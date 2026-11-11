@@ -1,0 +1,123 @@
+{
+ "summary": "Built and committed locally. On a founder-signed GOAL, weak reports from independent sources now add up and wake the goal once; a copied, repeated, reworded-by-a-word or denied claim does not add up. Both reproductions failed on pr196 first and pass now.\n\nCounted on my 16 scenarios (17 wanted wakes, each on a real Body): per-item rule 10 right, 10 false alerts, 7 missed; with the change 16 right, 3 false alerts, 1 missed. Three scenarios got worse than the baseline and one is not fixed; all four are in those counts. The scenarios are mine, not a sample of real intake.\n\nMutation gate: 25 of 25 caught, wired into job 10. `acceptance check` is sound, the ratchet against 8d205324 passes, and governance integrity is clean.\n\nTier: a cloud container, per-test keys, no founder device, VEPMC 0. Nothing was pushed.",
+ "blocked": "",
+ "branch": "claude/goal-intake-accumulation-20261111",
+ "worktree": "/tmp/claude-0/-home-user/f78643ba-8a14-5107-b25c-e0462dfdc774/scratchpad/intake",
+ "base_commit": "8d20532464b1533b28d71d8331ca3412a90dbb11",
+ "head_commit": "1106795d00ded061b46074e1ba34514ae51a570a",
+ "what_can_greg_do_now": "On a body with a founder-signed GOAL, GREG now wakes the goal when independent sources each say something weak about the goal's subject and together they reach the goal's signed threshold. It then pulls the goal's signed missions to look now instead of at their next cadence. In the test, the mission repaired a damaged file inside its cone through the Gate; the move that needs the founder's decision was neither run nor asked again.\n\nGREG no longer wakes again on a copy of a claim it already woke on, whoever repeats it. One source repeating itself, a campaign behind one claim, chatter on the goal's channel and a denial of a claim do not add up.\n\n`greg goal evidence <goal>` now shows, in numbers and without intake text, what a goal's intake adds up to: reports in the window, claims, disputed claims, waiting weight, reports that added nothing.\n\nEvidence that the mechanism caused the gain: the same two test files fail on 8d205324 and pass on the branch, the per-item baseline run inside the counts test reproduces the old behaviour on the new tree, and each of 25 safeguards fails a test when removed.",
+ "fail_before_evidence": "Run on an unchanged detached worktree of pr196 (8d205324), before any source change:\n\n- `test_three_weak_reports_from_three_independent_sources_wake_the_goal`: `assert [False, False, False] == [False, True, False]` (never woke).\n- `test_one_claim_repeated_by_four_sources_wakes_the_goal_once`: `assert [True, True, True, True] == [True, False, False, False]` (woke four times).\n\nThe final two test files on pr196: 30 failed, 2 passed.\n- 21 fail on behaviour (an assertion about wakes).\n- 9 cannot run there because they name the new code (`IntakeAccumulation`, the `intake` view).\n- 2 pass before and after; they pin what must not change (a quarantined item adds nothing; a report recorded before its goal is judged alone). Each is guarded by a mutant.\n\nKept in the tree: docs/evidence/greg-goal-intake/2026-11-11/fail-before-8d205324.txt.\n\nShingle similarity was added only after a test showed the need. With exact normalisation alone, the reworded-copy test and three denial tests failed (4 failed, 1 passed; stage1-normalisation-only.txt). The threshold (word-set Jaccard 0.8) was written to a note at 17:55 UTC before that test ran and was not changed. The reworded test sits exactly at 0.8 and a mutant pins it. The repository cannot prove the note's time.",
+ "baseline_and_ablation": "Baseline: the per-item scoring of pr196, run on the new tree by making the count return each item's own score.\n\n| Rule | Right wakes | False alerts | Missed |\n|---|---|---|---|\n| Per item | 10 | 10 | 7 |\n| Accumulated by independent source | 16 | 3 | 1 |\n\n16 scenarios, 17 wanted wakes, labels fixed before the first run. My hand count matched the first run.\n\nWorse than baseline (new failures, all counted):\n- a disagreement by an opposite word (\"is broken\" / \"is fine\") now adds up: 1 false alert, 0 before;\n- passing mentions that report nothing now add up: 1 false alert, 0 before;\n- the same sentence when the fault has come back inside the window no longer wakes the goal: 1 miss, 0 before.\n\nNot fixed: a claim retold in other words by another source still wakes the goal again (1 false alert, as before).\n\nAblation (accumulate, but count every item instead of independent sources), on the four repetition scenarios: 10 false alerts, against 8 per item and 0 with the change. The repetition tests fail under it: one source saying one thing twice reaches a threshold of two, and every copy wakes the goal.",
+ "files_changed": [
+  "/tmp/claude-0/-home-user/f78643ba-8a14-5107-b25c-e0462dfdc774/scratchpad/intake/greg/goal_gravity.py",
+  "/tmp/claude-0/-home-user/f78643ba-8a14-5107-b25c-e0462dfdc774/scratchpad/intake/greg/dataplane.py",
+  "/tmp/claude-0/-home-user/f78643ba-8a14-5107-b25c-e0462dfdc774/scratchpad/intake/tests/unit/test_greg_goal_intake_accumulation.py",
+  "/tmp/claude-0/-home-user/f78643ba-8a14-5107-b25c-e0462dfdc774/scratchpad/intake/tests/unit/test_greg_goal_intake_counts.py",
+  "/tmp/claude-0/-home-user/f78643ba-8a14-5107-b25c-e0462dfdc774/scratchpad/intake/scripts/ci/check_goal_intake_mutants.py",
+  "/tmp/claude-0/-home-user/f78643ba-8a14-5107-b25c-e0462dfdc774/scratchpad/intake/.github/workflows/canonical-ci.yml",
+  "/tmp/claude-0/-home-user/f78643ba-8a14-5107-b25c-e0462dfdc774/scratchpad/intake/acceptance/directive-sections.json",
+  "/tmp/claude-0/-home-user/f78643ba-8a14-5107-b25c-e0462dfdc774/scratchpad/intake/docs/mechanisms/MC-0003-independent-source-intake-count.md",
+  "/tmp/claude-0/-home-user/f78643ba-8a14-5107-b25c-e0462dfdc774/scratchpad/intake/docs/decisions/ADR-GOAL-GRAVITY-002-greg-binding.md",
+  "/tmp/claude-0/-home-user/f78643ba-8a14-5107-b25c-e0462dfdc774/scratchpad/intake/docs/evidence/greg-goal-intake/2026-11-11/README.md",
+  "/tmp/claude-0/-home-user/f78643ba-8a14-5107-b25c-e0462dfdc774/scratchpad/intake/docs/evidence/greg-goal-intake/2026-11-11/counts.txt",
+  "/tmp/claude-0/-home-user/f78643ba-8a14-5107-b25c-e0462dfdc774/scratchpad/intake/docs/evidence/greg-goal-intake/2026-11-11/fail-before-8d205324.txt",
+  "/tmp/claude-0/-home-user/f78643ba-8a14-5107-b25c-e0462dfdc774/scratchpad/intake/docs/evidence/greg-goal-intake/2026-11-11/mutants.txt",
+  "/tmp/claude-0/-home-user/f78643ba-8a14-5107-b25c-e0462dfdc774/scratchpad/intake/docs/evidence/greg-goal-intake/2026-11-11/predeclared-threshold.txt",
+  "/tmp/claude-0/-home-user/f78643ba-8a14-5107-b25c-e0462dfdc774/scratchpad/intake/docs/evidence/greg-goal-intake/2026-11-11/stage1-normalisation-only.txt"
+ ],
+ "commands": [
+  {
+   "command": "git -C /home/user/uniimente-kernel worktree add -b claude/goal-intake-accumulation-20261111 <scratchpad>/intake pr196",
+   "result": "Worktree created at 8d205324. I also made two scratch worktrees of my own (intake-base, a detached pr196; intake-merged) and removed both at the end. The main checkout was not touched."
+  },
+  {
+   "command": "python -m pytest -q -p no:cacheprovider tests/unit/test_greg_goal_intake_accumulation.py   (on detached pr196, the two reproductions only, before any source change)",
+   "result": "2 failed: [False, False, False] instead of [False, True, False]; [True, True, True, True] instead of [True, False, False, False]."
+  },
+  {
+   "command": "python -m pytest -q -p no:cacheprovider --tb=line tests/unit/test_greg_goal_intake_accumulation.py tests/unit/test_greg_goal_intake_counts.py   (final files, on detached pr196)",
+   "result": "30 failed, 2 passed. 21 fail on behaviour, 9 name code that does not exist there."
+  },
+  {
+   "command": "python -m pytest -q -p no:cacheprovider tests/unit/test_greg_goal_intake_accumulation.py -k \"reworded or disagree or denial\"   (stage 1: exact normalisation only)",
+   "result": "4 failed, 1 passed: the reworded copy and three denials woke the goal. This is the test that justified word-set similarity."
+  },
+  {
+   "command": "python -m pytest -q -p no:cacheprovider tests/unit/test_greg_goal_intake_accumulation.py tests/unit/test_greg_goal_intake_counts.py   (branch, final source)",
+   "result": "32 passed in 39.5s. Counts printed: total (10, 10, 7) -> (16, 3, 1); wanted wakes: 17."
+  },
+  {
+   "command": "python scripts/ci/check_goal_intake_mutants.py   (first run)",
+   "result": "24/26 caught. Two survivors, both real: one test passed for another reason (a new goal's first turn reads its mission's checks); one part of a cache key changed nothing observable. I fixed the test and removed the redundant key part with its mutant."
+  },
+  {
+   "command": "python scripts/ci/check_goal_intake_mutants.py   (final source, run twice)",
+   "result": "25/25 caught, exit 0, 3m27s. Covers 24 mutants in greg/goal_gravity.py and 1 in greg/dataplane.py."
+  },
+  {
+   "command": "python -m pytest -q -p no:cacheprovider -rs tests/unit/test_goal_gravity.py tests/unit/test_greg_goal_gravity.py tests/unit/test_greg_goal_gravity_*.py tests/unit/test_goal_gravity_*.py tests/integration/test_greg_goal_gravity_process.py tests/unit/test_greg_dataplane*.py tests/unit/test_greg_community_*.py + the two new files",
+   "result": "283 passed, 1 skipped (tests/unit/test_goal_gravity_evidence_kinds.py: needs networkx)."
+  },
+  {
+   "command": "python -m pytest -q -p no:cacheprovider -rs <all 53 test files that mention goal gravity, the data plane, community_evidence or ingest_external>",
+   "result": "910 passed, 3 failed, 9 skipped in 8m40s. All 3 failures reproduce on detached pr196: the 2 known recombined_native_game cases, and tests/unit/test_greg_outcome_resolution.py::test_s11_the_preference_bound_is_the_compilers_own_holm_rule (No module named scipy), which is not on the known list. This run was before a last docstring-only edit; after that edit I re-ran the two new files, the gate and the required list, not these 53 files."
+  },
+  {
+   "command": "python -m pytest -q -p no:cacheprovider tests/unit/test_directive_sections.py tests/unit/test_directive_ratchet.py tests/unit/test_acceptance_harness.py",
+   "result": "127 passed (after the map edit)."
+  },
+  {
+   "command": "python -m pytest -q -p no:cacheprovider -rs tests/unit/test_repo_health_gates.py tests/unit/test_effect_call_allowlist.py tests/unit/test_governance_integrity.py tests/unit/test_greg_packaging.py tests/unit/test_sources_parse.py tests/unit/test_import_layering.py tests/unit/test_catalogs.py   (committed tree)",
+   "result": "120 passed."
+  },
+  {
+   "command": "python -m acceptance check",
+   "result": "sound: 12 missions, 85 requirements, 374 distinct test nodes, 18 contract functions. Exit 0."
+  },
+  {
+   "command": "python -m acceptance directive --against 8d20532464b1533b28d71d8331ca3412a90dbb11",
+   "result": "Exit 0, no ratchet line. 83/272 asks met at the static ceiling (82 before); sections DONE 2, PARTIAL 54, OPEN 21 (53 and 22 before); 124 open asks building can still close (125 before)."
+  },
+  {
+   "command": "python -m acceptance directive --collect",
+   "result": "Exit 2 on the branch and on pr196 alike: the same 8 cited files collect nothing in this container (missing packages). Neither of my cited files is among them."
+  },
+  {
+   "command": "python -m governance.integrity --check",
+   "result": "13 protected artifacts, all as authorized. Exit 0."
+  },
+  {
+   "command": "PYTHONPATH=. python scripts/refresh_owned_source.py",
+   "result": "added: [], removed: []. No owned runtime source file was added."
+  },
+  {
+   "command": "git merge-tree --write-tree claude/goal-intake-accumulation-20261111 compose-20261111b ; then the two new files and six neighbour files on a scratch merge worktree",
+   "result": "Merges with no conflict. On the scratch merge: 179 passed. The scratch commit has no ref and its worktree is removed. Not asked for; done because the rehearsal branch also edits job 10, so I placed my gate step mid-list to avoid a conflict."
+  },
+  {
+   "command": "git -c user.name=Claude -c user.email=noreply@anthropic.com commit   (twice)",
+   "result": "17058c036529d93d3470369da59fa53355772b02 (code, tests, gate, CI step) and 1106795d00ded061b46074e1ba34514ae51a570a (Mechanism Card, evidence, ADR section, S42.A1). Working tree clean. Nothing pushed."
+  }
+ ],
+ "limitations": [
+  "The count reads words, not meaning. A disagreement by an opposite word and passing mentions now add up to a wake where each item alone did not. Both are worse than the baseline and are counted.",
+  "A sentence the goal already woke on is not news inside the window, even when the fault it names has come back. The mission then finds it at its own next look. The window is the goal's signed intersection_window_seconds, 30 days by default.",
+  "A claim retold in other words by another source counts as a new claim. Only an edited copy (word-set Jaccard at or above 0.8) is recognised. Denials are recognised only through a negation word, a contraction or a reversed direction.",
+  "Source independence is the source string. A determined author using several source names and different wordings is counted as several sources. The data plane has the same limit.",
+  "The scenario set is mine and small. The counts show which cases the rule handles, not how often each occurs on real intake.",
+  "Not run: the whole test suite, CI, any real intake feed, any founder device.",
+  "Skipped here for lack of networkx: tests/unit/test_goal_gravity_evidence_kinds.py, tests/integration/test_greg_capability_wakes_goal.py, tests/integration/test_greg_goal_requests_formation.py, tests/integration/test_one_machine.py, tests/integration/test_one_mission_fifteen_steps.py, tests/integration/test_outcome_correction_changes_decision.py, tests/unit/test_greg_outcome_resolution_signed.py. The second and third carry check_cortex_mutants' Goal Gravity mutants, so that gate's Goal Gravity cases were not exercised against this change.",
+  "Skipped here for lack of bubblewrap: one test in tests/integration/test_greg_attack_campaign_process.py and one in tests/unit/test_greg_paid_approval_zero_booked.py.",
+  "Only intake reports are combined. The egregore intersection detector (opportunity_factors: capabilities, constraints, timing and resources as beliefs) is unchanged and still has no body-mode test.",
+  "A goal keeps at most 256 relevant reports. Beyond that the oldest is forgotten and its claim counts again. Counting a full window of 256 distinct claims took about 85 ms here, once per goal per turn.",
+  "Outside sources in the Mechanism Card (noisy-OR, shingle resemblance) are cited from memory. Nothing was fetched.",
+  "S42.A1 now reads met. Whether the residual cases fall outside that ask is a review judgement, not something the harness checks. I also set section 42 to PARTIAL (the check requires the computed status) and marked unit S42-B closed by this local branch, which goes slightly beyond editing the one entry."
+ ],
+ "founder_questions": [
+  "Should a change that GREG itself observes in the goal's mission checks clear what the goal has 'already woken on'? That would wake the goal when the same sentence arrives after the fault has come back, at the price of one more look on a late copy. It is buildable now and I did not build it because the task fixed the rule as window-only.",
+  "Is the goal's signed 30-day default window the right span for 'a repeated claim is not news'? A shorter signed window re-arms a claim sooner.",
+  "Should a bare mention of the goal's subject count as a unit, or only a report that also says something about its state? Requiring a state word would remove the passing-mentions false alert and risk new misses.",
+  "Is S42.A1 rightly closed at SANDBOX_VERIFIED and covered, given the three residual false alerts and one new miss recorded beside it?"
+ ],
+ "details": "**Decisions I made that the task left open**\n\n- **What a wake spends.** The goal's own wake record on the ledger (any cause) marks every report that had arrived as used. This is what makes four copies wake the goal once, while the data plane's cap of two sources per claim still applies before a wake. A wake that was only requested, deferred or refused spends nothing.\n- **Sum, not product.** The noisy-OR transplant is its structure only: independent causes combine and one cause counts once. Units add in the goal's signed weights against its signed `wake_threshold`. I did not take the probability product: no source reliability has been measured, and a probability cannot be compared with a signed sum of weights. MinHash was not taken either: a goal compares at most 256 reports, so exact Jaccard is cheap and has no seed. Both are recorded in MC-0003.\n- **Two sides per claim.** A denial counts on the claim's other side and the heavier unspent side counts. This keeps \"all-clear, then the fault\" waking the goal twice at threshold 1.\n- **Reuse.** `greg/dataplane.py` now exposes `claim_key` and `claim_support`; `community_evidence` calls them and so does Goal Gravity. Negation and direction come from the existing `greg.cognition.evidence.distortions`. No egregore file was changed: `cortex/evaluation/freeze-v0.2.2.json` pins them and CI job 6 refuses a changed input, so the count hooks in through `BodyRelevanceRouter.score`, the seam egregore's router already offers.\n- **No new record and no new GoalSpec field.** The window is the signed `intersection_window_seconds`. The count is rebuilt from the ledger per open Body.\n- **A report recorded before its goal** is not part of the goal's count and is scored alone, as before.\n\n**Things I found that are not mine and I did not change**\n\n- The one-pull-a-minute limit (`PULL_MIN_INTERVAL`) is held in memory per open Body, so a restart forgets it. That is why the scout saw four pulls: its harness opens a new Body per tick.\n- A goal with threshold 1.0 and a subject condition on its mission wakes on every changed reading of that mission's own checks. This confounded one of my scenarios until I let the mission settle between steps.\n- `dataplane.ingest` stamps intake with the wall clock, not the body's clock. The window tests patch `dataplane.utcnow`; on a real body the two agree.\n- `test_s11_the_preference_bound_is_the_compilers_own_holm_rule` fails on pr196 in this container (no scipy) and is not on the known-failure list.\n\n**Where to look**\n\n- Code: `greg/goal_gravity.py` (`intake_score`, `IntakeAccumulation`, `BodyRelevanceRouter.score`, one line in `binding_for`, one line in `evidence`).\n- Card: `docs/mechanisms/MC-0003-independent-source-intake-count.md`.\n- Evidence: `docs/evidence/greg-goal-intake/2026-11-11/README.md`.\n- Rollback: remove the `loop.router.intake = ...` line in `binding_for`; every item is scored alone again and no record needs migrating."
+}

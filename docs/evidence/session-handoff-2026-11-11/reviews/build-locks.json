@@ -1,0 +1,125 @@
+{
+ "summary": "Two test-only locks are committed locally on claude/acceptance-locks-20261111 (base pr196 8d205324, head 1f4bf62d). No product code changed. Lock C holds on #196: an approved action whose precondition stopped passing before dispatch is withheld, unrelated work continues, and it runs exactly once when the precondition returns. Lock H holds in its main story and FAILS in a nearby mission shape, which is the main result: when the completed write's own check is read through the formed function, that function faults, and an unrelated check fails in the same pass, GREG dispatches the completed write again and overwrites the file. That defect is committed as a strict expected failure with a passing control. Gates: whole-output gate 162 mutants, 0 survived or stale; new reconstitution gate 4 of 4 caught. Reality tier: in-process Body in a cloud container, test keys, no founder device, VEPMC 0.",
+ "blocked": "",
+ "branch": "claude/acceptance-locks-20261111",
+ "worktree": "/tmp/claude-0/-home-user/f78643ba-8a14-5107-b25c-e0462dfdc774/scratchpad/locks",
+ "base_commit": "8d20532464b1533b28d71d8331ca3412a90dbb11",
+ "head_commit": "1f4bf62dececc655bdfc5dda0ac6bc3182e1346d",
+ "files_changed": [
+  "tests/unit/test_greg_precondition_unheld.py",
+  "tests/unit/test_greg_functional_reconstitution.py",
+  "scripts/ci/check_whole_output_mutants.py",
+  "scripts/ci/check_reconstitution_mutants.py",
+  ".github/workflows/canonical-ci.yml"
+ ],
+ "details": "COMMITS (local only; no push, no PR, no comment)\n- 2d883484004d56b9f70e79baee9bcb0f49f83e14  Lock C: an approved action whose precondition stopped passing is withheld\n- 1f4bf62dececc655bdfc5dda0ac6bc3182e1346d  Lock H: functional reconstitution on one mission; a replay defect on record\nThe Lock H message was amended once after the final verification. The tree is the same one that was verified (677f7b74 before and after).\nDiff against pr196: 5 files, 566 insertions, 2 deletions. Nothing outside tests/, scripts/ci/ and .github/.\n\nLOCK C (tests/unit/test_greg_precondition_unheld.py, 7 new tests over one run of the story)\nStory: `work` writes out.txt, requires the signed check `gate`, and is outside the signed cone. `late` is unrelated work with its own precondition, inside the cone.\n1. Planned on a measured precondition: `gate` was observed passing with a receipt; the only ask is APPROVAL for `work` at its exact scope; no action record, no adapter call, no Gate claim, grant or receipt.\n2. Stale action withheld: after request.txt changed and the founder approved, `work` has no action record, no grant_dispatch claim, no grant_issued event, no receipt, no fs.write call and no file. The approval is answered and still in approved_scopes, so it is the precondition that withholds it. Every later pass measured `gate` failing.\n3. Unrelated valid work continues: `late` ran DONE in the first pass after the change, one claim, one receipt, one adapter call.\n4. The ask names the hold: a NO_STRATEGY ask with evidence.held_by_precondition == {\"work\": [\"gate\"]}; no second approval is asked; states stay BLOCKED or WAITING.\n5. Standing approval admits it later: when request.txt returned, no new ask and no new answer; GREG withdrew its own NO_STRATEGY ask; the grant records founder_approved_scope True for the scope approved at planning; mission ACHIEVED.\n6. Exactly once: one adapter call, one write-ahead intent scope, one claim, one grant, one positive receipt for `work`, and three more passes do not repeat it. The docstring limits the claim to a write in the body's own workspace through its own Gate.\n7. The separate appraiser returned VERIFIED with preconditions_honored, approval_boundaries_honored and exactly_once.\nGate: the existing scripts/ci/check_whole_output_mutants.py already mutates this hold and already runs in CI job 10, so no new gate was made. Two mutants added, both aimed at test 2: \"the hold on an unproven precondition is dropped\" (the one the task named) and \"a founder approval overrides the hold\". The first also fails the file's two earlier tests. The second fails only the new tests in the three files I ran it against.\n\nLOCK H (tests/unit/test_greg_functional_reconstitution.py, 7 story tests, 1 control, 1 strict expected failure)\nStory on the builder route:\n1. The write step completed once while the first built capability served the function (one adapter call, one intent, one claim, one grant, one receipt; no asks; HOLDING).\n2. The lost function returns under a different capability id by GREG's own repair. The removal is the `re` module withdrawn from the isolated runtime that runs built code. The first implementation imports it; no repair code names it. GREG quarantined the capability itself, the screen refused a rebuilt copy that needs the module, and a line-scanner implementation with a different source digest was attached. The check is measured again; states include REPAIRED and end HOLDING.\n3. No founder ask up to there; the attach is recorded as the mission's signed read-only auto_attach; the capability is read_only and inside the cone's signed pattern.\n4. The completed write is never dispatched again across the loss, the repair, the founder's detach, a restart and the re-attach: one adapter call, one intent, one claim, one grant and the same one receipt at all five moments.\n5. A capability the founder detached is not used though nothing else can serve: registry is {first: QUARANTINED, second: DETACHED}; no state change follows the founder's detach; no reading by the detached capability; the builder was asked twice and could only return the detached implementation (route \"founder-detached; explicit attach required\"); the same holds after a restart, with no further build.\n6. The mission asks and waits instead: exactly one CAPABILITY_ATTACH ask naming the function, whose evidence lists both capabilities and their states; states BLOCKED or WAITING.\n7. Only the founder's own CAPABILITY_ATTACH returns it to service; the ask is then withdrawn and the mission holds again.\nI first used \"delete the stored source\" as the removal and replaced it: the built adapter explicitly checks that file, so it was not unknown to the repair design.\nNew gate scripts/ci/check_reconstitution_mutants.py (shared mutation_harness, wired into CI job 10), 4 of 4 caught: a rebuilt founder-detached implementation is attached again; the withheld-implementation search attaches a founder-detached one; a formed capability that keeps faulting is never re-formed; a lone unmeasured check is pursued. None of these anchors was in any gate, and no gate ran test_greg_self_repair.py or test_greg_genesis_builder.py. The builder route's \"founder-detached\" refusal had no test at all before this.\n\nDEFECT FOUND (not fixed; product code untouched)\nTest: test_a_completed_write_is_not_replayed_when_the_function_that_reads_it_faults_beside_a_real_failure, marked xfail(strict=True, raises=AssertionError). Setup problems raise pytest.fail, so only the replay assertion can satisfy the mark.\nMission shape: check note-open-items is read by the formed function over the file the write produced; check noted is fs.read on the same file; check request is unrelated and has no strategy; the write advances the first two; infinite closure.\nObserved on 8d205324: the write completes and the mission holds. A person appends a line to the note; both checks still hold. Then `re` is withdrawn and request.txt changes in the same pass. Pass 1 is ACTED: the function's sensor is REFUSED, noted still passes, request fails, and GREG dispatches the write again at attempt 1. fs.write is called twice, there are action records DONE attempt 0 and DONE attempt 1, and the person's line is overwritten. Pass 2 is REPAIRED, pass 3 BLOCKED.\nControl (passes): the same loss with no other failing check is SENSOR_RETRY then REPAIRED, one write, the line kept.\nCause as measured: MissionEngine pursues `failing - self.inconclusive`. A check whose formed sensor capability faulted is recorded in self.capability_faults for the two-strike repair but is not inconclusive, so on strike one it rides along with any measured failure. This is the case the project's own J1 rule (test_greg_unmeasured_not_failed.py) closed for undecidable evidence but not for a capability fault.\nDiagnosis check in a scratch copy only: subtracting set(self.capability_faults) from the pursued set made the reproduction pass and failed nothing else in test_greg_self_repair.py, test_greg_unmeasured_not_failed.py or the lock file. It was not run against the whole suite and is not proposed as the final fix.\nSecond trigger, probe only (/tmp/claude-0/-home-user/f78643ba-8a14-5107-b25c-e0462dfdc774/scratchpad/locks-scratch/probe_h5.py): a formed capability with a latent bug on longer input. The replayed write cut a 796-character note to 38, and the capability was never repaired, because the overwrite removed the input that exposed the bug.\nThe defect also reproduces on a copy of the integrated rehearsal compose-20261111b (3b1c743a). No local branch changes that code path.\nNot measured: the same replay for an out-of-cone action under a standing free approval, or for a paid or external effect.\n\nOTHER MEASURED FACTS\n- Residual window of Lock C (probe /tmp/claude-0/-home-user/f78643ba-8a14-5107-b25c-e0462dfdc774/scratchpad/locks-scratch/probe_c3.py): if the prerequisite changes inside one pass, after that pass read it and before it dispatches, the action runs and the appraiser records the precondition as honoured. Nothing re-reads a mission precondition at the Gate's commit. Stated in the test module's docstring; not locked.\n- Detach scope (probe /tmp/claude-0/-home-user/f78643ba-8a14-5107-b25c-e0462dfdc774/scratchpad/locks-scratch/probe_h4.py): after a founder detach of a built capability, a rebuilt implementation that differed by one renamed variable was registered and auto-attached with no ask. This is the code's stated design (the builder is told to produce a different implementation). It is a founder question, not asserted by any test here.\n- tests/integration/test_greg_adversarial_machine.py has 4 failures in this container that are not on the task's known list. I checked them on a detached pr196 worktree I created and then removed: the same 4 fail there (numpy is missing). They are not mine.\n\nNo Mechanism Card: nothing was transplanted.\nScratch logs and probes: /tmp/claude-0/-home-user/f78643ba-8a14-5107-b25c-e0462dfdc774/scratchpad/locks-scratch/ (gate_whole_output.log, gate_reconstitution.log, final.log, adv_pr196.log, probe_*.py, mutate.py).",
+ "fail_before_evidence": "These are locks on behaviour that already exists, so there is no failing-then-fixed product change. The evidence is in two parts.\n1. Each lock fails when its safeguard is removed, in a scratch copy, by a named test. Lock C: with the hold dropped, test_an_approved_action_whose_precondition_stopped_passing_is_never_dispatched fails on `[('DONE', 0)] == []` and 8 of the file's 9 tests fail; with \"approval overrides the hold\" the same test fails and 6 new tests fail while all 62 older tests in the three files run still pass. Lock H: the four gate mutants are each caught by a FAILED test in the lock file.\n2. The defect reproduction fails on pr196 as it stands. Run without the mark it gives: AssertionError: (['note.md', 'note.md'], [('DONE', 0), ('DONE', 1)], False, ['ACTED', 'REPAIRED', 'BLOCKED']). My first version of that test was failing for the wrong reason (a missing directory); I found it by running with --runxfail, fixed it, and added raises=AssertionError so that cannot recur silently.",
+ "baseline_and_ablation": "Lock C baseline: no hold. The approved action runs in the first pass after the approval although its prerequisite changed; the separate appraiser then returns REFUTED. Ablation named by the task (hold dropped) is in the gate and caught; whole gate 162 mutants, 0 survived or stale, 9m33s.\nLock H baselines: without self-repair the mission stops at the faulting capability and asks; without either detach check the detached capability returns to service with no founder act. All four ablations are in the new gate, 4 of 4 caught in 30 s.\nNo-replay clause: in the main story nothing attempts a second dispatch, and neither single removal I tried there makes the write repeat (recovering a recorded dispatch again raises EventError in the journal; pursuing a lone unmeasured check produces an ask instead). The control test carries that clause's mutant, where the write does repeat. The strongest evidence that the assertion can detect a replay is the defect itself.\nIntegrated machine: both lock files on a copy of compose-20261111b at 3b1c743a give 17 passed, 1 expected failure.",
+ "what_can_greg_do_now": "Nothing new. This unit changes no product code. Two behaviours GREG already had are now held by tests and by mutants that run in CI job 10, and one replay defect is on record as a strict expected failure, so a fix will turn that test red until the mark is removed. The next executable step is that fix in greg/missions.py: a check left unmeasured by a capability fault must not be pursued beside a measured failure.",
+ "commands": [
+  {
+   "command": "git -C /home/user/uniimente-kernel worktree add -b claude/acceptance-locks-20261111 /tmp/claude-0/-home-user/f78643ba-8a14-5107-b25c-e0462dfdc774/scratchpad/locks pr196",
+   "result": "Worktree created at 8d205324 on the new branch."
+  },
+  {
+   "command": "PYTHONPATH=. python ../scout-out/exp_c.py ../locks-scratch (in the new worktree)",
+   "result": "Reproduced the scout's output exactly: APPROVAL at planning, late DONE while work withheld, NO_STRATEGY naming held_by_precondition, then work DONE and ACHIEVED with no new ask."
+  },
+  {
+   "command": "python -m pytest -q -p no:cacheprovider tests/unit/test_greg_precondition_unheld.py",
+   "result": "9 passed (2 earlier tests, 7 new)."
+  },
+  {
+   "command": "scratch copy, greg/missions.py hold replaced by `if False:`, then pytest tests/unit/test_greg_precondition_unheld.py",
+   "result": "8 failed, 1 passed. The named test fails on `[('DONE', 0)] == []`. The appraiser test shows REFUTED."
+  },
+  {
+   "command": "scratch copy, hold replaced by `... & unproven and not m.approved_scopes:`, then pytest on test_greg_precondition_unheld.py, test_greg_unmeasured_not_failed.py, test_greg_whole_output_judgment.py",
+   "result": "6 failed, 62 passed. All 6 failures are new tests; no older test in these three files catches it."
+  },
+  {
+   "command": "python scripts/ci/check_whole_output_mutants.py",
+   "result": "162 mutants, 0 survived or stale. real 9m33s. Both new mutants CAUGHT."
+  },
+  {
+   "command": "python -m pytest -q -p no:cacheprovider -rxX tests/unit/test_greg_functional_reconstitution.py",
+   "result": "8 passed, 1 xfailed. Repeated three times together with the Lock C file: 17 passed, 1 xfailed each time."
+  },
+  {
+   "command": "python -m pytest -q -p no:cacheprovider --runxfail tests/unit/test_greg_functional_reconstitution.py -k faults_beside",
+   "result": "1 failed, as intended: AssertionError: (['note.md', 'note.md'], [('DONE', 0), ('DONE', 1)], False, ['ACTED', 'REPAIRED', 'BLOCKED'])."
+  },
+  {
+   "command": "python scripts/ci/check_reconstitution_mutants.py",
+   "result": "4/4 caught. real 30s. Run again on the final test file with the same result."
+  },
+  {
+   "command": "scratch copy, `_pursue(m, now, failing - self.inconclusive - set(self.capability_faults), evidence)`, then pytest on the lock file, test_greg_self_repair.py, test_greg_unmeasured_not_failed.py, test_greg_recombine.py, tests/integration/test_greg_adversarial_machine.py",
+   "result": "Diagnosis only. 5 failed, 30 passed, 3 skipped: the reproduction XPASSed (strict), plus the same 4 container failures of the adversarial file. Nothing else failed."
+  },
+  {
+   "command": "copy of compose-20261111b (3b1c743a) plus the two lock files, pytest on both files",
+   "result": "17 passed, 1 xfailed. With --runxfail the defect gives the same AssertionError there."
+  },
+  {
+   "command": "python -m pytest -q -p no:cacheprovider -rfsxX on the two lock files plus test_greg_self_repair.py, test_greg_recombine.py, test_greg_genesis_restore.py, test_greg_bindings.py, test_greg_bind_from_check.py, test_greg_reservation_release.py, test_greg_genesis_builder.py, test_greg_unmeasured_not_failed.py, test_greg_whole_output_judgment.py (committed tree)",
+   "result": "120 passed, 1 skipped, 1 xfailed, exit 0. The skip is the whole of test_greg_recombine.py (no networkx)."
+  },
+  {
+   "command": "python -m pytest -q -p no:cacheprovider -rfs tests/integration/test_greg_adversarial_machine.py (committed tree, and again on a detached pr196 worktree)",
+   "result": "4 failed, 9 passed, 2 skipped on both. Same 4 tests on pr196 itself (ModuleNotFoundError: numpy and its consequences). Not caused by this branch."
+  },
+  {
+   "command": "python -m pytest -q -p no:cacheprovider tests/unit/test_repo_health_gates.py tests/unit/test_effect_call_allowlist.py tests/unit/test_governance_integrity.py tests/unit/test_greg_packaging.py tests/unit/test_sources_parse.py tests/unit/test_import_layering.py (committed tree)",
+   "result": "115 passed, exit 0."
+  },
+  {
+   "command": "python -m acceptance check",
+   "result": "exit 0. sound: 12 missions, 85 requirements, 374 distinct test nodes, 18 contract functions."
+  },
+  {
+   "command": "python -m acceptance directive --against 8d20532464b1533b28d71d8331ca3412a90dbb11",
+   "result": "exit 0. 77 sections (DONE 2, PARTIAL 53, OPEN 22); 82/272 asks met at the static ceiling. Unchanged."
+  },
+  {
+   "command": "python -m governance.integrity --check",
+   "result": "exit 0. 13 protected artifacts, all as authorized."
+  },
+  {
+   "command": "PYTHONPATH=. python scripts/refresh_owned_source.py (after git add, and again after commit)",
+   "result": "added [], removed []. foundry/owned-source.json unchanged; the inventory does not cover tests/ or scripts/."
+  },
+  {
+   "command": "PYTHONPATH=. python ../locks-scratch/probe_c3.py ../locks-scratch",
+   "result": "Within-pass change: states ACTED, BLOCKED, WAITING; work DONE; appraisal VERIFIED_UNMET with preconditions_honored True."
+  },
+  {
+   "command": "PYTHONPATH=. python ../locks-scratch/probe_h4.py and probe_h5.py ../locks-scratch",
+   "result": "h4: after a founder detach, an implementation differing by one renamed variable was auto-attached with no ask. h5: a latent-bug trigger of the same replay cut a 796-character note to 38 and the capability was never repaired."
+  },
+  {
+   "command": "git -c user.name=Claude -c user.email=noreply@anthropic.com commit (twice), then commit --amend of the second message only",
+   "result": "2d883484 and 1f4bf62d on claude/acceptance-locks-20261111. Working tree clean. Tree 677f7b74 is the one verified."
+  }
+ ],
+ "limitations": [
+  "Reality tier: in-process Body in a cloud container, a test clock, per-test founder keys that are not Alfonso's, a deterministic StaticBuilder. No founder device. VEPMC 0.",
+  "The whole test suite was not run, by instruction. Only the files named above ran.",
+  "Skipped here, so not evidence: all of tests/unit/test_greg_recombine.py (no networkx), including test_a_founder_detached_construction_is_not_silently_reattached, test_detaching_the_engine_stops_every_construction_built_on_it and test_repair_does_not_readmit_the_construction_that_failed_in_service; and both cases of test_an_interrupted_capability_construction_resumes_once_and_serves_nothing_half_built in the adversarial machine file.",
+  "Failing in this container on pr196 itself, so not evidence either: test_revoked_engine_is_not_reused_after_restart, test_lying_solver_is_caught_by_the_independent_profit_dp, test_prompt_injection_in_sources_stays_data and test_duplicate_fixture_order_does_not_double_book (numpy is missing). These four are not on the task's known-failure list.",
+  "The mutant \"a founder approval overrides the hold\" was shown to survive older tests in three files only. Other tests in the suite might also catch it.",
+  "Exactly-once is asserted for a local file write counted in-process and on the body's own ledger. Nothing is claimed for an external, paid or out-of-cone effect.",
+  "Lock C does not cover a change inside one pass, between that pass's reading of the precondition and its dispatch. Measured: the action runs.",
+  "In Lock H's main story no safeguard I removed makes the write repeat, because nothing there attempts a second dispatch. That clause is a regression lock; its mutant lives in the control test.",
+  "The removal in Lock H is made by patching builders.ALLOWED_IMPORTS for the story. The real isolated interpreter enforces the patched list, but no real runtime upgrade was performed.",
+  "The story's tick counts assume the isolated interpreter answers within builders.RUN_TIMEOUT (10 s), as the existing builder tests do. A much slower host could make them miss.",
+  "The CI workflow edit was only parsed locally as YAML. Job 10 was not run on GitHub. The cortex gate (448 mutants) and the other gates were not run; I did not touch them.",
+  "The diagnosis change for the defect ran in a scratch copy against five files only. It is not a tested fix.",
+  "The Lock C test module's last docstring sentence reads \"the appraiser called it honoured\"; it means the precondition. I left it so the gate result stays tied to the exact file."
+ ],
+ "founder_questions": [
+  "After you detach a built capability, should the mission's signed auto_attach still let GREG build and attach a different implementation of the same function without asking you? Today it does, by design. In a probe a rebuild that differed by one renamed variable was attached with no ask.",
+  "Should a mission precondition be read again at the Gate's commit? Today the hold uses the reading from the same pass, so a change in the moment between that reading and the dispatch is not seen.",
+  "The replay defect: do you want it fixed before any mission is allowed to verify its own effect through a formed capability? Until then such a mission can repeat a completed in-cone write when that capability faults while another check fails."
+ ]
+}

@@ -1,0 +1,136 @@
+{
+ "summary": "The separate appraiser no longer runs a sensor, or re-derives a delivery, for a capability that is not ATTACHED. The pending closure is recorded UNAVAILABLE with the reason, once, and is appraised again after the founder re-attaches. It is on local branch claude/appraiser-detached-sensor-20261111 (head bf8e4b9f, two commits on pr196), not pushed. The new mutation gate catches 26/26 and the verification list passes. While testing the re-attach path I found a second defect on pr196 itself and fixed it in its own commit: a detach then re-attach after a failure closure made every later tick raise EventError.",
+ "blocked": "",
+ "branch": "claude/appraiser-detached-sensor-20261111",
+ "worktree": "/tmp/claude-0/-home-user/f78643ba-8a14-5107-b25c-e0462dfdc774/scratchpad/appraiser",
+ "base_commit": "8d20532464b1533b28d71d8331ca3412a90dbb11",
+ "head_commit": "bf8e4b9f04bf4db2795c8a02423e38b709217360",
+ "files_changed": [
+  "greg/appraisal.py",
+  "greg/body.py",
+  "greg/missions.py",
+  "tests/unit/test_greg_appraiser_attach_state.py",
+  "tests/unit/test_greg_failure_closure.py",
+  "scripts/ci/check_appraiser_attach_state_mutants.py",
+  "scripts/ci/check_cognition_residual_mutants.py",
+  ".github/workflows/canonical-ci.yml",
+  "tests/security/effect-call-allowlist.json"
+ ],
+ "fail_before_evidence": "All on untouched pr196 (8d205324), a real Body, signed commands, a per-test key.\n\n1. Reviewer's probe, unchanged: 1 failed. \"APPRAISER fs.read state DETACHED | verdict REFUTED | world_reobserved False | findings [c: world no longer matches (contains 'final')]\".\n\n2. The committed tests copied onto pr196: 31 failed, 4 passed (the 4 are controls). The tests go through Body.tick and the real separate appraiser process; the child only writes down which adapters and deliveries it ran.\n   - Detached sensor (ordinary stop between closure and appraisal, then DETACH, restart, tick): `assert child.ran == [], \"the appraiser ran a capability the founder detached\"` fails with `['adapter fs.read'] == []`. Same with the world unchanged, changed and deleted.\n   - Sensor recorded QUARANTINED, VERIFIED or DISCOVERED: `['adapter fs.read'] == []` fails.\n   - Detach recorded by one process and appraised by the next, an appraisal retried after a run without a verdict, and Body.appraise on demand: the adapter ran each time.\n   - Failure closure with its sensor detached: recorded VERIFIED_UNMET, not UNAVAILABLE.\n   - Detached brief.engineering: `'delivery brief.engineering' not in [...]` fails, and the closure is VERIFIED.\n   - In-process: an adapter or manifest that is not the registered one ran (`[{'path': ...note.txt}] == []`); a sensor whose manifest is internal_write ran.\n\n3. Engine defect, scratch probe and committed test: \"unmet 1 | appraised ['VERIFIED_UNMET'] | after detach: blocker capability | after attach tick 0, 1, 2: CRASH EventError fact identity greg.mission.unmet reused with different content\".\n\nLogs: /tmp/claude-0/-home-user/f78643ba-8a14-5107-b25c-e0462dfdc774/scratchpad/appraiser-scratch/fail-before-pr196-final.log and /tmp/claude-0/-home-user/f78643ba-8a14-5107-b25c-e0462dfdc774/scratchpad/appraiser-scratch/probe_unmet_reattach.py",
+ "what_can_greg_do_now": "When the founder detaches a sensor or a delivering capability, GREG's separate appraiser stops running it too. A closure still waiting for its appraisal is recorded UNAVAILABLE with the reason, on the ledger, in Mission Control's Proof list and in the morning report, instead of being re-read by the detached capability. When the founder attaches it again, that closure is appraised once more. GREG also survives a detach and re-attach after a failure closure, which crash-looped the body before. This is SANDBOX evidence in a container with a test key; nothing ran on the founder's device and nothing was pushed.",
+ "details": "**How appraisal works (mapped before changing it)**\n- Path: Body.tick -> _close_out -> _appraise_closure -> Body.appraise, which spawns `python -m greg.appraisal` with a scrubbed env and a 120 s timeout.\n- The child opens the ledger read-only at the pinned head. It re-verifies the founder signature, re-derives each check from receipts bound through the Gate chain, and checks exactly-once, approvals and preconditions.\n- Step 3 re-runs a check's sensor when its id is in REOBSERVABLE by calling `BUILTINS[cap]`'s adapter directly with secrets=None. That is the appraiser's one adapter call. There is no office, grant or receipt by design: it re-reads, it does not act.\n- Step 4b re-derives deliveries through `verify_delivery` of greg.briefs, greg.ventures and greg.organ_exchange. The last two re-run the organs.\n- REOBSERVABLE holds 139 ids: 138 read_only, plus cognition.settle, which is internal_write.\n- The appraiser already built a registry projection from the ledger (`_formed_registry`), but only for cognition sensors, where it stops nested organs and formed mechanisms that are not attached. It never re-runs a formed capability or a sensor named by function.\n\n**Commit bf8e4b9f: the appraiser fix**\n- greg/appraisal.py builds that projection for every appraisal and applies the office's rule itself:\n  - a sensor runs only if its state is ATTACHED;\n  - the adapter and manifest it would run must be the ones registered under the id;\n  - a manifest that is not read_only is never re-run, so the rule no longer depends on the list being curated.\n- A delivery is not re-derived for a delivering capability that is not ATTACHED.\n- greg/body.py records the appraiser's answer at once as mission.appraised. It uses no retry attempt and starts no appraiser on later ticks.\n- After a state change that leaves every not-run capability ATTACHED, the closure is appraised again, once per attach. An UNAVAILABLE that came from runs without a verdict stays final (H.G7 unchanged).\n- A later appraisal of the same closure gets its own record identity.\n- The effect-call allowlist entry for the appraiser spawn was re-read and re-pinned, because Body.appraise changed.\n- Mission status and receipts are never touched.\n\n**Verdict vocabulary, and why**\n- Verdict UNAVAILABLE: the word greg/body.py already records when the appraiser judged nothing. It is never VERIFIED or VERIFIED_UNMET.\n- Finding: the appraiser's existing phrase, \"c: the world could not be re-measured (fs.read is DETACHED; only an ATTACHED capability runs, and the appraiser runs none that is not)\", with checks.world_reobserved false.\n- `unmeasured_checks`: the engine's existing key for checks it could not measure.\n- `not_run` {capability: why}: the one new field. The body needs it to know which attach to wait for.\n- Deliveries: \"<action>: the delivery could not be re-derived (...)\", with deliveries_bound_to_evidence false.\n- Why not REFUTED, which a sensor that raises gets today: REFUTED is failure evidence. autonomy.failures withdraws standing approvals, corrections records APPRAISAL_REFUTED on the claim's receipts, and routing counts \"refuted\". Behaviour B separates revocation from epistemic marks, so a permission change should write none. The tests assert all three stay silent.\n- A closure that something else refutes is still REFUTED and still names `not_run`.\n\n**Commit 09eba869: the engine defect found on the way**\n- A mission that closed unmet blocks on the founder. A DETACH of its sensor replaces that blocker and the ATTACH lifts it, so the engine reaches the same failure again.\n- It re-recorded mission.unmet under the same identity with a new time. The journal refuses that, and every later tick raised.\n- The engine now records one failure closure per completed-action count.\n- Its test is in tests/unit/test_greg_failure_closure.py and its mutant in scripts/ci/check_cognition_residual_mutants.py.\n- It is a separate commit so the integrator can take or drop it alone. Without it, the re-attach path cannot work for failure closures.\n\n**Mutation gate**\n- scripts/ci/check_appraiser_attach_state_mutants.py has 26 mutants over greg/appraisal.py and greg/body.py and is wired into the mutation job. It catches 26/26 on the committed tree.\n- An earlier run caught 26 of 27. The survivor removed a filter that the other condition already implied, so I deleted the filter instead of gating it.\n- My first version extracted the re-observation into a helper and made four existing gates' anchors stale. I redid it inline so they stay live, then ran those gates' 18 appraiser mutants against their named tests: 18/18 caught.\n\n**Merge check**\n- The branch merges cleanly with the #291 branch head 41fcc41f, which contains #290. On the merged tree the new tests, the engine test, both office attach-state test files, the allowlist and the health gates give 117 passed.\n\n**Found and not fixed**\n- greg/console.py still calls foundry.query directly when it is detached. The skeptic reproduced it; it has a different owner.\n- A method nested in a cognition sensor that is detached or quarantined after the closure does not run, but the closure reads REFUTED. Probe on this branch: \"quarantine | again REFUTED | findings [answered: world no longer matches ('CAPABILITY_DEFICIT' == 'ANSWERED')]\", and the same for detach.\n\nLogs and probes are in /tmp/claude-0/-home-user/f78643ba-8a14-5107-b25c-e0462dfdc774/scratchpad/appraiser-scratch",
+ "founder_questions": [
+  "Verdict: a closure whose sensor the appraiser did not run because it is not ATTACHED is recorded UNAVAILABLE, not REFUTED, so nothing reads it as failure evidence. Is that what you want? A sensor that raises or cannot decide is still REFUTED today; should it get the same treatment?",
+  "Nested detach: when a method inside a cognition sensor is detached or quarantined after the closure, it does not run, but the closure is REFUTED ('world no longer matches'), which autonomy and corrections read as failure evidence. Should that also be UNAVAILABLE?",
+  "Re-attach: the body now re-appraises such a closure automatically, once per attach. The closure is re-read against the world as it is then, so it can come back REFUTED. Do you want that automatic, or only on your command?",
+  "Deliveries: a detach of brief.engineering, venture.assess or organs.exchange now also stops the appraiser's re-derivation of a past delivery. For a brief that is a pure re-render with no organ run. Is that the reach you intend for a detach?",
+  "'Immediately': a DETACH dropped while an appraisal is already running is read at the next tick, so that one run (at most 120 s) may still re-read. Is that acceptable?",
+  "Surface: UNAVAILABLE shows in Mission Control's Proof list (verdict only) and in the morning report (with the reason). No ask is raised. Should GREG ask you about it, or show the reason on the Proof view?",
+  "Console: Mission Control still serves an owned page through foundry.query when that capability is detached (not fixed here). Do you want it closed the same way?",
+  "The appraiser reads attach state from the ledger's capability.state records, as a restart does. It does not re-verify the signed command behind an attach. Is that enough?",
+  "Engine fix: a mission that fails again at the same completed-action count, even on different checks, records no second failure closure (before it crashed). Is one closure per action count right?"
+ ],
+ "limitations": [
+  "Not run: the whole test suite, hosted CI, and the full residual, cortex, whole-output and worker-appraisal gates. Only their 18 appraiser mutants and my one engine mutant were run, through scratch runners.",
+  "tests/unit/test_greg_recombine.py does not run in the instructed venv (networkx and scipy are absent; pytest exit 5, module skipped). I ran it, and tests/integration/test_greg_mind_constructs_capability.py, with another worker's environment at /tmp/claude-0/-home-user/f78643ba-8a14-5107-b25c-e0462dfdc774/scratchpad/s69a6-venv: 30 passed. Nothing was installed anywhere.",
+  "The broad 24-file unit set (562 passed, 11 skipped) ran before two late edits: a simplification in Body._reattached_closures and an import move in the new test file. The final verification list and the gate ran on the committed tree; that broad set was not re-run.",
+  "QUARANTINED: no production path quarantines a re-observable built-in today (Genesis quarantines only what it formed, and the appraiser re-runs built-ins only). The test records the state the way Genesis records it; it is not a real Genesis fault.",
+  "Delivery gating was exercised with brief.engineering only. venture.assess and organs.exchange share the same code path but were not tested detached with real organs.",
+  "The adapter-identity and read-only tests run the appraiser in-process with a patched registry or manifest; no production route to those states was shown.",
+  "Attach state is read at the pinned head: a DETACH that arrives during a running appraisal takes effect at the next tick.",
+  "By reading only, not reproduced: the appraiser's Genesis projection looks for built sources under the mission workspace's parent, so a built capability is projected QUARANTINED there. Pre-existing.",
+  "scripts/README.md gate counts were already stale (it says 24; there are 31 files) and I did not update them.",
+  "Tier: SANDBOX. Container, per-test key, no founder device, no push, no PR, no comment.",
+  "Leftover scratch: about 255 MB of killed-run copies under /tmp/claude-0/-home-user/f78643ba-8a14-5107-b25c-e0462dfdc774/scratchpad/appraiser-scratch/tmp. A safety check refused my relative-path removal, so I left them."
+ ],
+ "commands": [
+  {
+   "command": "git -C /home/user/uniimente-kernel worktree add -b claude/appraiser-detached-sensor-20261111 /tmp/claude-0/-home-user/f78643ba-8a14-5107-b25c-e0462dfdc774/scratchpad/appraiser pr196",
+   "result": "worktree created at 8d205324; the main checkout was never modified (clean at 41fcc41f at the end)"
+  },
+  {
+   "command": "python /tmp/claude-0/-home-user/f78643ba-8a14-5107-b25c-e0462dfdc774/scratchpad/handoff/show.py \"appraiser executes a founder-detached\"",
+   "result": "finding and skeptic verdict read (confirmed, low, pre-existing on pr196, pr290 and #291)"
+  },
+  {
+   "command": "python -m pytest -q -p no:cacheprovider -s tests/unit/test_probe_preauth_appraiser.py (reviewer's probe copied onto pr196, then removed)",
+   "result": "1 failed: the detached fs.read adapter read the file for the appraiser"
+  },
+  {
+   "command": "PYTHONPATH=. python ../appraiser-scratch/probe_unmet_reattach.py (untouched pr196 checkout)",
+   "result": "after attach, ticks 0, 1, 2: CRASH EventError fact identity greg.mission.unmet reused with different content"
+  },
+  {
+   "command": "python -m pytest -q -p no:cacheprovider tests/unit/test_greg_appraiser_attach_state.py tests/unit/test_greg_failure_closure.py::test_a_failure_closure_is_recorded_once_when_the_mission_fails_again_after_a_lifted_blocker (committed tests on untouched pr196)",
+   "result": "31 failed, 4 passed (the 4 are controls)"
+  },
+  {
+   "command": "python -m pytest -q -p no:cacheprovider tests/unit/test_greg_appraiser_attach_state.py (committed tree)",
+   "result": "34 passed"
+  },
+  {
+   "command": "python -m pytest -q -p no:cacheprovider tests/unit/test_greg_failure_closure.py (engine commit 09eba869 alone, separate checkout)",
+   "result": "9 passed"
+  },
+  {
+   "command": "python scripts/ci/check_appraiser_attach_state_mutants.py (committed tree cde60164, TMPDIR in scratch)",
+   "result": "26/26 caught, exit 0. An earlier run: 26/27, the survivor an equivalent mutant; the redundant filter was deleted"
+  },
+  {
+   "command": "python ../appraiser-scratch/run_engine_mutant.py $PWD (the one mutant added to check_cognition_residual_mutants.py, via scripts/ci/mutation_harness.py)",
+   "result": "1/1 caught"
+  },
+  {
+   "command": "s69a6-venv/bin/python ../appraiser-scratch/run_other_gates_appraiser_mutants.py $PWD (appraiser mutants of the whole-output, residual, worker-appraisal and cortex gates, each against its named test)",
+   "result": "18/18 caught. A first run reported 0/18 because my runner's -rs flag hid the FAILED lines; fixed and re-run"
+  },
+  {
+   "command": "python -m pytest -q -p no:cacheprovider tests/unit/test_greg_appraisal_closure.py test_greg_appraisal_retry_bound.py test_greg_closure_integrity.py test_greg_closure_scoped_claims.py test_greg_closure_scoped_settlement.py test_greg_failure_closure.py test_greg_compute_closure.py test_closure.py test_cognition_disclosure.py test_greg_unmeasured_not_failed.py test_greg_briefs.py test_greg_achievement_after_unmet.py",
+   "result": "149 passed"
+  },
+  {
+   "command": "python -m pytest -q -p no:cacheprovider tests/integration/test_greg_appraiser_kill_process.py",
+   "result": "12 passed"
+  },
+  {
+   "command": "python -m pytest -q -p no:cacheprovider tests/unit/test_greg_recombine.py (instructed venv)",
+   "result": "exit 5: module skipped, networkx not installed"
+  },
+  {
+   "command": "s69a6-venv/bin/python -m pytest -q -p no:cacheprovider tests/unit/test_greg_recombine.py tests/integration/test_greg_mind_constructs_capability.py",
+   "result": "30 passed"
+  },
+  {
+   "command": "python -m pytest -q -p no:cacheprovider (24 unit files: workers, spiderweb, ventures, organ_exchange, media, artifacts, text_query, evidence_corrections, standing_approval_regression, missions, task_fabric and others)",
+   "result": "562 passed, 11 skipped (run before the two late edits)"
+  },
+  {
+   "command": "python -m pytest -q -p no:cacheprovider tests/unit/test_repo_health_gates.py test_effect_call_allowlist.py test_governance_integrity.py test_greg_packaging.py test_sources_parse.py test_mutation_harness.py",
+   "result": "108 passed. Before the re-pin, test_effect_call_allowlist failed with PIN MISMATCH on Body.appraise, as it should"
+  },
+  {
+   "command": "python -m governance.integrity --check",
+   "result": "13 protected artifacts, all as authorized; exit 0"
+  },
+  {
+   "command": "python -m acceptance check",
+   "result": "exit 0 (sound: 12 missions, 85 requirements)"
+  },
+  {
+   "command": "python -m acceptance directive --against 8d20532464b1533b28d71d8331ca3412a90dbb11",
+   "result": "exit 0: the pinned asks hold against 8d205324, and every ask closed since cites new or changed evidence"
+  },
+  {
+   "command": "git merge --no-ff 41fcc41f in a scratch worktree, then pytest on the new tests, the engine test, test_greg_authority_attach_state.py, test_greg_authority_registered_identity.py, test_effect_call_allowlist.py, test_repo_health_gates.py",
+   "result": "merged cleanly; 117 passed; scratch worktree removed afterwards"
+  },
+  {
+   "command": "PYTHONPATH=. s69a6-venv/bin/python ../appraiser-scratch/probe_nested_quarantine.py",
+   "result": "none: VERIFIED; quarantine: REFUTED; detach: REFUTED, both with \"answered: world no longer matches ('CAPABILITY_DEFICIT' == 'ANSWERED')\""
+  },
+  {
+   "command": "git -c user.name=Claude -c user.email=noreply@anthropic.com commit (twice, local only)",
+   "result": "09eba869 A failure closure is recorded once per completed-action count; bf8e4b9f The separate appraiser runs nothing for a capability that is not ATTACHED"
+  }
+ ]
+}

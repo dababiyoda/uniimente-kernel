@@ -4343,34 +4343,46 @@
      "ask": "Every major mechanism has a record of canonical implementation, alternatives, shims, experiments, benchmarks, history, migration and retirement condition",
      "excerpt": "CANONICAL IMPLEMENTATION ALTERNATIVES SHIMS EXPERIMENTS BENCHMARKS HISTORICAL IMPLEMENTATIONS MIGRATION PATH RETIREMENT CONDITION",
      "owner_paths": [
-      "docs/opus-maximus/REPOSITORY_CONVERGENCE_MAP.md"
+      "docs/opus-maximus/REPOSITORY_CONVERGENCE_MAP.md",
+      "docs/collaboration/ARCHITECTURE-OWNERSHIP-MAP.yaml"
      ],
-     "evidence": [],
+     "evidence": [
+      "tests/unit/test_canonical_owner_guard.py::test_registry_names_an_owner_status_alternates_and_conditions_for_every_required_function",
+      "tests/unit/test_canonical_owner_guard.py::test_the_registry_keeps_every_pinned_record_entry_and_founder_decision",
+      "tests/unit/test_canonical_owner_guard.py::test_every_registered_module_and_qualname_exists"
+     ],
      "required_tier": "UNIT_VERIFIED",
-     "tier": "INTENDED",
-     "coverage": "gap",
+     "tier": "UNIT_VERIFIED",
+     "coverage": "partial",
      "blocker": {
       "class": "BUILDABLE_NOT_BUILT",
-      "reason": "Only a prose convergence map exists",
+      "reason": "A machine-checked registry holds function-owner records (canonical implementation, alternates by status, migration path, retirement or revival condition), but only for the functions found duplicated, not for every major mechanism. Still open: some of its records are NEEDS_FOUNDER_DECISION, with candidates and no owner; benchmarks have no field; the registry is PROPOSED and retires nothing",
       "unit": "MW-C"
-     }
+     },
+     "note": "Corrected 2026-11-11. The reason recorded on 2026-10-30 ('Only a prose convergence map exists') described the tree before function_owner_records in docs/collaboration/ARCHITECTURE-OWNERSHIP-MAP.yaml and tests/unit/test_canonical_owner_guard.py landed on this line (mutant gate in Canonical CI job 10). On 2026-11-11: 8 records, 5 CANONICAL and 3 NEEDS_FOUNDER_DECISION (goal runtime, evidence ladder, autonomy levels). Limits: docs/evidence/canonical-owner-guard-2026-10-30/README.md."
     },
     {
      "id": "S52.A2",
      "ask": "No two generations stay equally canonical: a retired alternate cannot load on the live path",
      "excerpt": "Preserving history does not require preserving active ambiguity.",
      "owner_paths": [
-      "greg/"
+      "greg/",
+      "docs/collaboration/ARCHITECTURE-OWNERSHIP-MAP.yaml"
      ],
-     "evidence": [],
+     "evidence": [
+      "tests/unit/test_canonical_owner_guard.py::test_no_greg_module_imports_a_retired_or_historical_alternate",
+      "tests/unit/test_canonical_owner_guard.py::test_every_dynamic_import_in_greg_resolves_or_is_allowlisted",
+      "tests/unit/test_canonical_owner_guard.py::test_the_registry_has_at_least_one_alternate_the_import_guard_applies_to"
+     ],
      "required_tier": "UNIT_VERIFIED",
-     "tier": "INTENDED",
-     "coverage": "gap",
+     "tier": "UNIT_VERIFIED",
+     "coverage": "partial",
      "blocker": {
       "class": "BUILDABLE_NOT_BUILT",
-      "reason": "No live-import guard",
+      "reason": "A live-import guard exists: no module under greg/ may reach an alternate the owner registry marks HISTORICAL or RETIRED. Still open: where a record is NEEDS_FOUNDER_DECISION its candidates stay equally canonical until the founder rules; nothing has been retired, and the guard binds only what the registry marks; it does not see setattr on a module or a name reached through a function's return value",
       "unit": "MU-H"
-     }
+     },
+     "note": "Corrected 2026-11-11. The reason recorded on 2026-10-30 ('No live-import guard') described the tree before tests/unit/test_canonical_owner_guard.py landed on this line. On 2026-11-11 the registry marks 1 alternate HISTORICAL and none RETIRED. Limits: docs/evidence/canonical-owner-guard-2026-10-30/README.md."
     },
     {
      "id": "S52.A3",
@@ -5137,17 +5149,22 @@
      "ask": "Preserved historical evidence never silently stays on the live path",
      "excerpt": "But preserved historical evidence must not silently remain live production architecture.",
      "owner_paths": [
-      "greg/"
+      "greg/",
+      "docs/collaboration/ARCHITECTURE-OWNERSHIP-MAP.yaml"
      ],
-     "evidence": [],
+     "evidence": [
+      "tests/unit/test_canonical_owner_guard.py::test_no_greg_module_imports_a_retired_or_historical_alternate",
+      "tests/unit/test_canonical_owner_guard.py::test_the_registry_has_at_least_one_alternate_the_import_guard_applies_to"
+     ],
      "required_tier": "UNIT_VERIFIED",
-     "tier": "INTENDED",
-     "coverage": "gap",
+     "tier": "UNIT_VERIFIED",
+     "coverage": "partial",
      "blocker": {
       "class": "BUILDABLE_NOT_BUILT",
-      "reason": "Unclassified packages load with the body; no live-import guard",
+      "reason": "A live-import guard exists, but only for what the owner registry classifies: no module under greg/ may reach an alternate it marks HISTORICAL or RETIRED. Still open: a module or package the registry does not name is not checked, so preserved code outside its function records can still load with the body unseen",
       "unit": "MU-H"
-     }
+     },
+     "note": "Corrected 2026-11-11. Of the reason recorded on 2026-10-30 ('Unclassified packages load with the body; no live-import guard'), the second half described the tree before tests/unit/test_canonical_owner_guard.py landed on this line; the first half was not re-measured. Limits: docs/evidence/canonical-owner-guard-2026-10-30/README.md."
     }
    ]
   },
@@ -5365,20 +5382,26 @@
      "ask": "Architectural ownership is reconciled: one canonical owner per function, competing active owners removed",
      "excerpt": "* reconcile architectural ownership;",
      "owner_paths": [
-      "docs/opus-maximus/REPOSITORY_CONVERGENCE_MAP.md"
+      "docs/opus-maximus/REPOSITORY_CONVERGENCE_MAP.md",
+      "docs/collaboration/ARCHITECTURE-OWNERSHIP-MAP.yaml"
      ],
-     "evidence": [],
+     "evidence": [
+      "tests/unit/test_canonical_owner_guard.py::test_registry_names_an_owner_status_alternates_and_conditions_for_every_required_function",
+      "tests/unit/test_canonical_owner_guard.py::test_the_registry_keeps_every_pinned_record_entry_and_founder_decision",
+      "tests/unit/test_canonical_owner_guard.py::test_no_unrecorded_reimplementation_of_a_registered_function"
+     ],
      "required_tier": "UNIT_VERIFIED",
-     "tier": "INTENDED",
-     "coverage": "gap",
+     "tier": "UNIT_VERIFIED",
+     "coverage": "partial",
      "lines": [
       "* remove competing active ownership;"
      ],
      "blocker": {
       "class": "BUILDABLE_NOT_BUILT",
-      "reason": "As S52.A1 and S52.A2: ownership is reconciled in prose; no registry or guard keeps one canonical owner per function",
+      "reason": "As S52.A1 and S52.A2: a registry names one canonical owner for each function it records, and a guard fails an unrecorded re-implementation of a registered function in greg/, foundry/, egregore/, omnimorph/, autonomy/ or governance/. Still open: the records marked NEEDS_FOUNDER_DECISION have competing owners and none is removed; the guard is a name-and-structure heuristic that misses a rewritten copy under an unmarked name, a method inside a class and code outside those packages; a function the registry does not record has no owner check",
       "unit": "MW-C"
-     }
+     },
+     "note": "Corrected 2026-11-11. The reason recorded on 2026-10-30 ('ownership is reconciled in prose; no registry or guard keeps one canonical owner per function') described the tree before docs/collaboration/ARCHITECTURE-OWNERSHIP-MAP.yaml's function_owner_records and tests/unit/test_canonical_owner_guard.py landed on this line. Limits: docs/evidence/canonical-owner-guard-2026-10-30/README.md."
     },
     {
      "id": "S69.A4",

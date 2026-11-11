@@ -50,7 +50,7 @@ def restored(journal) -> dict | None:
 
 def _verified_head(layout: Layout, recorded: str | None) -> str | None:
     from provenance.ledger import EvidenceLedger
-    config = json.loads(layout.config.read_text())
+    config = layout.read_config()
     try:
         ledger = EvidenceLedger(config["constitution_hash"], str(layout.ledger), read_only=True)
     except ValueError as exc:                                     # the ledger verifies itself as it loads

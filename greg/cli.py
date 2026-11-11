@@ -1354,7 +1354,7 @@ def main(argv=None) -> int:
                                              "your approval"}, indent=1))
         elif args.cmd == "mcp":
             from greg import mcp_tools
-            servers = mcp_tools.installed_servers(json.loads(Layout(home).config.read_text())["read_roots"])
+            servers = mcp_tools.installed_servers(Layout(home).read_config()["read_roots"])
             if args.tools:
                 for server in servers.values():
                     try:

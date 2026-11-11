@@ -5437,10 +5437,10 @@
      "coverage": "partial",
      "blocker": {
       "class": "BUILDABLE_NOT_BUILT",
-      "reason": "Nothing requires a safeguard to have a mutant or to name the test that fails without it: a gate proves that only for the safeguards someone listed in it. check_seed_mutants.py runs in no workflow until the founder or CI owner decides register item S-3. A gate reads as wired when its file name occurs anywhere in a workflow file, a comment or a manual-only workflow included",
+      "reason": "Nothing requires a safeguard to have a mutant or to name the test that fails without it: a gate proves that only for the safeguards someone listed in it. check_seed_mutants.py runs in no workflow until the founder or CI owner decides register item S-3, and with its solver packages installed one of its seven mutants (constraint) survives at 8d205324. A gate reads as wired when its file name occurs anywhere in a workflow file, a comment or a manual-only workflow included",
       "unit": "S69-A"
      },
-     "note": "Partial since 27f03910 (2026-11-05): a unit test fails when a scripts/ci/check_*mutant*.py gate is named in no workflow (shrink-only kept list, one entry) or when a gate's literal anchor no longer occurs in its target. A blocker has one class, so the S-3 decision is named in the reason and not as a FOUNDER_ONLY record."
+     "note": "Partial since 27f03910 (2026-11-05): a unit test fails when a scripts/ci/check_*mutant*.py gate is named in no workflow (shrink-only kept list, one entry) or when a gate's literal anchor no longer occurs in its target. Without ortools and z3 the unwired gate prints 7 of 7, two only because the named test cannot import its solver. A blocker has one class, so the S-3 decision is named in the reason and not as a FOUNDER_ONLY record."
     },
     {
      "id": "S69.A7",

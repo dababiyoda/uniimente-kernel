@@ -160,7 +160,7 @@ jobs:
         run: python scripts/ci/check_effect_call_allowlist_mutants.py
       - name: Node revocation and enrolled-node receipt mutations (NODE_REVOKE founder-only, receipts admitted only inside the node's cone)
         run: python scripts/ci/check_node_revoke_mutants.py
-      - name: Browser binary mutations (a render uses an installed browser only after it rendered a local page; the founder's choice is never replaced)
+      - name: Browser binary mutations (an unconfined render uses an installed browser only after it rendered a local page; behind the relay no browser starts outside the namespace; GREG_CHROMIUM is the only browser run, or is refused by name)
         run: python scripts/ci/check_browser_binary_mutants.py
 
   verifier:

@@ -599,6 +599,7 @@
     "greg/precedents.py",
     "greg/presence.py",
     "greg/presentation.py",
+    "greg/readiness.py",
     "greg/recombine.py",
     "greg/recovery.py",
     "greg/rehearsal.py",

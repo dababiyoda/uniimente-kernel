@@ -176,22 +176,6 @@ def test_around_is_never_applied_to_a_refused_act(world):
     assert out.status == "REFUSED" and not called
 
 
-AROUND_CALLERS = {"greg/missions.py"}       # the mission engine's one strategy dispatch (background workers)
-
-
-def test_only_the_listed_callers_may_shape_a_dispatch():
-    """``around`` is the one place a caller's code runs inside the office's dispatch. A new caller is a review
-    decision: add it here with its reason."""
-    root = Path(__file__).resolve().parents[2]
-    users = set()
-    for path in sorted((root / "greg").rglob("*.py")):
-        for node in ast.walk(ast.parse(path.read_text())):
-            if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr == "act"
-                    and any(k.arg == "around" for k in node.keywords)):
-                users.add(path.relative_to(root).as_posix())
-    assert users <= AROUND_CALLERS, f"unlisted callers pass around= to the office: {sorted(users - AROUND_CALLERS)}"
-
-
 # -- a dispatch wrapper is caller code: it must not run before the act is authorized -------------------------
 
 class _Wrapper:
@@ -333,30 +317,283 @@ def test_a_running_office_whose_registry_is_removed_refuses_every_act(world):
     assert out.status == "REFUSED"
 
 
-OFFICE_BUILDERS = {"greg/body.py"}          # the body builds the one office, with its own registry
+# -- gaps an independent audit found: each test below fails under a mutant the first gate did not catch --------
+# (audit of 7245fa5d, 2026-11-11; the mutant ids N1..N14 are the auditor's and are kept in the gate's names)
+
+def _demo(body, cid="demo.echo", klass="read_only"):
+    """A registered, attached capability whose adapter reports what its context allows and counts its calls."""
+    manifest = CapabilityManifest(capability_id=cid, version="1.0.0", provider="test", function=cid,
+                                  description="reports what its context allows", route="api", consequence_class=klass,
+                                  inputs={"x": "str"}, outputs={"allow": "list"}, target_prefix="artifact:",
+                                  strengthens=("proof",), egress_allowlist=("a.example",))
+    calls = []
+
+    def adapter(params, ctx):
+        calls.append(ctx.manifest)
+        return {"allow": list(ctx.manifest.egress_allowlist)}
+    body.registry.register(manifest, adapter, state="ATTACHED")
+    return manifest, adapter, calls
 
 
-def test_only_the_body_builds_an_authority_office_and_it_names_its_registry():
-    """A second construction site is a second place the registry could be left out. Adding one is a review
-    decision: list it here with its reason."""
-    root = Path(__file__).resolve().parents[2]
-    sites = {}
+def _demo_act(body, home, data, manifest, adapter, ctx_manifest, **extra):
+    return _office_act(body, home, data, manifest=manifest, adapter=adapter, ctx_manifest=ctx_manifest,
+                       params={"x": "y"}, **extra)
+
+
+def _nothing_was_authorized(body) -> bool:
+    return not _events(body, "greg.authority.grant_issued") and not body.ledger.by_type("grant_dispatch")
+
+
+@pytest.mark.parametrize("wrapped", [False, True])
+def test_a_detached_write_adapter_does_not_run_when_the_context_agrees_with_the_manifest(world, wrapped):
+    """N3, N14: the adapter check alone must refuse, with or without a wrapper, and nothing is written."""
+    body, key, body_id, home, data, _ = world
+    body.apply(signed(key, body_id, "CAPABILITY_DETACH", {"capability_id": "foundry.apply"}))
+    query = body.registry.manifests["foundry.query"]
+    cone = LightCone(capabilities=frozenset({"foundry.query"}), targets=("foundry:*",),
+                     max_consequence_class="read_only", budget_usd=0.0, horizon=horizon())
+    extra = {"around": lambda adapter: adapter} if wrapped else {}
+    out = _office_act(body, home, data, manifest=query, adapter=body.registry.adapters["foundry.apply"],
+                      ctx_manifest=query, params={"system": 36, "op": "put", "args": {"text": "x"}},
+                      target="foundry:cas", cone=cone, **extra)
+    assert out.status == "REFUSED" and out.receipt_hash is None
+    assert not (workspace(home, "m:direct-office") / "foundry").exists()
+    assert _nothing_was_authorized(body)
+
+
+def test_an_edited_manifest_of_the_same_id_in_the_context_never_reaches_the_adapter(world):
+    """N1: adapters read their egress allowlist, binaries and credentials from ctx.manifest."""
+    body, _, _, home, data, _ = world
+    manifest, adapter, calls = _demo(body)
+    out = _demo_act(body, home, data, manifest, adapter, replace(manifest, egress_allowlist=("evil.example",)))
+    assert out.status == "REFUSED" and calls == []
+    assert "carries a manifest for demo.echo that is not the registered one" in out.reasons[0]
+
+
+def test_a_context_with_no_manifest_is_refused_before_any_dispatch(world):
+    """N2: otherwise the adapter crashes after the Gate's claim and the act is UNCERTAIN."""
+    body, _, _, home, data, _ = world
+    manifest, adapter, calls = _demo(body)
+    out = _demo_act(body, home, data, manifest, adapter, None)
+    assert out.status == "REFUSED" and calls == [] and _nothing_was_authorized(body)
+
+
+def test_every_identity_refusal_is_recorded(world):
+    """N5: a wrong manifest and a wrong context each leave their own record."""
+    body, _, _, home, data, _ = world
+    manifest, adapter, _ = _demo(body)
+    edited = replace(manifest, description="edited")
+    _demo_act(body, home, data, edited, adapter, edited)
+    _demo_act(body, home, data, manifest, adapter, body.registry.manifests["fs.read"], attempt="q")
+    assert len(_events(body, "greg.authority.refused_unattached")) == 2
+
+
+def test_a_detached_capability_outside_the_cone_is_refused_not_offered_for_approval(world):
+    """N6: the attach check comes before the cone. OUTSIDE_SCOPE becomes a founder ask in the mission engine, and
+    the founder is never asked to approve running what he detached."""
+    body, _, _, home, data, _ = world
+    manifest, adapter, _ = _demo(body)
+    body.registry.set_state("demo.echo", "DETACHED")
+    cone = LightCone(capabilities=frozenset({"fs.read"}), targets=("artifact:reports",),
+                     max_consequence_class="read_only", budget_usd=0.0, horizon=horizon())
+    out = _demo_act(body, home, data, manifest, adapter, manifest, cone=cone)
+    assert out.status == "REFUSED" and "DETACHED" in out.reasons[0]
+
+
+def test_the_registered_adapter_runs_exactly_once_under_a_wrapper(world):
+    """N7."""
+    body, _, _, home, data, _ = world
+    manifest, adapter, calls = _demo(body)
+    out = _demo_act(body, home, data, manifest, adapter, manifest, around=lambda adapter: adapter)
+    assert out.status == "DONE" and len(calls) == 1
+
+
+def test_no_caller_code_runs_when_the_gate_refuses_after_the_grant(world):
+    """N8: 'inside the dispatch' is later than 'after grant_issued'; the Gate can still refuse in between
+    (identity, grant validity, budget reservation, commit-time revalidation). Here identity lapses."""
+    body, _, _, home, data, _ = world
+    manifest, adapter, calls = _demo(body)
+    real, built = body.passports.verify, []
+    body.passports.verify = lambda pid: (False, "lapsed") if _events(body, "greg.authority.grant_issued") \
+        else real(pid)
+    out = _demo_act(body, home, data, manifest, adapter, manifest,
+                    around=lambda adapter: built.append(1) or adapter)
+    assert out.status == "REFUSED" and built == [] and calls == []
+
+
+def test_an_office_with_no_registry_refuses_a_write_class_capability_too(world):
+    """N9: fail closed for every consequence class, not only reads."""
+    body, _, _, home, data, _ = world
+    manifest, adapter, calls = _demo(body, cid="demo.write", klass="internal_write")
+    body.office.registry = None
+    cone = LightCone(capabilities=frozenset({"demo.write"}), targets=("artifact:reports",),
+                     max_consequence_class="internal_write", budget_usd=0.0, horizon=horizon())
+    out = _demo_act(body, home, data, manifest, adapter, manifest, cone=cone)
+    assert out.status == "REFUSED" and calls == []
+
+
+def test_an_attached_state_without_a_registered_manifest_is_refused(world):
+    """N10."""
+    body, _, _, home, data, _ = world
+    manifest, adapter, calls = _demo(body)
+    del body.registry.manifests["demo.echo"]
+    out = _demo_act(body, home, data, manifest, adapter, manifest)
+    assert out.status == "REFUSED" and calls == []
+
+
+# -- a missing adapter or context is refused, not dispatched ---------------------------------------------------
+
+@pytest.mark.parametrize("wrapped", [False, True])
+def test_an_act_with_no_adapter_is_refused_before_any_grant(world, wrapped):
+    """Before: a None adapter skipped the identity check, got a grant and a dispatch claim, and ended UNCERTAIN (a
+    founder reconciliation for an act that could never run); with a wrapper, the wrapper's own function ran and
+    was receipted DONE in the capability's name."""
+    body, _, _, home, data, _ = world
+    manifest, _, calls = _demo(body)
+    ran = []
+    extra = {"around": lambda adapter: (lambda params, ctx: ran.append(1) or {"allow": []})} if wrapped else {}
+    out = _demo_act(body, home, data, manifest, None, manifest, **extra)
+    assert out.status == "REFUSED" and ran == [] and calls == [] and _nothing_was_authorized(body)
+    assert _events(body, "greg.authority.refused_unattached")
+
+
+def test_an_act_with_no_context_is_refused_before_any_grant(world):
+    body, _, _, home, data, _ = world
+    manifest, adapter, calls = _demo(body)
+    cone = LightCone(capabilities=frozenset({"demo.echo"}), targets=("artifact:reports",),
+                     max_consequence_class="read_only", budget_usd=0.0, horizon=horizon())
+    out = body.office.act(mission_id="m:direct-office", cone=cone, command_digest="sha256:" + "0" * 64,
+                          manifest=manifest, adapter=adapter, ctx=None, params={"x": "y"}, target="artifact:reports",
+                          cost_usd=0.0, expected_outcome="observation captured", evidence_refs=[], attempt="n",
+                          spent_usd=0.0, approved_scopes=set())
+    assert out.status == "REFUSED" and calls == [] and _nothing_was_authorized(body)
+
+
+def test_a_manifest_subclass_that_vouches_for_itself_is_refused(world):
+    """The check used the presented object's own digest(). A subclass can answer with the registered digest while
+    declaring a wider allowlist; only the registered object or an equal copy of exactly its type passes."""
+    body, _, _, home, data, _ = world
+    manifest, adapter, calls = _demo(body)
+
+    class Lying(CapabilityManifest):
+        def digest(self):
+            return manifest.digest()
+    forged = Lying(**{**{f: getattr(manifest, f) for f in manifest.__dataclass_fields__},
+                      "egress_allowlist": ("evil.example",)})
+    for attempt, (m, c) in enumerate(((forged, forged), (manifest, forged))):
+        out = _demo_act(body, home, data, m, adapter, c, attempt=str(attempt))
+        assert out.status == "REFUSED", (attempt, out.reasons)
+    assert calls == []
+
+
+def test_the_adapter_is_handed_the_registered_manifest_itself(world):
+    """An equal copy in the context is accepted, and the adapter still receives the registered object: what the
+    caller does to its own context after the check cannot reach the adapter."""
+    body, _, _, home, data, _ = world
+    manifest, adapter, calls = _demo(body)
+    copy = replace(manifest)
+    out = _demo_act(body, home, data, copy, adapter, copy)
+    assert out.status == "DONE" and len(calls) == 1 and calls[0] is manifest
+
+
+# -- ratchets: who may shape a dispatch, and who may build an office ------------------------------------------
+
+AROUND_SITES = {"greg/missions.py": 1}       # the mission engine's one strategy dispatch (background workers)
+OFFICE_BUILDERS = {"greg/body.py": 1}        # the body builds the one office, with its own registry
+
+
+def _production_sources(root: Path):
     for path in sorted(root.rglob("*.py")):
         rel = path.relative_to(root).as_posix()
         if rel.startswith(("tests/", ".")) or "/node_modules/" in rel or "/site-packages/" in rel:
             continue
         try:
-            tree = ast.parse(path.read_text(encoding="utf-8"))
+            yield rel, ast.parse(path.read_text(encoding="utf-8"))
         except (SyntaxError, UnicodeDecodeError):
             continue
+
+
+def around_sites(root: Path) -> dict:
+    """Every call, anywhere outside tests, that could hand an office a dispatch wrapper: a call named ``act``
+    (as an attribute or a bound name) that passes ``around=`` or a ``**`` splat. Counted per file."""
+    sites = {}
+    for rel, tree in _production_sources(root):
         for node in ast.walk(tree):
-            if isinstance(node, ast.Call) and getattr(node.func, "id", getattr(node.func, "attr", None)) \
-                    == "AuthorityOffice":
-                sites.setdefault(rel, []).append(node)
-    assert set(sites) <= OFFICE_BUILDERS, f"unlisted code builds an AuthorityOffice: {sorted(set(sites) - OFFICE_BUILDERS)}"
-    assert sites, "the scan found no construction site at all; it is reading the wrong tree"
-    for rel, calls in sites.items():
-        for call in calls:
-            named = [k for k in call.keywords if k.arg == "registry"]
-            assert named and not (isinstance(named[0].value, ast.Constant) and named[0].value.value is None), \
-                f"{rel}:{call.lineno} builds an AuthorityOffice without a registry"
+            if isinstance(node, ast.Call) and getattr(node.func, "attr", getattr(node.func, "id", None)) == "act" \
+                    and any(k.arg in ("around", None) for k in node.keywords):
+                sites[rel] = sites.get(rel, 0) + 1
+    return sites
+
+
+def office_builds(root: Path) -> dict:
+    """Every construction of an AuthorityOffice outside tests, by its own name, an import alias or a simple
+    rebinding of either: {file: [(line, registry_named)]}. A dynamic lookup (getattr, importlib) is not seen."""
+    found = {}
+    for rel, tree in _production_sources(root):
+        names = {"AuthorityOffice"}
+        for _ in range(2):                                   # aliases of aliases, one level
+            for node in ast.walk(tree):
+                if isinstance(node, ast.ImportFrom):
+                    names |= {a.asname for a in node.names if a.name in names and a.asname}
+                elif isinstance(node, ast.Assign) and (
+                        isinstance(node.value, ast.Name) and node.value.id in names
+                        or isinstance(node.value, ast.Attribute) and node.value.attr in names):
+                    names |= {t.id for t in node.targets if isinstance(t, ast.Name)}
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Call) and getattr(node.func, "attr", getattr(node.func, "id", None)) in names:
+                named = [k for k in node.keywords if k.arg == "registry"]
+                ok = bool(named) and not (isinstance(named[0].value, ast.Constant) and named[0].value.value is None) \
+                    and not any(k.arg is None for k in node.keywords)
+                found.setdefault(rel, []).append((node.lineno, ok))
+    return found
+
+
+REPO = Path(__file__).resolve().parents[2]
+
+
+def test_only_the_listed_sites_may_shape_a_dispatch():
+    """``around`` is the one place a caller's code runs inside the office's dispatch. A new site, in any package,
+    is a review decision: add it here with its reason."""
+    extra = {rel: n for rel, n in around_sites(REPO).items() if n > AROUND_SITES.get(rel, 0)}
+    assert not extra, f"unlisted code can hand the office a dispatch wrapper: {extra}"
+
+
+def test_only_the_body_builds_an_authority_office_and_it_names_its_registry():
+    """A second construction site is a second place the registry could be left out or replaced."""
+    builds = office_builds(REPO)
+    assert builds, "the scan found no construction site at all; it is reading the wrong tree"
+    extra = {rel: len(calls) for rel, calls in builds.items() if len(calls) > OFFICE_BUILDERS.get(rel, 0)}
+    assert not extra, f"unlisted code builds an AuthorityOffice: {extra}"
+    bad = [(rel, line) for rel, calls in builds.items() for line, ok in calls if not ok]
+    assert not bad, f"an AuthorityOffice is built without naming a registry: {bad}"
+
+
+@pytest.mark.parametrize("relpath,source", [
+    ("egregore/zz_a.py", "def f(office, wrap, **kw):\n    return office.act(around=wrap, **kw)\n"),
+    ("greg/zz_b.py", "def f(office, wrap, **kw):\n    return office.act(**{'around': wrap, **kw})\n"),
+    ("greg/zz_c.py", "def f(office, wrap, **kw):\n    act = office.act\n    return act(around=wrap, **kw)\n"),
+])
+def test_the_wrapper_scan_sees_other_packages_splats_and_bound_names(tmp_path, relpath, source):
+    target = tmp_path / relpath
+    target.parent.mkdir(parents=True)
+    target.write_text(source)
+    assert around_sites(tmp_path) == {relpath: 1}
+
+
+def test_the_wrapper_scan_counts_sites_per_file(tmp_path):
+    (tmp_path / "greg").mkdir()
+    (tmp_path / "greg/missions.py").write_text(
+        "def a(o, w):\n    return o.act(around=w)\n\ndef b(o, w):\n    return o.act(around=w)\n")
+    assert around_sites(tmp_path) == {"greg/missions.py": 2}       # one more than AROUND_SITES allows
+
+
+@pytest.mark.parametrize("source,ok", [
+    ("from greg.authority import AuthorityOffice as Office\n\ndef f(b):\n    return Office(compiled=1, registry=b.r)\n", True),
+    ("import greg.authority as A\n\ndef f(b):\n    return A.AuthorityOffice(compiled=1, registry=None)\n", False),
+    ("from greg.authority import AuthorityOffice\nMake = AuthorityOffice\n\ndef f(b, kw):\n    return Make(**kw)\n", False),
+])
+def test_the_builder_scan_sees_aliases_rebindings_and_missing_registries(tmp_path, source, ok):
+    (tmp_path / "pkg").mkdir()
+    (tmp_path / "pkg/second.py").write_text(source)
+    [(line, named)] = office_builds(tmp_path)["pkg/second.py"]
+    assert named is ok

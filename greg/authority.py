@@ -89,15 +89,16 @@ class AuthorityOffice:
                                    f"that {manifest.target_from} would contact")
         return None
 
-    def attach_refusal(self, manifest: CapabilityManifest, adapter=None, ctx=None) -> str | None:
-        """Why this capability may not execute on this body now, or None. Attach state is the founder's (signed
+    def attach_refusal(self, manifest: CapabilityManifest, adapter, ctx) -> str | None:
+        """Why this act may not execute on this body now, or None. Attach state is the founder's (signed
         CAPABILITY_ATTACH / DETACH, Genesis quarantine); only ATTACHED executes. A capability the registry does not
         hold is not this body's to run. Epistemic requalification never reaches this test: it does not attach.
 
-        Attach state is keyed by id, so the id alone is not enough: what runs is the adapter. With ``adapter`` and
-        ``ctx`` (as ``act`` passes them) the manifest, the adapter and the context's manifest must be the ones the
-        registry holds under that id. Otherwise a detached capability's adapter, presented under an attached
-        capability's manifest, would run on that capability's grant and be receipted in its name."""
+        Attach state is keyed by id, so the id alone is not enough: what runs is the adapter, and the adapter reads
+        its allowlist, binaries and credentials from the context's manifest. The manifest, the adapter and the
+        context's manifest must each be the one the registry holds under that id, and none may be missing.
+        Otherwise a detached capability's adapter, presented under an attached capability's manifest, would run on
+        that capability's grant and be receipted in its name."""
         if self.registry is None:       # fail closed: nothing can be shown to be attached
             return ("this authority office was built without a capability registry; the Kernel runs nothing it "
                     "cannot check against one")
@@ -108,18 +109,27 @@ class AuthorityOffice:
         if state != "ATTACHED":
             return f"capability {cid} is {state}; the Kernel runs only ATTACHED capabilities"
         registered = self.registry.manifests.get(cid)
-        if registered is not manifest and (registered is None or registered.digest() != manifest.digest()):
+        if registered is None or not self._same_manifest(registered, manifest):
             return f"the manifest presented as {cid} is not the one registered on this body"
-        if adapter is not None and self.registry.adapters.get(cid) is not adapter:
+        if adapter is None or self.registry.adapters.get(cid) is not adapter:
             return (f"the adapter presented for {cid} is not the one registered for it; the Kernel runs a "
                     "capability's own adapter only")
-        if ctx is not None:
-            named = getattr(ctx, "manifest", None)
-            if named is not manifest and (named is None or named.capability_id != cid
-                                          or named.digest() != manifest.digest()):
-                return (f"the invocation context names {getattr(named, 'capability_id', None)}, not {cid}; an "
-                        "adapter is told which capability it runs as by the Kernel, not by its caller")
+        if not isinstance(ctx, InvocationContext) or ctx.manifest is None:
+            return (f"no invocation context names {cid}; an adapter is told which capability it runs as by the "
+                    "Kernel, not left to guess")
+        if not self._same_manifest(registered, ctx.manifest):
+            named = getattr(ctx.manifest, "capability_id", None)
+            return ((f"the invocation context names {named}, not {cid}" if named != cid else
+                     f"the invocation context carries a manifest for {cid} that is not the registered one")
+                    + "; an adapter is told which capability it runs as by the Kernel, not by its caller")
         return None
+
+    @staticmethod
+    def _same_manifest(registered: CapabilityManifest, presented) -> bool:
+        """The registered object itself, or an equal copy of exactly its type (a restart rebuilds manifests from
+        their records). A subclass that answers ``digest()`` for itself is not trusted to describe itself."""
+        return presented is registered or (type(presented) is type(registered)
+                                           and presented.digest() == registered.digest())
 
     @staticmethod
     def proposal_id(scope: str, attempt) -> str:
@@ -165,6 +175,9 @@ class AuthorityOffice:
                                          "scope_digest": scope, "capability": manifest.capability_id,
                                          "mission_id": mission_id, "reason": unattached})
             return ActionOutcome("REFUSED", [unattached], **base)
+        # The adapter is told which capability it runs as by the Kernel: the registered manifest, on a copy of the
+        # context, so nothing the caller does to its own context object afterwards reaches the adapter.
+        ctx = replace(ctx, manifest=self.registry.manifests[manifest.capability_id])
         if around is not None:
             # ``around`` is the caller's code, so none of it runs here. It is applied to the registered adapter
             # (checked above) inside the call the Gate makes at dispatch: after the precheck, the cone, policy and

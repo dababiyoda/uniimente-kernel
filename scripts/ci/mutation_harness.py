@@ -1,7 +1,12 @@
 """Shared runner for mutation gates: each safeguard must fail its tests when removed.
 
-A gate script keeps its own literal ``MUTANTS`` list (``scripts/repo_review.py``
-reads it to check that every anchor still exists) and calls :func:`run`.
+A gate script keeps its own literal ``MUTANTS`` list and calls :func:`run`.
+``scripts/repo_review.py`` does not read these lists today: its static reader
+expects a target path directly followed by its anchor, and here the mutant's
+name sits between them (written as a literal path, the target would make the
+reader take the name for the anchor and call it stale). For a gate that calls
+this runner a moved anchor is therefore reported by the gate's own run, as
+``STALE``, not by the unit suite.
 
 For each ``(target, name, old, new)`` mutant, in a scratch copy of the
 repository (never the working tree):

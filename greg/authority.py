@@ -101,6 +101,40 @@ class AuthorityOffice:
         receipts = self.ledger.select("receipt", grant_id=claims[-1].payload.get("grant_id"))
         return claims[-1], (receipts[-1] if receipts else None)
 
+    @staticmethod
+    def outcome_of(receipt, *, cost_usd: float, proposal_id: str, scope_digest: str,
+                   reused: str | None = None) -> ActionOutcome:
+        """What one Gate receipt says happened. The receipt's result decides, never the fact that it exists.
+
+        The one reading of a receipt, for the dispatch that just produced it (``reused`` None) and for a retained
+        one found again after an interruption (``reused`` says why it stands and nothing was dispatched for it):
+
+        - ``negative``: the capability refused or failed. REFUSED with the receipt's observed outcome and failure
+          class and nothing booked, however often and whenever it is asked about;
+        - ``positive``: DONE with the output it kept and the action's cost;
+        - anything else (another class, no class, a result that cannot be read): UNCERTAIN. This office's executor
+          writes exactly those two classes, so such a receipt does not say whether the capability acted. It is
+          not a success, and it is not a refusal either: a refusal lets the mission try the action again, which
+          would repeat an effect that may already have happened. It is reconciled like any unknown outcome.
+
+        Before, ``act`` reported any retained receipt of the same proposal as DONE without reading its result. A
+        body stopped between the Gate's receipt of a refusal and the mission's record of it then recorded the
+        refusal as done: a refused compensation was on the record as DONE and the founder was never asked, and a
+        refused read passed an ``absent`` check and closed its mission."""
+        result = receipt.payload.get("result")
+        result = result if isinstance(result, dict) else {}
+        kept = dict(receipt_hash=receipt.hash, grant_id=receipt.payload.get("grant_id"), proposal_id=proposal_id,
+                    scope_digest=scope_digest)
+        klass = result.get("result_class")
+        if klass == "negative":
+            return ActionOutcome("REFUSED", [result.get("observed_outcome", "capability failed")],
+                                 failure_class=result.get("failure_class"), **kept)
+        if klass != "positive":
+            return ActionOutcome("UNCERTAIN", [f"the receipt does not say whether the capability acted (result class "
+                                               f"{klass!r}); its outcome is unknown and must be reconciled"], **kept)
+        return ActionOutcome("DONE", [reused] if reused else [], output=result.get("output"), cost_usd=cost_usd,
+                             output_artifact=result.get("output_artifact"), **kept)
+
     def act(self, *, mission_id: str, cone: LightCone, command_digest: str, manifest: CapabilityManifest,
             adapter, ctx: InvocationContext, params: dict, target: str, cost_usd: float,
             expected_outcome: str, evidence_refs: list, attempt, spent_usd: float,
@@ -128,14 +162,9 @@ class AuthorityOffice:
             legacy_id = "greg-" + sha256_json({"scope": legacy_scope, "attempt": attempt})[7:39]
             old_claim, old_receipt = self._prior(legacy_id)
             old_base = dict(proposal_id=legacy_id, scope_digest=legacy_scope)
-            if old_receipt is not None:
-                result = old_receipt.payload["result"]
-                positive = result.get("result_class") == "positive"
-                return ActionOutcome("DONE" if positive else "REFUSED", ["retained legacy receipt; no redispatch"],
-                                     output=result.get("output"), receipt_hash=old_receipt.hash,
-                                     grant_id=old_receipt.payload.get("grant_id"),
-                                     cost_usd=cost_usd if positive else 0.0,
-                                     output_artifact=result.get("output_artifact") if positive else None, **old_base)
+            if old_receipt is not None:   # a refusal keeps its own reason and failure class, as below
+                return self.outcome_of(old_receipt, cost_usd=cost_usd, reused="retained legacy receipt; no redispatch",
+                                       **old_base)
             if old_claim is not None:
                 return ActionOutcome("UNCERTAIN", ["retained legacy dispatch; no receipt or blind retry"], **old_base)
         outside = cone.admits(capability=manifest.capability_id, target=target, consequence_class=consequence,
@@ -144,12 +173,11 @@ class AuthorityOffice:
             return ActionOutcome("OUTSIDE_SCOPE", outside, **base)
 
         claim, receipt = self._prior(proposal_id)
-        if receipt is not None:  # already done before an interruption: reuse, never redo
-            # with the whole output it kept, so a reused reading is judged as the fresh one was (review of #209)
-            return ActionOutcome("DONE", ["retained receipt reused after restart"], output=receipt.payload["result"].get("output"),
-                                 receipt_hash=receipt.hash, grant_id=receipt.payload.get("grant_id"),
-                                 cost_usd=cost_usd, output_artifact=receipt.payload["result"].get("output_artifact"),
-                                 **base)
+        if receipt is not None:  # already dispatched before an interruption: reuse, never redo
+            # Reported as the call that produced it reported it: DONE with the whole output it kept, so a reused
+            # reading is judged as the fresh one was (review of #209), or the same REFUSED when the capability
+            # refused. A retained refusal is not a success because a restart came between it and its record.
+            return self.outcome_of(receipt, cost_usd=cost_usd, reused="retained receipt reused after restart", **base)
         if claim is not None:  # the dispatch the claim names, so its reconciliation settles exactly that one
             return ActionOutcome("UNCERTAIN", ["dispatch claimed without receipt; outcome unknown"],
                                  grant_id=claim.payload.get("grant_id"), **base)
@@ -219,16 +247,8 @@ class AuthorityOffice:
                     if scope in approved_scopes else "no founder decision")
 
         record = self.gate.run(proposal, executor=execute, approver=approver, standing_grant=grant)
-        if record.state == "recorded":
-            receipt = self.ledger.find(record.receipt_hash)
-            result = receipt.payload["result"]
-            if result.get("result_class") != "positive":
-                return ActionOutcome("REFUSED", [result.get("observed_outcome", "capability failed")],
-                                     receipt_hash=record.receipt_hash, grant_id=grant["grant_id"],
-                                     failure_class=result.get("failure_class"), **base)
-            return ActionOutcome("DONE", [], output=result.get("output"), receipt_hash=record.receipt_hash,
-                                 grant_id=grant["grant_id"], cost_usd=cost_usd,
-                                 output_artifact=result.get("output_artifact"), **base)
+        if record.state == "recorded":   # read by the one function a retained receipt is read by, so they cannot differ
+            return self.outcome_of(self.ledger.find(record.receipt_hash), cost_usd=cost_usd, **base)
         if record.state == "reconciliation_required":
             return ActionOutcome("UNCERTAIN", record.refusal_reasons, grant_id=grant["grant_id"], **base)
         return ActionOutcome("REFUSED", record.refusal_reasons or [record.state], grant_id=grant["grant_id"], **base)

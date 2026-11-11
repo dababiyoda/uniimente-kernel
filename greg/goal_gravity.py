@@ -10,7 +10,7 @@
                     floor is restored if an unsigned record widened it
         sense       Gate receipts of each check's own sensor read (check predicate recomputed), separate-process
                     appraisals, greg.path, non-quarantined intake (untrusted, judged by what its content names):
-                    only new or changed evidence
+                    only new or changed evidence. Community intake counts once per independent source.
         reopen      a completed goal whose plan node an attributed observation shows regressed is dormant again
         loop        egregore GoalGravityLoop.turn in body mode: no gate, no executor, no grant
                       awake goal  -> MissionEngine.observe_now for its signed missions (timing only; a mission
@@ -869,6 +869,19 @@ def goal_subjects(spec: GoalSpec) -> set[str]:
             | {c.match for c in spec.wake_conditions if c.kind == "subject"})
 
 
+def community_source(payload: dict) -> str | None:
+    """The independent source of one community intake item, or None when the item is not community intake.
+
+    Copies are further ingested items with the same source. They are not further sources. Other channels stay
+    one signal per ingested item: a channel's feed address is not a community identity."""
+    if payload.get("channel") != "community":
+        return None
+    source = payload.get("source")
+    if not isinstance(source, str) or not source.strip():
+        return None
+    return source.strip()[:500]
+
+
 def intake_about(content: str, book: MissionBook, registry: GoalRegistry) -> tuple[list[str], list[str]]:
     """(subjects, matched terms): the missions and goal subjects an intake item's text names, as whole words."""
     text = f" {_norm(content)} "
@@ -1153,6 +1166,16 @@ def _sense(body, loop: GoalGravityLoop, cursor: int) -> tuple[list[SignalEnvelop
     latest: dict[tuple, tuple] = {}            # one reading per (subject, attribute): the latest in ledger order
     path_changed = cursor == 0
     gate: dict = {}                            # grant_issued and witness records, read once if needed
+    counted: set[str] = set()                  # community sources already counted on an earlier turn
+    for rec in body.ledger.records[:cursor]:
+        if rec.record_type != "event":
+            continue
+        earlier_t, earlier_p = rec.payload.get("type"), rec.payload.get("payload", {})
+        if earlier_t == "greg.external.ingested" and not earlier_p.get("quarantined"):
+            sid = community_source(earlier_p)
+            if sid:
+                counted.add(sid)
+    fresh: dict[str, dict] = {}                # this window's first copy of each new community source
     for rec in records:
         if rec.record_type != "event":
             continue
@@ -1188,8 +1211,21 @@ def _sense(body, loop: GoalGravityLoop, cursor: int) -> tuple[list[SignalEnvelop
                                                               rec.hash, p["state"], "attributed")
         elif t == "greg.external.ingested" and not p.get("quarantined"):
             about, terms = intake_about(p.get("content", ""), book, loop.registry)
-            emit(rec.payload["event_id"], p["at"], rec.hash, trust="untrusted", tags=[p["channel"]],
-                 domain=p["channel"], intake=True, about=about, matched_terms=terms)
+            sid = community_source(p)
+            if sid is None:
+                emit(rec.payload["event_id"], p["at"], rec.hash, trust="untrusted", tags=[p["channel"]],
+                     domain=p["channel"], intake=True, about=about, matched_terms=terms)
+            elif sid not in counted:
+                held = fresh.get(sid)
+                if held is None:
+                    fresh[sid] = {"event_id": rec.payload["event_id"], "at": p["at"], "hash": rec.hash,
+                                  "about": set(about), "terms": set(terms)}
+                else:
+                    held["about"].update(about)
+                    held["terms"].update(terms)
+    for _sid, item in fresh.items():
+        emit(item["event_id"], item["at"], item["hash"], trust="untrusted", tags=["community"],
+             domain="community", intake=True, about=sorted(item["about"]), matched_terms=sorted(item["terms"]))
     for (subject, attribute), (event_id, at, record_hash, value, trust) in latest.items():
         if changed(subject, attribute, value, trust):
             emit(event_id, at, record_hash, [{"subject": subject, "attribute": attribute, "value": value,

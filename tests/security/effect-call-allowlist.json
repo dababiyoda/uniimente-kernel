@@ -1197,13 +1197,13 @@
   {
    "module": "greg/workers.py",
    "qualname": "appraise",
-   "callee": "subprocess.run",
+   "callee": "greg.workers._tracked_run",
    "count": 1,
    "serves": [
     "capability:worker.appraise"
    ],
    "justification": "`git clone --no-hardlinks` of the work tree into a fresh directory for the independent appraisal",
-   "pin": "70da7e3d4efe30156b067a2df74023fc161face83c146e4444b7a9ebc5377bc1"
+   "pin": "eb8bbc4df2be57dbb2b2e1de758661ac5008a52e4a2091199db86616c2f2cd63"
   },
   {
    "module": "greg/workers.py",
@@ -1273,8 +1273,8 @@
     "capability:worker.commission",
     "capability:worker.appraise"
    ],
-   "justification": "the git calls of _git and private_clone, run as they were by subprocess.run but in their own process group registered while they run, so a closing Body's shutdown kills them (#273 re-review B)",
-   "pin": "9d4c5ba547ec9dd862c88e5ff543ea79d08f0f196356adb09e9ac525a9a9f777"
+   "justification": "the git calls of _git, private_clone and appraise, run as subprocess.run ran them but in their own process group registered while they run, so a closing Body's shutdown kills them (#273 re-review B), and always on PATH=/usr/bin:/bin, set here over whatever env the caller hands in (#273 re-review 2, E)",
+   "pin": "39441b8798f5281f3f6ce537a7203c4d9698dc4c07dd79838551100210db34d6"
   }
  ],
  "known_unmediated": [
@@ -1605,15 +1605,15 @@
    "program": "git",
    "count": 1,
    "searches": "<computed>",
-   "note": "PATH=/usr/bin:/bin with _GIT_HARDENING, on GREG's private clones; the env dict naming PATH=/usr/bin:/bin is built here and handed to _tracked_run, which passes it to Popen unchanged"
+   "note": "with _GIT_HARDENING, on GREG's private clones; the env the caller builds is not read through _tracked_run, so the scan records <computed>; _tracked_run sets PATH=/usr/bin:/bin in its own pinned Popen call, so git is found only there whatever the caller passes"
   },
   {
    "module": "greg/workers.py",
    "qualname": "appraise",
    "program": "git",
    "count": 1,
-   "searches": "/usr/bin:/bin",
-   "note": "PATH=/usr/bin:/bin, cloning the work tree for the independent appraisal"
+   "searches": "<computed>",
+   "note": "cloning the work tree for the independent appraisal; the env the caller builds is not read through _tracked_run, so the scan records <computed>; _tracked_run sets PATH=/usr/bin:/bin in its own pinned Popen call, so git is found only there whatever the caller passes"
   },
   {
    "module": "greg/workers.py",
@@ -1621,7 +1621,7 @@
    "program": "git",
    "count": 1,
    "searches": "<computed>",
-   "note": "PATH=/usr/bin:/bin, the private clone with its origin removed; the env dict naming PATH=/usr/bin:/bin is built here and handed to _tracked_run, which passes it to Popen unchanged"
+   "note": "the private clone with its origin removed; the env the caller builds is not read through _tracked_run, so the scan records <computed>; _tracked_run sets PATH=/usr/bin:/bin in its own pinned Popen call, so git is found only there whatever the caller passes"
   }
  ]
 }

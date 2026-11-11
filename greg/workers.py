@@ -223,9 +223,11 @@ def supervised_run(argv, *, input=None, capture_output=True, text=False, timeout
 
 def _tracked_run(argv, *, timeout, env, text=True) -> subprocess.CompletedProcess:
     """``subprocess.run(capture_output=True)`` in its own process group, registered while it runs, so a closing Body
-    can kill it (kill_live_workers) even though it is not polled for STOP (#273 re-review B)."""
-    proc = subprocess.Popen(argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=text, env=env,
-                            start_new_session=True)
+    can kill it (kill_live_workers) even though it is not polled for STOP (#273 re-review B). The program is looked
+    up on PATH=/usr/bin:/bin whatever env the caller hands in: the effect-call scan cannot read a caller's env
+    through this wrapper, so the PATH is set here, in the pinned call (#273 re-review 2, E)."""
+    proc = subprocess.Popen(argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=text,
+                            env={**env, "PATH": "/usr/bin:/bin"}, start_new_session=True)
     _live(proc.pid)
     try:
         try:
@@ -1338,9 +1340,13 @@ def appraise(params: dict, ctx: InvocationContext) -> dict:
             base = private_clone(repo, summary["base_commit"], fresh)
         else:
             work = root / "work"
-            subprocess.run(["git", "clone", "--quiet", "--no-hardlinks", str(work), str(fresh)], check=True,
-                           capture_output=True, env={"PATH": "/usr/bin:/bin", "GIT_CONFIG_NOSYSTEM": "1",
-                                                     "GIT_CONFIG_GLOBAL": "/dev/null", "HOME": tmp})
+            # In a registered process group with a timeout, like every other git call here, so a closing Body
+            # can kill it (#273 re-review 2).
+            proc = _tracked_run(["git", "clone", "--quiet", "--no-hardlinks", str(work), str(fresh)], timeout=300,
+                                env={"PATH": "/usr/bin:/bin", "GIT_CONFIG_NOSYSTEM": "1",
+                                     "GIT_CONFIG_GLOBAL": "/dev/null", "HOME": tmp})
+            if proc.returncode:                 # as check=True did
+                raise subprocess.CalledProcessError(proc.returncode, proc.args, proc.stdout, proc.stderr)
             base = summary["base_commit"]
             _git(fresh, "checkout", "--quiet", "--detach", base)
         if base != summary["base_commit"]:

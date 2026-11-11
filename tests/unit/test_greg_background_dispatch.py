@@ -496,6 +496,51 @@ def test_nothing_is_written_after_body_stopped_names_an_unfinished_dispatch(tmp_
         assert journal.ledger.verify_chain()[0]
 
 
+def test_a_dispatch_released_while_body_stopped_is_written_records_nothing_after_it(tmp_path, monkeypatch):
+    """#273 re-review 2, B. The stuck adapter returns while run() holds the turn writing body.stopped, so its dispatch
+    waits for the lock. run() then lets go of the turn and close() takes it again later: before the fix the dispatch
+    took the lock in between and wrote its action, decision and block after body.stopped. The ledger is now sealed
+    in the same critical section that writes body.stopped."""
+    from greg import background as background_module
+    from greg import body as body_module
+    from greg.journal import Journal
+    monkeypatch.setattr(body_module, "STOP_JOIN_SECONDS", 1)
+    monkeypatch.setattr(background_module, "KILL_GRACE_SECONDS", 1)
+    home, worker, long_id = missions_ready(tmp_path, monkeypatch)
+    real_record, real_close = Journal.record, Body.close
+
+    def record(self, record_type, *args, **kwargs):
+        if record_type == "body.stopped":
+            worker.release.set()             # the adapter returns now and waits for the turn run() holds
+            time.sleep(0.3)
+        return real_record(self, record_type, *args, **kwargs)
+
+    def close(self):
+        time.sleep(0.3)                      # the window between run() letting go of the turn and close()
+        return real_close(self)
+    monkeypatch.setattr(Journal, "record", record)
+    monkeypatch.setattr(Body, "close", close)
+    body = Body(home)
+    loop = threading.Thread(target=body.run, kwargs={"tick_seconds": 0.05}, daemon=True)
+    loop.start()
+    try:
+        assert worker.holding.wait(WAIT), "the worker was never commissioned"
+        body.stop_requested = True
+        loop.join(WAIT)
+        assert not loop.is_alive(), "the body did not stop"
+    finally:
+        worker.release.set()
+    time.sleep(1.0)                                      # let the late dispatch try to record
+    with observe(home, actor="spiffe://uniimente.internal/test/background") as journal:
+        events = list(journal.replay(""))
+        stopped = [i for i, e in enumerate(events) if e.type == "greg.body.stopped"]
+        assert stopped, "body.stopped was not recorded"
+        assert events[stopped[-1]].payload.get("dispatches_unfinished") == [long_id]
+        after = [e.type for e in events[stopped[-1] + 1:]]
+        assert after == [], f"written after body.stopped: {after}"
+        assert journal.ledger.verify_chain()[0]
+
+
 def test_a_closing_body_kills_only_the_children_its_own_dispatches_started(tmp_path):
     """#273 re-review D: kill_live_workers is scoped to the closing Body's dispatch threads."""
     mine, other = threading.Event(), threading.Event()
@@ -536,3 +581,22 @@ def test_a_background_error_is_not_contained_by_a_paused_body(tmp_path, monkeypa
         monkeypatch.setattr(body, "paused", lambda: True)
         with pytest.raises(RuntimeError, match="recording failed off the turn"):
             body._contained(body.tick)
+
+
+def test_a_tracked_git_call_searches_only_the_fixed_path_whatever_env_its_caller_hands_it():
+    """#273 re-review 2, E. The worker's git calls go through _tracked_run, where the effect-call scan cannot see the
+    env a caller builds, so the caller's PATH=/usr/bin:/bin was no longer pinned. _tracked_run now sets that PATH in
+    its own pinned call: a caller that hands it the body's PATH, or any other, cannot widen where git is found."""
+    proc = workers._tracked_run(["sh", "-c", 'printf %s "$PATH"'], timeout=10,
+                                env={"PATH": os.environ.get("PATH", "") + ":/tmp/anything", "LANG": "C"})
+    assert proc.returncode == 0
+    assert proc.stdout == "/usr/bin:/bin"
+
+
+def test_the_appraisal_clone_of_the_work_tree_runs_in_a_tracked_process_group(monkeypatch, tmp_path):
+    """#273 re-review 2: the appraiser's work-tree clone ran through subprocess.run, with no timeout and no
+    registered process group, so a closing Body could not kill it. It now runs through _tracked_run."""
+    import inspect
+    source = inspect.getsource(workers.appraise)
+    assert 'subprocess.run(["git", "clone"' not in source
+    assert '_tracked_run(["git", "clone"' in source

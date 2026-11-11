@@ -548,8 +548,8 @@ class Body:
         # the body (an error included): the turn lock is not held while they finish, since they need it to record.
         background = self.engine.background if getattr(self, "engine", None) is not None else None
         if background is not None and background.running and not background.shut:
-            # Once shut down (Body.run did, before it recorded body.stopped), it is not waited for again: what is
-            # still running then writes nothing more (the ledger closes below) and is reconciled on restart.
+            # Once shut down (Body.run did, before it recorded body.stopped and sealed the ledger), it is not waited
+            # for again: what is still running then writes nothing more and is reconciled on restart.
             background.shutdown(STOP_JOIN_SECONDS)
         with self._turn:     # a dispatch that outlived even that cannot be mid-write while the ledger closes
             if self.ledger is not None:
@@ -1295,6 +1295,11 @@ class Body:
                                                      **({"dispatches_unfinished": unfinished} if unfinished else {})},
                                     key=[self.boot_id, "stopped"])
                 self._heartbeat("STOPPED", [])
+                # Sealed in the same critical section. A dispatch named unfinished above may be waiting for the
+                # turn; it must not get it between this block and close() and write after body.stopped. Its writes
+                # now fail on the closed ledger, and the restart reconciles it from its write-ahead intent.
+                self.ledger.close()
+                self.ledger = None
             return 0
         finally:
             self.close()

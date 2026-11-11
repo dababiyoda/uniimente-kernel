@@ -277,6 +277,18 @@
     "category": "fragility",
     "statement": "close() waited again after body.stopped named an unfinished dispatch, which then wrote mission.action, decision.requested and mission.blocked after body.stopped; git children outlived the body",
     "strengthening_response": "close() does not wait for a background already shut down: it closes the ledger under the turn lock, so late writes fail and the restart reconciles; the worker's git calls run in registered process groups the kill reaches; failing-first test tests/unit/test_greg_background_dispatch.py::test_nothing_is_written_after_body_stopped_names_an_unfinished_dispatch"
+   },
+   {
+    "id": "W9",
+    "category": "fragility",
+    "statement": "A dispatch released while run() held the turn writing body.stopped could take the turn in the window before close() retook it, and wrote mission.action, decision.requested and mission.blocked after body.stopped (independent re-review: 3 of 6 runs, 3 of 3 with a delay at close())",
+    "strengthening_response": "run() closes the ledger in the same critical section that records body.stopped, so a dispatch that gets the turn afterwards fails to write and the restart reconciles it; failing-first test tests/unit/test_greg_background_dispatch.py::test_a_dispatch_released_while_body_stopped_is_written_records_nothing_after_it (3 of 3 failed before, 5 of 5 pass)"
+   },
+   {
+    "id": "W10",
+    "category": "gaming",
+    "statement": "Moving the worker's git calls into _tracked_run left the effect-call scan unable to read the PATH their callers set, so a caller handing git the body's PATH went uncaught",
+    "strengthening_response": "_tracked_run sets PATH=/usr/bin:/bin in its own pinned Popen call whatever env it is handed; two allowlist mutants (drop or widen that PATH) must be caught; failing-first test tests/unit/test_greg_background_dispatch.py::test_a_tracked_git_call_searches_only_the_fixed_path_whatever_env_its_caller_hands_it. The appraiser's work-tree clone now runs through _tracked_run too (timeout, registered process group)"
    }
   ],
   "residual_risks": [

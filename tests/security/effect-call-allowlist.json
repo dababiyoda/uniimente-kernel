@@ -565,7 +565,18 @@
     "capability:browser.render"
    ],
    "justification": "unconfined browser.render: headless Chrome, fresh profile, resolving only the signed web:<host> target (every other name maps to NOTFOUND)",
-   "pin": "10c21536f6b953c575074c971ae4f6698d23abc024f49efbd5ba9eb86a554505"
+   "pin": "357ce42dfcded27e1d1ae2c1646c2446d2f844649fa33e7449813c602acbdbc1"
+  },
+  {
+   "module": "greg/capabilities.py",
+   "qualname": "cannot_render",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "capability:browser.render"
+   ],
+   "justification": "the check that an installed browser can render at all, reached only when browser.render chooses its binary (chrome_binary): the render's own command line on a data: page, every name mapped to NOTFOUND and every request sent to the closed port 127.0.0.1:9 with no bypass, a fresh profile, an environment of PATH, LANG and HOME, ended at RENDER_SECONDS; it contacts no host. One run per binary build, and again for a build that failed only after RENDER_RETRY_SECONDS",
+   "pin": "45f40d6cf38227fd758c0f40874371516409c06082b94bcb5da15b148226af63"
   },
   {
    "module": "greg/capabilities.py",

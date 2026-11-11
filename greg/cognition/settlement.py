@@ -266,10 +266,43 @@ def _observation_appraisal(journal, settling: dict):
 
 
 def measured_outcomes(journal):
+    """The settled outcome of every signed claim, as current evidence supports it (``_measure``)."""
+    return list(_measure(journal)[0].values())
+
+
+def _measure(journal) -> tuple[dict, dict]:
+    """(claim identity -> its settled outcome, claim identity -> the correction that last contained a reading of it).
+
+    An observation that rests on a receipt a correction contains (``corrections.contained_receipts``: a founder
+    rejection or a failed replication, not requalified) settles nothing, and its claim is scored as neither success
+    nor failure, as a disputed world outcome is. Earlier readings of the same claim are withheld with it: a closure
+    cites only its latest reading of a check, so an earlier one would otherwise earn the credit back. A later
+    reading of the claim that no correction contains settles it again. The second mapping explains a claim only
+    while the first does not hold it. A refuted appraisal is not read here: ``_settling_appraisals`` already
+    withdraws and restores what it judged.
+
+    Stated limit: the claim is withheld whichever closure settled its earlier readings. In a mission that closed
+    unmet and was later achieved, a failure of the same claim that the appraiser verified under the unmet closure is
+    withheld too when the achievement's reading is contained. That needs one signed claim (same input, same method)
+    that failed and later passed."""
     if journal is None:
-        return []
+        return {}, {}
     from .cortex import geometry_key
+    from greg import corrections
     from greg.capabilities import BUILTINS
+    contained = corrections.contained_receipts(journal)     # once: every reader of settled competence passes here
+    observations, withheld = {}, {}
+
+    def settle(outcome, data):
+        """Keep one observation's outcome under its claim; None when a correction contains the receipt it read."""
+        identity = _outcome_identity(outcome)
+        why = contained.get(data["receipt"])
+        if why is None:
+            observations[identity] = outcome
+            return identity
+        observations.pop(identity, None)       # no earlier reading of the claim earns the credit back
+        withheld[identity] = {"cause_id": why["cause_id"], "class": why["cause"], "event": why["event"]}
+        return None
     formed = _formed_versions(journal)
     constructed = _constructed_versions(journal)
     functions = _constructed_functions(journal) if constructed else {}
@@ -278,7 +311,6 @@ def measured_outcomes(journal):
     claim_receipts = defaultdict(set)     # claim identity -> the ledger receipts its observations carried
     registrations = {e.payload["mission_id"]: e.payload for e in journal.replay("mission.registered")}
     witnesses = {r.payload["witness_id"]: r.payload for r in journal.ledger.by_type("witness")}
-    observations = {}
     appraisal_of = _observation_appraisal(journal, _settling_appraisals(journal))
     for event in journal.replay("mission.observed"):
         data = event.payload
@@ -299,9 +331,8 @@ def measured_outcomes(journal):
                       if c["check_id"] == data["check_id"]), None),
                 witnesses.get(record.payload.get("witness_id"), {}).get("capability"),
                 data, event, appraisal)
-            if outcome is not None:
-                identity = _outcome_identity(outcome)
-                observations[identity] = outcome
+            identity = settle(outcome, data) if outcome is not None else None
+            if identity is not None:
                 claim_receipts[identity].add(data["receipt"])
                 promise = _promise(built, functions.get(outcome["method"]))
                 world_seen[identity].update({e.event_id: e for e in world.get(data["receipt"], {}).values()
@@ -337,7 +368,7 @@ def measured_outcomes(journal):
                                  "selected_by": "competency_compiler"} if compiled else {}),
                              **condition_competence.settlement_fields(compiled, check, data["passed"])}
         # Reobservations revise this signed claim; another check/input is not its duplicate.
-        observations[_outcome_identity(outcome)] = outcome
+        settle(outcome, data)
     if world_seen:
         order = _realization_order(journal)
         signed = _signed_realizations(journal)
@@ -351,7 +382,7 @@ def measured_outcomes(journal):
                     observations.pop(identity)    # a live dispute about one answer: scored as neither
                 else:
                     observations[identity] = settled
-    return list(observations.values())
+    return observations, withheld
 
 
 def competence(journal):
@@ -421,10 +452,17 @@ def reconcile(journal):
             journal.record("cognition.settled", {**outcome, "supersedes": prior.event_id if prior else None},
                            key=[identity, "revision", digest(outcome), prior.event_id if prior else None],
                            causal_parent=outcome["observation_event"])
+    withheld = None
     for identity, prior in current.items():
         if identity not in measured and identity not in succeeded and not prior.payload.get("invalidated"):
+            if withheld is None:                  # read only on a tick that invalidates something
+                withheld = _measure(journal)[1]
+            why = withheld.get(identity)          # a correction contains the reading it rests on, or the appraisal fell
             revision = {**prior.payload, "invalidated": True, "supersedes": prior.event_id,
-                        "reason": "current appraisal no longer supports competence; history retained"}
+                        "reason": (f"withheld: correction {why['cause_id']} ({why['class']}) impugns the reading this "
+                                   "outcome rests on; history retained" if why else
+                                   "current appraisal no longer supports competence; history retained"),
+                        **({"withheld_by": why} if why else {})}
             journal.record("cognition.settled", revision, key=[identity, "invalidate", prior.event_id], causal_parent=prior.event_id)
 
 

@@ -77,13 +77,18 @@ def verified_appraisals(journal: Journal) -> dict[str, str]:
 
 
 def closed_procedures(journal: Journal) -> dict[str, list]:
-    from greg.missions import reconciled
     """mission_id -> ordered capabilities of receipted DONE actions for locally verified closures.
 
     A founder-reconciled step is excluded whatever its record shape (either lineage's): the appraiser
-    never re-derived it, so it is not part of a procedure the evidence supports."""
+    never re-derived it, so it is not part of a procedure the evidence supports. A mission a correction
+    contains (``corrections.contained_missions``: a founder rejection or a failed replication, not
+    requalified) is excluded too: no procedure is learned from it, and a proposal that rests on it is not
+    ratified (``ratify``)."""
+    from greg import corrections
+    from greg.missions import reconciled
     achieved = {e.payload["mission_id"] for e in journal.replay("mission.achieved")}
     achieved.intersection_update(verified_appraisals(journal))
+    achieved.difference_update(corrections.contained_missions(journal))
     steps = defaultdict(list)
     for event in journal.replay("mission.action"):
         data = event.payload

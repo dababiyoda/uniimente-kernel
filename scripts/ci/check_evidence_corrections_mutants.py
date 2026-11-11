@@ -2,10 +2,11 @@
 
     python scripts/ci/check_evidence_corrections_mutants.py
 
-Mutants are applied to greg/corrections.py and greg/body.py in a scratch copy of the repository, never to the working
-tree; the copy runs without bytecode and its __pycache__ is purged before each mutant. A mutant is caught only when
-tests/unit/test_greg_evidence_corrections.py reports a FAILED test (an import or collection error does not count). Exit
-status 1 if any mutant survives or no longer applies.
+Mutants are applied to greg/corrections.py, greg/body.py and the readers that withhold what a correction contains
+(greg/cognition/settlement.py, greg/sop.py, greg/precedents.py) in a scratch copy of the repository, never to the
+working tree; the copy runs without bytecode and its __pycache__ is purged before each mutant. A mutant is caught only
+when tests/unit/test_greg_evidence_corrections.py reports a FAILED test (an import or collection error does not
+count). Exit status 1 if any mutant survives or no longer applies.
 """
 from pathlib import Path
 
@@ -14,6 +15,9 @@ from mutation_harness import run  # scripts/ci/mutation_harness.py: the shared l
 ROOT = Path(__file__).resolve().parents[2]
 CORRECTIONS = "greg/corrections.py"
 BODY = "greg/body.py"
+SETTLEMENT = "greg/cognition/settlement.py"
+SOP = "greg/sop.py"
+PRECEDENTS = "greg/precedents.py"
 TESTS = "tests/unit/test_greg_evidence_corrections.py"
 MUTANTS = [
     (CORRECTIONS, "a refuted appraisal or a founder rejection asks again about the mission alone",
@@ -41,9 +45,17 @@ MUTANTS = [
     (CORRECTIONS, "a refuted appraisal is requalified by a reading",
      '        if cause["class"] == "APPRAISAL_REFUTED":\n            closure', '        if False:\n            closure'),
     (CORRECTIONS, "a source that moved on contains the method that read it",
-     'if correction.get("impugns_measurement") and cid not in requalified:', "if cid not in requalified:"),
+     'if correction.get("impugns_measurement") and cid not in requalified\n', "if cid not in requalified\n"),
     (CORRECTIONS, "a requalified cause stays contained",
-     'if correction.get("impugns_measurement") and cid not in requalified:', 'if correction.get("impugns_measurement"):'),
+     'if correction.get("impugns_measurement") and cid not in requalified\n', 'if correction.get("impugns_measurement")\n'),
+    (CORRECTIONS, "a refuted appraisal contains what its readers already withdraw and restore",
+     '\n            and correction["class"] not in APPRAISED]', "]"),
+    (CORRECTIONS, "a mission that acted on a contained reading is not named",
+     'out.setdefault(claim["mission_id"], why)', 'out.setdefault(correction["root"]["mission_id"], why)'),
+    (CORRECTIONS, "a compilation that ran no method counts as a failed replication",
+     'later["inconclusive"] or later["no_method"]:', 'later["inconclusive"]:'),
+    (CORRECTIONS, "a deficit is read from data GREG did not produce",
+     '"no_method": own and no_method_ran(output),', '"no_method": no_method_ran(output),'),
     (CORRECTIONS, "an action that bound an affected receipt is not followed", "hit = used & receipts", "hit = set()"),
     (CORRECTIONS, "the claim of a mission that acted on it is not followed",
      'acted = claim["mission_id"] in acted_at and claim["seq"] > acted_at[claim["mission_id"]]', "acted = False"),
@@ -91,6 +103,15 @@ MUTANTS = [
     (CORRECTIONS, "an answered ask is withdrawn on requalification",
      "elif not open_causes and asked and rid not in answered", "elif not open_causes and asked"),
     (BODY, "the body never propagates", "        corrections.propagate(self.journal, now)\n", "        pass\n"),
+    # what a correction contains stops earning credit: every reader of settled competence, procedures, precedents
+    (SOP, "a procedure is learned from a contained mission",
+     "    achieved.difference_update(corrections.contained_missions(journal))\n", ""),
+    (PRECEDENTS, "a contained mission is still a precedent", ") - contained.keys())]", "))]"),
+    (SETTLEMENT, "settlement ignores containment",
+     "    contained = corrections.contained_receipts(journal)", "    contained = {}"),
+    (SETTLEMENT, "the invalidating revision does not name its cause", "why = withheld.get(identity)", "why = None"),
+    (SETTLEMENT, "an earlier reading of a withheld claim earns the credit back",
+     "        observations.pop(identity, None)       # no earlier", "        pass       # no earlier"),
 ]
 
 

@@ -6,6 +6,7 @@ that action. Neither is independent external proof or a causal estimate.
 """
 from __future__ import annotations
 
+from greg import corrections
 from greg.capabilities import BUILTINS, CapabilityError, InvocationContext
 from greg.sop import verified_appraisals
 from memory.causal import CausalMemory
@@ -44,8 +45,10 @@ def precedents(params: dict, ctx: InvocationContext) -> dict:
     achieved = {e.payload["mission_id"] for e in ctx.journal.replay("mission.achieved")}
     relevant = {e.payload["mission_id"] for e in ctx.journal.replay("mission.action")
                 if e.payload.get("capability") == capability and e.payload.get("status") == "DONE"}
+    # a mission a correction contains (a founder rejection, a failed replication) is no precedent
+    contained = corrections.contained_missions(ctx.journal)
     local = [{"mission_id": mid, "appraisal_event": appraisals[mid]}
-             for mid in sorted(achieved & relevant & appraisals.keys())]
+             for mid in sorted((achieved & relevant & appraisals.keys()) - contained.keys())]
     return {"capability": capability,
             "action_evidence": {"count": len(actions), "by_validation_and_result": counts,
                                 "recent": examples, "shown": len(examples)},

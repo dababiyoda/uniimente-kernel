@@ -30,16 +30,22 @@ A **cause** is found when a later record contradicts a reading a delivered claim
 - MEASUREMENT_EXPIRED: an ``expires_at`` of an evidence source in one of GREG's own cognition receipts has passed
   (an expiry inside other data, an MCP server's for instance, is that data's, not the measurement's);
 - REPLICATION_FAILED: the same signed sensor (instrument, input and predicate) read later fails on the same input
-  (the same source digest, or a computation with no source); APPRAISAL_REFUTED: the closure's independent appraisal is
-  REFUTED; FOUNDER_REJECTED: a founder critique rejects the closure or the reading.
+  (the same source digest, or a computation with no source). A later computation that ended in a capability deficit
+  ran no method and replicates nothing; APPRAISAL_REFUTED: the closure's independent appraisal is REFUTED;
+  FOUNDER_REJECTED: a founder critique rejects the closure or the reading.
 
 Each cause is recorded once (``evidence.invalidated``), with the correction it propagates (``evidence.correction``:
 every affected descendant and the edge it was reached by, and how many delivered claims are unaffected). History is
 never edited. Only the causes that impugn the measurement itself (replication on the same input, a refuted appraisal,
-a founder rejection) contain the settled outcomes on it (``contained_receipts``): a source that moved on leaves the
-method that read it as competent as before. Every cause marks its claims NEEDS_REVIEW and names the decisions to
-review; a terminal delivery, or one another mission or a founder decision depended on, is also put to the founder,
-once per triggering record and mission (EVIDENCE_CORRECTION, answer only recorded), from the stored correction.
+a founder rejection) touch what was credited on it. A refuted appraisal already does, wherever the appraisal is read.
+A failed replication and a founder rejection are seen by no appraisal, so they contain: the settled outcomes on
+their receipts (``contained_receipts``, read by ``settlement.measured_outcomes``, so by every reader of settled
+competence) and their missions as evidence for a procedure or a precedent (``contained_missions``, read by
+``sop.closed_procedures`` and ``precedents``). A source that moved on leaves the method that read it as competent as
+before. What is contained is scored as neither success nor failure, and a requalified cause lifts it. Every cause
+marks its claims NEEDS_REVIEW and names the decisions to review; a terminal delivery, or one another mission or a
+founder decision depended on, is also put to the founder, once per triggering record and mission
+(EVIDENCE_CORRECTION, answer only recorded), from the stored correction.
 
 A cause is **requalified** by evidence alone (``evidence.requalified``): a later passing reading of the same signed
 sensor, with no expired evidence of its own; a refuted appraisal only by a later
@@ -66,6 +72,9 @@ RETRACTED_STATUS = (404, 410)
 # appraisal of the mission's own closure (autonomy, routing and Goal Gravity consume it) and the founder's own
 # rejection. They put an ask only when something beyond that mission rests on the claim.
 SELF_REPORTED = ("APPRAISAL_REFUTED", "FOUNDER_REJECTED")
+# A cause whose credit effect its own readers already have. Settlement and SOP read each closure's appraisal, and a
+# later VERIFIED appraisal of that closure restores what a refuted one withdrew; containment adds nothing to it.
+APPRAISED = ("APPRAISAL_REFUTED",)
 COMPUTATIONS = ("cognition.",)        # sensors whose reading is a computation on its signed input, not the world
 MAX_DEPTH = 6                          # how deep an output is searched for evidence expiries
 
@@ -120,6 +129,12 @@ def expiries(output, depth: int = 0) -> list[str]:
     return found
 
 
+def no_method_ran(output) -> bool:
+    """A cognition receipt that ended in a capability deficit: no attached method could run (the founder detached
+    it, or none fits), so it holds no answer. It neither fails nor replicates a claim another reading answered."""
+    return isinstance(output, dict) and "CAPABILITY_DEFICIT" in (output.get("state"), output.get("abstention_state"))
+
+
 def _instant(text: str) -> datetime | None:
     try:
         value = datetime.fromisoformat(text.replace("Z", "+00:00"))
@@ -154,6 +169,7 @@ class Index:
             reading = {"event_id": e.event_id, "mission_id": p["mission_id"], "check_id": p["check_id"],
                        "receipt": p["receipt"], "seq": record.seq, "capability": p.get("capability"),
                        "passed": bool(p.get("passed")), "inconclusive": str(p.get("detail", "")).startswith("sensor "),
+                       "no_method": own and no_method_ran(output),
                        "sensor": sensors.get((p["mission_id"], p["check_id"])), "source": source_of(output),
                        "expires": sorted(expiries(output)) if own else [], "at": p.get("at")}
             self.readings.append(reading)
@@ -248,7 +264,7 @@ class Index:
             if root["sensor"] and base["passed"]:
                 computed = src is None and str(base["capability"]).startswith(COMPUTATIONS)
                 for later in later_by_sensor[root["sensor"]]:
-                    if not counts(later) or later["passed"] or later["inconclusive"]:
+                    if not counts(later) or later["passed"] or later["inconclusive"] or later["no_method"]:
                         continue
                     if computed and later["source"] is None or (
                             src is not None and later["source"] is not None and later["source"]["key"] == src["key"]
@@ -386,20 +402,45 @@ def _basis(index: "Index", requalified: dict) -> dict:
     return out
 
 
-def contained_receipts(journal: Journal) -> dict:
-    """receipt -> {cause, cause_id, event, path} for every recorded cause that impugns the measurement itself
-    (REPLICATION_FAILED, APPRAISAL_REFUTED, FOUNDER_REJECTED) and is not requalified. A reader of settled outcomes
-    withholds those resting on a listed receipt; a source that moved on, a changed API or an expiry lists nothing.
-    ``event`` is the ``evidence.invalidated`` event id; ``path`` the dependency path of the correction. Computed from
-    recorded facts only (deterministic, cheap)."""
+def _containing(journal: Journal) -> list[tuple[dict, dict]]:
+    """(correction, {cause, cause_id, event}) for every recorded cause that withholds credit, in the order recorded:
+    it impugns the measurement itself, it is not requalified, and no appraisal already expresses it (a
+    REPLICATION_FAILED or a FOUNDER_REJECTED). A source that moved on, a changed API or an expiry is never among
+    them, and a refuted appraisal is left to the readers of appraisals (``APPRAISED``). ``event`` is the
+    ``evidence.invalidated`` event id. Read from recorded facts only (deterministic, cheap)."""
+    recorded = _recorded(journal, "evidence.correction")
+    if not recorded:                      # the usual body: nothing corrected, nothing more to read
+        return []
     requalified = _recorded(journal, "evidence.requalified")
     events = {e.payload["cause_id"]: e.event_id for e in journal.replay("evidence.invalidated")}
+    return [(correction, {"cause": correction["class"], "cause_id": cid, "event": events.get(cid)})
+            for cid, correction in recorded.items()
+            if correction.get("impugns_measurement") and cid not in requalified
+            and correction["class"] not in APPRAISED]
+
+
+def contained_receipts(journal: Journal) -> dict:
+    """receipt -> {cause, cause_id, event, path} for every receipt a containing cause reaches (``_containing``): the
+    reading itself and the receipts of the actions that bound it. A reader of settled outcomes withholds those
+    resting on a listed receipt (``settlement.measured_outcomes``). ``path`` is the dependency path of the
+    correction."""
     out = {}
-    for cid, correction in _recorded(journal, "evidence.correction").items():
-        if correction.get("impugns_measurement") and cid not in requalified:
-            for r in correction["affected"]["receipts"]:
-                out.setdefault(r, {"cause": correction["class"], "cause_id": cid, "event": events.get(cid),
-                                   "path": correction["affected"]["path"]})
+    for correction, why in _containing(journal):
+        for r in correction["affected"]["receipts"]:
+            out.setdefault(r, {**why, "path": correction["affected"]["path"]})
+    return out
+
+
+def contained_missions(journal: Journal) -> dict:
+    """mission id -> {cause, cause_id, event} for every mission with a delivered claim a containing cause reaches
+    (``_containing``): the mission whose reading it is, and any mission whose claim followed an action that bound
+    it. A reader of verified closures withholds those missions: no procedure is learned from one and it is no
+    precedent (``sop.closed_procedures``, ``precedents``). The appraisal on record is not changed and nothing here
+    touches what the mission may still do."""
+    out = {}
+    for correction, why in _containing(journal):
+        for claim in correction["affected"]["claims"]:
+            out.setdefault(claim["mission_id"], why)
     return out
 
 

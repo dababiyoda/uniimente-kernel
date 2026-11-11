@@ -405,6 +405,12 @@ def bound_value(edge: dict, output, whole=None, *, recorded_cut: bool = True):
 METERED_SPEND = {"worker.commission": "worker.cost_usd"}
 
 
+def compensation_attempt(action_id: str, original_receipt) -> str:
+    """The attempt a compensation's one Gate proposal is derived from (with its exact scope): the strategy it undoes
+    and the receipt of the effect. The dispatch, its recovery after a restart and every later reader name it so."""
+    return f"compensate:{action_id}:{original_receipt}"
+
+
 def reconciliation_terms(capability: str | None, reserved: float) -> tuple[str, dict]:
     """What every RECONCILIATION ask tells the founder before they answer: what to do, and what each answer books.
     A metered capability's provider may have spent while it ran, so "not executed" does not release its cap."""
@@ -3271,6 +3277,22 @@ class MissionEngine:
     def _run_compensation(self, m: MissionState, action: dict, klass: str, declared: dict, now: datetime) -> str:
         mid, aid, original = m.mission_id, action["action_id"], action.get("receipt")
         manifest, adapter, missing = self._resolve(declared)
+        params, target = declared.get("params", {}), declared["target"]
+        # The registry's manifest names the compensation's exact scope also when the capability is not usable now.
+        known = manifest or self.registry.manifests.get(declared.get("capability"))
+        scope = None if known is None else self.office.scope_digest(
+            mission_id=mid, capability_id=known.capability_id, params=params, target=target,
+            consequence_class=known.consequence_class, cost_usd=0.0)
+        record = {"mission_id": mid, "action_id": aid, "capability": getattr(known, "capability_id", None),
+                  "target": target, "original_receipt": original, "scope_digest": scope}
+        settled = self._dispatched_compensation(scope, aid, original) if scope else None
+        if settled is not None:
+            # The Gate already dispatched this compensation and the body stopped before recording it. Its record
+            # decides first, as for an action (_recover_dispatch), whatever happened since to the approval it ran
+            # under or to its capability: a device revocation voids what an approval had not been used for, never
+            # an effect that happened. Asking again would offer the founder "nothing is run for it" about a write
+            # that already ran; calling the capability unusable would say an undone effect still stands.
+            return self._record_compensation(m, action, klass, record, settled, now)
         if manifest is None:
             self._compensation_ask(m, action, klass, now, failure=[f"compensating capability {missing} is not usable"])
             return "ESCALATED"
@@ -3278,13 +3300,8 @@ class MissionEngine:
             self._compensation_ask(m, action, klass, now, failure=[
                 f"{manifest.capability_id} spends money by itself; GREG runs no unpaid compensation through it"])
             return "ESCALATED"
-        params, target = declared.get("params", {}), declared["target"]
-        scope = self.office.scope_digest(mission_id=mid, capability_id=manifest.capability_id, params=params,
-                                         target=target, consequence_class=manifest.consequence_class, cost_usd=0.0)
         if any(r["kind"] == "APPROVAL" and r["scope_digest"] == scope for r in self.book.open_requests()):
             return "WAITING"                    # the founder decides this exact scope; no re-evaluation meanwhile
-        record = {"mission_id": mid, "action_id": aid, "capability": manifest.capability_id, "target": target,
-                  "original_receipt": original, "scope_digest": scope}
         if scope in m.rejected_scopes:
             self.journal.record("mission.compensated", {**record, "status": "DECLINED", "receipt": None, "at": iso(now),
                                                         "reasons": ["founder rejected this compensating action"]},
@@ -3311,7 +3328,7 @@ class MissionEngine:
             expected_outcome=f"compensation of {aid}", evidence_refs=[original] if original else [],
             # Unpaid by construction (cost 0; self-spending capabilities refused), so an overrun of the cone
             # by earlier spend is no reason to refuse undoing an effect: the budget clause sees what it adds.
-            attempt=f"compensate:{aid}:{original}", spent_usd=min(m.committed_usd, m.cone.budget_usd),
+            attempt=compensation_attempt(aid, original), spent_usd=min(m.committed_usd, m.cone.budget_usd),
             approved_scopes=m.approved_scopes)
         if outcome.status in ("OUTSIDE_SCOPE", "NEEDS_DECISION"):
             self._request(m, kind="APPROVAL", scope_digest=outcome.scope_digest, action_id=aid,
@@ -3325,9 +3342,39 @@ class MissionEngine:
                           consequence="the executed effect stands; nothing is run for it", params=params,
                           compensation=True)
             return "WAITING"
+        return self._record_compensation(m, action, klass, record, outcome, now)
+
+    def _dispatched_compensation(self, scope: str, aid: str, original) -> ActionOutcome | None:
+        """What the Gate itself holds for this compensation's one proposal, or None when it never dispatched it.
+
+        A compensation has no write-ahead intent of its own: its proposal is derived from its exact scope and the
+        receipt it compensates, so the Gate's dispatch claim and receipt are found again by that identity. A
+        receipt is read by its result (positive: done; negative: the capability refused; anything else does not
+        say whether it acted), and a claim without a receipt is an unknown outcome. Nothing is dispatched here."""
+        proposal_id = self.office.proposal_id(scope, compensation_attempt(aid, original))
+        claim, receipt = self.office.prior(proposal_id)
+        if claim is None:
+            return None
+        base = dict(proposal_id=proposal_id, scope_digest=scope, grant_id=claim.payload.get("grant_id"))
+        if receipt is None:
+            return ActionOutcome("UNCERTAIN", ["dispatch claimed without receipt; the body stopped inside it, so "
+                                               "its outcome is unknown"], **base)
+        result = receipt.payload.get("result")
+        result = result if isinstance(result, dict) else {}
+        if result.get("result_class") == "positive":
+            return ActionOutcome("DONE", ["retained receipt of a compensation the body did not record before it "
+                                          "stopped"], receipt_hash=receipt.hash, **base)
+        if result.get("result_class") == "negative":
+            return ActionOutcome("REFUSED", [result.get("observed_outcome", "capability failed")],
+                                 receipt_hash=receipt.hash, failure_class=result.get("failure_class"), **base)
+        return ActionOutcome("UNCERTAIN", ["the receipt does not say whether the capability acted (result class "
+                                           f"{result.get('result_class')!r})"], receipt_hash=receipt.hash, **base)
+
+    def _record_compensation(self, m: MissionState, action: dict, klass: str, record: dict, outcome, now) -> str:
+        """Record one Gate outcome of a compensation, once (its fact key), and ask about one that did not complete."""
         self.journal.record("mission.compensated", {**record, "status": outcome.status, "receipt": outcome.receipt_hash,
                                                     "reasons": [str(r)[:300] for r in outcome.reasons], "at": iso(now)},
-                            key=[mid, aid, "compensated"])
+                            key=[record["mission_id"], record["action_id"], "compensated"])
         if outcome.status != "DONE":            # refused, unavailable or uncertain: never blind-retried
             self._compensation_ask(m, action, klass, now, failure=outcome.reasons)
         return outcome.status

@@ -1241,3 +1241,698 @@ def test_the_policy_is_recorded_verbatim_with_every_ledger_field():
     assert not [k for k in required if k not in record]
     assert all((root / ref).exists() for ref in record["source_refs"] + record["implementation_refs"])
     assert record["intent_id"] in (root / "docs/FOUNDER_INTENT_LEDGER.md").read_text(encoding="utf-8")
+
+
+# -- compensations: the Gate's record decides, before any approval is looked at (independent review, finding 1) ---
+
+RESTORE = {"capability": "fs.write", "params": {"relative_path": "note.txt", "content": "original"},
+           "target": "workspace:note.txt"}
+
+
+def compensable(world, body, mid="m:comp"):
+    """A mission whose executed write has a signed compensation: write the original text back."""
+    note = workspace(world.home, mid) / "note.txt"
+    note.parent.mkdir(parents=True, exist_ok=True)
+    note.write_text("original")
+    body.apply(world.sign("MISSION", mission(
+        mid, checks=[note_check("c", note, "draft")],
+        strategies=[write_strategy("w", "note.txt", "draft", ["c"], compensate=RESTORE)],
+        capabilities=["fs.read", "fs.write"],
+        closure={"kind": "infinite", "ladder": [["c"]], "cadence_seconds": 3600})))
+    world.tick(body, 3)
+    assert note.read_text() == "draft"
+    return note
+
+
+def superseded_and_asked(world, body, mid="m:comp"):
+    """The founder superseded the mission: undoing its write is asked first (a successor may rely on it)."""
+    note = compensable(world, body, mid)
+    body.apply(world.sign("LIFECYCLE", {"mission_id": mid, "state": "SUPERSEDED", "reason": "replaced"}))
+    world.tick(body, 2)
+    [ask] = open_asks(body, mid)
+    assert ask["compensation"] is True
+    return note, ask
+
+
+def compensated(body, mid="m:comp"):
+    return [e.payload for e in body.journal.replay("mission.compensated") if e.payload["mission_id"] == mid]
+
+
+def gate_record(body, ask, mid="m:comp"):
+    """(dispatch claims, receipts) the Gate holds for the one proposal of this mission's compensation."""
+    [ran] = [a for a in actions(body, mid) if a["status"] == "DONE"]
+    proposal = body.engine.office.proposal_id(ask["scope_digest"], f"compensate:w:{ran['receipt']}")
+    claims = body.ledger.select("grant_dispatch", proposal_id=proposal)
+    receipts = [r for c in claims for r in body.ledger.select("receipt", grant_id=c.payload["grant_id"])]
+    return claims, receipts
+
+
+def killed_before_the_mission_records(body):
+    """The body stops after the Gate's receipt of the compensation and before the mission's own record of it."""
+    real = body.journal.record
+
+    def record(kind, data, **kw):
+        if kind == "mission.compensated":
+            raise SystemExit("killed after the Gate's receipt, before the mission's record")
+        return real(kind, data, **kw)
+    body.journal.record = record
+    with pytest.raises(SystemExit):
+        body.tick()
+    assert compensated(body) == []
+
+
+@pytest.mark.parametrize("revoked", [False, True])
+def test_a_compensation_the_gate_completed_is_recorded_from_its_receipt_whatever_became_of_its_approval(world, revoked):
+    """The phone approves the compensation; the Gate dispatches it and writes its receipt; the body dies before
+    ``mission.compensated``; the founder revokes the phone while the body is down. The restarted body records the
+    compensation from the Gate's receipt. Before this fix it asked the founder to approve it again, said "nothing is
+    run for it" about a write that had run, and recorded DECLINED with no receipt when he rejected."""
+    with world.body() as body:
+        phone = world.enroll(body, "phone")
+        note, ask = superseded_and_asked(world, body)
+        decision = world.approve(ask["request_id"], key=phone)
+        body.apply(decision)
+        killed_before_the_mission_records(body)
+        assert note.read_text() == "original"                       # the compensation DID run
+        [claim], [receipt] = gate_record(body, ask)
+        assert receipt.payload["result"]["result_class"] == "positive"
+    if revoked:
+        drop(world.home, world.revoke("phone"), "a-revoke.json")    # while the body is down
+    with world.body() as body:
+        world.tick(body, 3)
+        [row] = compensated(body)
+        assert row["status"] == "DONE" and row["receipt"] == receipt.hash and row["scope_digest"] == ask["scope_digest"]
+        assert row["reasons"] == ["retained receipt of a compensation the body did not record before it stopped"]
+        assert gate_record(body, ask) == ([claim], [receipt])       # the Gate never dispatched it a second time
+        assert open_asks(body, "m:comp") == [] and open_asks(body, "m:comp", kind="COMPENSATION") == []
+        assert note.read_text() == "original" and body.ledger.verify_chain()[0]
+        if not revoked:
+            return
+        # what the approval had not been used for is void all the same, and nothing asks for it again
+        [void] = trail(body, ask["request_id"])
+        assert void["voids_approval"] is True
+        # a suspicion signed later finds the compensation by the Gate grant issued while the approval stood,
+        # although the mission recorded it only after the revocation
+        body.apply(world.revoke("phone", suspected_compromise=True))
+        [review] = [e.payload for e in body.journal.replay(revocation.REVIEW_RECORD)]
+        [effect] = review["effects"]
+        assert effect["effect"] == "a compensation dispatched under its approval"
+        assert effect["receipt"] == receipt.hash and effect["rested_on"]["command_digest"] == sha256_json(decision)
+
+
+def test_a_compensation_interrupted_inside_its_dispatch_is_recorded_as_unknown_not_asked_as_if_unrun(world):
+    """The body dies inside the compensation's dispatch (the Gate's claim, no receipt), and the phone that approved
+    it is revoked before the restart. The outcome is unknown: it is recorded UNCERTAIN and put to the founder as a
+    COMPENSATION decision, exactly as without a revocation. It is never offered for approval as if nothing ran."""
+    with world.body() as body:
+        phone = world.enroll(body, "phone")
+        note, ask = superseded_and_asked(world, body)
+        body.apply(world.approve(ask["request_id"], key=phone))
+        real = body.registry.adapters["fs.write"]
+
+        def dies(params, ctx):
+            real(params, ctx)
+            raise SystemExit("power lost after the write, before the Gate's receipt")
+        body.registry.adapters["fs.write"] = dies
+        with pytest.raises(SystemExit):
+            body.tick()
+        assert note.read_text() == "original" and compensated(body) == []
+        [claim], receipts = gate_record(body, ask)
+        assert receipts == []
+    drop(world.home, world.revoke("phone"), "a-revoke.json")
+    with world.body() as body:
+        world.tick(body, 3)
+        [row] = compensated(body)
+        assert row["status"] == "UNCERTAIN" and row["receipt"] is None
+        assert "outcome is unknown" in row["reasons"][0]
+        assert open_asks(body, "m:comp") == []                      # no APPROVAL ask for an effect that may have run
+        [question] = open_asks(body, "m:comp", kind="COMPENSATION")
+        assert "outcome is unknown" in json.dumps(question["evidence"]["compensation_failed"])
+        assert gate_record(body, ask) == ([claim], [])              # never dispatched again, never blind-retried
+        body.apply(world.approve(question["request_id"], answer="reject"))
+        world.tick(body, 3)
+        assert [r["status"] for r in compensated(body)] == ["UNCERTAIN"]   # the answer is a record; DECLINED is never written
+
+
+def test_a_refused_compensation_found_again_after_a_restart_is_recorded_as_the_refusal_it_was(world):
+    """The Gate's receipt is read by its result, not by its existence: a compensation the capability refused is
+    recorded REFUSED after the restart and the founder is asked about the effect, which still stands."""
+    from greg.capabilities import CapabilityError
+    with world.body() as body:
+        note, ask = superseded_and_asked(world, body)
+        body.apply(world.approve(ask["request_id"]))
+
+        def refuses(params, ctx):
+            raise CapabilityError("the disk is read-only")
+        body.registry.adapters["fs.write"] = refuses
+        killed_before_the_mission_records(body)
+        [claim], [receipt] = gate_record(body, ask)
+        assert receipt.payload["result"]["result_class"] == "negative" and note.read_text() == "draft"
+    with world.body() as body:
+        world.tick(body, 3)
+        [row] = compensated(body)
+        assert row["status"] == "REFUSED" and row["receipt"] == receipt.hash
+        assert "the disk is read-only" in row["reasons"][0]
+        [question] = open_asks(body, "m:comp", kind="COMPENSATION")
+        assert "the disk is read-only" in json.dumps(question["evidence"]["compensation_failed"])
+        assert gate_record(body, ask) == ([claim], [receipt]) and note.read_text() == "draft"
+
+
+def test_a_compensation_approved_by_a_device_revoked_before_its_dispatch_does_not_run(world):
+    """The same rule as for an action: the phone's approval of a compensation the Gate has not dispatched is void
+    from the revocation on. The effect stands until the founder (or a device still delegated) answers the new ask."""
+    with world.body() as body:
+        phone = world.enroll(body, "phone")
+        note, ask = superseded_and_asked(world, body)
+        drop(world.home, world.approve(ask["request_id"], key=phone), "a-decision.json")
+        drop(world.home, world.revoke("phone"), "b-revoke.json")
+        world.tick(body, 4)
+        assert note.read_text() == "draft" and compensated(body) == [] and gate_record(body, ask) == ([], [])
+        [again] = open_asks(body, "m:comp")
+        assert again["request_id"] != ask["request_id"] and again["compensation"] is True
+        [void] = trail(body, ask["request_id"])
+        assert void["voids_approval"] is True
+        body.apply(world.approve(again["request_id"]))              # the founder approves: it runs, once
+        world.tick(body, 3)
+        assert note.read_text() == "original" and [c["status"] for c in compensated(body)] == ["DONE"]
+        assert [len(x) for x in gate_record(body, ask)] == [1, 1]
+
+
+def test_the_review_lists_a_compensation_the_device_approved(world):
+    with world.body() as body:
+        phone = world.enroll(body, "phone")
+        note, ask = superseded_and_asked(world, body)
+        decision = world.approve(ask["request_id"], key=phone)
+        body.apply(decision)
+        world.tick(body, 3)
+        [row] = compensated(body)
+        assert row["status"] == "DONE" and note.read_text() == "original"
+        body.apply(world.revoke("phone", suspected_compromise=True))
+        [review] = [e.payload for e in body.journal.replay(revocation.REVIEW_RECORD)]
+        [effect] = review["effects"]
+        assert effect["effect"] == "a compensation dispatched under its approval"
+        assert effect["receipt"] == row["receipt"] and effect["original_receipt"] == row["original_receipt"]
+        assert effect["rested_on"] == {"command_digest": sha256_json(decision), "kind": "DECISION",
+                                       "request_id": ask["request_id"]}
+        assert compensated(body) == [row]                           # the review changed nothing
+
+
+def test_a_compensation_the_gate_completed_is_recorded_when_its_capability_was_detached_since(world):
+    """The same reading, for a cause that is not a revocation (and predates this policy: 8d205324 did the same): the
+    founder detaches the compensating capability while the body is down. The completed compensation is recorded
+    from its receipt; before, the founder was told the capability "is not usable" about an effect already undone."""
+    with world.body() as body:
+        note, ask = superseded_and_asked(world, body)
+        body.apply(world.approve(ask["request_id"]))
+        killed_before_the_mission_records(body)
+        [claim], [receipt] = gate_record(body, ask)
+        assert note.read_text() == "original"
+    drop(world.home, world.sign("CAPABILITY_DETACH", {"capability_id": "fs.write"}), "a-detach.json")
+    with world.body() as body:
+        world.tick(body, 3)
+        [row] = compensated(body)
+        assert row["status"] == "DONE" and row["receipt"] == receipt.hash and row["capability"] == "fs.write"
+        assert open_asks(body, "m:comp", kind="COMPENSATION") == []
+
+
+def test_a_receipt_that_does_not_say_what_happened_is_an_unknown_outcome_of_the_compensation(world):
+    """The Gate's executor writes two result classes. A retained receipt of any other class does not say whether
+    the capability acted: the compensation is unknown (asked about, never retried), neither done nor refused."""
+    class Stub:
+        def __init__(self, payload):
+            self.payload, self.hash = payload, "sha256:" + "5" * 64
+    with world.body() as body:
+        engine = body.engine
+        real = engine.office.prior
+        try:
+            for result, status_ in (({"result_class": "positive"}, "DONE"), ({"result_class": "negative"}, "REFUSED"),
+                                    ({"result_class": "partial"}, "UNCERTAIN"), ("not a result", "UNCERTAIN")):
+                engine.office.prior = lambda proposal_id: (Stub({"grant_id": "g"}), Stub({"result": result}))
+                outcome = engine._dispatched_compensation("sha256:scope", "w", "sha256:original")
+                assert (outcome.status, outcome.receipt_hash, outcome.grant_id) == (status_, "sha256:" + "5" * 64, "g")
+            engine.office.prior = lambda proposal_id: (None, None)
+            assert engine._dispatched_compensation("sha256:scope", "w", "sha256:original") is None
+        finally:
+            engine.office.prior = real
+
+
+def test_an_interrupted_compensation_the_device_approved_is_listed_once(world):
+    """Its record names no grant (its dispatch was interrupted): the review finds the grant by the compensation's
+    proposal, so the dispatch is listed once, as the compensation, and not again as an unrecorded grant."""
+    with world.body() as body:
+        phone = world.enroll(body, "phone")
+        note, ask = superseded_and_asked(world, body)
+        explode_once(body)                                          # the compensating write dies with no receipt
+        body.apply(world.approve(ask["request_id"], key=phone))
+        world.tick(body, 2)
+        [row] = compensated(body)
+        assert row["status"] == "UNCERTAIN" and row["receipt"] is None and "grant_id" not in row
+        body.apply(world.revoke("phone", suspected_compromise=True))
+        [review] = [e.payload for e in body.journal.replay(revocation.REVIEW_RECORD)]
+        assert [(x["effect"], x["status"]) for x in review["effects"]] == [
+            ("a compensation dispatched under its approval", "UNCERTAIN")]
+
+
+# -- the review attributes to the key only what rested on it (independent review, finding 2) ----------------------
+
+def scope_grants(body, scope):
+    return [r for r in body.ledger.by_type("event") if r.payload.get("type") == "greg.authority.grant_issued"
+            and r.payload.get("founder_approved_scope") and r.payload.get("scope_digest") == scope]
+
+
+def standing(world, body, mid, *, wants="approved", writes="approved"):
+    """A standing mission whose write lies outside its read-only cone; returns (note path, its open APPROVAL)."""
+    note = workspace(world.home, mid) / "n.txt"
+    body.apply(world.sign("MISSION", mission(
+        mid, checks=[note_check("n", note, wants)], strategies=[write_strategy("w", "n.txt", writes, ["n"])],
+        capabilities=["fs.read"], ceiling="read_only",
+        closure={"kind": "infinite", "ladder": [["n"]], "cadence_seconds": 60})))
+    world.tick(body, 2)
+    [ask] = open_asks(body, mid)
+    return note, ask
+
+
+def cadence(world, body, times=3):
+    for _ in range(times):
+        world.clock.advance(61)
+        world.tick(body, 2)
+
+
+def test_a_late_suspicion_does_not_list_what_the_founder_approved_after_the_revocation(world):
+    """The phone approves a standing write; it runs; the phone is revoked plainly; the FOUNDER approves the new ask
+    and the write runs again; later the founder marks the revocation as a suspected compromise. The review lists the
+    phone's run and nothing of the founder's: before this fix it listed the founder's dispatch as "granted under
+    its approval, not yet recorded by the mission"."""
+    with world.body() as body:
+        phone = world.enroll(body, "phone")
+        note, ask = standing(world, body, "m:stand")
+        decision = world.approve(ask["request_id"], key=phone)
+        body.apply(decision)
+        world.tick(body, 3)
+        [first] = scope_grants(body, ask["scope_digest"])
+        [ran] = [a for a in actions(body, "m:stand") if a["status"] == "DONE"]
+        body.apply(world.revoke("phone"))                           # voids the standing remainder
+        note.unlink()                                               # drift: the standing mission must write again
+        cadence(world, body)
+        [again] = open_asks(body, "m:stand")
+        assert again["request_id"] != ask["request_id"] and again["scope_digest"] == ask["scope_digest"]
+        body.apply(world.approve(again["request_id"]))              # the FOUNDER approves
+        cadence(world, body)
+        assert note.read_text() == "approved"
+        [_, second] = scope_grants(body, ask["scope_digest"])
+        assert len([a for a in actions(body, "m:stand") if a["status"] == "DONE"]) == 2
+        body.apply(world.revoke("phone", suspected_compromise=True))
+        [review] = [e.payload for e in body.journal.replay(revocation.REVIEW_RECORD)]
+        [effect] = review["effects"]
+        assert effect["effect"] == "an action dispatched under its approval" and effect["receipt"] == ran["receipt"]
+        assert effect["rested_on"]["command_digest"] == sha256_json(decision)
+        assert second.payload["grant_id"] not in json.dumps(review) and review["receipts"] == [ran["receipt"]]
+        assert body.ledger.find(ran["receipt"]).payload["grant_id"] == first.payload["grant_id"]
+
+
+def test_a_review_does_not_list_what_ran_after_the_devices_approval_was_withdrawn(world):
+    """The phone's standing approval is withdrawn by the standing-approval regression (a run under it proved
+    ineffective); the FOUNDER approves the ask that follows and the write runs again; then the phone, delegated all
+    along, is revoked as a suspected compromise. The founder's dispatch is not the phone's."""
+    mid = "m:regress"
+    with world.body() as body:
+        phone = world.enroll(body, "phone")
+        note, ask = standing(world, body, mid, wants="final", writes="draft")   # the run executes and proves ineffective
+        body.apply(world.approve(ask["request_id"], key=phone))
+        cadence(world, body, 4)
+        assert [e.payload["request_id"] for e in body.journal.replay("autonomy.regressed")] == [ask["request_id"]]
+        phones = scope_grants(body, ask["scope_digest"])
+        note.write_text("final")                                    # the world passes once (by hand), then drifts
+        cadence(world, body, 1)
+        note.unlink()
+        cadence(world, body)
+        [again] = [r for r in open_asks(body, mid) if r["request_id"] != ask["request_id"]]
+        body.apply(world.approve(again["request_id"]))              # the FOUNDER approves
+        cadence(world, body, 2)
+        founders = [g for g in scope_grants(body, ask["scope_digest"]) if g not in phones]
+        assert phones and founders
+        body.apply(world.revoke("phone", suspected_compromise=True))
+        [review] = [e.payload for e in body.journal.replay(revocation.REVIEW_RECORD)]
+        assert {x["effect"] for x in review["effects"]} == {"an action dispatched under its approval"}
+        listed = {body.ledger.find(x["receipt"]).payload["grant_id"] for x in review["effects"]}
+        assert listed == {g.payload["grant_id"] for g in phones}
+        assert not [g for g in founders if g.payload["grant_id"] in json.dumps(review)]
+        [command] = review["commands"]
+        assert command["standing"].startswith("WITHDRAWN_EARLIER")
+
+
+def test_a_late_suspicion_lists_a_dispatch_granted_under_the_approval_and_recorded_after_the_revocation(world, monkeypatch):
+    """The Gate granted and ran the phone-approved write, the body died before recording it, the phone was revoked
+    plainly, and the restarted body recorded the action from the Gate's receipt. A suspicion signed later lists that
+    action: it rested on the phone's approval although its record follows the revocation."""
+    with world.body() as body:
+        body.boot()
+        phone = world.enroll(body, "phone")
+        note, ask = asked(world, body)
+        decision = world.approve(ask["request_id"], key=phone)
+        body.apply(decision)
+        monkeypatch.setattr(body.engine, "_record_outcome", lambda *a, **k: (_ for _ in ()).throw(SystemExit("killed")))
+        with pytest.raises(SystemExit):
+            world.tick(body)
+        assert note.read_text() == "approved" and actions(body, "m:gated") == []
+    with world.body() as body:
+        body.boot()
+        body.apply(world.revoke("phone"))
+        world.tick(body, 4)
+        [done] = actions(body, "m:gated")
+        assert done["status"] == "DONE"
+        body.apply(world.revoke("phone", suspected_compromise=True))
+        [review] = [e.payload for e in body.journal.replay(revocation.REVIEW_RECORD)]
+        [effect] = review["effects"]
+        assert effect["effect"] == "an action dispatched under its approval" and effect["receipt"] == done["receipt"]
+        assert effect["rested_on"]["command_digest"] == sha256_json(decision)
+
+
+def test_a_dispatch_reconciled_before_the_revocation_is_listed_once(world):
+    """The phone-approved write's first dispatch is interrupted and the founder reconciles it as executed. The
+    review lists the dispatch once, as the action under the phone's approval, not a second time for the record of
+    the founder's reconciliation."""
+    with world.body() as body:
+        phone = world.enroll(body, "phone")
+        note, ask = asked(world, body)
+        explode_once(body, after_effect=True)
+        body.apply(world.approve(ask["request_id"], key=phone))
+        world.tick(body, 2)
+        [question] = open_asks(body, "m:gated", kind="RECONCILIATION")
+        body.apply(world.approve(question["request_id"], answer="reconcile_executed"))
+        world.tick(body, 3)
+        records = actions(body, "m:gated")
+        assert [a["status"] for a in records][0] == "UNCERTAIN" and len(records) == 2
+        assert records[1]["route"] == "founder_reconciliation"
+        body.apply(world.revoke("phone", suspected_compromise=True))
+        [review] = [e.payload for e in body.journal.replay(revocation.REVIEW_RECORD)]
+        rows = [(x["effect"], x["status"]) for x in review["effects"]]
+        assert rows == [("an action dispatched under its approval", "UNCERTAIN")]
+
+
+def test_a_record_that_names_no_grant_is_attributed_by_where_it_stands(world):
+    """A dispatch found again under the earlier scope form is recorded UNCERTAIN with no grant id (greg/authority.py,
+    "retained legacy dispatch"). Such a record rests on the phone's approval when it was written while the approval
+    stood, and not when it was written after the revocation voided it. (The two rows are written here as that path
+    writes them; the body is not turned afterwards.)"""
+    with world.body() as body:
+        phone = world.enroll(body, "phone")
+        note, ask = standing(world, body, "m:stand")
+        body.apply(world.approve(ask["request_id"], key=phone))
+        world.tick(body, 3)
+        [ran] = [a for a in actions(body, "m:stand") if a["status"] == "DONE"]
+        legacy = {**ran, "status": "UNCERTAIN", "receipt": None, "cost_usd": 0.0,
+                  "reasons": ["retained legacy dispatch; no receipt or blind retry"]}
+        body.journal.record("mission.action", {**legacy, "attempt": 91}, key=["m:stand", "w", 91, "legacy"])
+        body.apply(world.revoke("phone"))
+        body.journal.record("mission.action", {**legacy, "attempt": 92}, key=["m:stand", "w", 92, "legacy"])
+        body.apply(world.revoke("phone", suspected_compromise=True))
+        [review] = [e.payload for e in body.journal.replay(revocation.REVIEW_RECORD)]
+        assert [(x["effect"], x["status"], x["attempt"]) for x in review["effects"]] == [
+            ("an action dispatched under its approval", "DONE", ran["attempt"]),
+            ("an action dispatched under its approval", "UNCERTAIN", 91)]
+
+
+# -- a mission a revoked device ended (independent review, finding 3) ---------------------------------------------
+
+def test_a_mission_a_revoked_device_abandoned_is_still_compensated_and_every_surface_says_so(world):
+    """OPEN FOUNDER QUESTION (ADR open question 1); this pins the draft's default and what the founder is shown.
+
+    The phone abandons a mission whose executed write has a signed compensation, and is revoked before the body's
+    next turn. The compensation is dispatched after the revocation: ending a mission is not a Gate approval, and
+    the compensation was signed by the founder with the mission. Nothing is held for the revocation. The review
+    (read as the revocation left the ledger) says the compensation was still to run, and the founder's status lists
+    it while it is owed and after it ran."""
+    with world.body() as body:
+        phone = world.enroll(body, "phone", ("LIFECYCLE",))
+        note = compensable(world, body)
+        [ran] = actions(body, "m:comp")
+        body.apply(world.sign("BODY_PAUSE", {}))                    # so the turn that reads both steps no mission
+        abandon = world.sign("LIFECYCLE", {"mission_id": "m:comp", "state": "ABANDONED", "reason": "phone"}, key=phone)
+        drop(world.home, abandon, "a-abandon.json")
+        drop(world.home, world.revoke("phone", suspected_compromise=True), "b-revoke.json")
+        turn = world.tick(body)
+        assert [c["status"] for c in turn["commands"]] == ["APPLIED", "APPLIED"] and turn["paused"]
+        assert note.read_text() == "draft" and compensated(body) == []
+        [revoked] = body.journal.replay("device.revoked")
+        [review] = [e.payload for e in body.journal.replay(revocation.REVIEW_RECORD)]
+        assert [c["command_digest"] for c in review["commands"]] == [sha256_json(abandon)]
+        assert [(x["effect"], x.get("mission_id"), x.get("action_id")) for x in review["effects"]] == [
+            ("a mission lifecycle it set", "m:comp", None), (revocation.STILL_TO_RUN, "m:comp", "w")]
+        assert review["effects"][1]["original_receipt"] == ran["receipt"]
+        assert review["effects"][1]["capability"] == "fs.write"
+    row = status(world.home)["security"]["device_revocations"][0]
+    assert row["ended_and_compensated"] == [{"mission_id": "m:comp", "state": "ABANDONED",
+                                             "compensated_since_the_revocation": [], "still_to_run": ["w"]}]
+    with world.body() as body:
+        before = len([r for r in body.ledger.by_type("event") if r.payload.get("type") == "greg.authority.grant_issued"])
+        body.apply(world.sign("BODY_RESUME", {}))
+        world.tick(body, 3)
+        assert note.read_text() == "original"                       # the default: it is compensated all the same
+        [done] = compensated(body)
+        assert done["status"] == "DONE" and done["original_receipt"] == ran["receipt"]
+        seq = {r.payload.get("event_id"): r.seq for r in body.ledger.by_type("event")}
+        new = [r for r in body.ledger.by_type("event") if r.payload.get("type") == "greg.authority.grant_issued"][before:]
+        assert len(new) == 1 and new[0].seq > seq[revoked.event_id]
+        assert new[0].payload["founder_approved_scope"] is False    # under the mission's mandate, no one's approval
+        assert revocation.build_review(body.journal, revoked) == review     # the review is a reading of that moment
+    row = status(world.home)["security"]["device_revocations"][0]
+    assert row["ended_and_compensated"] == [{
+        "mission_id": "m:comp", "state": "ABANDONED", "still_to_run": [],
+        "compensated_since_the_revocation": [{"action_id": "w", "status": "DONE", "receipt": done["receipt"]}]}]
+
+
+def test_only_what_the_revoked_key_itself_ended_is_listed_under_its_revocation(world):
+    """Not listed under the phone's revocation: a mission the founder ended, one the laptop ended, one the phone
+    ended that was compensated before the revocation, and one it ended whose write has no signed compensation
+    (nothing runs for it). A mission the key ends under a later delegation is listed under that delegation's
+    revocation only, and never under another key's revocation that came in between."""
+    with world.body() as body:
+        phone, laptop = world.enroll(body, "phone", ("LIFECYCLE",)), world.enroll(body, "laptop", ("LIFECYCLE",))
+        for mid, key in (("m:founder", None), ("m:laptop", laptop), ("m:early", phone)):
+            compensable(world, body, mid)
+            body.apply(world.sign("LIFECYCLE", {"mission_id": mid, "state": "ABANDONED", "reason": "x"}, key=key))
+            world.tick(body, 3)
+            assert [c["status"] for c in compensated(body, mid)] == ["DONE"]
+        plain = workspace(world.home, "m:plain") / "n.txt"
+        body.apply(world.sign("MISSION", mission("m:plain", checks=[note_check("n", plain, "x")],
+                                                 strategies=[write_strategy("w", "n.txt", "x", ["n"])],
+                                                 capabilities=["fs.read", "fs.write"],
+                                                 closure={"kind": "infinite", "ladder": [["n"]], "cadence_seconds": 3600})))
+        world.tick(body, 3)
+        assert plain.read_text() == "x"
+        body.apply(world.sign("LIFECYCLE", {"mission_id": "m:plain", "state": "ABANDONED", "reason": "x"}, key=phone))
+        world.tick(body, 2)
+        assert compensated(body, "m:plain") == []                   # an open obligation: no compensation was signed
+        body.apply(world.revoke("phone"))
+        world.clock.advance(60)
+        world.enroll(body, "phone", ("LIFECYCLE",))
+        compensable(world, body, "m:late")
+        body.apply(world.sign("BODY_PAUSE", {}))
+        body.apply(world.sign("LIFECYCLE", {"mission_id": "m:late", "state": "ABANDONED", "reason": "x"}, key=phone))
+        body.apply(world.revoke("laptop"))
+        body.apply(world.revoke("phone"))
+    rows = status(world.home)["security"]["device_revocations"]
+    assert [r["device_key_id"] for r in rows] == [world.kid("phone"), world.kid("laptop"), world.kid("phone")]
+    assert "ended_and_compensated" not in rows[0] and "ended_and_compensated" not in rows[1]
+    assert rows[2]["ended_and_compensated"] == [{"mission_id": "m:late", "state": "ABANDONED",
+                                                 "compensated_since_the_revocation": [], "still_to_run": ["w"]}]
+
+
+# -- safeguards the independent review found without a failing test (finding 4, and its other survivors) ----------
+
+def test_voiding_a_devices_reconciliation_answer_leaves_the_founders_approval_of_the_action(world):
+    """The FOUNDER approved the write; its first dispatch's completion is unknown; the phone answers the
+    reconciliation and is revoked before the engine records that answer. Only the phone's answer is void. A
+    RECONCILIATION ask carries the action's scope digest, so a careless void would take the founder's approval."""
+    mid = "m:gated"
+    with world.body() as body:
+        phone = world.enroll(body, "phone")
+        note, ask = asked(world, body, mid=mid)
+        explode_once(body)
+        body.apply(world.approve(ask["request_id"]))                # the founder's own approval
+        world.tick(body, 2)
+        [question] = open_asks(body, mid, kind="RECONCILIATION")
+        assert question["scope_digest"] == ask["scope_digest"]
+        drop(world.home, world.approve(question["request_id"], key=phone, answer="reconcile_not_executed"), "a.json")
+        drop(world.home, world.revoke("phone"), "b.json")
+        world.tick(body, 2)
+        assert question["request_id"] in body.engine.book.voided
+        assert body.engine.book.missions[mid].approved_scopes == {ask["scope_digest"]}
+        [again] = open_asks(body, mid, kind="RECONCILIATION")
+        body.apply(world.approve(again["request_id"], answer="reconcile_not_executed"))
+        world.tick(body, 4)
+        assert note.exists() and open_asks(body, mid) == []         # the retry ran on the founder's approval
+
+
+def appraised(body):
+    return body.journal.replay("mission.appraised")[-1].payload
+
+
+def test_the_appraiser_refutes_nothing_for_another_devices_revocation(world):
+    """The laptop approves; the PHONE is revoked before the dispatch. The laptop's approval was in force."""
+    with world.body() as body:
+        body.boot()
+        world.enroll(body, "phone")
+        laptop = world.enroll(body, "laptop")
+        note, ask = asked(world, body)
+        body.apply(world.approve(ask["request_id"], key=laptop))
+        body.apply(world.revoke("phone"))
+        world.tick(body, 4)
+        assert note.read_text() == "approved"
+        verdict = appraised(body)
+        assert verdict["verdict"] == "VERIFIED" and verdict["checks"]["approval_boundaries_honored"] is True, verdict
+
+
+def test_the_appraiser_accepts_a_fresh_approval_of_a_key_delegated_again(world):
+    """The phone was revoked before it approved anything and delegated again; its approval under the new delegation
+    is in force. Only a revocation between an answer and the dispatch voids that answer."""
+    with world.body() as body:
+        body.boot()
+        phone = world.enroll(body, "phone")
+        note, ask = asked(world, body)
+        body.apply(world.revoke("phone"))
+        world.clock.advance(60)
+        world.enroll(body, "phone")
+        world.clock.advance(5)
+        body.apply(world.approve(ask["request_id"], key=phone))
+        world.tick(body, 4)
+        assert note.read_text() == "approved"
+        verdict = appraised(body)
+        assert verdict["verdict"] == "VERIFIED" and verdict["checks"]["approval_boundaries_honored"] is True, verdict
+
+
+def test_the_review_lists_an_exclusion_an_abandons_compensation_and_a_settled_reconciliation(world):
+    with world.body() as body:
+        phone = world.enroll(body, "phone", ("DECISION", "CRITIQUE", "LIFECYCLE"))
+        note = compensable(world, body)                             # abandoned by the phone; the compensation runs
+        abandon = world.sign("LIFECYCLE", {"mission_id": "m:comp", "state": "ABANDONED", "reason": "phone"}, key=phone)
+        body.apply(abandon)
+        world.tick(body, 3)
+        [undone] = compensated(body)
+        assert note.read_text() == "original" and undone["status"] == "DONE"
+        _, question, _ = uncertain(world, body)                     # an interrupted dispatch the phone reconciles
+        reconcile = world.approve(question["request_id"], key=phone, answer="reconcile_executed")
+        body.apply(reconcile)
+        world.tick(body, 2)
+        target = [e for e in body.journal.replay("mission.action") if e.payload["mission_id"] == "m:uncertain"][0]
+        critique = world.sign("CRITIQUE", {"target_event_id": target.event_id, "verdict": "reject",
+                                           "evidence_type": "founder_judgment", "text": "not this way",
+                                           "exclude_strategy": True}, key=phone)
+        body.apply(critique)
+        body.apply(world.revoke("phone", suspected_compromise=True))
+        [review] = [e.payload for e in body.journal.replay(revocation.REVIEW_RECORD)]
+        assert [c["command_digest"] for c in review["commands"]] == [sha256_json(c) for c in (abandon, reconcile, critique)]
+        rows = [(x["effect"], x.get("mission_id"), x.get("action_id"), x["rested_on"]["command_digest"])
+                for x in review["effects"]]
+        assert rows == [
+            ("a mission lifecycle it set", "m:comp", None, sha256_json(abandon)),
+            ("a compensation run after it ended the mission", "m:comp", "w", sha256_json(abandon)),
+            ("an interrupted dispatch settled by its answer", "m:uncertain", "w", sha256_json(reconcile)),
+            ("a strategy excluded by its critique", "m:uncertain", "w", sha256_json(critique))]
+        assert review["effects"][1]["receipt"] == undone["receipt"]
+
+
+def test_the_review_lists_a_compensation_obligation_the_devices_answer_closed(world):
+    """The compensating capability is detached, so the effect is put to the founder; the phone answers "the effect
+    stands"; the obligation is closed by that answer. The review lists the closure under the phone's DECISION."""
+    with world.body() as body:
+        phone = world.enroll(body, "phone")
+        note = compensable(world, body)
+        body.apply(world.sign("CAPABILITY_DETACH", {"capability_id": "fs.write"}))
+        world.tick(body)
+        body.apply(world.sign("LIFECYCLE", {"mission_id": "m:comp", "state": "ABANDONED", "reason": "over"}))
+        world.tick(body, 2)
+        [question] = open_asks(body, "m:comp", kind="COMPENSATION")
+        answer = world.approve(question["request_id"], key=phone, answer="reject")
+        body.apply(answer)
+        world.tick(body, 2)
+        [closed] = compensated(body)
+        assert closed["status"] == "FOUNDER_DECIDED" and closed["request_id"] == question["request_id"]
+        body.apply(world.revoke("phone", suspected_compromise=True))
+        [review] = [e.payload for e in body.journal.replay(revocation.REVIEW_RECORD)]
+        [effect] = review["effects"]
+        assert effect["effect"] == "a compensation obligation closed by its answer" and effect["action_id"] == "w"
+        assert effect["rested_on"]["command_digest"] == sha256_json(answer)
+        assert note.read_text() == "draft"
+
+
+def test_each_revocation_lists_only_what_it_voided_itself(world):
+    """Two delegations of one key, each revoked while one of its approvals was unused: the status lists under each
+    revocation what that revocation voided, and the review of the second says the first approval was voided
+    earlier."""
+    with world.body() as body:
+        phone = world.enroll(body, "phone")
+        _, one = asked(world, body, mid="m:one")
+        body.apply(world.approve(one["request_id"], key=phone))
+        body.apply(world.revoke("phone"))
+        world.clock.advance(60)
+        world.enroll(body, "phone")
+        world.clock.advance(5)
+        _, two = asked(world, body, mid="m:two")
+        body.apply(world.approve(two["request_id"], key=phone))
+        result = body.apply(world.revoke("phone", suspected_compromise=True))["result"]
+        assert result["voided_requests"] == [two["request_id"]]
+        [review] = [e.payload for e in body.journal.replay(revocation.REVIEW_RECORD)]
+        standing_of = {c["request_id"]: c["standing"].split(":")[0].split(" ")[0] for c in review["commands"]}
+        assert standing_of == {one["request_id"]: "VOIDED_BY_AN_EARLIER_REVOCATION",
+                               two["request_id"]: "VOIDED_BY_THIS_REVOCATION"}
+        assert review["voided_by_this_revocation"] == [two["request_id"]]
+    rows = status(world.home)["security"]["device_revocations"]
+    assert [r["voided_requests"] for r in rows] == [[one["request_id"]], [two["request_id"]]]
+
+
+def test_a_listed_command_verifies_only_as_the_envelope_its_digest_names(world):
+    """``signature_verifies`` says the listed digest is the digest of an envelope the delegated key signed. A row
+    whose digest names something other than its envelope does not verify, whatever the envelope's own signature."""
+    with world.body() as body:
+        phone = world.enroll(body, "phone")
+        _, ask = asked(world, body)
+        decision = world.approve(ask["request_id"], key=phone)
+        body.apply(decision)
+        [accepted] = [e.payload for e in body.journal.replay("command.accepted") if e.payload["kind"] == "DECISION"]
+        other = world.sign("DECISION", {"request_id": "req-other", "answer": "reject", "reason": "x"}, key=phone)
+        body.journal.record("command.accepted", {**accepted, "digest": "sha256:" + "0" * 64, "envelope": other},
+                            key=["forged-row"])
+        body.apply(world.revoke("phone", suspected_compromise=True))
+        [review] = [e.payload for e in body.journal.replay(revocation.REVIEW_RECORD)]
+        assert [(c["command_digest"], c["signature_verifies"]) for c in review["commands"]] == [
+            (sha256_json(decision), True), ("sha256:" + "0" * 64, False)]
+
+
+def test_the_ask_carries_the_first_rows_of_a_long_review_and_says_where_the_rest_is(world):
+    with world.body() as body:
+        phone = world.enroll(body, "phone", ("BODY_PAUSE", "BODY_RESUME"))
+        for i in range(revocation.ASK_SHOWN // 2 + 1):
+            body.apply(world.sign("BODY_PAUSE", {}, key=phone))
+            body.apply(world.sign("BODY_RESUME", {}, key=phone))
+        result = body.apply(world.revoke("phone", suspected_compromise=True))["result"]
+        [review] = [e.payload for e in body.journal.replay(revocation.REVIEW_RECORD)]
+        assert len(review["commands"]) == len(review["effects"]) == revocation.ASK_SHOWN + 2
+        ask = body.engine.book.requests[result["integrity_review"]]
+        evidence = ask["evidence"]
+        assert len(evidence["commands"]) == len(evidence["effects"]) == revocation.ASK_SHOWN
+        assert evidence["truncated"] is True and evidence["counts"]["commands"] == revocation.ASK_SHOWN + 2
+        assert [c["command_digest"] for c in evidence["commands"]] == [
+            c["command_digest"] for c in review["commands"][:revocation.ASK_SHOWN]]
+
+
+def test_a_void_made_by_a_restore_names_the_restore(world):
+    """A restore voids every device delegation by a revocation record of its own; the fold's void of the phone's
+    unused approval names that restore."""
+    from foundry.systems import seed
+    from greg.recovery import restore_body
+    with world.body() as body:
+        body.boot()
+        phone = world.enroll(body, "phone")
+        note, ask = asked(world, body)
+        body.apply(world.approve(ask["request_id"], key=phone))
+    made = seed.make_seed(world.home, world.tmp / "seed-store")
+    world.home.rename(world.home.parent / "lost-machine")
+    world.clock.advance(60)
+    report = restore_body(world.tmp / "seed-store", made["seed"], world.home, clock=world.clock)
+    with world.body() as body:
+        body.boot()
+        void = body.engine.book.voided[ask["request_id"]]
+        assert void["voided_by"]["restore_id"] == report["restore_id"]
+        assert void["voided_by"]["device_key_id"] == world.kid("phone")

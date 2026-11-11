@@ -30,11 +30,13 @@ MUTANTS = [
      "if registered is not manifest and (registered is None or registered.digest() != manifest.digest()):",
      "if registered is not manifest:"),
     (AUTHORITY, "a dispatch wrapper is handed nothing to run and runs alone",
-     "                run = adapter if around is None else around(adapter)\n",
-     "                run = adapter if around is None else around(None)\n"),
+     "            adapter = around(adapter)\n", "            adapter = around(None)\n"),
     (AUTHORITY, "a dispatch wrapper is ignored",
-     "                run = adapter if around is None else around(adapter)\n",
-     "                run = adapter\n"),
+     "            adapter = around(adapter)\n", "            pass\n"),
+    (AUTHORITY, "a dispatch wrapper is applied before the attach check",
+     "        unattached = self.attach_refusal(manifest, adapter, ctx)\n",
+     "        adapter = around(adapter) if around is not None else adapter\n"
+     "        unattached = self.attach_refusal(manifest, adapter, ctx)\n"),
 ]
 
 

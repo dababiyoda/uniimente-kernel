@@ -147,8 +147,9 @@ class AuthorityOffice:
 
         ``adapter`` is the capability's registered adapter itself (``attach_refusal``). A caller that must shape
         how it is dispatched (a long worker run off the body's turn) passes ``around``: the office applies it to
-        the registered adapter at dispatch, after every refusal. It changes how the adapter is called, never
-        which adapter; the callers allowed to pass it are listed in the unit suite."""
+        the registered adapter once the attach check has passed, and calls the result only at dispatch. It changes
+        how the adapter is called, never which adapter; the callers allowed to pass it are listed in the unit
+        suite."""
         consequence = manifest.consequence_class
         scope = self.scope_digest(mission_id=mission_id, capability_id=manifest.capability_id, params=params,
                                   target=target, consequence_class=consequence, cost_usd=cost_usd,
@@ -162,6 +163,8 @@ class AuthorityOffice:
                                          "scope_digest": scope, "capability": manifest.capability_id,
                                          "mission_id": mission_id, "reason": unattached})
             return ActionOutcome("REFUSED", [unattached], **base)
+        if around is not None:          # only now: what it wraps is the registered adapter, checked above
+            adapter = around(adapter)
         refused = self.precheck(manifest, target=target, params=params)
         if refused is not None:
             return ActionOutcome(refused[0], [refused[1]], **base)
@@ -249,11 +252,10 @@ class AuthorityOffice:
                         scope_digest=scope, proposal_id=proposal_id,
                         witness_id=dispatch.payload.get("witness_id") if dispatch else None,
                         dispatch_effect_digest=dispatch.payload.get("effect_digest") if dispatch else None)
-                run = adapter if around is None else around(adapter)
-                output = run(params, replace(ctx, target=target, mission_id=mission_id,
-                                            authority_ref=command_digest, grant_id=grant['grant_id'],
-                                            policy_version=self.compiled.constitution_version,
-                                            cognition_budget=window))
+                output = adapter(params, replace(ctx, target=target, mission_id=mission_id,
+                                                authority_ref=command_digest, grant_id=grant['grant_id'],
+                                                policy_version=self.compiled.constitution_version,
+                                                cognition_budget=window))
             except CapabilityError as exc:
                 return {"observed_outcome": "capability refused: " + str(exc)[:300], "result_class": "negative",
                         "failure_class": exc.failure_class, "output": None, "validation_status": "self_reported"}

@@ -2034,6 +2034,12 @@ class MissionEngine:
         if m.status in TERMINAL:
             if m.status == "ACHIEVED":
                 return {"state": m.status}
+            if self._recover_dispatch(m, now) is not None:
+                # The founder ended the mission before the restarted body stepped it: a dispatch the Gate claimed
+                # and the body never recorded is settled from the Gate's record first, as on a live mission. What
+                # ran is then on the mission's record, so it is compensated or reconciled like any other action.
+                self.book.rebuild()
+                m = self.book.missions[m.mission_id]
             if m.uncertain and self._unsettled(m) is not None:
                 # A question lost to a crash, or a reconciliation block a later decision displaced (the horizon's
                 # SCOPE_RENEWAL), is asked (an open one reused) before anything is undone.

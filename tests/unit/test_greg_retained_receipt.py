@@ -20,8 +20,10 @@ Three more defects of the same family were found while checking every consumer o
 a body stopped between a refused compensation's record and its question lost the question; a recovered receipt of an
 interrupted worker was recorded DONE with its signed cap booked as spent; and a retained refusal under the earlier
 scope form lost its reason and failure class. Three tests pass before this change and pin what it must not alter (a
-reused success, a reused success under the earlier scope form, a refused strategy recovered after a kill). One
-further defect was measured and is not fixed here (the strict xfail at the end).
+reused success, a reused success under the earlier scope form, a refused strategy recovered after a kill). A fourth
+was measured first and marked as a strict expected failure, then fixed: a dispatch the Gate held and the body never
+recorded was settled only on a live mission, so one the founder ended before the restart lost it (the last three
+tests).
 """
 from __future__ import annotations
 
@@ -487,31 +489,81 @@ def test_an_interrupted_workers_receipt_recovered_after_a_kill_is_reconciled_not
     assert killed == control
 
 
-# -- measured, not fixed here ----------------------------------------------------------------------------------
+# -- a mission the founder ends before the restarted body steps it ----------------------------------------------
 
-@pytest.mark.xfail(strict=True, reason="measured defect, not this change's: a dispatch the Gate receipted and the "
-                                       "body did not record is recovered only on a mission that is still live "
-                                       "(_recover_dispatch runs after the TERMINAL branch of _step). When the "
-                                       "founder ends the mission before the restarted body steps it, the executed "
-                                       "write is never recorded and never accounted as compensation required. "
-                                       "Remove this mark when an ended mission's unrecorded dispatch is settled.")
-def test_a_receipted_write_the_body_did_not_record_is_accounted_for_when_its_mission_is_ended(tmp_path):
-    home, key, body_id, _ = make_body(tmp_path)
+def ended_run(tmp, how: str) -> dict:
+    """A body dies with a dispatch the Gate holds and the mission never recorded; the founder abandons the mission
+    while the body is down; the body restarts. ``how``: "written" (the write ran and the Gate receipted it),
+    "refused" (the capability refused it: a negative receipt) or "unknown" (the body died inside the adapter: a
+    dispatch claim and no receipt). Returns what the restarted body ends with."""
+    tmp.mkdir()
+    home, key, body_id, _ = make_body(tmp)
     mid = "m:ended-before-recovery"
     note = workspace(home, mid) / "note.txt"
     note.parent.mkdir(parents=True, exist_ok=True)
     note.write_text("original")
+    strategy = write_strategy("w", "note.txt", "draft", ["c"])
+    if how == "refused":
+        strategy = {**strategy, "params": {"relative_path": "other.txt", "content": "draft"}}
     drop(home, signed(key, body_id, "MISSION", mission(
-        mid, checks=[note_check("c", note, "final")], strategies=[write_strategy("w", "note.txt", "draft", ["c"])],
-        capabilities=["fs.read", "fs.write"])))
+        mid, checks=[note_check("c", note, "final")], strategies=[strategy], capabilities=["fs.read", "fs.write"])))
     clock = Clock()
     with Body(home, clock=clock) as body:
-        kill_before_record(body, "mission.action")
+        if how == "unknown":
+            def dies(params, ctx):
+                raise Killed("SIGKILL inside the adapter")
+            body.registry.adapters["fs.write"] = dies
+        else:
+            kill_before_record(body, "mission.action")
         with pytest.raises(Killed):
             tick(body, clock, 3)
-    assert note.read_text() == "draft"                          # the write happened and the Gate receipted it
+        assert not facts(body, "mission.action", mid)
+        [intent] = facts(body, "mission.dispatching", mid)
     drop(home, signed(key, body_id, "LIFECYCLE", {"mission_id": mid, "state": "ABANDONED", "reason": "not wanted"}))
     with Body(home, clock=clock) as body:
-        tick(body, clock, 3)
-        assert [a["status"] for a in facts(body, "mission.action", mid)] == ["DONE"]
-        assert [c["action_id"] for c in facts(body, "mission.compensation_required", mid)] == ["w"]
+        writes = []
+        real = body.registry.adapters["fs.write"]
+        body.registry.adapters["fs.write"] = lambda params, ctx: (writes.append(params), real(params, ctx))[1]
+        tick(body, clock, 4)
+        state = body.engine.book.missions[mid]
+        return {"status": state.status, "note": note.read_text(),
+                "actions": [(a["action_id"], a["attempt"], a["status"]) for a in facts(body, "mission.action", mid)],
+                "reasons": [a["reasons"] for a in facts(body, "mission.action", mid)],
+                "compensation_required": [c["action_id"] for c in facts(body, "mission.compensation_required", mid)],
+                "open_asks": sorted(r["kind"] for r in body.engine.book.open_requests()),
+                "spent_usd": state.spent_usd, "writes_after_restart": len(writes),
+                "claims": len([r for r in body.ledger.by_type("grant_dispatch")
+                               if r.payload.get("proposal_id") == intent["proposal_id"]])}
+
+
+def test_a_receipted_write_the_body_did_not_record_is_accounted_for_when_its_mission_is_ended(tmp_path):
+    """Before: the recovery ran only on a live mission, so the executed write was never recorded and never named as
+    needing compensation. The ended mission showed no action at all."""
+    ended = ended_run(tmp_path / "written", "written")
+    assert ended["note"] == "draft"                                   # the write happened and the Gate receipted it
+    assert ended["actions"] == [("w", 0, "DONE")]
+    assert ended["compensation_required"] == ["w"]
+    assert (ended["status"], ended["claims"], ended["writes_after_restart"]) == ("ABANDONED", 1, 0)
+
+
+def test_a_refusal_the_body_did_not_record_stays_a_refusal_when_its_mission_is_ended(tmp_path):
+    """The Gate holds a negative receipt. The ended mission records the refusal it was: nothing ran, so nothing is
+    named as needing compensation, nobody is asked, and nothing is dispatched again."""
+    ended = ended_run(tmp_path / "refused", "refused")
+    assert ended["actions"] == [("w", 0, "REFUSED")]
+    assert ended["reasons"] == [["capability refused: write path 'workspace:other.txt' does not match the signed "
+                                 "target 'workspace:note.txt'"]]
+    assert (ended["compensation_required"], ended["open_asks"], ended["note"]) == ([], [], "original")
+    assert (ended["status"], ended["claims"], ended["writes_after_restart"], ended["spent_usd"]) == (
+        "ABANDONED", 1, 0, 0.0)
+
+
+def test_an_unknown_outcome_the_body_did_not_record_is_asked_about_when_its_mission_is_ended(tmp_path):
+    """The Gate holds a dispatch claim and no receipt: the body cannot know whether the write ran. The ended mission
+    records it UNCERTAIN and asks the founder once. Nothing is undone, and nothing is dispatched again, before the
+    founder says what that dispatch did."""
+    ended = ended_run(tmp_path / "unknown", "unknown")
+    assert ended["actions"] == [("w", 0, "UNCERTAIN")]
+    assert ended["open_asks"] == ["RECONCILIATION"]
+    assert (ended["compensation_required"], ended["note"]) == ([], "original")
+    assert (ended["status"], ended["claims"], ended["writes_after_restart"]) == ("ABANDONED", 1, 0)

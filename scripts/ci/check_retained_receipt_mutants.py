@@ -79,6 +79,11 @@ MUTANTS = [
      '                    reused="retained receipt of a dispatch the body did not record before it stopped", **base)',
      '                outcome = ActionOutcome("DONE", ["retained receipt"], receipt_hash=receipt.hash,\n'
      '                                        output=(receipt.payload.get("result") or {}).get("output"), **base)'),
+    ("a dispatch the body never recorded is not settled on a mission the founder ended", "greg/missions.py",
+     '            if self._recover_dispatch(m, now) is not None:\n'
+     '                # The founder ended the mission before the restarted body stepped it',
+     '            if False:\n'
+     '                # The founder ended the mission before the restarted body stepped it'),
 ]
 
 

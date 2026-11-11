@@ -3864,7 +3864,7 @@ class MissionEngine:
         def act(wrap):
             return self.office.act(
                 mission_id=m.mission_id, cone=m.cone, command_digest=m.command_digest, manifest=manifest,
-                adapter=wrap(adapter), ctx=ctx, params=bound_params, target=s["target"],
+                adapter=adapter, around=wrap, ctx=ctx, params=bound_params, target=s["target"],
                 cost_usd=float(s.get("cost_usd", 0.0)),
                 expected_outcome=s.get("expected_outcome", "strategy executed"),
                 evidence_refs=evidence + [r for r in sources if r not in evidence], attempt=attempt,

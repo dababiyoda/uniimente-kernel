@@ -1,0 +1,595 @@
+{
+  "decision_id": "BROWSER-METHOD-GATE-20261030",
+  "title": "Decide every browser.session request on the browser target, refuse writes to signed origins unless the founder signs them, and keep the step program a founder-signed literal",
+  "problem": "browser.session is declared internal_write (greg/capabilities.py), but on base a6c29bbd its allow() handler (greg/computer.py:163-168) checked only the origin and continued any HTTP method to a signed origin. With browser discovery fixed, an unmarked click on a POST form delivered POST /order to the loopback server (count 1), the session returned COMPLETED and the order page was extracted. That is a consequence-gate bypass, a kill criterion in directive section 67. greg/pipeline.py PROTECTED also omitted the step fields, so an earlier action's untrusted output could bind the whole step program. And the computer-use suite was invisible: tests/unit/test_greg_computer.py skipped as a whole module ('no Chromium installed'), even with Playwright installed, because computer.chromium() looked only in chrome-linux/ and the preinstalled build lives in chrome-linux64/.",
+  "founder_intent_refs": [
+    "INTENT-20261030-BUILD-BEFORE-DEVICE-RUN",
+    "INTENT-20261028-OPUS-MAXIMUS-REISSUE, sections 31 (computer use), 34 (hostile input), 35 (generated code is untrusted), 36 (zero trust), 67 (kill criteria: permits consequence-gate bypass)",
+    "INTENT-20261001-FULL-MACHINE-COMPLETION",
+    "INTENT-20261019-UPWARD-ASCENT",
+    "INTENT-GREG-EMBODIED-2026-09-11 (authorized computer use on the first body)"
+  ],
+  "baseline": "a6c29bbd (#196 head): allow() continues any method to a signed origin; allow_socket() refuses only unsigned origins; the consequential marker on a step is a declaration, not a mechanism; PROTECTED lacks op, selector, secret, consequential and a step-program rule; requirements, installer and CI install no Playwright, and test_greg_computer.py (8 tests) and the confined browser test importorskip it.",
+  "alternatives": [
+    {
+      "name": "Proposed: browser-target request interception, channel removal, signed read_methods exceptions and a protected step program",
+      "description": "CDP Fetch enabled on the browser target before the context exists pauses every request of every page, frame and worker, including unload-time requests and each redirect hop; HTTP is decided only there, against the origin bound and the method gate (GET, HEAD and OPTIONS without a body pass; anything else, and any WebSocket, needs a signed read_methods entry naming method, origin and exact path). Channels no interception sees are removed in two layers: --disable-blink-features=WebSocketStream,SharedWorker and a page prelude deleting Worker, SharedWorker, WebSocketStream, WebTransport, RTCPeerConnection, webkitRTCPeerConnection and Navigator.prototype.serviceWorker in every frame. Any refused write ends the session at AUTHORITY_BOUNDARY with the original stop in the reason, including one seen at close. pipeline.resolve refuses a $from_action at the params root, at a bound steps list or a whole step, and at op, selector, secret, consequential and read_methods; a fill value and an integer steps still bind. The suite runs: chromium() finds chrome-linux64, playwright==1.63.0 is pinned, GREG_REQUIRE_BROWSER=1 turns a missing Playwright into a failure, and a new workflow runs the suites and 26 mutants.",
+      "advantages": [
+        "Measured on the unmarked POST-form probe: POST /order count 1 and COMPLETED before; 0 and AUTHORITY_BOUNDARY after, with blocked_methods {'POST 127.0.0.1:<port>/order': 1}",
+        "Every reviewer probe that delivered a write on 7b7ea61e delivers none on cebf1674 (server writes [] everywhere)",
+        "Commodity mechanisms only: Playwright, the Chrome DevTools Protocol Fetch domain, a Blink feature flag and an init script; no new authority plane",
+        "test_greg_computer.py goes from a module skip to 35 tests that run against a real Chromium; 26/26 mutants caught"
+      ],
+      "disadvantages": [
+        "The gate sees methods, not effects: a GET with side effects or data in a GET query to a signed origin is not detected",
+        "Channel removal by the page prelude is page-script level, as strong as Playwright's own WebSocket mock and no stronger",
+        "Pages that need a worker lose it; same-origin telemetry writes, including at close, end the session unless the founder signs that exact endpoint",
+        "The gate lives only in the browser; the confined relay still checks origins only"
+      ],
+      "revival_evidence": "Retained; revisit when a method-aware egress point below the browser exists, or when a channel or realm is found that bypasses the browser-target interception or the prelude."
+    },
+    {
+      "name": "Simplest viable: the first round, a method check in Playwright page routing (context.route) plus PROTECTED additions",
+      "description": "Commits 50f8231c..7b7ea61e: allow() aborts non-read methods to signed origins, route_web_socket refuses page WebSockets, and op, selector, secret, consequential and read_methods join PROTECTED with a steps rule.",
+      "advantages": [
+        "Smallest change; 18 tests and 12 mutants passed on 7b7ea61e",
+        "Closed the measured POST-form, fetch PUT, dedicated-worker POST, sendBeacon-on-load and page WebSocket channels"
+      ],
+      "disadvantages": [
+        "Two adversarial reviews by separate agents of this session reproduced bypasses: unload-time beacons and keepalive fetches, a shared worker's POST, redirect hops after a signed exception or a plain GET, a worker's WebSocket, WebSocketStream, a WEBSOCKET method token and an OPTIONS body",
+        "Whole-params binding still supplied steps and read_methods; the steps rule refused a solver's integer step count",
+        "Its docstring and README claimed coverage it lacked"
+      ],
+      "revival_evidence": "Only if Playwright page routing is shown to see unload-time requests, shared-worker requests and redirect hops on the pinned Chromium."
+    },
+    {
+      "name": "Strongest competing design: a method-aware egress point below the browser (relay door or local forward proxy) for every session",
+      "description": "Decide method and origin at a network layer every renderer, worker and socket crosses, including WebSocket Upgrade, so the gate does not depend on browser internals.",
+      "advantages": [
+        "Sees traffic from any realm, including ones an init script misses",
+        "One enforcement point for confined and unconfined bodies"
+      ],
+      "disadvantages": [
+        "HTTPS needs a trusted interception profile (the trust-anchor work GREG already imports) and its own review",
+        "Chromium never consulted a PAC script for loopback in the scratch probe, so loopback tests need another routing mechanism",
+        "The confined relay (foundry relay door) is shared machinery that open PRs touch; changing it is a larger, separate unit"
+      ],
+      "revival_evidence": "Before browser.act or any wider browser autonomy, or as soon as one channel is shown to bypass the browser-target interception."
+    },
+    {
+      "name": "Staged or reversible experiment: this draft PR, held behind integrator intake",
+      "description": "Land the browser-level gate as a draft child of #196, run the new workflow on a hosted runner, and keep the below-browser gate as the next stage.",
+      "advantages": [
+        "Reverting seven commits restores the old behaviour; no data migration",
+        "The new workflow is separate from canonical-ci.yml, so it cannot break the canonical jobs"
+      ],
+      "disadvantages": [
+        "Until intake, #196 keeps the measured bypass",
+        "The workflow and the confined browser test have not run"
+      ],
+      "revival_evidence": "This is the chosen staging; it ends at founder merge or at a kill criterion."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "An unmarked click, Enter, page script, worker, beacon or WebSocket can write to any signed origin while browser.session reports COMPLETED; an earlier action's output can rewrite the step program; the computer-use suite stays invisible to CI. Kill criterion 67 (permits consequence-gate bypass) stays met on a shipped capability.",
+    "advantages": [
+      "No change to browser.session behaviour or to greg/pipeline.py",
+      "Pages keep workers, WebRTC and WebTransport"
+    ],
+    "disadvantages": [
+      "Measured external effect above the capability's class: POST /order arrived and the session reported COMPLETED",
+      "No browser.act or wider autonomy can be built on a gate that consequence markers alone enforce",
+      "Regressions in the browser hands remain undetectable in CI"
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Directive sections 34 and 36 require that external content cannot authorize consequential action and that bypass is prevented or detectable; section 67 names consequence-gate bypass as a kill criterion. This unit replaces the bypass with a mechanism and records every refusal. It is built under INTENT-20261030-BUILD-BEFORE-DEVICE-RUN: no founder-device run, and no claim beyond INTEGRATION-TESTED.",
+      "material_concerns": [
+        "'Consequence comes from mechanism' holds for HTTP methods and the removed channels, not for a GET with side effects; it must not be presented as complete",
+        "Section 31 keeps broad computer use as a destination: pages that lose workers are a narrowing of today's capability, not of the destination, and stay on the horizon",
+        "VEPMC 0 is unchanged"
+      ],
+      "evidence_refs": [
+        "docs/evidence/browser-method-gate-2026-10-30/README.md",
+        "greg/computer.py METHOD_GATE"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Commodity mechanisms, one owner: greg/computer.py decides HTTP on the browser target and greg/pipeline.py owns binding refusals. No new authority plane, store or service. canonical-ci.yml, greg/missions.py, greg/capabilities.py, install.sh and doctor.py are untouched; the new workflow and requirements file avoid the hot files of open PRs.",
+      "material_concerns": [
+        "The gate depends on CDP Fetch behaviour of the pinned Chromium 1243 and Playwright 1.63.0; an upgrade can change it silently unless the workflow runs",
+        "op, selector and secret are now protected for every capability (foundry_bridge's op can no longer be bound)",
+        "greg/pipeline.py conflicts textually with open #209 in one hunk of pipeline.inspect(); the resolution must keep this branch's wrapper and pass #209's observe=observed, or #209's depth-0 call is refused"
+      ],
+      "evidence_refs": [
+        "greg/computer.py",
+        "greg/pipeline.py",
+        "git merge-tree of cebf1674 with #209 head 9b9945c1"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Two adversarial reviews by separate agents of this session (not independent sessions, not humans) broke the first round's claims with 16 findings on 7b7ea61e: 15 confirmed, 1 plausible (F10, WebTransport). All 16 were reproduced with the reviewers' own probes; 15 are fixed with tests and mutants, and R6 is fixed in part. The review-round fixes were checked by rerunning those probes and by a final verification run, not by a third adversarial review.",
+      "material_concerns": [
+        "The prelude's removals are page-script level; a realm it does not reach reopens Worker, WebTransport and WebRTC",
+        "WebTransport was not exercised end to end (no HTTP/3 server); the SharedWorker POST was shown caught by the browser-target interception only in a scratch probe",
+        "greg/missions.py registration still accepts a whole-params $from_action and a bind edge onto steps or steps.N; a step's key and a mouse step's x and y stay bindable",
+        "The interception's fail-safe default (a request whose decision raises is refused) is not mutation-tested"
+      ],
+      "evidence_refs": [
+        "scratchpad review-browser-method-gate-attack/p*.py and review-browser-method-gate-fidelity/probe_*.py (reviewers' probes, outside the repository)",
+        "scripts/ci/check_browser_method_gate_mutants.py"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Reversible: revert seven commits or decline intake, no data migration. The suite now fails loudly when the browser is required and missing. The new workflow is isolated from Canonical CI.",
+      "material_concerns": [
+        "computer-use.yml has never run on a hosted runner; whether Chromium's OS sandbox starts there as a non-root user is unverified",
+        "capabilities.chrome_binary() still globs only chrome-linux/, so three browser.render tests skip on hosts with the chrome-linux64 layout",
+        "install.sh and doctor.py do not install or report Playwright yet; they wait for #211",
+        "The full suite was not run on the final head"
+      ],
+      "evidence_refs": [
+        ".github/workflows/computer-use.yml",
+        "requirements-computer.txt",
+        "conftest.py"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Claims are at INTEGRATION-TESTED in a container: a real Chromium run as root with the OS sandbox off, against loopback servers. The README corrects the first round's overclaims in its own section and keeps every negative. Nothing is founder-used, live or externally verified.",
+      "material_concerns": [
+        "Founder burden can rise: a site's telemetry write now ends the session unless the founder signs that exact endpoint, and worker-dependent pages stop working",
+        "The first round's commit a91a3d54 says 'measured on the base'; the measurement was base plus the browser-discovery commit 50f8231c (stated correctly in the README and the PR text)",
+        "The browser.session manifest does not declare read_methods or the new trace outputs"
+      ],
+      "evidence_refs": [
+        "docs/evidence/browser-method-gate-2026-10-30/README.md, sections 'Corrections to first-round claims' and 'Limitations'"
+      ],
+      "recommendation": "RETAIN"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "On the base, a write leaves the browser to a signed origin while the session reports COMPLETED",
+      "tier": "sandbox_execution",
+      "reference": "Probe order_click.py on a6c29bbd plus 50f8231c's browser discovery; docs/evidence/browser-method-gate-2026-10-30/README.md 'Fail-before, first round'",
+      "finding": "Unmarked POST-form click: COMPLETED, extracted 'Ordered', server POST /order = 1. On the pure base the session cannot launch here at all (module skip)"
+    },
+    {
+      "claim": "After the change the same click is refused and recorded",
+      "tier": "sandbox_execution",
+      "reference": "order_click.py on the branch head; tests/unit/test_greg_computer.py::test_a_click_on_an_unmarked_post_form_is_aborted_and_ends_at_the_authority_boundary",
+      "finding": "AUTHORITY_BOUNDARY, server POST /order = 0, blocked_methods {'POST 127.0.0.1:<port>/order': 1}"
+    },
+    {
+      "claim": "First-round tests fail before and pass after",
+      "tier": "sandbox_execution",
+      "reference": "Detached worktree of a6c29bbd with the new test files",
+      "finding": "10 failed, 2 passed, 1 skipped (test_greg_computer.py skipped as a module); on base plus discovery only, 10 failed, 8 passed, and the server received every write the gate tests send"
+    },
+    {
+      "claim": "Review-round tests fail on the reviewed head and pass on the final head",
+      "tier": "sandbox_execution",
+      "reference": "Detached worktree of 7b7ea61e with the round's test_greg_computer.py and test_greg_pipeline_protected.py",
+      "finding": "20 failed, 27 passed on 7b7ea61e (3 of the 20 fail only because PAGE_PRELUDE does not exist there); all pass on cebf1674"
+    },
+    {
+      "claim": "The unit's suites pass with the browser required",
+      "tier": "sandbox_execution",
+      "reference": "GREG_REQUIRE_BROWSER=1 pytest test_greg_computer.py (35), test_greg_browser_required.py (3), test_greg_pipeline_protected.py (12), tests/integration/test_greg_pipeline.py (2), the confined browser test",
+      "finding": "52 passed, 2 skipped in final verification; the 2 skips are the confined test's parameters (no bubblewrap)"
+    },
+    {
+      "claim": "Every reviewer probe that delivered a write now delivers none",
+      "tier": "sandbox_execution",
+      "reference": "Reviewers' probes p1, p2, p3, p3b, p4, p5, p6, p8b, p9, p10, p11, p13 before and after the fix; README 'Review probes'",
+      "finding": "Before (7b7ea61e): every channel delivered its write with COMPLETED and blocked_methods {}. After: server writes [] everywhere; p11 registration still accepts whole params, refused at resolve"
+    },
+    {
+      "claim": "Each new safeguard is load-bearing",
+      "tier": "sandbox_execution",
+      "reference": "python -B scripts/ci/check_browser_method_gate_mutants.py; python -B scripts/ci/check_pipeline_mutants.py",
+      "finding": "26/26 caught, every catching test passed unmutated first; existing pipeline mutants 3/3 caught"
+    },
+    {
+      "claim": "Dependent and related suites are unchanged",
+      "tier": "unit_test",
+      "reference": "Final verification: binding suites (12 files); test_greg_capabilities, adversarial_machine, browser, packaging, confined_egress; test_greg_workers, test_foundry_relay_door; test_developmental_inheritance, test_greg_platform",
+      "finding": "190 passed, 4 skipped; 48 passed, 11 skipped; 67 passed, 9 skipped; 42 passed. Every skip is missing bubblewrap or browser.render's chrome_binary() finding no browser"
+    },
+    {
+      "claim": "Authority and schema checks pass and the branch merges into the integration line",
+      "tier": "sandbox_execution",
+      "reference": "scripts/ci/check_authority_singleton.py; scripts/ci/check_schema_refs.py; git merge-tree into origin/claude/greg-full-machine-completion-whgiee at b1950be2",
+      "finding": "Both checks rc 0; clean merge (tree ad1312d8); the merged tree was not tested"
+    },
+    {
+      "claim": "Browser-target interception sees what page routing missed",
+      "tier": "sandbox_execution",
+      "reference": "Scratch probes on raw Playwright 1.63 and Chromium 1243 (cdp_probe.py, ws_probe.py, pac_probe.py, iframe_probe.py, csp_probe.py)",
+      "finding": "CDP Fetch on the browser target paused and could refuse a SharedWorker POST, pagehide and visibilitychange beacons and keepalive at navigation and close, and each redirect hop; it did not see WebSockets"
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "The first round overclaimed its coverage",
+      "tier": "sandbox_execution",
+      "reference": "Two adversarial reviews of 7b7ea61e by separate agents of this session: F1-F10, WU10-R1..R7",
+      "finding": "Unload-time beacons and keepalive fetches, a shared worker's POST, redirect hops, a worker WebSocket, WebSocketStream, a WEBSOCKET method token and an OPTIONS body all reached the server while the session said COMPLETED"
+    },
+    {
+      "claim": "A GET with side effects is not gated",
+      "tier": "readme_claim",
+      "reference": "greg/computer.py METHOD_GATE and module docstring; README 'Limitations'",
+      "finding": "The gate sees methods, not effects; a logout or unsubscribe link, a state-changing GET API or data in a GET query to a signed origin passes"
+    },
+    {
+      "claim": "Channel removal is page-script level and partly unexercised",
+      "tier": "sandbox_execution",
+      "reference": "test_greg_computer.py prelude and engine-layer tests; p13",
+      "finding": "Verified for the page and for dynamically created about:blank frames only; WebTransport not exercised end to end (no HTTP/3 server); the SharedWorker interception shown only in a scratch probe"
+    },
+    {
+      "claim": "Mission registration still accepts bindings resolve refuses",
+      "tier": "sandbox_execution",
+      "reference": "Reviewer probe p11; missions.protected_param",
+      "finding": "validate_mission accepts a whole-params $from_action; the bind-edge route accepts steps and steps.N; end-to-end dispatch was not run"
+    },
+    {
+      "claim": "The branch conflicts with open #209 in greg/pipeline.py",
+      "tier": "sandbox_execution",
+      "reference": "git merge-tree of cebf1674 with #209 head 9b9945c1, run while preparing this record",
+      "finding": "One conflict hunk in pipeline.inspect(): #209 calls resolve({'$from_action': params}, ..., observe=observed) at depth 0, which this branch refuses; the resolution is the wrapped call plus observe=observed"
+    },
+    {
+      "claim": "Not run where it matters next",
+      "tier": "readme_claim",
+      "reference": "Final verification 'not_run' rows",
+      "finding": "computer-use.yml never ran on a hosted runner; the confined browser test skipped (no bubblewrap); the full suite was not run on the final head; nothing ran on the Chromebook"
+    },
+    {
+      "claim": "A partial full-suite run on the pre-fix head had load-induced failures",
+      "tier": "sandbox_execution",
+      "reference": "Second reviewer's run on 7b7ea61e, -n 4, stopped at 34% by a 20-minute cap",
+      "finding": "2699 passed, 38 skipped, 4 failed; all 4 pass when rerun alone, and two of them also pass alone on the base; another session was running tests concurrently"
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "browser.session's internal_write class is enforced by what can leave the browser, not by a step's marker; untrusted earlier output cannot rewrite which operation runs on which element with which credential; and the browser hands are visible to CI, failing loudly when the browser is required and missing.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "Writes to signed origins are decided where every page, frame, worker, unload-time request and redirect hop is paused",
+        "amplified_value": "The precondition for browser.act and wider autonomy: a consequence gate that the page cannot route around for HTTP. Reverses into a liability if presented as complete while GET side effects and unreached realms remain"
+      },
+      {
+        "id": "A2",
+        "statement": "Every refused write is recorded (blocked_methods per step, a close record) and decides the status",
+        "amplified_value": "The founder can reconstruct what a page tried to do (section 36), and an attempted write is never hidden behind another stop"
+      },
+      {
+        "id": "A3",
+        "statement": "A signed read_methods exception names one method, one signed origin and one exact path, and each use is counted",
+        "amplified_value": "Founder-signed, narrow, auditable exceptions instead of a blanket allow; a WEBSOCKET exception passes only sockets"
+      },
+      {
+        "id": "A4",
+        "statement": "The step program is a founder-signed literal: whole params, a bound steps list or step, op, selector, secret, consequential and read_methods are not bindable",
+        "amplified_value": "Section 34: a page's text cannot choose the next click; a fill value and a solver's integer step count stay data"
+      },
+      {
+        "id": "A5",
+        "statement": "The computer-use suite runs and fails when required; 26 mutants guard the safeguards",
+        "amplified_value": "Browser regressions become visible in CI instead of hidden behind a module skip"
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "The gate sees methods, not effects: a GET with side effects, or data in a GET query to a signed origin, passes",
+        "severity": "high",
+        "response_type": "evidence",
+        "redesigned_response": "Stated in the module docstring, in the method_gate field of every trace and in the README; kept as a named residual for the founder, not hidden"
+      },
+      {
+        "id": "D2",
+        "statement": "Removing Worker, service-worker registration, WebTransport and RTCPeerConnection is page-script level",
+        "severity": "medium",
+        "response_type": "protective",
+        "redesigned_response": "Two layers: WebSocketStream and SharedWorker are also off in the engine; each layer is tested alone and mutated alone; the prelude is verified in dynamically created about:blank frames"
+      },
+      {
+        "id": "D3",
+        "statement": "Capability narrowing: pages that need a worker lose it, and a same-origin telemetry write, including at close, ends the session unless the founder signs that exact endpoint",
+        "severity": "medium",
+        "response_type": "governance",
+        "redesigned_response": "The founder can sign the exact method, origin and path in read_methods; the trade-off is put to the founder rather than decided by the builder"
+      },
+      {
+        "id": "D4",
+        "statement": "The gate lives only in the browser; on a confined body the relay checks origins only",
+        "severity": "medium",
+        "response_type": "modularity",
+        "redesigned_response": "The confined browser test's 'allowlist removed' parameter now switches off the browser-target interception so it still tests the relay alone; a method-aware relay is recorded as the next stage"
+      },
+      {
+        "id": "D5",
+        "statement": "op, selector and secret are protected for every capability, not only browser.session",
+        "severity": "low",
+        "response_type": "evidence",
+        "redesigned_response": "Recorded as a behaviour change in the README; no existing mission, test or evidence file binds these names (reviewer grep)"
+      },
+      {
+        "id": "D6",
+        "statement": "greg/missions.py registration still accepts a whole-params $from_action and a bind edge onto steps or steps.N; a step's key and mouse x and y stay bindable",
+        "severity": "medium",
+        "response_type": "protective",
+        "redesigned_response": "pipeline.resolve refuses them at dispatch, so they never run; the registration fix is deferred because missions.py is edited by open PRs"
+      },
+      {
+        "id": "D7",
+        "statement": "Evidence stops at INTEGRATION-TESTED: the workflow, the confined browser test and the full suite have not run",
+        "severity": "medium",
+        "response_type": "evidence",
+        "redesigned_response": "Every not-run item is listed with its reason; the workflow triggers on this pull request, so its first run is the next evidence"
+      },
+      {
+        "id": "D8",
+        "statement": "The gate is coupled to the pinned Playwright 1.63.0 and Chromium 1243; an upgrade can change CDP behaviour",
+        "severity": "low",
+        "response_type": "protective",
+        "redesigned_response": "requirements-computer.txt pins the driver; the mutant 'page routing instead of browser-target interception' and the unload, worker and redirect tests fail if the interception stops seeing those requests"
+      }
+    ],
+    "comparisons": {
+      "baseline": "Origin-only allow(): any method to a signed origin; measured POST /order = 1 with COMPLETED; suite skipped as a module",
+      "do_nothing": "Kill criterion 67 stays met on a shipped capability, and no browser.act can be built on it",
+      "simplest_viable_alternative": "Page routing method check (the first round): broken by 16 reproduced findings, among them unload-time requests, shared workers, redirect hops and worker WebSockets",
+      "strongest_competing_architecture": "A method-aware egress point below the browser: sees every realm, but needs HTTPS interception and a relay change outside this unit; kept as the next stage and as dissent",
+      "reversible_experiment": "This draft PR: seven commits, no data migration, an isolated workflow; decline intake to roll back"
+    },
+    "rejected_alternatives": [
+      {
+        "name": "Playwright page routing (context.route) as the only gate",
+        "rejection_reason": "Measured: it never sees unload-time keepalive requests and beacons, a shared worker's requests or redirect hops",
+        "revival_evidence": "A Playwright release whose page routing sees those three kinds of request on the pinned Chromium"
+      },
+      {
+        "name": "Network.setBlockedURLs for WebSockets",
+        "rejection_reason": "Measured: it did not block WebSockets",
+        "revival_evidence": "A Chromium build where it blocks a worker WebSocket and WebSocketStream"
+      },
+      {
+        "name": "A worker-src 'none' CSP header injected at the response stage",
+        "rejection_reason": "Measured: enforced for blob workers but not for new Worker('/w.js') or service-worker registration",
+        "revival_evidence": "A test showing it blocks network workers and service-worker registration"
+      },
+      {
+        "name": "A PAC script routing ws URLs to a local gate",
+        "rejection_reason": "Measured: Chromium never consulted PAC for loopback, so loopback tests cannot exercise it",
+        "revival_evidence": "A below-browser gate design that does not depend on PAC for loopback"
+      },
+      {
+        "name": "Adding 'steps' to PROTECTED (the unit spec's design)",
+        "rejection_reason": "Protection propagates to every descendant, so it would forbid binding a fill value, which the spec itself requires; replaced by the PROGRAMS rule on a bound array or object",
+        "revival_evidence": "None expected; the scoped rule covers the same attack"
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Two adversarial reviews by separate agents of this session attacked the first-round head 7b7ea61e as deployed: one for bypasses of the method gate and step-program rule, one for fidelity of the claims. They reported 16 findings (F1-F10, WU10-R1..R6) plus an info finding (R7). All 16 were reproduced with the reviewers' own probes, then fixed in 661602d0, 1b4eedc8 and cebf1674; the fixes were checked by rerunning those probes and a final verification, not by a third review. Preparing this record added one attack: a merge with open #209.",
+    "new_weaknesses": [
+      {
+        "id": "W1",
+        "category": "fragility",
+        "statement": "Page routing missed unload-time keepalive fetches and beacons, a shared worker's requests and every redirect hop (F1, F3, F4, R1, R2, high and medium)",
+        "strengthening_response": "HTTP is decided only by CDP Fetch on the browser target, enabled before the context exists; context.route is gone; tests for navigate-away by goto and link click, session close, a SCOPE stop then close, 307 same-origin, 307 cross-origin and a 302 after a GET"
+      },
+      {
+        "id": "W2",
+        "category": "fragility",
+        "statement": "The WebSocket gate covered only window.WebSocket in documents: a worker's WebSocket and WebSocketStream got through, and WebTransport and RTCPeerConnection are outside HTTP interception (F2 high, F10 plausible)",
+        "strengthening_response": "--disable-blink-features=WebSocketStream,SharedWorker plus a prelude deleting the remaining constructors in every frame; each layer tested and mutated alone"
+      },
+      {
+        "id": "W3",
+        "category": "gaming",
+        "statement": "A signed WEBSOCKET exception let an HTTP request with that method token through, and OPTIONS could carry a body (F7)",
+        "strengthening_response": "A WEBSOCKET exception passes only sockets; OPTIONS with a body is a refused write; one regression test and two mutants"
+      },
+      {
+        "id": "W4",
+        "category": "fragility",
+        "statement": "A refused write during a step that then failed its expectation was reported as EXPECTATION_FAILED (F6), and the post-loop charge was untested (R4)",
+        "strengthening_response": "A refused write always decides the status, keeping the original stop in the reason; a write seen after the last step or at close becomes a close record; mutants for each"
+      },
+      {
+        "id": "W5",
+        "category": "gaming",
+        "statement": "A $from_action at the params root supplied steps, read_methods, url and also_hosts wholesale (F5, R3)",
+        "strengthening_response": "pipeline.resolve refuses a binding at depth 0; pipeline.inspect wraps its own reference under a key; mutant 'whole params bindable'"
+      },
+      {
+        "id": "W6",
+        "category": "overfit",
+        "statement": "The steps rule refused a cognition solver's integer steps (F8)",
+        "strengthening_response": "The program rule applies only to a bound array or object; mutant 'a scalar step count is refused as a program'"
+      },
+      {
+        "id": "W7",
+        "category": "fragility",
+        "statement": "A malformed URL in read_methods or the start URL raised a bare ValueError the executor does not catch (F9)",
+        "strengthening_response": "Raised as CapabilityError; regression test with two cases; mutant 'a malformed URL crashes'"
+      },
+      {
+        "id": "W8",
+        "category": "comprehensibility",
+        "statement": "The docstring, README, product delta and requirements comment claimed coverage the code lacked (R1, R2, R5, R6, R7)",
+        "strengthening_response": "Docstring, method_gate field and README corrected, with a 'Corrections to first-round claims' section; <a ping> added as a test; the requirements comment corrected. Not fixed: commit a91a3d54's 'measured on the base' (history is not rewritten; the PR text says base plus browser discovery) and the manifest's missing read_methods (capabilities.py is edited by open PRs)"
+      },
+      {
+        "id": "W9",
+        "category": "dependency",
+        "statement": "Merged with open #209 (head 9b9945c1), greg/pipeline.py conflicts in pipeline.inspect(), and #209's depth-0 resolve call would be refused by this branch",
+        "strengthening_response": "Recorded for the integrator with the exact resolution: keep this branch's wrapped call and add #209's observe=observed; rerun test_greg_pipeline_protected.py and #209's tests on the merged tree"
+      },
+      {
+        "id": "W10",
+        "category": "other",
+        "statement": "The review-round redesign itself was not attacked by a further adversarial review",
+        "strengthening_response": "Reviewers' probes rerun before and after, 14 new mutants, and a final verification of every README number; a further review is a named review trigger before browser.act"
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "accepted",
+        "rationale": "No browser-level mechanism can tell a side-effecting GET from a read; it is stated wherever the gate is reported",
+        "owner": "Alfonso Lopez (whether internal_write may carry this residual); computer-use maintainer (wording)",
+        "review_trigger": "Before browser.act or any wider browser autonomy, or the first observed side-effecting GET on a founder mission"
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "accepted",
+        "rationale": "Two layers, each tested alone; no reachable realm without the prelude was found in the probes",
+        "owner": "Computer-use maintainer",
+        "review_trigger": "A realm the prelude does not reach, or any Playwright or Chromium upgrade"
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "deferred",
+        "rationale": "A capability-versus-safety trade-off belongs to the founder; the signed exception gives a narrow way through",
+        "owner": "Alfonso Lopez",
+        "review_trigger": "The first real mission that stops at AUTHORITY_BOUNDARY on a telemetry write or fails for a missing Worker"
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "deferred",
+        "rationale": "A method-aware relay or proxy is a separate, larger unit on shared machinery",
+        "owner": "Relay (foundry relay door) maintainer",
+        "review_trigger": "Before browser.act, or the first confined-body run of the browser test with bubblewrap"
+      },
+      {
+        "disadvantage_id": "D5",
+        "outcome": "accepted",
+        "rationale": "These names carry execution scope wherever they appear; no current binding uses them",
+        "owner": "Pipeline maintainer",
+        "review_trigger": "A mission that needs to bind op, selector or secret for another capability"
+      },
+      {
+        "disadvantage_id": "D6",
+        "outcome": "deferred",
+        "rationale": "Refused at dispatch already; registration lives in greg/missions.py, which open #201, #209, #214, #228 and #229 edit",
+        "owner": "#196 integrator, after those PRs land",
+        "review_trigger": "Intake of the open PRs that touch greg/missions.py"
+      },
+      {
+        "disadvantage_id": "D7",
+        "outcome": "deferred",
+        "rationale": "The next evidence is the workflow's first hosted run and the confined test on a host with bubblewrap",
+        "owner": "#196 integrator",
+        "review_trigger": "The first computer-use.yml run on this pull request"
+      },
+      {
+        "disadvantage_id": "D8",
+        "outcome": "resolved",
+        "rationale": "The pin plus the interception mutant and the unload, worker and redirect tests turn a silent CDP change into a failing run",
+        "owner": "Computer-use maintainer",
+        "review_trigger": "Any change to requirements-computer.txt"
+      }
+    ],
+    "final_design": "Head cebf1674: CDP Fetch on the browser target decides every HTTP request against the signed origins and the method gate (GET, HEAD, OPTIONS without a body; other methods and any WebSocket need a signed read_methods entry naming method, origin and exact path, counted in read_methods_used); WebSocketStream and SharedWorker off in the engine and a prelude removing Worker, SharedWorker, WebSocketStream, WebTransport, RTCPeerConnection and service-worker registration in every frame; any refused write ends at AUTHORITY_BOUNDARY with the original stop in the reason and a close record for writes at close; pipeline.resolve refuses root, program and step-field bindings while a fill value and integer steps bind; chromium() finds both layouts; playwright==1.63.0; GREG_REQUIRE_BROWSER=1 fails a missing Playwright; computer-use.yml runs the suites and 26 mutants.",
+    "residual_risks": [
+      {
+        "risk": "A GET with side effects, or data in a GET query, reaches a signed origin",
+        "mitigation": "Stated in every trace (method_gate) and the docstring; founder decision before browser.act",
+        "owner": "Alfonso Lopez",
+        "review_trigger": "Before browser.act or wider autonomy"
+      },
+      {
+        "risk": "A realm the prelude does not reach reopens worker, WebTransport or WebRTC channels",
+        "mitigation": "Engine flags cover WebSocketStream and SharedWorker; a below-browser gate is the next stage",
+        "owner": "Computer-use and relay maintainers",
+        "review_trigger": "Any such realm found, or a Chromium upgrade"
+      },
+      {
+        "risk": "Founder burden rises from refused telemetry writes and worker-dependent pages",
+        "mitigation": "Exact signed exceptions; the trade-off is a founder decision",
+        "owner": "Alfonso Lopez",
+        "review_trigger": "First real mission blocked this way"
+      },
+      {
+        "risk": "The #209 conflict is resolved by taking #209's side of pipeline.inspect(), which this branch's depth-0 rule then refuses",
+        "mitigation": "Exact resolution recorded; test_greg_pipeline_protected.py and #209's tests must pass on the merged tree",
+        "owner": "#196 integrator",
+        "review_trigger": "Intake of #209 or of this PR, whichever is second"
+      },
+      {
+        "risk": "The workflow fails on a hosted runner (non-root Chromium sandbox, bubblewrap)",
+        "mitigation": "It is a separate workflow; a failure blocks nothing in Canonical CI and is the evidence to act on",
+        "owner": "#196 integrator",
+        "review_trigger": "First computer-use.yml run"
+      }
+    ],
+    "recommendation": "NEEDS_FOUNDER_DECISION"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Recorded with thresholds; neither entry blocks the draft, and either blocks browser.act or wider autonomy if its threshold is met.",
+    "entries": [
+      {
+        "role": "Adversarial Reviewer",
+        "position": "A gate that lives only in the browser is one unreached realm away from bypass; before browser.act or wider autonomy, a method-aware egress point below the renderer must also refuse writes.",
+        "rationale": "The prelude is page-script level and WebTransport was not exercised end to end; the relay checks origins only.",
+        "evidence_threshold": "Any channel that delivers a non-read request or a WebSocket to a signed origin without passing the browser-target interception, or any realm the prelude does not reach",
+        "owner": "Computer-use and relay maintainers",
+        "review_trigger": "Before browser.act, or the first such channel found"
+      },
+      {
+        "role": "Evidence and Welfare Guardian",
+        "position": "Removing workers, WebRTC and WebTransport from every page and ending sessions on telemetry writes should be measured on real sites before adoption; the safety gain may cost founder attention.",
+        "rationale": "Directive section 67 also kills architecture that increases founder burden without sufficient gain; only loopback pages were measured.",
+        "evidence_threshold": "A real founder mission that stops at AUTHORITY_BOUNDARY on a telemetry write or fails for a missing Worker",
+        "owner": "Alfonso Lopez",
+        "review_trigger": "First real browser.session mission after intake"
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": true,
+    "approval_status": "pending",
+    "approver": "Alfonso Lopez (merge, and the GET residual, channel-removal and global-protection trade-offs); #196 integrator for intake"
+  },
+  "migration_plan": "No data migration. browser.session gains one optional founder-signed param (read_methods) and trace fields (blocked_methods, read_methods_used, method_gate, a close record); existing missions keep working unless they bind a whole params, a steps list or step, or op, selector, secret, consequential or read_methods through $from_action, which none found does. Integrator follow-ups: resolve the #209 conflict in pipeline.inspect() by keeping the wrapped call and adding observe=observed; after #211, install requirements-computer.txt from binary wheels in install.sh and report browser_session readiness and the GET residual in doctor.py; after the open capabilities.py PRs, extend chrome_binary() to chrome-linux* and declare read_methods in the browser.session manifest; after the open missions.py PRs, refuse whole-params and steps/steps.N bind edges at registration; optionally add check_browser_method_gate_mutants.py to Canonical CI once that job installs requirements-computer.txt.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Decline intake into #196, or revert the seven code commits 50f8231c..cebf1674 (and this record's commit)",
+      "Delete .github/workflows/computer-use.yml and requirements-computer.txt with the revert; no data or ledger migration is needed"
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "Any non-read request or WebSocket from a browser.session page reaches a signed origin without a signed read_methods entry and without the session ending at AUTHORITY_BOUNDARY",
+    "Any request to an unsigned origin leaves the browser",
+    "A refused write is reported with any other status, or goes unrecorded",
+    "An earlier action's output sets a capability's whole params, a step program, a whole step, or a step's op, selector, secret, consequential or read_methods",
+    "With GREG_REQUIRE_BROWSER=1, a missing Playwright skips instead of failing",
+    "Any mutant in scripts/ci/check_browser_method_gate_mutants.py survives",
+    "The narrowing raises founder burden on real missions without a matching safety gain (directive section 67)"
+  ],
+  "decision": "NEEDS_FOUNDER_DECISION",
+  "decision_owner": "Alfonso Lopez decides merge and the trade-offs (GET residual, channel removal, global protection of op, selector and secret); the #196 integrator decides intake and resolves the #209 conflict; session_01Kucyfm6YBHMTjaiC1M9hqD owns the reversible draft. All five roles recommend RETAIN.",
+  "review_trigger": "First computer-use.yml run on the pull request; intake of #209 or of this PR; a founder decision on the trade-offs; before browser.act or wider autonomy; any Playwright or Chromium upgrade"
+}

@@ -449,8 +449,15 @@ def test_a_browser_session_drives_pages_behind_the_relay_and_nothing_else_leaves
     except WorkerIsolationError as exc:
         pytest.skip(f"no bubblewrap network namespaces here: {exc}")
     if in_browser_allowlist == "removed":
-        from playwright.sync_api import BrowserContext
-        monkeypatch.setattr(BrowserContext, "route", lambda self, *a, **k: None)
+        from playwright.sync_api import Browser, BrowserContext
+
+        class Inert:                    # the browser-target request interception (greg/computer.py), switched off
+            def on(self, *a, **k):
+                pass
+
+            def send(self, *a, **k):
+                return {}
+        monkeypatch.setattr(Browser, "new_browser_cdp_session", lambda self: Inert())
         monkeypatch.setattr(BrowserContext, "route_web_socket", lambda self, *a, **k: None)
     hits, raw = [], socket.socket()
     raw.bind(("127.0.0.1", 0))

@@ -5422,17 +5422,25 @@
      "excerpt": "* add tests; * attack the implementation; * run CI;",
      "owner_paths": [
       ".github/workflows",
-      "scripts/ci"
+      "scripts/ci",
+      "scripts/repo_review.py"
      ],
-     "evidence": [],
+     "evidence": [
+      "tests/unit/test_repo_health_gates.py::test_unwired_gates_match_the_shrink_only_list",
+      "tests/unit/test_repo_health_gates.py::test_a_gate_no_workflow_runs_is_unwired",
+      "tests/unit/test_repo_health_gates.py::test_no_mutation_anchor_is_stale",
+      "tests/unit/test_repo_health_gates.py::test_moved_code_makes_the_anchor_stale",
+      "tests/unit/test_mutation_harness.py::test_caught_survived_and_stale"
+     ],
      "required_tier": "UNIT_VERIFIED",
-     "tier": "INTENDED",
-     "coverage": "gap",
+     "tier": "UNIT_VERIFIED",
+     "coverage": "partial",
      "blocker": {
       "class": "BUILDABLE_NOT_BUILT",
-      "reason": "No check ties a mutant gate in scripts/ci to a workflow that runs it, or a safeguard to the test that fails without it",
+      "reason": "Nothing requires a safeguard to have a mutant or to name the test that fails without it: a gate proves that only for the safeguards someone listed in it. check_seed_mutants.py runs in no workflow until the founder or CI owner decides register item S-3. A gate reads as wired when its file name occurs anywhere in a workflow file, a comment or a manual-only workflow included",
       "unit": "S69-A"
-     }
+     },
+     "note": "Partial since 27f03910 (2026-11-05): a unit test fails when a scripts/ci/check_*mutant*.py gate is named in no workflow (shrink-only kept list, one entry) or when a gate's literal anchor no longer occurs in its target. A blocker has one class, so the S-3 decision is named in the reason and not as a FOUNDER_ONLY record."
     },
     {
      "id": "S69.A7",

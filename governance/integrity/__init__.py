@@ -75,10 +75,12 @@ ties the manifest baseline to git history at the SR-002 witness commit.
 """
 from __future__ import annotations
 
+import ast
 import hashlib
 import json
 import os
 import re
+import warnings
 import secrets
 import subprocess
 from dataclasses import dataclass, field
@@ -673,3 +675,49 @@ def authorization_body(root: str, artifact: str, new_sha256: str, reason: str) -
         raise IntegrityRecordError(f"{artifact} is already authorized at {new}")
     return {"artifact": artifact, "previous_sha256": previous, "new_sha256": new,
             "reason": _text(reason, "reason", 1000)}
+
+
+# Names that construct or define the one Gate. Read from the AST; the modules are not imported.
+AUTHORITY_CONSTRUCTIONS = frozenset({"ConsequenceGate", "GrantIssuer"})
+_AUTHORITY_SKIP = {".git", "__pycache__", "node_modules", ".venv", "venv", "archive", "tests"}
+
+
+def authority_constructions(root: str) -> list[tuple[str, str, str]]:
+    """``(relative path, 'class'|'call'|'unreadable', name)`` for ConsequenceGate and GrantIssuer.
+
+    Filename is not consulted. A second construction in a file that is not named
+    ``consequence_gate.py`` is still reported. ``tests/`` is not a product plane.
+    """
+    found = []
+    root = os.path.abspath(root)
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = sorted(name for name in dirnames if name not in _AUTHORITY_SKIP)
+        for filename in sorted(filenames):
+            if not filename.endswith(".py"):
+                continue
+            full = os.path.join(dirpath, filename)
+            rel = os.path.relpath(full, root).replace(os.sep, "/")
+            if any(part in _AUTHORITY_SKIP for part in rel.split("/")):
+                continue
+            try:
+                text = open(full, encoding="utf-8").read()
+            except OSError as exc:
+                found.append((rel, "unreadable", str(exc)))
+                continue
+            try:
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", SyntaxWarning)
+                    tree = ast.parse(text, filename=rel)
+            except SyntaxError as exc:
+                found.append((rel, "unreadable", str(exc)))
+                continue
+            for node in ast.walk(tree):
+                if isinstance(node, ast.ClassDef) and node.name in AUTHORITY_CONSTRUCTIONS:
+                    found.append((rel, "class", node.name))
+                elif isinstance(node, ast.Call):
+                    func = node.func
+                    name = func.id if isinstance(func, ast.Name) else (
+                        func.attr if isinstance(func, ast.Attribute) else None)
+                    if name in AUTHORITY_CONSTRUCTIONS:
+                        found.append((rel, "call", name))
+    return found

@@ -442,7 +442,8 @@
    "id": "S51-A",
    "title": "Organ consequence seams verify a Kernel gate decision instead of an organ-local approximation",
    "source": "gap map of the 77 sections against #196 head 4ec00605 (session 2026-10-30), section 51 (unnamed there)",
-   "depends_on": []
+   "depends_on": [],
+   "closed_by": "greg/organs.py seam_problems: an organ manifest that approves an effect must cite a Kernel gate decision id (the Gate action UUID). DALEOBANKS approves none. tests/unit/test_section5_authority.py"
   },
   {
    "id": "S53-A",
@@ -868,16 +869,12 @@
       "greg/path.py"
      ],
      "evidence": [
-      "tests/unit/test_greg_platform.py::test_guardrail_repository_metabolism_is_classified_without_destroying_history"
+      "tests/unit/test_greg_platform.py::test_guardrail_repository_metabolism_is_classified_without_destroying_history",
+      "tests/unit/test_section5_authority.py::test_a_material_path_with_zero_or_two_dispositions_fails"
      ],
      "required_tier": "UNIT_VERIFIED",
      "tier": "UNIT_VERIFIED",
-     "coverage": "partial",
-     "blocker": {
-      "class": "BUILDABLE_NOT_BUILT",
-      "reason": "Dispositions live in several vocabularies and files; no single index gives every material path one disposition",
-      "unit": "S5-A"
-     }
+     "coverage": "covered"
     },
     {
      "id": "S5.A2",
@@ -4265,7 +4262,7 @@
   {
    "n": 51,
    "heading": "REPOSITORY OWNERSHIP",
-   "status": "OPEN",
+   "status": "PARTIAL",
    "asks": [
     {
      "id": "S51.A1",
@@ -4276,16 +4273,12 @@
       "governance/integrity/__init__.py"
      ],
      "evidence": [
-      "tests/unit/test_governance_integrity.py"
+      "tests/unit/test_governance_integrity.py",
+      "tests/unit/test_section5_authority.py::test_a_second_consequence_gate_is_green_by_filename_and_fails_in_the_ast"
      ],
      "required_tier": "UNIT_VERIFIED",
      "tier": "UNIT_VERIFIED",
-     "coverage": "partial",
-     "blocker": {
-      "class": "BUILDABLE_NOT_BUILT",
-      "reason": "The singleton check matches filenames in the Kernel tree; it does not read code for a second grant issuer or gate",
-      "unit": "S3-A"
-     }
+     "coverage": "covered"
     },
     {
      "id": "S51.A2",
@@ -4296,17 +4289,12 @@
       "greg/organs.py"
      ],
      "evidence": [
-      "mission:E.R5",
-      "tests/unit/test_repair_adapters.py"
+      "tests/unit/test_repair_adapters.py",
+      "tests/unit/test_section5_authority.py::test_an_organ_manifest_that_approves_an_effect_without_a_kernel_decision_fails"
      ],
      "required_tier": "UNIT_VERIFIED",
      "tier": "UNIT_VERIFIED",
-     "coverage": "partial",
-     "blocker": {
-      "class": "BUILDABLE_NOT_BUILT",
-      "reason": "Organ seams decide on organ-local approximations; they do not verify a Kernel gate decision",
-      "unit": "S51-A"
-     }
+     "coverage": "covered"
     },
     {
      "id": "S51.A3",
@@ -5158,16 +5146,11 @@
      ],
      "evidence": [
       "tests/unit/test_greg_platform.py::test_body_refuses_second_writer_and_constitution_drift",
-      "mission:E.R5"
+      "tests/unit/test_section5_authority.py::test_a_second_consequence_gate_is_green_by_filename_and_fails_in_the_ast"
      ],
      "required_tier": "UNIT_VERIFIED",
      "tier": "UNIT_VERIFIED",
-     "coverage": "partial",
-     "blocker": {
-      "class": "BUILDABLE_NOT_BUILT",
-      "reason": "Detection is by filename and top-level greg modules only",
-      "unit": "S3-A"
-     }
+     "coverage": "covered"
     },
     {
      "id": "S67.A2",

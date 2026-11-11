@@ -87,6 +87,8 @@ health:
       e7dc0cbc (per-organ bridge keys); packets carry stated evidence. Branch
       claude/greg-full-machine-completion-whgiee, draft PR #96; not on main. The
       capability list above is from the 829c5f28 inspection and was not regenerated.
+      This organ approves no effect. An effect is approved only by citing a Kernel
+      gate decision id, the Gate's action UUID.
 shutdown_behavior: Dry-run by default; live posting requires explicit arming plus credentials.
 recovery: Organ-local ledger replay; approval queue state persists in its database.
 status: active

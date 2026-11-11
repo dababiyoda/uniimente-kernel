@@ -10,20 +10,30 @@ and was told DONE:
   the founder;
 - a read its capability refused passed an ``absent`` check, and the mission was recorded achieved.
 
-Every test here but one (``test_only_a_positive_result_is_done``, which reads result shapes with no body) runs on a
-real Body and crosses a real restart: the Body is closed and opened again on the same home, in this process. ``Killed``
-stands in for SIGKILL: a BaseException nothing in the body handles. No test here kills a real process. The founder
-key is a per-test Ed25519 key, not Alfonso's; ``test.probe`` and the interrupted worker are test doubles, said where
-they are used.
+Every test here but one (``test_a_receipt_is_read_by_its_result_class_and_an_unreadable_one_is_unknown``, which reads
+result shapes with no body) runs on a real Body and crosses a real restart: the Body is closed and opened again on the
+same home, in this process. ``Killed`` stands in for SIGKILL: a BaseException nothing in the body handles. No test
+here kills a real process. The founder key is a per-test Ed25519 key, not Alfonso's; ``test.probe`` and the
+interrupted worker are test doubles, said where they are used.
 
 Three more defects of the same family were found while checking every consumer of the outcome, and are covered here:
 a body stopped between a refused compensation's record and its question lost the question; a recovered receipt of an
 interrupted worker was recorded DONE with its signed cap booked as spent; and a retained refusal under the earlier
-scope form lost its reason and failure class. Three tests pass before this change and pin what it must not alter (a
-reused success, a reused success under the earlier scope form, a refused strategy recovered after a kill). A fourth
-was measured first and marked as a strict expected failure, then fixed: a dispatch the Gate held and the body never
-recorded was settled only on a live mission, so one the founder ended before the restart lost it (the last three
-tests).
+scope form lost its reason and failure class. A fourth was measured first and marked as a strict expected failure,
+then fixed: a dispatch the Gate held and the body never recorded was settled only on a live mission, so one the
+founder ended before the restart lost it (the three tests of the last section).
+
+An adversarial review of e24b326c found the behaviour right and eleven of its sixteen extra mutants unnoticed by
+these tests. The tests it asked for are here: an unreadable retained receipt read through ``act``, in both places
+``act`` finds one; the cost a recovered paid receipt books; the interrupted-worker rule's limit to
+``worker.commission``; and which compensation records leave a question for the founder (unknown and unavailable do,
+done and declined do not, and a record that kept no reasons still names what failed).
+
+Eight of the 39 tests pass on 8d205324, before any of this, and pin what the change must not alter: a reused success,
+a reused success under the earlier scope form, a refused strategy recovered after a kill, the cost of a recovered
+paid receipt, a non-worker output that says UNCERTAIN (two) and a settled compensation (two). The other 31 fail
+there, the thirteen readings of a result among them because that commit has no ``outcome_of``. Measured by running
+this file against a copy of that commit's code.
 """
 from __future__ import annotations
 
@@ -225,6 +235,45 @@ def test_a_receipt_is_read_by_its_result_class_and_an_unreadable_one_is_unknown(
     out = AuthorityOffice.outcome_of(receipt, cost_usd=2.0, proposal_id="p", scope_digest="s")
     assert out == ActionOutcome(status, reasons, "p", "s", output={"n": 1} if status == "DONE" else None,
                                 receipt_hash=receipt.hash, grant_id="g", cost_usd=2.0 if status == "DONE" else 0.0)
+
+
+@pytest.mark.parametrize("earlier_scope_form", [False, True])
+def test_an_unreadable_retained_receipt_asked_about_again_is_unknown_and_nothing_runs(
+        tmp_path, monkeypatch, earlier_scope_form):
+    """The three-way reading through ``act`` itself, in both places it finds a retained receipt: under the proposal's
+    current scope, and under the earlier scope form of a paid action. The body died inside the adapter (a dispatch
+    claim, no receipt), and a receipt for that dispatch names no result class (appended here by hand: not one this
+    office's executor writes). Asked again, the act is UNCERTAIN over that receipt. It is not a refusal, which the
+    mission would answer by trying the action again; nothing is dispatched and the adapter is not called."""
+    calls = []
+
+    def dies(params, ctx):
+        calls.append(ctx.grant_id)
+        raise Killed("SIGKILL inside the adapter")
+    home, _, _, data = make_body(tmp_path)
+    ProbeBody = probe_body(dies)
+    kw = dict(capability=PROBE, params={"probe": "once"}, target="probe:x", cost=0.25, budget=1.0)
+    current = AuthorityOffice.scope_digest
+    if earlier_scope_form:
+        monkeypatch.setattr(AuthorityOffice, "scope_digest", staticmethod(lambda **k: current(
+            **{name: value for name, value in k.items() if name not in ("spent_usd", "budget_usd")})))
+    with ProbeBody(home) as body:
+        with pytest.raises(Killed):
+            act(body, home, data, **kw)
+        [claim] = body.ledger.by_type("grant_dispatch")
+        assert not body.ledger.by_type("receipt")
+        unclassed = body.ledger.append("receipt", {
+            "action_id": "unclassed", "witness_id": claim.payload["witness_id"], "grant_id": claim.payload["grant_id"],
+            "result": {"observed_outcome": "half done"}})
+    monkeypatch.undo()
+    with ProbeBody(home) as body:
+        again = act(body, home, data, **kw)
+        after = gate_records(body, again)
+    assert again.proposal_id == claim.payload["proposal_id"]
+    assert again.status == "UNCERTAIN", "an unreadable retained receipt was reported " + again.status
+    assert again.reasons == [UNKNOWN.format(None)] and again.receipt_hash == unclassed.hash
+    assert (again.output, again.cost_usd, again.failure_class) == (None, 0.0, None)
+    assert len(calls) == 1 and after == {"dispatch_claims": 1, "receipts": [unclassed.hash], "grants_issued": 1}
 
 
 # -- through the mission engine --------------------------------------------------------------------------------
@@ -487,6 +536,202 @@ def test_an_interrupted_workers_receipt_recovered_after_a_kill_is_reconciled_not
     killed = worker_run(tmp_path / "killed", monkeypatch, True)
     assert [a[1] for a in killed["actions"]] != ["DONE"], "an interrupted worker's receipt is recorded as DONE"
     assert killed == control
+
+
+def probe_strategy_run(tmp, kill: bool, output: dict) -> dict:
+    """A paid strategy through ``test.probe`` (a test double), signed at $0.25 in a mission with a $1.00 budget, whose
+    adapter answers ``output``. ``kill``: the body dies between the Gate's receipt and the action's record, and the
+    restarted body settles the dispatch from the Gate's record."""
+    calls = []
+
+    def answers(params, ctx):
+        calls.append(ctx.grant_id)
+        return dict(output)
+    tmp.mkdir()
+    home, key, body_id, data = make_body(tmp)
+    mid = "m:paid-probe"
+    (data / "note.txt").write_text("nothing yet")
+    paid = {"action_id": "p", "capability": PROBE, "params": {"probe": "once"}, "target": "probe:x",
+            "advances": ["c"], "rationale": "ask once, at a price", "cost_usd": 0.25}
+    drop(home, signed(key, body_id, "MISSION", mission(
+        mid, checks=[note_check("c", data / "note.txt", "never there")], strategies=[paid],
+        capabilities=["fs.read", PROBE], targets=("fs:*", "probe:*"), budget=1.0)))
+    TheBody, clock = probe_body(answers), Clock()
+    with TheBody(home, clock=clock) as body:
+        if kill:
+            kill_before_record(body, "mission.action")
+            with pytest.raises(Killed):
+                tick(body, clock, 3)
+            assert len(calls) == 1 and not facts(body, "mission.action", mid)
+        else:
+            tick(body, clock, 3)
+    with TheBody(home, clock=clock) as body:
+        tick(body, clock, 3)
+        state = body.engine.book.missions[mid]
+        return {"actions": [(a["action_id"], a["attempt"], a["status"], a["cost_usd"])
+                            for a in facts(body, "mission.action", mid)],
+                "spent_usd": state.spent_usd, "reserved_usd": state.reserved_usd, "probe_calls": len(calls),
+                "reconciliation_asks": len([r for r in body.engine.book.open_requests()
+                                            if r["kind"] == "RECONCILIATION"])}
+
+
+def test_a_recovered_receipt_of_a_paid_action_books_the_cost_it_was_signed_at(tmp_path):
+    """The recovery passes the strategy's signed cost to the office's reader. Without it a paid action that completed
+    before the kill is recorded DONE at $0.00 and the mission's spend stays 0: the budget is under-counted by a
+    payment that was made. The recovered record equals the unkilled one in cost and spend, with one adapter call."""
+    control = probe_strategy_run(tmp_path / "control", False, {"text": "paid for"})
+    assert control == {"actions": [("p", 0, "DONE", 0.25)], "spent_usd": 0.25, "reserved_usd": 0.0, "probe_calls": 1,
+                       "reconciliation_asks": 0}
+    assert probe_strategy_run(tmp_path / "killed", True, {"text": "paid for"}) == control
+
+
+@pytest.mark.parametrize("kill", [False, True])
+def test_a_completed_action_whose_output_says_uncertain_is_done_unless_a_worker_was_commissioned(tmp_path, kill):
+    """The interrupted-worker rule reads ``status: UNCERTAIN`` in the output of ``worker.commission`` only: that is
+    GREG's own summary of a worker it stopped. Any other capability's output is the capability's answer, and a field
+    in it named ``status`` does not turn a completed, paid action into a reconciliation with its cost held back."""
+    got = probe_strategy_run(tmp_path / "run", kill, {"text": "x", "status": "UNCERTAIN"})
+    assert got == {"actions": [("p", 0, "DONE", 0.25)], "spent_usd": 0.25, "reserved_usd": 0.0, "probe_calls": 1,
+                   "reconciliation_asks": 0}
+
+
+# -- which compensation records leave a question for the founder ------------------------------------------------
+
+RESTORE = {"capability": "fs.write", "params": {"relative_path": "note.txt", "content": "original"},
+           "target": "workspace:note.txt"}
+NOT_INSTALLED = "fs.write is not available on this body (test)"
+DISK_GONE = "executor raised RuntimeError: the disk went away mid-write; outcome unknown"
+
+
+def written_then_ended(tmp, compensate=RESTORE):
+    """A body whose mission wrote ``draft`` over ``original`` and signed ``compensate`` with that write. Returns the
+    home, the founder key, the body id, the note and the mission id; the caller ends the mission."""
+    home, key, body_id, _ = make_body(tmp)
+    mid = "m:compensate-question"
+    note = workspace(home, mid) / "note.txt"
+    note.parent.mkdir(parents=True, exist_ok=True)
+    note.write_text("original")
+    drop(home, signed(key, body_id, "MISSION", mission(
+        mid, checks=[note_check("c", note, "final")], capabilities=["fs.read", "fs.write"],
+        strategies=[write_strategy("w", "note.txt", "draft", ["c"], compensate=compensate)])))
+    return home, key, body_id, note, mid
+
+
+def compensation_asks(body, mid) -> list:
+    """Every COMPENSATION ask this mission ever raised, open or answered: (action, the failure it names)."""
+    return [(r["action_id"], r["evidence"].get("compensation_failed")) for r in body.engine.book.requests.values()
+            if r.get("mission_id") == mid and r["kind"] == "COMPENSATION"]
+
+
+def unfinished_compensation_run(tmp, monkeypatch, status: str, kill: bool) -> dict:
+    """An executed write whose mission is abandoned, and whose signed compensation ends ``status``: "UNCERTAIN" (the
+    compensating adapter raises an error the Gate cannot classify, so whether it wrote is unknown) or "UNAVAILABLE"
+    (its capability cannot run on this body when the compensation is due; nothing is dispatched). ``kill``: the body
+    dies between the compensation's record and its question to the founder, then restarts."""
+    tmp.mkdir()
+    restores = []
+    manifest, real = capabilities.BUILTINS["fs.write"]
+
+    def counted(params, ctx):
+        if params.get("content") == "original":
+            restores.append(ctx.grant_id)
+            if status == "UNCERTAIN":
+                raise RuntimeError("the disk went away mid-write")
+        return real(params, ctx)
+    monkeypatch.setitem(capabilities.BUILTINS, "fs.write", (manifest, counted))
+    home, key, body_id, note, mid = written_then_ended(tmp)
+    clock = Clock()
+    with monkeypatch.context() as patch:
+        with Body(home, clock=clock) as body:
+            tick(body, clock, 3)
+            assert note.read_text() == "draft"
+            if status == "UNAVAILABLE":
+                available = CapabilityManifest.available
+                patch.setattr(CapabilityManifest, "available", lambda self: (False, NOT_INSTALLED)
+                              if self.capability_id == "fs.write" else available(self))
+            drop(home, signed(key, body_id, "LIFECYCLE", {"mission_id": mid, "state": "ABANDONED", "reason": "no"}))
+            if kill:
+                kill_once(patch, "_compensation_ask")
+                with pytest.raises(Killed):
+                    tick(body, clock, 3)
+                assert [c["status"] for c in facts(body, "mission.compensated", mid)] == [status]
+                assert not compensation_asks(body, mid)        # the record is kept; its question was lost
+            else:
+                tick(body, clock, 3)
+        with Body(home, clock=clock) as body:                   # the restart (the control simply runs on)
+            tick(body, clock, 3)
+            return {"compensated": [(c["status"], c["reasons"], c["receipt"])
+                                    for c in facts(body, "mission.compensated", mid)],
+                    "asked": compensation_asks(body, mid), "note": note.read_text(),
+                    "open_compensation_asks": len([r for r in body.engine.book.open_requests()
+                                                   if r["kind"] == "COMPENSATION"]),
+                    "compensating_writes": len(restores)}
+
+
+@pytest.mark.parametrize("status, reason, writes", [("UNCERTAIN", DISK_GONE, 1), ("UNAVAILABLE", NOT_INSTALLED, 0)])
+def test_an_unknown_or_unavailable_compensation_reaches_the_founder_when_the_body_dies_before_its_question(
+        tmp_path, monkeypatch, status, reason, writes):
+    """REFUSED is not the only record that leaves the effect unaccounted for (its two kill windows are tested
+    above). A compensation whose outcome is unknown, or whose capability could not run, did not undo the effect
+    either: a body stopped between that record and its question asks it after the restart, once, with the reasons
+    the record kept, and runs the compensation no further."""
+    control = unfinished_compensation_run(tmp_path / "control", monkeypatch, status, False)
+    assert control == {"compensated": [(status, [reason], None)], "asked": [("w", [reason])], "note": "draft",
+                       "open_compensation_asks": 1, "compensating_writes": writes}
+    killed = unfinished_compensation_run(tmp_path / "killed", monkeypatch, status, True)
+    assert killed["asked"], f"the founder is never asked about the effect the {status} compensation left"
+    assert killed == control
+
+
+@pytest.mark.parametrize("settled", ["DONE", "DECLINED"])
+def test_a_settled_compensation_is_never_asked_about(tmp_path, settled):
+    """Nothing is owed for an effect whose compensation completed (DONE), or whose compensating action the founder
+    rejected (DECLINED: the mission was superseded, so the compensation needed an exact-scope approval, and the
+    founder's reject is their decision that the effect stands). No COMPENSATION ask is raised for either, on the
+    tick that settles it, on later ticks, or after a restart."""
+    home, key, body_id, note, mid = written_then_ended(tmp_path)
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        tick(body, clock, 3)
+        assert note.read_text() == "draft"
+        ended = "ABANDONED" if settled == "DONE" else "SUPERSEDED"
+        drop(home, signed(key, body_id, "LIFECYCLE", {"mission_id": mid, "state": ended, "reason": "replaced"}))
+        tick(body, clock, 3)
+        if settled == "DECLINED":
+            [approval] = [r for r in body.engine.book.open_requests() if r["kind"] == "APPROVAL"]
+            drop(home, signed(key, body_id, "DECISION", {"request_id": approval["request_id"], "answer": "reject",
+                                                         "reason": "the successor needs the draft"}))
+            tick(body, clock, 3)
+        assert [c["status"] for c in facts(body, "mission.compensated", mid)] == [settled]
+        assert not compensation_asks(body, mid)
+    with Body(home, clock=clock) as body:
+        tick(body, clock, 4)
+        assert [c["status"] for c in facts(body, "mission.compensated", mid)] == [settled]
+        assert not compensation_asks(body, mid), "the founder is asked about a compensation that is settled"
+        assert note.read_text() == ("original" if settled == "DONE" else "draft")
+
+
+def test_a_lost_question_about_a_record_that_kept_no_reasons_still_says_the_compensation_did_not_complete(tmp_path):
+    """The question a crash lost quotes the reasons its record kept. This engine always writes at least one; the
+    record here has none and is written by hand, as an earlier version or another writer could leave it. An ask with
+    no failure tells the founder "the mission signed no compensating action for it", which is false here: the ask
+    names the record's status as what failed instead."""
+    home, key, body_id, note, mid = written_then_ended(tmp_path)
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        tick(body, clock, 3)
+        [done] = [a for a in facts(body, "mission.action", mid) if a["status"] == "DONE"]
+        body.journal.record("mission.compensated", {
+            "mission_id": mid, "action_id": "w", "capability": "fs.write", "target": "workspace:note.txt",
+            "original_receipt": done["receipt"], "scope_digest": None, "status": "UNCERTAIN", "receipt": None,
+            "reasons": [], "at": clock.now.isoformat()}, key=[mid, "w", "compensated"])
+    drop(home, signed(key, body_id, "LIFECYCLE", {"mission_id": mid, "state": "ABANDONED", "reason": "not wanted"}))
+    with Body(home, clock=clock) as body:
+        tick(body, clock, 3)
+        assert compensation_asks(body, mid) == [("w", ["UNCERTAIN"])]
+        [ask] = [r for r in body.engine.book.open_requests() if r["kind"] == "COMPENSATION"]
+        assert "its signed compensation did not complete" in ask["why_now"]
+        assert len(facts(body, "mission.compensated", mid)) == 1 and note.read_text() == "draft"
 
 
 # -- a mission the founder ends before the restarted body steps it ----------------------------------------------

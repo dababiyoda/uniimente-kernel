@@ -4,26 +4,26 @@
 
 ## A revoked device's unused authority authorizes nothing — 2026-11-11
 
-Founder message of 2026-11-11, section "Revoked-device approvals" ([verbatim source](intent/sources/REVOKED-DEVICE-AUTHORITY-2026-11-11-source.md)). It is intent evidence, not founder authentication. It answers the gap draft #290 recorded: a DECISION a device signed before its revocation still counted.
+Founder message of 2026-11-11, section "Revoked-device approvals" ([verbatim source](intent/sources/REVOKED-DEVICE-AUTHORITY-2026-11-11-source.md)). It is intent evidence, not founder authentication. The brief for this work says draft #290 records this as an open gap (a DECISION a device signed before its revocation still counts). The finishing session did not find that sentence in #290's tree (`facea170`) and did not read the pull request page; the gap itself is reproduced by the first test.
 
 | Required field | INTENT-20261111-REVOKED-DEVICE-AUTHORITY |
 | --- | --- |
-| statement | My preferred policy is that revoking a device should immediately invalidate its unused authority to authorize future execution. Actions already legitimately completed must remain in the evidence ledger. Revocation must not erase history or pretend an external effect never happened. A suspected key compromise should trigger a separate retrospective integrity review. Distinguish historical validity of a signature from its continuing authority to approve a new effect. |
+| statement | My preferred policy is that revoking a device should immediately invalidate its unused authority to authorize future execution. Actions already legitimately completed must remain in the evidence ledger. Revocation must not erase history or pretend an external effect never happened. A suspected key compromise should trigger a separate retrospective integrity review. Distinguish historical validity of a signature from its continuing authority to approve a new effect. Develop and test that policy in the sandbox, but keep constitutional changes subject to the existing authenticated founder-approval process. Do not silently alter protected authority rules. |
 | source_refs | [verbatim source](intent/sources/REVOKED-DEVICE-AUTHORITY-2026-11-11-source.md); [record](intent/INTENT-20261111-REVOKED-DEVICE-AUTHORITY.json); [decision record](decisions/ADR-20261111-revoked-device-authority.md); [deliberation](collaboration/deliberation-revoked-device-authority-20261111.json) |
 | owner | Alfonso Lopez decides; the implementing session built the sandbox draft |
 | state | active; implemented as a local draft branch (`claude/revoked-device-authority-20261111` on #196's `8d205324`), not pushed |
 | binding_scope | `greg/` only: the mission fold, the DEVICE_REVOKE command, the founder-ask surfaces, the separate appraiser |
 | constitutional_constraints | changed axis: authority, narrowing only. No protected artifact is touched; a device stays a delegation; history is append-only; "keep constitutional changes subject to the existing authenticated founder-approval process" |
-| success_evidence | `tests/unit/test_greg_revoked_device_authority.py` on real bodies (the reproduction and 16 more fail on `8d205324`); `scripts/ci/check_revoked_device_mutants.py` |
-| failure_evidence | an action dispatched after a `device.revoked` record on that key's approval; a receipt or answer changed by a revocation; a review that revokes or rewrites anything |
+| success_evidence | `tests/unit/test_greg_revoked_device_authority.py` on real bodies (copied unchanged onto `8d205324`, 42 of its 50 tests fail, the reproduction among them; 8 pass); `scripts/ci/check_revoked_device_mutants.py` |
+| failure_evidence | an action, compensation or observation dispatched after a `device.revoked` record on that key's approval; a receipt or answer changed by a revocation; a review that revokes or rewrites anything |
 | dependencies | `greg/founder.py` device delegation; the `decision.withdrawn` `voids_approval` precedent of `greg/recovery.py` and `greg/autonomy.py` |
 | conflicts | "an unpaid approve stands for the mission's lifetime" (`greg/goal_gravity.py` APPROVE_MEANS) is narrowed for a device key that is later revoked; the founder's own approvals are unchanged |
-| next_review_trigger | founder review of the draft and of the nine open questions in the decision record |
+| next_review_trigger | founder review of the draft and of the eleven open questions in the decision record (above all: whether what a revoked device resumed is paused again; default: no); an independent adversarial review, not yet done |
 | supersedes | the behaviour in which a revoked device's accepted answer kept authorizing new actions |
 | superseded_by | none |
 | implementation_refs | `greg/missions.py` (`MissionBook._revoked`, `unused_authority`), `greg/revocation.py`, `greg/body.py`, `greg/appraisal.py`, `greg/asks.py`, `greg/remote.py`, `greg/cli.py` |
 
-Product delta: after the founder revokes a phone, GREG acts on nothing the phone approved and had not yet been used for; it asks again, keeps every completed receipt, and on `--suspected-compromise` lists everything the phone signed for the founder's review. Reality: unit-tested on real bodies in a container, with per-test keys. Authority delta: narrowing only. VEPMC: 0.
+Product delta: after the founder revokes a phone, GREG acts on nothing the phone approved and had not yet been used for (actions, compensations and out-of-scope observations); it asks again, keeps every completed receipt, and on `--suspected-compromise` (with the revocation or later) lists everything the phone signed for the founder's review. Not changed: a mission or body the phone resumed keeps running; the status lists it. Reality: unit-tested on real bodies in a container, with per-test keys; built by two sessions of one agent, with no independent review yet. Authority delta: narrowing only. VEPMC: 0.
 
 ## Regular structural review and contributor orientation — 2026-11-05
 

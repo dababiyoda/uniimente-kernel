@@ -21,5 +21,7 @@ Distinguish historical validity of a signature from its continuing authority to 
 Develop and test that policy in the sandbox, but keep constitutional changes subject to the existing authenticated founder-approval process. Do not silently alter protected authority rules.
 ```
 
-The gap it answers was recorded on draft #290: a DECISION a device signed before its revocation
-still counted for an action that had not run yet.
+The text above was checked a second time, by the session that finished the draft, against the request as the
+harness relayed it to the first session: identical.
+
+The brief for this work says draft #290 records this as an open gap (a DECISION a device signed before its revocation still counts). The finishing session did not find that sentence in #290's tree (facea170) and did not read the pull request page; the gap itself is reproduced by the first test.

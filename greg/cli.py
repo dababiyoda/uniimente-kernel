@@ -19,7 +19,8 @@
     greg device enroll --pubkey HEX --label phone --key K   delegate a narrow key to a phone
     greg device revoke KEY_ID --key K [--suspected-compromise]   end a delegation; what the key approved and
                                                     was not yet used authorizes nothing more (the flag also opens
-                                                    a retrospective review of everything it signed)
+                                                    a retrospective review of everything it signed; with the flag,
+                                                    a key already revoked gets the review of that revocation)
     greg device reviews                             read-only: revocations, what each voided, the reviews
     greg node enroll NODE_ID --pubkey HEX --cone CONE.json --key K   admit a node's own key (founder-signed)
     greg node revoke NODE_ID --key K | greg node list   end a node's enrollment; read-only node states
@@ -563,7 +564,9 @@ def main(argv=None) -> int:
     dr = ds.add_parser("revoke"); dr.add_argument("device_key_id")
     dr.add_argument("--suspected-compromise", action="store_true",
                     help="also open a retrospective integrity review: every command the key signed and every effect "
-                         "that rested on one, listed for you (it rewrites nothing and revokes nothing further)")
+                         "that rested on one, listed for you (it rewrites nothing and revokes nothing further). For a "
+                         "key you already revoked, sign it again with this flag: it opens the review of that "
+                         "revocation, once")
     ds.add_parser("reviews", help="read-only: each device revocation, what it voided, and the integrity reviews")
     for q in (de, dr):
         q.add_argument("--key", required=True); q.add_argument("--no-passphrase", action="store_true")

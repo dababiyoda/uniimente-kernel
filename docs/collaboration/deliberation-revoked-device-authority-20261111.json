@@ -1,7 +1,7 @@
 {
  "decision_id": "REVOKED-DEVICE-AUTHORITY-20261111",
  "title": "A revoked device's unused authority authorizes no new effect; completed effects and history stay; a suspected compromise opens a review",
- "problem": "On the integration head 8d205324 a DECISION that a delegated device key signed and the body accepted kept its effect after the founder revoked the device: an approved action that had not run yet ran after the revocation, with a grant marked founder-approved. Draft #290 recorded this as an open gap. The founder's policy of 2026-11-11 says revocation must end the device's unused authority at once, keep what was legitimately completed, open a separate review when compromise is suspected, and keep the historical validity of a signature apart from its continuing authority.",
+ "problem": "On the integration head 8d205324 a DECISION that a delegated device key signed and the body accepted kept its effect after the founder revoked the device: an approved action that had not run yet ran after the revocation, with a grant marked founder-approved. The brief for this work says draft #290 records this as an open gap (not found in #290's tree by the finishing session). The founder's policy of 2026-11-11 says revocation must end the device's unused authority at once, keep what was legitimately completed, open a separate review when compromise is suspected, and keep the historical validity of a signature apart from its continuing authority.",
  "founder_intent_refs": [
   "docs/intent/INTENT-20261111-REVOKED-DEVICE-AUTHORITY.json",
   "docs/intent/sources/REVOKED-DEVICE-AUTHORITY-2026-11-11-source.md",
@@ -66,9 +66,9 @@
  "roles": [
   {
    "role": "Founder-Intent Steward",
-   "position": "Each sentence of the policy has a tested behaviour: unused authority is voided at the revocation record; completed actions keep their records, receipts and their VERIFIED appraisal; a suspected compromise opens a separate review that changes nothing; the device's signatures still verify as history while its approvals stop authorizing. No protected artifact is touched.",
+   "position": "Each sentence of the policy has a tested behaviour: unused authority is voided at the revocation record (approvals of APPROVAL and SENSOR_SCOPE asks, unrecorded reconciliation answers); completed actions keep their records, receipts and their VERIFIED appraisal; a suspected compromise opens a separate review that changes nothing; the device's signatures still verify as history while its approvals stop authorizing. No protected artifact is touched.",
    "material_concerns": [
-    "Nine points the sentence does not settle are listed for the founder with the default implemented (ADR, open questions)",
+    "Eleven points the sentence does not settle are listed for the founder with the default implemented (ADR, open questions); the most consequential is whether a revoked device's resume of a paused mission or body should be undone (default: no)",
     "The destination is unchanged: a device stays a narrow delegation; this only ends its reach at revocation"
    ],
    "evidence_refs": [
@@ -82,7 +82,8 @@
    "position": "One rule in the one mission fold (MissionBook._revoked with unused_authority), read by the engine, the goal fold and every surface through tables they already read (withdrawn, consumed). greg/revocation.py owns no authority: it writes what the fold derived and builds the review. No new command kind, store, ledger or authority path.",
    "material_concerns": [
     "A voided reconciliation is a new state: no reconciliation ask was ever withdrawn before, so the engine gained two guards (live and ended missions)",
-    "The appraiser places a dispatch at its grant's ledger record, not at the mission's later record, so an in-flight dispatch is judged where the Gate claimed it"
+    "The appraiser places a dispatch at its grant's ledger record, not at the mission's later record, so an in-flight dispatch is judged where the Gate claimed it",
+    "Every ask kind raised in greg/ is in exactly one revocation class (GATE_SCOPE_ASKS, RECONCILIATION_ASKS, NO_AUTHORITY_ASKS, ANSWER_ONLY_RECORDS, NOT_ANSWERABLE); a source scan in the tests fails when a kind is unclassified"
    ],
    "evidence_refs": [
     "greg/missions.py",
@@ -93,10 +94,10 @@
   },
   {
    "role": "Adversarial Reviewer",
-   "position": "The attacks were written and run by the implementing session itself, one agent. This is not an independent review. Covered by failing-then-passing tests: approve then revoke in one inbox read; a paused body; a decision signed before and delivered after; the same envelope re-sent; the key delegated again; a second device; a forged device.revoked row naming the founder key; a body stopped between the revocation and its trail; a trail written after a new approval of the same scope; an unrecorded reconciliation on a live and on an ended mission; a restore; a device answering the review; a body without the rule judged by the appraiser.",
+   "position": "The attacks were written and run by the builder's side: a first session that was stopped before it could report, and a second that treated its work as an unverified draft. This is not an independent review. The second session found one more defect of the kind the policy forbids and reproduced it before fixing it: a revoked device's approve of a SENSOR_SCOPE ask kept admitting out-of-cone observations (two further Gate grants). Covered by tests that fail without their safeguard: approve then revoke in one inbox read; a paused body; a decision signed before and delivered after; the same envelope re-sent; the key delegated again; a second device; a forged device.revoked row naming the founder key; a body stopped between the revocation and its trail; a trail written after a new approval of the same scope; an unrecorded reconciliation on a live and on an ended mission; a restore; a device answering the review; a body without the rule judged by the appraiser; a SENSOR_SCOPE approval; an approval a failed run had already withdrawn; a second revocation record of the same key; a review reading that raises; a dispatch reconciled as executed after the revocation; a suspicion signed after the revocation.",
    "material_concerns": [
     "A revocation takes effect at the body's next inbox read; mission steps later in the same turn still run on the approvals as that turn began",
-    "Rejections, answer-only records and device-signed resumes are not voided (open questions 1 to 3)",
+    "Rejections, answer-only records and device-signed resumes are not voided (open questions 1 to 3); a test pins that a mission the device resumed runs after the revocation",
     "An independent adversarial review has not been done"
    ],
    "evidence_refs": [
@@ -107,10 +108,10 @@
   },
   {
    "role": "Operator and Maintainer",
-   "position": "The founder runs `greg device revoke KEY [--suspected-compromise]` and reads `greg device reviews`; `greg status` lists what each revocation voided. A turn pays one fold step and a few lookups; a review is one fold over the ledger prefix, built once. Reverting the branch leaves the written rows as history the old fold already understands.",
+   "position": "The founder runs `greg device revoke KEY [--suspected-compromise]` and reads `greg device reviews`; `greg status` lists what each revocation voided and what the key resumed that still runs. A suspicion after a plain revocation is signed as the same command for the revoked key. A turn pays one fold step and a few lookups; a review is one fold over the ledger prefix, built once. Reverting the branch leaves the written rows as history the old fold already understands.",
    "material_concerns": [
     "After a revocation the founder is asked again once per voided decision",
-    "A failure while building a review stops a running body, as any turn failure does; the revocation itself is already recorded and in force",
+    "A review reading that fails is recorded as the review (COULD_NOT_BE_BUILT, with the error) and the founder is asked; it does not stop the body, and it is not built again by itself",
     "The whole test suite was not run here"
    ],
    "evidence_refs": [
@@ -135,17 +136,21 @@
  ],
  "evidence": [
   "Reproduction on 8d205324: the phone approves, the founder revokes, both land before the next turn, and the write runs (first test of tests/unit/test_greg_revoked_device_authority.py)",
-  "On 8d205324, 17 of the 19 tests of that file that need no new module fail (2 of the 17 only because they read the new MissionBook.voided table); the 2 that pass pin behaviour that already held",
-  "On the branch the file passes",
-  "scripts/ci/check_revoked_device_mutants.py: every listed safeguard, removed in a scratch copy, fails a test of that file",
-  "python -m governance.integrity --check: 13 protected artifacts, all as authorized",
+  "The test file copied unchanged onto a worktree of 8d205324: 42 of its 50 tests fail, 8 pass (the 8 pin behaviour that already held); many of the 42 also read tables or a module only this change adds",
+  "Reproduced on the first draft of this change before it was fixed: after a revoked device's SENSOR_SCOPE approval the Gate granted two more out-of-cone observations",
+  "On the branch the file passes (50 tests)",
+  "78 test files, this one and 77 neighbours: 1164 passed, 109 skipped, 2 failed (both recombined_native_game tests that fail on 8d205324 in this container)",
+  "scripts/ci/check_revoked_device_mutants.py: 68 of 68 mutants caught, each removed safeguard failing a test of that file in a scratch copy; two mutants that survived a first run exposed one dead clause (removed) and one untested case (now tested)",
+  "python -m governance.integrity --check: clean; no protected artifact is touched",
   "python -m acceptance check and python -m acceptance directive --against 8d205324: exit 0"
  ],
  "counterevidence": [
-  "Not run: the whole suite (about 90 minutes), the other mutation gates, the phone page in a browser",
-  "This container's known failures on the integration line are unchanged and unrelated (tests/unit/test_greg_native_reconciliation.py fails 9 on the base too: scipy is not installed here)",
+  "Not run: the whole suite (about 90 minutes), the other mutation gates, hosted CI, the phone page in a browser",
+  "This container's known failures on the integration line are unrelated and unchanged",
   "No independent session or human reviewed the change",
-  "A HUMAN_JUDGMENT answer a revoked device signed keeps deciding its question"
+  "A HUMAN_JUDGMENT answer a revoked device signed keeps deciding its question",
+  "A mission or body a revoked device resumed keeps running (pinned by a test, listed in the status and the review)",
+  "The separate appraiser checks approvals in force for actions, not for out-of-cone observations (it never re-derived those)"
  ],
  "pass_1": {
   "intended_outcome": "After a device key is revoked, GREG starts no effect on that key's say-so; everything already done is kept; the founder can ask for one list of everything the key signed.",
@@ -173,10 +178,11 @@
   ]
  },
  "pass_2": {
-  "attack_summary": "Re-attacked with pass 1 in place: a trail record landing after the founder approved the same scope again took that scope away (fixed: a void acts at the revocation only; test and mutant); a live mission could close over an interrupted dispatch whose answer was voided when the world already showed the effect (fixed: asked again first; test and mutant); an ended mission recorded a reconciliation in a voided answer's name (fixed; test and mutant); a paused founder was told a voided approval was about to run (fixed in the engine's resolution rule; test and mutant); a dispatch the mission had not recorded when the key was revoked was missing from the review (fixed: the Gate's grant records are read; test and mutant); another device could close a review (fixed: founder key only, on the command path and in the fold; tests and mutants).",
+  "attack_summary": "Re-attacked with pass 1 in place: a trail record landing after the founder approved the same scope again took that scope away (fixed: a void acts at the revocation only; test and mutant); a live mission could close over an interrupted dispatch whose answer was voided when the world already showed the effect (fixed: asked again first; test and mutant); an ended mission recorded a reconciliation in a voided answer's name (fixed; test and mutant); a paused founder was told a voided approval was about to run (fixed in the engine's resolution rule; test and mutant); a dispatch the mission had not recorded when the key was revoked was missing from the review (fixed: the Gate's grant records are read; test and mutant); another device could close a review (fixed: founder key only, on the command path and in the fold; tests and mutants). A second session re-attacked the stopped draft: a revoked device's SENSOR_SCOPE approval still admitted observations (fixed: every ask whose scope the Gate honours is voided, and every ask kind is classified under a source-scanning test); a failing review reading stopped even a held body, because the trail is settled before the pause check (fixed: the failure is recorded as the review); a suspicion after a plain revocation had no command (added: the same command for the revoked key, once); the command result named the first pending review, not its own (fixed).",
   "new_weaknesses": [
    "the appraiser's rule applies to older ledgers too when they are appraised again",
-   "the goal's own record of an accepted item stays in the goal registry; the mission-level scope is void and the goal asks again (tested)"
+   "the goal's own record of an accepted item stays in the goal registry; the mission-level scope is void and the goal asks again (tested)",
+   "a second device.revoked record for one key now exists by design (a later suspicion); every reader of revocation records treats one as idempotent, and a test pins that it voids nothing twice"
   ],
   "pass_1_disadvantage_dispositions": [
    "the narrowed standing approval: accepted, it is the policy",
@@ -188,6 +194,7 @@
   "residual_risks": [
    "revocation timing is the next inbox read",
    "rejections, answer-only records and device-signed resumes stand",
+   "the appraiser does not re-derive approvals of observations",
    "no independent review yet"
   ],
   "recommendation": "NEEDS_FOUNDER_DECISION"
@@ -217,13 +224,14 @@
   "reason_impossible": null
  },
  "kill_criteria": [
-  "an action is dispatched after a device.revoked record on that key's approval",
+  "an action, compensation or observation is dispatched after a device.revoked record on that key's approval",
   "a revocation changes or removes a recorded answer, action or receipt",
   "an action completed before a revocation is refuted because of it",
   "a review revokes, pauses or rewrites anything, or a device key closes one",
-  "a plain DEVICE_REVOKE is recorded or answered differently than before"
+  "a plain DEVICE_REVOKE is recorded or answered differently than before",
+  "a review reading that fails stops the body or hides the failure"
  ],
  "decision": "NEEDS_FOUNDER_DECISION",
- "decision_owner": "Alfonso Lopez decides adoption and the nine open questions; the #196 integrator decides intake",
+ "decision_owner": "Alfonso Lopez decides adoption and the eleven open questions; the #196 integrator decides intake",
  "review_trigger": "Founder review of the draft; an independent adversarial review; intake into #196; the first revocation on a founder-device body"
 }

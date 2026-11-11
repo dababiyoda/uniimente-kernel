@@ -16,18 +16,27 @@ A device key (a phone) is a delegation: the founder key grants it some of `DEVIC
 (`greg/founder.py`). On `8d205324`, a DECISION the phone signed and the body accepted kept its effect after the
 founder revoked the phone. Reproduced on a real body: the phone approves a write, the founder revokes the phone,
 both reach the body before its next turn, and the write runs with a grant marked `founder_approved_scope: true`
-(`tests/unit/test_greg_revoked_device_authority.py`, first test). Of the 19 tests of that file that need no new
-module, 17 fail on `8d205324`, 2 of them only because they read the new `MissionBook.voided` table; the 2 that pass
-pin behaviour that already held.
+(`tests/unit/test_greg_revoked_device_authority.py`, first test). The test file, copied unchanged onto a worktree
+of `8d205324`, fails 42 of its 50 tests there; the first fails on the assertion that the write did not run. Many of
+the 42 also read tables or a module that only this change adds. The 8 that pass pin behaviour that already held: a
+completed act keeps its receipt and closure, a decision delivered after the revocation is refused, a dispatch the
+founder reconciles as executed keeps its approval, and a revocation body with an unknown field is refused (5 cases).
+
+This draft was built in two sessions. The first was stopped before it could report; the second read its work as
+an unverified draft, attacked it, and found one more defect of the same kind, reproduced before it was fixed: the
+first draft voided approvals of APPROVAL asks only, and a revoked device's approve of a SENSOR_SCOPE ask kept
+admitting observations outside the cone (two further Gate grants after the revocation, both marked
+`founder_approved_scope: true`).
 
 ## What a device may sign, and where authority is used
 
 | A device may sign | What it changes | Does it authorize a later effect? |
 | --- | --- | --- |
 | DECISION `approve` on an APPROVAL ask | adds the exact scope to the mission's `approved_scopes` | Yes. Unpaid: it stands for the mission's lifetime, every time the mission selects that scope. Paid: it funds one run and is used up when that run is recorded (`MissionBook.consumed`). |
+| DECISION `approve` on a SENSOR_SCOPE ask | adds the observation's exact scope to the mission's `approved_scopes` | Yes. It stands for the mission's lifetime: every later observation of that check is granted on it. |
 | DECISION `reconcile_executed` / `reconcile_not_executed` | settles one interrupted dispatch when the engine records it | Yes, until recorded: "not executed" releases the reservation and lets the action be dispatched again. |
 | DECISION `reject` | rejects the scope, fails the strategy | No. It only narrows. |
-| DECISION on an answer-only ask (HUMAN_WORK, CAPABILITY_ATTACH, COMPENSATION, EVIDENCE_CORRECTION, HUMAN_JUDGMENT, NO_STRATEGY, SENSOR_FAILURE) | a record; a HUMAN_JUDGMENT answer decides that one question for cognition | No Gate effect by itself. |
+| DECISION on an answer-only ask (HUMAN_WORK, ACCOUNT_ACCESS, CAPABILITY_ATTACH, CAPABILITY_DISPOSITION, COMPENSATION, EVIDENCE_CORRECTION, HUMAN_JUDGMENT) or one that only lets the mission look again or closes the ask (NO_STRATEGY, SENSOR_FAILURE, COMPUTE, BODY_AVAILABILITY) | a record; a HUMAN_JUDGMENT answer decides that one question for cognition | No Gate effect by itself. |
 | LIFECYCLE | pauses, resumes, abandons or supersedes a mission | Not a grant: the mission runs under its own founder-signed mandate. |
 | BODY_PAUSE, BODY_RESUME, BODY_STOP | pauses, resumes or stops the body | Not a grant. |
 | CRITIQUE | evidence; may exclude a strategy | No. It narrows. |
@@ -39,8 +48,13 @@ commands, and a mission's `pre_approved_steps` are inside the founder-signed MIS
 The signer of every accepted command is on the ledger (`command.accepted`: `founder_key_id`, `signer`, the whole
 signed envelope). An answer counts only as the mission fold re-derives it from a signature-verified DECISION at its
 own ledger position (`MissionBook`, `goal_gravity.founder_facts`). Authority is used in one place:
-`AuthorityOffice.act` admits an action outside the cone, or one the Constitution requires a human for, only if its
-exact scope is in the mission's `approved_scopes`.
+`AuthorityOffice.act` admits an action, a compensation or an observation outside the cone, or one the Constitution
+requires a human for, only if its exact scope is in the mission's `approved_scopes`.
+
+Every kind of founder ask raised anywhere in `greg/` is in exactly one class in `greg/missions.py`
+(`GATE_SCOPE_ASKS`, `RECONCILIATION_ASKS`, `NO_AUTHORITY_ASKS`, with `greg.asks.ANSWER_ONLY_RECORDS` and
+`NOT_ANSWERABLE`). A test scans the source for ask kinds and fails when one is unclassified or in two classes, so a
+new kind cannot be added without deciding what a revocation does to its answers.
 
 Two rules already held and are unchanged: a revoked key signs nothing new (`FounderVerifier`, "founder key not
 enrolled or revoked"), so a DECISION signed before the revocation and delivered after it is refused; and a key
@@ -50,8 +64,8 @@ delegated again verifies only what it signs after the new delegation (`signed_no
 
 **The rule lives in the mission fold.** At the ledger position of a `device.revoked` record,
 `MissionBook._revoked` voids every answer that key signed which still authorizes something not yet done
-(`unused_authority`): an `approve` of an APPROVAL ask that is not used up, and a `reconcile_*` answer the engine has
-not recorded. For each:
+(`unused_authority`): an `approve` of an ask whose scope the Gate honours (APPROVAL, SENSOR_SCOPE) that is not used
+up, and a `reconcile_*` answer the engine has not recorded. For each:
 
 - the approved scope leaves the mission's `approved_scopes`;
 - the request counts as withdrawn and used up, so the mission asks again under a new request id, which the founder
@@ -65,7 +79,8 @@ written. Nothing later reverses it: delegating the key again revives no voided a
 never voided here, whatever key a `device.revoked` row names.
 
 **What is not voided.** What was used: a paid approval whose run happened, a reconciliation the engine recorded,
-every completed action. And what authorizes nothing: rejections and answer-only records.
+every completed action and observation, and an approval a failed run or a restore had already withdrawn. And what
+authorizes nothing: rejections and answer-only records.
 
 **The trail** (`greg/revocation.py` `settle`). The body calls it when it records a revocation and at the start of
 every turn. It writes one `decision.withdrawn` per voided answer, from what the fold derived. A body that stopped
@@ -80,9 +95,20 @@ anything is undone, and records nothing in the voided answer's name.
 `true` when given. A plain revocation is validated, recorded and answered exactly as before. With the field, the
 body also records one `device.integrity_review` and one founder ask (`DEVICE_INTEGRITY_REVIEW`), shown where
 pending decisions already show (`greg status`, Mission Control, the morning report, the phone channel). The review
-is read from the ledger as the revocation left it, so it is the same whenever it is built. It also reads the Gate's own grant records, so a dispatch
-the mission had not recorded yet when the key was revoked is listed too. It rewrites nothing and
-revokes nothing further. The answer to its ask is only recorded, and only the founder key gives it.
+is read from the ledger as the revocation left it, so it is the same whenever it is built. It also reads the
+Gate's own grant records, so a dispatch the mission had not recorded yet when the key was revoked is listed too,
+and so is each observation read under a SENSOR_SCOPE approval. It rewrites nothing and revokes nothing further.
+The answer to its ask is only recorded, and only the founder key gives it.
+
+A suspicion often comes after the key was revoked. The founder then signs `DEVICE_REVOKE` for the revoked key
+again with `suspected_compromise: true`. That record revokes and voids nothing more (`marks_revocation` names the
+revocation it is about) and opens the review of that revocation, once; a second one is refused. A plain
+`DEVICE_REVOKE` of a key that is not delegated is refused with the same words as before.
+
+A review is a reading over everything the key signed. If the reading itself fails, the failure is recorded as the
+review (`status: COULD_NOT_BE_BUILT`, the error, empty lists), the founder is still asked, and the body's turn goes
+on: the void does not depend on the review, and the body settles the trail before it checks whether it is paused,
+so a reading that raised would otherwise stop even a held body.
 
 **The separate appraiser** (`greg/appraisal.py`). An approved action ran honestly only if an approval of its exact
 scope was in force when the Gate dispatched it: signed by a founder key, or by a device key not revoked between its
@@ -93,13 +119,15 @@ dispatched before the revocation is still verified after it.
 
 | Record | New or changed | Fields |
 | --- | --- | --- |
-| `greg.device.revoked` | one optional field | `device_key_id`, `command_digest`, `at`; `suspected_compromise: true` only when the founder signed it |
-| `greg.decision.withdrawn` | an existing type, new fields for this cause | `request_id`, `mission_id`, `voids_answer: true`, `voids_approval: true` (approvals only), `why`, `voided_by: {device_key_id, signer, revocation_event, revocation_command[, restore_id]}`, `kind`, `answer`, `answer_command`, `at`. Identity: request, `device-revoked`, revocation event |
-| `greg.device.integrity_review` | new | `review_id`, `status: OPEN_FOR_FOUNDER_REVIEW`, `device: {device_key_id, label, delegations}`, `revocation: {event_id, command_digest, at, suspected_compromise}`, `commands[]` (digest, kind, signer, times, channel, `signature_verifies`, and per kind: request, answer, mission, scope, `standing`; lifecycle state; critique; goal control), `effects[]` (what rested on a command: action, attempt, status, capability, scope, receipt, cost, `rested_on`), `voided_by_this_revocation`, `missions`, `receipts`, `scopes`, `read_through`, `unknown`, `history_rewritten: false`, `revokes_further: false`, `authority_created: false`, `at` |
+| `greg.device.revoked` | two optional fields | `device_key_id`, `command_digest`, `at`; `suspected_compromise: true` only when the founder signed it; `marks_revocation` (the event id of the standing revocation) only on a suspicion signed after the key was revoked |
+| `greg.decision.withdrawn` | an existing type, new fields for this cause | `request_id`, `mission_id`, `voids_answer: true`, `voids_approval: true` (APPROVAL and SENSOR_SCOPE approvals only), `why`, `voided_by: {device_key_id, signer, revocation_event, revocation_command[, restore_id]}`, `kind`, `answer`, `answer_command`, `at`. Identity: request, `device-revoked`, revocation event |
+| `greg.device.integrity_review` | new | `review_id`, `status: OPEN_FOR_FOUNDER_REVIEW` (or `COULD_NOT_BE_BUILT` with `error`), `device: {device_key_id, label, delegations}`, `revocation: {event_id, command_digest, at, suspected_compromise[, marks_revocation]}`, `commands[]` (digest, kind, signer, times, channel, `signature_verifies`, and per kind: request, answer, mission, scope, `standing`; lifecycle state; critique; goal control), `effects[]` (what rested on a command: an action, a compensation, an observation or a Gate grant, with attempt, status, capability, scope, receipt, cost, `rested_on`), `voided_by_this_revocation`, `missions`, `receipts`, `scopes`, `read_through`, `unknown`, `history_rewritten: false`, `revokes_further: false`, `authority_created: false`, `at` |
 | `greg.decision.requested` | an existing type, new kind | `kind: DEVICE_INTEGRITY_REVIEW`, `mission_id: null`, evidence: the review event, counts, the first 20 rows of each list |
 
-`greg status` gains `security.device_revocations` (what each revocation voided, the review's state). `greg device
-revoke KEY --suspected-compromise` signs the field; `greg device reviews` reads the records.
+`greg status` gains `security.device_revocations`: what each revocation voided, the review's state, and
+`resumed_and_still_running` (the missions, and the body, that the key resumed and that still run; see open
+question 3). `greg device revoke KEY --suspected-compromise` signs the field; `greg device reviews` reads the
+records.
 
 ## A dispatch already in flight
 
@@ -135,7 +163,10 @@ A revocation takes effect when the body records it: its next inbox read, at most
   before and delivered after; the same envelope re-sent; the key delegated again; a second device; a forged
   revocation row naming the founder key; a body stopped between the revocation and its trail; a trail written
   after a new approval of the same scope; an unrecorded reconciliation on a live and on an ended mission; a
-  restore; a device answering the review.
+  restore; a device answering the review. Second session: a SENSOR_SCOPE approval (found open, fixed); an approval a
+  failed run had already withdrawn; a second revocation record of the same key; a review reading that raises; a
+  dispatch reconciled as executed after the revocation; a suspicion after the revocation. Both sessions are the
+  builder's side: an independent review has not been done.
 - Operator: the turn pays one fold step and a few lookups. A review is one fold over the ledger prefix, built once.
 - Beneficiary: the founder is asked again once per voided decision; nothing is undone behind his back.
 - Constitutional: it only narrows. No protected artifact, no grant, no new command kind, no new authority path.
@@ -148,20 +179,30 @@ A revocation takes effect when the body records it: its next inbox read, at most
    question for cognition. Default: they stand and are listed. Voiding a HUMAN_JUDGMENT answer needs a change in
    the compiler: its request id is derived from the question and cannot be asked again under a new id.
 3. **A mission or the body that a revoked device resumed, or a mission it abandoned** (compensations run after an
-   abandon). Default: nothing is paused or undone; the review lists the command. Alternative: re-pause what the
-   device resumed until the founder key resumes it.
+   abandon). Default: nothing is paused or undone. A test pins this: the founder pauses a mission, the phone
+   resumes it, the phone is revoked, and the mission's write then runs. The review lists each resume, and
+   `greg status` lists what the key resumed that still runs, also after a plain revocation. Alternative: put back
+   the pause the device lifted until the founder key (or another delegated device) resumes it. This is the most
+   consequential open question: under the alternative reading, a resume is authority to execute.
 4. **A standing approval on a mission that already closed.** Default: its remainder is voided and recorded like
    any other (one rule, no exception). Alternative: skip closed missions to keep the ledger quieter.
 5. **Who closes a review, and what an answer does.** Default: only the founder key; the answer is only recorded.
    Alternative: a `reject` pauses the missions the review names.
-6. **When a review opens.** Default: only when the founder signs `suspected_compromise: true` with the revocation.
-   A suspicion that arises after a plain revocation has no command yet (the key is no longer delegated).
+6. **When a review opens.** Default: when the founder signs `suspected_compromise: true`, with the revocation or
+   afterwards for a key already revoked (once per revocation). Nothing opens one by itself. Alternatives: a
+   separate command kind for a later suspicion; a review for every revocation.
 7. **Expiry and founder-key rotation.** Default: an unused approval of a device whose delegation merely expired,
    or of a founder key since rotated out, keeps standing. The policy sentence names revocation only.
 8. **Timing.** Default: the revocation takes effect at the body's next inbox read, not at the moment of signing.
 9. **Older ledgers.** Default: an appraisal run from now on refutes a closure whose action was dispatched on a
    revoked device's approval, also when that happened before this rule existed. Recorded appraisals are not
    rewritten.
+
+10. **A review whose reading fails.** Default: recorded once as `COULD_NOT_BE_BUILT` with the error, the founder is
+    asked, and it is not built again by itself. Alternative: stop the body until it can be built.
+11. **Observations.** A SENSOR_SCOPE approval is voided like an APPROVAL (the Gate honours both). The separate
+    appraiser re-derives approvals for actions only, as before; it does not check that an out-of-cone observation
+    was read under an approval in force. Default: left as it was. Alternative: extend the appraiser.
 
 ## Limits
 
@@ -172,7 +213,14 @@ A revocation takes effect when the body records it: its next inbox read, at most
 - A replay-only stand-in book (no ledger, tests only) reads the signer a record states, unverified.
 - SOP proposals (`greg/sop.py`) still count a device's approvals as history when proposing a pre-approvable step;
   the founder ratifies any such step with his own key.
-- Not run here: the whole test suite (about 90 minutes), the other mutation gates, the phone page in a browser.
+- `resumed_and_still_running` reads the signer a `command.accepted` record states, as the review does.
+- Run for this draft: 78 test files, this one (50 tests) and 77 neighbours (device, decisions, approvals,
+  reconciliation, restore, goal gravity, appraisal, remote, the health, packaging and integrity gates): 1164 passed,
+  109 skipped, 2 failed, both `recombined_native_game` tests that fail on `8d205324` in this container; the mutation
+  gate: 68 of 68 mutants caught; `python -m governance.integrity --check`; `python -m acceptance check`;
+  `python -m acceptance directive --against 8d205324`.
+- Not run here: the whole test suite (about 90 minutes), the other mutation gates, hosted CI, the phone page in a
+  browser. No independent review.
 
 ## Rollback
 

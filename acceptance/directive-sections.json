@@ -3177,17 +3177,21 @@
      "ask": "A consequential worker that can bypass the evidence plane is detected as a security defect",
      "excerpt": "If consequential workers can bypass the evidence plane, treat it as a security defect.",
      "owner_paths": [
-      "greg/capabilities.py"
+      "greg/capabilities.py",
+      "tests/security/effect-call-allowlist.json"
      ],
-     "evidence": [],
+     "evidence": [
+      "tests/unit/test_effect_call_allowlist.py"
+     ],
      "required_tier": "UNIT_VERIFIED",
-     "tier": "INTENDED",
-     "coverage": "gap",
+     "tier": "UNIT_VERIFIED",
+     "coverage": "partial",
      "blocker": {
       "class": "BUILDABLE_NOT_BUILT",
-      "reason": "No bypass detector over effectful call sites",
+      "reason": "The detector is a static inventory, not a run-time check: a process, connection or listener started in greg/, foundry/systems/ or a repository module they import fails a unit test until it is listed with what governs it. Still open: its known_unmediated entries are sites the body reaches on its own schedule with no manifest, Gate or envelope behind them; what governs a listed site is a justification read by hand, so nothing checks that the site's effect reaches the ledger; effects inside third-party libraries, and code a child process runs from a string, are not seen",
       "unit": "MU-D"
-     }
+     },
+     "note": "Corrected 2026-11-11. The reason recorded on 2026-10-30 ('No bypass detector over effectful call sites') described the tree before tests/unit/test_effect_call_allowlist.py landed on this line; its mutant gate runs in Canonical CI job 10. On 2026-11-11 the allowlist holds 6 known_unmediated entries. Limits: docs/evidence/effect-call-allowlist-2026-10-30/README.md."
     }
    ]
   },

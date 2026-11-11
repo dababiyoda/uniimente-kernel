@@ -46,10 +46,11 @@ class ActionOutcome:
 
 
 class AuthorityOffice:
-    def __init__(self, *, compiled, passports, signer, ledger, grants: GrantIssuer | None = None, registry=None):
-        """``registry``: the body's CapabilityRegistry. With it, ``act`` refuses a capability the founder has not
+    def __init__(self, *, compiled, passports, signer, ledger, registry, grants: GrantIssuer | None = None):
+        """``registry``: the body's CapabilityRegistry, required. ``act`` refuses a capability the founder has not
         left ATTACHED (behaviour B: "the Kernel must deny affected execution immediately"), whatever path reached
-        the office. Without it the office keeps its earlier behaviour."""
+        the office. There is no office without one: leaving the argument out is a TypeError, and an office whose
+        registry is None refuses every act, since it cannot tell what is attached."""
         self.compiled, self.passports, self.signer, self.ledger = compiled, passports, signer, ledger
         self.registry = registry
         self.grants = grants or GrantIssuer()
@@ -88,19 +89,47 @@ class AuthorityOffice:
                                    f"that {manifest.target_from} would contact")
         return None
 
-    def attach_refusal(self, manifest: CapabilityManifest) -> str | None:
-        """Why this capability may not execute on this body now, or None. Attach state is the founder's (signed
+    def attach_refusal(self, manifest: CapabilityManifest, adapter, ctx) -> str | None:
+        """Why this act may not execute on this body now, or None. Attach state is the founder's (signed
         CAPABILITY_ATTACH / DETACH, Genesis quarantine); only ATTACHED executes. A capability the registry does not
-        hold is not this body's to run. Epistemic requalification never reaches this test: it does not attach."""
-        if self.registry is None:
-            return None
+        hold is not this body's to run. Epistemic requalification never reaches this test: it does not attach.
+
+        Attach state is keyed by id, so the id alone is not enough: what runs is the adapter, and the adapter reads
+        its allowlist, binaries and credentials from the context's manifest. The manifest, the adapter and the
+        context's manifest must each be the one the registry holds under that id, and none may be missing.
+        Otherwise a detached capability's adapter, presented under an attached capability's manifest, would run on
+        that capability's grant and be receipted in its name."""
+        if self.registry is None:       # fail closed: nothing can be shown to be attached
+            return ("this authority office was built without a capability registry; the Kernel runs nothing it "
+                    "cannot check against one")
         cid = manifest.capability_id
         state = self.registry.state.get(cid)
         if state is None:
             return f"capability {cid} is not registered on this body; the Kernel runs no unregistered capability"
         if state != "ATTACHED":
             return f"capability {cid} is {state}; the Kernel runs only ATTACHED capabilities"
+        registered = self.registry.manifests.get(cid)
+        if registered is None or not self._same_manifest(registered, manifest):
+            return f"the manifest presented as {cid} is not the one registered on this body"
+        if adapter is None or self.registry.adapters.get(cid) is not adapter:
+            return (f"the adapter presented for {cid} is not the one registered for it; the Kernel runs a "
+                    "capability's own adapter only")
+        if not isinstance(ctx, InvocationContext) or ctx.manifest is None:
+            return (f"no invocation context names {cid}; an adapter is told which capability it runs as by the "
+                    "Kernel, not left to guess")
+        if not self._same_manifest(registered, ctx.manifest):
+            named = getattr(ctx.manifest, "capability_id", None)
+            return ((f"the invocation context names {named}, not {cid}" if named != cid else
+                     f"the invocation context carries a manifest for {cid} that is not the registered one")
+                    + "; an adapter is told which capability it runs as by the Kernel, not by its caller")
         return None
+
+    @staticmethod
+    def _same_manifest(registered: CapabilityManifest, presented) -> bool:
+        """The registered object itself, or an equal copy of exactly its type (a restart rebuilds manifests from
+        their records). A subclass that answers ``digest()`` for itself is not trusted to describe itself."""
+        return presented is registered or (type(presented) is type(registered)
+                                           and presented.digest() == registered.digest())
 
     @staticmethod
     def proposal_id(scope: str, attempt) -> str:
@@ -123,10 +152,16 @@ class AuthorityOffice:
             adapter, ctx: InvocationContext, params: dict, target: str, cost_usd: float,
             expected_outcome: str, evidence_refs: list, attempt, spent_usd: float,
             approved_scopes: set, evidence_confidence: float = 1.0,
-            signed_scopes: frozenset = frozenset()) -> ActionOutcome:
+            signed_scopes: frozenset = frozenset(), around=None) -> ActionOutcome:
         """``signed_scopes``: exact scopes the founder-signed mission itself pre-approves (its
         ``pre_approved_steps``). They admit that one action past the light cone only; a constitutional
-        requirement for a human is still answered by an exact-scope founder DECISION alone."""
+        requirement for a human is still answered by an exact-scope founder DECISION alone.
+
+        ``adapter`` is the capability's registered adapter itself (``attach_refusal``). A caller that must shape
+        how it is dispatched (a long worker run off the body's turn) passes ``around``: the office applies it to
+        the registered adapter at dispatch, inside the call the Gate makes once the act is authorized. No caller
+        code runs before that. It changes how the adapter is called, never which adapter; the callers allowed to
+        pass it are listed in the unit suite."""
         consequence = manifest.consequence_class
         scope = self.scope_digest(mission_id=mission_id, capability_id=manifest.capability_id, params=params,
                                   target=target, consequence_class=consequence, cost_usd=cost_usd,
@@ -134,12 +169,23 @@ class AuthorityOffice:
         proposal_id = self.proposal_id(scope, attempt)
         base = dict(proposal_id=proposal_id, scope_digest=scope)
 
-        unattached = self.attach_refusal(manifest)
+        unattached = self.attach_refusal(manifest, adapter, ctx)
         if unattached is not None:      # before any cone, passport, grant, dispatch or retained-receipt reuse
             self.ledger.append("event", {"type": "greg.authority.refused_unattached", "proposal_id": proposal_id,
                                          "scope_digest": scope, "capability": manifest.capability_id,
                                          "mission_id": mission_id, "reason": unattached})
             return ActionOutcome("REFUSED", [unattached], **base)
+        # The adapter is told which capability it runs as by the Kernel: the registered manifest, on a copy of the
+        # context, so nothing the caller does to its own context object afterwards reaches the adapter.
+        ctx = replace(ctx, manifest=self.registry.manifests[manifest.capability_id])
+        if around is not None:
+            # ``around`` is the caller's code, so none of it runs here. It is applied to the registered adapter
+            # (checked above) inside the call the Gate makes at dispatch: after the precheck, the cone, policy and
+            # the grant, and never for a refused act, a reused receipt or a dispatch whose outcome is unknown.
+            registered = adapter
+
+            def adapter(params, ctx):
+                return around(registered)(params, ctx)
         refused = self.precheck(manifest, target=target, params=params)
         if refused is not None:
             return ActionOutcome(refused[0], [refused[1]], **base)

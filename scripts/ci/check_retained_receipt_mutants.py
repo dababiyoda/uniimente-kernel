@@ -66,9 +66,12 @@ MUTANTS = [
      'COMPENSATION_SETTLED = ("DONE", "FOUNDER_DECIDED", "DECLINED", "REFUSED")'),
     ("the question a crash lost is asked without the reasons the record kept", "greg/missions.py",
      'failure=closed[aid].get("reasons") or [closed[aid].get("status")])', 'failure=[closed[aid].get("status")])'),
+    # the copy in _record_outcome (it follows ``aid = s["action_id"]``); the dispatch keeps an identical, redundant one
     ("an interrupted worker's receipt is recorded DONE", "greg/missions.py",
+     '        aid = s["action_id"]\n'
      '        if (manifest.capability_id == "worker.commission" and outcome.status == "DONE"\n'
      '                and isinstance(outcome.output, dict) and outcome.output.get("status") == "UNCERTAIN"):\n',
+     '        aid = s["action_id"]\n'
      '        if False:\n'),
     ("a recovered receipt is recorded DONE whatever its result", "greg/missions.py",
      '                outcome = self.office.outcome_of(\n'

@@ -2520,10 +2520,12 @@
      "ask": "A blocked goal stores blocker, why, reconsideration condition, required evidence, required authority and next move",
      "excerpt": "blocker why blocked reconsideration condition required evidence required authority next possible move",
      "owner_paths": [
-      "greg/missions.py"
+      "greg/missions.py",
+      "greg/blockers.py"
      ],
      "evidence": [
-      "tests/unit/test_greg_missions.py"
+      "tests/unit/test_greg_missions.py",
+      "tests/unit/test_greg_blockers.py::test_each_blocker_type_yields_one_record_with_every_field"
      ],
      "tests_tier": "SANDBOX_VERIFIED",
      "required_tier": "SANDBOX_VERIFIED",
@@ -2531,9 +2533,10 @@
      "coverage": "partial",
      "blocker": {
       "class": "BUILDABLE_NOT_BUILT",
-      "reason": "active_constraint carries some of the six; no typed record carries all",
+      "reason": "greg/blockers.py types every blocker it lists into the six fields, saying 'none required' with the reason where one does not apply. Still open: an unpaused no_strategy blocker is typed but never listed, because the engine's own rule treats it as resolved at every tick although its mission is in effect stuck; listing it needs greg/missions.py to tell re-evaluate from resolved. The six fields are projected on read from the journal's mission.blocked facts, not written as records of their own",
       "unit": "MU-E"
-     }
+     },
+     "note": "Corrected 2026-11-11. The reason recorded on 2026-10-30 ('active_constraint carries some of the six; no typed record carries all') described the tree before greg/blockers.py and tests/unit/test_greg_blockers.py landed on this line (10 blocker cases; mutant gate in Canonical CI job 10). The unlisted case is pinned by test_a_self_clearing_no_strategy_blocker_is_typed_but_not_listed. Limits: docs/evidence/typed-blockers-2026-10-30/README.md."
     },
     {
      "id": "S29.A4",

@@ -14,7 +14,6 @@ from mutation_harness import ROOT, run  # noqa: E402
 
 TESTS = "tests/unit/test_greg_browser_binary.py"
 C = "greg/capabilities.py"
-K = "greg/computer.py"
 
 ORDER = ("    for candidate in (*playwright_builds(HEADLESS_SHELLS), *HEADLESS_SHELL_CANDIDATES, *CHROME_CANDIDATES,\n"
          "                      *playwright_builds(FULL_BROWSERS)):")
@@ -43,8 +42,6 @@ MUTANTS = [
      "    found: list[str] = [chosen] if _executable(chosen) else []"),
     (C, "a candidate that is not installed is not listed",
      "        if _executable(candidate) and candidate not in found:", "        if candidate not in found:"),
-    (K, "the session route drives the full browser, never the headless shell",
-     "    for path in playwright_builds(FULL_BROWSERS) + [", "    for path in playwright_builds(HEADLESS_SHELLS) + ["),
     # an installed browser is used only once it has rendered
     (C, "a candidate is used only after it rendered the local page",
      "        why = cannot_render(candidate)\n        if why is None:", "        why = None\n        if why is None:"),

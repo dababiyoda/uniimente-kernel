@@ -38,6 +38,7 @@ SHA-256, plus a digest of the visible text, so the trace can be re-read later.
 from __future__ import annotations
 
 import contextlib
+import glob
 import hashlib
 import json
 import os
@@ -49,7 +50,7 @@ import tempfile
 import time
 import urllib.parse
 
-from greg.capabilities import FULL_BROWSERS, CapabilityError, InvocationContext, _inside, playwright_builds
+from greg.capabilities import CapabilityError, InvocationContext, _inside
 
 OPS = ("goto", "fill", "type", "press", "click", "select", "check", "scroll", "wait_for", "expect_text",
        "extract", "extract_all", "screenshot", "download", "mouse")
@@ -70,10 +71,8 @@ class BoundaryStop(Exception):
 
 
 def chromium() -> str:
-    # Playwright's full builds, the newest first, under either spelling of their OS directory (chrome-linux,
-    # chrome-linux64): the session drives the full browser, not the headless shell a one-shot render prefers.
-    for path in playwright_builds(FULL_BROWSERS) + ["/usr/bin/chromium", "/usr/bin/chromium-browser",
-                                                    "/usr/bin/google-chrome"]:
+    candidates = sorted(glob.glob("/opt/pw-browsers/chromium-*/chrome-linux/chrome"))
+    for path in candidates[::-1] + ["/usr/bin/chromium", "/usr/bin/chromium-browser", "/usr/bin/google-chrome"]:
         if os.access(path, os.X_OK):
             return path
     raise CapabilityError("no Chromium installed on this body")

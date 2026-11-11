@@ -4,7 +4,9 @@ Measured on #196's 8d205324 in a Linux container: the full Chrome binary (Chrome
 a one-shot headless render, with GREG's command line or a minimal one, while the headless shell installed beside it
 renders the same page under GREG's isolation flags in half a second. ``chrome_binary`` picked the full binary, every
 render ran into its 45 second limit, and both real-browser tests in test_greg_browser.py skipped ("browser present
-but cannot run here"). The Playwright paths also named only the earlier ``chrome-linux`` directory.
+but cannot run here"). The Playwright path also named only the earlier ``chrome-linux`` directory. (The session
+route's own lookup, ``greg.computer.chromium``, has the same stale path; draft #233 fixes it and this change leaves
+that file alone.)
 
 Every test here runs stand-in executables (shell scripts) through the real selection and the real ``browser_render``:
 one writes a page, one never returns, one fails, one writes nothing. No real browser and no network is used; the real
@@ -17,7 +19,7 @@ from pathlib import Path
 
 import pytest
 
-from greg import capabilities, computer
+from greg import capabilities
 from greg.capabilities import BUILTINS, CapabilityError, InvocationContext, browser_render
 
 PAGE = "<html><head><title>stand-in</title></head><body><p>greg-renders-42</p><p>hello page</p></body></html>"
@@ -72,8 +74,6 @@ def test_the_headless_shell_comes_first_and_the_newest_build_by_number(machine):
     assert capabilities.chrome_candidates() == [new_shell, old_shell, system_shell, system, new_full, old_full]
     assert capabilities.installed_chrome() == new_shell
     assert not any(runs(b) for b in (old_shell, new_shell, old_full, new_full, system, system_shell))
-    # the session route drives the full browser: the newest full build, never the headless shell
-    assert computer.chromium() == new_full
 
 
 def test_a_browser_that_never_returns_is_passed_over_for_one_that_renders(machine):

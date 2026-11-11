@@ -646,7 +646,7 @@ class Body:
         if kind == "MISSION":
             return {"mission_id": self.engine.register(body, digest)}
         if kind == "DECISION":
-            self.engine.answer(body, digest)
+            self.engine.answer(body, digest, signer=principal)   # some asks only the founder key answers
             return {"request_id": body["request_id"]}
         if kind == "LIFECYCLE":
             self.engine.lifecycle(body, digest)
@@ -761,12 +761,24 @@ class Body:
                                 key=[grant["device_key_id"], digest])
             return {"device_key_id": grant["device_key_id"], "kinds": grant["kinds"], "expires_at": grant["expires_at"]}
         if kind == "DEVICE_REVOKE":
-            kid = body.get("device_key_id")
-            if set(body) != {"device_key_id"} or kid not in self.device_keys():
-                raise MissionError("revocation needs exactly one currently delegated device_key_id")
-            self.journal.record("device.revoked", {"device_key_id": kid, "command_digest": digest,
-                                                   "at": iso(self.clock())}, key=[kid, digest])
-            return {"device_key_id": kid, "revoked": True}
+            # Founder policy 2026-11-11: from this record on, nothing the key approved and that was not yet used
+            # authorizes a new effect (the mission fold derives that from the record, greg/missions.py); what
+            # already ran under it keeps its receipts. ``suspected_compromise`` also opens a retrospective review.
+            from greg import revocation
+            kid, suspected = revocation.revoke_fields(body)
+            retained = self.journal.retained("device.revoked", [kid, digest])
+            if retained is None:      # else: this very command revoked it before a stop; finish its acceptance
+                if kid not in self.device_keys():
+                    raise MissionError("revocation needs exactly one currently delegated device_key_id")
+                self.journal.record("device.revoked", {"device_key_id": kid, "command_digest": digest,
+                                                       "at": iso(self.clock()),
+                                                       **({revocation.SUSPECTED: True} if suspected else {})},
+                                    key=[kid, digest])
+            trail = revocation.settle(self.journal, self.engine.book)
+            voided = sorted(rid for rid, v in self.engine.book.voided.items()
+                            if v["voided_by"].get("revocation_command") == digest)
+            return {"device_key_id": kid, "revoked": True, **({"voided_requests": voided} if voided else {}),
+                    **({"integrity_review": trail["reviews"][0]} if suspected and trail["reviews"] else {})}
         if kind == "ANCHOR_CONFIGURE":
             try:
                 return anchor.configure(self.journal, body, digest)
@@ -994,6 +1006,10 @@ class Body:
         commands = self.ingest_inbox()
         if self.stop_requested:
             return {"commands": commands, "stopped": True}
+        # The trail of a device revocation (what it voided, the review a suspected compromise opens), finished here
+        # if the body stopped between the revocation and its trail. Paused or not: it is a record, not an action.
+        from greg import revocation
+        revocation.settle(self.journal, self.engine.book)
         if self.paused():
             hold = crash_loop_hold(self.journal)
             self._heartbeat("HELD" if hold else "PAUSED", [])
@@ -1413,6 +1429,9 @@ def status(home: str | Path) -> dict:
             "security": {"founder_keys_enrolled": founder, "chain_verified": ok, "chain": chain,
                          "devices": [{k: d[k] for k in ("device_key_id", "label", "kinds", "expires_at")}
                                      for d in device_delegations(journal).values()],
+                         # what each revocation voided, and the review a suspected compromise opened
+                         "device_revocations": __import__("greg.revocation", fromlist=["summary"]).summary(
+                             journal, book),
                          "stop_file_present": layout.stop_file.exists(),
                          "pause_file_present": layout.pause_file.exists(),
                          "crash_loop_hold": (crash_loop_hold(journal) or {}).get("why"),

@@ -1,0 +1,39 @@
+{
+ "appraisal": [
+  "VERIFIED"
+ ],
+ "settled_before": {
+  "cognition.swarm": [
+   1,
+   1
+  ]
+ },
+ "critiques": [
+  "reject"
+ ],
+ "causes": [
+  [
+   "FOUNDER_REJECTED",
+   true
+  ]
+ ],
+ "contained_receipts": 1,
+ "claim_state": [
+  [
+   "m:okay",
+   "NEEDS_REVIEW"
+  ]
+ ],
+ "settled_after": {
+  "cognition.swarm": [
+   1,
+   1
+  ]
+ },
+ "measured_outcomes_resting_on_contained": 1,
+ "cognition_settled_invalidated_flags": [
+  false
+ ],
+ "sop_closed_procedures": [],
+ "asks": []
+}

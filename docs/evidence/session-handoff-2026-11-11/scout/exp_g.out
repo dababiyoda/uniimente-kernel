@@ -1,0 +1,35 @@
+{
+ "G1_three_weak_independent_sources_threshold_2": {
+  "woken": [
+   [],
+   []
+  ],
+  "pulls_added": 0
+ },
+ "G2_same_sentence_from_four_sources_threshold_1": {
+  "woken_per_tick": [
+   [
+    "sha256:7dc19ba8a0ce4fea242954323c38924d766297c0417d34a8a555bc9d32480fe2"
+   ],
+   [
+    "sha256:7dc19ba8a0ce4fea242954323c38924d766297c0417d34a8a555bc9d32480fe2"
+   ],
+   [
+    "sha256:7dc19ba8a0ce4fea242954323c38924d766297c0417d34a8a555bc9d32480fe2"
+   ],
+   [
+    "sha256:7dc19ba8a0ce4fea242954323c38924d766297c0417d34a8a555bc9d32480fe2"
+   ]
+  ],
+  "pulls_added": 4,
+  "community_evidence_distinct_claims": 1,
+  "community_evidence_flags": [
+   {
+    "claim": "c.txt looks broken",
+    "sources": 4,
+    "flag": "COORDINATED_CAMPAIGN_SUSPECTED",
+    "counted_as": 2
+   }
+  ]
+ }
+}

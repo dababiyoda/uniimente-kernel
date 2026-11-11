@@ -1,0 +1,60 @@
+ "gate_at_planning": true,
+ "states_after_approval": [
+  "ACTED",
+  "BLOCKED",
+  "WAITING",
+  "WAITING",
+  "WAITING"
+ ],
+ "actions": [
+  [
+   "late",
+   "DONE"
+  ]
+ ],
+ "out_file_exists": false,
+ "late_file": "ok",
+ "asks_after": [
+  [
+   "APPROVAL",
+   "work",
+   null
+  ],
+  [
+   "NO_STRATEGY",
+   null,
+   {
+    "work": [
+     "gate"
+    ]
+   }
+  ]
+ ],
+ "withdrawn": [],
+ "states_after_prereq_returns": [
+  "RESUMED",
+  "ACTED",
+  "ACHIEVED",
+  "ACHIEVED"
+ ],
+ "actions_final": [
+  [
+   "late",
+   "DONE"
+  ],
+  [
+   "work",
+   "DONE"
+  ]
+ ],
+ "asks_final": [
+  [
+   "APPROVAL",
+   "work"
+  ],
+  [
+   "NO_STRATEGY",
+   null
+  ]
+ ]
+}

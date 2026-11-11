@@ -22,8 +22,8 @@ MUTANTS = [
      "        if False:\n            return f"),
     (AUTHORITY, "the refusal leaves no record", '"type": "greg.authority.refused_unattached"',
      '"type": "greg.authority.refused_unattached_unrecorded"'),
-    (BODY, "the body builds its office without the registry",
-     "ledger=self.ledger, registry=self.registry)", "ledger=self.ledger)"),
+    (BODY, "the body builds its office with no registry",
+     "ledger=self.ledger, registry=self.registry)", "ledger=self.ledger, registry=None)"),
 ]
 
 

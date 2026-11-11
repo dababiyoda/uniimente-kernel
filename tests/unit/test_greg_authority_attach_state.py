@@ -100,8 +100,10 @@ def test_reattach_restores_execution_and_requalification_alone_does_not(world):
     assert _act(body, tmp, note, attempt="b").status == "DONE"
 
 
-def test_an_office_built_without_a_registry_keeps_its_earlier_behaviour(world):
+def test_an_office_without_a_registry_runs_nothing(world):
+    """Was "keeps its earlier behaviour" (DONE). An office that cannot check a registry now fails closed, so no
+    construction or later mutation can silently switch the attach check off."""
     body, _, _, tmp, note = world
-    body.registry.set_state("fs.read", "DETACHED")
     body.office.registry = None
-    assert _act(body, tmp, note, attempt="no-registry").status == "DONE"
+    out = _act(body, tmp, note, attempt="no-registry")
+    assert out.status == "REFUSED" and "without a capability registry" in out.reasons[0]

@@ -30,13 +30,21 @@ MUTANTS = [
      "if registered is not manifest and (registered is None or registered.digest() != manifest.digest()):",
      "if registered is not manifest:"),
     (AUTHORITY, "a dispatch wrapper is handed nothing to run and runs alone",
-     "            adapter = around(adapter)\n", "            adapter = around(None)\n"),
+     "                return around(registered)(params, ctx)\n", "                return around(None)(params, ctx)\n"),
     (AUTHORITY, "a dispatch wrapper is ignored",
-     "            adapter = around(adapter)\n", "            pass\n"),
+     "                return around(registered)(params, ctx)\n", "                return registered(params, ctx)\n"),
     (AUTHORITY, "a dispatch wrapper is applied before the attach check",
      "        unattached = self.attach_refusal(manifest, adapter, ctx)\n",
      "        adapter = around(adapter) if around is not None else adapter\n"
      "        unattached = self.attach_refusal(manifest, adapter, ctx)\n"),
+    (AUTHORITY, "caller code runs before the act is authorized (the wrapper is built on the way in)",
+     "            registered = adapter\n", "            registered = around(adapter)\n            around = lambda a: a\n"),
+    (AUTHORITY, "an office with no registry runs everything",
+     "        if self.registry is None:       # fail closed: nothing can be shown to be attached\n"
+     "            return (", "        if self.registry is None:\n            return None\n        if False:\n            return ("),
+    (AUTHORITY, "an office can be built without naming a registry",
+     "signer, ledger, registry, grants: GrantIssuer | None = None):",
+     "signer, ledger, registry=None, grants: GrantIssuer | None = None):"),
 ]
 
 

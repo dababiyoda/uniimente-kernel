@@ -46,10 +46,11 @@ class ActionOutcome:
 
 
 class AuthorityOffice:
-    def __init__(self, *, compiled, passports, signer, ledger, grants: GrantIssuer | None = None, registry=None):
-        """``registry``: the body's CapabilityRegistry. With it, ``act`` refuses a capability the founder has not
+    def __init__(self, *, compiled, passports, signer, ledger, registry, grants: GrantIssuer | None = None):
+        """``registry``: the body's CapabilityRegistry, required. ``act`` refuses a capability the founder has not
         left ATTACHED (behaviour B: "the Kernel must deny affected execution immediately"), whatever path reached
-        the office. Without it the office keeps its earlier behaviour."""
+        the office. There is no office without one: leaving the argument out is a TypeError, and an office whose
+        registry is None refuses every act, since it cannot tell what is attached."""
         self.compiled, self.passports, self.signer, self.ledger = compiled, passports, signer, ledger
         self.registry = registry
         self.grants = grants or GrantIssuer()
@@ -97,8 +98,9 @@ class AuthorityOffice:
         ``ctx`` (as ``act`` passes them) the manifest, the adapter and the context's manifest must be the ones the
         registry holds under that id. Otherwise a detached capability's adapter, presented under an attached
         capability's manifest, would run on that capability's grant and be receipted in its name."""
-        if self.registry is None:
-            return None
+        if self.registry is None:       # fail closed: nothing can be shown to be attached
+            return ("this authority office was built without a capability registry; the Kernel runs nothing it "
+                    "cannot check against one")
         cid = manifest.capability_id
         state = self.registry.state.get(cid)
         if state is None:
@@ -147,9 +149,9 @@ class AuthorityOffice:
 
         ``adapter`` is the capability's registered adapter itself (``attach_refusal``). A caller that must shape
         how it is dispatched (a long worker run off the body's turn) passes ``around``: the office applies it to
-        the registered adapter once the attach check has passed, and calls the result only at dispatch. It changes
-        how the adapter is called, never which adapter; the callers allowed to pass it are listed in the unit
-        suite."""
+        the registered adapter at dispatch, inside the call the Gate makes once the act is authorized. No caller
+        code runs before that. It changes how the adapter is called, never which adapter; the callers allowed to
+        pass it are listed in the unit suite."""
         consequence = manifest.consequence_class
         scope = self.scope_digest(mission_id=mission_id, capability_id=manifest.capability_id, params=params,
                                   target=target, consequence_class=consequence, cost_usd=cost_usd,
@@ -163,8 +165,14 @@ class AuthorityOffice:
                                          "scope_digest": scope, "capability": manifest.capability_id,
                                          "mission_id": mission_id, "reason": unattached})
             return ActionOutcome("REFUSED", [unattached], **base)
-        if around is not None:          # only now: what it wraps is the registered adapter, checked above
-            adapter = around(adapter)
+        if around is not None:
+            # ``around`` is the caller's code, so none of it runs here. It is applied to the registered adapter
+            # (checked above) inside the call the Gate makes at dispatch: after the precheck, the cone, policy and
+            # the grant, and never for a refused act, a reused receipt or a dispatch whose outcome is unknown.
+            registered = adapter
+
+            def adapter(params, ctx):
+                return around(registered)(params, ctx)
         refused = self.precheck(manifest, target=target, params=params)
         if refused is not None:
             return ActionOutcome(refused[0], [refused[1]], **base)

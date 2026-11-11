@@ -1,4 +1,4 @@
-"""The founder's three messages of 2026-11-11 are kept whole, and they move sequencing and evidence discipline only.
+"""The founder's messages of 2026-11-11 are kept whole, and they move sequencing and evidence discipline only.
 
 They say that engineering never waits for a device run, a customer or a founder-only decision ("VEPMC = 0 does not
 stop Track A"). They must not loosen what counts as that device run: VEPMC still needs the founder tier.
@@ -36,11 +36,30 @@ PINNED = {
 }
 
 
+RESUME_PINNED = [
+    "every substantial component inspected should receive a documented disposition: integrate, extract useful parts, "
+    "consolidate, preserve for a justified future use, or reject with reasons.",
+    "Even rejected code can contribute a useful mechanism or counterexample.",
+    "Whether it follows through must be demonstrated by working connections and verified capabilities.",
+    "These were instructions to build and test, not claims that those capabilities already exist.",
+]
+
+
 def blocks() -> dict:
     """The three fenced messages, by letter, exactly as stored."""
     text = SOURCE.read_text(encoding="utf-8")
     found = re.findall(r"^## ([ABC])\. [^\n]*\n\n````text\n(.*?)\n````$", text, flags=re.S | re.M)
     return dict(found)
+
+
+def resume_parts() -> dict:
+    """The two new parts of the resume message (D), which repeats message C between them."""
+    text = SOURCE.read_text(encoding="utf-8")
+    return dict(re.findall(r"^### (D-before|D-after) [^\n]*\n\n````text\n(.*?)\n````$", text, flags=re.S | re.M))
+
+
+def everything_kept() -> str:
+    return "\n".join([*blocks().values(), *resume_parts().values()])
 
 
 def test_the_three_messages_are_kept_whole_and_their_digests_match():
@@ -55,6 +74,21 @@ def test_the_three_messages_are_kept_whole_and_their_digests_match():
     assert {int(n) for n in re.findall(r"^(\d{1,2})\. [A-Z]", kept["C"], flags=re.M)} >= set(range(1, 23))
 
 
+def test_the_resume_message_is_kept_whole_without_storing_the_directive_twice():
+    """D is new text, then C again byte for byte, then new text. The stored parts rebuild the message as sent."""
+    parts, text = resume_parts(), SOURCE.read_text(encoding="utf-8")
+    assert sorted(parts) == ["D-after", "D-before"]
+    rows = re.findall(r"^\| (D-before|D-after) \| +(\d+) \| `([0-9a-f]{64})` \|$", text, flags=re.M)
+    stated = {name: (int(size), digest) for name, size, digest in rows}
+    for name, body in parts.items():
+        assert stated[name] == (len(body), hashlib.sha256(body.encode("utf-8")).hexdigest()), name
+    [(size, digest)] = re.findall(r"^\| D \| [^|]+ \| +(\d+) \| `([0-9a-f]{64})` \|$", text, flags=re.M)
+    whole = parts["D-before"] + blocks()["C"] + parts["D-after"]
+    assert (len(whole), hashlib.sha256(whole.encode("utf-8")).hexdigest()) == (int(size), digest)
+    for sentence in RESUME_PINNED:
+        assert sentence in parts["D-before"] or sentence in parts["D-after"], sentence
+
+
 def test_the_sentences_later_work_relies_on_are_in_the_messages_word_for_word():
     kept = blocks()
     for letter, sentences in PINNED.items():
@@ -66,7 +100,7 @@ def test_the_record_has_every_ledger_field_and_quotes_only_what_the_source_says(
     record = json.loads(RECORD.read_text(encoding="utf-8"))
     assert not [f for f in REQUIRED if f not in record]
     assert record["state"] == "active" and record["authority_delta"] == "none"
-    whole = "\n".join(blocks().values())
+    whole = everything_kept()
     assert record["statement"] in whole and record["exact_source_excerpt"] in whole
     for ref in record["source_refs"]:
         assert (ROOT / ref).is_file(), ref

@@ -13,7 +13,7 @@
  "source_date": "2026-11-11",
  "changed_axis": "sequence, immediate priority and evidence discipline (CLAUDE.md developmental-inheritance axes). The final intended effect, the completion boundary BODY + ORGANS + MIND and the authority envelope are unchanged.",
  "intended_effect": "Developmental engineering (Track A) advances continuously in controlled conditions and is never stopped by a missing device run, customer, payment or founder-only decision. Founder and external acceptance (Track B) keeps its own evidence and is never moved by a container, a test key, a synthetic founder or a rehearsal. Each increment is reproduced, fixed, verified, composed on one tree with its neighbours and handed to the integration owner; then the next unfinished dependency is recomputed and built.",
- "executable_interpretation": "Agents (1) start from a real defect or the highest-value buildable dependency, not a roadmap; the first named build is truthful recovery of a retained negative receipt, with the eight-step acceptance sequence in the source; (2) verify behaviour on a composed tree, since a clean merge proves nothing; (3) treat the eight proposed extensions (representation repair, evidence-dependency correction, proof-bearing plans, adaptive cognitive organization, transferable capability propagation, developmental-process improvement, goal opportunity synthesis, functional reconstitution) as bounded experiments with the minimum tests the source gives, extending canonical owners and inspecting existing mechanisms first; (4) report in the founder's language, leading with what GREG can reliably do now that it could not do before; (5) leave an exact continuation package when a resource limit forces a pause. Revoking a device invalidates its unused authority at once while completed actions stay in the ledger; a suspected compromise opens a separate retrospective review. No probability estimates or process-quality scores stand in for engineering results. The directive's own disposition for the proposed extensions is EXPERIMENT.",
+ "executable_interpretation": "Agents (1) start from a real defect or the highest-value buildable dependency, not a roadmap; the first named build is truthful recovery of a retained negative receipt, with the eight-step acceptance sequence in the source; (2) verify behaviour on a composed tree, since a clean merge proves nothing; (3) treat the eight proposed extensions (representation repair, evidence-dependency correction, proof-bearing plans, adaptive cognitive organization, transferable capability propagation, developmental-process improvement, goal opportunity synthesis, functional reconstitution) as bounded experiments with the minimum tests the source gives, extending canonical owners and inspecting existing mechanisms first; (4) report in the founder's language, leading with what GREG can reliably do now that it could not do before; (5) leave an exact continuation package when a resource limit forces a pause. (6) Per the resume message, every substantial component an agent inspects gets a documented disposition in the founder's five words (integrate, extract useful parts, consolidate, preserve for a justified future use, reject with reasons), stating how it was inspected; a disposition is a record, and follow-through is shown only by working connections and verified capabilities. Revoking a device invalidates its unused authority at once while completed actions stay in the ledger; a suspected compromise opens a separate retrospective review. No probability estimates or process-quality scores stand in for engineering results. The directive's own disposition for the proposed extensions is EXPERIMENT.",
  "owner": "Alfonso Lopez (founder authority); the integration owner and implementing sessions on board #96",
  "state": "active",
  "status": "active",
@@ -31,13 +31,15 @@
  ],
  "success_evidence": [
   "Draft pull requests into the integration line, each with fail-before and pass-after evidence, adverse cases, a composed-tree run and a mutation gate, while VEPMC stays 0",
-  "tests/unit/test_founder_directive_20261111.py: the three messages are kept whole with matching digests, the pinned sentences are in them, and the record has every required ledger field"
+  "tests/unit/test_founder_directive_20261111.py: the messages are kept whole with matching digests (the resume message is rebuilt from its two new parts and block C), the pinned sentences are in them, and the record has every required ledger field",
+  "docs/collaboration/REPOSITORY-DISPOSITIONS-2026-11-11.md: one session's dispositions for what it inspected on 2026-11-11, with the depth of each inspection stated"
  ],
  "failure_evidence": [
   "A report that names a missing device run, customer, payment or signature as the reason engineering stopped",
   "A container run, test key or rehearsal reported as founder-used, live, externally verified or commercially validated",
   "A read-only audit or a new architecture document presented as the directive executed",
-  "An unfinished buildable requirement relabelled as an external blocker, or a test threshold lowered after a failure"
+  "An unfinished buildable requirement relabelled as an external blocker, or a test threshold lowered after a failure",
+  "A component inspected and left with no disposition, or a disposition presented as a working connection"
  ],
  "dependencies": [
   "INTENT-20261028-OPUS-MAXIMUS-REISSUE (the controlling 77-section prompt)",
@@ -58,7 +60,8 @@
  "implementation_refs": [
   "docs/FOUNDER_INTENT_LEDGER.md",
   "tests/unit/test_founder_directive_20261111.py",
-  "greg/metrics.py"
+  "greg/metrics.py",
+  "docs/collaboration/REPOSITORY-DISPOSITIONS-2026-11-11.md"
  ],
  "authority_delta": "none"
 }

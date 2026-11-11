@@ -1,6 +1,6 @@
-# Founder directives of 2026-11-11: complete-machine execution, the five-item continuation, and the Fable 5.2 execution directive (verbatim)
+# Founder directives of 2026-11-11: complete-machine execution, the five-item continuation, the Fable 5.2 execution directive, and the resume message (verbatim)
 
-Status: three messages the founder sent in Claude Code session `session_01Kucyfm9exT5imDVYvHTYSv` on 2026-11-11,
+Status: four messages the founder sent in Claude Code session `session_01Kucyfm9exT5imDVYvHTYSv` on 2026-11-11,
 kept exactly as sent. Sources for `INTENT-20261111-ABSOLUTE-OPUS-MAXIMUS`. Chat text is intent evidence, not
 cryptographic runtime authentication. It grants no external-consequence authority.
 
@@ -13,8 +13,19 @@ the block is that argument, including its first line naming the skills to use. N
 | A | 2026-11-11T12:31:57.934Z | 40240 | `1fd852647ceadd340e2294d4dd4286ec172f0678a0245da1a6bcfedc7988bdd6` |
 | B | 2026-11-11T13:19:43.178Z | 3555 | `ee254e2cc9caf99f1db01a00a14bc776af83a2caa8ac4b85f82933b35e6bcb0a` |
 | C | 2026-11-11T16:42:28.814Z | 78071 | `e75371eb437f2f8791f0f2c9e6f6c7e20e097020ec8985f14e9b3c8ddadf14c9` |
+| D | 2026-11-11T23:12:14.886Z | 97405 | `34efedbe0ee9a860a2d5a290223a2d95abea854c7719e8bce2c9dc6ecae77f7a` |
 
-A fourth message, sent 2026-11-11T16:00:30.708Z (43846 characters, SHA-256 `b1249e0fa64a0bd1c33a1b04949b7998cf54d689bdcd7b857b3e21e445764587`), begins "Resume:" and repeats B
+Message D is the founder's resume message. It is 1179 characters of new text, then block C again byte for
+byte (78071 characters), then 18155 characters of new text. Block C is not stored twice: section D below keeps
+the two new parts whole, each with its own digest, and the digest in the table is of the whole message as sent
+(`D-before` + block C + `D-after`), which the test rebuilds.
+
+| Part of D | Characters | SHA-256 |
+|---|---:|---|
+| D-before | 1179 | `44af4bc93979d5e5ddf7fe70b1ac7340670c023a2263060ff9013ff61a2f955a` |
+| D-after | 18155 | `7c4eefdea6a774419a294d5dc50d5c8b9c970e403e7e7d76ff2b25d6d003b33d` |
+
+Another message, sent 2026-11-11T16:00:30.708Z (43846 characters, SHA-256 `b1249e0fa64a0bd1c33a1b04949b7998cf54d689bdcd7b857b3e21e445764587`), begins "Resume:" and repeats B
 and then A. It is not stored again; repetition adds no authority.
 
 What the texts say about themselves, which a reader should keep in mind: C opens "This is a founder-facing draft to
@@ -23,6 +34,11 @@ proven, or activated." C contains the directive twice, a long form and a shorter
 into Claude", with a preparation appendix between them that describes how the draft was prepared; the appendix calls
 its own review "drafting judgments and self-review, not independent engineering review". The founder sent the whole
 of it with the words "Do all work verbatim. As instructed by me".
+
+The two new parts of D are written in the voice of someone addressing the founder ("Your intended process is",
+"the complete prompt you sent") and speak of Claude in the third person. Who drafted them is not stated in the
+message. The founder sent them as the resume instruction, so they are kept as direction the founder adopted, not as
+the founder's own drafting.
 
 ## A. Founder correction, frontier invention, and complete-machine execution directive
 
@@ -2089,4 +2105,250 @@ VERIFY THE CONNECTED MACHINE.
 MAKE ITS DEVELOPMENTAL PROCESS STRONGER.
 
 CONTINUE TOWARD THE TRUE ABSOLUTE OPUS MAXIMUS.
+````
+
+## D. The resume message: dispositions for everything inspected, and the directive's 22 points restated
+
+What D adds, in the founder's words: "every substantial component inspected should receive a documented disposition:
+integrate, extract useful parts, consolidate, preserve for a justified future use, or reject with reasons." Its last
+part restates what the directive asks for and says of that list: "These were instructions to build and test, not
+claims that those capabilities already exist."
+
+### D-before (everything in the message ahead of block C's text)
+
+````text
+RESUME:
+The prompt explicitly instructs Claude to treat the repositories as building material for one converging institution. Sections 4, 7, 8, and 13 cover that.
+
+Your intended process is:
+
+1. Inspect existing work: code, tests, research, abandoned experiments, and failures.
+2. Extract its useful mechanisms: preserve what already works and the lessons from what failed.
+3. Adapt and recombine: build stronger capabilities from those existing pieces.
+4. Connect them: give retained components actual consumers inside Body + Organs + Mind.
+5. Verify the improvement: demonstrate useful behavior in the integrated machine.
+
+Your clarification sharpens the accountability requirement: every substantial component inspected should receive a documented disposition: integrate, extract useful parts, consolidate, preserve for a justified future use, or reject with reasons.
+
+That preserves value while controlling duplication and complexity. Even rejected code can contribute a useful mechanism or counterexample.
+
+Claude has the instruction. Whether it follows through must be demonstrated by working connections and verified capabilities.
+
+/reverse-engineering:reverse-engineering 
+````
+
+### D-after (everything in the message behind block C's text)
+
+````text
+
+
+The prompt gave Claude 22 main directives, covering the complete machine, its strongest proposed abilities, and the evidence required to prove them. These were instructions to build and test, not claims that those capabilities already exist.
+
+This list follows the complete prompt you sent⁠￼.
+
+1. Fix the immediate execution defects, then keep advancing.
+    Start by making GREG remember failed or refused actions correctly after interruption. Recovery must preserve the original outcome without repeating the action, issuing another permission, inventing another charge, or awarding false success.
+    Finish the assigned detached-sensor, revoked-device, completion-map, and capability-scout work. Verify the components together, recompute the next unfinished dependency, and continue beyond the first successful repair.
+2. Build the complete artificial institution.
+    Build the whole Body + Organs + Mind, with persistent goals, shared memory, coordinated work, reasoning, authority, evidence, and learning.
+    Its intended capabilities include computer operation, capability invention, temporary AI organizations, human collaboration, scientific research, cultural creation, operating ventures, resource management, recovery, migration, and eventual physical interfaces.
+    The founder experience should be straightforward: you establish direction; GREG handles authorized work and brings you consequential decisions.
+3. Continue developmental engineering independently of commercial or device acceptance.
+    Keep building, integrating, testing, repairing, packaging, and rehearsing even while VEPMC remains zero.
+    Missing customers, hardware acceptance, or a particular signature should block only the work that actually depends on them. Preserve genuine founder acceptance and real commercial outcomes as separate achievements.
+    Only you can authorize graduation from the developmental period.
+4. Reconstruct your actual intent from current evidence.
+    Read the canonical instructions, founder corrections, conversations, project sources, code, reviews, failures, alternative architectures, and organ repositories.
+    Track what was inspected, what remains inaccessible, which sources conflict, and which implementation owns each intended effect. Correct stale classifications using executable evidence.
+    Preserve the ambition without pretending every source has been read or every documented capability works.
+5. Complete every remaining part as connected behavior.
+    The prompt identifies twelve work families:
+
+Work family	Required result
+Authority	Correct identity, permissions, revocation, budgets, outcomes, recovery, and shutdown
+Mind	Competent reasoning selection and composition
+Capability Genesis	Obtain or construct missing abilities and resume the original mission
+Workers	Reliable background work, temporary teams, cancellation, and handoffs
+Body and Hands	Persistent operation and dependable computer control
+Memory	Durable goals, source freshness, correction, and historical reconstruction
+Organs	Information meaningfully consumed across components
+Learning	Failures constrain future attempts; improvements help later work
+Business	Complete delivery, payment, disputes, obligations, and accounting
+Human systems	Consent, expertise, refusal, appeals, and participant benefit
+Resilience	Recovery and replacement without losing control
+Founder comprehension	One understandable account of intentions, actions, results, costs, and learning
+
+    Preserve all 55 Foundry obligations. A catalog entry does not count as implementation. Each unfinished requirement needs an owner, missing behavior, dependencies, evidence gap, next build, and completion criterion.
+6. Build the complete five-layer Polyintelligence Mind.
+
+Layer	Ambitious requirement
+L1: Basal intelligence	Reflexes, state machines, sensing, filters, anomaly detection, feedback, and resource regulation
+L2: Collective intelligence	Independent scouting, aggregation, quorum, adaptive networks, diversity, and human collective judgment
+L3: Solver intelligence	The full repertoire of specialist reasoning methods
+L4: Developmental intelligence	Form, reorganize, repair, replace, and improve functional arrangements
+L5: Institutional intelligence	Recognize problem structure, choose representations and methods, allocate resources, diagnose deficits, and learn what works
+
+    L3 explicitly preserves 25 families: semantic reasoning; exact and symbolic methods; Fermi estimation; formal verification; constraints; optimization; graphs; search; Bayesian reasoning; causal reasoning; control; sequential decisions; active perception; information and value of information; patterns; simulation; games; mechanism design; adversarial reasoning; executable mental models; human expertise; heterogeneous model routing; program synthesis; MICA/CDPE research; and Levin-inspired developmental mechanisms.
+    Test the architecture against strong single methods, simple routing, and a capable model with tools under comparable resources. Preserve simpler approaches when they perform better. UNIIMENTE_TRUE_ABSOLUTE_OPUS_MAXIMUS_FABLE_5_2.md
+7. Make Capability Genesis a central operating ability.
+    When a mission exposes a missing function, GREG should search its existing capabilities, history, organs, and external mechanisms before deciding whether to acquire, adapt, combine, or build something.
+    It must isolate and verify the candidate, register it, obtain the required attachment authority, and return to the original mission.
+    Retain provenance, licenses, dependencies, operating limits, tests, failure history, recovery procedures, and retirement conditions. A renamed or rebuilt capability must not escape applicable historical counterexamples.
+8. Turn experience into reusable competence through Alchemy.
+    Convert successes, failures, criticism, research, code, and human expertise into mechanisms, detectors, alternative representations, recovery procedures, experiments, and reusable skills.
+    Generate materially different candidates, including simpler alternatives. Retain only improvements that survive checks for correctness, authority, cost, maintenance, and participant welfare.
+    Seek both an immediate improvement and a justified improvement to future development. Improve the machinery that produces capabilities, while protecting evaluators and constitutional rules.
+9. Pursue eight stronger frontier abilities.
+
+Proposed ability	What Claude was told to build and prove
+Representation repair	Detect when a technically correct answer solves the wrong problem; identify the faulty assumption and improve the decision
+Evidence-dependency correction	When evidence is retracted, revise affected conclusions while preserving valid, unaffected work
+Proof-bearing plans	Give plans checkable assumptions, prerequisites, budgets, expected observations, stop rules, and recovery paths
+Adaptive cognitive organization	Choose and reorganize algorithms, models, specialist workflows, temporary teams, simulations, or human assistance
+Transferable capability propagation	Carry useful competence into another mission or organ and demonstrate an actual improvement
+Developmental-process improvement	Improve how capabilities are researched, constructed, tested, and repaired, then prove the benefit on later tasks
+Goal opportunity synthesis	Combine relevant signals about dormant goals, timing, resources, and capabilities to recognize useful openings
+Functional reconstitution	Restore a lost function through a different permitted mechanism after losing its usual tool, provider, worker, or organization
+
+    Each proposed ability requires a falsification test. These are bounded engineering ambitions, not established general intelligence or universal self-healing.
+10. Pair every strong constructive ability with equally serious correction.
+
+Constructive ability	Required corrective ability
+Broad perception	Consent, minimization, provenance, freshness, and attention control
+Strong reasoning	Assumption challenges, uncertainty, dissent, and abstention
+Powerful invention	Independent testing, rejection, and retirement
+Persistent pursuit	Reassessment, founder correction, dormancy, refusal, and termination
+Autonomous execution	Exact permission, revocation, reconciliation, and shutdown
+Capability growth	Regression controls, quarantine, replacement, and recovery
+Institutional memory	Correction, expiry, data rights, and accurate lineage
+Parallel teams	Scope limits, shared budgets, cancellation, and dissolution
+Economic compounding	Accounting, obligations, reserves, restitution, and downside control
+Cultural influence	Truthfulness, material disclosures, dissent, and voluntary participation
+Distributed continuity	Explicit enrollment, conflict handling, revocation, and authorized migration
+Physical capability	Appropriate engineering assurance, oversight, and separate authorization
+
+Test both sides together. Strong safeguards should make useful authorized work more dependable.
+
+11. Make Goal Gravity produce useful work while you are absent.
+
+Maintain the desired future, current state, assumptions, active milestone, bottleneck, available interventions, missing capabilities, relevant observations, and revised route.
+
+Connect Goal Gravity, Backcast GPS, opportunistic memory, Experience Surface, Favorable Intersection mechanisms, Genesis, and the Asymmetry Production Line through actual working consumers.
+
+Prepare dependencies before urgency, preserve dormant goals, recognize meaningful openings, and decide when to investigate, compute, recruit expertise, act, wait, or abstain.
+
+Measure your intervention time, recovery burden, false alerts, missed events, and useful outcomes.
+
+12. Finish the persistent Body, computer Hands, and founder interface.
+
+Deliver one installable operating experience with durable state independent of individual conversations or model sessions.
+
+Include background work, bounded workers, timers, recovery, institutional questions and answers, desktop and phone interfaces, voice where feasible, scoped credentials, resource accounting, health monitoring, degraded operation, pause, stop, and revocation.
+
+Operate through APIs, files, terminals, repositories, browsers, applications, and desktop automation. Test actual missions against stale screens, interrupted writes, duplicate messages, expired credentials, hostile content, missing tools, uncertain submissions, and restart.
+
+Preserve the Night Shift → evidence → Morning Tribunal → correction → verified improvement cycle.
+
+13. Complete the specialist organs as one institution.
+
+Organ	Assigned ambition
+Golden Kernel	Own constitutional authority, identity, budgets, consequence controls, evidence semantics, refusal, revocation, and shutdown
+DALEOBANKS	Operate as one persistent creative identity across languages, characters, channels, and embodiments, serving knowledge and human capability
+WealthMachineIntelligence	Evaluate opportunities, business models, operating capacity, risk, capital efficiency, and venture options
+Research and Discovery	Convert papers, standards, repositories, scouting, and appropriate reverse-engineering findings into evaluated capabilities
+Foundry and OMNIMORPH	Form the smallest effective mechanism or organization that closes a legitimate deficit
+PumpStation	Preserve the governed Web3 and human/AI earning-network horizon, with justified identity, credentials, wallets, contracts, governance, proof, and settlement
+
+Evaluate candidate repositories for actual fit rather than treating ownership or a README as integration. Preserve retired venture decisions, including IVIO-NEMT. UNIIMENTE_TRUE_ABSOLUTE_OPUS_MAXIMUS_FABLE_5_2.md
+
+14. Build regenerative economic and humanitarian compounding.
+
+Find recurring value trapped behind broken proof, trust, eligibility, routing, coordination, or settlement. Build infrastructure that removes the failure and makes participants more capable.
+
+Each Venture Cell must identify its buyer, payer, beneficiary, operator, valid completion, accepted evidence, delivery, revenue, obligations, rights, and responsibility for failure.
+
+Test eligibility, routing, proof, and settlement together. Challenge the business against an incumbent’s strongest copying, pricing, bundling, partnering, acquisition, and self-cannibalization responses.
+
+Complete delivery, acceptance, payment, refunds, disputes, chargebacks, taxes or other obligations, reserves, founder benefit, and separately authorized reinvestment. Report collected net outcomes, including hidden labor and uncertainty.
+
+15. Make ethics an operating capability.
+
+Evaluate effects on users, beneficiaries, workers, excluded participants, suppliers, communities, maintainers, and future operators.
+
+Detect hidden burdens created by speed, profit, automation, eligibility rules, or information advantages.
+
+Build appropriate correction, human review, appeals, portability, voluntary exit, data minimization, incident response, and restitution.
+
+Measure whether participants become more capable or more dependent. The institution should strengthen as its surrounding ecosystem improves.
+
+16. Replace impressive but weak premises with dependable mechanisms.
+
+Preserve useful ambition while rejecting unsupported guarantees.
+
+The prompt explicitly rejects treating hashes as truth, ancestry as causation, rollback as reversal of external events, structured output as correctness, consensus as independent verification, persistent execution as immortality, or saved failures as guaranteed nonrecurrence.
+
+Use mature infrastructure where it wins. Additional agents, repositories, hardware, and frameworks must justify their cost and failure exposure.
+
+17. Extract usable mechanisms from frontier research.
+
+Study evaluator-guided program search, archives of alternative candidates, protected searches for better development methods, task-specific reliability, multiscale organization, capability reconstruction, embodiment, and signaling.
+
+Record each proposed transplant’s source behavior, modification, preserved invariant, expected benefit, new failure modes, simpler comparator, decisive experiment, and final disposition.
+
+Include research failures and counterexamples. Preserve open-source-first and appropriately licensed local-model defaults; available credentials do not themselves authorize paid services.
+
+18. Search competing architectures deeply and strengthen them twice.
+
+Compare materially different approaches: canonical integration, deterministic methods, specialist composition, temporary teams, capability acquisition, protected construction, improved development methods, human assistance, service-first ventures, and justified distributed or physical expansion.
+
+Include the current architecture, doing nothing, a simple alternative, and a reversible experiment.
+
+Apply five perspectives: founder intent, system coherence, adversarial failure, operations and maintenance, and evidence and participant welfare.
+
+Perform exactly two strengthening passes: first improve credible benefits and redesign downsides; then attack the strengthened design for complexity, leakage, common failures, hidden authority, cost, maintenance, gaming, founder burden, and participant harm.
+
+19. Prove the institution through connected acceptance tests.
+
+The required A–L acceptance system covers:
+
+* Persistent goals through interruption.
+* Competent reasoning selection and composition.
+* Capability formation followed by original-mission resumption.
+* Dependent human and AI work with accountable handoffs.
+* Meaningful cross-organ exchange.
+* Relevant observations awakening dormant goals.
+* Complete business operation and accounting.
+* Duplicate, failure, interruption, and uncertain-effect handling.
+* Forged authority, corrupted evidence, and unsafe capability containment.
+* Retained competence improving later tasks.
+* Revocation and shutdown across restart and alternative paths.
+* Your understanding of the complete mission and learning trace.
+
+Add withheld tests for the stronger frontier abilities. Declare metrics, baselines, budgets, tolerances, and inconclusive rules before evaluation. Track contamination and search costs.
+
+20. Continue until the actual developmental boundary.
+
+After each verified improvement, preserve evidence, compose the correct integration, obtain required review, update the completion map, identify the next highest-value unfinished dependency, and continue.
+
+Completion requires integrated executable behavior and appropriate evidence for every currently buildable requirement.
+
+Do not disguise unfinished software as an external blocker, lower thresholds after failure, or preserve weak implementations because of sunk effort.
+
+If resources force a pause, leave exact revisions, commands, results, failures, artifacts, integration instructions, ownership, and the next code change.
+
+21. Report progress in terms of new dependable abilities.
+
+Lead with: “What can GREG reliably do now that it could not do before?”
+
+Support that with changed behavior, exact revisions, fail-before/pass-after evidence, adverse cases, checks actually run, unresolved defects, negative results, unrun checks, demonstrated learning, remaining work, and the next executable change.
+
+Keep engineering progress, device acceptance, Mind performance, commercial results, costs, and welfare distinct. Test counts and attractive demonstrations cannot substitute for capability evidence.
+
+22. Build the whole institution and improve its ability to develop itself.
+
+The final instruction combines the entire ambition: a persistent institution that reasons, investigates, prepares, performs authorized work, recruits help, forms missing capabilities, detects errors, restores function, learns from outcomes, and improves how it develops future capabilities.
+
+Apply that competence to useful technologies, durable ventures, trustworthy institutions, and greater human capability.
+
+Keep your constitutional authority fixed while operational competence grows. Build the connected machine, prove its behavior, strengthen its developmental process, and continue. UNIIMENTE_TRUE_ABSOLUTE_OPUS_MAXIMUS_FABLE_5_2.md
 ````

@@ -4,7 +4,7 @@
 
 ## Complete-machine execution on two tracks — 2026-11-11
 
-`INTENT-20261111-ABSOLUTE-OPUS-MAXIMUS` ([record](intent/INTENT-20261111-ABSOLUTE-OPUS-MAXIMUS.json), [three messages, verbatim](intent/sources/ABSOLUTE-OPUS-MAXIMUS-2026-11-11-source.md)): the founder's directives of 2026-11-11 in session `session_01Kucyfm9exT5imDVYvHTYSv`. They are chat intent evidence, not founder authentication.
+`INTENT-20261111-ABSOLUTE-OPUS-MAXIMUS` ([record](intent/INTENT-20261111-ABSOLUTE-OPUS-MAXIMUS.json), [four messages, verbatim](intent/sources/ABSOLUTE-OPUS-MAXIMUS-2026-11-11-source.md)): the founder's directives of 2026-11-11 in session `session_01Kucyfm9exT5imDVYvHTYSv`. They are chat intent evidence, not founder authentication.
 
 - **Two tracks.** Track A is developmental engineering in controlled conditions. Track B is founder and external acceptance. "VEPMC = 0 does not stop Track A." A missing signature blocks the action that needs it, not independent engineering. Track B evidence is never manufactured.
 - **Method.** Start from a real defect. Reproduce it on the exact parent, fix it in the canonical owner, verify it on one composed tree with its neighbours, hand it to the integration owner, recompute the next unfinished dependency, continue. "A small build is the next step. It is never a substitute for the destination."
@@ -12,6 +12,7 @@
 - **Proposed extensions, as bounded experiments:** representation repair, evidence-dependency correction, proof-bearing plans, adaptive cognitive organization, transferable capability propagation, developmental-process improvement, goal opportunity synthesis, functional reconstitution. Each has a minimum test in the source. Existing mechanisms are inspected first.
 - **Revoked devices.** Revocation invalidates a device's unused authority at once. Completed actions stay in the ledger. A suspected compromise opens a separate retrospective review.
 - **Reporting.** Lead with what GREG can reliably do now that it could not do before. No probability estimates or process-quality scores in place of engineering results.
+- **Dispositions (resume message, 23:12 UTC).** "every substantial component inspected should receive a documented disposition: integrate, extract useful parts, consolidate, preserve for a justified future use, or reject with reasons." Follow-through "must be demonstrated by working connections and verified capabilities." First record: [dispositions of 2026-11-11](collaboration/REPOSITORY-DISPOSITIONS-2026-11-11.md).
 
 **Changed axis:** sequence, immediate priority and evidence discipline. **State:** active. **Authority delta:** none. **VEPMC:** 0. The 2026-10-28 directive stays the controlling prompt and the 2026-10-30 correction stands.
 

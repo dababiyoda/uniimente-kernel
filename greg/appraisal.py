@@ -8,7 +8,8 @@ appraiser re-derives the result from retained bytes and from the world:
 2. every success check the signed closure rule requires is re-evaluated from the receipt of a fresh
    observation inside the selected closure's window (not the engine's flag), and that receipt is bound
    to this mission's own grant -> witness -> dispatch -> receipt chain for the signed sensor;
-3. read-only built-in sensors are re-run now, so the world must still match;
+3. read-only built-in sensors are re-run now, so the world must still match; a sensor that is not ATTACHED is not
+   run, and the closure is then neither verified nor refuted (``_withheld``, ``_verdict``);
 4. every action completed inside the closure window has exactly one dispatch claim and one receipt,
    bound to its signed strategy through the same Gate chain;
 5. every completed action the founder-signed cone does not admit (re-derived here, not taken from the
@@ -325,6 +326,47 @@ def _formed_registry(journal: Journal, workspace) -> object:
     return registry
 
 
+# Only an ATTACHED capability executes, on any path (founder directive re-issued 2026-11-04, behaviour B: "Grant
+# revocation is separate: the Kernel must deny affected execution immediately. Epistemic requalification cannot
+# restore permission."). The appraiser reaches a capability without the authority office: it re-reads the world with
+# a sensor's own adapter and re-derives a delivery with its capability's own machinery, with no grant and no receipt,
+# because it re-reads and does not act. So it applies the office's rule itself, on its own projection of the registry
+# as retained at the appraised head (built-ins, what Genesis formed, every recorded state change, re-pinned as at a
+# restart, nothing written). It never reads the body's in-memory registry, and nothing it finds changes attach state.
+NOT_RUN_CHECKS = ("world_reobserved", "deliveries_bound_to_evidence")   # what a capability it did not run leaves open
+
+
+def _not_attached(registry, cid: str) -> str | None:
+    """Why nothing runs in this capability's name now, or None when it is ATTACHED."""
+    state = registry.state.get(cid)
+    if state != "ATTACHED":
+        return (f"{cid} is {state or 'not registered on this body'}; only an ATTACHED capability runs, and the "
+                "appraiser runs none that is not")
+    return None
+
+
+def _withheld(registry, cid: str) -> str | None:
+    """Why this body's registry withholds the reviewed built-in sensor now, or None when the appraiser may re-run it.
+
+    Attach state is keyed by id, and what runs is the adapter: the manifest and the adapter the appraiser would run
+    (the built-in's) must be the ones this body holds registered under that id. Something else registered there (a
+    capability formed under a built-in's id, a stand-in) is not run, and neither is the built-in in its place."""
+    manifest, adapter = BUILTINS[cid]
+    why = _not_attached(registry, cid)
+    if why is None and (registry.manifests.get(cid) is not manifest or registry.adapters.get(cid) is not adapter):
+        why = f"the adapter this body holds registered as {cid} is not the reviewed built-in the appraiser re-runs"
+    return why
+
+
+def _never_rerun(cid: str) -> str | None:
+    """Why the appraiser never re-runs this built-in as a sensor, whatever its attach state: it re-reads, it does not
+    act. ``REOBSERVABLE`` is a list of ids (it names ``cognition.settle``, which writes); the manifest decides."""
+    manifest = BUILTINS[cid][0]
+    if manifest.consequence_class != "read_only":
+        return f"{cid} is {manifest.consequence_class}; the appraiser re-runs read-only sensors only"
+    return None
+
+
 def appraise(request: dict) -> dict:
     ledger = EvidenceLedger(request["constitution"], request["ledger"], read_only=True,
                             expected_head=request["head"], tail="ignore")
@@ -337,6 +379,9 @@ def appraise(request: dict) -> dict:
         # whole outputs the body kept beside cut receipts: read only by a receipt's recorded address, re-hashed
         artifacts = Path(request["artifact_root"]) if request.get("artifact_root") else None
         seq = {r.payload.get("event_id"): r.seq for r in ledger.by_type("event")}
+        registry = _formed_registry(journal, request["workspace"])   # attach state as retained at this head
+        not_run = {}        # capability id -> why the appraiser ran nothing in its name
+        unmeasured = []     # the checks whose sensor it therefore did not re-run
         registered = [e for e in journal.replay("mission.registered") if e.payload["mission_id"] == mid]
         unmet = False
         if request.get("closure_event"):  # a standing mission's hold after new action, or a failure closure
@@ -470,9 +515,20 @@ def appraise(request: dict) -> dict:
                 findings.append(f"{check['check_id']}: receipt bytes " + (
                     f"are a refused observation, not a reading of the claimed failure ({detail})" if unmet
                     else f"do not satisfy predicate ({detail})"))
-            # 3. re-observe the world now where a reviewed read-only sensor exists
+            # 3. re-observe the world now where a reviewed read-only sensor exists and this body leaves it ATTACHED
             cap = check["sensor"].get("capability")
-            if cap in REOBSERVABLE:
+            never = _never_rerun(cap) if cap in REOBSERVABLE else None
+            withheld = _withheld(registry, cap) if cap in REOBSERVABLE else None
+            if never is not None:
+                reobserved = False
+                findings.append(f"{check['check_id']}: the world could not be re-measured ({never})")
+            elif withheld is not None:
+                # Not run. Nothing was re-read, so this decides nothing about the closure either way: the verdict is
+                # UNAVAILABLE unless something else refutes it (``_verdict``).
+                not_run[cap] = withheld
+                unmeasured.append(check["check_id"])
+                findings.append(f"{check['check_id']}: the world could not be re-measured ({withheld})")
+            elif cap in REOBSERVABLE:
                 manifest, adapter = BUILTINS[cap]
                 ctx = InvocationContext(workspace=Path(request["workspace"]),
                                         read_roots=tuple(Path(p) for p in request["read_roots"]),
@@ -511,7 +567,7 @@ def appraise(request: dict) -> dict:
                         "the world could not be re-measured" if now_ok is None else "world no longer matches")
                         + f" ({now_detail})")
         checks["checks_rederived_from_receipts"] = rederived
-        checks["world_reobserved"] = reobserved
+        checks["world_reobserved"] = reobserved and not unmeasured
         checks["closure_evidence_bound"] = bound
 
         # 4. exactly-once consequences, inside this closure's window only: each completed action has
@@ -580,9 +636,17 @@ def appraise(request: dict) -> dict:
         # time, and their superseded inputs are history, not a present-tense claim.
         window = [e.payload for e in completed] if request.get("closure_event") else actions
         import importlib
-        delivered_ok = True
+        delivered_ok, underived = True, []
         for action in window:
             if action.get("capability") not in DELIVERING:
+                continue
+            withheld = _not_attached(registry, action["capability"])
+            if withheld is not None:
+                # The re-derivation is the capability's own machinery (a render; for a venture or an organ exchange,
+                # a re-run of the organs). None of it runs for a capability that is not ATTACHED.
+                not_run[action["capability"]] = withheld
+                underived.append(action["action_id"])
+                findings.append(f"{action['action_id']}: the delivery could not be re-derived ({withheld})")
                 continue
             receipt = ledger.find(action["receipt"]) if action.get("receipt") else None
             output = receipt.payload["result"].get("output") if receipt else None
@@ -594,7 +658,7 @@ def appraise(request: dict) -> dict:
             if not ok:
                 delivered_ok = False
                 findings.append(f"{action['action_id']}: {detail}")
-        checks["deliveries_bound_to_evidence"] = delivered_ok
+        checks["deliveries_bound_to_evidence"] = delivered_ok and not underived
 
         # 5. approval boundaries honored, inside the closure window. The founder-signed cone decides which
         # completed actions needed approval, not the engine's own asks: every DONE action is re-admitted
@@ -681,21 +745,36 @@ def appraise(request: dict) -> dict:
                     "founder_signature_verified", "closure_evidence_bound", "checks_rederived_from_receipts",
                     "world_reobserved", "exactly_once", "deliveries_bound_to_evidence",
                     "approval_boundaries_honored", "preconditions_honored")
-        return _verdict(request, checks, findings, required=required, unmet=unmet)
+        return _verdict(request, checks, findings, required=required, unmet=unmet, not_run=not_run,
+                        unmeasured=unmeasured, otherwise_whole=reobserved and delivered_ok)
     finally:
         ledger.close()
 
 
-def _verdict(request, checks, findings, required=(), unmet=False):
+def _verdict(request, checks, findings, required=(), unmet=False, not_run=None, unmeasured=(), otherwise_whole=False):
     """VERIFIED is a verified success. A verified failure closure is VERIFIED_UNMET, so no reader of VERIFIED can
-    take it for a success; settlement reads both, to hear failures as well as successes."""
+    take it for a success; settlement reads both, to hear failures as well as successes.
+
+    UNAVAILABLE is the word the body already records when the appraiser judged nothing (greg/body.py, acceptance
+    H.G7): never VERIFIED, and not REFUTED either, so no reader takes it for failure evidence (a permission change
+    writes no epistemic mark). It is the verdict when the only thing between this closure and a judgment is a
+    capability the appraiser did not run because this body does not leave it ATTACHED (``not_run``): every other
+    required check holds, and nothing that was re-read or re-derived disagrees (``otherwise_whole``). A closure that
+    something else refutes is REFUTED, and still says what was not run."""
     verified = bool(required) and all(checks.get(k) for k in required)
-    return {"mission_id": request["mission_id"], "head": request["head"],
+    judged = {"mission_id": request["mission_id"], "head": request["head"],
             "verdict": ("VERIFIED_UNMET" if unmet else "VERIFIED") if verified else "REFUTED",
             **({"closure": "unmet"} if unmet else {}), "checks": checks, "findings": findings,
             "appraiser": "separate process over read-only head-pinned ledger; re-derivation + re-observation",
             "limits": "shares reviewed Kernel code; not an independent implementation",
             **({"closure_event": request["closure_event"]} if request.get("closure_event") else {})}
+    if not_run:
+        judged["not_run"] = dict(sorted(not_run.items()))
+        if unmeasured:
+            judged["unmeasured_checks"] = sorted(unmeasured)
+        if otherwise_whole and all(checks.get(k) for k in required if k not in NOT_RUN_CHECKS):
+            judged["verdict"] = "UNAVAILABLE"
+    return judged
 
 
 if __name__ == "__main__":

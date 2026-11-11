@@ -443,7 +443,9 @@ jobs:
           UNIIMENTE_WEALTHMACHINE_PYTHON: "${{ github.workspace }}/organs/wealthmachine-venv/bin/python"
         run: python scripts/ci/check_organ_verdict_mutants.py
       # Runs here, not in job 1: job 1 already takes about its whole 120-minute limit on the base (#221, #260), and
-      # this 41-mutant gate (about 1.5 minutes) needs only the kernel environment this job installs.
+      # this 50-mutant gate needs only the kernel environment this job installs. It took about 1.5 minutes with 41
+      # mutants; the nine added on 2026-11-11 include three that run a real body with a cognition mission (3 min 17 s
+      # for all 50 in a 4-CPU cloud container; not yet timed here).
       - name: Evidence-correction mutations (a changed, retracted, expired or contradicted reading marks what rests on it)
         working-directory: kernel
         run: python scripts/ci/check_evidence_corrections_mutants.py

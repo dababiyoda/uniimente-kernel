@@ -16,7 +16,7 @@ BODY = "greg/body.py"
 TESTS = "tests/unit/test_greg_authority_attach_state.py"
 MUTANTS = [
     (AUTHORITY, "the office never consults attach state",
-     "        unattached = self.attach_refusal(manifest)\n", "        unattached = None\n"),
+     "        unattached = self.attach_refusal(manifest, adapter, ctx)\n", "        unattached = None\n"),
     (AUTHORITY, "a non-ATTACHED state executes", 'if state != "ATTACHED":', "if False:"),
     (AUTHORITY, "an unregistered capability executes", "        if state is None:\n            return f",
      "        if False:\n            return f"),

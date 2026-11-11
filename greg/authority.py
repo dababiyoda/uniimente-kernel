@@ -88,10 +88,15 @@ class AuthorityOffice:
                                    f"that {manifest.target_from} would contact")
         return None
 
-    def attach_refusal(self, manifest: CapabilityManifest) -> str | None:
+    def attach_refusal(self, manifest: CapabilityManifest, adapter=None, ctx=None) -> str | None:
         """Why this capability may not execute on this body now, or None. Attach state is the founder's (signed
         CAPABILITY_ATTACH / DETACH, Genesis quarantine); only ATTACHED executes. A capability the registry does not
-        hold is not this body's to run. Epistemic requalification never reaches this test: it does not attach."""
+        hold is not this body's to run. Epistemic requalification never reaches this test: it does not attach.
+
+        Attach state is keyed by id, so the id alone is not enough: what runs is the adapter. With ``adapter`` and
+        ``ctx`` (as ``act`` passes them) the manifest, the adapter and the context's manifest must be the ones the
+        registry holds under that id. Otherwise a detached capability's adapter, presented under an attached
+        capability's manifest, would run on that capability's grant and be receipted in its name."""
         if self.registry is None:
             return None
         cid = manifest.capability_id
@@ -100,6 +105,18 @@ class AuthorityOffice:
             return f"capability {cid} is not registered on this body; the Kernel runs no unregistered capability"
         if state != "ATTACHED":
             return f"capability {cid} is {state}; the Kernel runs only ATTACHED capabilities"
+        registered = self.registry.manifests.get(cid)
+        if registered is not manifest and (registered is None or registered.digest() != manifest.digest()):
+            return f"the manifest presented as {cid} is not the one registered on this body"
+        if adapter is not None and self.registry.adapters.get(cid) is not adapter:
+            return (f"the adapter presented for {cid} is not the one registered for it; the Kernel runs a "
+                    "capability's own adapter only")
+        if ctx is not None:
+            named = getattr(ctx, "manifest", None)
+            if named is not manifest and (named is None or named.capability_id != cid
+                                          or named.digest() != manifest.digest()):
+                return (f"the invocation context names {getattr(named, 'capability_id', None)}, not {cid}; an "
+                        "adapter is told which capability it runs as by the Kernel, not by its caller")
         return None
 
     @staticmethod
@@ -134,7 +151,7 @@ class AuthorityOffice:
         proposal_id = self.proposal_id(scope, attempt)
         base = dict(proposal_id=proposal_id, scope_digest=scope)
 
-        unattached = self.attach_refusal(manifest)
+        unattached = self.attach_refusal(manifest, adapter, ctx)
         if unattached is not None:      # before any cone, passport, grant, dispatch or retained-receipt reuse
             self.ledger.append("event", {"type": "greg.authority.refused_unattached", "proposal_id": proposal_id,
                                          "scope_digest": scope, "capability": manifest.capability_id,

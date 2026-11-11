@@ -8,6 +8,7 @@ read-only capability. These tests drive the office directly on a real body, as t
 """
 from __future__ import annotations
 
+import ast
 from dataclasses import replace
 from pathlib import Path
 
@@ -23,7 +24,8 @@ RAW = b"bytes a detached capability must not retain\n"
 ADDRESS = "sha256:36e23d6cf2b7eafa664d41ee529106249e119fe6ac20f7d700adbbe1c4080b53"
 
 
-def _office_act(body: Body, home: Path, data: Path, *, manifest, adapter, ctx_manifest, params, attempt="direct"):
+def _office_act(body: Body, home: Path, data: Path, *, manifest, adapter, ctx_manifest, params, attempt="direct",
+                **extra):
     cone = LightCone(capabilities=frozenset({manifest.capability_id}), targets=("artifact:reports",),
                      max_consequence_class="read_only", budget_usd=0.0, horizon=horizon())
     ctx = InvocationContext(workspace=workspace(home, "m:direct-office"), read_roots=(data,), secrets=body.secrets,
@@ -31,7 +33,7 @@ def _office_act(body: Body, home: Path, data: Path, *, manifest, adapter, ctx_ma
     return body.office.act(mission_id="m:direct-office", cone=cone, command_digest="sha256:" + "0" * 64,
                            manifest=manifest, adapter=adapter, ctx=ctx, params=params, target="artifact:reports",
                            cost_usd=0.0, expected_outcome="observation captured", evidence_refs=[],
-                           attempt=attempt, spent_usd=0.0, approved_scopes=set())
+                           attempt=attempt, spent_usd=0.0, approved_scopes=set(), **extra)
 
 
 def _events(body, kind):
@@ -140,3 +142,48 @@ def test_a_detach_survives_a_restart_at_the_office(tmp_path):
         again = _office_act(body, home, data, manifest=inspect, adapter=body.registry.adapters["artifact.inspect"],
                             ctx_manifest=inspect, params={"namespace": "reports", "address": ADDRESS}, attempt="b")
         assert again.status == "DONE"
+
+
+def test_around_shapes_the_dispatch_of_the_registered_adapter(world):
+    """A caller that runs a long worker off the body's turn wraps the dispatch; the office hands its wrapper the
+    registered adapter, so the wrapper decides how it is called and never which adapter is."""
+    body, _, _, home, data, _ = world
+    inspect, registered = body.registry.manifests["artifact.inspect"], body.registry.adapters["artifact.inspect"]
+    seen = []
+
+    def around(adapter):
+        def shaped(params, ctx):
+            seen.append(adapter)
+            return adapter(params, ctx)
+        return shaped
+
+    out = _office_act(body, home, data, manifest=inspect, adapter=registered, ctx_manifest=inspect,
+                      params={"namespace": "reports", "address": ADDRESS}, around=around)
+    assert out.status == "DONE" and seen == [registered]
+
+
+def test_around_is_never_applied_to_a_refused_act(world):
+    body, key, body_id, home, data, _ = world
+    body.apply(signed(key, body_id, "CAPABILITY_DETACH", {"capability_id": "artifact.inspect"}))
+    inspect = body.registry.manifests["artifact.inspect"]
+    called = []
+    out = _office_act(body, home, data, manifest=inspect, adapter=body.registry.adapters["artifact.inspect"],
+                      ctx_manifest=inspect, params={"namespace": "reports", "address": ADDRESS},
+                      around=lambda adapter: called.append(adapter) or adapter)
+    assert out.status == "REFUSED" and not called
+
+
+AROUND_CALLERS = {"greg/missions.py"}       # the mission engine's one strategy dispatch (background workers)
+
+
+def test_only_the_listed_callers_may_shape_a_dispatch():
+    """``around`` is the one place a caller's code runs inside the office's dispatch. A new caller is a review
+    decision: add it here with its reason."""
+    root = Path(__file__).resolve().parents[2]
+    users = set()
+    for path in sorted((root / "greg").rglob("*.py")):
+        for node in ast.walk(ast.parse(path.read_text())):
+            if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr == "act"
+                    and any(k.arg == "around" for k in node.keywords)):
+                users.add(path.relative_to(root).as_posix())
+    assert users <= AROUND_CALLERS, f"unlisted callers pass around= to the office: {sorted(users - AROUND_CALLERS)}"

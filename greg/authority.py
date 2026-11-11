@@ -140,10 +140,15 @@ class AuthorityOffice:
             adapter, ctx: InvocationContext, params: dict, target: str, cost_usd: float,
             expected_outcome: str, evidence_refs: list, attempt, spent_usd: float,
             approved_scopes: set, evidence_confidence: float = 1.0,
-            signed_scopes: frozenset = frozenset()) -> ActionOutcome:
+            signed_scopes: frozenset = frozenset(), around=None) -> ActionOutcome:
         """``signed_scopes``: exact scopes the founder-signed mission itself pre-approves (its
         ``pre_approved_steps``). They admit that one action past the light cone only; a constitutional
-        requirement for a human is still answered by an exact-scope founder DECISION alone."""
+        requirement for a human is still answered by an exact-scope founder DECISION alone.
+
+        ``adapter`` is the capability's registered adapter itself (``attach_refusal``). A caller that must shape
+        how it is dispatched (a long worker run off the body's turn) passes ``around``: the office applies it to
+        the registered adapter at dispatch, after every refusal. It changes how the adapter is called, never
+        which adapter; the callers allowed to pass it are listed in the unit suite."""
         consequence = manifest.consequence_class
         scope = self.scope_digest(mission_id=mission_id, capability_id=manifest.capability_id, params=params,
                                   target=target, consequence_class=consequence, cost_usd=cost_usd,
@@ -244,10 +249,11 @@ class AuthorityOffice:
                         scope_digest=scope, proposal_id=proposal_id,
                         witness_id=dispatch.payload.get("witness_id") if dispatch else None,
                         dispatch_effect_digest=dispatch.payload.get("effect_digest") if dispatch else None)
-                output = adapter(params, replace(ctx, target=target, mission_id=mission_id,
-                                                authority_ref=command_digest, grant_id=grant['grant_id'],
-                                                policy_version=self.compiled.constitution_version,
-                                                cognition_budget=window))
+                run = adapter if around is None else around(adapter)
+                output = run(params, replace(ctx, target=target, mission_id=mission_id,
+                                            authority_ref=command_digest, grant_id=grant['grant_id'],
+                                            policy_version=self.compiled.constitution_version,
+                                            cognition_budget=window))
             except CapabilityError as exc:
                 return {"observed_outcome": "capability refused: " + str(exc)[:300], "result_class": "negative",
                         "failure_class": exc.failure_class, "output": None, "validation_status": "self_reported"}

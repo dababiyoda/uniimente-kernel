@@ -12,8 +12,9 @@ continuation can renormalize it, and files refused before they are buffered or r
 (greg/textform.py, greg/capabilities.py, greg/business_loop.py); or of the bounded text query that reads a whole
 file of any size (greg/textquery.py, its planner route) and refuses a PDF, by its header or its structure, which the
 planner sends to its reader, or asks about, also for a word count, which it reads whole (greg/planner.py,
-greg/templates.py). The named test must fail for every mutant. Mutants are applied to a scratch copy of the
-repository, never to the working tree.
+greg/templates.py); or of the same hold on a precondition that passed when an action was planned and stopped passing
+before its approval arrived (tests/unit/test_greg_precondition_unheld.py). The named test must fail for every mutant.
+Mutants are applied to a scratch copy of the repository, never to the working tree.
 Exit status 1 if any mutant survives or no longer applies.
 
 Mutants run one after another in one copy, so no run may see another's bytecode. Python reuses a cached .pyc when
@@ -51,6 +52,7 @@ W = "tests/unit/test_greg_judge_incomplete_wrappers.py::"
 F = "tests/unit/test_greg_faithful_text.py::"
 Q = "tests/unit/test_greg_text_query.py::"
 S = "tests/integration/test_greg_section_ix_text_scenarios.py::"
+P = "tests/unit/test_greg_precondition_unheld.py::"
 MUTANTS = [
     ("a check the prefix cannot decide is never read over the whole", "greg/missions.py",
      "    if verdict != INSUFFICIENT or record is None:\n        return verdict, detail",
@@ -115,6 +117,14 @@ MUTANTS = [
      '            if set(s.get("requires", [])) & unproven:',
      '            if set(s.get("requires", [])) & failing:',
      U + "test_a_strategy_requiring_an_unmeasured_check_stays_held"),
+    # the same hold, for a plan made while the precondition passed (founder's minimum test C, 2026-11-11)
+    ("the hold on an unproven precondition is dropped", "greg/missions.py",
+     '            if set(s.get("requires", [])) & unproven:', "            if False:",
+     P + "test_an_approved_action_whose_precondition_stopped_passing_is_never_dispatched"),
+    ("a founder approval overrides the hold on an unproven precondition", "greg/missions.py",
+     '            if set(s.get("requires", [])) & unproven:',
+     '            if set(s.get("requires", [])) & unproven and not m.approved_scopes:',
+     P + "test_an_approved_action_whose_precondition_stopped_passing_is_never_dispatched"),
     ("the appraiser reads undecided receipt bytes as the claimed failure", "greg/appraisal.py",
      "            elif verdict == INSUFFICIENT:\n                # Bytes that cannot decide",
      "            elif False:\n                # Bytes that cannot decide",

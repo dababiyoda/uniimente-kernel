@@ -1,18 +1,39 @@
-"""History is read whatever the capability's state is now; permission is not.
+"""A dispatch the Gate recorded and the mission did not is read from the Gate's record, whatever its capability's
+state is now; permission is not.
 
 A body stopped between the Gate's record of a dispatch and the mission's record of it settles that dispatch from the
-Gate's own record when it restarts (``MissionEngine._recover_dispatch``). The founder may detach the capability in
-between. Two things must then hold together:
+Gate's own record when it restarts. Two paths do this, and each has its section here:
+
+- a strategy: ``MissionEngine._recover_dispatch`` finds the proposal by the intent the mission wrote before the
+  dispatch;
+- a signed compensation: ``MissionEngine._run_compensation`` reads the Gate's record of the compensation's own
+  proposal before it looks at the capability. (Before, only ``office.act`` looked, and it is reached only when the
+  capability is attached and answers its availability check first.)
+
+The founder may detach the capability in between, or it may be attached and not runnable on this body. Two things
+must then hold together:
 
 - what already happened stays what the record says it was: a completed effect is recorded as done with its receipt
-  and its cost, a refusal as that refusal with its own reason, and a dispatch with no receipt, or with a receipt
-  that does not say what happened, as uncertain with one reconciliation ask. Detaching a capability does not turn a completed effect into a refusal or hide an unknown one;
+  (and, for a strategy, its cost), a refusal as that refusal with its own reason, and a dispatch with no receipt, or
+  with a receipt that does not say what happened, as uncertain with one question to the founder (a reconciliation
+  for a strategy, the COMPENSATION ask for a compensation). The capability's state does not turn a completed effect
+  into a refusal or into "did not complete", and does not hide an unknown one;
 - nothing runs because of it: no second dispatch, grant or receipt for the recovered action, and a later action of
   the detached capability is not executed.
 
-Each case is run twice, with and without the detach, and the recovered record must be the same. Every run is a real
-Body closed and opened again on the same home, in this process; ``Killed`` stands in for SIGKILL. The founder key is a
-per-test key, not Alfonso's.
+What is not read this way, so the title is not taken further than it holds:
+
+- a compensation is found by its exact scope, which includes its capability's consequence class. One dispatched
+  before the capability was registered again under another class is not found (read from the code, not run);
+- a ledger on which the earlier code already asked the founder about such a compensation keeps that open question:
+  no compensation is looked up while the founder's answer to its COMPENSATION ask is awaited, and the answer is
+  recorded as FOUNDER_DECIDED. A record the earlier code wrote as UNAVAILABLE stays as written. (The first was
+  observed on a scratch body with the lookup switched off for one restart; it has no test here.)
+
+Each strategy case is run twice, with and without the detach, and the recovered record must be the same; each
+compensation case is run with the capability usable, detached and unavailable, against one stated expectation. Every
+run is a real Body closed and opened again on the same home, in this process; ``Killed`` stands in for SIGKILL. The
+founder key is a per-test key, not Alfonso's.
 """
 from __future__ import annotations
 
@@ -20,6 +41,7 @@ import pytest
 
 from greg import capabilities
 from greg.body import Body
+from greg.capabilities import CapabilityManifest
 from tests.greg_fixtures import Clock, drop, make_body, mission, note_check, signed, workspace, write_strategy
 
 MID = "m:history-detached"
@@ -35,8 +57,8 @@ def tick(body, clock, n):
         clock.advance(1)
 
 
-def facts(body, kind):
-    return [e.payload for e in body.journal.replay(kind) if e.payload.get("mission_id") == MID]
+def facts(body, kind, mid=MID):
+    return [e.payload for e in body.journal.replay(kind) if e.payload.get("mission_id") == mid]
 
 
 def gate_kept(body, action_id: str) -> dict:
@@ -158,3 +180,160 @@ def test_what_happened_before_a_detach_is_recorded_as_it_was_and_runs_nothing(tm
     assert control["later_ran"] == control["later_written"] == (case in ("done", "refused"))
     assert not detached["later_ran"] and not detached["later_written"]
     assert "DONE" not in detached["later_records"]
+
+
+# -- a compensation the Gate dispatched and the body did not record ----------------------------------------------
+
+CMID = "m:history-compensation"
+RESTORE = {"capability": "fs.write", "params": {"relative_path": "note.txt", "content": "original"},
+           "target": "workspace:note.txt"}
+# a signed compensation the fs.write adapter refuses: its path does not name its signed target
+BROKEN = {"capability": "fs.write", "params": {"relative_path": "other.txt", "content": "original"},
+          "target": "workspace:note.txt"}
+BROKEN_REASON = "capability refused: write path 'workspace:other.txt' does not match the signed target " \
+                "'workspace:note.txt'"
+NOT_RECORDED = "retained receipt of a compensation the body did not record before it stopped"
+NO_RECEIPT = "dispatch claimed without receipt; the body stopped inside it, so its outcome is unknown"
+UNCLASSED = "the receipt does not say whether the capability acted (result class None); its outcome is unknown and " \
+            "must be reconciled"
+NOT_INSTALLED = "fs.write is not available on this body (test)"
+
+
+def compensation_run(tmp, monkeypatch, case: str, state: str | None) -> dict:
+    """An executed write whose mission the founder abandons, with a compensation signed with it.
+
+    ``case`` is what the Gate holds for the compensation when the body stops: "done" (it ran and restored the file: a
+    positive receipt), "refused" (its capability refused it: a negative receipt), "unknown" (the body died inside the
+    compensating adapter: a dispatch claim and no receipt), "unclassed" (as "unknown", and a receipt for that dispatch
+    whose result names no class), or "never" (the body stopped before the mission was abandoned: the Gate holds
+    nothing for the compensation). In every case but "never" the body dies before it records the compensation.
+
+    ``state`` is the compensating capability when the body restarts: None (usable), "detached" (the founder's signed
+    detach, applied by the restarted body before its first tick) or "unavailable" (attached, and its manifest says it
+    cannot run on this body). The restarted body ticks four times, then restarts twice more."""
+    tmp.mkdir()
+    home, key, body_id, _ = make_body(tmp)
+    note = workspace(home, CMID) / "note.txt"
+    note.parent.mkdir(parents=True, exist_ok=True)
+    note.write_text("original")
+    calls, dies = [], {"inside": case in ("unknown", "unclassed")}
+    manifest, real = capabilities.BUILTINS["fs.write"]
+
+    def counted(params, ctx):
+        calls.append(params.get("content"))
+        if dies["inside"] and params.get("content") == "original":
+            raise Killed("SIGKILL inside the compensating adapter")
+        return real(params, ctx)
+    monkeypatch.setitem(capabilities.BUILTINS, "fs.write", (manifest, counted))
+    drop(home, signed(key, body_id, "MISSION", mission(
+        CMID, checks=[note_check("c", note, "final")], capabilities=["fs.read", "fs.write"],
+        strategies=[write_strategy("w", "note.txt", "draft", ["c"],
+                                   compensate=BROKEN if case == "refused" else RESTORE)])))
+    abandon = signed(key, body_id, "LIFECYCLE", {"mission_id": CMID, "state": "ABANDONED", "reason": "not wanted"})
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        tick(body, clock, 3)
+        assert note.read_text() == "draft" and calls == ["draft"]
+        earlier = len(body.ledger.by_type("grant_dispatch"))          # every dispatch before any compensation
+        if case != "never":
+            drop(home, abandon)
+            if case in ("done", "refused"):
+                kill_before_record(body, "mission.compensated")
+            with pytest.raises(Killed):
+                tick(body, clock, 3)
+            assert not facts(body, "mission.compensated", CMID), "the body recorded the compensation before it died"
+            assert len(body.ledger.by_type("grant_dispatch")) == earlier + 1   # the Gate claimed its one dispatch
+    if case == "never":
+        drop(home, abandon)
+    if case == "unclassed":
+        with Body(home, clock=clock) as body:   # nothing ticks: only the record another writer or version could leave
+            claim = body.ledger.by_type("grant_dispatch")[-1]
+            body.ledger.append("receipt", {"action_id": "unclassed", "witness_id": claim.payload["witness_id"],
+                                           "grant_id": claim.payload["grant_id"],
+                                           "result": {"observed_outcome": "half written"}})
+    dies["inside"] = False              # a second run of the compensation would now write, and be counted
+    before_restart, seen = len(calls), []
+
+    def kept(body) -> dict:
+        records = facts(body, "mission.compensated", CMID)
+        asked = [r for r in body.engine.book.requests.values()
+                 if r.get("mission_id") == CMID and r["kind"] == "COMPENSATION"]
+        claims = body.ledger.by_type("grant_dispatch")[earlier:]
+        grants = {c.payload["grant_id"] for c in claims}
+        return {"compensated": [(c["status"], c["reasons"], body.ledger.find(c["receipt"]).payload["result"].get(
+                                    "result_class", "no class") if c["receipt"] else None) for c in records],
+                "asked": [(r["action_id"], r["evidence"]["compensation_failed"]) for r in asked],
+                "open_compensation_asks": len([r for r in body.engine.book.open_requests()
+                                               if r["kind"] == "COMPENSATION"]),
+                "note": note.read_text(), "fs_write": body.registry.state["fs.write"],
+                "compensation_claims": len(claims),
+                "compensation_receipts": len([r for r in body.ledger.by_type("receipt")
+                                              if r.payload["grant_id"] in grants]),
+                "status": body.engine.book.missions[CMID].status}
+    with monkeypatch.context() as patch:
+        if state == "unavailable":
+            available = CapabilityManifest.available
+            patch.setattr(CapabilityManifest, "available", lambda self: (False, NOT_INSTALLED)
+                          if self.capability_id == "fs.write" else available(self))
+        for restart in range(3):
+            with Body(home, clock=clock) as body:
+                if state == "detached" and restart == 0:
+                    detach = signed(key, body_id, "CAPABILITY_DETACH", {"capability_id": "fs.write"})
+                    assert body.apply(detach)["result"]["state"] == "DETACHED"
+                tick(body, clock, 4)
+                seen.append(kept(body))
+    return {"first": seen[0], "later": seen[1:], "calls_after_restart": calls[before_restart:]}
+
+
+# case -> (the one mission.compensated record, the COMPENSATION asks ever raised, the note afterwards)
+RECORDED_FROM_THE_GATE = {
+    "done": ([("DONE", [NOT_RECORDED], "positive")], [], "original"),
+    "refused": ([("REFUSED", [BROKEN_REASON], "negative")], [("w", [BROKEN_REASON])], "draft"),
+    "unknown": ([("UNCERTAIN", [NO_RECEIPT], None)], [("w", [NO_RECEIPT])], "draft"),
+    "unclassed": ([("UNCERTAIN", [UNCLASSED], "no class")], [("w", [UNCLASSED])], "draft"),
+}
+
+
+@pytest.mark.parametrize("state", [None, "detached", "unavailable"])
+@pytest.mark.parametrize("case", ["done", "refused", "unknown", "unclassed"])
+def test_a_compensation_the_gate_dispatched_is_recorded_from_the_gates_record_whatever_its_capability_is_now(
+        tmp_path, monkeypatch, case, state):
+    """Before: a compensation was looked for in the Gate's record only by ``office.act``, which is reached only when
+    the capability is attached and answers the precheck first. With the capability detached at the restart nothing
+    was recorded and the founder was asked about a compensation that "did not complete", though it had completed;
+    with it attached and unavailable the record said UNAVAILABLE with no receipt. Now the Gate's record of the
+    compensation's own proposal is read first: once, with nothing dispatched, whatever the capability's state is."""
+    compensated, asked, note = RECORDED_FROM_THE_GATE[case]
+    got = compensation_run(tmp_path / "run", monkeypatch, case, state)
+    first = got["first"]
+    assert first["fs_write"] == ("DETACHED" if state == "detached" else "ATTACHED")
+    assert [c[0] for c in first["compensated"]] == [compensated[0][0]], \
+        f"the Gate holds a {case} compensation; the mission recorded {first['compensated']} and asked {first['asked']}"
+    assert first["compensated"] == compensated
+    assert first["asked"] == asked
+    assert first["open_compensation_asks"] == len(asked)
+    assert first["note"] == note
+    # nothing ran because of it: no adapter call after the restart, the one dispatch claim and what it had kept
+    assert got["calls_after_restart"] == []
+    assert first["compensation_claims"] == 1
+    assert first["compensation_receipts"] == (0 if case == "unknown" else 1)
+    # and it is recorded and asked about once: two more restarts and eight more ticks change nothing
+    assert got["later"] == [first, first]
+
+
+@pytest.mark.parametrize("state, compensated, asked, calls, note", [
+    (None, [("DONE", [], "positive")], [], ["original"], "original"),
+    ("detached", [], [("w", ["compensating capability fs.write is not usable"])], [], "draft"),
+    ("unavailable", [("UNAVAILABLE", [NOT_INSTALLED], None)], [("w", [NOT_INSTALLED])], [], "draft"),
+])
+def test_a_compensation_the_gate_never_dispatched_is_treated_as_it_was_before(
+        tmp_path, monkeypatch, state, compensated, asked, calls, note):
+    """The Gate's record is read first and holds nothing for this compensation, so nothing changes: it runs when its
+    capability can run it, and the founder is asked when the capability is detached or unavailable. These three pass
+    before the change that reads the record first."""
+    got = compensation_run(tmp_path / "run", monkeypatch, "never", state)
+    first = got["first"]
+    assert (first["compensated"], first["asked"], first["note"]) == (compensated, asked, note)
+    assert got["calls_after_restart"] == calls
+    assert first["compensation_claims"] == first["compensation_receipts"] == len(calls)
+    assert got["later"] == [first, first]

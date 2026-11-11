@@ -404,6 +404,12 @@ def bound_value(edge: dict, output, whole=None, *, recorded_cut: bool = True):
 # capability -> field of the adapter output holding the provider-reported USD.
 METERED_SPEND = {"worker.commission": "worker.cost_usd"}
 
+# ``mission.compensated`` statuses after which nothing is owed for the effect: undone through the Gate (DONE), or
+# decided by the founder (their answer to its COMPENSATION ask, or their rejection of the compensating action).
+# Any other status (REFUSED, UNAVAILABLE, UNCERTAIN) is a signed compensation that did not complete, and the
+# founder is asked about the effect.
+COMPENSATION_SETTLED = ("DONE", "FOUNDER_DECIDED", "DECLINED")
+
 
 def reconciliation_terms(capability: str | None, reserved: float) -> tuple[str, dict]:
     """What every RECONCILIATION ask tells the founder before they answer: what to do, and what each answer books.
@@ -3095,13 +3101,20 @@ class MissionEngine:
         mid = m.mission_id
         required = {e.payload["action_id"] for e in self.journal.replay("mission.compensation_required")
                     if e.payload["mission_id"] == mid}
-        closed = {e.payload["action_id"] for e in self.journal.replay("mission.compensated")
+        closed = {e.payload["action_id"]: e.payload for e in self.journal.replay("mission.compensated")
                   if e.payload["mission_id"] == mid}
         strategies = {s["action_id"]: s for s in m.spec["strategies"]}
         rows, dispatched = [], False
         for action, klass in reversed(self._executed(m)):           # undo in reverse order of execution
             aid = action["action_id"]
             if aid in closed:
+                if closed[aid].get("status") not in COMPENSATION_SETTLED:
+                    # The signed compensation ran and did not complete. Its question is asked right after its
+                    # record, so a body stopped between the two kept the record and lost the question: it is asked
+                    # here, with the reasons the record kept. One ask per effect (its request id), so this records
+                    # nothing once the founder has the question, and nothing is dispatched for the effect again.
+                    self._compensation_ask(m, action, klass, now,
+                                           failure=closed[aid].get("reasons") or [closed[aid].get("status")])
                 continue
             decided = self._compensation_answer(m, action)
             if decided is not None and not decided.get("answer"):
@@ -3544,13 +3557,6 @@ class MissionEngine:
             evidence_refs=evidence + [r for r in sources if r not in evidence], attempt=attempt,
             spent_usd=m.committed_usd, approved_scopes=m.approved_scopes,
             evidence_confidence=float(s.get("evidence_confidence", 1.0)), signed_scopes=signed)
-        if (manifest.capability_id == "worker.commission" and outcome.status == "DONE"
-                and isinstance(outcome.output, dict) and outcome.output.get("status") == "UNCERTAIN"):
-            # Extracted from #157 (#184): the Gate completed collection, but the cancellable worker stopped after
-            # possible partial effects and spend. Keep its receipt and route it through the same no-blind-retry
-            # reconciliation as any uncertain act, with the signed cap reserved.
-            outcome.status = "UNCERTAIN"
-            outcome.reasons = ["worker execution interrupted; partial outcome and spend require reconciliation"]
         return self._record_outcome(m, s, manifest, outcome, attempt=attempt, routing_decision=routing_decision,
                                     input_bindings=input_bindings, bindings=bindings, budget_capped=budget_capped,
                                     prepare_for=prepare_for, now=now, bound_params=bound_params)
@@ -3581,14 +3587,10 @@ class MissionEngine:
                 # observation nothing to close over, so observation decides first, as it did before this recovery.
                 continue
             base = dict(proposal_id=intent["proposal_id"], scope_digest=intent["scope_digest"])
-            if receipt is not None:
-                result = receipt.payload.get("result") or {}
-                outcome = ActionOutcome(
-                    "DONE" if result.get("result_class") == "positive" else "REFUSED",
-                    ["retained receipt of a dispatch the body did not record before it stopped"]
-                    if result.get("result_class") == "positive" else [result.get("observed_outcome", "failed")],
-                    output=result.get("output"), receipt_hash=receipt.hash, grant_id=receipt.payload.get("grant_id"),
-                    cost_usd=float(s.get("cost_usd", 0.0)), **base)
+            if receipt is not None:      # read as the office reads every receipt: its result decides, not its existence
+                outcome = self.office.outcome_of(
+                    receipt, cost_usd=float(s.get("cost_usd", 0.0)),
+                    reused="retained receipt of a dispatch the body did not record before it stopped", **base)
             else:
                 outcome = ActionOutcome("UNCERTAIN", ["dispatch claimed without receipt; the body stopped inside "
                                                       "it, so its outcome is unknown"],
@@ -3606,6 +3608,15 @@ class MissionEngine:
         scope the dispatch bound (its mcp.act reach and an ask's move digest are read from it)."""
         bound_params = bound_params if bound_params is not None else dict(s.get("params") or {})
         aid = s["action_id"]
+        if (manifest.capability_id == "worker.commission" and outcome.status == "DONE"
+                and isinstance(outcome.output, dict) and outcome.output.get("status") == "UNCERTAIN"):
+            # Extracted from #157 (#184): the Gate completed collection, but the cancellable worker stopped after
+            # possible partial effects and spend. Keep its receipt and route it through the same no-blind-retry
+            # reconciliation as any uncertain act, with the signed cap reserved. Read here, where every outcome is
+            # recorded: in the dispatch alone, a body stopped between that receipt and this record recovered the
+            # receipt as an ordinary DONE, booked the signed cap as spent and asked for no reconciliation.
+            outcome.status = "UNCERTAIN"
+            outcome.reasons = ["worker execution interrupted; partial outcome and spend require reconciliation"]
         record = {"mission_id": m.mission_id, "action_id": aid, "attempt": attempt, "status": outcome.status,
                   "reasons": [str(r)[:300] for r in outcome.reasons], "receipt": outcome.receipt_hash,
                   "capability": manifest.capability_id, "route": manifest.route,

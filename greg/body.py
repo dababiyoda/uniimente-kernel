@@ -428,9 +428,9 @@ class Body:
                                                "scratch home were removed before anything could read them"},
                 key=["leftovers", sha256_json(removed), len(self.journal.replay("mcp.leftovers_removed"))])
         signer = WitnessSigner(key=self.layout.witness_key.read_bytes(), env="production")
-        self.office = AuthorityOffice(compiled=self.compiled, passports=self.passports, signer=signer,
-                                      ledger=self.ledger)
         self.registry = CapabilityRegistry()
+        self.office = AuthorityOffice(compiled=self.compiled, passports=self.passports, signer=signer,
+                                      ledger=self.ledger, registry=self.registry)
         from greg.cognition.catalog import initial_state
         for manifest, adapter in BUILTINS.values():
             self.registry.register(manifest, adapter, state=initial_state(manifest.capability_id))

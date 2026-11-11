@@ -46,8 +46,12 @@ class ActionOutcome:
 
 
 class AuthorityOffice:
-    def __init__(self, *, compiled, passports, signer, ledger, grants: GrantIssuer | None = None):
+    def __init__(self, *, compiled, passports, signer, ledger, grants: GrantIssuer | None = None, registry=None):
+        """``registry``: the body's CapabilityRegistry. With it, ``act`` refuses a capability the founder has not
+        left ATTACHED (behaviour B: "the Kernel must deny affected execution immediately"), whatever path reached
+        the office. Without it the office keeps its earlier behaviour."""
         self.compiled, self.passports, self.signer, self.ledger = compiled, passports, signer, ledger
+        self.registry = registry
         self.grants = grants or GrantIssuer()
         self.gate = ConsequenceGate(compiled=compiled, passports=passports, grants=self.grants,
                                     signer=signer, ledger=ledger)
@@ -84,6 +88,20 @@ class AuthorityOffice:
                                    f"that {manifest.target_from} would contact")
         return None
 
+    def attach_refusal(self, manifest: CapabilityManifest) -> str | None:
+        """Why this capability may not execute on this body now, or None. Attach state is the founder's (signed
+        CAPABILITY_ATTACH / DETACH, Genesis quarantine); only ATTACHED executes. A capability the registry does not
+        hold is not this body's to run. Epistemic requalification never reaches this test: it does not attach."""
+        if self.registry is None:
+            return None
+        cid = manifest.capability_id
+        state = self.registry.state.get(cid)
+        if state is None:
+            return f"capability {cid} is not registered on this body; the Kernel runs no unregistered capability"
+        if state != "ATTACHED":
+            return f"capability {cid} is {state}; the Kernel runs only ATTACHED capabilities"
+        return None
+
     @staticmethod
     def proposal_id(scope: str, attempt) -> str:
         """The one proposal (hence at most one Gate dispatch) of this exact scope at this attempt."""
@@ -116,6 +134,12 @@ class AuthorityOffice:
         proposal_id = self.proposal_id(scope, attempt)
         base = dict(proposal_id=proposal_id, scope_digest=scope)
 
+        unattached = self.attach_refusal(manifest)
+        if unattached is not None:      # before any cone, passport, grant, dispatch or retained-receipt reuse
+            self.ledger.append("event", {"type": "greg.authority.refused_unattached", "proposal_id": proposal_id,
+                                         "scope_digest": scope, "capability": manifest.capability_id,
+                                         "mission_id": mission_id, "reason": unattached})
+            return ActionOutcome("REFUSED", [unattached], **base)
         refused = self.precheck(manifest, target=target, params=params)
         if refused is not None:
             return ActionOutcome(refused[0], [refused[1]], **base)

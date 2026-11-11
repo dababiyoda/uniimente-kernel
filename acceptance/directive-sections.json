@@ -389,7 +389,8 @@
    "title": "Goal Gravity counts community intake by independent sources, not by volume",
    "source": "gap map of the 77 sections against #196 head 4ec00605 (session 2026-10-30), section 42 (unnamed there)",
    "depends_on": [],
-   "note": "Touches greg/goal_gravity.py: after open PR #209"
+   "note": "Touches greg/goal_gravity.py: after open PR #209",
+   "closed_by": "claude/goal-intake-accumulation-20261111 on #196 8d205324 (local branch, not pushed): greg/goal_gravity.py IntakeAccumulation counts each goal's relevant intake inside its signed window by the data plane's rule (dataplane.claim_support), a wake spends what had arrived, and a denial counts on a claim's other side; tests/unit/test_greg_goal_intake_accumulation.py, tests/unit/test_greg_goal_intake_counts.py, scripts/ci/check_goal_intake_mutants.py"
   },
   {
    "id": "S43-A",
@@ -3506,7 +3507,7 @@
   {
    "n": 42,
    "heading": "PUBLIC COMMUNITY FEEDBACK",
-   "status": "OPEN",
+   "status": "PARTIAL",
    "asks": [
     {
      "id": "S42.A1",
@@ -3517,17 +3518,15 @@
       "greg/goal_gravity.py"
      ],
      "evidence": [
-      "tests/unit/test_greg_community_evidence.py",
+      "tests/unit/test_greg_goal_intake_accumulation.py",
+      "tests/unit/test_greg_goal_intake_counts.py",
       "mission:I.I4"
      ],
+     "tests_tier": "SANDBOX_VERIFIED",
      "required_tier": "SANDBOX_VERIFIED",
-     "tier": "UNIT_VERIFIED",
-     "coverage": "partial",
-     "blocker": {
-      "class": "BUILDABLE_NOT_BUILT",
-      "reason": "Community evidence is weighted per source but Goal Gravity counts intake by volume",
-      "unit": "S42-B"
-     }
+     "tier": "SANDBOX_VERIFIED",
+     "coverage": "covered",
+     "note": "2026-11-11: Goal Gravity now counts a goal's intake by independent source with the data plane's own rule (one unit per source per claim, at most two sources per claim), on a real Body with a signed GOAL: weak reports from independent sources wake the right goal once, and a copied, repeated or denied claim does not add up. Both cited files drive a real Body; the data plane's typed evidence keeps its unit tests in tests/unit/test_greg_community_evidence.py, no longer cited here because they run on a stand-in journal. Counted on the author's 16 scenarios: 16 of 17 wanted wakes, 3 false alerts, 1 miss (per item before: 10, 10, 7). Not covered by this ask and still true: a claim retold in other words counts as a new one; a disagreement by an opposite word and passing mentions now add up; a sentence the goal already woke on is not news inside the window when its fault comes back (docs/mechanisms/MC-0003-independent-source-intake-count.md)"
     },
     {
      "id": "S42.A2",

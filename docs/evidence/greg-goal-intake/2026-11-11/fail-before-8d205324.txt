@@ -1,0 +1,31 @@
+tests/unit/test_greg_goal_intake_accumulation.py:82: assert [False, False, False] == [False, True, False]
+tests/unit/test_greg_goal_intake_accumulation.py:98: assert [True, True, True, True] == [True, False, False, False]
+tests/unit/test_greg_goal_intake_accumulation.py:132: AssertionError: assert [] == ['sha256:ced5...725082d1150c']
+tests/unit/test_greg_goal_intake_accumulation.py:150: AssertionError: assert False
+tests/unit/test_greg_goal_intake_accumulation.py:163: AssertionError: assert False
+tests/unit/test_greg_goal_intake_accumulation.py:179: KeyError: 'intake'
+tests/unit/test_greg_goal_intake_accumulation.py:193: assert [True, True, ...e, True, True] == [True, False,... False, False]
+tests/unit/test_greg_goal_intake_accumulation.py:209: AssertionError: assert False
+tests/unit/test_greg_goal_intake_accumulation.py:209: AssertionError: assert False
+tests/unit/test_greg_goal_intake_accumulation.py:209: AssertionError: assert False
+tests/unit/test_greg_goal_intake_accumulation.py:209: AssertionError: assert False
+tests/unit/test_greg_goal_intake_accumulation.py:220: AssertionError: assert not True
+tests/unit/test_greg_goal_intake_accumulation.py:235: AssertionError: assert False
+tests/unit/test_greg_goal_intake_accumulation.py:251: AssertionError: assert False
+tests/unit/test_greg_goal_intake_accumulation.py:271: KeyError: 'intake'
+tests/unit/test_greg_goal_intake_accumulation.py:286: AssertionError: assert False
+tests/unit/test_greg_goal_intake_accumulation.py:290: AttributeError: <module greg.goal_gravity> has no attribute '
+tests/unit/test_greg_goal_intake_accumulation.py:332: AttributeError: 'BodyRelevanceRouter' object has no attribute 'intake'
+tests/unit/test_greg_goal_intake_accumulation.py:387: assert ([False, False... False, False] == [False, False..., False, True]
+tests/unit/test_greg_goal_intake_accumulation.py:387: assert ([False, False... False, False] == [False, False..., False, True]
+tests/unit/test_greg_goal_intake_accumulation.py:387: assert ([False, False... False, False] == [False, False..., False, True]
+tests/unit/test_greg_goal_intake_accumulation.py:387: assert ([False, False... False, False] == [False, False..., False, True]
+tests/unit/test_greg_goal_intake_accumulation.py:396: assert [False, False, False] == [True, False, False]
+tests/unit/test_greg_goal_intake_accumulation.py:416: AssertionError: assert False
+tests/unit/test_greg_goal_intake_accumulation.py:427: AssertionError: assert 'sha256:a7058f64ee6633332b86e274e8eddb06b62c98c3b701ec42fdf62e533e3da610' in []
+tests/unit/test_greg_goal_intake_accumulation.py:462: KeyError: 'intake'
+tests/unit/test_greg_goal_intake_accumulation.py:480: AttributeError: module 'greg.goal_gravity' has no attribute 'IntakeAccumulation'
+tests/unit/test_greg_goal_intake_accumulation.py:505: AttributeError: module 'greg.goal_gravity' has no attribute 'IntakeAccumulation'
+tests/unit/test_greg_goal_intake_counts.py:122: AttributeError: module 'greg.goal_gravity' has no attribute 'IntakeAccumulation'
+tests/unit/test_greg_goal_intake_counts.py:122: AttributeError: module 'greg.goal_gravity' has no attribute 'IntakeAccumulation'
+30 failed, 2 passed in 11.91s

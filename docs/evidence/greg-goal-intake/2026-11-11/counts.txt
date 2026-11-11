@@ -1,0 +1,19 @@
+  (right wakes, false alerts, misses)   per-item -> accumulated
+  (0, 0, 1) -> (1, 0, 0)  weak reports from three independent sources
+  (1, 3, 0) -> (1, 0, 0)  one claim copied by four sources
+  (0, 0, 0) -> (0, 0, 0)  one source repeating its claim
+  (0, 0, 1) -> (1, 0, 0)  chatter on the goal's channel, then two reports
+  (0, 0, 1) -> (1, 0, 0)  a campaign behind one weak claim
+  (1, 5, 0) -> (1, 0, 0)  a campaign rewording its claim
+  (0, 0, 1) -> (1, 0, 0)  two sources that disagree, then a third
+  (2, 1, 0) -> (2, 0, 0)  an all-clear, then the fault, then the all-clear again
+  (3, 0, 0) -> (3, 0, 0)  different sufficient reports
+  (0, 0, 2) -> (2, 0, 0)  two goals, reports about one
+  (0, 0, 1) -> (1, 0, 0)  a report older than the window
+  (0, 0, 0) -> (0, 0, 0)  a quarantined report, then a weak one
+  (1, 1, 0) -> (1, 1, 0)  residual: one claim retold in other words
+  (0, 0, 0) -> (0, 1, 0)  residual: disagreement by an opposite word
+  (2, 0, 0) -> (1, 0, 1)  residual: the same sentence when the fault has come back
+  (0, 0, 0) -> (0, 1, 0)  residual: passing mentions that report nothing
+  total (10, 10, 7) -> (16, 3, 1); wanted wakes: 17
+32 passed in 39.52s

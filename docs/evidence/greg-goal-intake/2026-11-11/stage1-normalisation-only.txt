@@ -1,0 +1,5 @@
+FAILED tests/unit/test_greg_goal_intake_accumulation.py::test_a_reworded_repeat_from_the_same_campaign_does_not_count_twice
+FAILED tests/unit/test_greg_goal_intake_accumulation.py::test_two_sources_that_disagree_do_not_add_up_as_agreement[c.txt is not broken]
+FAILED tests/unit/test_greg_goal_intake_accumulation.py::test_two_sources_that_disagree_do_not_add_up_as_agreement[c.txt isn't broken]
+FAILED tests/unit/test_greg_goal_intake_accumulation.py::test_two_sources_that_disagree_do_not_add_up_as_agreement[C.TXT IS NEVER BROKEN]
+4 failed, 1 passed, 20 deselected in 6.06s

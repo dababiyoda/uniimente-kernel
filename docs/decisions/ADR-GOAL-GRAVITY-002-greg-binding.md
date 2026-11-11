@@ -351,6 +351,33 @@ Residuals after this review (owner Alfonso):
 - `mission.registered` still folds unverified; `presence.py`, `path.py` and `resilience.py` still read raw rows and
   decide no mission.
 
+## Intake counted by independent source (2026-11-11, unit S42-B)
+
+Reality tier: a cloud container, per-test keys, no founder device, VEPMC 0.
+
+**Reproduced on `8d205324`.** Each intake item was scored alone. Three weak reports from three sources never woke a goal. One sentence from four sources woke it four times.
+
+**Decision.** `BodyRelevanceRouter.score` still decides relevance by what an item names. A relevant item now scores what the goal's intake adds up to (`IntakeAccumulation`), and egregore's router compares that with the signed `wake_threshold` as before.
+
+- One source adds one unit per claim, and a claim counts for at most two sources. This is the data plane's rule, called and not copied (`dataplane.claim_support`).
+- A claim is the same normalised text, or the same words edited (word-set Jaccard at 0.8, fixed before the test ran).
+- A denial of a claim counts on the claim's other side. The two sides never add to each other.
+- The window is the goal's signed `intersection_window_seconds`. A goal keeps at most 256 reports.
+- The goal's wake record spends every report that had arrived. A claim the goal already woke on adds nothing when repeated.
+- Nothing is stored. The count is read from the ledger, so a restart changes no wake.
+
+**Authority.** None is created. The count reads the ledger and returns a number to the existing router. A wake by accumulation writes the same kinds of record as a wake by one report.
+
+**Measured.** 16 scenarios, 17 wanted wakes, on real Bodies: per item 10 right, 10 false alerts, 7 missed; accumulated 16 right, 3 false alerts, 1 missed. The scenarios are the author's.
+
+**Known limits.** A disagreement by an opposite word and passing mentions now add up. A sentence the goal already woke on is not news inside the window when its fault comes back. A claim retold in other words still counts as new. Each is a counted scenario in `tests/unit/test_greg_goal_intake_counts.py`.
+
+**Founder decision open.** Whether an attributed change in the goal's own mission observations should clear what the goal has already woken on.
+
+Card: `docs/mechanisms/MC-0003-independent-source-intake-count.md`. Evidence: `docs/evidence/greg-goal-intake/2026-11-11/`. Gate: `scripts/ci/check_goal_intake_mutants.py`.
+
+**Rollback.** Remove the `loop.router.intake = ...` line in `binding_for`: every item is scored alone again. No record needs migrating, because none was added.
+
 ## Alternatives
 
 - **Do nothing.** Persistent goals stay off the only authenticated body. Rejected: Mission F cannot run.

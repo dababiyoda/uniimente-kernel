@@ -1,0 +1,30 @@
+CAUGHT chatter on the goal's channel that names nothing adds up
+CAUGHT a quarantined item adds weight
+CAUGHT an item with no readable time is counted
+CAUGHT a goal counts what arrived before it was authorized
+CAUGHT a report from before the goal is dropped instead of judged alone
+CAUGHT one source repeating its claim adds again
+CAUGHT a campaign adds past the data plane's cap
+CAUGHT the data plane's cap is gone, and Goal Gravity's with it
+CAUGHT a wake spends nothing
+CAUGHT the goal's wake record is never read
+CAUGHT a report that adds nothing wakes the goal on what others left
+CAUGHT a reworded copy is a new claim
+CAUGHT the declared resemblance of 0.8 is itself excluded
+CAUGHT a claim's words are not the data plane's normalised words
+CAUGHT a denial counts as agreement
+CAUGHT the two sides of a claim add to each other
+CAUGHT a contracted denial is not seen as one
+CAUGHT negations stay in a claim's words, so a short denial is a new claim
+CAUGHT the signed window never expires
+CAUGHT a muted channel's reports add to others
+CAUGHT a goal keeps every report for ever
+CAUGHT a report keeps every word
+CAUGHT a kept count is never counted again
+CAUGHT a kept count ignores the founder's mute
+CAUGHT the founder's view counts a spent report as waiting
+25/25 caught
+
+real	3m27.079s
+user	2m59.616s
+sys	0m8.027s

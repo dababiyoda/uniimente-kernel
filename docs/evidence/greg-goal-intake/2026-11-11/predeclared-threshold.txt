@@ -1,0 +1,9 @@
+Pre-declared before any paraphrase or disagreement test was run (2026-11-11, branch claude/goal-intake-accumulation-20261111):
+
+1. Stage 1 implements claim identity by the data plane's normalisation only (dataplane.claim_key).
+2. If, and only if, the paraphrase test fails under stage 1, stage 2 adds near-duplicate matching:
+   - measure: Jaccard similarity of the two texts' word sets (word 1-shingles) after dataplane._normal,
+     with negating words removed;
+   - threshold: 0.8 (two texts at or above 0.8 are one claim reworded);
+   - no MinHash sketch: the window is bounded (256 reports per goal), exact Jaccard is cheap and has no hash seed.
+3. The threshold is not lowered after seeing a failure. A paraphrase the threshold misses is reported as a miss.

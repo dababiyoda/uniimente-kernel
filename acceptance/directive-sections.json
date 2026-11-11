@@ -1940,16 +1940,15 @@
       "greg/builders.py"
      ],
      "evidence": [
-      "mission:C.R5"
+      "tests/unit/test_greg_genesis_attack.py::test_genesis_refuses_the_length_bug_before_registration_and_registers_the_next_candidate",
+      "tests/unit/test_greg_genesis_attack.py::test_each_attack_class_refuses_a_candidate_the_frozen_oracle_accepts",
+      "tests/unit/test_greg_genesis_attack.py::test_an_input_that_spends_more_than_its_cpu_share_is_slow",
+      "tests/unit/test_greg_genesis_attack.py::test_attack_inputs_are_deterministic_bounded_and_the_feedback_carries_no_input_text"
      ],
+     "tests_tier": "SANDBOX_VERIFIED",
      "required_tier": "SANDBOX_VERIFIED",
      "tier": "SANDBOX_VERIFIED",
-     "coverage": "partial",
-     "blocker": {
-      "class": "BUILDABLE_NOT_BUILT",
-      "reason": "No ATTACK stage before registration",
-      "unit": "WU-11"
-     }
+     "coverage": "covered"
     },
     {
      "id": "S22.A3",
@@ -2962,7 +2961,7 @@
   {
    "n": 35,
    "heading": "GENERATED CODE IS UNTRUSTED",
-   "status": "OPEN",
+   "status": "PARTIAL",
    "asks": [
     {
      "id": "S35.A1",
@@ -3012,16 +3011,15 @@
       "greg/genesis.py"
      ],
      "evidence": [
-      "mission:C.R5"
+      "tests/unit/test_greg_genesis_attack.py::test_genesis_refuses_the_length_bug_before_registration_and_registers_the_next_candidate",
+      "tests/unit/test_greg_genesis_attack.py::test_each_attack_class_refuses_a_candidate_the_frozen_oracle_accepts",
+      "tests/unit/test_greg_genesis_attack.py::test_an_input_that_spends_more_than_its_cpu_share_is_slow",
+      "tests/unit/test_greg_genesis_attack.py::test_attack_inputs_are_deterministic_bounded_and_the_feedback_carries_no_input_text"
      ],
+     "tests_tier": "SANDBOX_VERIFIED",
      "required_tier": "SANDBOX_VERIFIED",
      "tier": "SANDBOX_VERIFIED",
-     "coverage": "partial",
-     "blocker": {
-      "class": "BUILDABLE_NOT_BUILT",
-      "reason": "No ATTACK stage",
-      "unit": "WU-11"
-     }
+     "coverage": "covered"
     },
     {
      "id": "S35.A4",

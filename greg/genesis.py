@@ -2185,6 +2185,11 @@ class Genesis:
                         report["service_replay"] = {"passed": not broke,
                                                     "error": broke[0]["error"] if broke else None}
                 passed = passed and not corpus_failures
+            if passed:
+                # S22.A2 / S35.A3: attacked before it counts, in the same isolated interpreter. Hostile shapes the
+                # frozen oracle never covered, a second run for determinism, and each input's own CPU share.
+                report["attack"] = builders.attack(path, contract["examples"])
+                passed = report["attack"]["passed"]
             if repair and "service_replay" not in report:
                 report["service_replay"] = {"passed": None, "error": "live input not replayable inside read roots"}
             self.journal.record("genesis.verified", {"deficit_id": deficit_id, "capability_id": f"built:{digest}",
@@ -2220,6 +2225,10 @@ class Genesis:
                 self._route(deficit_id, "builder",
                             f"attempt {attempt} failed the service replay" if not kept else
                             f"attempt {attempt} failed {len(kept)} kept failure input(s) of this function", None)
+                continue
+            if report.get("attack") and not report["attack"]["passed"]:
+                feedback = [builders.attack_feedback(report["attack"])]
+                self._route(deficit_id, "builder", f"attempt {attempt} failed the attack stage", None)
                 continue
             feedback = problems or [f"input {json.dumps(contract['examples'][f['case']]['input_text'])[:200]} expected "
                                     f"{json.dumps(contract['examples'][f['case']]['expected'])} but got "

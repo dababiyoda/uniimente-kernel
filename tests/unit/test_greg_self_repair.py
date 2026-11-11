@@ -14,9 +14,11 @@ from greg.body import Body
 from tests.greg_fixtures import Clock, drop, make_body, signed
 from tests.unit.test_greg_genesis_builder import FUNCTION, GOOD, _mission
 
-# Passes every frozen vector (all short) but has a latent bug on longer real input.
+# Passes every frozen vector (all short) and the attack stage (generic hostile shapes), but has a latent bug on the
+# longer real input these scenarios write: a run of finished "step" items. A bug on any long input is the attack
+# stage's to catch (LENGTH_BUG, tests/unit/test_greg_genesis_attack.py); this one only service can reveal.
 BUGGY = ("import re\n\ndef run(text):\n"
-         "    if len(text) > 400:\n        raise ValueError('longer than this implementation handles')\n"
+         "    if len(text) > 400 and 'step' in text:\n        raise ValueError('longer than this implementation handles')\n"
          "    return len(re.findall(r'^[ \\t]*[-*+] \\[ \\]', text, re.M))\n")
 
 

@@ -3557,6 +3557,13 @@ class MissionEngine:
             evidence_refs=evidence + [r for r in sources if r not in evidence], attempt=attempt,
             spent_usd=m.committed_usd, approved_scopes=m.approved_scopes,
             evidence_confidence=float(s.get("evidence_confidence", 1.0)), signed_scopes=signed)
+        if (manifest.capability_id == "worker.commission" and outcome.status == "DONE"
+                and isinstance(outcome.output, dict) and outcome.output.get("status") == "UNCERTAIN"):
+            # Extracted from #157 (#184): the Gate completed collection, but the cancellable worker stopped after
+            # possible partial effects and spend. Keep its receipt and route it through the same no-blind-retry
+            # reconciliation as any uncertain act, with the signed cap reserved.
+            outcome.status = "UNCERTAIN"
+            outcome.reasons = ["worker execution interrupted; partial outcome and spend require reconciliation"]
         return self._record_outcome(m, s, manifest, outcome, attempt=attempt, routing_decision=routing_decision,
                                     input_bindings=input_bindings, bindings=bindings, budget_capped=budget_capped,
                                     prepare_for=prepare_for, now=now, bound_params=bound_params)
@@ -3614,7 +3621,9 @@ class MissionEngine:
             # possible partial effects and spend. Keep its receipt and route it through the same no-blind-retry
             # reconciliation as any uncertain act, with the signed cap reserved. Read here, where every outcome is
             # recorded: in the dispatch alone, a body stopped between that receipt and this record recovered the
-            # receipt as an ordinary DONE, booked the signed cap as spent and asked for no reconciliation.
+            # receipt as an ordinary DONE, booked the signed cap as spent and asked for no reconciliation. (The
+            # dispatch keeps its own, now redundant, copy of this rule so this change leaves the dispatch site
+            # as it was: PR #273 restructures that site, and the two then merge without a conflict there.)
             outcome.status = "UNCERTAIN"
             outcome.reasons = ["worker execution interrupted; partial outcome and spend require reconciliation"]
         record = {"mission_id": m.mission_id, "action_id": aid, "attempt": attempt, "status": outcome.status,

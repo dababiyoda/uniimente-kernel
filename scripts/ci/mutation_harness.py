@@ -14,6 +14,12 @@ repository (never the working tree):
 
 Exit status 1 if any mutant survives, errors or no longer applies.
 
+The runner does not run the tests unmutated first. A named test that already fails counts as a catch for every
+mutant, so a gate runs its tests green beforehand (as ``check_gate_rules_mutants.py`` does) or relies on the job that
+runs the whole suite. The collection-error exclusion matches pytest's heading anywhere in its output: a failing test
+whose shown source or output contains that heading reads as not caught. ``tests/unit/test_mutation_harness.py`` pins
+each clause of the rule.
+
 New gates should use this runner. Gates with a different contract (another
 timeout, a single target, no purge) keep their own loop rather than change
 behaviour to fit it.

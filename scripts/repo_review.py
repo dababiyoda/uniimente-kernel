@@ -191,7 +191,9 @@ def ratchet(observed: set, kept: dict) -> dict:
 # ------------------------------------------------------------------ gate liveness
 
 # Mutation-gate scripts that no workflow runs, with the reason each is tolerated.
-# Shrink-only: a new unwired gate fails, and so does a listed gate once it is wired.
+# A new unwired gate fails, and so does a listed gate once it is wired. ratchet() compares this list with the tree,
+# not with what it was, so a gate added here in the same change would pass it: the list's contents are pinned in
+# tests/unit/test_repo_health_gates.py (PINNED_UNWIRED), and growing it takes an edit there too.
 KEPT_UNWIRED_GATES = {
     "check_seed_mutants.py":
         "7/7 caught locally with requirements installed, but run by no workflow; "

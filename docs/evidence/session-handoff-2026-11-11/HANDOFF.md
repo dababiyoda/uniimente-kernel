@@ -1,6 +1,7 @@
 # Session handoff, 2026-11-11 (session `session_01Kucyfm9exT5imDVYvHTYSv`)
 
-Rewritten at 19:25 UTC; it replaces the 17:45 and 14:49 versions (kept in this branch's history). This branch is
+Rewritten at 19:18 UTC and amended at 19:30 UTC; it replaces the 17:45 and 14:49 versions (kept in this branch's
+history). The 19:18 version said "19:25": that time was estimated, not read from the clock, and was wrong. This branch is
 evidence only: **not for merge**. It holds the exact continuation state, the connected staffing proof, raw review
 results, the scout's experiments, the decision record for work selection and the workflow scripts.
 
@@ -19,13 +20,14 @@ deployment, spending, publication or outside contact happened.
 
 ## 2. Draft PRs opened by this session (all into #196's branch, base `8d205324`)
 
-| PR | Branch | Head | State at 19:25 |
+| PR | Branch | Head | State at 19:18 unless a later time is given |
 |---|---|---|---|
 | #291 | `egregore/fervent-mayer-syy5d6` | `41fcc41f` | all ten Canonical CI jobs and every other check passed (job 6 on its one permitted re-run; its two failures were `apt-get` on the runner). The PR body does not yet record this |
 | #293 | `claude/browser-render-qualified-binary-20261111` | `da2aff57` | receipt and build-frontier checks passed; Canonical CI queued; independent review running |
 | #294 | `claude/retained-negative-receipt-20261111` | `e24b326c` | Canonical CI running (started 19:05 after an hour in the queue); independent review running |
 | #295 | `claude/intent-20261111-absolute-opus-maximus` | `d86e83c2` | receipt and build-frontier checks passed; Canonical CI queued |
-| #296 | `claude/compose-rehearsal-20261111` | `0b0bb6d3` | opened 19:13; checks not yet reported |
+| #296 | `claude/compose-rehearsal-20261111` | `0b0bb6d3` | opened 19:13; receipt passed; Canonical CI running at 19:28 |
+| #297 | `claude/seed-path-collection-clock-20261111` | `0454ab62` | opened 19:26; receipt passed; Canonical CI queued at 19:28 |
 
 Board #96 comments by this session today: 6797070087, 6799013915, 6800963150, 6802130261, 6802820715, 6802927161,
 6804957388 (handoff of #296 with intake findings), 6805031119 (claim: representation repair). No acknowledgment
@@ -53,6 +55,25 @@ tree, cause named by leaving one head out. 15 tests, gate 15/15. Findings on rea
 
 **#291, authority identity.** Unchanged: 51 tests in the two authority files, gates 23/23 and 5/5.
 
+**#297, a test time limit.** Canonical CI job 1 failed on #293's previous head `46ab6f89`: 1 failed, 11,444 passed,
+in 6,899 s. The failing seed-path test stamps a source when tests are collected, with a one-hour freshness limit;
+that run reached it later than that. The same job passed on #291 in 4,770 s. Reproduced here: the request answers
+with a source 3,500 s old and abstains at 3,700 s. #297 builds the source when the test runs (as `58a2fad1` did for
+the twin file) and adds a guard test. #293's comment 6805238511 records this. If the run on #293's current head
+`da2aff57` (started 19:20) fails on the same test, #297's one commit is to be brought into #293.
+
+**#294, local follow-up `a01997fd` (not pushed at 19:30).** A dispatch the Gate holds and the body never recorded is
+now settled on a mission the founder ended, too. Three tests replace the strict expected failure: 3 failed with
+`greg/missions.py` at `e24b326c`, 3 passed with the change; 174 neighbouring tests passed; mutation gate 19/19 on
+`a01997fd`. It waits for the review's fix round so the branch is pushed once.
+
+**Independent reviews returned by 19:27.** #294: behaviour held in every variant run; 11 of 16 extra mutants
+survive the tests (fix round queued); one adjacent gap predates the change (a compensation's retained receipt is
+not read when its capability is detached or unavailable at the restart). Revoked-device: the rule held under a
+160-seed fuzz; four fixes owed (fix round running). Its first finding is the same missing step as #294's adjacent
+gap: `_run_compensation` never reads the Gate's own record of the compensation's dispatch. One implementation must
+cover both; check on the composed tree before either is handed off.
+
 ## 4. Composed tree
 
 Local branch `compose-20261111c`, worktree `scratchpad/compose3`, head `090b06a5`:
@@ -66,7 +87,7 @@ needs both sides kept.
 
 Read each branch head and its tests before trusting it. A label is not a result.
 
-| Unit | Local branch | Local head | Pushed | State at 19:25 |
+| Unit | Local branch | Local head | Pushed | State at 19:18 |
 |---|---|---|---|---|
 | revoked-device approvals | `claude/revoked-device-authority-20261111` | `f35b7986` | only `d7c43ce5` | built; independent review running |
 | appraiser runs no detached sensor | `claude/appraiser-detached-sensor-20261111` | `bf8e4b9f` | no | built; review queued |
@@ -80,6 +101,8 @@ Known issue to fix before pushing: the credit and intake units both name a Mecha
 
 Workflows: `track-a-resume` (run `wf_c7bc9338-5cc`), `track-a-capability-wave` (run `wf_24637629-6ac`),
 `representation-repair-design` (run `wf_2f744d95-777`, design only: three designs, one adversary each, one brief).
+Also `business-engine-map` (run `wf_d93417c4-c78`, read-only: what the business path does today, what open
+branches hold, which units remain buildable without founder authority).
 Their journals are under the session's `subagents/workflows/<run>/journal.jsonl`.
 
 ## 6. Next unit claimed: representation repair (directive extension A)
@@ -107,7 +130,7 @@ skipped some or all of their tests here.
 
 ## 8. Decisions that are the founder's
 
-- Intake of #290, #291, #293, #294, #295, #296 into #196.
+- Intake of #290, #291, #293, #294, #295, #296, #297 into #196.
 - #291 reverses #290's choice that an office without a registry "keeps its earlier behaviour".
 - #294 reads an unclassed or unreadable receipt as UNCERTAIN. The alternative is REFUSED.
 - Revoked-device approvals: the unit adds an optional `suspected_compromise: true` to a founder-signed

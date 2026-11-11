@@ -4521,19 +4521,23 @@
      "excerpt": "STOP HORIZONTAL EXPANSION.",
      "owner_paths": [
       "constitution/constitution.ucl",
-      "compiler/ucl_compiler.py"
+      "compiler/ucl_compiler.py",
+      "greg/cathedral.py"
      ],
      "evidence": [
-      "tests/unit/test_ucl_compiler.py"
+      "tests/unit/test_ucl_compiler.py",
+      "tests/unit/test_cathedral_detector.py::test_activity_rising_while_outcomes_stay_flat_is_cathedral_and_the_detector_writes_nothing",
+      "tests/unit/test_cathedral_detector.py::test_the_build_phase_keeps_the_kill_condition_visible_beside_insufficient_history"
      ],
      "required_tier": "UNIT_VERIFIED",
      "tier": "UNIT_VERIFIED",
      "coverage": "partial",
      "blocker": {
       "class": "BUILDABLE_NOT_BUILT",
-      "reason": "The cathedral kill condition is compiled but never evaluated",
+      "reason": "greg/cathedral.py evaluates the first clause of the cathedral kill condition (git activity against founder-tier outcomes on the founder's designated body); its report says to stop horizontal expansion, and it writes nothing and grants nothing. Still open: it runs only when someone calls greg cathedral; until a founder-designated body exists every real run is INSUFFICIENT_HISTORY, with CATHEDRAL as a conditional beside it; the second clause (the Kernel adds more cost than control) and section 55's outcomes outside the founder's ledger (venture revenue, external effect, founder usability) are not computed",
       "unit": "WU-13"
-     }
+     },
+     "note": "Corrected 2026-11-11. The reason recorded on 2026-10-30 ('The cathedral kill condition is compiled but never evaluated') described the tree before greg/cathedral.py and tests/unit/test_cathedral_detector.py landed on this line (mutant gate in Canonical CI job 10). Limits: docs/evidence/cathedral-detector-2026-10-30/README.md."
     }
    ]
   },
@@ -5232,19 +5236,22 @@
      "ask": "The kill conditions are evaluated: infrastructure growing faster than outcomes is detected",
      "excerpt": "* increases infrastructure faster than outcomes;",
      "owner_paths": [
-      "constitution/constitution.ucl"
+      "constitution/constitution.ucl",
+      "greg/cathedral.py"
      ],
      "evidence": [
-      "tests/unit/test_ucl_compiler.py"
+      "tests/unit/test_ucl_compiler.py",
+      "tests/unit/test_cathedral_detector.py::test_activity_rising_while_outcomes_stay_flat_is_cathedral_and_the_detector_writes_nothing"
      ],
      "required_tier": "UNIT_VERIFIED",
      "tier": "UNIT_VERIFIED",
      "coverage": "partial",
      "blocker": {
       "class": "BUILDABLE_NOT_BUILT",
-      "reason": "Kill conditions are compiled, never evaluated",
+      "reason": "One clause of one kill condition is evaluated: greg/cathedral.py computes the cathedral condition's first clause (activity rising while founder-tier outcomes stay flat) when someone calls greg cathedral. Still open: its second clause and the self_authorization kill condition are compiled and never evaluated; nothing evaluates a kill condition on a schedule; until a founder-designated body exists every real run is INSUFFICIENT_HISTORY",
       "unit": "WU-13"
-     }
+     },
+     "note": "Corrected 2026-11-11. The reason recorded on 2026-10-30 ('Kill conditions are compiled, never evaluated') described the tree before greg/cathedral.py landed on this line. Limits: docs/evidence/cathedral-detector-2026-10-30/README.md."
     }
    ]
   },
@@ -5517,17 +5524,21 @@
      "excerpt": "Do not respond with another giant architectural document when the required decision is already clear and code can be built.",
      "owner_paths": [
       "constitution/constitution.ucl",
-      "compiler/ucl_compiler.py"
+      "compiler/ucl_compiler.py",
+      "greg/cathedral.py"
      ],
-     "evidence": [],
+     "evidence": [
+      "tests/unit/test_cathedral_detector.py::test_activity_rising_while_outcomes_stay_flat_is_cathedral_and_the_detector_writes_nothing"
+     ],
      "required_tier": "UNIT_VERIFIED",
-     "tier": "INTENDED",
-     "coverage": "gap",
+     "tier": "UNIT_VERIFIED",
+     "coverage": "partial",
      "blocker": {
       "class": "BUILDABLE_NOT_BUILT",
-      "reason": "As S55.A1: the cathedral kill condition is compiled but never evaluated",
+      "reason": "As S55.A1: greg/cathedral.py evaluates the cathedral condition's first clause on request, and counts new documents among the activity it sets against founder-tier outcomes. Still open: nothing compares a document with the code that could have been built in its place; the detector runs only when someone calls greg cathedral; until a founder-designated body exists every real run is INSUFFICIENT_HISTORY",
       "unit": "WU-13"
-     }
+     },
+     "note": "Corrected 2026-11-11. The reason recorded on 2026-10-30 ('As S55.A1: the cathedral kill condition is compiled but never evaluated') described the tree before greg/cathedral.py landed on this line. Limits: docs/evidence/cathedral-detector-2026-10-30/README.md."
     },
     {
      "id": "S69.A10",

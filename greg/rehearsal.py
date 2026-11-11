@@ -22,6 +22,11 @@ What it is not: the throwaway key is not Alfonso's key and authenticates no one;
 is not a founder-designated body, so nothing it does counts toward VEPMC; no network, model, money,
 message or publication is used. It reads only the kernel checkout it is pointed at.
 
+``--dir`` has to be a new scratch folder. It is refused when that folder holds ``body.json``, or when
+it equals, contains, or is inside the real GREG home (``GREG_HOME`` when set, and ``~/.uniimente/greg``
+either way). Aimed at either, the command would nest a rehearsal body in the founder's tree and write
+an unencrypted throwaway key there.
+
 The body is marked as a rehearsal body in its body.json (``mark_body``) before the throwaway key is enrolled, and
 every MISSION it signs opens its founder_expression with ``LABEL``, so its own hash-chained ledger says so too.
 greg.metrics.founder_tier never puts a mission of a body marked or labelled either way at the founder tier, even
@@ -80,7 +85,7 @@ def rehearse(*, directory: Path | None = None, kernel_root: Path | None = None, 
     from greg.founder import generate_founder_key, load_founder_key
     from greg.templates import first_mission
     started = time.monotonic()
-    work = Path(directory or tempfile.mkdtemp(prefix="greg-rehearsal-")).resolve()
+    work = _rehearsal_work(directory, "greg-rehearsal-")
     kernel = Path(kernel_root or Path(__file__).resolve().parents[1]).resolve()
     if (work / "body").exists():
         raise FileExistsError(f"{work / 'body'} exists; a rehearsal always starts from a new body")
@@ -150,6 +155,62 @@ STATEMENT_HEADER = "date,description,amount,currency\n"
 
 class PathRehearsalError(RuntimeError):
     """The one-body path did not reach N3, then N4, then N7."""
+
+
+class RehearsalDirError(RuntimeError):
+    """``--dir`` would write a rehearsal body or an unencrypted throwaway key into a real home or an existing body."""
+
+
+def _greg_homes() -> tuple[Path, ...]:
+    """Homes a rehearsal must not touch: ``GREG_HOME`` when set, and the default ``~/.uniimente/greg``.
+
+    The environment variable is the real home for this process. The default path stays protected when
+    that variable points somewhere else, so a scratch ``GREG_HOME`` does not open the founder's default tree.
+    """
+    candidates = []
+    configured = os.environ.get("GREG_HOME", "").strip()
+    if configured:
+        candidates.append(Path(configured).expanduser())
+    candidates.append(Path.home() / ".uniimente" / "greg")
+    homes, seen = [], set()
+    for candidate in candidates:
+        resolved = candidate.resolve()
+        if resolved not in seen:
+            seen.add(resolved)
+            homes.append(resolved)
+    return tuple(homes)
+
+
+def _path_nested(outer: Path, inner: Path) -> bool:
+    try:
+        inner.relative_to(outer)
+    except ValueError:
+        return False
+    return True
+
+
+def refuse_rehearsal_directory(directory: Path) -> Path:
+    """Resolve a ``--dir`` or raise before a rehearsal creates anything there.
+
+    Refused when the path holds ``body.json``, or when it equals, contains, or is inside a GREG home.
+    """
+    work = Path(directory).expanduser().resolve()
+    for home in _greg_homes():
+        if work == home or _path_nested(work, home) or _path_nested(home, work):
+            raise RehearsalDirError(
+                f"{work} equals, contains, or is inside the GREG home {home}; "
+                "a rehearsal will not write an unencrypted throwaway key there")
+    if (work / "body.json").is_file():
+        raise RehearsalDirError(
+            f"{work} holds body.json; a rehearsal will not nest a body or write a throwaway key "
+            "inside an existing body")
+    return work
+
+
+def _rehearsal_work(directory: Path | None, prefix: str) -> Path:
+    if directory is None:
+        return Path(tempfile.mkdtemp(prefix=prefix)).resolve()
+    return refuse_rehearsal_directory(directory)
 
 
 class _Clock:
@@ -280,7 +341,7 @@ def rehearse_path(*, directory: Path | None = None, kernel_root: Path | None = N
     from greg.body import Body, init_body
     from greg.founder import generate_founder_key, load_founder_key
     started = time.monotonic()
-    work = Path(directory or tempfile.mkdtemp(prefix="greg-rehearsal-path-")).resolve()
+    work = _rehearsal_work(directory, "greg-rehearsal-path-")
     kernel = Path(kernel_root or Path(__file__).resolve().parents[1]).resolve()
     if (work / "body").exists():
         raise FileExistsError(f"{work / 'body'} exists; a path rehearsal always starts from a new body")
@@ -368,7 +429,7 @@ def main(args) -> int:
         try:
             result = rehearse_path(directory=Path(args.dir) if args.dir else None,
                                    kernel_root=Path(args.kernel_root) if args.kernel_root else None)
-        except (PathRehearsalError, FileExistsError) as exc:
+        except (PathRehearsalError, FileExistsError, RehearsalDirError) as exc:
             print(json.dumps({"label": REHEARSAL, "mode": "path", "ok": False, "error": str(exc)}, indent=1))
             return 1
         print(json.dumps(result, indent=1))
@@ -387,8 +448,13 @@ def main(args) -> int:
             finally:
                 server.server_close()
         return 0 if ok else 1
-    result = rehearse(directory=Path(args.dir) if args.dir else None,
-                      kernel_root=Path(args.kernel_root) if args.kernel_root else None, effort_budget=args.effort)
+    try:
+        result = rehearse(directory=Path(args.dir) if args.dir else None,
+                          kernel_root=Path(args.kernel_root) if args.kernel_root else None,
+                          effort_budget=args.effort)
+    except RehearsalDirError as exc:
+        print(json.dumps({"label": REHEARSAL, "ok": False, "error": str(exc)}, indent=1))
+        return 1
     print(json.dumps(result, indent=1))
     if args.console:
         from greg.console import Console, serve

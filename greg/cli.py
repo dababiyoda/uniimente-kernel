@@ -855,7 +855,11 @@ def main(argv=None) -> int:
                     if not args.intake:
                         raise BodyError("intake-recommendation needs --intake with a JSON file: "
                                         "{repository, base, units: [{name, sha}]}")
-                    asked = json.loads(Path(args.intake).read_text())
+                    try:
+                        asked = json.loads(Path(args.intake).read_text(encoding="utf-8"))
+                    except (OSError, ValueError) as exc:     # ValueError: not UTF-8, or not JSON
+                        raise BodyError(f"--intake {args.intake}: not a readable JSON file "
+                                        f"({type(exc).__name__}: {' '.join(str(exc).split())[:160]})") from None
                     known = {"repository", "base", "units", "union", "claims", "timeout_seconds"}
                     whole = isinstance(asked, dict) and {"repository", "base", "units"} <= set(asked)
                     if not whole or set(asked) - known:

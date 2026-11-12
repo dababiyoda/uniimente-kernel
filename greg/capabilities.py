@@ -1288,11 +1288,13 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                      _lazy("greg.intake", "intake_recommendation")),
     "brief.intake_status": (_builtin("brief.intake_status", "delivery.intake_status",
                                      "Whether an intact, recent intake recommendation for one exact request "
-                                     "(its digest) is in the delivery folder", "api", "read_only", "deliver:",
+                                     "(its digest), delivered by GREG under a receipt on the canonical ledger, is in "
+                                     "the delivery folder", "api", "read_only", "deliver:",
                                      {"request_digest": "sha256:hex", "max_age_hours": "number?"},
                                      {"kind": "str", "request_digest": "str", "matching": "int",
                                       "for_other_requests": "int", "too_old": "int", "unusable": "int",
-                                      "latest": "str|null", "age_hours": "float|null"},
+                                      "not_delivered_by_greg": "int", "latest": "str|null",
+                                      "age_hours": "float|null"},
                                      filesystem="read-scoped", retry_safe=True,
                                      tests=("tests/unit/test_greg_intake.py",),
                                      provenance={"source": "uniimente-kernel/greg/intake.py"}),

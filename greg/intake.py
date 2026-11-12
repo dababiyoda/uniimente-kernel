@@ -4,7 +4,8 @@ The founder's first mission for GREG's own development (2026-11-12): "Given sele
 evidence-backed intake recommendation, identify behavioral conflicts, prepare a reversible composition, execute the
 relevant checks, and explain what remains unproven."
 
-One capability, ``brief.intake``, and one read-only sensor, ``brief.intake_status``:
+One capability, ``brief.intake``, and one read-only sensor, ``brief.intake_status``, which counts only a
+recommendation ``brief.intake`` delivered under a receipt on the canonical ledger:
 
     repository + base + ordered units {name, full sha}      (signed in the mission; nothing is fetched)
       -> ancestry             which heads contain the base and each other (``git merge-base --is-ancestor``)
@@ -15,7 +16,8 @@ One capability, ``brief.intake``, and one read-only sensor, ``brief.intake_statu
       -> render               one Markdown file, a deterministic function of the inputs kept in the receipt
       -> deliver              that file and its JSON twin, as ``brief.engineering`` delivers: never overwriting
 
-What it touches: Git objects are read; the merge's new objects are written under the mission workspace, never into
+What it touches: Git objects of exactly the named repository are read (``_pinned``: no upward search, nothing
+outside the read roots); the merge's new objects are written under the mission workspace, never into
 the repository (``intake_rehearsal.scratch_objects``); the trees are exported under the mission workspace and removed
 afterwards; two files are written under the delivery root. No ref, index or working tree changes. No network.
 
@@ -43,11 +45,15 @@ from pathlib import Path
 import re
 import shlex
 import shutil
+import time
 
 from greg import intake_rehearsal as rehearsal
 from greg.capabilities import READ_ONLY_GIT_ENV, CapabilityError, InvocationContext, _inside
 
-RENDERER = "greg.intake.render/2"     # /2: an own-head failure in the envelope is not checked, not held
+# /2: an own-head failure in the envelope is not checked, not held. /3 (review of 885b7b7a): a head containing a held
+# head is held; an order-dependent textual conflict is said on both units; checks are read per name and in a hosting
+# service's words; a contradicted claim keeps a unit from ready; the composed tree is named as an identity only.
+RENDERER = "greg.intake.render/3"
 KIND = "intake"
 SHA = re.compile(r"[0-9a-f]{40}")
 NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,40}")
@@ -58,16 +64,25 @@ MAX_UNITS, MAX_TESTS, MAX_UNION, MAX_CLAIMS, MAX_NODES, MAX_SKIPPED = 12, 40, 20
 TEXT, NODE_TEXT, WHY_TEXT = 240, 300, 200
 MAX_TWIN_BYTES = 2 * 1024 * 1024
 DEFAULT_TIMEOUT, MAX_TIMEOUT = 300, 3600
+# One invocation's budget across every test file it runs (each file's own timeout bounds only that file): never more
+# than the longest single file may take. A file that would start after it is spent is not run, and says so.
+MAX_INVOCATION_SECONDS = MAX_TIMEOUT
+_monotonic = time.monotonic
 DEFAULT_MAX_AGE_HOURS = 48
 
 PASSED, FAILED, TIMED_OUT, NOT_RUN, ERRORED = "passed", "failed", "timed out", "not run", "errored"
 STATES = (PASSED, FAILED, TIMED_OUT, NOT_RUN, ERRORED)
-# A check conclusion that is a failure (GitHub's check-run vocabulary, as greg.briefs reads it).
-FAILING = ("failure", "timed_out", "cancelled", "action_required", "startup_failure")
+# A check conclusion that is a failure, in GitHub's check-run vocabulary. ``cancelled`` is not one: the check stopped
+# before it said anything (it reads as no result, like ``skipped``, ``neutral`` and ``stale``).
+FAILING = ("failure", "timed_out", "action_required", "startup_failure")
+# A check status that is not a conclusion yet: the check is still running.
+UNFINISHED = ("in_progress", "queued", "pending", "waiting", "requested")
+MIN_SHA_PREFIX = 12          # a claim's or a check's head names this unit when it is a prefix of its SHA this long
 
 READY, AFTER, HOLD, NOT_CHECKED = "ready to take", "take after", "hold", "not checked"
 SAME, DIFFERENT = "re-executed here: same result", "re-executed here: DIFFERENT result"
 NOT_REEXECUTED, NO_CLAIMS = "claimed, not re-executed here", "no claims supplied"
+UNREADABLE = "claimed result is not a pass or a fail"
 NO_RESULT, OTHER_HEAD = "no result for this exact head", "result is for another head (stale)"
 CHECK_FAILED, RUNNING, CHECK_PASSED = "failed", "still running", "passed"
 BOUNDARY = ("This file recommends. It approves nothing. Composing these heads for development and approving a "
@@ -187,7 +202,63 @@ def request_digest(params) -> str:
 
 # -- reading the repository ---------------------------------------------------------------------------------
 
-def _git_environment(repo: Path, scratch: Path) -> dict:
+def _pinned(repo: Path, roots) -> dict:
+    """``GIT_DIR`` for exactly the named repository, after checking that everything git would read for it is inside
+    the read roots: its git directory (a ``.git`` directory, or the one a ``.git`` file names), the repository a
+    linked worktree belongs to (``commondir``), and every alternate object store, followed as git follows them.
+    git's search upward from a plain directory is never used, and a configuration that includes another file is
+    refused (git would read that file)."""
+    def inside(path: Path, what: str) -> Path:
+        try:
+            return _inside(path, roots)
+        except CapabilityError:
+            raise CapabilityError(f"{what} is outside the read roots ({str(path)[:200]}); git would read it there, so "
+                                  "the request is refused") from None
+
+    def text(path: Path) -> str:
+        try:
+            return path.read_text(encoding="utf-8", errors="replace")[:65536]
+        except OSError as exc:
+            raise CapabilityError(f"not a git repository: {path.name} cannot be read ({type(exc).__name__})") from None
+    dot = repo / ".git"
+    if dot.is_dir():
+        gitdir = dot
+    elif dot.is_file():
+        named = text(dot).strip()
+        if not named.startswith("gitdir:"):
+            raise CapabilityError("not a git repository: its .git file names no gitdir")
+        gitdir = Path(named[len("gitdir:"):].strip())
+        gitdir = gitdir if gitdir.is_absolute() else repo / gitdir
+    elif (repo / "HEAD").is_file() and (repo / "objects").is_dir():
+        gitdir = repo                                    # a bare repository
+    else:
+        raise CapabilityError(f"not a git repository: {str(repo)[:200]} holds no .git (git's search upward from a "
+                              "directory is not used)")
+    gitdir = inside(gitdir, "its git directory")
+    common = gitdir
+    if (gitdir / "commondir").is_file():
+        common = inside(gitdir / text(gitdir / "commondir").strip(), "the repository this worktree belongs to")
+    stores, seen = [common / "objects"], set()
+    while stores:
+        store = inside(stores.pop(), "an alternate object store")
+        if store in seen:
+            continue
+        seen.add(store)
+        if len(seen) > 6:
+            raise CapabilityError("alternate object stores nest deeper than git follows them; refused")
+        listing = store / "info" / "alternates"
+        if listing.is_file():
+            for line in text(listing).splitlines():
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                if line.startswith('"'):
+                    raise CapabilityError("an alternate object store is named in quotes; refused")
+                stores.append(Path(line) if Path(line).is_absolute() else store / line)
+    return {"GIT_DIR": str(gitdir), "GIT_CEILING_DIRECTORIES": str(repo.parent)}
+
+
+def _git_environment(repo: Path, scratch: Path, roots=None) -> dict:
     """The environment the rehearsal's git runs in: scrubbed, with no system or user configuration, no lazy fetch,
     new objects written under ``scratch``, and nothing the repository's own configuration names ever run. A filter
     driver is blanked, as ``capabilities.read_only_git`` does (git skips an empty filter command, so ``git archive``
@@ -195,13 +266,18 @@ def _git_environment(repo: Path, scratch: Path) -> dict:
     repository that configures one is refused."""
     home = scratch / "home"
     home.mkdir(parents=True, exist_ok=True)
-    env = {**READ_ONLY_GIT_ENV, "HOME": str(home)}
+    env = {**READ_ONLY_GIT_ENV, "HOME": str(home), **(_pinned(repo, roots) if roots is not None else {})}
     config = [("core.fsmonitor", "false"), ("core.hooksPath", "/dev/null")]
     with rehearsal.git_environment(env):
         listed = rehearsal.git(repo, "config", "-z", "--name-only", "--get-regexp",
                                r"^(filter\..*\.(clean|process|smudge)|merge\..*\.driver)$", check=False)
         if listed.returncode not in (0, 1):
             raise CapabilityError("not a git repository")
+        included = rehearsal.git(repo, "config", "--no-includes", "-z", "--name-only", "--get-regexp",
+                                 r"^include(if\..*)?\.path$", check=False)
+        if included.returncode == 0 and included.stdout.strip(b"\x00"):
+            raise CapabilityError("this repository's configuration includes another file; git would read that file "
+                                  "wherever it is, so the request is refused")
         for key in dict.fromkeys(k for k in listed.stdout.decode("utf-8", "replace").split("\x00") if k):
             if key.startswith("merge."):
                 raise CapabilityError(f"this repository configures a merge driver ({key[:80]}); the rehearsal runs no "
@@ -243,7 +319,7 @@ def _changed_test_names(repo: Path, base: str, sha: str) -> list[str]:
     listing, in which a name with unusual bytes is quoted and so never matches: this is how such a file is found and
     reported as not run, instead of going missing."""
     fork = rehearsal.git(repo, "merge-base", base, sha, check=False).stdout.decode().strip() or base
-    listed = rehearsal.git(repo, "diff", "--name-only", "-z", "--diff-filter=AM", fork, sha, "--", "tests").stdout
+    listed = rehearsal.git(repo, "diff", "--name-only", "-z", *rehearsal.CHANGED, fork, sha, "--", "tests").stdout
     names = [n.decode("utf-8", "replace") for n in listed.split(b"\x00") if n]
     return sorted(n for n in names if Path(n).name.startswith("test_") and n.endswith(".py"))
 
@@ -256,6 +332,11 @@ class ConfinedRunner:
 
     def __init__(self, ctx: InvocationContext):
         self.ctx, self.modes, self.filesystems, self.runs = ctx, [], [], 0
+        self.deadline = _monotonic() + MAX_INVOCATION_SECONDS
+
+    def stopped(self) -> None:
+        if self.ctx.stop_check is not None and self.ctx.stop_check():
+            raise CapabilityError("stop requested; the rehearsal ended before any recommendation was written")
 
     def __call__(self, tree: Path, files: list[str], timeout: int) -> dict:
         from greg import workers
@@ -266,16 +347,21 @@ class ConfinedRunner:
                   for f in missing}
         failed, counts = [], {}
         for file in present:
-            if self.ctx.stop_check is not None and self.ctx.stop_check():
-                raise CapabilityError("stop requested; the rehearsal ended before any recommendation was written")
-            [result] = workers.run_tests([["python", *rehearsal.PYTEST, "--tb=no", file]], tree, timeout=timeout,
+            self.stopped()
+            left = int(self.deadline - _monotonic())
+            if left < 1:
+                states[file] = {"state": NOT_RUN, "measured": False, "why": f"the invocation's time budget of "
+                                f"{MAX_INVOCATION_SECONDS}s was spent before it started"}
+                continue
+            limit = min(timeout, left)
+            [result] = workers.run_tests([["python", *rehearsal.PYTEST, "--tb=no", file]], tree, timeout=limit,
                                          stop_check=self.ctx.stop_check, confinement=self.ctx.worker_confinement)
             self.runs += 1
             if result["confinement"] not in self.modes:
                 self.modes.append(result["confinement"])
             if result.get("filesystem") and result["filesystem"] not in self.filesystems:
                 self.filesystems.append(result["filesystem"])
-            state, nodes, seen = classify(result, file, timeout, envelope=host_has_envelope)
+            state, nodes, seen = classify(result, file, limit, envelope=host_has_envelope)
             states[file] = state
             failed += nodes
             for kind, n in seen.items():
@@ -291,6 +377,13 @@ def classify(result: dict, file: str, timeout: int, *, envelope=lambda: True) ->
     tail = str(result.get("tail") or "")
     if result.get("confinement") == "refused":
         reason = " ".join(tail.removeprefix("acceptance confinement refused: ").split())[:WHY_TEXT]
+        # Two ends of a run that did start (greg.workers.supervised_run, on the envelope and on the supervised floor
+        # alike) arrive with the same "refused" label: neither is an envelope that was unavailable.
+        if reason.startswith("stop requested; worker"):
+            return {"state": NOT_RUN, "measured": False, "why": "interrupted by a stop request; no result"}, [], {}
+        if reason.startswith("worker exceeded the bounded stdout/stderr ceiling"):
+            return {"state": ERRORED, "measured": False,
+                    "why": "stopped when its output passed the output ceiling; no result was read"}, [], {}
         return {"state": NOT_RUN, "measured": False,
                 "why": ("envelope unavailable: " if not envelope() else "refused before it ran: ") + reason}, [], {}
     if result.get("returncode") == -1 and tail == f"timed out after {timeout}s":
@@ -318,7 +411,7 @@ def classify(result: dict, file: str, timeout: int, *, envelope=lambda: True) ->
     if counts.get("passed"):
         return {"state": ERRORED, "measured": False,
                 "why": f"pytest exited {result.get('returncode')} after reporting no failure"}, [], counts
-    if counts or "no tests ran" in " ".join(lines[-2:]):
+    if counts or summary or "no tests ran" in " ".join(lines[-2:]):   # e.g. every test deselected or skipped
         return {"state": NOT_RUN, "measured": False, "why": "no test in the file ran to a result: " + last}, [], counts
     return {"state": ERRORED, "measured": False, "why": "pytest printed no result: " + last}, [], counts
 
@@ -335,7 +428,7 @@ def intake_recommendation(params, ctx: InvocationContext) -> dict:
     scratch.mkdir(parents=True)
     runner = ConfinedRunner(ctx)
     try:
-        with rehearsal.git_environment(_git_environment(repo, scratch)):
+        with rehearsal.git_environment(_git_environment(repo, scratch, ctx.read_roots)):
             for label, sha in [("base", asked["base"])] + [(f"unit {u['name']}", u["sha"]) for u in asked["units"]]:
                 if rehearsal.git(repo, "cat-file", "-e", f"{sha}^{{commit}}", check=False).returncode:
                     raise CapabilityError(f"{label}: revision {sha} is not in this repository (nothing is fetched)")
@@ -365,6 +458,7 @@ def intake_recommendation(params, ctx: InvocationContext) -> dict:
             failure_class="transient") from None
     finally:
         shutil.rmtree(scratch, ignore_errors=True)
+    runner.stopped()          # nothing is delivered after a STOP, even one that ended or arrived during the last run
     inputs = {"renderer": RENDERER, "generated_on": briefs.NOW().date().isoformat(), "request": asked,
               "request_digest": digest(asked), "ancestry": lineage, "rehearsal": report,
               "composed_tree": facts.get("composed_tree"), "skipped_tests": skipped,
@@ -435,47 +529,91 @@ def _claim_tests(row: dict) -> list[str]:
     return row["tests"] if "tests" in row else sorted(set(TEST_IN_TEXT.findall(row["command"])))
 
 
-def _claimed(result: str) -> str:
-    return {"pass": "pass", "passed": "pass", "fail": "fail", "failed": "fail"}.get(result.strip().lower(), result)
+PASS_WORDS = ("pass", "passed", "passes", "success", "succeeded", "successful", "ok", "green")
+FAIL_WORDS = ("fail", "failed", "fails", "failure", "error", "errored", "red")
+
+
+def _claimed(result: str) -> str | None:
+    """A claimed result as "pass" or "fail", in the words people and test runners write it ("success", "1 passed",
+    "3 passed, 1 failed in 0.2s"), or None when it says neither."""
+    text = " ".join(result.strip().lower().split())
+    if text in PASS_WORDS:
+        return "pass"
+    if text in FAIL_WORDS:
+        return "fail"
+    parts = re.sub(r" in \d+(\.\d+)?s$", "", text).split(", ")
+    counts = [re.fullmatch(r"(\d+) (passed|failed|errors?|skipped|xfailed|xpassed|deselected|warnings?)", p)
+              for p in parts]
+    if not text or not all(counts):
+        return None
+    if any(int(m.group(1)) for m in counts if m.group(2) in ("failed", "error", "errors")):
+        return "fail"
+    return "pass" if any(int(m.group(1)) for m in counts if m.group(2) == "passed") else None
+
+
+def _names_head(claimed: str, sha: str) -> bool | None:
+    """Whether a claim's or a check's head names this unit: its full SHA, or a prefix of it of at least
+    ``MIN_SHA_PREFIX`` hex digits. None when it names no head at all."""
+    if not claimed:
+        return None
+    claimed = claimed.lower()
+    return len(claimed) >= MIN_SHA_PREFIX and bool(SHA_PREFIX.fullmatch(claimed)) and sha.startswith(claimed)
+
+
+SHA_PREFIX = re.compile(r"[0-9a-f]{1,40}")
+
+
+def _short(claimed: str, sha: str) -> str:
+    return (f", shorter than {MIN_SHA_PREFIX} hex digits, so it is not read as this one"
+            if claimed and SHA_PREFIX.fullmatch(claimed.lower()) and sha.startswith(claimed.lower()) else "")
 
 
 def _match_claims(unit: dict, record: dict | None, alone: dict) -> tuple[list[dict], list[dict]]:
-    """A unit's claims and check results, each given exactly one of the stated readings."""
+    """A unit's claims and check results, each given exactly one of the stated readings. Each check carries
+    ``this_head`` (whether it names this revision), so the assessment can decide check by check name."""
     if record is None:
         return [{"claim": "", "status": NO_CLAIMS, "detail": ""}], \
-               [{"name": "", "status": NO_RESULT, "detail": "nothing was supplied for this unit"}]
+               [{"name": "", "status": NO_RESULT, "detail": "nothing was supplied for this unit", "this_head": False}]
     claims = []
     for row in record["validation"]:
         tests = _claim_tests(row)
-        if record["head_sha"] != unit["sha"]:
-            status, detail = f"stale: the claim names head {record['head_sha'] or '(none)'}, this unit is " \
-                             f"{unit['sha']}", ""
+        named = _names_head(record["head_sha"], unit["sha"])
+        if named is None:
+            status, detail = f"stale: the claim names no head; this unit is {unit['sha']}", ""
+        elif not named:
+            status, detail = f"stale: the claim names head {record['head_sha']}, this unit is " \
+                             f"{unit['sha']}", _short(record["head_sha"], unit["sha"]).removeprefix(", ")
         elif not tests or any(not alone.get(t, {}).get("measured") for t in tests):
             status = NOT_REEXECUTED
             detail = "it names no test file" if not tests else "its tests were not among those run and measured here: " \
                 + ", ".join(t for t in tests if not alone.get(t, {}).get("measured"))
         else:
             here = "pass" if all(alone[t]["state"] == PASSED for t in tests) else "fail"
-            same = _claimed(row["result"]) == here
-            status = SAME if same else DIFFERENT
+            said = _claimed(row["result"])
+            status = UNREADABLE if said is None else SAME if said == here else DIFFERENT
             detail = f"claimed {row['result'] or '(nothing)'}; here {here}"
         claims.append({"claim": row["command"], "claimed_result": row["result"], "tests": tests, "status": status,
                        "detail": detail})
     checks, exact = [], False
     for row in record["checks"]:
-        if row["head_sha"] != unit["sha"]:
-            status, detail = OTHER_HEAD, f"it names head {row['head_sha'] or '(none)'}"
-        elif row["conclusion"] is None:
-            status, detail, exact = RUNNING, "", True
-        elif row["conclusion"] == "success":
+        named, conclusion = _names_head(row["head_sha"], unit["sha"]), row["conclusion"]
+        if named is None:
+            status, detail = NO_RESULT, "it names no head"
+        elif not named:
+            status, detail = OTHER_HEAD, f"it names head {row['head_sha']}" + _short(row["head_sha"], unit["sha"])
+        elif conclusion is None or conclusion.lower() in UNFINISHED:
+            status, detail, exact = RUNNING, f"status {conclusion}" if conclusion else "", True
+        elif conclusion.lower() == "success":
             status, detail, exact = CHECK_PASSED, "", True
-        elif row["conclusion"] in FAILING:
-            status, detail, exact = CHECK_FAILED, f"concluded {row['conclusion']}", True
+        elif conclusion.lower() in FAILING:
+            status, detail, exact = CHECK_FAILED, f"concluded {conclusion}", True
         else:
-            status, detail = NO_RESULT, f"concluded {row['conclusion']}, which is not a result"
-        checks.append({"name": row["name"], "status": status, "detail": detail})
+            status, detail = NO_RESULT, f"concluded {conclusion}, which is not a result"
+        checks.append({"name": row["name"], "status": status, "detail": detail, "this_head": bool(named),
+                       "conclusion": conclusion})
     if not exact:
-        checks.append({"name": "", "status": NO_RESULT, "detail": "no check result was supplied for this revision"})
+        checks.append({"name": "", "status": NO_RESULT, "detail": "no check result was supplied for this revision",
+                       "this_head": False})
     return claims, checks
 
 
@@ -530,10 +668,11 @@ def assess(inputs: dict) -> dict:
             elif name in conflict["caused_by"]:
                 hold.append(f"behavioural conflict: merging it breaks {conflict['unit']}'s test {conflict['test']}")
         if any(c["status"].startswith("stale") for c in claims):
-            hold.append("stale: its claims name another head")
-        if any(c["status"] == OTHER_HEAD for c in checks) and not any(
-                c["status"] in (CHECK_PASSED, CHECK_FAILED, RUNNING) for c in checks):
-            hold.append("stale: its check results are for another head")
+            hold.append("stale: its claims name another head or none")
+        # Check by check name: a check whose every result is for another head is stale, whatever other checks say.
+        current = {c["name"] for c in checks if c.get("this_head")}
+        for check in dict.fromkeys(c["name"] for c in checks if c["status"] == OTHER_HEAD and c["name"] not in current):
+            hold.append(f"stale: check {check} has results only for another head")
         if any(c["status"] == CHECK_FAILED for c in checks):
             hold.append("a check failed for this revision")
 
@@ -549,6 +688,14 @@ def assess(inputs: dict) -> dict:
             unchecked.append("a test failed on one tree and gave no result on the other")
         if any(c["status"] == RUNNING for c in checks):
             unchecked.append("a check is still running for this revision")
+        mine = [c for c in checks if c.get("this_head")]
+        if mine and all(c["status"] == NO_RESULT for c in mine):
+            unchecked.append("every check supplied for this revision concluded without a result ("
+                             + ", ".join(str(c.get("conclusion")) for c in mine) + ")")
+        for claim in claims:
+            if claim["status"] in (DIFFERENT, UNREADABLE):
+                unchecked.append(f"a claim's result differs from what ran here: \"{claim['claim']}\" "
+                                 f"({claim['detail']})")
 
         if name in report["kept_both_sides"]:
             notes.append("the merge keeps both sides' lines in " + ", ".join(report["kept_both_sides"][name])
@@ -559,17 +706,34 @@ def assess(inputs: dict) -> dict:
         if arrives:
             notes.append("arrives with " + ", ".join(arrives))
         after = [n for n in order if n in lineage["contains"].get(name, [])]
-        if hold:
-            recommendation, kind = f"{HOLD}: {hold[0]}", HOLD
-        elif unchecked:
-            recommendation, kind = f"{NOT_CHECKED}: {unchecked[0]}", NOT_CHECKED
-        elif after:
-            recommendation, kind = f"{AFTER} {', '.join(after)}", AFTER
+        # Which of two heads that conflict textually is left out depends on the listed order: the one merged first
+        # says so, beside whatever it is recommended.
+        blocks = [other for other, heads in (report.get("textual_conflicts_with") or {}).items() if name in heads]
+        if blocks:
+            notes.append(f"{', '.join(blocks)}, listed after it, conflicts with it textually and was left out of the "
+                         "merge: which of them is left out depends on the listed order")
+        units.append({"name": name, "sha": unit["sha"], "hold": hold, "not_checked": unchecked, "notes": notes,
+                      "tests": tests, "claims": claims, "checks": checks, "arrives_with": arrives, "after": after,
+                      "blocks": blocks})
+    # In dependency order, so a contained head is decided before every head that contains it: taking a head takes the
+    # heads it contains, so one that contains a held head is held too.
+    decided = {u["name"]: u for u in units}
+    for name in order:
+        unit = decided[name]
+        unit["hold"] += [f"it contains {inner}, which is held ({decided[inner]['hold'][0]}); taking it takes that code"
+                         for inner in unit["after"] if decided[inner]["kind"] == HOLD]
+        if unit["hold"]:
+            recommendation, kind = f"{HOLD}: {unit['hold'][0]}", HOLD
+        elif unit["not_checked"]:
+            recommendation, kind = f"{NOT_CHECKED}: {unit['not_checked'][0]}", NOT_CHECKED
+        elif unit["after"]:
+            recommendation, kind = f"{AFTER} {', '.join(unit['after'])}", AFTER
         else:
             recommendation, kind = READY, READY
-        units.append({"name": name, "sha": unit["sha"], "recommendation": recommendation, "kind": kind,
-                      "hold": hold, "not_checked": unchecked, "notes": notes, "tests": tests, "claims": claims,
-                      "checks": checks, "arrives_with": arrives, "after": after})
+        if kind in (READY, AFTER) and unit["blocks"]:
+            recommendation += (f" (in the listed order; {', '.join(unit['blocks'])}, listed after it, conflicts with "
+                               "it textually and is held)")
+        unit["recommendation"], unit["kind"] = recommendation, kind
     kinds = [u["kind"] for u in units]
     refused = [w for u in units for t in u["tests"] for w in (t["alone"], t["merged"])
                if w["state"] == NOT_RUN and str(w.get("why", "")).startswith("envelope unavailable")]
@@ -660,8 +824,9 @@ def render(inputs: dict) -> str:
     lines += ["", "## 3. Textual conflicts", ""]
     if not report["textual_conflicts"] and not report["kept_both_sides"]:
         lines.append("None: every unit merged onto what came before it.")
-    lines += [f"- **{name}** was left out of the merged tree: it conflicts with what was merged before it in "
-              + ", ".join(f"`{_shown(f)}`" for f in files) for name, files in report["textual_conflicts"].items()]
+    lines += [f"- **{name}** was left out of the merged tree: it conflicts with what was merged before it"
+              + rehearsal._directly(report, name) + " in " + ", ".join(f"`{_shown(f)}`" for f in files)
+              for name, files in report["textual_conflicts"].items()]
     lines += [f"- **{name}**: both sides' lines were kept in " + ", ".join(f"`{_shown(f)}`" for f in files)
               + " (asked for by the mission for these files only; nobody reviewed the result)"
               for name, files in report["kept_both_sides"].items()]
@@ -706,7 +871,9 @@ def render(inputs: dict) -> str:
             lines.append(f"- **{name}**: {label}: **{check['status']}**"
                          + (f" ({_shown(check['detail'], 200)})" if check["detail"] else "") + ".")
     lines += ["", "## 7. Reproducible recipe", "", "```", recipe(asked), "```", "",
-              f"Composed tree: `{inputs['composed_tree']}` (the tree of the in-memory merge; no ref points at it).",
+              f"Composed tree id: `{inputs['composed_tree']}`. Its objects were written only to the mission's "
+              "scratch, which was removed: nothing in the repository holds them, so it cannot be fetched. The id "
+              "names the merged content: the same merge, made again by the command above, has the same tree id.",
               "The command repeats the composition and the tests as you, outside GREG's confinement, with its "
               "timeout applied to a whole unit's test run. It prints its own report.",
               "", "## 8. What remains unproven", ""]
@@ -715,9 +882,9 @@ def render(inputs: dict) -> str:
               for reason in by_name[name]["not_checked"]]
     lines += [f"- **{name}**: {_shown(claim['status'], 200)}" + (f": \"{_shown(claim['claim'])}\"" if claim["claim"] else "")
               for name in judged["order"] for claim in by_name[name]["claims"]
-              if claim["status"] in (NOT_REEXECUTED, NO_CLAIMS)]
+              if claim["status"] in (NOT_REEXECUTED, NO_CLAIMS, DIFFERENT, UNREADABLE)]
     lines += [f"- **{name}**: {_shown(note, 400)}" for name in judged["order"] for note in by_name[name]["notes"]
-              if "nobody reviewed" in note or "does not contain the base" in note]
+              if "nobody reviewed" in note or "does not contain the base" in note or "listed order" in note]
     modes = "; ".join(confinement["modes"]) or "no test was started"
     lines += [f"- the tests ran under: {modes} (body setting: {confinement['body_setting']}); a test that opens any "
               "socket (even to localhost), reaches the network, reads a file outside its tree or expects its "
@@ -739,9 +906,31 @@ def render(inputs: dict) -> str:
 
 # -- the sensor and the appraiser's check ---------------------------------------------------------------------
 
+def _delivered(ledger, asked: str) -> dict:
+    """Every recommendation for the request ``asked`` that GREG itself delivered, by the Markdown path each names:
+    what ``brief.intake`` returned under a Consequence Gate receipt (its Commit Witness names the capability). Read
+    from the canonical ledger, never from the delivery folder, which anything on the machine can write."""
+    witnesses = {r.payload.get("witness_id") for r in ledger.by_type("witness")
+                 if r.payload.get("capability") == "brief.intake"}
+    found = {}
+    for record in ledger.by_type("receipt"):
+        result = record.payload.get("result") or {}
+        output = result.get("output") if isinstance(result, dict) else None
+        if record.payload.get("witness_id") in witnesses and result.get("result_class") == "positive" \
+                and isinstance(output, dict) and output.get("request_digest") == asked:
+            try:
+                found[Path(str(output.get("path"))).resolve()] = output
+            except (OSError, ValueError):
+                continue
+    return found
+
+
 def intake_status(params, ctx: InvocationContext) -> dict:
-    """How many intact, recent recommendations for exactly this request are in the delivery folder. A file about
-    other heads has another request digest and is not counted, however new it is."""
+    """How many intact, recent recommendations for exactly this request, delivered by GREG, are in the delivery
+    folder. A file about other heads has another request digest and is not counted, however new it is. A file GREG
+    did not deliver (no ``brief.intake`` receipt on the canonical ledger names it) is not counted, however exactly it
+    resembles one: it is counted apart, as ``not_delivered_by_greg``. A delivered file counts only while it is still
+    exactly what its receipt renders: the appraiser's own check (:func:`verify_delivery`) decides that, here too."""
     from greg import briefs
     asked = params.get("request_digest")
     if not isinstance(asked, str) or not re.fullmatch(r"sha256:[0-9a-f]{64}", asked):
@@ -749,9 +938,13 @@ def intake_status(params, ctx: InvocationContext) -> dict:
     limit = params.get("max_age_hours", DEFAULT_MAX_AGE_HOURS)
     if isinstance(limit, bool) or not isinstance(limit, (int, float)) or limit <= 0:
         raise CapabilityError("max_age_hours must be a positive number")
+    if getattr(ctx.journal, "ledger", None) is None:
+        raise CapabilityError("brief.intake_status reads the canonical ledger: only a recommendation GREG delivered "
+                              "under a receipt counts, and without the ledger none can be told from a planted file")
+    delivered = _delivered(ctx.journal.ledger, asked)
     folder = briefs._deliver_dir(ctx)
     now = briefs.NOW().timestamp()
-    matching, others, unusable, stale, latest = 0, 0, 0, 0, None
+    matching, others, unusable, stale, planted, latest = 0, 0, 0, 0, 0, None
     for path in sorted(folder.glob(f"*-{KIND}-brief*.json"), key=lambda p: (p.stat().st_mtime, p.name)):
         try:
             if path.stat().st_size > MAX_TWIN_BYTES:
@@ -761,19 +954,25 @@ def intake_status(params, ctx: InvocationContext) -> dict:
             intact = (isinstance(twin, dict) and twin.get("markdown") == markdown.name and markdown.is_file()
                       and hashlib.sha256(markdown.read_bytes()).hexdigest() == twin.get("markdown_sha256")
                       and digest(twin.get("request")) == twin.get("request_digest"))
+            receipt = delivered.get(markdown.resolve()) if intact else None
         except (OSError, ValueError):
             intact = False
         if not intact:
             unusable += 1
         elif twin["request_digest"] != asked:
             others += 1
+        elif receipt is None:
+            planted += 1
+        elif not verify_delivery(receipt, ctx.deliver_root)[0]:
+            unusable += 1
         elif (age := max(now - markdown.stat().st_mtime, 0.0) / 3600) > limit:
             stale += 1
         else:
             matching += 1
             latest = {"latest": markdown.name, "age_hours": round(age, 3), "sha256": twin["markdown_sha256"]}
     return {"kind": KIND, "request_digest": asked, "matching": matching, "for_other_requests": others,
-            "too_old": stale, "unusable": unusable, **(latest or {"latest": None, "age_hours": None})}
+            "too_old": stale, "unusable": unusable, "not_delivered_by_greg": planted,
+            **(latest or {"latest": None, "age_hours": None})}
 
 
 def verify_delivery(output: dict, deliver_root: Path | None, ledger=None, *, confined: bool = False) -> tuple[bool, str]:

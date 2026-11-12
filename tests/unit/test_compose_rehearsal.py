@@ -281,3 +281,25 @@ def test_the_command_line_writes_both_reports_and_exits_1_on_a_conflict_0_when_c
     assert cr.main(["--repo", str(repo), "--base", "base", "--unit", "x=label", "--unit", "x=one"]) == 2
     assert cr.main(["--repo", str(repo), "--base", "base", "--unit", "x=no-such-ref"]) == 2
     assert cr.main(["--repo", str(repo), "--base", "no-such-base", "--unit", "x=label"]) == 2
+
+
+def test_the_command_line_runs_a_renamed_test_and_names_the_head_a_left_out_one_conflicts_with(repo, tmp_path):
+    """Review of 885b7b7a, F5 and F9, on the command line's side of the shared code: a test file renamed and edited
+    is run (git's rename detection, even a person's ``diff.renames = copies``, no longer drops it), and a head left
+    out for a textual conflict names the earlier head it conflicts with, since which one is left out depends on the
+    listed order."""
+    git(repo, "config", "diff.renames", "copies")
+    git(repo, "checkout", "-q", "-b", "mover", "base")
+    git(repo, "mv", "tests/test_base.py", "tests/test_pricing.py")
+    moved = repo / "tests" / "test_pricing.py"
+    moved.write_text(moved.read_text() + "# moved\n")
+    git(repo, "add", "-A")
+    git(repo, "commit", "-qm", "mover")
+    git(repo, "checkout", "-q", "base")
+    assert git(repo, "diff", "--name-status", "base", "mover").startswith("R")     # git itself calls it a rename
+    [mover] = rehearse(repo, tmp_path, "mover")["units"]
+    assert mover["tests"] == ["tests/test_pricing.py"] and mover["alone"]["counts"] == {"passed": 1}
+    report = rehearse(repo, tmp_path, "steeper", "flat")
+    assert report["textual_conflicts_with"] == {"flat": ["steeper"]}
+    assert "- **flat** conflicts with what was merged before it (directly with steeper; which of them is left out " \
+           "depends on the listed order) in: `pkg.py`, `tests/test_base.py`" in cr.markdown(report)

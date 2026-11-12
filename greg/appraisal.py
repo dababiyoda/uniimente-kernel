@@ -60,6 +60,12 @@ DELIVERING = {"brief.engineering": "greg.briefs", "venture.assess": "greg.ventur
               "organs.exchange": "greg.organ_exchange", "brief.intake": "greg.intake"}  # re-rendered from receipts
 
 
+def _ledger_view(journal: Journal):
+    """The canonical ledger, readable by record type only (``greg.ventures.LedgerReader``)."""
+    from greg.ventures import LedgerReader
+    return LedgerReader(journal)
+
+
 def _founder_keys(journal: Journal, before_seq: int, ledger) -> dict:
     keys = {}
     seq = {r.payload.get("event_id"): r.seq for r in ledger.by_type("event")}
@@ -610,7 +616,9 @@ def appraise(request: dict) -> dict:
                                         deliver_root=Path(request["deliver_root"])
                                         if request.get("deliver_root") else None,
                                         journal=journal if cap in ("memory.precedents", "artifact.inspect", "worker.appraise", "daleobanks.outcome")
-                                        or cap.startswith(("cognition.", "pipeline.", "institution.", "organ.", "foundry.")) else None,
+                                        or cap.startswith(("cognition.", "pipeline.", "institution.", "organ.", "foundry."))
+                                        # the intake sensor counts only a delivery receipted on this ledger, read-only
+                                        else _ledger_view(journal) if cap == "brief.intake_status" else None,
                                         mission_id=mid,
                                         artifact_root=Path(request["artifact_root"])
                                         if request.get("artifact_root") else None,

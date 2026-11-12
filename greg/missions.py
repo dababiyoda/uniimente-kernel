@@ -1966,6 +1966,8 @@ class MissionEngine:
     def _context(self, m: MissionState, manifest) -> InvocationContext:
         # worker.appraise reads the ledger to bind a retained WorkOrder to its canonical commission receipt, as the
         # separate appraiser does: evidence a stopped body wrote before its receipt is never accepted (H.G11).
+        # brief.intake_status reads it to count only a recommendation GREG delivered under a receipt (review of
+        # 885b7b7a, F4: a planted pair closed the mission with no action).
         return InvocationContext(workspace=self.workspace_root / m.mission_id.replace(":", "_"),
                                  read_roots=self.read_roots, secrets=self.secrets, manifest=manifest,
                                  deliver_root=self.deliver_root, learned=improvement.learned(self.journal),
@@ -1975,7 +1977,8 @@ class MissionEngine:
                                  # commission receipt get a reader that cannot write
                                  journal=self._ledger_reader() if manifest.capability_id in ("venture.assess",
                                                                                              "daleobanks.verify",
-                                                                                             "worker.appraise")
+                                                                                             "worker.appraise",
+                                                                                             "brief.intake_status")
                                  else self.journal if manifest.capability_id in ("memory.precedents", "daleobanks.outcome")
                                  or manifest.capability_id.startswith(("artifact.", "cognition.", "pipeline.", "institution.",
                                                                        "organ.", "foundry.")) else None,

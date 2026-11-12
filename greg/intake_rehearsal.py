@@ -60,6 +60,13 @@ COUNT = re.compile(r"(\d+) (passed|failed|skipped|error|errors|xfailed|xpassed)"
 PYTEST = ("-B", "-m", "pytest", "-q", "-p", "no:cacheprovider", "-rfE", "--no-header")
 # The environment git and tar run in: None is the caller's own (the command line); a mission sets a scrubbed one.
 _ENV: contextvars.ContextVar = contextvars.ContextVar("greg_intake_rehearsal_env", default=None)
+# Where a rehearsal's own temporary files go (keep_both's scratch index): inside its scratch directory while
+# :func:`rehearse` runs, so a mission's rehearsal writes nothing outside its workspace.
+_WORK: contextvars.ContextVar = contextvars.ContextVar("greg_intake_rehearsal_work", default=None)
+# How a head's changed test files are listed. Rename and copy detection are off (a person's ``diff.renames`` setting
+# included): a test renamed or copied and edited is an added file, never an R or C entry an A/M filter would drop.
+# A type change (a file that became a symbolic link) is listed too. Both callers read this one listing.
+CHANGED = ("--no-renames", "--diff-filter=AMT")
 
 
 class RehearsalError(Exception):
@@ -120,7 +127,7 @@ def keep_both(root: Path, ours: str, theirs: str, tree: str, paths: list[str]) -
     only to the files the caller names, and the report says where it was applied. Objects only: a scratch index
     file, no working tree, no ref."""
     fork = git(root, "merge-base", ours, theirs, check=False).stdout.decode().strip()
-    with tempfile.TemporaryDirectory(prefix="compose-rehearsal-index-") as work:
+    with tempfile.TemporaryDirectory(prefix="compose-rehearsal-index-", dir=_WORK.get()) as work:
         index = {"GIT_INDEX_FILE": str(Path(work) / "index")}
 
         def scratch(*args: str, stdin: bytes | None = None) -> bytes:
@@ -197,7 +204,7 @@ def export(root: Path, treeish: str, dest: Path) -> Path:
 def changed_tests(root: Path, base: str, sha: str) -> list[str]:
     """The test files a head added or changed since it left the base."""
     fork = git(root, "merge-base", base, sha, check=False).stdout.decode().strip() or base
-    names = git(root, "diff", "--name-only", "--diff-filter=AM", fork, sha, "--", "tests").stdout.decode().splitlines()
+    names = git(root, "diff", "--name-only", *CHANGED, fork, sha, "--", "tests").stdout.decode().splitlines()
     return sorted(n for n in names if Path(n).name.startswith("test_") and n.endswith(".py"))
 
 
@@ -215,6 +222,8 @@ def measured(result: dict, file: str) -> bool:
     """Whether ``result`` says how ``file`` behaved. A runner that reports no per-file ``states`` (the command line's)
     measured everything it ran. One that does (a mission's confined runner) may have timed out, been refused its
     envelope or lost part of pytest's output: such a file is no measurement, of a pass or of a failure."""
+    if file in result.get("not_compared", ()):
+        return False
     states = result.get("states")
     return states is None or bool(states.get(file, {}).get("measured"))
 
@@ -228,6 +237,30 @@ def rehearse(root: Path, base_ref: str, units: list[Unit], also: list[str], time
     """The rehearsal. ``run(tree, files, timeout)`` runs test files inside an exported tree and is always the
     caller's choice: this module starts no test itself. ``facts``, when given, is filled with what the report does
     not carry: the merged commit and its tree."""
+    Path(scratch).mkdir(parents=True, exist_ok=True)
+    token = _WORK.set(str(scratch))
+    try:
+        return _rehearse(root, base_ref, units, also, timeout, Path(scratch), union, run=run, facts=facts)
+    finally:
+        _WORK.reset(token)
+
+
+def conflicts_directly(root: Path, units: list[Unit], merged: list[str], textual: dict) -> dict[str, list[str]]:
+    """For each head left out for a textual conflict, the heads merged before it that conflict with it on their own
+    (``git merge-tree`` of the two heads). The verdict depends on the order: listed the other way round, the other
+    head would have been the one left out. Empty for a conflict only the combination of earlier heads produces."""
+    out = {}
+    for index, unit in enumerate(units):
+        if unit.name not in textual:
+            continue
+        out[unit.name] = [other.name for other in units[:index] if other.name in merged
+                          and git(root, "merge-tree", "--write-tree", "--name-only", "--no-messages", other.sha,
+                                  unit.sha, check=False).returncode == 1]
+    return out
+
+
+def _rehearse(root: Path, base_ref: str, units: list[Unit], also: list[str], timeout: int, scratch: Path,
+              union: tuple[str, ...], *, run, facts: dict | None) -> dict:
     base = resolve(root, base_ref)
     if not base:
         raise RehearsalError(f"unknown base {base_ref}")
@@ -252,13 +285,37 @@ def rehearse(root: Path, base_ref: str, units: list[Unit], also: list[str], time
         facts["composed_tree"] = git(root, "rev-parse", f"{merged_commit}^{{tree}}").stdout.decode().strip()
     composed = {u.name: run(composed_tree, u.tests, timeout) for u in in_merge}
     composed_also = run(composed_tree, also, timeout) if also else None
+    # A head's test file that the merged tree holds in another version (a descendant's, or another head's edit merged
+    # in) is not that head's test: what ran there measures someone else's file. It is not compared, either way, and
+    # says whose version ran (review of 885b7b7a, F18: 303-old's test was replaced by 303's and never met 304).
+    not_compared = []
+    for unit in in_merge:
+        foreign = {}
+        for file in unit.tests:
+            mine, there = scratch / f"own-{unit.name}" / file, composed_tree / file
+            if mine.is_file() and there.is_file() and mine.read_bytes() != there.read_bytes():
+                ran = [o.name for o in in_merge if o.name != unit.name
+                       and (scratch / f"own-{o.name}" / file).is_file()
+                       and (scratch / f"own-{o.name}" / file).read_bytes() == there.read_bytes()]
+                foreign[file] = (f"the merged tree holds {', '.join(ran)}'s version of this file" if ran else
+                                 "the merged tree holds a merge of several heads' versions of this file") + \
+                    f", not {unit.name}'s: its own version was not run against the merge"
+                not_compared.append({"unit": unit.name, "file": file, "note": foreign[file]})
+        if foreign:
+            result = composed[unit.name]
+            result["failed"] = [n for n in result["failed"] if node_file(n) not in foreign]
+            result["not_compared"] = sorted(foreign)
+            if "states" in result:
+                result["states"] = {**result["states"], **{f: {"state": "not run", "measured": False, "why": why}
+                                                           for f, why in foreign.items()}}
 
     # ``not_measured``: a test seen failing on one tree whose file gave no result on the other. It is neither a
     # conflict nor "failing before the merge": one half of the comparison is missing. Always empty for a runner
     # that reports no per-file state.
     behavioural, already_failing, not_measured = [], [], []
     for unit in in_merge:
-        alone = set(own[unit.name]["failed"])
+        alone = {n for n in own[unit.name]["failed"]
+                 if node_file(n) not in composed[unit.name].get("not_compared", ())}
         for node in composed[unit.name]["failed"]:
             if node not in alone and not measured(own[unit.name], node_file(node)):
                 not_measured.append({"test": node, "unit": unit.name,
@@ -343,9 +400,11 @@ def rehearse(root: Path, base_ref: str, units: list[Unit], also: list[str], time
         "also": {"tests": also, "base": base_also and {k: base_also[k] for k in ("counts", "failed")},
                  "merged": composed_also and {k: composed_also[k] for k in ("counts", "failed")}} if also else None,
         "merge_order": merged, "textual_conflicts": textual, "kept_both_sides": kept_both,
+        "textual_conflicts_with": conflicts_directly(root, units, merged, textual),
         # A head with no test to run was checked for nothing: it must not read as compatible.
         "unchecked": [u.name for u in units if not [f for f in u.tests if f not in own[u.name]["missing"]]],
         "behavioural_conflicts": behavioural, "failing_before_the_merge": already_failing,
+        "not_compared": not_compared,
         "clean": not textual and not behavioural,
         "limits": ["only the named tests were run: a clean result does not prove the heads are compatible",
                    "a unit left out for a textual conflict was not tested in the merge",
@@ -360,6 +419,13 @@ def rehearse(root: Path, base_ref: str, units: list[Unit], also: list[str], time
                                "merged": composed[unit.name].get("states", {}) if unit.name in composed else None}
         report["not_measured"] = not_measured
     return report
+
+
+def _directly(report: dict, name: str) -> str:
+    """" (directly with A, B)" when those heads, merged before ``name``, conflict with it on their own."""
+    heads = (report.get("textual_conflicts_with") or {}).get(name) or []
+    return f" (directly with {', '.join(heads)}; which of them is left out depends on the listed order)" if heads \
+        else ""
 
 
 def markdown(report: dict) -> str:
@@ -382,7 +448,8 @@ def markdown(report: dict) -> str:
             for name, files in report["kept_both_sides"].items()] + [
             "", "Asked for on the command line for these files only. Nobody reviewed the result.", ""]
     if report["textual_conflicts"]:
-        lines += ["## Textual conflicts", ""] + [f"- **{name}** conflicts with what was merged before it in: "
+        lines += ["## Textual conflicts", ""] + [f"- **{name}** conflicts with what was merged before it"
+                                                  + _directly(report, name) + " in: "
                                                   + ", ".join(f"`{f}`" for f in files)
                                                   for name, files in report["textual_conflicts"].items()] + [""]
     if report["behavioural_conflicts"]:
@@ -402,6 +469,9 @@ def markdown(report: dict) -> str:
             if len(items) > SHOWN:
                 lines.append(f"- and {len(items) - SHOWN} more from {name} (all are in the JSON report)")
         lines.append("")
+    if report.get("not_compared"):
+        lines += ["## Not compared", ""] + [f"- `{item['file']}` (from {item['unit']}): {item['note']}"
+                                            for item in report["not_compared"]] + [""]
     if report["unchecked"]:
         lines += ["## Not checked", "", "No test was run for: " + ", ".join(f"**{n}**" for n in report["unchecked"])
                   + ". These heads changed no test file and none was named for them, so nothing here says whether "

@@ -206,7 +206,10 @@ def request_digest(params) -> str:
 
 # -- reading the repository ---------------------------------------------------------------------------------
 
-ALTERNATE_DEPTH = 5        # git reads an alternate store's own listing this many levels deep, and ignores deeper ones
+ALTERNATE_DEPTH = 5        # git reads an alternate store's own listing this many levels deep, and ignores deeper ones.
+                           # The rehearsal's git lists the repository's own store as an alternate (scratch objects),
+                           # so its listing is read one level down: a chain one store shorter than plain git reads.
+MAX_LISTED_DIRECTORIES = 65536  # directory listings per git directory or store before the request is refused
 MAX_STORES = 64            # distinct object stores followed for one repository (each is listed for links)
 # Repository configuration that names a file the rehearsal's git commands read (attributes for merge-tree and
 # archive, a mailmap for archive's substitutions, an order file for diff) or a working tree whose attributes
@@ -238,16 +241,29 @@ def _pinned(repo: Path, roots) -> dict:
     listed: set[Path] = set()
 
     def no_link_out(directory: Path, what: str) -> None:
-        """Refuse when a link inside ``directory`` (not followed while listing) leads outside the read roots. A git
-        directory's ``hooks`` is not looked at: no hook runs here (``core.hooksPath`` is /dev/null), so none is read."""
+        """Refuse when a link inside ``directory`` leads outside the read roots. A link that leads to a directory
+        inside the roots is followed and that directory is listed too, since git reads through it (a directory link
+        to a place whose own entries link outside; re-check of b42d10f6, R6). Each real directory is listed once, so
+        a link back to an ancestor ends. A git directory's own ``hooks`` is not looked at: no hook runs here
+        (``core.hooksPath`` is /dev/null), so none is read."""
         if any(done == directory or done in directory.parents for done in listed) or not directory.is_dir():
             return
         listed.add(directory)
+        walked: set[str] = set()
+        listings = 0
 
         def unlistable(exc: OSError) -> None:
             raise CapabilityError(f"{what} cannot be listed ({type(exc).__name__}); refused")
-        for top, dirs, names in os.walk(directory, onerror=unlistable):
-            if "HEAD" in names and "hooks" in dirs:
+        for top, dirs, names in os.walk(directory, onerror=unlistable, followlinks=True):
+            real = os.path.realpath(top)
+            if real in walked:
+                dirs[:] = []
+                continue
+            walked.add(real)
+            listings += 1                       # the listings made, so a walk that repeats itself is bounded too
+            if listings > MAX_LISTED_DIRECTORIES:
+                raise CapabilityError(f"{what} needs more than {MAX_LISTED_DIRECTORIES} directory listings; refused")
+            if top == str(directory) and "HEAD" in names and "hooks" in dirs:
                 dirs.remove("hooks")
             for name in dirs + names:
                 if (Path(top) / name).is_symlink():
@@ -292,7 +308,7 @@ def _pinned(repo: Path, roots) -> dict:
                     continue
                 if line.startswith('"'):
                     raise CapabilityError("an alternate object store is named in quotes; refused")
-                if depth >= ALTERNATE_DEPTH + 1:
+                if depth >= ALTERNATE_DEPTH:
                     raise CapabilityError("alternate object stores nest deeper than git follows them; refused")
                 stores.append((Path(line) if Path(line).is_absolute() else store / line, depth + 1))
     return {"GIT_DIR": str(gitdir), "GIT_CEILING_DIRECTORIES": str(repo.parent)}

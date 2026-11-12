@@ -1416,7 +1416,12 @@ def gc(repo: Path) -> None:
 
 LINKED = ["linked pack files", "a linked pack directory", "linked loose object directories", "a linked config",
           "a linked info/attributes", "a linked alternates listing naming a store inside", "a .git link to a file outside",
-          "core.attributesFile outside", "mailmap.file outside", "an alternate store inside with linked pack files"]
+          "core.attributesFile outside", "mailmap.file outside", "an alternate store inside with linked pack files",
+          "a pack directory linked to one inside whose packs link outside",
+          "loose object directories linked to ones inside whose objects link outside",
+          "an info directory linked to one inside whose attributes link outside",
+          "an objects/info directory linked to one inside whose alternates link outside"]
+TWO_HOP = [why for why in LINKED if "linked to one" in why or "linked to ones" in why]
 
 
 def linked_case(tmp_path: Path, why: str) -> tuple[Path, dict]:
@@ -1427,6 +1432,38 @@ def linked_case(tmp_path: Path, why: str) -> tuple[Path, dict]:
     attrs = outside / "attrs"
     attrs.write_text("tests/** export-ignore\n")
     where = tmp_path / "roots" / "repo"
+    if why in TWO_HOP:              # re-check of b42d10f6: a directory link to a place inside whose entries lead out
+        hop = tmp_path / "roots" / "hop"
+        hop.mkdir(parents=True)
+        if "info directory" in why and "objects" not in why:
+            shutil.copytree(outer, where, symlinks=True)
+            os.symlink(attrs, hop / "attributes")
+            shutil.rmtree(where / ".git" / "info", ignore_errors=True)
+            os.symlink(hop, where / ".git" / "info")
+            return where, shas
+        where.mkdir(parents=True)
+        git(where, "init", "-q")
+        objects = where / ".git" / "objects"
+        if "objects/info" in why:       # the listing names a store inside: only reading the listing itself escapes
+            shutil.copytree(outer / ".git" / "objects", tmp_path / "roots" / "store")
+            (outside / "alternates").write_text(f"{tmp_path / 'roots' / 'store'}\n")
+            os.symlink(outside / "alternates", hop / "alternates")
+            shutil.rmtree(objects / "info")
+            os.symlink(hop, objects / "info")
+        elif "loose" in why:                                         # build_repo leaves its objects loose
+            for sub in (outer / ".git" / "objects").iterdir():
+                if len(sub.name) == 2:
+                    (hop / sub.name).mkdir()
+                    for obj in sub.iterdir():
+                        os.symlink(obj, hop / sub.name / obj.name)
+                    os.symlink(hop / sub.name, objects / sub.name)
+        else:
+            gc(outer)
+            for pack in (outer / ".git" / "objects" / "pack").iterdir():
+                os.symlink(pack, hop / pack.name)
+            shutil.rmtree(objects / "pack")
+            os.symlink(hop, objects / "pack")
+        return where, shas
     if why in ("linked pack files", "a linked pack directory", "linked loose object directories",
                "a linked alternates listing naming a store inside", "an alternate store inside with linked pack files"):
         where.mkdir(parents=True)
@@ -1490,6 +1527,24 @@ def test_git_reads_nothing_a_link_in_the_repository_leads_outside_the_read_roots
     assert delivered(tmp_path / "ctx") == []
 
 
+def test_a_directory_link_that_stays_inside_the_read_roots_is_followed_and_a_link_loop_ends(tmp_path, monkeypatch):
+    """The other side of the two-hop refusal: a pack directory linked to a directory inside the read roots, whose
+    packs are real files there, is read; links back to an ancestor inside the git directory are listed once and
+    the check ends (two loops: listing them again would double the walk at every level until the cap refuses)."""
+    roots = tmp_path / "roots"
+    shas = build_repo(roots / "repo")
+    gc(roots / "repo")
+    objects = roots / "repo" / ".git" / "objects"
+    shutil.move(str(objects / "pack"), str(roots / "packs"))
+    os.symlink(roots / "packs", objects / "pack")
+    os.symlink(roots / "repo" / ".git", objects / "loop")             # git never reads objects/loop
+    os.symlink(roots / "repo" / ".git", objects / "loop2")            # two loops: listed again, the walk doubles per level
+    monkeypatch.setattr(workers, "run_tests", Script())
+    out = intake.intake_recommendation(params(roots / "repo", shas, ["label"]), context(tmp_path / "ctx",
+                                                                                        read_root=roots))
+    assert out["recommendations"] == {"label": "ready to take"}
+
+
 def test_inside_the_read_roots_a_packed_repository_and_a_shared_clone_are_read(tmp_path, monkeypatch):
     """R6, the other side: the layouts git makes itself, inside the read roots, are still read, and a hooks directory
     linked from elsewhere (as hook managers do) refuses nothing, since no hook is read or run."""
@@ -1523,13 +1578,22 @@ def test_alternate_stores_are_counted_by_nesting_and_resolved_from_their_store(t
     out = intake.intake_recommendation(params(roots / "repo", shas, ["label"]), context(tmp_path / "side",
                                                                                         read_root=roots))
     assert out["recommendations"] == {"label": "ready to take"}
-    # nested seven deep: git ignores the listings past the fifth level, so the rehearsal refuses
-    listing.write_text(f"{stores[0]}\n")
-    for upper, lower in zip(stores, stores[1:]):
-        (upper / "info" / "alternates").write_text(f"{lower}\n")
-    with pytest.raises(CapabilityError, match="nest deeper than git follows them"):
-        intake.intake_recommendation(params(roots / "repo", shas, ["label"]), context(tmp_path / "deep",
-                                                                                       read_root=roots))
+    # nested: the rehearsal's git reads the repository's own listing one level down (it lists the repository's
+    # store as an alternate of its scratch objects), so a chain of five is read and a chain of six is refused
+    # (re-check of b42d10f6: a chain of six was accepted here, then refused as "not in this repository")
+    for length, refused in ((5, False), (6, True), (7, True)):
+        for store in stores:
+            (store / "info" / "alternates").unlink(missing_ok=True)
+        listing.write_text(f"{stores[0]}\n")
+        for upper, lower in zip(stores[:length - 1], stores[1:length]):
+            (upper / "info" / "alternates").write_text(f"{lower}\n")
+        ctx = context(tmp_path / f"deep{length}", read_root=roots)
+        if refused:
+            with pytest.raises(CapabilityError, match="nest deeper than git follows them"):
+                intake.intake_recommendation(params(roots / "repo", shas, ["label"]), ctx)
+        else:
+            out = intake.intake_recommendation(params(roots / "repo", shas, ["label"]), ctx)
+            assert out["recommendations"] == {"label": "ready to take"}
     for store in stores:
         (store / "info" / "alternates").unlink(missing_ok=True)
     # relative to its store, the line leads outside the roots; from this process's directory it would lead inside

@@ -88,6 +88,7 @@ def test_malformed_requests_are_refused_before_anything_runs(repo, tmp_path):
     for bad, why in (({"units": []}, "ordered list"), ({"units": [{"name": "../x", "sha": shas["label"]}]}, "name"),
                      ({"units": [{"name": "a", "sha": shas["label"]}, {"name": "a", "sha": shas["steeper"]}]}, "once"),
                      ({"units": [{"name": "a", "sha": shas["label"]}, {"name": "b", "sha": shas["label"]}]}, "once"),
+                     ({"units": [{"name": "a", "sha": shas["label"]}, {"name": "A", "sha": shas["steeper"]}]}, "once"),
                      ({"repository": "relative/path"}, "absolute"), ({"union": ["../outside"]}, "repository-relative"),
                      ({"union": ["-rf"]}, "repository-relative"), ({"timeout_seconds": 0}, "timeout_seconds"),
                      ({"timeout_seconds": True}, "timeout_seconds"), ({"surprise": 1}, "takes repository"),
@@ -109,6 +110,20 @@ def test_a_repository_outside_the_read_roots_is_refused_and_nothing_is_written(r
     with pytest.raises(CapabilityError, match="outside permitted roots"):
         intake.intake_recommendation(params(outside, shas, ["label"]), context(tmp_path))
     assert script.calls == [] and delivered(tmp_path) == [] and not (tmp_path / "workspace").exists()
+
+
+def test_a_path_that_is_not_a_repository_is_a_refusal_not_an_unknown_outcome(repo, tmp_path, monkeypatch):
+    """A refusal is a CapabilityError: the Gate records it and nothing is left uncertain. Before this was caught, a
+    missing directory raised OSError out of the capability, which the Gate can only record as an unknown outcome."""
+    path, shas = repo
+    (path.parent / "plain").mkdir()
+    for where in (path.parent / "plain", path.parent / "missing"):
+        script = Script()
+        monkeypatch.setattr(workers, "run_tests", script)
+        with pytest.raises(CapabilityError, match="not a git repository|could not be carried out"):
+            intake.intake_recommendation(params(where, shas, ["label"]), context(tmp_path))
+        assert script.calls == [] and delivered(tmp_path) == []
+        assert not (tmp_path / "workspace" / "intake-scratch").exists()
 
 
 def test_a_revision_that_is_not_in_the_repository_is_refused_and_nothing_is_fetched(repo, tmp_path, monkeypatch):
@@ -219,6 +234,32 @@ def test_output_that_does_not_decide_a_file_is_never_read_as_a_pass_or_as_a_whol
     assert intake.classify(said, file, 30)[0]["state"] == "passed"
 
 
+def test_a_claim_about_a_test_that_gave_no_result_here_was_not_re_executed(repo, tmp_path, monkeypatch):
+    """``slow``'s author claims its test passes. Here it timed out: that neither confirms nor contradicts the claim,
+    so the claim is "claimed, not re-executed here", never "DIFFERENT result"."""
+    path, shas = repo
+    claims = {"slow": {"head_sha": shas["slow"], "validation": [
+        {"command": "pytest tests/test_slow.py", "result": "pass", "evidence": "local"}]}}
+    out = run(tmp_path, path, shas, ["slow"], Script({SLOW: "timeout"}), monkeypatch, claims=claims)
+    lines = section(Path(out["path"]).read_text(), "5. Claims matched to executed evidence")
+    assert '- **slow**: "pytest tests/test_slow.py" (claimed: pass): **claimed, not re-executed here** (its tests ' \
+           "were not among those run and measured here: tests/test_slow.py)." in lines
+    assert "DIFFERENT" not in lines and out["recommendations"]["slow"].startswith("not checked: ")
+
+
+def test_a_unit_left_out_for_a_textual_conflict_was_not_tested_in_the_merge_and_is_held(repo, tmp_path, monkeypatch):
+    path, shas = repo
+    out = run(tmp_path, path, shas, ["steeper", "flat"], Script(), monkeypatch)
+    assert out["inputs"]["rehearsal"]["textual_conflicts"] == {"flat": ["pkg.py", "tests/test_base.py"]}
+    assert out["recommendations"] == {
+        "steeper": "ready to take",
+        "flat": "hold: textual conflict with what was merged before it, in pkg.py, tests/test_base.py"}
+    text = Path(out["path"]).read_text()
+    assert "| flat | `tests/test_base.py` | passed | not run (the unit was left out of the merge for a textual " \
+           "conflict) |" in text
+    assert out["counts"]["test_runs"] == {"passed": 3, "failed": 0, "timed_out": 0, "not_run": 1, "errored": 0}
+
+
 # -- the recommendation: each case in its section, with its word ----------------------------------------------
 
 NAMES = ["steeper", "consumer", "label2", "label", "flat", "broken", "slow", "silent", "old"]
@@ -248,12 +289,12 @@ def full(repo, tmp_path, monkeypatch):
     script = Script({TOTAL: breaks_with_steeper, BROKEN: ("fail", ["test_never_passed"]), SLOW: "timeout"})
     before = state(path)
     out = run(tmp_path, path, shas, NAMES, script, monkeypatch, claims=claims_for(shas), timeout_seconds=7)
-    assert state(path) == before, "the rehearsal changed the repository it reads"
-    return out, Path(out["path"]).read_text(), shas, script, path
+    return out, Path(out["path"]).read_text(), shas, before == state(path), path
 
 
 def test_each_case_lands_in_its_section_with_its_word(full):
-    out, text, shas, script, _ = full
+    out, text, shas, untouched, _ = full
+    assert untouched, "the rehearsal changed the repository it reads"
     # (a) exact revisions, and what contains what
     revisions = section(text, "1. Exact revisions")
     assert f"- base: `{shas['base']}`" in revisions

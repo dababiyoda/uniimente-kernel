@@ -159,7 +159,8 @@ def request(params) -> dict:
                 raise CapabilityError(f"unit {unit['name']}: tests must name 1 to {MAX_TESTS} files")
             row["tests"] = [_tracked(t, f"unit {unit['name']}: a test") for t in tests]
         rows.append(row)
-    if len({r["name"] for r in rows}) != len(rows) or len({r["sha"] for r in rows}) != len(rows):
+    # names become scratch directory names: one per unit, on a file system that ignores case too
+    if len({r["name"].lower() for r in rows}) != len(rows) or len({r["sha"] for r in rows}) != len(rows):
         raise CapabilityError("each unit name and each unit revision may appear once")
     union = params.get("union") or []
     if not isinstance(union, list) or len(union) > MAX_UNION:
@@ -358,6 +359,10 @@ def intake_recommendation(params, ctx: InvocationContext) -> dict:
             lineage = ancestry(repo, asked["base"], asked["units"])
     except rehearsal.RehearsalError as exc:
         raise CapabilityError(f"the rehearsal could not be carried out: {str(exc)[:300]}") from None
+    except OSError as exc:      # scratch could not be written (a full disk, a path that is not a repository): nothing
+        raise CapabilityError(  # was delivered and the repository is untouched, so this is a refusal, not an unknown
+            f"the rehearsal could not be carried out: {type(exc).__name__}: {str(exc)[:200]}",
+            failure_class="transient") from None
     finally:
         shutil.rmtree(scratch, ignore_errors=True)
     inputs = {"renderer": RENDERER, "generated_on": briefs.NOW().date().isoformat(), "request": asked,

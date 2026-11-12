@@ -250,3 +250,37 @@ def test_under_required_with_no_envelope_the_delivered_recommendation_says_nothi
         assert "None could be measured: no test ran." in text
         assert appraisals(body, spec["mission_id"])[-1]["verdict"] == "VERIFIED", \
             appraisals(body, spec["mission_id"])[-1]["findings"]
+
+
+def test_the_founders_command_drafts_and_signs_the_mission_and_the_body_runs_it(tmp_path, monkeypatch, capsys):
+    """``greg mission new intake-recommendation --intake FILE``: the ordinary way in. The command validates the
+    request, signs the mission with the founder's key and drops it in the inbox; the body does the rest."""
+    from greg import cli
+    monkeypatch.setattr(workers, "run_tests", Script())
+    home, _, _, repo, shas = start(tmp_path)
+    key, asked = tmp_path / "founder.pem", tmp_path / "request.json"
+    asked.write_text(json.dumps({"repository": str(repo), "base": shas["base"],
+                                 "units": [{"name": "label", "sha": shas["label"]}], "timeout_seconds": 60}))
+    base = ["--home", str(home), "mission", "new", "intake-recommendation", "--key", str(key), "--no-passphrase"]
+    assert cli.main(base) == 2 and "needs --intake" in capsys.readouterr().err
+    short = tmp_path / "short.json"
+    short.write_text(json.dumps({"repository": str(repo), "base": "base", "units": [{"name": "label", "sha": "label"}]}))
+    assert cli.main(base + ["--intake", str(short)]) == 2
+    assert "full 40-character commit SHA" in capsys.readouterr().err
+    extra = tmp_path / "extra.json"
+    extra.write_text(json.dumps({**json.loads(asked.read_text()), "approve": True}))
+    assert cli.main(base + ["--intake", str(extra)]) == 2 and "must hold repository, base and units" in \
+        capsys.readouterr().err
+    assert list((Path(home) / "inbox").glob("*.json")) == []                 # a refused request signs nothing
+    assert cli.main(base + ["--intake", str(asked), "--print-only"]) == 0
+    spec = json.loads(capsys.readouterr().out)
+    assert spec["mission_id"].startswith("m:intake-") and spec["light_cone"]["max_consequence_class"] == "read_only"
+    assert cli.main(base + ["--intake", str(asked), "--preauthorize-delivery"]) == 0
+    capsys.readouterr()
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        assert ticks(body, clock, 2) == ["ACTED", "ACHIEVED"]
+        assert len(recommendations(home)) == 1
+        [verdict] = appraisals(body, spec["mission_id"])
+        assert verdict["verdict"] == "VERIFIED", verdict["findings"]

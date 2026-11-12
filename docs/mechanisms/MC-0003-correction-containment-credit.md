@@ -1,6 +1,7 @@
 # MC-0003 — A corrected reading stops earning credit
 
 Status: **built and tested on a real body, in a cloud container, with test keys. No founder device. VEPMC 0.**
+Reviewed independently at `b01d319f` on 2026-11-12 (verdict: sound with fixes). The section "Rules after the review" says what changed; sentences the review found false or incomplete are corrected in place.
 It runs on the body's tick path (`greg/body.py`: `corrections.propagate`, then `settlement.reconcile`, then `sop.propose`).
 Founder lineage: directive section 45 (S45.A3, S43.A4), the 2026-11-04 re-issue (behaviour B), and extension B of the founder's directive of 2026-11-11 (kept verbatim under INTENT-20261111-ABSOLUTE-OPUS-MAXIMUS, on its own branch). Its minimum test: "retract one shared observation; only its dependent conclusions change. Requalification never restores revoked execution permission."
 Tests: `tests/unit/test_greg_evidence_corrections.py`. Mutation gate: `scripts/ci/check_evidence_corrections_mutants.py`.
@@ -29,7 +30,33 @@ Reproduced on #196's `8d205324` on a real body. A cognition mission closed and t
 - the OUT label now reaches the beliefs derived from the reading. `settlement.measured_outcomes` skips an observation whose receipt is contained, so every reader of settled competence follows it. `corrections.contained_missions` gives the same label per mission, and `sop.closed_procedures` and `precedents` read it;
 - the relabelling is recorded. `settlement.reconcile` appends a `cognition.settled` revision that names the cause (`withheld_by`), and appends another when the cause is requalified. The early cutoff now reaches credit: a requalified cause returns the outcome without running the mission or its appraisal again;
 - a claim is withheld as a whole. An earlier reading of the same claim does not earn the credit back;
-- a compilation that ended in a capability deficit is not a failed replication. No method ran.
+- a compilation that held no answer is not a failed replication: a capability deficit, a timeout (state UNKNOWN), a stopped worker (state ABSTAIN), an incomplete formalization. No method answered. A compilation that answered and failed the check, or that REFUTED the claim, is a real negative.
+
+## Rules after the review of `b01d319f` (2026-11-12)
+
+Each rule was reproduced as a defect on `b01d319f` first, on a real body where the review used one. The review, its probes and their output before and after are kept with the session, not in the repository.
+
+1. **A founder rejection withholds the answer, not one receipt of it** (review F1). While a rejection stands on any reading of a claim, every reading of that claim that carries the same answer is contained with it, whichever receipt it has: an earlier reading the closure does not cite, a standing mission's own next cadence read. A later reading with a different answer is a new answer and settles on its own merits. Before: a standing mission's next read gave the rejected answer its credit back, and when the mission had already read the claim again, credit never dropped.
+2. **The same rule holds across missions, for GREG's own computations, and it stops at the answer** (review F2; the founder's decision of 2026-11-12: "withhold unsupported success credit. Scope rejection history to the relevant answer, evidence, task conditions, and version"). A rejection withholds the answer, identified by what was asked (the signed sensor: instrument, input and predicate, without the check's label) and what was answered (method, method version, answer digest), not by the mission that asked. The identical question signed again as a new mission earns nothing while it delivers the rejected answer, and that mission's claim is marked NEEDS_REVIEW and is no evidence for a procedure or a precedent. It does not reach a different question (another predicate on the same input), different inputs, another version of the method, or an unrelated mission; a world reading (a file, a URL) is the same claim only within its own mission. Tests: the review's reproduction in `test_a_contained_reading_is_withheld_from_settled_competence` (on `b01d319f` credit went from (1, 1) to (2, 2)), and the four cases it must not reach in `test_a_rejection_does_not_reach_another_question_other_inputs_another_version_or_an_unrelated_mission`.
+3. **A compilation that did not answer is no failed replication** (review F3). On `b01d319f` a host stall on a later mission (a solver timeout, or the worker killed with exit 137) was recorded REPLICATION_FAILED against a correct first answer, withheld its credit and asked the founder. The mission engine has the related defect: `missions.unanswered` reads only `abstention_state`, a compile receipt carries `state`, so the engine itself counts such a reading as measured and asks NO_STRATEGY. That is not fixed here (`greg/missions.py` is changed on another branch).
+4. **Containment does not depend on tick order** (review F4 and F8). It is derived from the journal each time it is read. A founder rejection counts from the acceptance of its signed command: a reject and an SOP_RATIFY read in one inbox tick refuse the ratification, and a compile decision made before the next tick already reads the lowered credit. A dependent that appears after a correction was recorded (a mission that binds a contained reading, a later reading of a rejected answer) is contained when it exists. The `affected` list a correction stored is history and the basis of its ask; it is not the projection.
+5. **A rejection reaches the claim through any record of it** (review F5): its closure, its appraisal (everything the judged closure cites), any reading of it (cited by the closure or not) and its settled outcome. A rejected failure closure (`mission.unmet`) contains the failing readings it closed on, so a failure the founder disputes stops counting against the method, by the same mechanism in the other direction; it contains no mission, because it delivered nothing. A rejection of any other event (a registration, an ask) names no reading: it is kept, it changes no credit, and the result of the command says so (`credit_effect` in the accepted command's result; the morning report lists it under `founder_rejections.changed_no_credit`).
+6. **A rejection only lowers the other credit readers** (review F6). In routing reliability (`routing.track_record`), the earned-autonomy report and precedent action evidence, a completed run of a mission a standing founder rejection contains is counted apart (`founder_rejected`) and never as a success or a verified run. Its failures and a refutation of its closure count as before. Neither change can raise a score or a level, and neither withdraws an approval or changes what may run.
+7. **Only a signed critique counts, and the founder can requalify what he rejected** (review F7; the founder's decision of 2026-11-12: "Permit explicit requalification when justified; avoid turning one rejection into an unexplained permanent prohibition across unrelated missions").
+   - A `critique.recorded` row is followed only when an accepted signed CRITIQUE command with its digest, naming the same target and the same verdict, stands behind it. That holds for a rejection and for an acceptance.
+   - **Who can requalify, and how.** Whoever can sign a CRITIQUE: a later signed CRITIQUE with verdict accept (`greg accept EVENT_ID`) that names the closure, the appraisal, a reading or the settled outcome of the rejected answer lifts the withholding for that answer, from the acceptance of the command on. It lifts that answer and no other: a rejection of another answer on the same body stays. A rejection signed after the acceptance stands again.
+   - **How it is recorded.** The next propagation writes `evidence.requalified` for the cause, naming the accepting critique and the digest of the command it came from. The settled outcome that returns names the correction it was restored after (`restored_after`). The acceptance's own command result lists the causes it requalified, and the morning report lists the rejection under `founder_rejections.requalified`.
+   - **What lifts nothing.** A later passing reading (evidence alone never overrules a founder rejection), an acceptance row nobody signed, and a bare `evidence.requalified` record (the forgery the review showed): the lift is derived from the signed critiques each time and that record is never trusted on its own.
+8. **Every withholding states its reason.** Wherever credit is missing, the record says which cause, for a founder rejection which critique and which answer identity, and what lifts it: in the `withheld_by` of the invalidated `cognition.settled` row and in its `reason`, in `greg cognition knowledge` (`withheld`, beside the competence it was taken from), in the result of the rejecting command (`credit_effect`), in the morning report (`founder_rejections.standing`), in a refused SOP ratification (the mission and its correction are named), and in the counters `founder_rejected` (routing, earned autonomy) and `withheld_by_founder_rejection` (precedents).
+
+## What these rules leave open (founder decisions)
+
+- **A procedure ratified before the rejections stays ratified and runnable.** Rejecting every run a procedure was learned from changes nothing about a ratification the founder already signed: `sop.instantiate` still builds a mission from it and its baseline still shows the rejected runs. This unit does not change what a ratified procedure may do.
+- **A delegated device key may sign a CRITIQUE today** (`greg/founder.py`, `DEVICE_KINDS`; read, not run, and not changed by this unit). So a device the founder delegated can withhold credit, can requalify what the founder rejected, and by rejecting a failure closure can stop a failure from counting against a method. This unit follows every accepted CRITIQUE alike and does not tell the two signers apart. Whether requalification should need the founder key itself is his to decide.
+- Every signed acceptance of a rejected answer lifts the rejection, including a routine morning acceptance of a delivery he rejected earlier. The acceptance's result says which rejections it lifted; nothing asks him to confirm first.
+- Rejecting an achievement withholds the whole claim, including a failure of the same claim that the appraiser verified under an earlier unmet closure of that mission.
+- A procedure whose recorded proposal includes a mission rejected later is not proposed again from clean runs (`sop.proposed` is keyed by procedure).
+- When a new mission delivers an answer the founder already rejected, its claim is marked NEEDS_REVIEW and earns nothing, and no new ask is raised: the ask of a correction is decided when the correction is recorded.
 
 **Deliberately not transplanted:**
 
@@ -46,17 +73,17 @@ The donors relabel beliefs inside one reasoner. Here the label crosses from the 
 
 - only a failed replication and a founder rejection contain credit. No appraisal sees them. A refuted appraisal impugns the measurement too, but settlement and SOP already read each closure's appraisal and restore what it withdrew when a later appraisal verifies the closure, so it is left to them. A source that moved on marks the claim and leaves the method as competent as before;
 - containment is scored as neither success nor failure, as a disputed world outcome already is;
-- the unit is the reading, not the mission. A two-check mission keeps the check nobody impugned.
+- the unit is the reading, not the mission. A two-check mission keeps the check nobody impugned. For a founder rejection the unit is the answer the reading carries (rules 1 and 2 below "Rules after the review").
 
 ## Preserved invariant
 
 - History is append-only. A withheld outcome keeps its original record; the withholding and its lifting are later records.
-- `corrections`, `settlement`, `sop` and `precedents` write no grant, approval or capability state. Requalification never restores permission.
+- `corrections`, `settlement`, `sop` and `precedents` write no grant, approval or capability state. Requalification never restores permission. The readers the review added (`routing.track_record`, `autonomy.report`) write nothing; `autonomy.regress`, which withdraws a standing approval on failure evidence, does not read rejections.
 - One authority path. Nothing here runs, attaches or dispatches anything.
 
 ## New interaction
 
-A founder's signed rejection, or a failed replication, now changes what the compiler selects on (`compiler._settled_counts`), what the disposition review counts, what conditional competence and learned routing read, which procedures are proposed or ratified, and which missions are precedents. Neither source did this alone: corrections computed a label nobody read, and settlement credited by appraisal only.
+A founder's signed rejection, or a failed replication, now changes what the compiler selects on (`compiler._settled_counts`), what the disposition review counts, what conditional competence and learned routing read, which procedures are proposed or ratified, and which missions are precedents. A founder's rejection also lowers routing reliability, the earned-autonomy report and precedent action evidence. A rejection takes effect when its signed command is accepted, with no tick in between (on `b01d319f` a ratification read in the same inbox tick as the rejection was still accepted). Neither source did this alone: corrections computed a label nobody read, and settlement credited by appraisal only.
 
 ## Expected benefit (measured, one container run each)
 
@@ -67,16 +94,31 @@ A founder's signed rejection, or a failed replication, now changes what the comp
 | founder rejects one of two closures that used `fs.write` | both are precedents | one precedent |
 | the only fitting method is detached and the question is signed again | REPLICATION_FAILED and an ask | no cause, no ask, credit kept |
 
+Measured on `b01d319f` and after the review's fixes (one container run each):
+
+| Scenario on a real body | `b01d319f` | After the fixes |
+|---|---|---|
+| founder rejects a standing mission's hold; the mission reads again | credit (1, 1) again, or never dropped | credit stays withheld |
+| the rejected question is signed again as a new mission, same answer | credit (1, 1) -> (2, 2) | (1, 1); the new claim NEEDS_REVIEW |
+| a later mission's solver times out or is killed on the same question | REPLICATION_FAILED, credit withheld, an ask | no cause, no ask, credit kept |
+| a reject and an SOP_RATIFY in one inbox tick | ratified | ratification refused |
+| founder rejects the earlier, uncited reading of a claim | no cause, credit (2, 2) | credit (1, 1), claim NEEDS_REVIEW |
+| founder rejects an unmet closure | no cause, credit (2, 1) | credit (1, 1) |
+| founder rejects a registration event | nothing said | the result says it changed no credit |
+| founder rejects every run `fs.write` reliability was earned on | reliability 0.8, level RECOMMENDER | 0.5, SHADOW |
+
 ## New failure
 
-- A false cause now costs credit. One was found and fixed (the capability deficit). Other abstentions were not examined.
+- A false cause now costs credit. Two were found and fixed: a capability deficit, and (review F3) any compilation that held no answer, a host timeout or a killed worker among them. The rule is now stated for every compilation state: only ANSWERED, WORLD_UNVERIFIED and REFUTED can fail a replication.
 - Listing a refuted appraisal as containing was tried first and regressed `tests/integration/test_cognition_multi_claim_settlement.py`: credit stayed withheld after the closure was verified again, until the next propagation. It was removed (`corrections.APPRAISED`).
-- A founder rejection is never requalified by evidence, so that claim's credit stays withheld. A later founder critique that accepts the same closure does not lift it either: `corrections` reads rejections only.
+- A founder rejection is never requalified by evidence. On `b01d319f` this card said "that claim's credit stays withheld", which was false: a later reading of the same answer under a new receipt settled the claim again (review F1). Now the rejected answer stays withheld on every reading that carries it, a different answer to the same claim settles, and only a signed acceptance lifts the rejection (rule 7).
+- "The same answer" is the digest of the method, its version and its answer. An answer that embeds something that differs per run (a timestamp, a sampled value from an unseeded method) is a different answer each time, and a rejection of one run does not withhold the next.
+- A rejected failure closure raises its method's share of successes (the failure no longer counts). That is the intended direction of rule 5, and it is the one place where a rejection can raise settled credit.
 - REPLICATION_FAILED is keyed by the signed sensor, not by the method. A later failing answer from another method withholds the first method's credit until a passing reading requalifies it.
 - A proposal already recorded with a mission that is later contained cannot be ratified, and the same procedure is not proposed again (`sop.proposed` is keyed by procedure). The same held before for a mission later refuted.
 - In a mission that closed unmet and was later achieved, a verified failure of the same claim is withheld with a contained achievement reading. It needs one signed claim that failed and later passed on the same input and method.
 - The construction path of settlement shares the one containment decision. No test in this container exercises it on a construction (networkx and scipy are absent here). `settlement.awaiting_realization` still offers a construction claim whose reading is contained; a report on it is recorded and settles nothing while the cause stands.
-- Cost: one more read of the correction records for each `measured_outcomes` call (one record kind on a body with no correction, three otherwise). The test file went from about 3 s to about 50 s in this container, and its mutation gate from 41 to 50 mutants.
+- Cost: on a body with no correction and no rejection, each read of containment replays two record kinds and builds nothing. On a body with one, containment builds the index of readings once per ledger head (it is kept until the ledger grows) and derives the dependents of each standing cause. Routing reliability and the earned-autonomy report now read containment too. The test file has 46 tests and its mutation gate 95 mutants (22 tests and 41 mutants on #196).
 
 ## Simpler comparator
 

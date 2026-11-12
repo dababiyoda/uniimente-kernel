@@ -465,7 +465,12 @@ def ratify(journal: Journal, body: dict, command_digest: str) -> dict:
     proposal = proposed[0].payload
     current = closed_procedures(journal)
     if any(current.get(mid) != proposal["steps"] for mid in proposal["missions"]):
-        raise ValueError("SOP proposal no longer locally appraised as verified; inspect its evidence")
+        from greg import corrections
+        contained = corrections.contained_missions(journal)
+        held = [f"{mid} is withheld by correction {contained[mid]['cause_id']} ({contained[mid]['cause']}), lifted by "
+                f"{contained[mid]['lifts']}" for mid in proposal["missions"] if mid in contained]
+        raise ValueError("SOP proposal no longer locally appraised as verified; inspect its evidence"
+                         + (": " + "; ".join(held) if held else ""))
     pre = body.get("pre_approve", [])
     if not isinstance(pre, list) or not all(isinstance(a, str) for a in pre) or len(set(pre)) != len(pre):
         raise ValueError("pre_approve is a list of distinct step ids")

@@ -14,7 +14,11 @@ A refutation for reasons that are not the capability's (signature, inbox, replay
 boundary) does not move routing. Appraiser-VERIFIED actions are counted apart.
 Each dispatched attempt is one outcome: a founder reconciliation of an UNCERTAIN
 dispatch replaces that attempt's outcome and, having no receipt, is counted apart
-(founder_reconciled) and never moves reliability.
+(founder_reconciled) and never moves reliability. A completed run of a mission a
+standing founder rejection contains (greg/corrections.py) is counted apart too
+(founder_rejected): it is no success and no verified run. Its failures, and a
+refutation of its closure, count as before, so a rejection can only lower an
+estimate.
 Knowledge is institutional and cross-mission: one mission's failure changes the
 next mission's routing. Nothing here grants authority; it only ranks options
 that are already inside the founder-signed light cone.
@@ -71,6 +75,8 @@ def track_record(journal: Journal) -> dict[str, dict]:
             appraisals[data["mission_id"]] = "refuted"
         else:
             appraisals.pop(data["mission_id"], None)
+    from greg import corrections
+    rejected = corrections.rejected_missions(journal)   # the founder rejected what the mission delivered
     # One outcome per dispatched attempt: a founder reconciliation of an UNCERTAIN dispatch is a later fact
     # about the same (mission, action, attempt) and replaces it; it never adds a second outcome.
     attempts = {}
@@ -87,6 +93,10 @@ def track_record(journal: Journal) -> dict[str, dict]:
             continue
         if data["status"] in SUCCESS and founder_reconciled(data):
             record[capability]["founder_reconciled"] += 1     # no receipt: neither a success nor a failure
+        elif data["status"] in SUCCESS and data.get("mission_id") in rejected \
+                and appraisals.get(data.get("mission_id")) != "refuted":
+            # withheld: neither a success nor a failure (the key exists only where a run was withheld)
+            record[capability]["founder_rejected"] = record[capability].get("founder_rejected", 0) + 1
         elif data["status"] in SUCCESS:
             record[capability]["done"] += 1
             if data.get("mission_id") in appraisals:

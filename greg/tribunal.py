@@ -16,7 +16,7 @@ edits the reviewed record. It becomes, explicitly and traceably:
 """
 from __future__ import annotations
 
-from greg import anchor, asks, compounding, sop
+from greg import anchor, asks, compounding, corrections, sop
 from greg.journal import Journal, iso, utcnow
 from provenance.ledger import sha256_json
 
@@ -119,7 +119,10 @@ def morning_report(journal: Journal, engine=None, *, now=None, heartbeat: dict |
                        # a later, different mission that used a capability an earlier one formed, and what that
                        # earlier acquisition cost which the later mission did not pay (greg/compounding.py)
                        "capabilities_reused": compounding.retained_reuse(journal)["reuses"],
-                       "critiques_applied": [c["critique_id"] for c in critiques]},
+                       "critiques_applied": [c["critique_id"] for c in critiques],
+                       # the founder's rejections: which stand, what each withholds and what lifts it; which a
+                       # signed acceptance requalified; which name no reading and so changed no credit
+                       "founder_rejections": corrections.rejection_report(journal)},
         "q10_retain": sorted({a["capability"] for a in done if a.get("capability")}),
         "q11_change": [{"regression_id": r["regression_id"], "description": r["description"]} for r in regressions],
         "q12_decisions_required": [asks.surface(r) for r in open_requests],
@@ -215,6 +218,12 @@ def critique(journal: Journal, engine, body: dict, command_digest: str) -> dict:
     reverted = improvement.founder_revert(journal, record, target, utcnow())
     if reverted:
         record["reverted"] = reverted
+    # What the critique does to credit, in the command's own result (greg/corrections.py): what a rejection
+    # withholds and what lifts it, or that it names no reading of a signed check and changes no credit; which
+    # standing rejections an acceptance requalifies. Nothing is added for an acceptance that lifts none.
+    effect = corrections.critique_effect(journal, record)
+    if effect is not None:
+        record["credit_effect"] = effect
     if body.get("exclude_strategy"):
         mission_id = target.payload.get("mission_id")
         action_id = target.payload.get("action_id") or body["exclude_strategy"]

@@ -2,9 +2,9 @@
 
     python scripts/ci/check_evidence_corrections_mutants.py
 
-Mutants are applied to greg/corrections.py, greg/body.py and the readers that withhold what a correction contains
-(greg/cognition/settlement.py, greg/sop.py, greg/precedents.py) in a scratch copy of the repository, never to the
-working tree; the copy runs without bytecode and its __pycache__ is purged before each mutant. A mutant is caught only
+Mutants are applied to greg/corrections.py, greg/body.py, greg/tribunal.py (the result of a signed rejection) and
+the readers that withhold what a correction contains (greg/cognition/settlement.py, greg/sop.py, greg/precedents.py,
+greg/routing.py, greg/autonomy.py) in a scratch copy of the repository, never to the working tree; the copy runs without bytecode and its __pycache__ is purged before each mutant. A mutant is caught only
 when tests/unit/test_greg_evidence_corrections.py reports a FAILED test (an import or collection error does not
 count). Exit status 1 if any mutant survives or no longer applies.
 """
@@ -18,6 +18,9 @@ BODY = "greg/body.py"
 SETTLEMENT = "greg/cognition/settlement.py"
 SOP = "greg/sop.py"
 PRECEDENTS = "greg/precedents.py"
+ROUTING = "greg/routing.py"
+AUTONOMY = "greg/autonomy.py"
+TRIBUNAL = "greg/tribunal.py"
 TESTS = "tests/unit/test_greg_evidence_corrections.py"
 MUTANTS = [
     (CORRECTIONS, "a refuted appraisal or a founder rejection asks again about the mission alone",
@@ -39,19 +42,22 @@ MUTANTS = [
     (CORRECTIONS, "a world sensor's failure is a failed replication", 'COMPUTATIONS = ("cognition.",)',
      'COMPUTATIONS = ("",)'),
     (CORRECTIONS, "a refuted appraisal is not noticed", 'if p.get("verdict") != "REFUTED":', "if True:"),
-    (CORRECTIONS, "a founder rejection is not noticed", 'if p.get("verdict") != "reject":', "if True:"),
+    (CORRECTIONS, "a founder rejection is not noticed",
+     'rows = [e for e in journal.replay("critique.recorded") if e.payload.get("verdict") in verdicts]', "rows = []"),
     (CORRECTIONS, "a reading overrules a founder rejection",
-     'if cause["class"] == "FOUNDER_REJECTED":\n            return None', "if False:\n            return None"),
+     'if cause["class"] == "FOUNDER_REJECTED":\n            by = self.rejections()',
+     'if False:\n            by = self.rejections()'),
     (CORRECTIONS, "a refuted appraisal is requalified by a reading",
      '        if cause["class"] == "APPRAISAL_REFUTED":\n            closure', '        if False:\n            closure'),
     (CORRECTIONS, "a source that moved on contains the method that read it",
-     'if correction.get("impugns_measurement") and cid not in requalified\n', "if cid not in requalified\n"),
+     'if c.get("impugns_measurement") and cid not in requalified\n', "if cid not in requalified\n"),
     (CORRECTIONS, "a requalified cause stays contained",
-     'if correction.get("impugns_measurement") and cid not in requalified\n', 'if correction.get("impugns_measurement")\n'),
+     'if c.get("impugns_measurement") and cid not in requalified\n', 'if c.get("impugns_measurement")\n'),
     (CORRECTIONS, "a refuted appraisal contains what its readers already withdraw and restore",
-     '\n            and correction["class"] not in APPRAISED]', "]"),
+     'and c["class"] not in APPRAISED and c["class"] != "FOUNDER_REJECTED"]', 'and c["class"] != "FOUNDER_REJECTED"]'),
     (CORRECTIONS, "a mission that acted on a contained reading is not named",
-     'out.setdefault(claim["mission_id"], why)', 'out.setdefault(correction["root"]["mission_id"], why)'),
+     'out["missions"].setdefault(claim["mission_id"], why)',
+     'out["missions"].setdefault(index.by_receipt[root]["mission_id"], why) if root in index.by_receipt else None'),
     (CORRECTIONS, "a compilation that ran no method counts as a failed replication",
      'later["inconclusive"] or later["no_method"]:', 'later["inconclusive"]:'),
     (CORRECTIONS, "a deficit is read from data GREG did not produce",
@@ -75,7 +81,7 @@ MUTANTS = [
     (CORRECTIONS, "any later passing reading requalifies",
      'if (later["sensor"] == root["sensor"] and later["passed"]', 'if (later["passed"]'),
     (CORRECTIONS, "the claim's predicate is not part of the sensor's identity",
-     ',\n                     "predicate": check.get("predicate")})', "})"),
+     ',\n                        "predicate": check.get("predicate")})', "})"),
     (CORRECTIONS, "a requalifying reading with expired evidence counts",
      '\n                    and all((_instant(t) or now) > now for t in later["expires"])', ''),
     (CORRECTIONS, "an expired measurement can never be requalified", "self.head_seq, False)", "1 << 62, False)"),
@@ -87,8 +93,8 @@ MUTANTS = [
      'if isinstance(output.get("expires_at"), str) and "digest" in output:', 'if isinstance(output.get("expires_at"), str):'),
     (CORRECTIONS, "a requalification does not move the claim's basis", '            out[q["root"]] = q["by"]["receipt"]\n',
      '            pass\n'),
-    (CORRECTIONS, "a cause's identity ignores the basis it was found on", 'else base["receipt"]})[7:39]',
-     'else root["receipt"]})[7:39]'),
+    (CORRECTIONS, "a cause's identity ignores the basis it was found on",
+     '                            else base["receipt"])', '                            else root["receipt"])'),
     (CORRECTIONS, "a server's final URL is kept as text", '"api": [sha256_json({"u": output.get("final_url")})[7:23],',
      '"api": [output.get("final_url"),'),
     (CORRECTIONS, "the founder's own words are screened as GREG's",
@@ -112,6 +118,120 @@ MUTANTS = [
     (SETTLEMENT, "the invalidating revision does not name its cause", "why = withheld.get(identity)", "why = None"),
     (SETTLEMENT, "an earlier reading of a withheld claim earns the credit back",
      "        observations.pop(identity, None)       # no earlier", "        pass       # no earlier"),
+    # review of b01d319f (2026-11-12). F1 and F2: a founder rejection withholds the answer, not one receipt of it
+    (CORRECTIONS, "a founder rejection contains one receipt, and the same answer under another earns the credit back",
+     'for other in self.same_answer(self.by_receipt[cause["root"]["receipt"]]):', "for other in []:"),
+    (CORRECTIONS, "the rejected answer earns credit again through another mission",
+     '\n                     or (reading["own"] and r["own"] and r["sensor"] is not None and r["sensor"] == reading["sensor"]))]',
+     ")]"),
+    (CORRECTIONS, "a different answer is withheld with the rejected one",
+     'if r is not reading and r["answer"] == reading["answer"] and r["passed"] == reading["passed"]',
+     'if r is not reading and r["passed"] == reading["passed"]'),
+    (CORRECTIONS, "the method that answered is not part of the answer",
+     'return sha256_json({"method": inner.get("method") or output.get("method_or_composition_selected"),\n'
+     '                            "method_version": inner.get("method_version"), "answer": result})',
+     'return sha256_json({"answer": result})'),
+    (CORRECTIONS, "the same answer to another question is withheld",
+     'and r["sensor"] is not None and r["sensor"] == reading["sensor"]))]', 'and r["sensor"] is not None))]'),
+    (CORRECTIONS, "a world reading of another mission is withheld with a rejected one",
+     'or (reading["own"] and r["own"] and r["sensor"] is not None', 'or (r["sensor"] is not None'),
+    # F3: a compilation that held no answer is no failed replication; one that refuted the claim is
+    (CORRECTIONS, "a timeout or a stopped worker on a later mission is a failed replication",
+     'output.get("state") not in (None, *ANSWERED)', 'output.get("state") == "CAPABILITY_DEFICIT"'),
+    (CORRECTIONS, "a compilation that refuted the claim counts as no answer",
+     'ANSWERED = ("ANSWERED", "WORLD_UNVERIFIED", "REFUTED")', 'ANSWERED = ("ANSWERED", "WORLD_UNVERIFIED")'),
+    # F4 and F8: containment does not depend on which tick recorded what
+    (CORRECTIONS, "a rejection waits for a tick to record a correction before it withholds anything",
+     'if journal.replay("evidence.correction") or signed_rejections(journal):', 'if journal.replay("evidence.correction"):'),
+    (CORRECTIONS, "a dependent that appears after the correction was recorded is not contained",
+     "if root in index.by_receipt else {}\n            path", "if root in index.by_receipt and not stored else {}\n            path"),
+    (CORRECTIONS, "a claim that came to rest on a corrected reading afterwards is not marked",
+     "for claim in dict.fromkeys(stored + reached):", "for claim in dict.fromkeys(stored or reached):"),
+    (CORRECTIONS, "the containing cause does not name its evidence.invalidated record",
+     '"event": fact_id("evidence.invalidated", [cid]), "lifts"', '"event": None, "lifts"'),
+    # F5: what a rejection rejects, and a rejection that names no reading is not silent
+    (CORRECTIONS, "a rejected reading maps to nothing",
+     '            return "reading", [self.by_event[target]]', '            return "reading", []'),
+    (CORRECTIONS, "a rejected settled outcome maps to nothing",
+     'return "settled outcome", [reading] if reading else []', 'return "settled outcome", []'),
+    (CORRECTIONS, "a rejected appraisal maps to nothing",
+     'return "appraisal", self.rejected_by(closure)[1] if judged not in (None, "mission.appraised") else []',
+     'return "appraisal", []'),
+    (CORRECTIONS, "a rejected failure closure maps to nothing", 'return "failure closure", out',
+     'return "failure closure", []'),
+    (CORRECTIONS, "a rejected failure is not recorded on a body that delivered nothing",
+     ' \\\n            and not signed_rejections(journal):\n        return []', ":\n        return []"),
+    (CORRECTIONS, "a rejection that names no reading is not listed for the morning report",
+     'if not index.rejected_by(e.payload.get("target_event_id"))[1]]}', "if False]}"),
+    (TRIBUNAL, "a signed critique's result does not say what it withheld or lifted, or that it changed no credit",
+     "    effect = corrections.critique_effect(journal, record)\n", "    effect = None\n"),
+    (SETTLEMENT, "a failure the founder rejected still counts against the method",
+     "        if why is None:\n            observations[identity] = outcome",
+     '        if why is None or not outcome["correct"]:\n            observations[identity] = outcome'),
+    # F6: routing reliability, the earned level and precedent action evidence; a rejection only lowers them
+    (ROUTING, "routing reliability still counts a rejected mission's runs",
+     'elif data["status"] in SUCCESS and data.get("mission_id") in rejected \\', 'elif False \\'),
+    (ROUTING, "a founder rejection lifts the penalty of a refuted closure",
+     ' \\\n                and appraisals.get(data.get("mission_id")) != "refuted":', ":"),
+    (AUTONOMY, "the earned level still counts a rejected mission's verified runs",
+     'if kind == "verified" and p["mission_id"] in rejected:', "if False:"),
+    (PRECEDENTS, "a rejected mission's self-reports are still action evidence",
+     'if not (a["action_id"] in withheld and a.get("result_class") in POSITIVE)]', "if True]"),
+    (CORRECTIONS, "a failed replication is treated as a founder rejection by routing and the earned level",
+     '                if cls == "FOUNDER_REJECTED":\n                    out["rejected"]',
+     '                if True:\n                    out["rejected"]'),
+    # F7: only a signed rejection counts, and no record lifts one
+    (CORRECTIONS, "a critique row nobody signed is followed, a rejection or an acceptance",
+     'signed = accepted.get(e.payload.get("command_digest")) if e.payload.get("command_digest") else None',
+     'signed = {"verdict": e.payload.get("verdict"), "target_event_id": e.payload.get("target_event_id")}'),
+    (CORRECTIONS, "an accepted command of another kind stands behind a rejection",
+     'for e in journal.replay("command.accepted") if e.payload.get("kind") == "CRITIQUE"}',
+     'for e in journal.replay("command.accepted")}'),
+    (CORRECTIONS, "a signed critique of another event stands behind the row",
+     ' \\\n                and signed.get("target_event_id") == e.payload.get("target_event_id"):', ":"),
+    (CORRECTIONS, "a requalification record with no signed acceptance behind it lifts a founder rejection",
+     '    if correction["class"] == "FOUNDER_REJECTED":\n        return correction["cause_id"] not in standing\n', ""),
+    # the founder's decision of 2026-11-12: explicit requalification by his own signed acceptance, scoped to the answer
+    (CORRECTIONS, "the founder's signed acceptance does not lift his rejection",
+     "for key in [k for k in standing if k[1] in accepted]:", "for key in []:"),
+    (CORRECTIONS, "an acceptance lifts his rejections of other answers too",
+     "for key in [k for k in standing if k[1] in accepted]:", "for key in list(standing):"),
+    (CORRECTIONS, "accepting another reading of the rejected answer does not lift the rejection",
+     'accepted = {r["receipt"] for a in readings for r in (a, *self.same_answer(a))}\n                for key',
+     'accepted = {a["receipt"] for a in readings}\n                for key'),
+    (CORRECTIONS, "the requalification is not recorded with its cause and the command it came from",
+     'return None if by is None else {"event_id": by.event_id', 'return None if True else {"event_id": by.event_id'),
+    (CORRECTIONS, "the result of an acceptance does not say which rejections it requalified",
+     "        if not lifted:\n            return None", "        if True:\n            return None"),
+    (CORRECTIONS, "a withholding does not name the rejection and the answer it withholds",
+     'why(cid, "FOUNDER_REJECTED", rejection=e.payload.get("critique_id"),\n'
+     '                        answer=index.identity(reading))', 'why(cid, "FOUNDER_REJECTED")'),
+    (CORRECTIONS, "what lifts a withholding is not said in the morning report",
+     '"lifts": LIFTS["FOUNDER_REJECTED"]})\n        row["answers"]', '})\n        row["answers"]'),
+    (SETTLEMENT, "a claim that settles again does not name the correction it was restored after",
+     '**({"restored_after": lifted} if lifted else {})},', "},"),
+    (SETTLEMENT, "a restored claim is revised again on every tick",
+     '            outcome = {**outcome, "restored_after": prior.payload["restored_after"]}\n', "            pass\n"),
+    (SOP, "a refused ratification does not say which mission is withheld and why",
+     'for mid in proposal["missions"] if mid in contained]', 'for mid in proposal["missions"] if False]'),
+    # F9: the reviewer's surviving mutants (R11 is superseded by the F3 mutants above)
+    (SETTLEMENT, "R1: the construction branch skips the containment filter",
+     "            identity = settle(outcome, data) if outcome is not None else None",
+     "            identity = (observations.__setitem__(_outcome_identity(outcome), outcome) or "
+     "_outcome_identity(outcome)) if outcome is not None else None"),
+    (SETTLEMENT, "R3: once withheld, a later reading that no correction contains never settles the claim again",
+     "        if why is None:\n            observations[identity] = outcome",
+     "        if why is None and identity not in withheld:\n            observations[identity] = outcome"),
+    (SETTLEMENT, "R4: the invalidating revision names the wrong class of cause",
+     '"class": why["cause"], "event": why["event"],', '"class": "FOUNDER_REJECTED", "event": why["event"],'),
+    (CORRECTIONS, "R7: only the root reading is listed, not the receipts of the actions that bound it",
+     'for r in [*reached.get("receipts", []), *(stored.get("receipts") or [])]:', "for r in [root]:"),
+    (CORRECTIONS, "R8: a standing mission's hold is never a contained mission",
+     'out["missions"].setdefault(claim["mission_id"], why)',
+     'out["missions"].setdefault(claim["mission_id"], why) if claim["kind"] == "achieved" else None'),
+    (SETTLEMENT, "R16: an outcome that fell for another reason is blamed on some correction",
+     "            why = withheld.get(identity)          # a correction",
+     "            why = withheld.get(identity) or next(iter(withheld.values()), None)          # a correction"),
 ]
 
 

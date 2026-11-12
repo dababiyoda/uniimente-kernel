@@ -275,11 +275,15 @@ def _measure(journal) -> tuple[dict, dict]:
 
     An observation that rests on a receipt a correction contains (``corrections.contained_receipts``: a founder
     rejection or a failed replication, not requalified) settles nothing, and its claim is scored as neither success
-    nor failure, as a disputed world outcome is. Earlier readings of the same claim are withheld with it: a closure
-    cites only its latest reading of a check, so an earlier one would otherwise earn the credit back. A later
-    reading of the claim that no correction contains settles it again. The second mapping explains a claim only
-    while the first does not hold it. A refuted appraisal is not read here: ``_settling_appraisals`` already
-    withdraws and restores what it judged.
+    nor failure, as a disputed world outcome is. That holds for a contained failure as for a contained success: a
+    failure the founder rejected stops counting against its method. Earlier readings of the same claim are withheld
+    with it: a closure cites only its latest reading of a check, so an earlier one would otherwise earn the credit
+    back. A founder rejection contains every reading that carries the rejected answer, whichever receipt and
+    whichever mission it has (``corrections.Index.same_answer``), so the same answer delivered again earns nothing:
+    not on a standing mission's next cadence read, not through a new mission that signs the same question. A later
+    reading of the claim that no correction contains (a different answer, or a requalified cause) settles it again.
+    The second mapping explains a claim only while the first does not hold it. A refuted appraisal is not read
+    here: ``_settling_appraisals`` already withdraws and restores what it judged.
 
     Stated limit: the claim is withheld whichever closure settled its earlier readings. In a mission that closed
     unmet and was later achieved, a failure of the same claim that the appraiser verified under the unmet closure is
@@ -301,7 +305,11 @@ def _measure(journal) -> tuple[dict, dict]:
             observations[identity] = outcome
             return identity
         observations.pop(identity, None)       # no earlier reading of the claim earns the credit back
-        withheld[identity] = {"cause_id": why["cause_id"], "class": why["cause"], "event": why["event"]}
+        withheld[identity] = {"cause_id": why["cause_id"], "class": why["cause"], "event": why["event"],
+                              # what a reader needs to explain the missing credit: the rejection and the answer it
+                              # withholds (a founder rejection), and what lifts it
+                              **{k: why[k] for k in ("rejection", "answer", "lifts") if why.get(k) is not None},
+                              "claim": {k: outcome[k] for k in ("mission_id", "check_id", "method", "method_version")}}
         return None
     formed = _formed_versions(journal)
     constructed = _constructed_versions(journal)
@@ -385,6 +393,16 @@ def _measure(journal) -> tuple[dict, dict]:
     return observations, withheld
 
 
+def withheld(journal) -> list[dict]:
+    """Every signed claim whose settled outcome a correction withholds now, with the reason: the cause and its
+    class, the ``evidence.invalidated`` record, for a founder rejection the critique and the answer it withholds,
+    and what lifts it. A reader of settled competence is shown this beside it (``greg cognition knowledge``), so
+    credit is never missing without a stated reason."""
+    observations, held = _measure(journal)
+    return [{**why.pop("claim"), **why} for why in (dict(w) for identity, w in held.items()
+                                                    if identity not in observations)]
+
+
 def competence(journal):
     # Recompute from current evidence instead of trusting a stale settlement cache.
     rows = defaultdict(lambda: {"count": 0, "correct": 0, "cost_usd": 0.0, "latency_seconds": 0.0,
@@ -448,8 +466,15 @@ def reconcile(journal):
             succeeded.add(old_identity)       # on every pass, so a later pass never invalidates it (review, S5)
             if prior is None:
                 prior = legacy_event
+        if prior is not None and prior.payload.get("restored_after") and not prior.payload.get("invalidated"):
+            # carried from the revision that restored the claim, so an unchanged claim is not revised again
+            outcome = {**outcome, "restored_after": prior.payload["restored_after"]}
         if prior is None or digest({k:v for k,v in prior.payload.items() if k != "supersedes"}) != digest(outcome):
-            journal.record("cognition.settled", {**outcome, "supersedes": prior.event_id if prior else None},
+            # a claim that settles again after a correction withheld it names that correction: the requalification
+            # (``evidence.requalified``, by its cause id) says what lifted it
+            lifted = (prior.payload.get("withheld_by") or {}).get("cause_id") if prior is not None else None
+            journal.record("cognition.settled", {**outcome, "supersedes": prior.event_id if prior else None,
+                                                 **({"restored_after": lifted} if lifted else {})},
                            key=[identity, "revision", digest(outcome), prior.event_id if prior else None],
                            causal_parent=outcome["observation_event"])
     withheld = None
@@ -458,9 +483,11 @@ def reconcile(journal):
             if withheld is None:                  # read only on a tick that invalidates something
                 withheld = _measure(journal)[1]
             why = withheld.get(identity)          # a correction contains the reading it rests on, or the appraisal fell
-            revision = {**prior.payload, "invalidated": True, "supersedes": prior.event_id,
+            why = {k: v for k, v in why.items() if k != "claim"} if why else None
+            revision = {**{k: v for k, v in prior.payload.items() if k != "restored_after"},
+                        "invalidated": True, "supersedes": prior.event_id,
                         "reason": (f"withheld: correction {why['cause_id']} ({why['class']}) impugns the reading this "
-                                   "outcome rests on; history retained" if why else
+                                   f"outcome rests on; lifted by {why['lifts']}; history retained" if why else
                                    "current appraisal no longer supports competence; history retained"),
                         **({"withheld_by": why} if why else {})}
             journal.record("cognition.settled", revision, key=[identity, "invalidate", prior.event_id], causal_parent=prior.event_id)

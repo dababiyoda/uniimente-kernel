@@ -12,7 +12,7 @@
  "source_date": "2026-11-11",
  "changed_axis": "authority (CLAUDE.md developmental-inheritance axes): how long a delegated device key's answer keeps authorizing. It narrows; nothing is widened. The delegation itself (DEVICE_KINDS, the founder-key-only kinds, the 90-day limit) is unchanged.",
  "intended_effect": "After the founder revokes a device key, nothing that key approved and that has not yet been used lets GREG start a new effect, an observation outside the mission's scope included. The mission asks again. Everything already done under the key keeps its record and its receipt. When the founder suspects the key was compromised, one list of everything it signed and everything that rested on it is put in front of the founder.",
- "executable_interpretation": "The mission fold (greg/missions.py MissionBook._revoked) voids, at the ledger position of a device.revoked record, every answer that key signed that still authorizes something not yet done: an approve of an ask whose scope the Gate honours (APPROVAL: a standing exact scope or a paid run not yet made; SENSOR_SCOPE: a standing out-of-cone observation) and a reconcile_* answer the engine has not recorded. The request counts as withdrawn and is asked again under a new request id. Rejections and record-only answers are not voided; every ask kind in greg/ is in exactly one class, pinned by a test. greg/revocation.py writes the trail (one decision.withdrawn per voided answer, naming the device, the revocation and the answer) and, for DEVICE_REVOKE with suspected_compromise: true (signed with the revocation, or later for the revoked key), one device.integrity_review record and one DEVICE_INTEGRITY_REVIEW ask that only the founder key answers. The separate appraiser (greg/appraisal.py) refutes a closure whose action was dispatched after the revocation on the revoked key's approval.",
+ "executable_interpretation": "The mission fold (greg/missions.py MissionBook._revoked) voids, at the ledger position of a device.revoked record, every answer that key signed that still authorizes something not yet done: an approve of an ask whose scope the Gate honours (APPROVAL: a standing exact scope or a paid run not yet made; SENSOR_SCOPE: a standing out-of-cone observation) and a reconcile_* answer the engine has not recorded. The request counts as withdrawn and is asked again under a new request id. Rejections and record-only answers are not voided; every ask kind in greg/ is in exactly one class, pinned by a test. greg/revocation.py writes the trail (one decision.withdrawn per voided answer, naming the device, the revocation and the answer) and, for DEVICE_REVOKE with suspected_compromise: true (signed with the revocation, or later for the revoked key), one device.integrity_review record and one DEVICE_INTEGRITY_REVIEW ask that only the founder key answers. The separate appraiser (greg/appraisal.py) refutes a closure whose action was dispatched after the revocation on the revoked key's approval. Fix round 2026-11-12, after an independent review: a mission the revoked key's own LIFECYCLE command ended stays ended, and its compensations the Gate had not dispatched are held by the fold (MissionState.compensation_hold) until an approval of each one's exact scope; a compensation the Gate dispatched before the revocation is recorded from the Gate's own record; the review attributes to the key only the dispatches granted while its approval stood.",
  "owner": "Alfonso Lopez (founder authority); the implementing session on branch claude/revoked-device-authority-20261111",
  "state": "active",
  "status": "active",
@@ -28,7 +28,8 @@
  "success_evidence": [
   "tests/unit/test_greg_revoked_device_authority.py on real bodies: copied unchanged onto the integration head 8d205324, 42 of its 50 tests fail (the reproduction on the assertion that the write did not run) and 8 pass",
   "scripts/ci/check_revoked_device_mutants.py: each safeguard removed in a scratch copy fails a behavioral test",
-  "A device-approved write that completed before the revocation is still VERIFIED by the separate appraiser after it"
+  "A device-approved write that completed before the revocation is still VERIFIED by the separate appraiser after it",
+  "tests/unit/test_greg_revoked_device_review.py on real bodies: the four findings of the independent review of f35b7986, each reproduced before it was changed, and the mutants that review found alive"
  ],
  "failure_evidence": [
   "An action, compensation or observation dispatched after a device.revoked record on an approval that key signed",
@@ -43,7 +44,7 @@
   "greg/goal_gravity.py APPROVE_MEANS says an unpaid approve stands for the mission's lifetime until the mission closes or its horizon passes. Narrowed here: it also ends when the device key that signed it is revoked. The founder's own approvals are unchanged.",
   "The brief for this work says draft #290 records this as an open gap (a DECISION a device signed before its revocation still counts). The finishing session did not find that sentence in #290's tree (facea170) and did not read the pull request page; the gap itself is reproduced by the first test. Wherever #290 records it, that text is not edited from this branch."
  ],
- "next_review_trigger": "Founder review of the draft and of the eleven open questions in ADR-20261111 (above all: whether what a revoked device resumed should be paused again); an independent adversarial review; the first revocation on a founder-device body",
+ "next_review_trigger": "Founder review of the draft and of the fourteen open questions in ADR-20261111 (above all: whether what a revoked device resumed should be paused again, and whether the compensations of a mission it ended are rightly held); a second independent review, of the fix round; the first revocation on a founder-device body",
  "supersedes": [
   "The behaviour in which an answer a device signed kept authorizing new actions after the device was revoked"
  ],
@@ -57,6 +58,7 @@
   "greg/remote.py",
   "greg/cli.py",
   "tests/unit/test_greg_revoked_device_authority.py",
+  "tests/unit/test_greg_revoked_device_review.py",
   "scripts/ci/check_revoked_device_mutants.py"
  ],
  "authority_delta": "narrowing only: a revoked device's unused answers stop authorizing; nothing gains authority"

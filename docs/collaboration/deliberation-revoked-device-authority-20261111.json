@@ -68,7 +68,7 @@
    "role": "Founder-Intent Steward",
    "position": "Each sentence of the policy has a tested behaviour: unused authority is voided at the revocation record (approvals of APPROVAL and SENSOR_SCOPE asks, unrecorded reconciliation answers); completed actions keep their records, receipts and their VERIFIED appraisal; a suspected compromise opens a separate review that changes nothing; the device's signatures still verify as history while its approvals stop authorizing. No protected artifact is touched.",
    "material_concerns": [
-    "Eleven points the sentence does not settle are listed for the founder with the default implemented (ADR, open questions); the most consequential is whether a revoked device's resume of a paused mission or body should be undone (default: no)",
+    "Fourteen points the sentence does not settle (eleven in the draft, three added by the fix round of 2026-11-12) are listed for the founder with the default implemented (ADR, open questions); the most consequential is whether a revoked device's resume of a paused mission or body should be undone (default: no)",
     "The destination is unchanged: a device stays a narrow delegation; this only ends its reach at revocation"
    ],
    "evidence_refs": [
@@ -98,7 +98,7 @@
    "material_concerns": [
     "A revocation takes effect at the body's next inbox read; mission steps later in the same turn still run on the approvals as that turn began",
     "Rejections, answer-only records and device-signed resumes are not voided (open questions 1 to 3); a test pins that a mission the device resumed runs after the revocation",
-    "An independent adversarial review has not been done"
+    "An independent adversarial review was done on f35b7986 after this record was written; the fix round of 2026-11-12 answers its four findings (decision record, section 'Independent review and fix round') and has not itself been independently reviewed"
    ],
    "evidence_refs": [
     "tests/unit/test_greg_revoked_device_authority.py",
@@ -232,6 +232,6 @@
   "a review reading that fails stops the body or hides the failure"
  ],
  "decision": "NEEDS_FOUNDER_DECISION",
- "decision_owner": "Alfonso Lopez decides adoption and the eleven open questions; the #196 integrator decides intake",
+ "decision_owner": "Alfonso Lopez decides adoption and the fourteen open questions; the #196 integrator decides intake",
  "review_trigger": "Founder review of the draft; an independent adversarial review; intake into #196; the first revocation on a founder-device body"
 }

@@ -222,7 +222,8 @@ def test_a_refused_read_beside_a_faulting_construction_keeps_its_route(tmp_path,
 
 def test_a_failure_closure_names_the_check_a_faulted_construction_could_not_answer(tmp_path, monkeypatch):
     """Beside the faulted construction, a check with no strategy fails for real. The mission closes as unmet on that
-    check, and the closure says which check it could not measure. Recorded as a measured failure (before), the
+    check, the closure says which check it could not measure, and the construction is repaired while the mission
+    is blocked. Recorded as a measured failure (before), the
     faulted check was named nowhere in the closure once it was left out of what is pursued (independent review,
     finding 5)."""
     spec = compiled_question(problem_id="staff-u", data=STAFFING, allow_construction=True)
@@ -237,10 +238,16 @@ def test_a_failure_closure_names_the_check_a_faulted_construction_could_not_answ
         monkeypatch.setitem(network.RUNNERS, "networkx.max_flow",
                             network.RUNNERS["networkx.max_flow"].replace("def solve(req):", LIE, 1))
         status.write_text("not yet")
-        ticks(body, clock, 2)
+        states = [s["state"] for s in ticks(body, clock, 2)]
         unmet = [e.payload for e in body.journal.replay("mission.unmet")]
         assert unmet and unmet[-1]["failing_checks"] == ["status"], unmet
         assert unmet[-1].get("unmeasured_checks") == ["answered"], unmet
+        # The mission is blocked on the real failure, and the construction is still repaired on its second strike:
+        # a blocked mission keeps looking, and a fault of its own machinery never waits on the founder. Before this
+        # change a fault the Mind named blocked the mission by itself, and the test of that repair went through
+        # that block; now only a real failure beside the fault reaches it.
+        assert states == ["BLOCKED", "REPAIRED"], states
+        assert [e.payload["kind"] for e in body.journal.replay("decision.requested")] == ["NO_STRATEGY"]
 
 
 def test_a_fault_hidden_by_a_long_predicate_is_still_repaired(tmp_path, monkeypatch):

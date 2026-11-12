@@ -973,6 +973,54 @@
    "pin": "5c48ac2d06f8a7f1940e35cb29fea69b424d785d350775c77353785e6f771d7d"
   },
   {
+   "module": "greg/intake_rehearsal.py",
+   "qualname": "export",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "capability:brief.intake",
+    "operator:python scripts/compose_rehearsal.py"
+   ],
+   "justification": "unpacks the tar stream `git archive` wrote for one commit into a new scratch directory (dest.mkdir fails if it exists); under brief.intake the directory is inside the mission workspace and the environment is the scrubbed one greg.intake._git_environment sets, from the command line it is the person's own",
+   "pin": "7c3a94bd89d236ce03c8e78adea10b3210475072b4cbfd40680da4eb2add2833"
+  },
+  {
+   "module": "greg/intake_rehearsal.py",
+   "qualname": "git",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "capability:brief.intake",
+    "operator:python scripts/compose_rehearsal.py"
+   ],
+   "justification": "the rehearsal's one git call; its callers here and in greg/intake.py pass only rev-parse, cat-file, merge-base, rev-list, merge-tree, commit-tree, archive, diff, show, ls-tree and config reads, never a fetch, push, checkout or ref update; under brief.intake it runs with READ_ONLY_GIT_ENV, no lazy fetch, hooks and fsmonitor off, filter drivers blanked and new objects written to the mission's scratch store (greg.intake._git_environment); from the command line with the person's own environment",
+   "pin": "c53182ec08dd25de963e13b254508615dd9e7e5836c992eb0a0819b8e39b6247"
+  },
+  {
+   "module": "greg/intake_rehearsal.py",
+   "qualname": "keep_both",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "capability:brief.intake",
+    "operator:python scripts/compose_rehearsal.py"
+   ],
+   "justification": "`git merge-file --union -p` over three temporary files, only for a file the mission or the person named in union; it reads those files and prints the merged text, in the same environment as the rehearsal's other git calls",
+   "pin": "42b7bd17492b48bf71f4d7ea334a4a0ba186612e87c18cf937eee4a2cc61fae9"
+  },
+  {
+   "module": "greg/intake_rehearsal.py",
+   "qualname": "keep_both.scratch",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "capability:brief.intake",
+    "operator:python scripts/compose_rehearsal.py"
+   ],
+   "justification": "read-tree, hash-object, update-index and write-tree against a scratch index file in a temporary directory (GIT_INDEX_FILE), so the repository's own index is never touched; same environment as the rehearsal's other git calls",
+   "pin": "513451db4913ca186aeb643808036930ab1cedcf6bd6b0b76e74552669c96641"
+  },
+  {
    "module": "greg/mcp_login.py",
    "qualname": "_callback_server",
    "callee": "asyncio.start_server",
@@ -1492,6 +1540,38 @@
    "count": 2,
    "searches": "ambient PATH",
    "note": "a presence check, then the person's systemctl runs `--user show-environment`, in `greg doctor --chromebook` and the installer"
+  },
+  {
+   "module": "greg/intake_rehearsal.py",
+   "qualname": "export",
+   "program": "tar",
+   "count": 1,
+   "searches": "<computed>",
+   "note": "under brief.intake the search path is /usr/bin:/bin (greg.intake._git_environment starts from READ_ONLY_GIT_ENV) and the body runs what it finds with its own privileges, unconfined, on Git objects only; from scripts/compose_rehearsal.py it is the person's ambient PATH and their own privileges"
+  },
+  {
+   "module": "greg/intake_rehearsal.py",
+   "qualname": "git",
+   "program": "git",
+   "count": 1,
+   "searches": "<computed>",
+   "note": "under brief.intake the search path is /usr/bin:/bin (greg.intake._git_environment starts from READ_ONLY_GIT_ENV) and the body runs what it finds with its own privileges, unconfined, on Git objects only; from scripts/compose_rehearsal.py it is the person's ambient PATH and their own privileges"
+  },
+  {
+   "module": "greg/intake_rehearsal.py",
+   "qualname": "keep_both",
+   "program": "git",
+   "count": 1,
+   "searches": "<computed>",
+   "note": "under brief.intake the search path is /usr/bin:/bin (greg.intake._git_environment starts from READ_ONLY_GIT_ENV) and the body runs what it finds with its own privileges, unconfined, on Git objects only; from scripts/compose_rehearsal.py it is the person's ambient PATH and their own privileges"
+  },
+  {
+   "module": "greg/intake_rehearsal.py",
+   "qualname": "keep_both.scratch",
+   "program": "git",
+   "count": 1,
+   "searches": "<computed>",
+   "note": "under brief.intake the search path is /usr/bin:/bin (greg.intake._git_environment starts from READ_ONLY_GIT_ENV) and the body runs what it finds with its own privileges, unconfined, on Git objects only; from scripts/compose_rehearsal.py it is the person's ambient PATH and their own privileges"
   },
   {
    "module": "greg/licensing.py",

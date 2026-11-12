@@ -769,7 +769,10 @@ def browser_render(params, ctx: InvocationContext) -> dict:
         env = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "HOME": profile}
         try:
             if ctx.egress is None:
-                proc = subprocess.run(argv, capture_output=True, timeout=45, env=env, cwd=profile)
+                try:
+                    proc = subprocess.run(argv, capture_output=True, timeout=45, env=env, cwd=profile)
+                except OSError as exc:      # installed, and the system cannot start it (or it is gone): a refusal
+                    raise CapabilityError(f"browser could not be started ({exc.strerror})") from exc
                 route = f"only {authority} reachable"
             else:
                 proc = _render_behind_relay(argv, ctx.egress, host, int(authority.rsplit(":", 1)[1]), loopback,

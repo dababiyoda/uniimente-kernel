@@ -145,6 +145,42 @@ def test_on_a_planted_tree_only_a_different_failing_test_is_a_catch(tmp_path, ca
     assert status == 1 and "BASELINE_FAILS" in out and "CAUGHT" not in out   # the tree does not fail where it says
 
 
+def test_on_a_planted_tree_a_later_test_that_already_fails_judges_no_mutant(tmp_path, capsys):
+    """The planted baseline runs every named test, not only up to the planted failure. Until a review on 2026-11-12
+    it stopped there (``-x``), so a test after the planted one that already failed was never seen, and a mutant that
+    only made the planted test pass read as caught by it."""
+    root = _tree(tmp_path, "KEPT = ()\n\n\ndef allowed(n):\n    return n in KEPT\n",
+                 "import guard\n\n\ndef test_planted():\n    assert guard.allowed(50)\n\n\n"
+                 "def test_unrelated_and_already_failing():\n    assert 1 + 1 == 3\n")
+    status = mutation_harness.run([("guard.py", "grow the kept list (nothing pins it)", "KEPT = ()", "KEPT = (50,)")],
+                                  TESTS, "h-", root=root, purge_dirs=("tests",), failing_first="test_planted")
+    out = capsys.readouterr().out
+    assert status == 1 and "BASELINE_FAILS tests/test_guard.py" in out and "CAUGHT" not in out
+    assert "test_unrelated_and_already_failing" in out and "0/1 caught" in out    # and it says which test
+
+
+def test_the_planted_test_is_named_whole_never_as_a_prefix(tmp_path, capsys):
+    """A test whose name begins with the planted test's name is a different test, in the baseline and in judging."""
+    guard = "LIMIT = 10\nKEPT = ()\n\n\ndef allowed(n):\n    return n < LIMIT or n in KEPT\n"
+    # A different test, named with the planted name as its prefix, already fails: the baseline refuses the tree.
+    root = _tree(tmp_path / "a", guard,
+                 "import guard\n\n\ndef test_planted():\n    assert guard.allowed(5)\n\n\n"
+                 "def test_planted_other():\n    assert guard.allowed(50)\n\n\n"
+                 "def test_pin():\n    assert guard.LIMIT == 10\n")
+    status = mutation_harness.run([("guard.py", "raise the limit", "LIMIT = 10", "LIMIT = 99")], TESTS, "h-",
+                                  root=root, purge_dirs=("tests",), failing_first="test_planted")
+    out = capsys.readouterr().out
+    assert status == 1 and "BASELINE_FAILS" in out and "CAUGHT" not in out
+    # The pin is named with the planted name as its prefix: a mutant that moves the failure to it is caught.
+    root = _tree(tmp_path / "b", guard,
+                 "import guard\n\n\ndef test_planted():\n    assert guard.allowed(50)\n\n\n"
+                 "def test_planted_pin():\n    assert guard.KEPT == ()\n")
+    status = mutation_harness.run([("guard.py", "grow the kept list", "KEPT = ()", "KEPT = (50,)")], TESTS, "h-",
+                                  root=root, purge_dirs=("tests",), failing_first="test_planted")
+    out = capsys.readouterr().out
+    assert status == 0 and "CAUGHT grow the kept list" in out and "1/1 caught" in out
+
+
 def test_parallel_workers_judge_each_mutant_alone_and_count_the_same(tmp_path, capsys):
     """Three workers, six mutants of one file: each mutant is applied and reverted in its own worker's copy, so a
     caught mutant cannot make a neighbour's run fail and a survivor cannot hide behind one. The verdicts and the
@@ -170,9 +206,97 @@ def test_parallel_workers_judge_each_mutant_alone_and_count_the_same(tmp_path, c
     assert "n < 10  # limit" in (root / "guard.py").read_text()
 
 
+ISOLATION_TEST = '''import os
+import subprocess
+import sys
+import uuid
+from pathlib import Path
+
+from guard import allowed
+
+HERE = Path(__file__).resolve().parents[1]            # this scratch copy's root
+RUNS = Path(RUNS_DIR)                                 # outside every copy, shared by every run of this file
+
+
+def test_limit():
+    assert not allowed(10)
+
+
+def test_no_other_copy_uses_this_base_temporary_directory(tmp_path_factory):
+    mine = str(tmp_path_factory.getbasetemp().resolve())
+    name = uuid.uuid4().hex
+    (RUNS / f".{name}").write_text(f"{HERE}\\n{mine}")
+    os.replace(RUNS / f".{name}", RUNS / name)        # whole records only: another run may be reading them now
+    records = (p.read_text().split("\\n") for p in RUNS.iterdir() if not p.name.startswith("."))
+    assert not {root for root, temp in records if temp == mine and root != str(HERE)}
+
+
+def test_a_process_started_outside_the_copy_imports_this_copy():
+    out = subprocess.run([sys.executable, "-c", "import guard; print(guard.__file__)"], cwd=RUNS,
+                         capture_output=True, text=True, check=True).stdout
+    assert Path(out.strip()).resolve().parent == HERE
+'''
+
+
+def test_each_copy_has_its_own_base_temporary_directory_and_import_path(tmp_path, capsys):
+    """Parallel verdicts rely on two isolations besides the copy itself. With one ``--basetemp`` for every copy, a
+    review (2026-11-12) saw no-op mutants read as caught on a real gated file (4 and 5 of 6 in two runs), because
+    concurrent runs deleted each other's ``tmp_path``; with one ``PYTHONPATH`` for every copy, a process a test starts
+    outside its copy imports another copy's code. Here a run fails if any other copy has used its base temporary
+    directory, or if such a process imports from anywhere else, so either sharing makes a mutant that changes nothing
+    read as caught. The baseline runs in one copy and three mutants run at once, so the comparison spans copies (the
+    last assertion checks that it did)."""
+    runs = tmp_path / "runs"
+    runs.mkdir()
+    root = _tree(tmp_path, "def allowed(n):\n    return n < 10  # limit\n",
+                 ISOLATION_TEST.replace("RUNS_DIR", repr(str(runs))))
+    mutants = [("guard.py", "drop the limit", "n < 10", "True")] + [
+        ("guard.py", f"comment only {i}", "# limit", f"# limit {i}") for i in range(3)]
+    status = mutation_harness.run(mutants, TESTS, "h-", root=root, purge_dirs=("tests",), workers=3)
+    out = capsys.readouterr().out
+    assert "CAUGHT drop the limit" in out and "1/4 caught" in out and status == 1              # control, then:
+    assert all(f"SURVIVED_OR_INVALID comment only {i}" in out for i in range(3)), out
+    records = [p for p in runs.iterdir() if not p.name.startswith(".")]
+    assert len({p.read_text().split("\n")[0] for p in records}) >= 2           # the check did span two copies
+
+
+def test_an_exception_while_judging_one_mutant_loses_no_other_verdict(tmp_path, capsys):
+    """A mutant that cannot be judged (here its target is not there; a timeout is handled the same way) reads as not
+    caught with its reason. Until a review on 2026-11-12 the exception left the run: mutants not yet started were
+    dropped and no count was printed."""
+    root = _repo(tmp_path)
+    mutants = [("guard.py", "drop the limit", "n < 10", "True"),
+               ("missing.py", "a target that is not there", "n < 10", "True"),
+               ("guard.py", "comment only", "# limit", "# l")]
+    for workers in (1, 3):
+        status = mutation_harness.run(mutants, TESTS, "h-", root=root, purge_dirs=("tests",), workers=workers)
+        out = capsys.readouterr().out
+        assert status == 1 and "1/3 caught" in out and "CAUGHT drop the limit" in out
+        assert "SURVIVED_OR_INVALID a target that is not there (not judged: FileNotFoundError" in out
+        assert "SURVIVED_OR_INVALID comment only" in out
+
+
 def test_the_worker_count_comes_from_the_environment_and_is_never_below_one(monkeypatch):
+    monkeypatch.setattr(mutation_harness.os, "cpu_count", lambda: 4)
     monkeypatch.setenv("MUTATION_WORKERS", "2")
     assert mutation_harness.default_workers() == 2
     for bad in ("0", "-3", "many", ""):
         monkeypatch.setenv("MUTATION_WORKERS", bad)
         assert 1 <= mutation_harness.default_workers() <= 3
+
+
+def test_a_worker_count_is_used_only_as_a_whole_number_from_one_to_the_cpus(monkeypatch, capsys):
+    """Found by a review on 2026-11-12: a superscript digit passed ``str.isdigit`` and crashed every gate in ``int``,
+    ' 2' fell back without a word, and 1000 made one repository copy per mutant. A value outside ASCII digits from 1
+    to the CPU count is not used, and the runner says so; an unset or empty value takes the default silently."""
+    monkeypatch.setattr(mutation_harness.os, "cpu_count", lambda: 4)
+    monkeypatch.setenv("MUTATION_WORKERS", "4")
+    assert mutation_harness.default_workers() == 4 and capsys.readouterr().err == ""
+    for bad in ("²", "٣", " 2", "2 ", "2.0", "5", "1000", "0", "-3", "many"):
+        monkeypatch.setenv("MUTATION_WORKERS", bad)
+        assert mutation_harness.default_workers() == 3
+        assert f"MUTATION_WORKERS={bad!r} is not a whole number from 1 to 4" in capsys.readouterr().err
+    monkeypatch.setenv("MUTATION_WORKERS", "")
+    assert mutation_harness.default_workers() == 3 and capsys.readouterr().err == ""
+    monkeypatch.delenv("MUTATION_WORKERS")
+    assert mutation_harness.default_workers() == 3 and capsys.readouterr().err == ""

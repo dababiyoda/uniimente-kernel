@@ -6,16 +6,22 @@ Three groups, each run by the shared runner in a scratch copy of the repository,
 
 * what the shared runner counts as caught (scripts/ci/mutation_harness.py, tests/unit/test_mutation_harness.py):
   pytest exits 1, reports a FAILED test in the named file and reports no collection error; an anchor that does not
-  occur exactly once is STALE; a stale or surviving mutant fails the gate;
+  occur exactly once is STALE; a stale or surviving mutant fails the gate; before any mutant every named test runs and
+  none fails, or on a planted tree the planted test alone, named whole; each scratch copy has its own pytest base
+  temporary directory and its own import path; an exception while judging one mutant loses no other verdict; and
+  MUTATION_WORKERS is used only as a whole number from 1 to the CPU count, a value not used being reported;
 * gate liveness (scripts/repo_review.py, tests/unit/test_repo_health_gates.py): a gate no workflow names reads as
   unwired, and an anchor that left its target reads as stale;
 * the pin on KEPT_UNWIRED_GATES. The copy first receives a gate no workflow names, so the liveness test fails there
   until the mutant adds that gate to the kept list. With the mutant applied the only failing test is the pin, which
   is what this group shows: growing the list in the same change as a new unwired gate is refused.
 
-Before any mutant, both test files must pass unmutated. The shared runner now checks that itself (BASELINE_FAILS);
-this gate keeps its own check as well, because one of its mutants removes the runner's. A mutant is caught only by a
-FAILED test. Exit status 1 if the baseline fails or any mutant survives or no longer applies.
+Before any mutant, both test files must pass unmutated, read in place. The shared runner checks each group's tests
+itself in its first scratch copy (BASELINE_FAILS), and for the planted group that the planted test is the only one
+failing. This gate's own check runs first, on the working tree, so a failing file stops the gate before any copy of
+the repository is made. (Until 2026-11-12 this said the check was kept because a mutant removes the runner's; the
+mutants edit only the scratch copies' runner, never the one this gate imports, so that was not the reason.) A mutant
+is caught only by a FAILED test. Exit status 1 if the baseline fails or any mutant survives or no longer applies.
 """
 import shutil
 import subprocess
@@ -50,9 +56,25 @@ RUNNER_MUTANTS = [
     (RUNNER, "two mutants share one worker's scratch copy at once", "repo, env, command = free.pop()",
      "repo, env, command = free[0]"),
     (RUNNER, "a named test that already fails counts as a catch for every mutant",
-     "if (baseline.returncode != 0) if planted is None else", "if False if planted is None else"),
+     "if baseline.returncode != (0 if planted is None else 1) or failed != expected:", "if False:"),
     (RUNNER, "on a planted tree the planted failure itself counts as a catch",
-     "caught = caught and planted not in result.stdout", "pass"),
+     "caught = caught and planted not in failures(result.stdout)", "pass"),
+    (RUNNER, "on a planted tree the baseline stops at the planted failure",
+     'full = [part for part in command if part != "-x"]', "full = command"),
+    (RUNNER, "on a planted tree only the first failing test is checked", "or failed != expected:",
+     "or failed[:1] != expected:"),
+    (RUNNER, "on a planted tree a test named with the planted name as its prefix counts as the planted one",
+     "planted not in failures(result.stdout)", "planted not in result.stdout"),
+    (RUNNER, "every copy runs pytest with one shared base temporary directory",
+     "f\"--basetemp={Path(temp) / f'pytest{index}'}\"", "f\"--basetemp={Path(temp) / 'pytest'}\""),
+    (RUNNER, "every copy imports from the first copy", '"PYTHONPATH": str(repo)',
+     '"PYTHONPATH": str(Path(temp) / "repo0")'),
+    (RUNNER, "an exception while judging one mutant loses the other verdicts", "except Exception as error:",
+     "except ArithmeticError as error:"),
+    (RUNNER, "a worker count in other digits, or above the CPU count, is used",
+     're.fullmatch("[0-9]+", asked) and 1 <= int(asked) <= cpus', "asked.isdigit() and int(asked) >= 1"),
+    (RUNNER, "a worker count that is not used is dropped without a word",
+     "print(message, file=sys.stderr, flush=True)", "None"),
 ]
 LIVENESS_MUTANTS = [
     (REVIEW, "every gate reads as wired", '"wired": gate.name in workflows,', '"wired": True,'),

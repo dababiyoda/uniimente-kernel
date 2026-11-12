@@ -34,7 +34,7 @@ tree for checks; it is evidence, not a merge request.
 
 Six independent reviews ran (retained receipts, browser, revoked device, the replay fix, the appraiser unit, the
 credit unit). Each returned "sound, with fixes". CI then found three more defects the reviews had not, and one
-capacity limit (rows eight and nine, added 2026-11-12 10:15 UTC). The reviewers were separate agents on the same model: a second process, not an
+capacity limit (rows eight and nine, added 2026-11-12 at 10:07 UTC). The reviewers were separate agents on the same model: a second process, not an
 independent operator.
 
 | Class | First seen | Seen again | What now checks for it | What still escapes |

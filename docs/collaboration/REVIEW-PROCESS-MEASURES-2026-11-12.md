@@ -34,6 +34,8 @@ second process, not an independent operator).
 | #305 fix round | F18 (a fix for the first review) hides a measured behavioural conflict whenever another head or the base also edited the broken test's file; the head that caused it reads 'ready to take' and the command line exits 0 clean | second independent review (R1, high; reproduced by a skeptic) | after the fix round was pushed |
 | #305 fix round | a cancelled re-run masks a stale failure; symlinked packs and `core.attributesFile` escape the pin; F18 reads head-controlled links in GREG's process; six mutants of new code survive a gate printing 42/42 | the same review (R2-R4, R6, R8, medium) | after push |
 | #307 | the planted-mode baseline runs with `-x` and never sees a later failing test; nothing pins per-copy isolation | independent review (F1, F2, medium) | after push; CI green |
+| #305 second fix round | a link check that walks one hop: a directory link to a place inside the roots, whose own entries link outside, still let git read packs, loose objects, `info/attributes` and an alternates listing from outside; the alternate depth was counted one level off from the git that runs | independent re-check of `b42d10f6` (R6 still reproduced; one new low) | after the second fix round, before push |
+| #307 fix round | the new summary parser read words, not structure: a planted test whose message carried "short test summary info" turned a survivor into a catch | independent re-check of `9de5075b` (new low) | after the fix round, before push |
 | #308 | `a995c3ce` (the session's own fix for job 11) moved job 8's two `GITHUB_ENV` lines into a new shell: job 8 ran with the browser variables empty and **passed** | independent review (F1, medium) | after push; **CI green**, so only review could see it |
 | candidate `e0f84ed1` | a genome test raced the clock (UNKNOWN after 18,110 of 20,000 states on a loaded runner) | CI job 1 | after push; #309 |
 | #291 + #273 | #273's call site refused beside #291 (13 of 17 tests) | composing by hand (2026-11-11); found again unaided by the intake mission (2026-11-12) | before intake |
@@ -87,6 +89,7 @@ is the operational slice (built after all five), whose review results will be re
 | revoked-device, appraiser and two authority fixes (one workflow) | 4,944,815 | 1,104 | 223 min |
 | credit, goal intake and two acceptance locks (one workflow) | 3,212,433 | 692 | 128 min |
 | representation-repair design panel | 1,680,096 | 158 | 27 min |
+| second #305 fix round and #307 fix round, each re-checked (4 agents) | 1,680,289 | 267 | 100 min |
 | earlier single-unit reviews and fix rounds | not recorded | | |
 
 Integration delay: none of these units has reached the integration line (`8d205324` unchanged since 2026-11-11);

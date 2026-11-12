@@ -178,7 +178,14 @@ class CapabilityManifest:
         for binary in self.binaries:
             if not Path(binary).is_absolute() or not os.access(binary, os.X_OK):
                 return False, f"binary {binary} not installed or not executable"
-        return True, "available"
+        asked_now = AVAILABLE_AT_CALL_TIME.get(self.capability_id)
+        return asked_now() if asked_now is not None else (True, "available")
+
+
+# A capability whose executable is chosen when it runs names no path in ``binaries`` (so its manifest, and the digest
+# the separate appraiser re-derives, are the same in every process) and is listed here instead: capability_id -> a
+# function answering (available, why) each time ``CapabilityManifest.available`` is asked.
+AVAILABLE_AT_CALL_TIME: dict = {}
 
 
 # -- secret broker ------------------------------------------------------------------
@@ -656,15 +663,50 @@ CHROME_CANDIDATES = (
     "/Applications/Chromium.app/Contents/MacOS/Chromium",
     "/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromium-browser",
 )
+HEADLESS_SHELL_CANDIDATES = ("/usr/bin/chrome-headless-shell",)
+PLAYWRIGHT_BROWSERS = "/opt/pw-browsers"
+NO_BROWSER = "no Chrome or Chromium is installed on this body"
+
+
+def chrome_candidates() -> list[str]:
+    """Every installed browser GREG may render with, in the order it tries them. Nothing is run here, and no OSError
+    leaves here: a path GREG cannot look at (a name too long, a directory it cannot search) is not a file.
+
+    GREG_CHROMIUM, when set, is the founder's choice and the only candidate; set to anything but the absolute path of
+    an executable file it is refused by name, and no other browser is run in its place."""
+    chosen = os.environ.get("GREG_CHROMIUM", "")
+    if chosen:
+        if not (os.path.isabs(chosen) and os.path.isfile(chosen) and os.access(chosen, os.X_OK)):
+            raise CapabilityError(f"GREG_CHROMIUM is set to {chosen!r}, which is not the absolute path of an "
+                                  "executable file; GREG runs the browser that variable names or none (unset it "
+                                  "to let GREG choose among the installed browsers)")
+        return [chosen]
+    shells = sorted(glob.glob(f"{PLAYWRIGHT_BROWSERS}/chromium_headless_shell-*/chrome-headless-shell-*/"
+                              "chrome-headless-shell"), reverse=True)
+    full = sorted(glob.glob(f"{PLAYWRIGHT_BROWSERS}/chromium-*/chrome-linux*/chrome"))
+    return [candidate for candidate in (*shells, *HEADLESS_SHELL_CANDIDATES, *CHROME_CANDIDATES, *full)
+            if os.path.isfile(candidate) and os.access(candidate, os.X_OK)]
 
 
 def chrome_binary() -> str:
     """The browser GREG drives: an installed Chrome/Chromium (founder-chosen via GREG_CHROMIUM)."""
-    for candidate in (os.environ.get("GREG_CHROMIUM", ""), *CHROME_CANDIDATES,
-                      *sorted(glob.glob("/opt/pw-browsers/chromium-*/chrome-linux/chrome"))):
-        if candidate and Path(candidate).is_file() and os.access(candidate, os.X_OK):
-            return candidate
-    return CHROME_CANDIDATES[0]
+    found = chrome_candidates()
+    if not found:       # a refusal, not a path that does not exist (whose FileNotFoundError the Gate cannot type)
+        raise CapabilityError(NO_BROWSER)
+    return found[0]
+
+
+def browser_installed() -> tuple[bool, str]:
+    """What ``CapabilityManifest.available`` answers for browser.render, looked up each time it is asked: a path fixed
+    at import can be gone when the capability runs (Playwright replaces a build's directory on upgrade). Nothing is
+    run: this says a browser is installed, not that it renders."""
+    try:
+        return (True, "available") if chrome_candidates() else (False, NO_BROWSER)
+    except CapabilityError as exc:      # GREG_CHROMIUM names no browser
+        return False, str(exc)
+
+
+AVAILABLE_AT_CALL_TIME["browser.render"] = browser_installed
 
 
 class _VisibleText(HTMLParser):
@@ -704,7 +746,9 @@ def browser_render(params, ctx: InvocationContext) -> dict:
     if parts.scheme != "https" and not (parts.scheme == "http" and loopback):
         raise CapabilityError("browser.render loads https pages (http only on this machine's loopback)")
     binary = chrome_binary()
-    with tempfile.TemporaryDirectory(prefix="greg-browser-") as profile:
+    # A helper of a browser killed at the limit can go on writing the profile: failing to remove the profile never
+    # replaces the answer. Neither the helper nor a profile it keeps writing is removed here.
+    with tempfile.TemporaryDirectory(prefix="greg-browser-", ignore_cleanup_errors=True) as profile:
         common = [binary, "--headless=new", "--disable-gpu", "--no-first-run", "--no-default-browser-check",
                   "--disable-extensions", "--disable-background-networking", "--disable-sync",
                   "--disable-component-update", "--disable-default-apps", "--mute-audio", "--hide-scrollbars",
@@ -728,14 +772,18 @@ def browser_render(params, ctx: InvocationContext) -> dict:
         env = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "HOME": profile}
         try:
             if ctx.egress is None:
-                proc = subprocess.run(argv, capture_output=True, timeout=45, env=env, cwd=profile)
+                try:
+                    proc = subprocess.run(argv, capture_output=True, timeout=45, env=env, cwd=profile)
+                except OSError as exc:      # installed, and the system cannot start it (or it is gone): a refusal
+                    raise CapabilityError(f"browser could not be started ({exc.strerror})") from exc
                 route = f"only {authority} reachable"
             else:
                 proc = _render_behind_relay(argv, ctx.egress, host, int(authority.rsplit(":", 1)[1]), loopback,
                                             Path(profile), env)
                 route = f"relay: only {authority}, every request journaled"
-        except subprocess.TimeoutExpired as exc:
-            raise CapabilityError("browser did not finish rendering within 45 seconds") from exc
+        except subprocess.TimeoutExpired as exc:      # the limit was reached: no measured failure of the browser
+            raise CapabilityError("browser did not finish rendering within 45 seconds",
+                                  failure_class="transient") from exc
     if proc.returncode or not proc.stdout.strip():
         raise CapabilityError("browser could not render the page: " + proc.stderr.decode("utf-8", "replace")[-300:])
     dom_cut = len(proc.stdout) > MAX_READ_BYTES * 4
@@ -764,8 +812,9 @@ def _render_behind_relay(argv, relay, host: str, port: int, loopback: bool, prof
     from greg.worker_isolation import WorkerIsolationError, _backend
     try:
         _backend(require_bubblewrap=True)
-    except WorkerIsolationError as exc:
-        raise CapabilityError(f"confined egress needs bubblewrap network namespaces here: {exc}") from None
+    except WorkerIsolationError as exc:     # this host cannot confine the browser: isolation unavailable
+        raise CapabilityError(f"confined egress needs bubblewrap network namespaces here: {exc}",
+                              failure_class="transient") from None
     scoped = Relay({"browser.render": {"allow": [[host, port]], "external": not loopback}}, relay.journal,
                    connect=relay.connect, proxy=relay.proxy)
     with Door(scoped, "browser.render") as door:
@@ -971,7 +1020,9 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                                 "browser", "read_only", "web:", {"url": "str"},
                                 {"title": "str", "text": "str", "dom_sha256": "str"},
                                 network="target-host-only", data_classes=("public_web",), retry_safe=True,
-                                binaries=(chrome_binary(),), target_from="url",
+                                # no ``binaries``: the browser is chosen when a render runs (chrome_binary) and
+                                # ``available`` asks browser_installed() then (AVAILABLE_AT_CALL_TIME)
+                                target_from="url",
                                 provenance={"source": "uniimente-kernel/greg/capabilities.py",
                                             "mechanism_from": "installed Chrome/Chromium --headless --dump-dom"}),
                        browser_render),

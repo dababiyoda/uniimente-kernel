@@ -36,6 +36,11 @@ second process, not an independent operator).
 | #307 | the planted-mode baseline runs with `-x` and never sees a later failing test; nothing pins per-copy isolation | independent review (F1, F2, medium) | after push; CI green |
 | #305 second fix round | a link check that walks one hop: a directory link to a place inside the roots, whose own entries link outside, still let git read packs, loose objects, `info/attributes` and an alternates listing from outside; the alternate depth was counted one level off from the git that runs | independent re-check of `b42d10f6` (R6 still reproduced; one new low) | after the second fix round, before push |
 | #307 fix round | the new summary parser read words, not structure: a planted test whose message carried "short test summary info" turned a survivor into a catch | independent re-check of `9de5075b` (new low) | after the fix round, before push |
+| #305 third round | **a boundary re-derived in Python instead of enforced by the kernel**: the pin re-implements git's parsing and path resolution and differs from git in six high ways (alternates and `commondir` parsing, FIFO listings, stores under skipped `hooks/`, long resolved paths, `.gitattributes` through a work-tree link a head can commit); all six present on every head since the first | independent re-check of `c6e79087` (escape lens; the layout lens found two false refusals the round introduced) | after three fix rounds; the structural fix (confine git in the Landlock envelope) is round 4 |
+| #305 third round | a guard that a lower layer happens to cover: the "list each real directory once" rule had no test that needed it, because the kernel's 40-link limit ended a single loop anyway | the intake mutation gate (64/65) | before push |
+| #311 | a path the body cannot look at raised `OSError` out of every tick; a 45 s timeout and missing bubblewrap were untyped refusals; a helper still writing the killed browser's profile turned the timeout into an unknown outcome | independent review (M1-M3, medium) | after push; CI green |
+| #312 | open asks are not re-checked when a detach or re-attach changes what the selection would run (an approve of one strategy runs another; a moot ask blocks the mission); the alternative chosen may itself be unattached, and a re-attach no longer unblocks (regression) | independent review (X1-X5, medium, each reproduced by a skeptic) | after push |
+| #304 | the ten-step one-machine test failed once in job 1 with a torn ledger tail (`partial or blank history record`); #304 does not touch the ledger | CI job 1 | after push; root cause under investigation |
 | #308 | `a995c3ce` (the session's own fix for job 11) moved job 8's two `GITHUB_ENV` lines into a new shell: job 8 ran with the browser variables empty and **passed** | independent review (F1, medium) | after push; **CI green**, so only review could see it |
 | candidate `e0f84ed1` | a genome test raced the clock (UNKNOWN after 18,110 of 20,000 states on a loaded runner) | CI job 1 | after push; #309 |
 | #291 + #273 | #273's call site refused beside #291 (13 of 17 tests) | composing by hand (2026-11-11); found again unaided by the intake mission (2026-11-12) | before intake |
@@ -90,6 +95,9 @@ is the operational slice (built after all five), whose review results will be re
 | credit, goal intake and two acceptance locks (one workflow) | 3,212,433 | 692 | 128 min |
 | representation-repair design panel | 1,680,096 | 158 | 27 min |
 | second #305 fix round and #307 fix round, each re-checked (4 agents) | 1,680,289 | 267 | 100 min |
+| #311 fix round and independent re-check (2 agents) | 877,905 | 184 | 66 min |
+| #312 independent review (7 agents, each finding verified) | 2,113,240 | 180 | 27 min |
+| #305 round-3 re-check (2 lenses) | 740,673 | 109 | 29 min |
 | earlier single-unit reviews and fix rounds | not recorded | | |
 
 Integration delay: none of these units has reached the integration line (`8d205324` unchanged since 2026-11-11);

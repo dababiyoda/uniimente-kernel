@@ -21,6 +21,13 @@ An earlier message the same night is recorded by digest only, because it adds no
 The one difference from earlier sendings is that its skill line adds `/anthropic-skills:computer-use`. Repetition
 adds no authority.
 
+Sent again 2026-11-12T16:21:51.857Z (27014 characters, SHA-256
+`5b345c4e500cbc5ca8b4cf108b33037270e55fec7760704aafa3ddd3fd6dc611`): the line `Resume:`, then a line naming five
+skills (`/anthropic-skills:counterpositioning` added to F's four), then F's two texts byte for byte (26773
+characters, SHA-256 `3213587746385eddbd6d8cd066f64b7ec1270bbf995d77ed7e98205bec92b96a`, compared with the block below
+by the session at 16:24 UTC). Recorded by digest only. Repetition adds no authority; it is read as the same
+direction, renewed.
+
 What the text says about itself, which a reader should keep in mind: its answers to five open questions are
 "engineering recommendations to reconcile with canonical contracts. Any actual change to constitutional authority
 retains its existing decision process." It also says: "Final merge approval and developmental composition are

@@ -790,9 +790,10 @@ def test_a_reading_the_canonical_reader_calls_unanswered_is_neither_blamed_nor_c
                  {"abstention_state": "REFUTED", "method": "m", "method_version": "1", "output": {"x": 1}}):
         assert missions.unanswered(real) is None and corrections.held_no_answer(real) is False
         assert corrections.answer_digest(real) is not None
-    monkeypatch.setattr(missions, "unanswered", canonical)      # as the reader stands on this branch: the interim
-    for state in ("UNKNOWN", "ABSTAIN", "CAPABILITY_DEFICIT"):   # half reads a compilation's abstention state
-        assert missions.unanswered({**answered, "state": state, "result": None}) is None
+    monkeypatch.setattr(missions, "unanswered", canonical)      # the reader as it stands on this tree. On
+    for state in ("UNKNOWN", "ABSTAIN", "CAPABILITY_DEFICIT"):   # 8d205324 it does not read a compilation's state
+        # and the interim half does; once the reader is extended it says so itself. Held either way: this test must
+        # not pin the reader's gap (it failed on a tree that carries the extended reader for exactly that reason).
         assert corrections.held_no_answer({**answered, "state": state, "result": None}) is True
     for state in ("PLANNED", "HUMAN_JUDGMENT_RECORDED", "ANSWERED", "WORLD_UNVERIFIED", "REFUTED"):
         output = {**answered, "state": state}                   # every other state is the canonical reader's alone

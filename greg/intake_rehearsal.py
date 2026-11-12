@@ -17,7 +17,10 @@ the other relies on. For a base and an ordered set of heads, :func:`rehearse`:
    branched), else the other head without which it passes, found by leaving one head out at a time.
 
 A test that already fails on its own head is listed apart: it is not a composition problem. A head for which no
-test was run is listed as not checked, never as compatible.
+test was run is listed as not checked, never as compatible. A failure measured on the merged tree is never dropped:
+where the merged tree holds a test file merged from several versions (two heads adding tests to one file, or the base
+editing it after a head branched), the failure is a conflict that names those other edits, since whose test it is is
+not separated; where it holds exactly another head's version, the failure is compared under that head.
 
 What differs between the two callers is how a test file is run and where git writes, never the rehearsal:
 
@@ -208,6 +211,22 @@ def changed_tests(root: Path, base: str, sha: str) -> list[str]:
     return sorted(n for n in names if Path(n).name.startswith("test_") and n.endswith(".py"))
 
 
+def entries(root: Path, commit: str, files) -> dict[str, str]:
+    """The tree entry ("<mode> <object id>") of each of ``files`` at ``commit``, read from git's objects. Comparing
+    entries, not exported bytes, opens no file a head wrote and follows no link it committed (a link is its own
+    entry, mode 120000); a file absent at ``commit`` has none."""
+    wanted = set(files)
+    if not wanted:
+        return {}
+    found = {}
+    for record in git(root, "ls-tree", "-r", "-z", commit, "--", *sorted(wanted)).stdout.split(b"\0"):
+        meta, _, name = record.partition(b"\t")
+        fields, path = meta.decode("ascii", "replace").split(), name.decode("utf-8", "replace")
+        if len(fields) == 3 and fields[1] == "blob" and path in wanted:
+            found[path] = f"{fields[0]} {fields[2]}"
+    return found
+
+
 def read_pytest(out: str) -> tuple[list[str], dict, list[str]]:
     """What pytest's own output says: the node ids it named as FAILED or ERROR, the counts on its last line, and the
     non-empty lines. The text is the output of code under test: it is read, never trusted to be complete."""
@@ -285,22 +304,41 @@ def _rehearse(root: Path, base_ref: str, units: list[Unit], also: list[str], tim
         facts["composed_tree"] = git(root, "rev-parse", f"{merged_commit}^{{tree}}").stdout.decode().strip()
     composed = {u.name: run(composed_tree, u.tests, timeout) for u in in_merge}
     composed_also = run(composed_tree, also, timeout) if also else None
-    # A head's test file that the merged tree holds in another version (a descendant's, or another head's edit merged
-    # in) is not that head's test: what ran there measures someone else's file. It is not compared, either way, and
-    # says whose version ran (review of 885b7b7a, F18: 303-old's test was replaced by 303's and never met 304).
-    not_compared = []
+    # Whose version of each test file the merged tree holds, read from git's tree entries (review of 387e8417, R3:
+    # comparing the exported bytes opened, in this process, whatever a link a head committed points at).
+    # - The head's own version: compared as usual.
+    # - Exactly the version of another head that runs this file too (its descendant's, F18: 303-old's test was
+    #   replaced by 303's and never met 304): what ran there is that head's file, not this one's. It is not compared
+    #   for this head, which is not checked; the same failures are compared under the head whose version it is, so
+    #   nothing measured is dropped.
+    # - A merge of the head's version with other edits (another head's, or the base's since the head branched): it
+    #   IS compared, and a failure is a behavioural conflict (R1, R2: F18 dropped such a failure, the head that caused
+    #   it read "ready to take" and the command line said clean). Whose test a failing one is is not separated from
+    #   the file's entries, so the conflict names the others whose edits the merged file holds (``shared_with``).
+    files = sorted({f for u in in_merge for f in u.tests})
+    there_all, at_base = entries(root, merged_commit, files), entries(root, base, files)
+    own_at = {u.name: entries(root, u.sha, files) for u in in_merge}
+    fork_at = {u.name: entries(root, git(root, "merge-base", base, u.sha, check=False).stdout.decode().strip() or base,
+                               files) for u in in_merge}
+    not_compared, shared = [], {}
     for unit in in_merge:
         foreign = {}
         for file in unit.tests:
-            mine, there = scratch / f"own-{unit.name}" / file, composed_tree / file
-            if mine.is_file() and there.is_file() and mine.read_bytes() != there.read_bytes():
-                ran = [o.name for o in in_merge if o.name != unit.name
-                       and (scratch / f"own-{o.name}" / file).is_file()
-                       and (scratch / f"own-{o.name}" / file).read_bytes() == there.read_bytes()]
-                foreign[file] = (f"the merged tree holds {', '.join(ran)}'s version of this file" if ran else
-                                 "the merged tree holds a merge of several heads' versions of this file") + \
-                    f", not {unit.name}'s: its own version was not run against the merge"
+            mine, there = own_at[unit.name].get(file), there_all.get(file)
+            if mine is None or there is None or mine == there:
+                continue
+            owners = [o.name for o in in_merge if o.name != unit.name and file in o.tests
+                      and own_at[o.name].get(file) == there]
+            if owners:
+                foreign[file] = f"the merged tree holds {', '.join(owners)}'s version of this file, not " \
+                                f"{unit.name}'s: its own version was not run against the merge"
                 not_compared.append({"unit": unit.name, "file": file, "note": foreign[file]})
+                continue
+            # the others whose edits the merged file holds: a head that changed it (not merely carrying this head's
+            # version), and the base when it changed the file after this head branched
+            shared[unit.name, file] = [o.name for o in in_merge if o.name != unit.name
+                                       and own_at[o.name].get(file) not in (fork_at[o.name].get(file), mine)] + \
+                ([ON_BASE] if at_base.get(file) != fork_at[unit.name].get(file) else [])
         if foreign:
             result = composed[unit.name]
             result["failed"] = [n for n in result["failed"] if node_file(n) not in foreign]
@@ -332,14 +370,19 @@ def _rehearse(root: Path, base_ref: str, units: list[Unit], also: list[str], tim
         before = set(base_also["failed"])
         for node in composed_also["failed"]:
             (already_failing if node in before else behavioural).append({"test": node, "unit": "(also)"})
+    for conflict in behavioural:
+        if (conflict["unit"], node_file(conflict["test"])) in shared:
+            conflict["shared_with"] = shared[conflict["unit"], node_file(conflict["test"])]
 
     # Which head causes each behavioural conflict: the merge without it passes the test. Each merge-without-one is
-    # made and exported once, and each test file is run on it once, however many of its tests conflict.
+    # made and exported once, and each test file is run on it once, however many of its tests conflict. A head whose
+    # edits the merged test file holds is not left out: without it the failing test may simply not be there.
     without: dict[str, Path | None] = {}
     reruns: dict[tuple[str, str], dict] = {}
     by_name = {u.name: u for u in in_merge}
     for conflict in behavioural:
-        causes, blind, file = [], [], node_file(conflict["test"])
+        causes, blind, file, tried = [], [], node_file(conflict["test"]), []
+        editors = [name for name in conflict.get("shared_with", ()) if name != ON_BASE]
         if conflict["unit"] in by_name:
             # First the cheapest explanation: the head no longer works on the line itself. Its own tree passes because
             # it branched from an older line; merged onto today's base, with no other head, the test already fails.
@@ -355,10 +398,10 @@ def _rehearse(root: Path, base_ref: str, units: list[Unit], also: list[str], tim
             if reruns[key]["ran"] and conflict["test"] in reruns[key]["failed"]:
                 conflict["caused_by"] = [ON_BASE]
                 conflict["note"] = "fails as soon as this head is merged onto the base, with no other head: " \
-                                   "the line has moved since it branched"
+                                   "the line has moved since it branched" + _whose(conflict, editors)
                 continue
         for other in in_merge:
-            if other.name == conflict["unit"]:
+            if other.name == conflict["unit"] or other.name in editors:
                 continue
             if other.name not in without:
                 rest = [u for u in in_merge if u.name != other.name]
@@ -377,10 +420,14 @@ def _rehearse(root: Path, base_ref: str, units: list[Unit], also: list[str], tim
                 continue
             if conflict["test"] not in result["failed"] and result["ran"]:
                 causes.append(other.name)
+            if result["ran"]:
+                tried.append(other.name)
         conflict["caused_by"] = causes
         conflict["note"] = ("passes when this head is left out" if len(causes) == 1 else
                             "no single head explains it: it passes with any one of these left out" if causes else
-                            "no single head explains it: it fails with any one head left out")
+                            "no single head explains it: it fails with any one head left out" if not editors else
+                            "no single head explains it: it fails with any one of " + ", ".join(tried) + " left out"
+                            if tried else "no head that did not edit this file was left out")
         if blind:
             # A rerun that timed out or was not run rules nothing in and nothing out: say which, beside what was
             # measured, and never "it fails with any one head left out" for a rerun that gave no result.
@@ -390,6 +437,7 @@ def _rehearse(root: Path, base_ref: str, units: list[Unit], also: list[str], tim
                                 + (["with " + ", ".join(others) + " left out"] if others else []))
             conflict["note"] = (conflict["note"] + "; it gave no result " + gaps if causes else
                                 "the cause was not found: the test gave no result " + gaps)
+        conflict["note"] += _whose(conflict, editors)
 
     report = {
         "tool": "compose_rehearsal/1", "base": base,
@@ -419,6 +467,19 @@ def _rehearse(root: Path, base_ref: str, units: list[Unit], also: list[str], tim
                                "merged": composed[unit.name].get("states", {}) if unit.name in composed else None}
         report["not_measured"] = not_measured
     return report
+
+
+def _whose(conflict: dict, editors: list[str]) -> str:
+    """What the note says of a failing test in a file the merged tree holds merged from several versions."""
+    if not conflict.get("shared_with"):
+        return ""
+    edits = ", ".join("the base" if name == ON_BASE else name for name in conflict["shared_with"])
+    said = f"; the merged tree holds this file merged from {conflict['unit']}'s version and the edits of {edits}"
+    if not editors:
+        return said
+    return (said + f": whose test it is was not separated, and {', '.join(editors)} "
+            + ("was" if len(editors) == 1 else "were") + " not left out (without a head that edited the file, the "
+            "test may not be there)")
 
 
 def _directly(report: dict, name: str) -> str:

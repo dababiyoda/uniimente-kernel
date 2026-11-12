@@ -59,6 +59,11 @@ MUTANTS = [
      '    return 0 if report["clean"] else 1', "    return 0"),
     (T, "a report with a textual conflict is not clean",
      '        "clean": not textual and not behavioural,', '        "clean": not behavioural,'),
+    (T, "a failure in a test file the merged tree merges from several versions is a conflict, never dropped",
+     "            if owners:", "            if True:"),
+    (T, "a head that edited the failing test's file is not left out to look for the cause",
+     '            if other.name == conflict["unit"] or other.name in editors:',
+     '            if other.name == conflict["unit"]:'),
 ]
 
 if __name__ == "__main__":

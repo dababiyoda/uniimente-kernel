@@ -45,6 +45,7 @@ from pathlib import Path
 import re
 import shlex
 import shutil
+import stat
 import time
 
 from greg import intake_rehearsal as rehearsal
@@ -53,7 +54,10 @@ from greg.capabilities import READ_ONLY_GIT_ENV, CapabilityError, InvocationCont
 # /2: an own-head failure in the envelope is not checked, not held. /3 (review of 885b7b7a): a head containing a held
 # head is held; an order-dependent textual conflict is said on both units; checks are read per name and in a hosting
 # service's words; a contradicted claim keeps a unit from ready; the composed tree is named as an identity only.
-RENDERER = "greg.intake.render/3"
+# /4 (review of 387e8417): a failure in a test file the merged tree holds merged from several versions holds every
+# head whose edits it holds; a head the cause search could not measure is not checked; only a passed or failed result
+# makes a check name current; a failing check that names no head holds.
+RENDERER = "greg.intake.render/4"
 KIND = "intake"
 SHA = re.compile(r"[0-9a-f]{40}")
 NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,40}")
@@ -202,12 +206,22 @@ def request_digest(params) -> str:
 
 # -- reading the repository ---------------------------------------------------------------------------------
 
+ALTERNATE_DEPTH = 5        # git reads an alternate store's own listing this many levels deep, and ignores deeper ones
+MAX_STORES = 64            # distinct object stores followed for one repository (each is listed for links)
+# Repository configuration that names a file the rehearsal's git commands read (attributes for merge-tree and
+# archive, a mailmap for archive's substitutions, an order file for diff) or a working tree whose attributes
+# merge-tree reads: each must be inside the read roots. A configuration include is refused outright.
+CONFIG_FILES = ("core.attributesFile", "mailmap.file", "diff.orderFile", "core.worktree")
+
+
 def _pinned(repo: Path, roots) -> dict:
     """``GIT_DIR`` for exactly the named repository, after checking that everything git would read for it is inside
     the read roots: its git directory (a ``.git`` directory, or the one a ``.git`` file names), the repository a
-    linked worktree belongs to (``commondir``), and every alternate object store, followed as git follows them.
-    git's search upward from a plain directory is never used, and a configuration that includes another file is
-    refused (git would read that file)."""
+    linked worktree belongs to (``commondir``), and every alternate object store, followed as git follows them. Each
+    of those directories is listed first, and a link in it that leads outside the read roots is refused: git follows
+    a link there as it reads a file (a pack, a loose object directory, the configuration, ``info/attributes``, an
+    alternates listing; review of 387e8417, R6). git's search upward from a plain directory is never used, and a
+    configuration that includes another file is refused (git would read that file)."""
     def inside(path: Path, what: str) -> Path:
         try:
             return _inside(path, roots)
@@ -220,7 +234,27 @@ def _pinned(repo: Path, roots) -> dict:
             return path.read_text(encoding="utf-8", errors="replace")[:65536]
         except OSError as exc:
             raise CapabilityError(f"not a git repository: {path.name} cannot be read ({type(exc).__name__})") from None
+
+    listed: set[Path] = set()
+
+    def no_link_out(directory: Path, what: str) -> None:
+        """Refuse when a link inside ``directory`` (not followed while listing) leads outside the read roots. A git
+        directory's ``hooks`` is not looked at: no hook runs here (``core.hooksPath`` is /dev/null), so none is read."""
+        if any(done == directory or done in directory.parents for done in listed) or not directory.is_dir():
+            return
+        listed.add(directory)
+
+        def unlistable(exc: OSError) -> None:
+            raise CapabilityError(f"{what} cannot be listed ({type(exc).__name__}); refused")
+        for top, dirs, names in os.walk(directory, onerror=unlistable):
+            if "HEAD" in names and "hooks" in dirs:
+                dirs.remove("hooks")
+            for name in dirs + names:
+                if (Path(top) / name).is_symlink():
+                    inside(Path(top) / name, f"a link in {what}")
     dot = repo / ".git"
+    if dot.is_symlink():
+        inside(dot, "its .git")
     if dot.is_dir():
         gitdir = dot
     elif dot.is_file():
@@ -235,17 +269,21 @@ def _pinned(repo: Path, roots) -> dict:
         raise CapabilityError(f"not a git repository: {str(repo)[:200]} holds no .git (git's search upward from a "
                               "directory is not used)")
     gitdir = inside(gitdir, "its git directory")
+    no_link_out(gitdir, "its git directory")
     common = gitdir
     if (gitdir / "commondir").is_file():
         common = inside(gitdir / text(gitdir / "commondir").strip(), "the repository this worktree belongs to")
-    stores, seen = [common / "objects"], set()
+        no_link_out(common, "the repository this worktree belongs to")
+    stores, seen = [(common / "objects", 0)], set()
     while stores:
-        store = inside(stores.pop(), "an alternate object store")
+        path, depth = stores.pop()
+        store = inside(path, "an alternate object store")
         if store in seen:
             continue
         seen.add(store)
-        if len(seen) > 6:
-            raise CapabilityError("alternate object stores nest deeper than git follows them; refused")
+        if len(seen) > MAX_STORES:
+            raise CapabilityError(f"more than {MAX_STORES} object stores are listed as alternates; refused")
+        no_link_out(store, "an object store")
         listing = store / "info" / "alternates"
         if listing.is_file():
             for line in text(listing).splitlines():
@@ -254,7 +292,9 @@ def _pinned(repo: Path, roots) -> dict:
                     continue
                 if line.startswith('"'):
                     raise CapabilityError("an alternate object store is named in quotes; refused")
-                stores.append(Path(line) if Path(line).is_absolute() else store / line)
+                if depth >= ALTERNATE_DEPTH + 1:
+                    raise CapabilityError("alternate object stores nest deeper than git follows them; refused")
+                stores.append((Path(line) if Path(line).is_absolute() else store / line, depth + 1))
     return {"GIT_DIR": str(gitdir), "GIT_CEILING_DIRECTORIES": str(repo.parent)}
 
 
@@ -278,6 +318,16 @@ def _git_environment(repo: Path, scratch: Path, roots=None) -> dict:
         if included.returncode == 0 and included.stdout.strip(b"\x00"):
             raise CapabilityError("this repository's configuration includes another file; git would read that file "
                                   "wherever it is, so the request is refused")
+        for key in CONFIG_FILES if roots is not None else ():
+            named = rehearsal.git(repo, "config", "--type=path", "-z", "--get-all", key, check=False)
+            for value in (v for v in named.stdout.split(b"\x00") if v):
+                path = Path(value.decode("utf-8", "replace"))
+                within = Path(env["GIT_DIR"]) if key == "core.worktree" else repo
+                try:
+                    _inside(path if path.is_absolute() else within / path, roots)
+                except CapabilityError:
+                    raise CapabilityError(f"this repository's configuration names a file outside the read roots "
+                                          f"({key}); git would read it there, so the request is refused") from None
         for key in dict.fromkeys(k for k in listed.stdout.decode("utf-8", "replace").split("\x00") if k):
             if key.startswith("merge."):
                 raise CapabilityError(f"this repository configures a merge driver ({key[:80]}); the rehearsal runs no "
@@ -341,10 +391,10 @@ class ConfinedRunner:
     def __call__(self, tree: Path, files: list[str], timeout: int) -> dict:
         from greg import workers
         from greg.worker_isolation import host_has_envelope
-        present = [f for f in files if (tree / f).is_file()]
-        missing = sorted(set(files) - set(present))
-        states = {f: {"state": NOT_RUN, "measured": False, "why": "the file does not exist in this tree"}
-                  for f in missing}
+        absent = {f: why for f in files if (why := _absent(tree, f))}
+        present = [f for f in files if f not in absent]
+        missing = sorted(absent)
+        states = {f: {"state": NOT_RUN, "measured": False, "why": why} for f, why in absent.items()}
         failed, counts = [], {}
         for file in present:
             self.stopped()
@@ -368,6 +418,25 @@ class ConfinedRunner:
                 counts[kind] = counts.get(kind, 0) + n
         return {"failed": sorted(failed), "counts": counts, "missing": missing, "ran": bool(present), "tail": "",
                 "states": states}
+
+
+def _absent(tree: Path, file: str) -> str | None:
+    """Why ``file`` is not in an exported tree, or None when it is. Looked up with ``lstat``, one path component at a
+    time: GREG's own process follows no link a head committed (a test file that is a link is in the tree, and runs,
+    like any test file, inside the envelope), and an error on the way is this file's, never the invocation's (review
+    of 387e8417, R3: a link to a name too long to look up refused the whole recommendation as a transient fault)."""
+    parts, at = Path(file).parts, tree
+    try:
+        for part in parts[:-1]:
+            at = at / part
+            if not stat.S_ISDIR(os.lstat(at).st_mode):
+                return "the file does not exist in this tree"
+        mode = os.lstat(at / parts[-1]).st_mode
+    except (FileNotFoundError, NotADirectoryError):
+        return "the file does not exist in this tree"
+    except OSError as exc:
+        return f"the file could not be looked up in this tree ({type(exc).__name__})"
+    return None if stat.S_ISREG(mode) or stat.S_ISLNK(mode) else "the file does not exist in this tree"
 
 
 def classify(result: dict, file: str, timeout: int, *, envelope=lambda: True) -> tuple[dict, list[str], dict]:
@@ -598,7 +667,7 @@ def _match_claims(unit: dict, record: dict | None, alone: dict) -> tuple[list[di
     for row in record["checks"]:
         named, conclusion = _names_head(row["head_sha"], unit["sha"]), row["conclusion"]
         if named is None:
-            status, detail = NO_RESULT, "it names no head"
+            status, detail = NO_RESULT, "it names no head" + (f"; concluded {conclusion}" if conclusion else "")
         elif not named:
             status, detail = OTHER_HEAD, f"it names head {row['head_sha']}" + _short(row["head_sha"], unit["sha"])
         elif conclusion is None or conclusion.lower() in UNFINISHED:
@@ -610,7 +679,7 @@ def _match_claims(unit: dict, record: dict | None, alone: dict) -> tuple[list[di
         else:
             status, detail = NO_RESULT, f"concluded {conclusion}, which is not a result"
         checks.append({"name": row["name"], "status": status, "detail": detail, "this_head": bool(named),
-                       "conclusion": conclusion})
+                       "names_no_head": named is None, "conclusion": conclusion})
     if not exact:
         checks.append({"name": "", "status": NO_RESULT, "detail": "no check result was supplied for this revision",
                        "this_head": False})
@@ -662,17 +731,41 @@ def assess(inputs: dict) -> dict:
                              + "); a failure there is not separated from the confinement")
         for conflict in conflicts:
             cause = ", ".join(conflict["caused_by"]) or "no single head"
-            if conflict["unit"] == name:
+            shared = conflict.get("shared_with") or []
+            edits = ", ".join("the base" if n == rehearsal.ON_BASE else n for n in shared)
+            file = rehearsal.node_file(conflict["test"])
+            if conflict["unit"] == name and shared:
+                # the merged tree holds that file merged from several versions: whose test it is is not separated
+                hold.append(f"behavioural conflict: {conflict['test']} fails on the merged tree and did not fail on "
+                            f"its own head; the merged tree holds that file merged from its version and the edits of "
+                            f"{edits}, so whose test it is was not separated (cause: {cause})")
+            elif conflict["unit"] == name:
                 hold.append(f"behavioural conflict: its test {conflict['test']} passes on its own head and fails on "
                             f"the merged tree (cause: {cause})")
             elif name in conflict["caused_by"]:
-                hold.append(f"behavioural conflict: merging it breaks {conflict['unit']}'s test {conflict['test']}")
+                hold.append(f"behavioural conflict: merging it breaks {conflict['unit']}'s test {conflict['test']}"
+                            if not shared else f"behavioural conflict: merging it breaks {conflict['test']}, in a "
+                            f"file {conflict['unit']} and {edits} edited")
+            elif name in shared:
+                hold.append(f"behavioural conflict: {conflict['test']} fails on the merged tree, in {file}, which it "
+                            "edited too; whose test it is was not separated")
+            elif name in conflict.get("not_measured_without", ()):
+                # A timeout does not establish measured failure, nor innocence: the head might be the cause.
+                unchecked.append(f"{conflict['unit']}'s test {conflict['test']} fails on the merged tree, and the "
+                                 "search for its cause gave no result with this head left out")
         if any(c["status"].startswith("stale") for c in claims):
             hold.append("stale: its claims name another head or none")
-        # Check by check name: a check whose every result is for another head is stale, whatever other checks say.
-        current = {c["name"] for c in checks if c.get("this_head")}
+        # Check by check name: a check with no passed or failed result for this head, and results for another head, is
+        # stale, whatever other checks say. A cancelled, skipped, neutral or running row for this head is no result
+        # (review of 387e8417, R4: a cancelled re-run masked the stale failure of the same check).
+        current = {c["name"] for c in checks if c.get("this_head") and c["status"] in (CHECK_PASSED, CHECK_FAILED)}
         for check in dict.fromkeys(c["name"] for c in checks if c["status"] == OTHER_HEAD and c["name"] not in current):
             hold.append(f"stale: check {check} has results only for another head")
+        # A failing check that names no head holds, as a claim that names no head does (R5); it may be this revision's,
+        # so a passing result of the same name does not clear it.
+        for check in checks:
+            if check.get("names_no_head") and str(check.get("conclusion")).lower() in FAILING:
+                hold.append(f"stale: check {check['name']} concluded {check['conclusion']} and names no head")
         if any(c["status"] == CHECK_FAILED for c in checks):
             hold.append("a check failed for this revision")
 
@@ -837,8 +930,10 @@ def render(inputs: dict) -> str:
                      else "None could be measured: no test ran.")
     for conflict in report["behavioural_conflicts"]:
         cause = ", ".join(conflict["caused_by"]) or "no single head"
-        lines.append(f"- `{_shown(conflict['test'], NODE_TEXT)}`, a test of **{conflict['unit']}**: passes on its own "
-                     f"head, fails on the merged tree. Cause: **{cause}**; {_shown(conflict['note'], 400)}.")
+        whose = (f"in a test file **{conflict['unit']}** edited: did not fail on its own head" if
+                 conflict.get("shared_with") else f"a test of **{conflict['unit']}**: passes on its own head")
+        lines.append(f"- `{_shown(conflict['test'], NODE_TEXT)}`, {whose}, fails on the merged tree. Cause: "
+                     f"**{cause}**; {_shown(conflict['note'], 600)}.")
     if report["failing_before_the_merge"]:
         lines += ["", "Failing on their own head before the merge, inside the test envelope (not a composition problem, "
                   "and not separated from the confinement: run them outside it before reading them as defects):"]
@@ -908,8 +1003,9 @@ def render(inputs: dict) -> str:
 
 def _delivered(ledger, asked: str) -> dict:
     """Every recommendation for the request ``asked`` that GREG itself delivered, by the Markdown path each names:
-    what ``brief.intake`` returned under a Consequence Gate receipt (its Commit Witness names the capability). Read
-    from the canonical ledger, never from the delivery folder, which anything on the machine can write."""
+    what ``brief.intake`` returned under a Consequence Gate receipt (its Commit Witness names the capability), with
+    the receipt's own time. Read from the canonical ledger, never from the delivery folder, which anything on the
+    machine can write; the latest receipt for a path wins (a delivery repeated byte for byte is a later one)."""
     witnesses = {r.payload.get("witness_id") for r in ledger.by_type("witness")
                  if r.payload.get("capability") == "brief.intake"}
     found = {}
@@ -919,10 +1015,20 @@ def _delivered(ledger, asked: str) -> dict:
         if record.payload.get("witness_id") in witnesses and result.get("result_class") == "positive" \
                 and isinstance(output, dict) and output.get("request_digest") == asked:
             try:
-                found[Path(str(output.get("path"))).resolve()] = output
+                found[Path(str(output.get("path"))).resolve()] = (output, getattr(record, "ts_utc", None))
             except (OSError, ValueError):
                 continue
     return found
+
+
+def _receipt_age_hours(ts, now: float) -> float | None:
+    """How long ago a receipt was written, from its own time on the ledger; None when it carries no readable time."""
+    from datetime import datetime
+    try:
+        when = datetime.fromisoformat(str(ts))
+    except ValueError:
+        return None
+    return None if when.tzinfo is None else max(now - when.timestamp(), 0.0) / 3600
 
 
 def intake_status(params, ctx: InvocationContext) -> dict:
@@ -930,7 +1036,8 @@ def intake_status(params, ctx: InvocationContext) -> dict:
     folder. A file about other heads has another request digest and is not counted, however new it is. A file GREG
     did not deliver (no ``brief.intake`` receipt on the canonical ledger names it) is not counted, however exactly it
     resembles one: it is counted apart, as ``not_delivered_by_greg``. A delivered file counts only while it is still
-    exactly what its receipt renders: the appraiser's own check (:func:`verify_delivery`) decides that, here too."""
+    exactly what its receipt renders: the appraiser's own check (:func:`verify_delivery`) decides that, here too.
+    How recent it is comes from its receipt's time on the ledger, never from the file's modification time."""
     from greg import briefs
     asked = params.get("request_digest")
     if not isinstance(asked, str) or not re.fullmatch(r"sha256:[0-9a-f]{64}", asked):
@@ -944,7 +1051,7 @@ def intake_status(params, ctx: InvocationContext) -> dict:
     delivered = _delivered(ctx.journal.ledger, asked)
     folder = briefs._deliver_dir(ctx)
     now = briefs.NOW().timestamp()
-    matching, others, unusable, stale, planted, latest = 0, 0, 0, 0, 0, None
+    matching, others, unusable, stale, planted, latest, youngest = 0, 0, 0, 0, 0, None, 0.0
     for path in sorted(folder.glob(f"*-{KIND}-brief*.json"), key=lambda p: (p.stat().st_mtime, p.name)):
         try:
             if path.stat().st_size > MAX_TWIN_BYTES:
@@ -963,13 +1070,16 @@ def intake_status(params, ctx: InvocationContext) -> dict:
             others += 1
         elif receipt is None:
             planted += 1
-        elif not verify_delivery(receipt, ctx.deliver_root)[0]:
+        elif not verify_delivery(receipt[0], ctx.deliver_root)[0] \
+                or (age := _receipt_age_hours(receipt[1], now)) is None:
             unusable += 1
-        elif (age := max(now - markdown.stat().st_mtime, 0.0) / 3600) > limit:
+        elif age > limit:            # the receipt's own time: a file's mtime is anyone's to set (review of 387e8417, R9)
             stale += 1
         else:
             matching += 1
-            latest = {"latest": markdown.name, "age_hours": round(age, 3), "sha256": twin["markdown_sha256"]}
+            if latest is None or age <= youngest:
+                youngest = age
+                latest = {"latest": markdown.name, "age_hours": round(age, 3), "sha256": twin["markdown_sha256"]}
     return {"kind": KIND, "request_digest": asked, "matching": matching, "for_other_requests": others,
             "too_old": stale, "unusable": unusable, "not_delivered_by_greg": planted,
             **(latest or {"latest": None, "age_hours": None})}

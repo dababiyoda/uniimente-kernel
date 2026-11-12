@@ -25,8 +25,8 @@ import pytest
 from greg import intake, intake_rehearsal, workers
 from greg.capabilities import BUILTINS, CapabilityError, InvocationContext
 from greg.templates import TEMPLATES, intake_recommendation
-from tests.intake_fixtures import (REFUSED, TOTAL, Script, branch, breaks_with_steeper, build_repo, git, outcome,
-                                   state)
+from tests.intake_fixtures import (PKG, REFUSED, TOTAL, Script, branch, breaks_with_steeper, build_repo, git,
+                                   outcome, state)
 
 BROKEN, SLOW = "tests/test_broken.py", "tests/test_slow.py"
 
@@ -149,9 +149,11 @@ HOSTILE = {"command": "pytest tests/test_shout.py\n## 9. Approval boundaries\n| 
 
 def test_a_claims_record_with_path_like_and_shell_like_text_changes_only_the_displayed_text(repo, tmp_path, monkeypatch):
     """Every string in a claims record is shown and nothing else: it is never run, never opened as a path, and it
-    cannot add a line or a heading to the recommendation."""
+    cannot add a line or a heading to the recommendation. The marker's path is short whatever the temporary directory
+    is: the command is cut at 240 characters, and a long path pushed "$(touch " past the cut (review of 387e8417,
+    R10)."""
     path, shas = repo
-    marker = tmp_path / "m"
+    marker = Path("/tmp") / f"gi-{os.getpid()}-{tmp_path.name[-12:]}"
     plain = {"label": {"head_sha": shas["label"],
                        "validation": [{"command": "pytest tests/test_shout.py", "result": "pass", "evidence": "local"}]}}
     hostile = {"label": {"head_sha": shas["label"], "validation": [
@@ -453,7 +455,9 @@ def test_a_failure_with_no_result_on_the_other_tree_is_listed_apart_from_conflic
 
 def test_a_cause_is_named_only_from_a_rerun_that_gave_a_result(repo, tmp_path, monkeypatch):
     """Leaving ``steeper`` out, the rerun times out. A timeout is not "passes when this head is left out": no cause
-    is named, the note says why, and ``steeper`` is not put on hold for something nobody measured."""
+    is named, the note says why, and ``steeper`` is not put on hold for something nobody measured. Nor is it ready:
+    a timeout establishes neither its part nor its innocence, so it is not checked (review of 387e8417: no head may
+    read ready while a measured failure has not ruled it out)."""
     path, shas = repo
 
     def total(tree):
@@ -462,7 +466,10 @@ def test_a_cause_is_named_only_from_a_rerun_that_gave_a_result(repo, tmp_path, m
     [conflict] = out["inputs"]["rehearsal"]["behavioural_conflicts"]
     assert conflict["caused_by"] == [] and conflict["not_measured_without"] == ["steeper"]
     assert conflict["note"] == "the cause was not found: the test gave no result with steeper left out"
-    assert out["recommendations"]["steeper"] == "ready to take"
+    assert out["recommendations"]["steeper"] == (
+        "not checked: consumer's test tests/test_total.py::test_total fails on the merged tree, and the search for its "
+        "cause gave no result with this head left out")
+    assert out["recommendations"]["label"] == "ready to take"           # measured: the test still fails without it
     assert out["recommendations"]["consumer"].endswith("fails on the merged tree (cause: no single head)")
 
     def on_base(tree):
@@ -647,7 +654,7 @@ def test_a_file_from_another_renderer_is_not_judged_but_sent_back_for_a_fresh_re
     old["inputs"]["renderer"] = "greg.intake.render/1"
     old["inputs_digest"] = intake.digest(old["inputs"])
     ok, why = intake.verify_delivery(old, tmp_path / "out")
-    assert ok is False and why == ("rendered by greg.intake.render/1; this appraiser renders greg.intake.render/3: the "
+    assert ok is False and why == ("rendered by greg.intake.render/1; this appraiser renders greg.intake.render/4: the "
                                    "file is not re-derivable here, so a fresh recommendation is needed, not a verdict "
                                    "on it")
     assert intake.verify_delivery(out, tmp_path / "out")[0] is True
@@ -689,10 +696,10 @@ def status(tmp_path, digest, *, ledger=None, **more) -> dict:
 
 def test_the_sensor_counts_only_an_intact_recent_recommendation_for_exactly_this_request(repo, tmp_path, monkeypatch):
     path, shas = repo
-    receipts = []
+    receipts, receipted = [], [0.0]
 
     def status(tmp_path, digest, **more):                    # every delivery below was receipted, as the Gate does
-        return globals()["status"](tmp_path, digest, ledger=Ledger(receipts), **more)
+        return globals()["status"](tmp_path, digest, ledger=Ledger(receipts, hours_ago=receipted[0]), **more)
     mine = intake.request_digest(params(path, shas, ["label"]))
     assert status(tmp_path, mine) == {"kind": "intake", "request_digest": mine, "matching": 0, "for_other_requests": 0,
                                       "too_old": 0, "unusable": 0, "not_delivered_by_greg": 0, "latest": None,
@@ -708,12 +715,16 @@ def test_the_sensor_counts_only_an_intact_recent_recommendation_for_exactly_this
     assert seen["for_other_requests"] == 1
     # the same heads with another timeout, or other claims, are another request
     assert status(tmp_path, intake.request_digest(params(path, shas, ["label"], timeout_seconds=9)))["matching"] == 0
-    # too old
+    # too old: by its receipt's time on the ledger, which a touch of the file does not change (review of 387e8417, R9)
     md, twin = Path(out["path"]), Path(out["twin"])
-    old = md.stat().st_mtime - 49 * 3600
-    os.utime(md, (old, old))
+    receipted[0] = 49
+    os.utime(md, None)
     assert status(tmp_path, mine)["matching"] == 0 and status(tmp_path, mine)["too_old"] == 1
     assert status(tmp_path, mine, max_age_hours=72)["matching"] == 1
+    receipted[0] = 0
+    old = md.stat().st_mtime - 49 * 3600                     # and an old file under a recent receipt is recent
+    os.utime(md, (old, old))
+    assert status(tmp_path, mine)["matching"] == 1 and status(tmp_path, mine)["too_old"] == 0
     # edited after delivery: no longer the file its twin describes
     os.utime(md, None)
     md.write_text(md.read_text() + "\nall good\n")
@@ -762,14 +773,18 @@ class Ledger:
     same shape). ``outputs`` are what ``brief.intake`` returned, each kept under a Gate witness and receipt, as the
     Consequence Gate writes them; ``other`` are receipts of another capability."""
 
-    def __init__(self, outputs=(), *, other=()):
+    def __init__(self, outputs=(), *, other=(), hours_ago=0.0, result_class="positive"):
+        from datetime import timedelta
         from types import SimpleNamespace as Record
+        from greg import briefs
+        when = (briefs.NOW() - timedelta(hours=hours_ago)).isoformat().replace("+00:00", "Z")
         self.records = {"witness": [], "receipt": []}
         for index, (capability, output) in enumerate([("brief.intake", o) for o in outputs]
                                                      + [("fs.read", o) for o in other]):
-            self.records["witness"].append(Record(payload={"witness_id": f"w{index}", "capability": capability}))
+            self.records["witness"].append(Record(payload={"witness_id": f"w{index}", "capability": capability},
+                                                  ts_utc=when))
             self.records["receipt"].append(Record(payload={"witness_id": f"w{index}", "result": {
-                "result_class": "positive", "output": output}}))
+                "result_class": result_class, "output": output}}, ts_utc=when))
         self.ledger = self
 
     def by_type(self, record_type):
@@ -1156,3 +1171,442 @@ def test_a_test_file_the_merged_tree_holds_in_another_heads_version_is_not_compa
     assert out["inputs"]["rehearsal"]["not_compared"] == [{"unit": "old", "file": rule, "note": why}]
     assert out["recommendations"]["newer"] == "take after old"
     assert f"- `{rule}` (from old): {why}" in intake_rehearsal.markdown(out["inputs"]["rehearsal"])
+
+
+def test_a_failure_in_another_heads_version_of_a_file_is_compared_under_a_head_that_runs_it(repo, tmp_path,
+                                                                                            monkeypatch):
+    """F18 kept, without silence. When the merged tree holds exactly ``newer``'s version of ``old``'s test file, the
+    result there is not ``old``'s, and is compared under ``newer``, which runs that file. When ``newer`` runs other
+    files (its tests named in the mission), nobody would compare it: the file then counts as merged from several
+    versions, and a failure in it is a conflict that holds both."""
+    path, shas = repo
+    rule = "tests/test_rule.py"
+    shas["old"] = branch(path, "old-rule", {rule: "import pkg\n\n\ndef test_rule():\n    assert pkg.price(2) == 4\n"})
+    shas["newer"] = branch(path, "newer-rule", {rule: "import pkg\n\n\ndef test_rule():\n    assert pkg.price(2) in "
+                                                      "(4, 5)\n"}, start="old-rule")
+    git(path, "checkout", "-q", "base")
+    fails = Script({rule: lambda tree: ("fail", ["test_rule"]) if tree in ("composed", "without-old") else "pass"})
+    out = run(tmp_path / "runs", path, shas, ["steeper", "old", "newer"], fails, monkeypatch)
+    report = out["inputs"]["rehearsal"]
+    assert [(c["unit"], c.get("shared_with")) for c in report["behavioural_conflicts"]] == [("newer", None)]
+    assert out["recommendations"]["newer"].startswith("hold: behavioural conflict: its test tests/test_rule.py")
+    assert out["recommendations"]["old"].startswith("not checked: tests/test_rule.py not run on the merged tree")
+    assert_a_measured_failure_is_never_silence(out)
+    named = {**params(path, shas, ["steeper", "old"]), "units": [
+        {"name": "steeper", "sha": shas["steeper"]}, {"name": "old", "sha": shas["old"]},
+        {"name": "newer", "sha": shas["newer"], "tests": ["tests/test_shout.py"]}]}
+    monkeypatch.setattr(workers, "run_tests", fails)
+    out = intake.intake_recommendation(named, context(tmp_path / "named", read_root=path.parent))
+    report = out["inputs"]["rehearsal"]
+    assert report["not_compared"] == []
+    assert [(c["unit"], c["shared_with"]) for c in report["behavioural_conflicts"]] == [("old", ["newer"])]
+    assert out["recommendations"]["newer"] == ("hold: behavioural conflict: tests/test_rule.py::test_rule fails on the "
+                                               "merged tree, in tests/test_rule.py, which it edited too; whose test it "
+                                               "is was not separated")
+    assert_a_measured_failure_is_never_silence(out)
+
+
+# -- the second independent review of 387e8417 (2026-11-12): each finding, pinned -----------------------------------
+
+SHARED = "tests/test_shared.py"
+FILLER = "".join(f"\n\ndef test_filler_{i}():\n    assert pkg.label({i}) == 'item-{i}'\n" for i in range(6))
+STEEP = PKG.replace("n * 2", "n * 3")
+TEST_A = "\n\ndef test_a():\n    assert pkg.price(2) == 4\n"
+
+
+def shared_file(path, shas) -> dict:
+    """The base gains one test file that several heads add tests to (R1's and R2's selections)."""
+    git(path, "checkout", "-q", "base")
+    (path / SHARED).write_text("import pkg\n" + FILLER)
+    git(path, "add", ".")
+    git(path, "commit", "-qm", "a shared test file")
+    return {**shas, "base": git(path, "rev-parse", "HEAD")}
+
+
+def implicated(report) -> set:
+    """Every head a measured behavioural conflict implicates: the head whose test it is (each head whose edits the
+    merged test file holds, where that is not separated), each head named as its cause, and each head with which the
+    cause search gave no result."""
+    names = set()
+    for conflict in report["behavioural_conflicts"]:
+        names |= {conflict["unit"], *conflict["caused_by"], *conflict.get("shared_with", ()),
+                  *conflict.get("not_measured_without", ())}
+    return names - {intake_rehearsal.ON_BASE, "(also)"}
+
+
+def assert_a_measured_failure_is_never_silence(out) -> None:
+    """The invariant: a failure measured on the merged tree is a conflict, no head it implicates reads ready or take
+    after, and the recommendation never says that none was measured."""
+    report = out["inputs"]["rehearsal"]
+    assert report["behavioural_conflicts"] and report["clean"] is False
+    for name in implicated(report):
+        assert out["recommendations"][name].startswith(("hold: ", "not checked: ")), (name, out["recommendations"])
+    assert "None was measured in the tests that ran." not in Path(out["path"]).read_text()
+
+
+def test_a_failure_in_a_test_file_several_heads_edited_is_measured_and_holds_every_head_it_implicates(
+        repo, tmp_path, monkeypatch):
+    """R1. ``a`` appends a test that relies on today's price to a shared test file, ``c`` adds a test at the top of the
+    same file, ``b`` changes the price. The merged tree holds that file merged from ``a``'s and ``c``'s versions;
+    ``a``'s test passes on its own head and fails there. F18 dropped the measured failure (the file was not byte for
+    byte either head's): ``b``, which caused it, read "ready to take" and section 4 said none was measured. It is a
+    behavioural conflict again; whose test it is is not separated from the file, so each head whose edits the file
+    holds is held and says so, and the cause is searched among the heads that did not edit it."""
+    path, shas = repo
+    shas = shared_file(path, shas)
+    shas["a"] = branch(path, "a-shared", {SHARED: "import pkg\n" + FILLER + TEST_A})
+    shas["c"] = branch(path, "c-shared", {SHARED: "import pkg\n\n\ndef test_c():\n    assert pkg.label(0) == 'item-0'\n"
+                                                  + FILLER})
+    shas["b"] = branch(path, "b-price", {"pkg.py": STEEP,
+                                         "tests/test_b.py": "import pkg\n\n\ndef test_b():\n    assert pkg.price(1) == 3\n"})
+    git(path, "checkout", "-q", "base")
+    script = Script({SHARED: lambda tree: ("fail", ["test_a"]) if tree in ("composed", "without-c") else "pass"})
+    out = run(tmp_path, path, shas, ["a", "c", "b"], script, monkeypatch)
+    report, node = out["inputs"]["rehearsal"], f"{SHARED}::test_a"
+    assert [(c["test"], c["unit"], c["shared_with"], c["caused_by"]) for c in report["behavioural_conflicts"]] == [
+        (node, "a", ["c"], ["b"]), (node, "c", ["a"], ["b"])]
+    assert report["not_compared"] == []
+    assert report["behavioural_conflicts"][0]["note"] == (
+        "passes when this head is left out; the merged tree holds this file merged from a's version and the edits of "
+        "c: whose test it is was not separated, and c was not left out (without a head that edited the file, the test "
+        "may not be there)")
+    got = out["recommendations"]
+    assert got["a"] == ("hold: behavioural conflict: tests/test_shared.py::test_a fails on the merged tree and did not "
+                        "fail on its own head; the merged tree holds that file merged from its version and the edits "
+                        "of c, so whose test it is was not separated (cause: b)")
+    assert got["c"] == ("hold: behavioural conflict: tests/test_shared.py::test_a fails on the merged tree, in "
+                        "tests/test_shared.py, which it edited too; whose test it is was not separated")
+    assert got["b"] == ("hold: behavioural conflict: merging it breaks tests/test_shared.py::test_a, in a file a and c "
+                        "edited")
+    assert_a_measured_failure_is_never_silence(out)
+    # a head that edited the file is never left out to look for the cause: without it the test may not be there
+    assert not [call for call in script.calls if call[0] in ("without-a", "without-c")]
+    behavioural = section(Path(out["path"]).read_text(), "4. Behavioural conflicts a clean merge does not reveal")
+    assert f"- `{node}`, in a test file **a** edited: did not fail on its own head, fails on the merged tree. Cause: " \
+           "**b**; passes when this head is left out; the merged tree holds this file merged from a's version" \
+        in behavioural
+
+
+def test_a_head_behind_a_base_that_edited_its_test_file_is_still_blamed_on_the_base(repo, tmp_path, monkeypatch):
+    """R2. ``behind`` adds a test to the shared file; the line then changes the price and edits the top of that file.
+    One head: the merged tree holds the file merged from ``behind``'s version and the base's edit. F18 dropped the
+    failure, saying "several heads' versions" of a file only the base and one head had touched, and ``behind`` went
+    from hold (cause: the base) to not checked. With only a header added by the base, it is ready, as before F18."""
+    path, shas = repo
+    shas = shared_file(path, shas)
+    shas["behind"] = branch(path, "behind-shared", {SHARED: "import pkg\n" + FILLER + TEST_A})
+    for name, files in (("moved", {"pkg.py": STEEP, SHARED: "# the line moved\nimport pkg\n" + FILLER}),
+                        ("header", {SHARED: "# a header only\nimport pkg\n" + FILLER})):
+        line = dict(shas, base=branch(path, f"line-{name}", files))
+        git(path, "checkout", "-q", "base")
+        fails = Script({SHARED: lambda tree: ("fail", ["test_a"]) if tree == "composed" else "pass"})
+        out = run(tmp_path / name, path, line, ["behind"], fails if name == "moved" else Script(), monkeypatch)
+        report = out["inputs"]["rehearsal"]
+        assert report["not_compared"] == []
+        if name == "header":
+            assert out["recommendations"] == {"behind": "ready to take"} and report["behavioural_conflicts"] == []
+            continue
+        [conflict] = report["behavioural_conflicts"]
+        assert conflict["caused_by"] == ["(the base)"] and conflict["shared_with"] == ["(the base)"]
+        assert conflict["note"] == ("fails as soon as this head is merged onto the base, with no other head: the line "
+                                    "has moved since it branched; the merged tree holds this file merged from behind's "
+                                    "version and the edits of the base")
+        assert out["recommendations"]["behind"].startswith(
+            "hold: behavioural conflict: tests/test_shared.py::test_a fails on the merged tree and did not fail on its "
+            "own head; the merged tree holds that file merged from its version and the edits of the base")
+        assert out["recommendations"]["behind"].endswith("(cause: (the base))")
+        assert_a_measured_failure_is_never_silence(out)
+
+
+_WATCHED: dict = {}
+
+
+def _audit(event, args):
+    if event == "open" and _WATCHED.get("targets") and isinstance(args[0], (str, bytes, os.PathLike)):
+        try:
+            if os.path.realpath(args[0]) in _WATCHED["targets"]:
+                _WATCHED["seen"].append(os.fsdecode(args[0]))
+        except (OSError, ValueError, TypeError):
+            pass
+
+
+@pytest.mark.parametrize("name", ["mem", "far", "long"])
+def test_a_test_file_a_head_turned_into_a_link_is_never_followed_in_gregs_own_process(name, repo, tmp_path, monkeypatch):
+    """R3. A head's test file that is a link was followed in GREG's own process, outside the envelope: F18 read both
+    trees' copies, so a link to /proc/self/mem refused every recommendation in the selection as a transient fault
+    (EIO), and a link to a file outside the read roots was opened and read; the runner's own look-up raised for a
+    link to a name too long to resolve, again a transient refusal. Versions are compared by git's tree entries, a
+    file is found with lstat, and a link is run, like any test file, only inside the envelope."""
+    path, shas = repo
+    outside = tmp_path / "outside" / "secret_test.py"            # outside the read root (tmp_path / "data")
+    outside.parent.mkdir()
+    outside.write_text("def test_secret():\n    assert True\n")
+    target = {"mem": "/proc/self/mem", "far": str(outside), "long": "x" * 300}[name]
+    git(path, "checkout", "-q", "-b", name, "base")
+    os.symlink(target, path / "tests" / f"test_{name}.py")
+    git(path, "add", "-A")
+    git(path, "commit", "-qm", name)
+    shas[name] = git(path, "rev-parse", "HEAD")
+    git(path, "checkout", "-q", "base")
+    if not _WATCHED:
+        import sys
+        sys.addaudithook(_audit)          # a hook cannot be removed: it records only while a test watches
+    _WATCHED.update(targets={str(outside.resolve()), "/proc/self/mem"}, seen=[])
+    try:
+        script = Script()
+        out = run(tmp_path, path, shas, ["label", name], script, monkeypatch)
+        seen = list(_WATCHED["seen"])
+    finally:
+        _WATCHED["targets"] = None
+    assert out["recommendations"] == {"label": "ready to take", name: "ready to take"}
+    assert seen == []
+    assert (f"own-{name}", f"tests/test_{name}.py", "supervised") in script.calls     # run, inside the envelope
+    assert intake._absent(tmp_path, "tests/x/test_y.py") == "the file does not exist in this tree"
+
+
+def test_only_a_passed_or_failed_result_for_this_head_makes_a_check_name_current(repo, tmp_path, monkeypatch):
+    """R4. A check name counted as current for this head as soon as any row of that name named it, a cancelled one
+    included: a cancelled re-run masked the stale failure of the same check, and another passing check made the unit
+    ready. Only a passed or failed result for this head makes the name current."""
+    path, shas = repo
+    label, steeper = shas["label"], shas["steeper"]
+    for word in ("cancelled", "skipped", "neutral", "stale", None, "IN_PROGRESS"):
+        got, _, _ = check_claims(repo, tmp_path, monkeypatch, {"checks": [
+            {"name": "ci", "head_sha": steeper, "conclusion": "failure"},
+            {"name": "ci", "head_sha": label, "conclusion": word},
+            {"name": "lint", "head_sha": label, "conclusion": "success"}]}, f"r4-{word}")
+        assert got == "hold: stale: check ci has results only for another head", word
+    # a passed or a failed result for this head is current: the other head's result no longer makes the name stale
+    got, _, _ = check_claims(repo, tmp_path, monkeypatch, {"checks": [
+        {"name": "ci", "head_sha": steeper, "conclusion": "failure"},
+        {"name": "ci", "head_sha": label, "conclusion": "success"}]}, "r4-current-pass")
+    assert got == "ready to take"
+    got, _, _ = check_claims(repo, tmp_path, monkeypatch, {"checks": [
+        {"name": "ci", "head_sha": steeper, "conclusion": "success"},
+        {"name": "ci", "head_sha": label, "conclusion": "failure"}]}, "r4-current-fail")
+    assert got == "hold: a check failed for this revision"
+    _, unit, _ = check_claims(repo, tmp_path, monkeypatch, {"checks": [
+        {"name": "ci", "head_sha": label, "conclusion": "Queued"}]}, "r4-case")
+    assert unit["checks"][0]["status"] == "still running"            # a hosting service's word, in any letter case
+
+
+def test_a_failing_check_that_names_no_head_holds_like_a_claim_that_names_none(repo, tmp_path, monkeypatch):
+    """R5. A failing check with no head read as "no result": it neither held nor kept the unit from ready, and
+    section 6 never said it failed. It holds now, as a claim naming no head does, and keeps the stricter rule: a pass
+    of the same name for this head does not clear it, since it may be this revision's own failure."""
+    path, shas = repo
+    label = shas["label"]
+    for i, also in enumerate(([{"name": "lint", "head_sha": label, "conclusion": "success"}],
+                              [{"name": "ci", "head_sha": label, "conclusion": "success"}])):
+        got, _, text = check_claims(repo, tmp_path, monkeypatch, {"checks": [
+            {"name": "ci", "head_sha": "", "conclusion": "failure"}] + also}, f"r5-{i}")
+        assert got == "hold: stale: check ci concluded failure and names no head"
+        assert '- **label**: check "ci": **no result for this exact head** (it names no head; concluded failure).' \
+            in section(text, "6. Missing or stale appraisals")
+    got, _, _ = check_claims(repo, tmp_path, monkeypatch, {"checks": [            # one that did not fail: no result
+        {"name": "ci", "head_sha": "", "conclusion": "success"},
+        {"name": "lint", "head_sha": label, "conclusion": "success"}]}, "r5-pass")
+    assert got == "ready to take"
+
+
+def gc(repo: Path) -> None:
+    git(repo, "-c", "gc.auto=0", "repack", "-adq")
+    git(repo, "prune-packed")
+
+
+LINKED = ["linked pack files", "a linked pack directory", "linked loose object directories", "a linked config",
+          "a linked info/attributes", "a linked alternates listing naming a store inside", "a .git link to a file outside",
+          "core.attributesFile outside", "mailmap.file outside", "an alternate store inside with linked pack files"]
+
+
+def linked_case(tmp_path: Path, why: str) -> tuple[Path, dict]:
+    """A repository inside the read roots (``tmp_path / "roots"``) that leads git outside them, as ``why`` says."""
+    outside = tmp_path / "outside"
+    outer = outside / "repo"
+    shas = build_repo(outer)
+    attrs = outside / "attrs"
+    attrs.write_text("tests/** export-ignore\n")
+    where = tmp_path / "roots" / "repo"
+    if why in ("linked pack files", "a linked pack directory", "linked loose object directories",
+               "a linked alternates listing naming a store inside", "an alternate store inside with linked pack files"):
+        where.mkdir(parents=True)
+        git(where, "init", "-q")
+        objects = where / ".git" / "objects"
+        if why == "an alternate store inside with linked pack files":     # the store is listed; its packs are links
+            store = tmp_path / "roots" / "store.git"
+            git(tmp_path / "roots", "init", "-q", "--bare", str(store))
+            (objects / "info" / "alternates").write_text(f"{store / 'objects'}\n")
+            objects = store / "objects"
+        if why == "linked loose object directories":                    # build_repo leaves its objects loose
+            for sub in (outer / ".git" / "objects").iterdir():
+                if len(sub.name) == 2:
+                    os.symlink(sub, objects / sub.name)
+            return where, shas
+        if why == "a linked alternates listing naming a store inside":
+            shutil.copytree(outer / ".git" / "objects", tmp_path / "roots" / "store")
+            (outside / "alternates").write_text(f"{tmp_path / 'roots' / 'store'}\n")
+            os.symlink(outside / "alternates", objects / "info" / "alternates")
+            return where, shas
+        gc(outer)
+        if why == "a linked pack directory":
+            shutil.rmtree(objects / "pack")
+            os.symlink(outer / ".git" / "objects" / "pack", objects / "pack")
+        else:
+            for pack in (outer / ".git" / "objects" / "pack").iterdir():
+                os.symlink(pack, objects / "pack" / pack.name)
+        return where, shas
+    if why == "a .git link to a file outside":
+        shutil.copytree(outer, tmp_path / "roots" / "real", symlinks=True)
+        where.mkdir(parents=True)
+        (outside / "dotgit").write_text(f"gitdir: {tmp_path / 'roots' / 'real' / '.git'}\n")
+        os.symlink(outside / "dotgit", where / ".git")
+        return where, shas
+    shutil.copytree(outer, where, symlinks=True)
+    if why == "a linked config":
+        (where / ".git" / "config").unlink()
+        os.symlink(outer / ".git" / "config", where / ".git" / "config")
+    elif why == "a linked info/attributes":
+        (where / ".git" / "info").mkdir(exist_ok=True)
+        os.symlink(attrs, where / ".git" / "info" / "attributes")
+    elif why == "core.attributesFile outside":
+        git(where, "config", "core.attributesFile", str(attrs))
+    else:
+        git(where, "config", "mailmap.file", str(outside / "mailmap"))
+    return where, shas
+
+
+@pytest.mark.parametrize("why", LINKED)
+def test_git_reads_nothing_a_link_in_the_repository_leads_outside_the_read_roots(why, tmp_path, monkeypatch):
+    """R6. The pin checked only the git directory, a worktree's repository and the alternate stores. A pack file, the
+    pack directory or a loose object directory linked from outside was read (a commit that exists only outside was
+    tested and recommended), as were a configuration, an ``info/attributes`` or an alternates listing linked from
+    outside, a ``.git`` link to a file outside, and a file the configuration names (``core.attributesFile``: its
+    export-ignore emptied the exported tree). Each is refused now."""
+    where, shas = linked_case(tmp_path, why)
+    monkeypatch.setattr(workers, "run_tests", Script())
+    with pytest.raises(CapabilityError, match="outside the read roots"):
+        intake.intake_recommendation(params(where, shas, ["label"]), context(tmp_path / "ctx",
+                                                                             read_root=tmp_path / "roots"))
+    assert delivered(tmp_path / "ctx") == []
+
+
+def test_inside_the_read_roots_a_packed_repository_and_a_shared_clone_are_read(tmp_path, monkeypatch):
+    """R6, the other side: the layouts git makes itself, inside the read roots, are still read, and a hooks directory
+    linked from elsewhere (as hook managers do) refuses nothing, since no hook is read or run."""
+    root = tmp_path / "roots"
+    shas = build_repo(root / "packed")
+    gc(root / "packed")
+    (tmp_path / "hooks").mkdir()
+    shutil.rmtree(root / "packed" / ".git" / "hooks", ignore_errors=True)
+    os.symlink(tmp_path / "hooks", root / "packed" / ".git" / "hooks")
+    git(root, "clone", "-q", "--shared", str(root / "packed"), str(root / "shared"))   # its objects: an alternate
+    monkeypatch.setattr(workers, "run_tests", Script())
+    for where in (root / "packed", root / "shared"):
+        out = intake.intake_recommendation(params(where, shas, ["label"]), context(tmp_path / where.name,
+                                                                                    read_root=root))
+        assert out["recommendations"] == {"label": "ready to take"}
+
+
+def test_alternate_stores_are_counted_by_nesting_and_resolved_from_their_store(tmp_path, monkeypatch):
+    """R7 and R8 (M7). Seven alternate stores side by side, all inside the read roots, were refused as nesting
+    "deeper than git follows them": the pin counted stores. It counts nesting now. A relative alternate is resolved
+    from the store that lists it, as git resolves it, never from the process's working directory."""
+    roots = tmp_path / "roots"
+    shas = build_repo(roots / "repo")
+    monkeypatch.setattr(workers, "run_tests", Script())
+    stores = []
+    for i in range(7):
+        git(roots, "init", "-q", "--bare", f"store{i}.git")
+        stores.append(roots / f"store{i}.git" / "objects")
+    listing = roots / "repo" / ".git" / "objects" / "info" / "alternates"
+    listing.write_text("".join(f"{store}\n" for store in stores))
+    out = intake.intake_recommendation(params(roots / "repo", shas, ["label"]), context(tmp_path / "side",
+                                                                                        read_root=roots))
+    assert out["recommendations"] == {"label": "ready to take"}
+    # nested seven deep: git ignores the listings past the fifth level, so the rehearsal refuses
+    listing.write_text(f"{stores[0]}\n")
+    for upper, lower in zip(stores, stores[1:]):
+        (upper / "info" / "alternates").write_text(f"{lower}\n")
+    with pytest.raises(CapabilityError, match="nest deeper than git follows them"):
+        intake.intake_recommendation(params(roots / "repo", shas, ["label"]), context(tmp_path / "deep",
+                                                                                       read_root=roots))
+    for store in stores:
+        (store / "info" / "alternates").unlink(missing_ok=True)
+    # relative to its store, the line leads outside the roots; from this process's directory it would lead inside
+    (tmp_path / "objs").mkdir()
+    listing.write_text("../../../../objs\n")                  # objects -> .git -> repo -> roots -> tmp_path / objs
+    deep = roots / "a" / "b" / "c" / "d"
+    deep.mkdir(parents=True)
+    monkeypatch.chdir(deep)
+    with pytest.raises(CapabilityError, match="alternate object store is outside the read roots"):
+        intake.intake_recommendation(params(roots / "repo", shas, ["label"]), context(tmp_path / "rel-out",
+                                                                                       read_root=roots))
+    # and a relative line leading to a store inside the roots is read, wherever the process is
+    listing.write_text("../../../store0.git/objects\n")
+    monkeypatch.chdir(tmp_path)
+    out = intake.intake_recommendation(params(roots / "repo", shas, ["label"]), context(tmp_path / "rel-in",
+                                                                                        read_root=roots))
+    assert out["recommendations"] == {"label": "ready to take"}
+
+
+def test_a_worktree_whose_repository_is_outside_the_read_roots_is_refused(tmp_path, monkeypatch):
+    """R8 (M6). A linked worktree whose own git directory is inside the read roots, and whose repository
+    (``commondir``) is outside: git reads that repository's configuration and references there. Refused. A ``.git``
+    file naming a git directory relative to the worktree is read from the worktree, wherever the process is."""
+    roots = tmp_path / "roots"
+    shas = build_repo(roots / "main")
+    monkeypatch.setattr(workers, "run_tests", Script())
+    common = tmp_path / "outside" / "common.git"
+    common.mkdir(parents=True)
+    for name in ("HEAD", "config", "refs", "packed-refs"):
+        source = roots / "main" / ".git" / name
+        if source.is_dir():
+            shutil.copytree(source, common / name)
+        elif source.exists():
+            shutil.copy(source, common / name)
+    os.symlink(roots / "main" / ".git" / "objects", common / "objects")
+    gitdir = roots / "wt-git"
+    gitdir.mkdir()
+    (gitdir / "HEAD").write_text(shas["label"] + "\n")
+    (gitdir / "commondir").write_text(f"{common}\n")
+    tree = roots / "tree"
+    tree.mkdir()
+    (gitdir / "gitdir").write_text(f"{tree / '.git'}\n")
+    (tree / ".git").write_text(f"gitdir: {gitdir}\n")
+    with pytest.raises(CapabilityError, match="the repository this worktree belongs to is outside the read roots"):
+        intake.intake_recommendation(params(tree, shas, ["label"]), context(tmp_path / "wt", read_root=roots))
+    (tree / ".git").write_text("gitdir: ../main/.git\n")       # relative: from the worktree, not from the process
+    monkeypatch.chdir(tmp_path)
+    out = intake.intake_recommendation(params(tree, shas, ["label"]), context(tmp_path / "rel", read_root=roots))
+    assert out["recommendations"] == {"label": "ready to take"}
+
+
+def test_a_claim_names_a_head_only_by_a_prefix_and_reads_an_error_count_as_a_failure(repo, tmp_path, monkeypatch):
+    """R8 (M2, M3). Twelve hex digits from the middle of the unit's SHA name another head, never this one. "1 passed,
+    1 error" and "3 passed, 2 errors" are failures, so a claim saying either about a test that passes here is a
+    different result, never the same one."""
+    path, shas = repo
+    label = shas["label"]
+    middle = label[5:17]
+    got, unit, _ = check_claims(repo, tmp_path, monkeypatch, {"head_sha": middle, "validation": [
+        {"command": "pytest tests/test_shout.py", "result": "pass"}]}, "m2-claim")
+    assert got == "hold: stale: its claims name another head or none"
+    got, unit, _ = check_claims(repo, tmp_path, monkeypatch, {"checks": [
+        {"name": "ci", "head_sha": middle, "conclusion": "success"}]}, "m2-check")
+    assert got == "hold: stale: check ci has results only for another head"
+    assert unit["checks"][0]["status"] == "result is for another head (stale)"
+    for said in ("1 passed, 1 error in 0.20s", "3 passed, 2 errors"):
+        assert intake._claimed(said) == "fail", said
+        got, unit, _ = check_claims(repo, tmp_path, monkeypatch, {"head_sha": label, "validation": [
+            {"command": "pytest tests/test_shout.py", "result": said}]}, f"m3-{said[:9]}")
+        assert unit["claims"][0]["status"] == "re-executed here: DIFFERENT result", said
+
+
+def test_only_a_positive_receipt_of_brief_intake_is_a_delivery(repo, tmp_path, monkeypatch):
+    """R8 (M10). A receipt the Gate classed as anything but positive is not a delivery, whatever output it carries."""
+    path, shas = repo
+    out = run(tmp_path, path, shas, ["label"], Script(), monkeypatch)
+    for result_class in ("negative", "unknown", "uncertain"):
+        seen = status(tmp_path, out["request_digest"], ledger=Ledger([out], result_class=result_class))
+        assert seen["matching"] == 0 and seen["not_delivered_by_greg"] == 1, result_class
+    assert status(tmp_path, out["request_digest"], ledger=Ledger([out]))["matching"] == 1

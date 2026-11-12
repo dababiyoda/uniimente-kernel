@@ -250,9 +250,33 @@ After the independent review of 885b7b7a (2026-11-12; renderer `greg.intake.rend
   "N passed" read as a pass, and a claim this run contradicts keeps the unit from ready;
 - a STOP during a run delivers nothing, a run stopped by STOP or by the output ceiling is never "refused before it
   ran", and one invocation has a time budget of an hour across all its files.
-- a head's test file that the merged tree holds in another version (a descendant's, or another head's edit merged
-  in) is not compared on the merged tree: it is `not run` there, naming whose version ran, and the unit is not
-  checked (2026-11-12: 303-old's test was replaced by its descendant 303's and never met 304).
+- a head's test file that the merged tree holds in exactly another head's version (a descendant's) is not compared
+  for that head: it is `not run` there, naming whose version ran, and the unit is not checked (2026-11-12: 303-old's
+  test was replaced by its descendant 303's and never met 304). The same failures are compared under the head whose
+  version it is.
+
+After the second independent review, of 387e8417 (2026-11-12; renderer `greg.intake.render/4`):
+
+- a failure measured on the merged tree is never dropped. Where the merged tree holds a test file merged from
+  several versions (two heads adding tests to one file, or the base editing it after a head branched), a failing
+  test is a behavioural conflict; whose test it is is not separated, so every head whose edits the file holds is
+  held and says so, and those heads are not left out when the cause is searched (without one, the test may not be
+  there). The command line exits 1 for it. Running each head's own version of such a file against the merge, which
+  would separate whose test it is, is not done;
+- a head with which the cause search gave no result (a rerun that timed out) is not checked, never ready;
+- whose version of a file each tree holds is read from git's tree entries: GREG's own process opens no file a head
+  wrote and follows no link it committed, and a file is found with `lstat`, so an error on a link is that file's,
+  never a transient refusal of the whole recommendation;
+- only a passed or failed result for this head makes a check name current (a cancelled re-run no longer masks a
+  stale failure), and a failing check that names no head holds, as a claim naming no head does, even beside a pass
+  of the same name;
+- git reads nothing outside the read roots through a link in the repository (a pack, an object directory, the
+  configuration, `info/attributes`, an alternates listing, `.git` itself) or through a file the configuration names
+  (`core.attributesFile`, `mailmap.file`, `diff.orderFile`, `core.worktree`): each is refused (a linked `hooks`
+  directory is not looked at: no hook runs).
+  Alternate stores are counted by nesting, as git follows them (five levels), and a relative one is resolved from
+  the store that lists it;
+- a recommendation's age, for the mission's check, comes from its receipt's time on the ledger, not from the file.
 
 It approves nothing. Composing heads for development and approving a protected merge are separate boundaries: the
 mission composes in scratch and writes a file; protected integration needs the founder's and the integrator's

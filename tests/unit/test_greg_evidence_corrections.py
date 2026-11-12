@@ -707,13 +707,19 @@ def test_a_compilation_that_held_no_answer_is_not_a_failed_replication():
            detail="lte 1")                                             # an answer that fails the check still counts
     [c] = w.tick()
     assert c["class"] == "REPLICATION_FAILED" and c["root"]["mission_id"] == "m:x"
-    v = World()                     # the word in data GREG did not produce excuses nothing: only its own receipts
-    for mid in ("m:a", "m:r"):
-        v.mission(mid, ("a", "fs.read", {"path": "/docs/a.txt"}, CONTAINS))
-    v.achieve("m:a", v.read("m:a", "a", file_read("/docs/a.txt", "alpha v1")))
-    v.read("m:r", "a", {**file_read("/docs/a.txt", "alpha v1"), "state": "CAPABILITY_DEFICIT"}, passed=False)
-    [c] = v.tick()
-    assert c["class"] == "REPLICATION_FAILED"
+    # the word in data GREG did not produce excuses nothing: only its own receipts. Both shapes the canonical reader
+    # reads are planted, so the rule holds whichever reader is in place (a cortex receipt's ``abstention_state`` is
+    # read on every tree; a compilation's ``state`` only where the reader reads compile receipts, or here, by the
+    # interim half of ``held_no_answer``)
+    for word in ({"state": "CAPABILITY_DEFICIT"}, {"abstention_state": "CAPABILITY_DEFICIT"},
+                 {"schema": COMPILE_SCHEMA, "state": "CAPABILITY_DEFICIT", "result": None}):
+        v = World()
+        for mid in ("m:a", "m:r"):
+            v.mission(mid, ("a", "fs.read", {"path": "/docs/a.txt"}, CONTAINS))
+        v.achieve("m:a", v.read("m:a", "a", file_read("/docs/a.txt", "alpha v1")))
+        v.read("m:r", "a", {**file_read("/docs/a.txt", "alpha v1"), **word}, passed=False)
+        [c] = v.tick()
+        assert c["class"] == "REPLICATION_FAILED", word
 
 
 # -- review of b01d319f (2026-11-12): what a founder rejection withholds ---------------------------------------------

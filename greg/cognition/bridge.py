@@ -183,6 +183,7 @@ def run_worker(problem: dict, records: list, *, withheld_organs: dict, semantic_
                                        "MKL_NUM_THREADS": "1"},
                             input_bytes=None if memory_records is None else canonical(memory_records).encode())
     except CapabilityError as exc:
+        note_host_stop("launch_refused", process="cortex", failure_class=exc.failure_class)
         raise CognitionError(f"worker isolation refused: {exc}") from exc
     except subprocess.TimeoutExpired:
         note_host_stop("timeout", process="cortex")

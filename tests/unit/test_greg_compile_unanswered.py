@@ -10,31 +10,36 @@ What these tests pin:
 
 - the one reader gives a compile receipt the answer it gives a cortex receipt, by the receipt's typed fields;
 - the compile receipt says in a typed field (``host_stop``) when the host, not the Mind, ended the decision: a worker
-  that timed out or exited abnormally, or an exhausted compute budget;
+  that timed out, exited abnormally or could not be launched, or an exhausted compute budget, each with the failure
+  class of the fact; a signed budget too small for any step is the Mind declining, not a stop;
 - the engine re-observes such a reading with a back-off and asks once after three unmeasured rounds, as it does for a
   construction the host stopped; an abstention that is not a host stop keeps the treatment of an abstaining cortex
   receipt (pursued, never certified as failed);
+- a reading the host stopped is unmeasured on either side of its predicate: it fails no check and passes none;
 - a real negative (a refuted receipt, an answer whose predicate is false) stays a measured failure;
-- the separate appraiser certifies no failure on a compile receipt that did not answer.
+- the separate appraiser certifies no failure on a compile receipt that did not answer, and no success on one the
+  host stopped;
+- a reading the Mind declined is not booked as a failure of the method that read it.
 
-Each mission test runs a real Body through the real office and Gate. The host stop is injected where the solver
+Each test here runs a real Body through the real office and Gate. The host stop is injected where the solver
 worker process is launched (``greg.capabilities.run_isolated``): nothing downstream of the launch is replaced.
-In-process Body, a test clock and a per-test founder key, not Alfonso's (SANDBOX).
+In-process Body, a test clock and a per-test founder key, not Alfonso's (SANDBOX). The reader, the receipt's typed
+field and the launch sites are pinned on their own in tests/unit/test_greg_compile_host_stop.py. The tests a
+mutation of the engine needs come first, so that the gate judges each mutant in a few seconds.
 """
 from __future__ import annotations
 
+import signal
 import subprocess
 from datetime import datetime
-from types import SimpleNamespace
 
 import pytest
 
 import greg.capabilities as caps
+import greg.missions
+from greg import appraisal, routing
 from greg.body import Body
-from greg.cognition import bridge, budget, compiler, settlement
-from greg.cognition.contracts import CognitionError, digest
-from greg.cognition.cortex import reason, registry_view
-from greg.missions import COMPILATION, MissionEngine, unanswered
+from greg.missions import MissionEngine, unanswered
 from greg.templates import compiled_question
 from tests.greg_fixtures import Clock, make_body, mission, note_check, signed, write_strategy
 
@@ -63,8 +68,10 @@ def question(mid, *checks, strategies=(), capabilities=("cognition.solve",), tar
 
 
 class Host:
-    """The place a solver or verifier worker process is launched. ``stall`` makes the host stop every such worker:
-    ``timeout`` (it does not finish inside its limit) or ``crash`` (it exits 137, as a killed process reports)."""
+    """The place a solver or verifier worker process is launched. ``stall`` makes every such launch give no result:
+    ``timeout`` (the worker does not finish inside its limit), ``crash`` (it exits 137), ``ceiling`` (its CPU
+    ceiling kills it: SIGXCPU), ``refuse`` (the launcher refuses, typed transient: isolation unavailable) or
+    ``refuse_untyped`` (the launcher refuses the request itself, with no failure class)."""
 
     def __init__(self, monkeypatch):
         self.real, self.mode, self.only, self.after, self.calls = caps.run_isolated, None, None, 0, 0
@@ -83,7 +90,12 @@ class Host:
             if self.calls > self.after:
                 if self.mode == "timeout":
                     raise subprocess.TimeoutExpired(argv, kwargs.get("timeout", 5))
-                return subprocess.CompletedProcess(argv, 137, b"", b"killed")
+                if self.mode == "refuse":
+                    raise caps.CapabilityError("network isolation unavailable; command refused",
+                                               failure_class="transient")
+                if self.mode == "refuse_untyped":
+                    raise caps.CapabilityError("argv must be a non-empty list of strings")
+                return subprocess.CompletedProcess(argv, -signal.SIGXCPU if self.mode == "ceiling" else 137, b"", b"")
         return self.real(argv, *args, **kwargs)
 
 
@@ -134,191 +146,31 @@ class Run:
         return self.body.engine.book.missions[mid]
 
 
-# -- the one reader ---------------------------------------------------------------------------------------------------
+# -- a reading the host stopped is unmeasured on either side of its predicate ---------------------------------------
 
-def compiled(state, result=None, **extra):
-    return {"schema": compiler.SCHEMA, "state": state, "result": result, **extra}
-
-
-def test_the_reader_knows_the_schema_the_compiler_writes():
-    assert compiler.SCHEMA.startswith(COMPILATION) and compiler.SCHEMA in settlement.COMPILE_SCHEMAS
-    assert "greg-competency-compilation/0.2" in settlement.COMPILE_SCHEMAS       # retained receipts still settle
+def no_counterexample(check_id="clean"):
+    """A check an empty receipt satisfies: the claim holds when the result names no counterexample."""
+    return {"check_id": check_id, "description": "the claim has no counterexample",
+            "sensor": {"capability": "cognition.solve", "target": "cognition:bb", "params": compile_params()},
+            "predicate": {"op": "absent", "field": "result.counterexample"}}
 
 
-def test_a_compile_receipt_is_read_by_its_own_typed_fields():
-    # an answer, a conditional answer, the founder's recorded decision: measurements
-    assert unanswered(compiled("ANSWERED", {"fitness": 0.1})) is None
-    assert unanswered(compiled("WORLD_UNVERIFIED", {"fitness": 0.1})) is None
-    assert unanswered(compiled("HUMAN_JUDGMENT_RECORDED", {"decision": {"verdict": "reject"}})) is None
-    # a refutation is a real negative result; a plan is the whole of what ``execute: false`` asked for
-    assert unanswered(compiled("REFUTED")) is None
-    assert unanswered(compiled("PLANNED")) is None
-    # everything else answered nothing, and the reason is the receipt's own state
-    for state in ("ABSTAIN", "UNKNOWN", "CAPABILITY_DEFICIT", "PROHIBITED", "HUMAN_JUDGMENT_REQUIRED",
-                  "FORMALIZATION_INCOMPLETE", "EVIDENCE_EXPIRED", "UNIDENTIFIED", "STAGE_ABSTAINED",
-                  "TRANSLATION_FAILED", "NO_RECIPE", "TIMEOUT", "HUMAN_REVIEW_REQUIRED"):
-        assert unanswered(compiled(state)) == state, state
-    # the judgment packet of a question still waiting for the founder is a result, and no answer
-    assert unanswered(compiled("HUMAN_JUDGMENT_REQUIRED", {"awaiting": "the founder"})) == "HUMAN_JUDGMENT_REQUIRED"
-    # a state that answers, without the answer, did not answer (WORLD_UNVERIFIED is also an abstention's state)
-    assert unanswered(compiled("WORLD_UNVERIFIED")) == "WORLD_UNVERIFIED"
-    assert unanswered(compiled("ANSWERED")) == "ANSWERED"
-    # a receipt an older compiler wrote is read the same way
-    assert unanswered({"schema": "greg-competency-compilation/0.2", "state": "UNKNOWN", "result": None}) == "UNKNOWN"
-    assert unanswered({"schema": "greg-competency-compilation/0.2", "state": "ANSWERED", "result": {"x": 1}}) is None
-    # a cortex receipt and any other output are read as before
-    assert unanswered({"abstention_state": "UNKNOWN", "reason_code": "TIMEOUT", "output": None}) == "TIMEOUT"
-    assert unanswered({"abstention_state": "REFUTED", "output": None}) is None
-    assert unanswered({"state": "UNKNOWN", "result": None}) is None and unanswered({"schema": 7, "state": "X"}) is None
-
-
-# -- the compile receipt's typed host stop ----------------------------------------------------------------------------
-
-@pytest.fixture
-def registry():
-    view = registry_view()
-    view.set_state(METHOD, "ATTACHED")
-    return view
-
-
-def test_a_worker_the_host_stopped_is_named_in_a_typed_field(registry, host):
-    answered = reason(compile_params(), registry=registry)
-    assert answered["state"] == "ANSWERED" and answered["host_stop"] is None and unanswered(answered) is None
-    host.stall("timeout")
-    timed_out = reason(compile_params(), registry=registry)
-    assert timed_out["state"] == "UNKNOWN" and timed_out["result"] is None
-    assert timed_out["host_stop"] == {"failure_class": "transient", "cause": "timeout", "process": "solver"}
-    host.stall("crash")
-    crashed = reason(compile_params(), registry=registry)
-    assert crashed["state"] == "ABSTAIN"
-    assert crashed["host_stop"] == {"failure_class": "transient", "cause": "worker_exit", "process": "solver",
-                                    "returncode": 137}
-    # nothing typed named the abnormal exit before: the executed method's own receipt reports it like bad input
-    assert crashed["selected_receipt"]["reason_code"] == "INSUFFICIENT_EVIDENCE"
-    host.stall("crash", only="verify")
-    unverified = reason(compile_params(), registry=registry)
-    assert unverified["result"] is None
-    assert unverified["host_stop"] == {"failure_class": "transient", "cause": "worker_exit", "process": "verifier",
-                                       "returncode": 137}
-    host.stall("timeout", only="verify")
-    assert reason(compile_params(), registry=registry)["host_stop"] == {
-        "failure_class": "transient", "cause": "timeout", "process": "verifier"}
-
-
-def test_an_exhausted_budget_is_a_host_stop_and_the_mind_declining_is_not(registry):
-    # a required step the thinking budget refused: nothing ran, and nothing was decided about the question
-    broke = reason(compile_params(geometry={"geometry": "optimization", "latency_budget": 0.01}), registry=registry)
-    assert broke["state"] == "ABSTAIN" and broke["result"] is None
-    assert broke["host_stop"] == {"failure_class": "budget_exceeded", "cause": "budget", "step": "answer"}
-    # the Mind declines: no retry changes these, so they name no host stop
-    prohibited = reason(compile_params(consequence={"lawful": False}), registry=registry)
-    assert prohibited["state"] == "PROHIBITED" and prohibited["host_stop"] is None
-    lacking = reason({"problem_id": "p", "compile": {"geometry": {"geometry": "optimization"},
-                                                     "data": {"function": "sphere"}}}, registry=registry)
-    assert lacking["state"] in ("ABSTAIN", "CAPABILITY_DEFICIT") and lacking["host_stop"] is None
-    planned = reason(compile_params(execute=False), registry=registry)
-    assert planned["state"] == "PLANNED" and planned["host_stop"] is None and unanswered(planned) is None
-
-
-def test_an_answer_names_no_host_stop_even_when_a_later_step_was_stopped(registry, host):
-    """The sensitivity re-runs are optional steps after the answer. The host stopping them leaves the answer
-    standing, so the receipt names no host stop."""
-    host.stall("timeout", after=2)                  # the answer's solver and verifier run; every later worker stops
-    geometry = {"geometry": "optimization", "consequence_class": "financial",
-                "deterministic_or_stochastic": "stochastic"}
-    receipt = reason(compile_params(geometry=geometry), registry=registry)
-    assert receipt["state"] == "WORLD_UNVERIFIED" and isinstance(receipt["result"], dict)
-    assert host.calls > 2 and receipt["sensitivity"]["inputs"]         # later workers were launched, and stopped
-    assert receipt["host_stop"] is None and unanswered(receipt) is None
-
-
-def test_a_host_stop_is_read_from_typed_facts_in_order():
-    spent = budget.Controller(1.0)
-    stub = lambda *stops: SimpleNamespace(stops=lambda: list(stops))  # noqa: E731
-    receipt = lambda state="UNKNOWN", code=None: {"state": state, "selected_receipt":  # noqa: E731
-                                                  {"reason_code": code} if code else None}
-    stop = compiler._host_stop
-    # a deadline or a ceiling the executed method's own receipt names, with no process killed
-    assert stop(receipt(code="TIMEOUT"), [], spent) == {"failure_class": "transient", "cause": "timeout"}
-    assert stop(receipt(code="BUDGET_EXHAUSTED"), [], spent) == {"failure_class": "budget_exceeded",
-                                                                  "cause": "budget"}
-    # the same two named among the receipt's outcome reasons: an engine that ran out of its signed budget inside
-    # the cortex worker, which returns normally and carries no reason code (measured on the problem route)
-    def reasons(*named):
-        return {"state": "UNKNOWN", "selected_receipt": {"outcome": {"reasons": list(named)}}}
-
-    assert stop(reasons("TIMEOUT", "SOLVER_UNKNOWN"), [], spent) == {"failure_class": "transient", "cause": "timeout"}
-    assert stop(reasons("BUDGET_EXHAUSTED"), [], spent) == {"failure_class": "budget_exceeded", "cause": "budget"}
-    assert stop(reasons("SOLVER_UNKNOWN"), [], spent) is None and stop(reasons(), [], spent) is None
-    # a chain that overran its limit
-    assert stop(receipt("TIMEOUT"), [], spent) == {"failure_class": "transient", "cause": "timeout"}
-    # the method's own reasons for having no answer are the Mind's, not the host's
-    for code in ("INSUFFICIENT_EVIDENCE", "SOLVER_UNKNOWN", "POLICY_REFUSAL", "CAPABILITY_UNAVAILABLE",
-                 "MODEL_INVALID", "HUMAN_JUDGMENT_REQUIRED"):
-        assert stop(receipt(code=code), [], spent) is None, code
-    assert stop(receipt("STAGE_ABSTAINED"), [], spent) is None
-    # a worker the launcher saw stop comes first: it says which process and how
-    noted = [{"cause": "worker_exit", "process": "solver", "returncode": -9},
-             {"cause": "timeout", "process": "verifier"}]
-    assert stop(receipt(code="TIMEOUT"), noted, spent) == {"failure_class": "transient", "cause": "worker_exit",
-                                                            "process": "solver", "returncode": -9}
-    # only a required step the budget refused counts: an optional step is skipped after an answer, never instead of one
-    optional = {"step": "sensitivity:x", "required": False, "decision": "STOP", "reason": "STOP: ..."}
-    required = {"step": "answer", "required": True, "decision": "STOP", "reason": "BUDGET_EXHAUSTED: ..."}
-    assert stop(receipt("ABSTAIN"), [], stub(optional)) is None
-    assert stop(receipt("ABSTAIN"), [], stub(optional, required)) == {"failure_class": "budget_exceeded",
-                                                                      "cause": "budget", "step": "answer"}
-
-
-def test_the_launchers_note_only_inside_a_compiled_decision(host):
-    """A note is a fact about one compiled decision. Outside one nobody collects it; a nested collector keeps its
-    own; an unknown cause is refused where it is written."""
-    budget.note_host_stop("timeout", process="solver")                     # no collector: dropped, no error
-    with budget.host_stops() as outer:
-        with budget.host_stops() as inner:
-            budget.note_host_stop("worker_exit", process="solver", returncode=1)
-        budget.note_host_stop("timeout", process="verifier")
-    assert inner == [{"cause": "worker_exit", "process": "solver", "returncode": 1}]
-    assert outer == [{"cause": "timeout", "process": "verifier"}]
-    with pytest.raises(CognitionError):
-        budget.note_host_stop("the solver said no", process="solver")
-    # the cortex-contract worker (the problem route) notes the same two facts
-    problem = {"question": "q", "payload": {}}
-    for mode, note in (("crash", {"cause": "worker_exit", "process": "cortex", "returncode": 137}),
-                       ("timeout", {"cause": "timeout", "process": "cortex"})):
-        host.stall(mode)
-        with budget.host_stops() as noted:
-            with pytest.raises((CognitionError, subprocess.TimeoutExpired)):
-                bridge.run_worker(problem, [], withheld_organs={}, semantic_model=None, cpu_seconds=1,
-                                  created_at="2026-11-12T00:00:00Z")
-        assert noted == [note]
-
-
-# -- the engine: a host stop is retried, not asked about at once ------------------------------------------------------
-
-@pytest.mark.parametrize("mode", ["timeout", "crash"])
-def test_a_question_the_host_stopped_is_read_again_within_the_back_off_and_nobody_is_asked(tmp_path, host, mode):
+@pytest.mark.parametrize("op", ["absent", "equals"])
+def test_a_reading_the_host_stopped_never_passes_a_check(tmp_path, host, op):
+    """Unreadable evidence stays unknown. Before, a predicate an empty receipt satisfies passed on a reading the
+    host had stopped, and the mission closed ACHIEVED on a question no method had answered."""
+    predicate = {"absent": {"op": "absent", "field": "result.counterexample"},
+                 "equals": {"op": "equals", "field": "result", "value": None}}[op]
+    check = {**no_counterexample(), "predicate": predicate}
     with Run(tmp_path) as run:
-        host.stall(mode)
-        run.sign("MISSION", question("m:quest", fitness_check()))
-        assert run.tick("m:quest") == "SENSOR_RETRY"            # before: BLOCKED on a NO_STRATEGY question
-        assert run.events("decision.requested") == []
-        assert run.tick("m:quest") == "SENSOR_RETRY"            # the second unmeasured round, 31 s later
-        host.recover()
-        recovered = run.offset()
-        states = [run.tick("m:quest") for _ in range(4)]
-        assert "ACHIEVED" in states, states
-        stopped, read = run.events("mission.observed", "m:quest")[:2], run.events("mission.observed", "m:quest")[2]
-        for observation in stopped:
-            assert observation["passed"] is False and observation["failure_class"] == "transient"
-            assert "declined" not in observation
-            assert observation["detail"].startswith("sensor inconclusive (transient): ")
-            assert run.output(observation)["host_stop"]["cause"] == {"timeout": "timeout", "crash": "worker_exit"}[mode]
-        assert read["passed"] is True
-        # read again inside the back-off (60 s after the second round), not a whole cadence later
-        assert 0 <= run.offset(read["at"]) - recovered <= 60 < CADENCE
-        assert run.events("decision.requested") == [] and run.events("decision.withdrawn") == []
-        assert run.mission("m:quest").status == "ACHIEVED"
+        host.stall("timeout")
+        run.sign("MISSION", question("m:empty", check))
+        assert [run.tick("m:empty") for _ in range(2)] == ["SENSOR_RETRY", "SENSOR_RETRY"]   # before: ACHIEVED
+        observed = run.events("mission.observed", "m:empty")
+        assert all(o["passed"] is False and o["failure_class"] == "transient" for o in observed), observed
+        assert all(o["detail"].startswith("sensor inconclusive (transient): ") for o in observed)
+        assert run.mission("m:empty").status != "ACHIEVED" and run.events("mission.achieved") == []
+        assert run.events("mission.appraised") == [] and run.events("decision.requested") == []
 
 
 def test_a_host_that_never_recovers_is_asked_about_once_after_three_unmeasured_rounds(tmp_path, host):
@@ -341,102 +193,6 @@ def test_a_host_that_never_recovers_is_asked_about_once_after_three_unmeasured_r
         assert [a["kind"] for a in run.events("decision.requested")] == ["SENSOR_FAILURE"]
         assert run.events("decision.withdrawn") == []
         assert run.events("mission.unmet") == [] and run.events("routing.outcome") == []
-        # once the sensor reads again the question is moot: withdrawn by the body, and the mission closes
-        host.recover()
-        run.clock.advance(CADENCE)
-        later = [run.tick("m:quest") for _ in range(3)]
-        assert "ACHIEVED" in later, later
-        assert len(run.events("decision.withdrawn")) == 1
-
-
-def test_an_exhausted_budget_is_retried_and_typed_as_a_resource_ceiling(tmp_path):
-    """The signed question declares a thinking budget below the smallest step that can solve and verify, so the
-    required answer step is refused and nothing runs. That says nothing about the question: the reading is
-    unmeasured, typed ``budget_exceeded``, and takes the retry path; three such rounds ask the founder once."""
-    tight = fitness_check(geometry={"geometry": "optimization", "latency_budget": 0.01})
-    with Run(tmp_path) as run:
-        run.sign("MISSION", question("m:tight", tight))
-        states = [run.tick("m:tight") for _ in range(4)]
-        assert states == ["SENSOR_RETRY", "SENSOR_RETRY", "WAITING", "BLOCKED"], states       # before: BLOCKED at once
-        observed = run.events("mission.observed", "m:tight")
-        assert [o["failure_class"] for o in observed] == ["budget_exceeded"] * 3
-        assert all(o["detail"].startswith("sensor inconclusive (budget_exceeded): ") for o in observed)
-        assert run.output(observed[0])["host_stop"] == {"failure_class": "budget_exceeded", "cause": "budget",
-                                                        "step": "answer"}
-        assert [a["kind"] for a in run.events("decision.requested")] == ["SENSOR_FAILURE"]
-
-
-def test_an_engine_out_of_its_signed_budget_inside_the_cortex_worker_is_retried_too(tmp_path):
-    """The problem route's form of a stalled host: nothing kills the cortex worker. The formal engine runs out of
-    the latency the signed question allows (11 pigeons, 10 holes, 0.3 s), the worker returns normally, and the
-    executed method's receipt names TIMEOUT among its outcome reasons and carries no reason code. Needs Z3
-    (requirements-cortex.txt); without it this test is skipped, and the unit test of the typed facts stands alone."""
-    pytest.importorskip("z3")
-    import itertools
-    holes = 10
-    model = {"requirement": "every pigeon in a distinct hole",
-             "variables": [{"name": f"p{k}", "sort": "int", "lo": 1, "hi": holes} for k in range(holes + 1)],
-             "obligations": [{"id": "R", "text": "distinct"}],
-             "constraints": [{"id": f"C{a}_{b}", "covers": ["R"], "expr": ["!=", f"p{a}", f"p{b}"]}
-                             for a, b in itertools.combinations(range(holes + 1), 2)]}
-    data = {"formal_model": model, "resources": {"max_latency_s": 0.3},
-            "declared": {"consequence_class": "read_only", "reversibility": "reversible"}}
-    decided = {"check_id": "decided", "description": "the infeasibility is decided",
-               "sensor": {"capability": "cognition.solve", "target": "cognition:pigeonhole",
-                          "params": {"problem_id": "ph10", "compile": {"geometry": {}, "data": data}}},
-               "predicate": {"op": "equals", "field": "result.answer.feasible", "value": False}}
-    with Run(tmp_path, attach=()) as run:
-        run.sign("MISSION", question("m:hard", decided))
-        assert run.tick("m:hard") == "SENSOR_RETRY"                       # before: BLOCKED on a NO_STRATEGY question
-        [observation] = run.events("mission.observed", "m:hard")
-        output = run.output(observation)
-        assert output["state"] == "UNKNOWN" and output["host_stop"]["failure_class"] == "transient"
-        assert observation["failure_class"] == "transient" and run.events("decision.requested") == []
-
-
-def test_a_strategy_is_not_run_blamed_or_closed_on_for_a_host_stop(tmp_path, host):
-    """The same stall when the question has a strategy (``greg.templates.compiled_question``). Before: the strategy
-    was dispatched into the stalled host, marked failed, booked as an ineffective route, and the mission closed as
-    a failure naming the check."""
-    spec = compiled_question(problem_id="sphere-1", data=dict(SPHERE))
-    mid = spec["mission_id"]
-    with Run(tmp_path) as run:
-        host.stall("crash")
-        run.sign("MISSION", spec)
-        states = [run.tick(mid) for _ in range(8)]
-        assert states[0] == "SENSOR_RETRY" and "BLOCKED" in states, states
-        assert run.events("mission.action", mid) == []                    # before: [("compile", "DONE")]
-        assert run.mission(mid).failed == {}                             # before: {"compile": "executed but ..."}
-        assert run.events("routing.outcome") == []                       # before: compile "ineffective"
-        assert run.events("mission.unmet") == []                         # before: failing_checks ["answered"]
-        assert [a["kind"] for a in run.events("decision.requested")] == ["SENSOR_FAILURE"]
-        assert all(o["detail"].startswith("sensor inconclusive (transient): ")
-                   for o in run.events("mission.observed", mid))
-
-
-def test_a_round_the_mind_declined_does_not_count_toward_the_three_unmeasured_rounds(tmp_path, host):
-    """The method is not attached, so the first reading is a deficit the Mind names, and the founder is asked to
-    attach it. Once it is attached the host stalls. The deficit was no failed measurement: the stall starts its own
-    run of unmeasured rounds, so its first back-off is 30 s and the next tick, 31 s later, reads again. Counted with
-    the deficit, the first stalled round would be the second, wait 60 s, and bring the founder's question a round
-    sooner."""
-    spec = compiled_question(problem_id="sphere-2", data=dict(SPHERE))
-    mid = spec["mission_id"]
-    with Run(tmp_path, attach=()) as run:
-        run.sign("MISSION", spec)
-        assert [run.tick(mid) for _ in range(3)] == ["BLOCKED", "WAITING", "WAITING"]
-        [deficit] = run.events("mission.observed", mid)
-        assert deficit["declined"] == "CAPABILITY_DEFICIT" and "failure_class" not in deficit
-        assert deficit["detail"].startswith("sensor inconclusive (CAPABILITY_DEFICIT): ")
-        assert [a["kind"] for a in run.events("decision.requested")] == ["CAPABILITY_ATTACH"]
-        host.stall("timeout")
-        run.sign("CAPABILITY_ATTACH", {"capability_id": METHOD})
-        assert [run.tick(mid) for _ in range(3)] == ["SENSOR_RETRY", "SENSOR_RETRY", "WAITING"]
-        stalled = [o for o in run.events("mission.observed", mid) if o.get("failure_class") == "transient"]
-        assert len(stalled) == 2 and run.offset(stalled[1]["at"]) - run.offset(stalled[0]["at"]) == STEP
-        host.recover()
-        assert "ACHIEVED" in [run.tick(mid) for _ in range(2)]
-        assert [a["kind"] for a in run.events("decision.requested")] == ["CAPABILITY_ATTACH"]    # nothing more asked
 
 
 def test_a_check_the_host_stopped_is_not_pursued_beside_a_measured_failure(tmp_path, host):
@@ -461,46 +217,7 @@ def test_a_check_the_host_stopped_is_not_pursued_beside_a_measured_failure(tmp_p
         assert "recompute" not in run.mission("m:beside").failed
 
 
-# -- a real negative stays one ----------------------------------------------------------------------------------------
-
-def test_an_answer_whose_predicate_is_false_is_a_measured_failure_as_before(tmp_path):
-    """The method answered; the answer does not meet the signed bound. The strategy ran and changed nothing: it is
-    blamed, the mission closes as a failure naming the check, and the separate appraiser certifies that failure."""
-    impossible = fitness_check("good", value=-1.0)
-    recompute = {"action_id": "recompute", "capability": "cognition.solve", "target": "cognition:bb",
-                 "params": compile_params(), "advances": ["good"], "rationale": "solve it again"}
-    with Run(tmp_path) as run:
-        run.sign("MISSION", question("m:neg", impossible, strategies=[recompute]))
-        for _ in range(6):
-            run.tick("m:neg")
-        observed = run.events("mission.observed", "m:neg")
-        assert observed and all(o["passed"] is False and not o["detail"].startswith("sensor ") for o in observed)
-        assert all(run.output(o)["state"] == "ANSWERED" for o in observed)
-        assert [(o["action_id"], o["verdict"]) for o in run.events("routing.outcome")] == [("recompute", "ineffective")]
-        [unmet] = run.events("mission.unmet", "m:neg")
-        assert unmet["failing_checks"] == ["good"] and "unmeasured_checks" not in unmet
-        [appraised] = run.events("mission.appraised", "m:neg")
-        assert appraised["verdict"] == "VERIFIED_UNMET", appraised["findings"]
-
-
-def test_a_refuted_compile_receipt_is_a_measured_failure_as_before(tmp_path, monkeypatch):
-    """The independent verifier refuted the method's answer (its verdict is injected at the verifier's boundary).
-    That is a negative result, not an abstention: the reading is a measured failure and the retry path is not taken."""
-    import greg.cognition.cortex as cortex
-    monkeypatch.setattr(cortex, "independent_verify",
-                        lambda *a, **k: {"verdict": "REFUTED", "dissent": ["the claimed minimum is not one"]})
-    with Run(tmp_path) as run:
-        run.sign("MISSION", question("m:refuted", fitness_check()))
-        assert run.tick("m:refuted") == "BLOCKED"
-        [observation] = run.events("mission.observed", "m:refuted")
-        output = run.output(observation)
-        assert output["state"] == "REFUTED" and output.get("host_stop") is None and unanswered(output) is None
-        assert observation["passed"] is False and not observation["detail"].startswith("sensor ")
-        assert "failure_class" not in observation
-        assert [a["kind"] for a in run.events("decision.requested")] == ["NO_STRATEGY"]
-
-
-# -- an abstention that is not a host stop: the treatment of an abstaining cortex receipt ------------------------------
+# -- an abstention that is not a host stop: the treatment of an abstaining cortex receipt ----------------------------
 
 def declined_mission(data):
     """The compile form of test_greg_unmeasured_not_failed's ``_abstaining``: the Mind declines q (the signed
@@ -568,6 +285,79 @@ def test_an_abstaining_cortex_receipt_is_recorded_as_it_was(tmp_path):
         assert [a["kind"] for a in run.events("decision.requested")] == ["NO_STRATEGY"]
 
 
+def test_a_round_the_mind_declined_does_not_count_toward_the_three_unmeasured_rounds(tmp_path, host):
+    """The method is not attached, so the first reading is a deficit the Mind names, and the founder is asked to
+    attach it. Once it is attached the host stalls. The deficit was no failed measurement: the stall starts its own
+    run of unmeasured rounds, so its first back-off is 30 s and the next tick, 31 s later, reads again. Counted with
+    the deficit, the first stalled round would be the second, wait 60 s, and bring the founder's question a round
+    sooner."""
+    spec = compiled_question(problem_id="sphere-2", data=dict(SPHERE))
+    mid = spec["mission_id"]
+    with Run(tmp_path, attach=()) as run:
+        run.sign("MISSION", spec)
+        assert [run.tick(mid) for _ in range(3)] == ["BLOCKED", "WAITING", "WAITING"]
+        [deficit] = run.events("mission.observed", mid)
+        assert deficit["declined"] == "CAPABILITY_DEFICIT" and "failure_class" not in deficit
+        assert deficit["detail"].startswith("sensor inconclusive (CAPABILITY_DEFICIT): ")
+        assert [a["kind"] for a in run.events("decision.requested")] == ["CAPABILITY_ATTACH"]
+        host.stall("timeout")
+        run.sign("CAPABILITY_ATTACH", {"capability_id": METHOD})
+        assert [run.tick(mid) for _ in range(3)] == ["SENSOR_RETRY", "SENSOR_RETRY", "WAITING"]
+        stalled = [o for o in run.events("mission.observed", mid) if o.get("failure_class") == "transient"]
+        assert len(stalled) == 2 and run.offset(stalled[1]["at"]) - run.offset(stalled[0]["at"]) == STEP
+        assert [a["kind"] for a in run.events("decision.requested")] == ["CAPABILITY_ATTACH"]    # nothing more asked
+
+
+def test_a_signed_budget_too_small_for_any_step_is_declined_and_never_retried(tmp_path):
+    """The signed question declares a thinking budget below the smallest step that can solve and verify. The
+    required step is refused, and it would be refused the same way on every repeat, whatever the host does. That
+    is the Mind declining the request as signed, not a stop: the founder is asked at the first pass, as for any
+    abstention, and the mission does not spend three rounds re-reading what cannot change."""
+    tight = fitness_check(geometry={"geometry": "optimization", "latency_budget": 0.01})
+    with Run(tmp_path) as run:
+        run.sign("MISSION", question("m:tight", tight))
+        assert [run.tick("m:tight") for _ in range(4)] == ["BLOCKED", "WAITING", "WAITING", "WAITING"]
+        observed = run.events("mission.observed", "m:tight")
+        assert all(o["declined"] == "ABSTAIN" and "failure_class" not in o for o in observed), observed
+        assert all(o["detail"].startswith("sensor inconclusive (ABSTAIN): ") for o in observed)
+        assert run.output(observed[0])["host_stop"] is None
+        assert [a["kind"] for a in run.events("decision.requested")] == ["NO_STRATEGY"]
+
+
+def test_a_receipt_that_reads_its_own_declined_state_still_passes(tmp_path):
+    """Only a stop is kept from passing. A check may read a receipt's own state: "the Mind refuses this act" is
+    satisfied by the PROHIBITED receipt, which names no stop."""
+    refuses = {"check_id": "refused", "description": "the Mind refuses an unlawful act",
+               "sensor": {"capability": "cognition.solve", "target": "cognition:bb",
+                          "params": compile_params(consequence={"lawful": False})},
+               "predicate": {"op": "equals", "field": "state", "value": "PROHIBITED"}}
+    with Run(tmp_path, attach=()) as run:
+        run.sign("MISSION", question("m:refuses", refuses))
+        assert run.tick("m:refuses") == "ACHIEVED"
+        [read] = run.events("mission.observed", "m:refuses")
+        assert read["passed"] is True and "declined" not in read and "failure_class" not in read
+
+
+def test_a_reading_the_mind_declined_is_not_booked_as_the_methods_failure(tmp_path, host):
+    """Routing sorts an observation method whose latest reading failed after the others. A prohibition or a named
+    deficit is the method working, not failing; a reading the host stopped did fail to measure, as before."""
+    with Run(tmp_path) as run:
+        run.sign("MISSION", question("m:alone", fitness_check(consequence={"lawful": False})))
+        run.tick("m:alone")
+        [declined] = run.events("mission.observed", "m:alone")
+        assert declined["declined"] == "PROHIBITED" and not routing.observation_method_failed(declined)
+        assert routing.observation_competence(run.body.journal) == {"cognition.solve": {"method_failed": False}}
+        host.stall("timeout")
+        run.sign("MISSION", question("m:stalled", fitness_check(problem="real:other")))
+        run.tick("m:stalled")
+        [stopped] = run.events("mission.observed", "m:stalled")
+        assert routing.observation_method_failed(stopped)
+        assert routing.observation_competence(run.body.journal) == {"cognition.solve": {"method_failed": True}}
+    # a cortex receipt's abstention carries no ``declined`` mark and is read as before
+    assert routing.observation_method_failed({"detail": "sensor inconclusive (TIMEOUT): field 'x' absent"})
+    assert not routing.observation_method_failed({"detail": "1 == 0"})
+
+
 # -- the separate appraiser -------------------------------------------------------------------------------------------
 
 def test_the_appraiser_certifies_no_failure_on_a_compile_receipt_that_did_not_answer(tmp_path, monkeypatch):
@@ -591,30 +381,197 @@ def test_the_appraiser_certifies_no_failure_on_a_compile_receipt_that_did_not_an
         assert any(f.startswith("q: the world could not be re-measured") for f in appraised["findings"])
 
 
-# -- retained receipts of the earlier schema version ------------------------------------------------------------------
+def test_the_appraiser_certifies_no_success_on_a_receipt_the_host_stopped(tmp_path, host, monkeypatch):
+    """Defence in depth, where the appraiser re-derives a success closure from the retained receipt. The engine is
+    made to close as it did before this change (it no longer reads the stop); the separate appraiser reads the
+    receipt's own ``host_stop`` and refuses the closure, though its own re-run of the sensor answers."""
+    monkeypatch.setattr(greg.missions, "host_stop", lambda output: None)
+    with Run(tmp_path) as run:
+        host.stall("timeout")
+        run.sign("MISSION", question("m:empty", no_counterexample()))
+        assert run.tick("m:empty") == "ACHIEVED"
+        assert run.output(run.events("mission.observed", "m:empty")[0])["host_stop"]["failure_class"] == "transient"
+        [appraised] = run.events("mission.appraised", "m:empty")
+        assert appraised["verdict"] == "REFUTED"                               # before: VERIFIED
+        assert appraised["checks"]["checks_rederived_from_receipts"] is False
+        assert appraised["checks"]["world_reobserved"] is True
+        assert any(f.startswith("clean: the host stopped the receipt's read (transient), so it proves no success")
+                   for f in appraised["findings"]), appraised["findings"]
 
-def retained(schema, **fields):
-    value = {"schema": schema, "state": "ANSWERED", "authority_created": False,
-             "selected_receipt": {"receipt_id": "sha256:inner"}, "intermediate_receipts": ["sha256:inner"], **fields}
-    return {**value, "receipt_id": digest(value)}
+
+def test_the_appraiser_does_not_take_its_own_stopped_reread_for_the_world(tmp_path, host):
+    """Where the appraiser re-observes the world. The mission closed on a real answer; the appraiser's own host
+    then stops its re-run of the sensor. An empty re-reading satisfies the predicate and measured nothing, so the
+    closure is not verified. The appraiser runs in this process here so that its launches can be stopped."""
+    with Run(tmp_path) as run:
+        run.sign("MISSION", question("m:empty", no_counterexample()))
+        assert run.tick("m:empty") == "ACHIEVED"
+        request = run.body.appraisal_request("m:empty")
+        assert appraisal.appraise(request)["verdict"] == "VERIFIED"
+        host.stall("timeout")
+        verdict = appraisal.appraise(request)
+        assert verdict["verdict"] != "VERIFIED" and verdict["checks"]["world_reobserved"] is False   # before: VERIFIED
+        assert verdict["checks"]["checks_rederived_from_receipts"] is True
+        assert any(f.startswith("clean: the world could not be re-measured") for f in verdict["findings"])
 
 
-def test_receipts_of_both_schema_versions_settle_and_are_listed_for_recheck(monkeypatch):
-    """0.3 adds ``host_stop``. A body keeps the 0.2 receipts it wrote before: they still settle, and a decision
-    made on evidence a resolution later rejected is still listed, whichever version wrote it."""
-    for schema in ("greg-competency-compilation/0.2", compiler.SCHEMA):
-        assert settlement._compiled(retained(schema)) is not None, schema
-    assert settlement._compiled(retained("greg-competency-compilation/0.1")) is None
+# -- the engine: a host stop is retried, not asked about at once ------------------------------------------------------
 
-    fact = SimpleNamespace(event_id="f1", occurred_at="2026-11-01T00:00:00Z",
-                           payload={"kind": "objective", "method": "cognition.swarm"})
-    resolution = SimpleNamespace(event_id="r1", occurred_at="2026-11-03T00:00:00Z",
-                                 payload={"resolves": ["f1", "f2"], "accept": "f2"})
-    decisions = [SimpleNamespace(hash=f"h{i}", ts_utc="2026-11-02T00:00:00Z", payload={"result": {"output": {
-        "schema": schema, "problem_id": f"p{i}", "methods_considered": ["cognition.swarm"],
-        "method_or_composition_selected": "cognition.swarm"}}})
-        for i, schema in enumerate(("greg-competency-compilation/0.2", compiler.SCHEMA))]
-    journal = SimpleNamespace(replay=lambda kind: [fact] if kind == "cognition.realization" else [],
-                              ledger=SimpleNamespace(by_type=lambda kind: decisions))
-    monkeypatch.setattr(settlement, "_resolutions", lambda journal, signed=None: [resolution])
-    assert [row["receipt"] for row in settlement.decisions_to_recheck(journal)] == ["h0", "h1"]
+STOPS = {"timeout": ("transient", "timeout"), "crash": ("executor_error", "worker_exit"),
+         "ceiling": ("budget_exceeded", "worker_exit"), "refuse": ("transient", "launch_refused")}
+
+
+@pytest.mark.parametrize("mode", sorted(STOPS))
+def test_a_question_the_host_stopped_is_read_again_within_the_back_off_and_nobody_is_asked(tmp_path, host, mode):
+    typed, cause = STOPS[mode]
+    with Run(tmp_path) as run:
+        host.stall(mode)
+        run.sign("MISSION", question("m:quest", fitness_check()))
+        assert run.tick("m:quest") == "SENSOR_RETRY"            # before: BLOCKED on a NO_STRATEGY question
+        assert run.events("decision.requested") == []
+        assert run.tick("m:quest") == "SENSOR_RETRY"            # the second unmeasured round, 31 s later
+        host.recover()
+        recovered = run.offset()
+        states = [run.tick("m:quest") for _ in range(4)]
+        assert "ACHIEVED" in states, states
+        stopped, read = run.events("mission.observed", "m:quest")[:2], run.events("mission.observed", "m:quest")[2]
+        for observation in stopped:
+            assert observation["passed"] is False and observation["failure_class"] == typed
+            assert "declined" not in observation
+            assert observation["detail"].startswith(f"sensor inconclusive ({typed}): ")
+            assert run.output(observation)["host_stop"]["cause"] == cause
+        assert read["passed"] is True
+        # read again inside the back-off (60 s after the second round), not a whole cadence later
+        assert 0 <= run.offset(read["at"]) - recovered <= 60 < CADENCE
+        assert run.events("decision.requested") == [] and run.events("decision.withdrawn") == []
+        assert run.mission("m:quest").status == "ACHIEVED"
+
+
+def test_the_question_about_a_stalled_host_is_withdrawn_once_the_sensor_reads_again(tmp_path, host):
+    """After three unmeasured rounds the founder has one SENSOR_FAILURE question. When the host is back, the next
+    read at the cadence answers; the body withdraws the question itself and the mission closes."""
+    with Run(tmp_path) as run:
+        host.stall("timeout")
+        run.sign("MISSION", question("m:quest", fitness_check()))
+        assert [run.tick("m:quest") for _ in range(4)][-1] == "BLOCKED"
+        host.recover()
+        run.clock.advance(CADENCE)
+        assert "ACHIEVED" in [run.tick("m:quest") for _ in range(3)]
+        assert [a["kind"] for a in run.events("decision.requested")] == ["SENSOR_FAILURE"]
+        assert len(run.events("decision.withdrawn")) == 1
+
+
+def test_the_check_passes_once_a_method_has_answered(tmp_path, host):
+    with Run(tmp_path) as run:
+        host.stall("timeout")
+        run.sign("MISSION", question("m:empty", no_counterexample()))
+        assert run.tick("m:empty") == "SENSOR_RETRY"
+        host.recover()
+        assert "ACHIEVED" in [run.tick("m:empty") for _ in range(3)]
+        read = run.events("mission.observed", "m:empty")[-1]
+        assert read["passed"] is True and run.output(read)["state"] == "ANSWERED"
+        [appraised] = run.events("mission.appraised", "m:empty")
+        assert appraised["verdict"] == "VERIFIED", appraised["findings"]
+
+
+def test_a_strategy_is_not_run_blamed_or_closed_on_for_a_host_stop(tmp_path, host):
+    """The same stall when the question has a strategy (``greg.templates.compiled_question``). Before: the strategy
+    was dispatched into the stalled host, marked failed, booked as an ineffective route, and the mission closed as
+    a failure naming the check."""
+    spec = compiled_question(problem_id="sphere-1", data=dict(SPHERE))
+    mid = spec["mission_id"]
+    with Run(tmp_path) as run:
+        host.stall("crash")
+        run.sign("MISSION", spec)
+        states = [run.tick(mid) for _ in range(8)]
+        assert states[0] == "SENSOR_RETRY" and "BLOCKED" in states, states
+        assert run.events("mission.action", mid) == []                    # before: [("compile", "DONE")]
+        assert run.mission(mid).failed == {}                             # before: {"compile": "executed but ..."}
+        assert run.events("routing.outcome") == []                       # before: compile "ineffective"
+        assert run.events("mission.unmet") == []                         # before: failing_checks ["answered"]
+        assert [a["kind"] for a in run.events("decision.requested")] == ["SENSOR_FAILURE"]
+        assert all(o["detail"].startswith("sensor inconclusive (executor_error): ")
+                   for o in run.events("mission.observed", mid))
+
+
+def test_a_strategy_is_not_dispatched_into_a_host_that_refuses_to_launch(tmp_path, host):
+    """Isolation is unavailable, so no worker can start. Before, the receipt named no stop: the strategy was
+    dispatched into the same refusal and marked failed, and the founder was asked for another strategy."""
+    spec = compiled_question(problem_id="sphere-3", data=dict(SPHERE))
+    mid = spec["mission_id"]
+    with Run(tmp_path) as run:
+        host.stall("refuse")
+        run.sign("MISSION", spec)
+        assert [run.tick(mid) for _ in range(2)] == ["SENSOR_RETRY", "SENSOR_RETRY"]   # before: ACTED, BLOCKED
+        assert run.events("mission.action", mid) == [] and run.mission(mid).failed == {}
+        assert run.events("decision.requested") == []                          # before: NO_STRATEGY
+        host.recover()
+        assert "ACHIEVED" in [run.tick(mid) for _ in range(3)]
+        assert run.events("decision.requested") == [] and run.events("mission.action", mid) == []
+
+
+def test_an_engine_out_of_its_signed_budget_inside_the_cortex_worker_is_retried_too(tmp_path):
+    """The problem route's form of a stalled host: nothing kills the cortex worker. The formal engine runs out of
+    the latency the signed question allows (11 pigeons, 10 holes, 0.3 s), the worker returns normally, and the
+    executed method's receipt names TIMEOUT among its outcome reasons and carries no reason code. Needs Z3
+    (requirements-cortex.txt); without it this test is skipped, and the unit test of the typed facts stands alone."""
+    pytest.importorskip("z3")
+    import itertools
+    holes = 10
+    model = {"requirement": "every pigeon in a distinct hole",
+             "variables": [{"name": f"p{k}", "sort": "int", "lo": 1, "hi": holes} for k in range(holes + 1)],
+             "obligations": [{"id": "R", "text": "distinct"}],
+             "constraints": [{"id": f"C{a}_{b}", "covers": ["R"], "expr": ["!=", f"p{a}", f"p{b}"]}
+                             for a, b in itertools.combinations(range(holes + 1), 2)]}
+    data = {"formal_model": model, "resources": {"max_latency_s": 0.3},
+            "declared": {"consequence_class": "read_only", "reversibility": "reversible"}}
+    decided = {"check_id": "decided", "description": "the infeasibility is decided",
+               "sensor": {"capability": "cognition.solve", "target": "cognition:pigeonhole",
+                          "params": {"problem_id": "ph10", "compile": {"geometry": {}, "data": data}}},
+               "predicate": {"op": "equals", "field": "result.answer.feasible", "value": False}}
+    with Run(tmp_path, attach=()) as run:
+        run.sign("MISSION", question("m:hard", decided))
+        assert run.tick("m:hard") == "SENSOR_RETRY"                       # before: BLOCKED on a NO_STRATEGY question
+        [observation] = run.events("mission.observed", "m:hard")
+        output = run.output(observation)
+        assert output["state"] == "UNKNOWN" and output["host_stop"]["failure_class"] == "transient"
+        assert observation["failure_class"] == "transient" and run.events("decision.requested") == []
+
+
+# -- a real negative stays one ----------------------------------------------------------------------------------------
+
+def test_an_answer_whose_predicate_is_false_is_a_measured_failure_as_before(tmp_path):
+    """The method answered; the answer does not meet the signed bound. The strategy ran and changed nothing: it is
+    blamed, the mission closes as a failure naming the check, and the separate appraiser certifies that failure."""
+    impossible = fitness_check("good", value=-1.0)
+    recompute = {"action_id": "recompute", "capability": "cognition.solve", "target": "cognition:bb",
+                 "params": compile_params(), "advances": ["good"], "rationale": "solve it again"}
+    with Run(tmp_path) as run:
+        run.sign("MISSION", question("m:neg", impossible, strategies=[recompute]))
+        for _ in range(6):
+            run.tick("m:neg")
+        observed = run.events("mission.observed", "m:neg")
+        assert observed and all(o["passed"] is False and not o["detail"].startswith("sensor ") for o in observed)
+        assert all(run.output(o)["state"] == "ANSWERED" for o in observed)
+        assert [(o["action_id"], o["verdict"]) for o in run.events("routing.outcome")] == [("recompute", "ineffective")]
+        [unmet] = run.events("mission.unmet", "m:neg")
+        assert unmet["failing_checks"] == ["good"] and "unmeasured_checks" not in unmet
+        [appraised] = run.events("mission.appraised", "m:neg")
+        assert appraised["verdict"] == "VERIFIED_UNMET", appraised["findings"]
+
+
+def test_a_refuted_compile_receipt_is_a_measured_failure_as_before(tmp_path, monkeypatch):
+    """The independent verifier refuted the method's answer (its verdict is injected at the verifier's boundary).
+    That is a negative result, not an abstention: the reading is a measured failure and the retry path is not taken."""
+    import greg.cognition.cortex as cortex
+    monkeypatch.setattr(cortex, "independent_verify",
+                        lambda *a, **k: {"verdict": "REFUTED", "dissent": ["the claimed minimum is not one"]})
+    with Run(tmp_path) as run:
+        run.sign("MISSION", question("m:refuted", fitness_check()))
+        assert run.tick("m:refuted") == "BLOCKED"
+        [observation] = run.events("mission.observed", "m:refuted")
+        output = run.output(observation)
+        assert output["state"] == "REFUTED" and output.get("host_stop") is None and unanswered(output) is None
+        assert observation["passed"] is False and not observation["detail"].startswith("sensor ")
+        assert "failure_class" not in observation
+        assert [a["kind"] for a in run.events("decision.requested")] == ["NO_STRATEGY"]

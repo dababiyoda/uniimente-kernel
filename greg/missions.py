@@ -599,6 +599,22 @@ def unanswered(output) -> str | None:
     return str(output.get("reason_code") or output.get("abstention_state"))
 
 
+HOST_STOP_CLASSES = ("transient", "budget_exceeded", "executor_error")
+
+
+def host_stop(output) -> str | None:
+    """The failure class of the stop a cognitive receipt names when it carries no answer; None otherwise.
+
+    A Competency Compiler receipt says in a typed field (``host_stop``) that a worker timed out, exited abnormally
+    or could not be launched, or that the compute budget ran out, before any method answered. Such a reading
+    establishes nothing in either direction: it is no failure of its check, and it is no success either when the
+    predicate is one an empty receipt satisfies (``absent``, or an equality with None). Whether a receipt carries
+    an answer is ``unanswered``'s reading alone; this adds only the receipt's own word on why it does not."""
+    stop = output.get("host_stop") if unanswered(output) else None
+    return stop["failure_class"] if isinstance(stop, dict) and stop.get("failure_class") in HOST_STOP_CLASSES \
+        else None
+
+
 def blames_strategy(reason: str) -> bool:
     """Whether a failed-strategy reason is evidence against the strategy's capability.
 
@@ -2556,24 +2572,27 @@ class MissionEngine:
                         sensor_errors.add(check["check_id"])
                         inconclusive.add(check["check_id"])
                         stopped = True
-                views = disagreement(outcome.output)
-                if views and not passed:
-                    self.disagreements[check["check_id"]] = {**views, "observation": outcome.receipt_hash}
-                why = None if passed or stopped else unanswered(outcome.output)
-                host = outcome.output.get("host_stop") if why else None
-                if isinstance(host, dict) and host.get("failure_class") in ("transient", "budget_exceeded"):
+                halted = None if stopped else host_stop(outcome.output)
+                if halted:
                     # The receipt carries no answer because the host (or a resource ceiling) ended the compiled
-                    # decision: a worker timed out or exited abnormally, or the compute budget ran out (the
-                    # receipt's typed ``host_stop``, greg.cognition.compiler). The world was not measured, and a
-                    # later read may succeed, so the reading takes the path of a construction the host stopped:
-                    # SENSOR_RETRY with a back-off, and the founder asked once after three unmeasured rounds.
-                    # Before, it was recorded as a measured failure, and a question with no strategy asked the
-                    # founder for one the first time the host stalled.
-                    failure_class = host["failure_class"]
+                    # decision: a worker timed out, exited abnormally or could not be launched, or the compute
+                    # budget ran out (the receipt's typed ``host_stop``, greg.cognition.compiler). The world was
+                    # not measured, and a later read may succeed, so the reading takes the path of a construction
+                    # the host stopped: SENSOR_RETRY with a back-off, and the founder asked once after three
+                    # unmeasured rounds. Before, it was recorded as a measured failure, and a question with no
+                    # strategy asked the founder for one the first time the host stalled.
+                    # It counts as unmeasured whatever the predicate made of it. A predicate an empty receipt
+                    # satisfies (``absent``, an equality with None) used to pass on such a reading, and the
+                    # mission closed ACHIEVED on a question nobody had answered.
+                    passed, failure_class = False, halted
                     detail = f"sensor inconclusive ({failure_class}): {detail}"
                     sensor_errors.add(check["check_id"])
                     inconclusive.add(check["check_id"])
-                elif why:
+                views = disagreement(outcome.output)
+                if views and not passed:
+                    self.disagreements[check["check_id"]] = {**views, "observation": outcome.receipt_hash}
+                why = None if passed or stopped or halted else unanswered(outcome.output)
+                if why:
                     # The receipt abstained: the world was not measured. The mission keeps its
                     # retry cadence (learned routing settles the lead engine's resource failure
                     # from these retries); _record_routing_outcomes never blames the strategy.

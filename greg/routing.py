@@ -161,11 +161,13 @@ OBSERVATION_WINDOW = 64
 
 
 def observation_method_failed(observation: dict) -> bool:
-    """True when this observation did not measure the world.
+    """True when this observation's method failed to measure the world.
 
-    A predicate miss is a measurement: its detail does not start with "sensor ".
+    A predicate miss is a measurement: its detail does not start with "sensor ". A reading the Mind declined
+    (``declined``: a compile receipt with no answer and no host stop) carries that marker so that nobody is blamed
+    for it, but the method ran and answered as it should: a prohibition or a named deficit is not its failure.
     """
-    return str(observation.get("detail", "")).startswith("sensor ")
+    return str(observation.get("detail", "")).startswith("sensor ") and not observation.get("declined")
 
 
 def observation_competence(journal) -> dict[str, dict]:

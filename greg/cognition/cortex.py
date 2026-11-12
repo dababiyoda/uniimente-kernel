@@ -135,7 +135,7 @@ def candidates(params, geometry, registry, journal=None):
 
 
 def _numeric(family, data, geometry):
-    from greg.capabilities import run_isolated
+    from greg.capabilities import CapabilityError, run_isolated
     request = canonical({"data": data, "geometry": asdict(geometry)})
     try:
         proc = run_isolated([sys.executable, "-I", str(Path(__file__).with_name("worker.py")), family],
@@ -143,6 +143,9 @@ def _numeric(family, data, geometry):
                             extra_env={"OPENBLAS_NUM_THREADS": "1", "OMP_NUM_THREADS": "1", "MKL_NUM_THREADS": "1"})
     except subprocess.TimeoutExpired:
         note_host_stop("timeout", process="solver")
+        raise
+    except CapabilityError as exc:
+        note_host_stop("launch_refused", process="solver", failure_class=exc.failure_class)
         raise
     if proc.returncode:
         # ``reason`` keeps this cause only as the text below; the note carries it as a fact (budget.note_host_stop)
@@ -179,7 +182,7 @@ def _semantic(data, geometry, model_config):
 
 
 def independent_verify(family, data, answer, proof_class, geometry):
-    from greg.capabilities import run_isolated
+    from greg.capabilities import CapabilityError, run_isolated
     # the deadline is the caller's (wall clock, which the worker shares): its certificate spends only what is left of
     # this budget after the worker's own start-up, which the worker cannot time
     payload = canonical({"family": family, "data": data, "answer": answer, "proof_class": proof_class,
@@ -189,6 +192,9 @@ def independent_verify(family, data, answer, proof_class, geometry):
                             cwd=ROOT, timeout=geometry.latency_limit, input_bytes=payload.encode())
     except subprocess.TimeoutExpired:
         note_host_stop("timeout", process="verifier")
+        raise
+    except CapabilityError as exc:
+        note_host_stop("launch_refused", process="verifier", failure_class=exc.failure_class)
         raise
     if proc.returncode:
         note_host_stop("worker_exit", process="verifier", returncode=proc.returncode)

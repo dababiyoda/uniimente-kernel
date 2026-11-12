@@ -26,6 +26,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 import contextvars
 from datetime import datetime, timezone
+import signal
 import time
 
 from egregore.resources import ResourceGovernor
@@ -48,25 +49,45 @@ def _range(interval, *, high=1e12):
 # Below this an inner run cannot solve (45% of its limit) and still verify; the cortex floors the solver at 10 ms.
 MIN_STEP_SECONDS = 0.1
 
-# Typed notes of worker processes the host ended while one compiled decision ran. ``cortex.reason`` and
-# ``bridge.reason_cortex`` turn a worker that timed out or exited abnormally into an abstaining receipt, and for
-# the abnormal exit the cause survives only as text in ``missing_information``. The place that launches the worker
-# knows the cause as a fact, so it notes it here; the Competency Compiler collects the notes into its receipt's
-# ``host_stop`` (compiler.run), which the mission engine reads instead of any message.
+# Typed notes of worker processes that were stopped, or never started, while one compiled decision ran.
+# ``cortex.reason`` and ``bridge.reason_cortex`` turn a worker that timed out, exited abnormally or could not be
+# launched into an abstaining receipt, and for the last two the cause survives only as text in
+# ``missing_information``. The place that launches the worker knows the cause as a fact, so it notes it here; the
+# Competency Compiler collects the notes into its receipt's ``host_stop`` (compiler.run), which the mission engine
+# reads instead of any message.
 _HOST_STOPS: contextvars.ContextVar = contextvars.ContextVar("greg_cognition_host_stops", default=None)
-HOST_STOP_CAUSES = ("timeout", "worker_exit")
+HOST_STOP_CAUSES = ("timeout", "worker_exit", "launch_refused")
+# The worker's CPU ceiling is the one thing that kills it by these signals on its own (RLIMIT_CPU: SIGXCPU, then
+# SIGKILL at the hard limit); ``greg.mechanisms.run`` types a package runner's exit the same way.
+CEILING_SIGNALS = (-signal.SIGXCPU, -signal.SIGKILL)
 
 
-def note_host_stop(cause: str, *, process: str, returncode: int | None = None) -> None:
-    """Record that the host ended a worker process: ``timeout`` (it did not finish inside its limit) or
-    ``worker_exit`` (it exited with a non-zero status: a signal, a resource ceiling, an interpreter that died).
+def note_host_stop(cause: str, *, process: str, returncode: int | None = None,
+                   failure_class: str | None = None) -> None:
+    """Record why a worker process gave no result, with its failure class in the capability vocabulary
+    (``greg.capabilities.CapabilityError``), decided here from the fact and never from a message:
+
+    * ``timeout``: it did not finish inside its limit: ``transient``;
+    * ``worker_exit``: it exited with a non-zero status: ``budget_exceeded`` when its CPU ceiling killed it
+      (SIGXCPU or SIGKILL), ``executor_error`` for any other exit (the worker died on its own);
+    * ``launch_refused``: the launcher refused to start it and typed the refusal ``transient`` or
+      ``budget_exceeded`` (isolation unavailable on this host, for one). A refusal it typed otherwise, or not at
+      all, is a refusal of the request and is not noted.
+
     A worker that ran and reported its own error exits 0 and is never noted. Outside a compiled decision nobody
     collects, and the note is dropped."""
     if cause not in HOST_STOP_CAUSES:
         raise CognitionError(f"unknown host stop cause {cause!r}")
+    if cause == "timeout":
+        failure_class = "transient"
+    elif cause == "worker_exit":
+        failure_class = "budget_exceeded" if returncode in CEILING_SIGNALS else "executor_error"
+    elif failure_class not in ("transient", "budget_exceeded"):
+        return
     log = _HOST_STOPS.get()
     if log is not None:
-        log.append({"cause": cause, "process": process, **({} if returncode is None else {"returncode": returncode})})
+        log.append({"failure_class": failure_class, "cause": cause, "process": process,
+                    **({} if returncode is None else {"returncode": returncode})})
 
 
 @contextmanager
@@ -337,6 +358,12 @@ class Controller:
     def bounded(self) -> bool:
         """True when the total is a stated limit (a declared budget or the caller's window), not the default."""
         return self.declared or self.window is not None
+
+    @property
+    def never_enough(self) -> bool:
+        """True when the requester's own declared budget is below the minimum step. No step can ever run on it,
+        whatever the host does and however often the request is repeated."""
+        return self.declared and self.requested < MIN_STEP_SECONDS
 
     def remaining(self, now=None) -> float:
         if self.started is None:

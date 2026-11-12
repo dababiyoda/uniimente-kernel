@@ -29,6 +29,11 @@ Mutants of this change that are not listed, and why:
   mutant R31). The bound no longer exists as a separate line: each approval's grants are bounded by where that
   approval stopped standing, which is never later than the reviewed record ("a grant issued after an approval
   stopped standing is listed as the key's" below removes that bound).
+- the review's reviewer mutant R18, which removes only the exclusion of the two reconciliation routes from the
+  actions listed under an approval. Equivalent: both routes write their record with ``receipt: None`` and a status
+  that is never UNCERTAIN (MissionEngine._record_reconciliation and the standing reconciliation in
+  ``_settle_uncertain``), so the condition on the next line excludes it as well. The listed mutant removes both
+  conditions; a test could tell them apart only by a reconciliation record with a receipt, which no code writes.
 - ``.get`` fallbacks in ``build_review`` for a mission or a hold that is absent. Unreachable from a ledger a body
   wrote: a listed LIFECYCLE command that ended a mission was accepted from this key, so the fold holds that mission
   from this key's revocation, which the review's ledger prefix always contains.
@@ -302,7 +307,9 @@ REVIEW_MUTANTS = [
      '                                        "original_receipt": p.get("original_receipt")})',
      '                        pass'),
     ("the review lists a reconciliation record a second time as an action under the approval", "greg/revocation.py",
-     '                            and p.get("route") not in ("founder_reconciliation", "standing_reconciliation")\n', ''),
+     '                            and p.get("route") not in ("founder_reconciliation", "standing_reconciliation")\n'
+     '                            and (p.get("receipt") or p.get("status") == "UNCERTAIN")):',
+     '                            ):'),
     ("the review misses a dispatch settled by the device's reconciliation answer", "greg/revocation.py",
      '                        effects.append(_action_row(e, "an interrupted dispatch settled by its answer", basis))',
      '                        pass'),

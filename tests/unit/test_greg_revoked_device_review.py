@@ -672,7 +672,8 @@ def test_an_interrupted_compensation_the_device_approved_is_listed_once(world):
 def test_a_paid_approval_stops_standing_at_the_run_that_used_it(world):
     """One paid approval funds one run. A later run of the same exact scope (a metered run that booked nothing
     leaves the scope unchanged, #157) needed a new approval, so it is not the phone's. The later grant and action
-    are written here as the Gate and the engine write them; the body is not turned afterwards."""
+    are written here as the Gate (AuthorityOffice.act) and the engine write them; the body is not turned
+    afterwards."""
     with world.body() as body:
         phone = world.enroll(body, "phone")
         note, ask = asked(world, body, mid="m:paid", cost_usd=0.5)
@@ -680,9 +681,9 @@ def test_a_paid_approval_stops_standing_at_the_run_that_used_it(world):
         world.tick(body, 3)
         [done] = actions(body, "m:paid")
         assert done["status"] == "DONE" and ask["request_id"] in body.engine.book.consumed
-        body.journal.record("authority.grant_issued", {"grant_id": "grant-of-a-later-approval", "proposal_id": "p-2",
-                                                       "scope_digest": ask["scope_digest"],
-                                                       "founder_approved_scope": True}, key=["later-grant"])
+        body.ledger.append("event", {"type": "greg.authority.grant_issued", "grant_id": "grant-of-a-later-approval",
+                                     "proposal_id": "p-2", "scope_digest": ask["scope_digest"],
+                                     "founder_approved_scope": True})
         body.journal.record("mission.action", {**done, "attempt": done["attempt"] + 1, "receipt": None,
                                                "status": "UNCERTAIN", "grant_id": "grant-of-a-later-approval",
                                                "reasons": ["written by this test"]}, key=["m:paid", "w", "later"])

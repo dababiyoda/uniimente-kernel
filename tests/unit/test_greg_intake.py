@@ -1135,3 +1135,24 @@ def test_one_invocation_has_a_time_budget_across_all_its_files(repo, tmp_path, m
     assert seen == [90, 40]                     # the second file gets what is left of the budget, never more
     assert out["recommendations"]["label"] == "not checked: tests/test_shout.py not run on the merged tree (the " \
                                               "invocation's time budget of 100s was spent before it started)"
+
+
+def test_a_test_file_the_merged_tree_holds_in_another_heads_version_is_not_compared(repo, tmp_path, monkeypatch):
+    """F18, two real runs on 2026-11-12: with a head (303-old) and its own descendant (303) in one selection, the
+    merged tree held the descendant's version of their shared test file, so 303-old's own test never met 304, and
+    303-old read "ready to take"; without the descendant the conflict with 304 showed. Here ``old`` asserts the old
+    price, its descendant ``newer`` relaxes that same test, and ``steeper`` changes the price. The merged-tree result
+    for ``old``'s file is not a measurement of ``old``: not run, naming whose version ran, and ``old`` is not checked.
+    """
+    path, shas = repo
+    rule = "tests/test_rule.py"
+    shas["old"] = branch(path, "old-rule", {rule: "import pkg\n\n\ndef test_rule():\n    assert pkg.price(2) == 4\n"})
+    shas["newer"] = branch(path, "newer-rule", {rule: "import pkg\n\n\ndef test_rule():\n    assert pkg.price(2) in "
+                                                      "(4, 6)\n"}, start="old-rule")
+    git(path, "checkout", "-q", "base")
+    out = run(tmp_path, path, shas, ["steeper", "old", "newer"], Script(), monkeypatch)
+    why = "the merged tree holds newer's version of this file, not old's: its own version was not run against the merge"
+    assert out["recommendations"]["old"] == f"not checked: {rule} not run on the merged tree ({why})"
+    assert out["inputs"]["rehearsal"]["not_compared"] == [{"unit": "old", "file": rule, "note": why}]
+    assert out["recommendations"]["newer"] == "take after old"
+    assert f"- `{rule}` (from old): {why}" in intake_rehearsal.markdown(out["inputs"]["rehearsal"])

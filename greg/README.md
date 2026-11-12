@@ -250,6 +250,9 @@ After the independent review of 885b7b7a (2026-11-12; renderer `greg.intake.rend
   "N passed" read as a pass, and a claim this run contradicts keeps the unit from ready;
 - a STOP during a run delivers nothing, a run stopped by STOP or by the output ceiling is never "refused before it
   ran", and one invocation has a time budget of an hour across all its files.
+- a head's test file that the merged tree holds in another version (a descendant's, or another head's edit merged
+  in) is not compared on the merged tree: it is `not run` there, naming whose version ran, and the unit is not
+  checked (2026-11-12: 303-old's test was replaced by its descendant 303's and never met 304).
 
 It approves nothing. Composing heads for development and approving a protected merge are separate boundaries: the
 mission composes in scratch and writes a file; protected integration needs the founder's and the integrator's

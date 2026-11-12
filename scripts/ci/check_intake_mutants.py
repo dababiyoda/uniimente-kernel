@@ -104,6 +104,9 @@ MUTANTS = [
     (I, "F11: a head is named only by its full SHA or a prefix of at least 12 hex digits",
      "    return len(claimed) >= MIN_SHA_PREFIX and", "    return"),
     (I, "F3: one invocation has a time budget across its files", "            if left < 1:", "            if False:"),
+    (R, "F18: a test file the merged tree holds in another head's version is not compared",
+     "            if mine.is_file() and there.is_file() and mine.read_bytes() != there.read_bytes():",
+     "            if False:"),
     # -- the repository is read, and runs nothing of its own -----------------------------------------------------
     (I, "the merge's objects are written to scratch, not into the repository",
      '        env |= rehearsal.scratch_objects(repo, scratch / "objects")\n', ""),

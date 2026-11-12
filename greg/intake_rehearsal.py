@@ -222,6 +222,8 @@ def measured(result: dict, file: str) -> bool:
     """Whether ``result`` says how ``file`` behaved. A runner that reports no per-file ``states`` (the command line's)
     measured everything it ran. One that does (a mission's confined runner) may have timed out, been refused its
     envelope or lost part of pytest's output: such a file is no measurement, of a pass or of a failure."""
+    if file in result.get("not_compared", ()):
+        return False
     states = result.get("states")
     return states is None or bool(states.get(file, {}).get("measured"))
 
@@ -283,13 +285,37 @@ def _rehearse(root: Path, base_ref: str, units: list[Unit], also: list[str], tim
         facts["composed_tree"] = git(root, "rev-parse", f"{merged_commit}^{{tree}}").stdout.decode().strip()
     composed = {u.name: run(composed_tree, u.tests, timeout) for u in in_merge}
     composed_also = run(composed_tree, also, timeout) if also else None
+    # A head's test file that the merged tree holds in another version (a descendant's, or another head's edit merged
+    # in) is not that head's test: what ran there measures someone else's file. It is not compared, either way, and
+    # says whose version ran (review of 885b7b7a, F18: 303-old's test was replaced by 303's and never met 304).
+    not_compared = []
+    for unit in in_merge:
+        foreign = {}
+        for file in unit.tests:
+            mine, there = scratch / f"own-{unit.name}" / file, composed_tree / file
+            if mine.is_file() and there.is_file() and mine.read_bytes() != there.read_bytes():
+                ran = [o.name for o in in_merge if o.name != unit.name
+                       and (scratch / f"own-{o.name}" / file).is_file()
+                       and (scratch / f"own-{o.name}" / file).read_bytes() == there.read_bytes()]
+                foreign[file] = (f"the merged tree holds {', '.join(ran)}'s version of this file" if ran else
+                                 "the merged tree holds a merge of several heads' versions of this file") + \
+                    f", not {unit.name}'s: its own version was not run against the merge"
+                not_compared.append({"unit": unit.name, "file": file, "note": foreign[file]})
+        if foreign:
+            result = composed[unit.name]
+            result["failed"] = [n for n in result["failed"] if node_file(n) not in foreign]
+            result["not_compared"] = sorted(foreign)
+            if "states" in result:
+                result["states"] = {**result["states"], **{f: {"state": "not run", "measured": False, "why": why}
+                                                           for f, why in foreign.items()}}
 
     # ``not_measured``: a test seen failing on one tree whose file gave no result on the other. It is neither a
     # conflict nor "failing before the merge": one half of the comparison is missing. Always empty for a runner
     # that reports no per-file state.
     behavioural, already_failing, not_measured = [], [], []
     for unit in in_merge:
-        alone = set(own[unit.name]["failed"])
+        alone = {n for n in own[unit.name]["failed"]
+                 if node_file(n) not in composed[unit.name].get("not_compared", ())}
         for node in composed[unit.name]["failed"]:
             if node not in alone and not measured(own[unit.name], node_file(node)):
                 not_measured.append({"test": node, "unit": unit.name,
@@ -378,6 +404,7 @@ def _rehearse(root: Path, base_ref: str, units: list[Unit], also: list[str], tim
         # A head with no test to run was checked for nothing: it must not read as compatible.
         "unchecked": [u.name for u in units if not [f for f in u.tests if f not in own[u.name]["missing"]]],
         "behavioural_conflicts": behavioural, "failing_before_the_merge": already_failing,
+        "not_compared": not_compared,
         "clean": not textual and not behavioural,
         "limits": ["only the named tests were run: a clean result does not prove the heads are compatible",
                    "a unit left out for a textual conflict was not tested in the merge",
@@ -442,6 +469,9 @@ def markdown(report: dict) -> str:
             if len(items) > SHOWN:
                 lines.append(f"- and {len(items) - SHOWN} more from {name} (all are in the JSON report)")
         lines.append("")
+    if report.get("not_compared"):
+        lines += ["## Not compared", ""] + [f"- `{item['file']}` (from {item['unit']}): {item['note']}"
+                                            for item in report["not_compared"]] + [""]
     if report["unchecked"]:
         lines += ["## Not checked", "", "No test was run for: " + ", ".join(f"**{n}**" for n in report["unchecked"])
                   + ". These heads changed no test file and none was named for them, so nothing here says whether "

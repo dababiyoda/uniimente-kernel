@@ -922,6 +922,10 @@ class MissionState:
     # ran). A retry-safe dispatch is never reconciled, so its reservation stands.
     reserved: dict = field(default_factory=dict)
     uncertain_streak: dict = field(default_factory=dict)  # action_id -> consecutive dispatches of unknown outcome
+    ended_command: str | None = None    # digest of the command that ended the mission (ABANDONED or SUPERSEDED)
+    # Set when the device key whose command ended the mission is revoked (MissionBook._revoked): from then on a
+    # compensation the Gate had not dispatched runs only on an approval of its exact scope, never on that command.
+    compensation_hold: dict | None = None
 
     @property
     def mission_id(self):
@@ -1182,7 +1186,7 @@ class MissionBook:
     _FOLD_SHOWN = ("missions", "requests", "answers", "withdrawn", "consumed", "unverified", "unverified_requests",
                    "voided")
     _FOLD_OWN = ("_restore", "_deficit_of", "_admitted", "_refused_commands", "_unverifiable", "_unverifiable_why",
-                 "_pending", "_signer_of", "_reconciled")
+                 "_pending", "_signer_of", "_reconciled", "_lifecycle_signer")
 
     def rebuild(self):
         """Fold the events retained since the previous rebuild into the book's own state, then hand out copies.
@@ -1279,6 +1283,7 @@ class MissionBook:
         self.voided: dict[str, dict] = {}  # request_id -> the withdrawal a device revocation made of its unused answer
         self._signer_of: dict = {}         # DECISION digest -> (key id, principal) it was accepted from
         self._reconciled: set[str] = set() # RECONCILIATION answers the engine has recorded (used, never voided)
+        self._lifecycle_signer: dict = {}  # LIFECYCLE digest -> (key id, principal) its acceptance record states
 
     def finish(self) -> None:
         """End of the replay: an answer row no signed DECISION it cites was accepted after is kept as data, with the
@@ -1305,6 +1310,11 @@ class MissionBook:
         time to judge a founder command against the mission state at its own ledger position. ``event_id``
         identifies a ``command.accepted`` record, where a signed DECISION's answer takes effect."""
         if kind == "command.accepted":
+            if data.get("kind") == "LIFECYCLE" and isinstance(data.get("digest"), str):
+                # Who ended a mission is read from the acceptance the body recorded for the command, on a verifying
+                # book too: ``mission.lifecycle`` itself is applied as recorded, and this reading can only hold a
+                # compensation back for a decision (_revoked), never authorize one.
+                self._lifecycle_signer[data["digest"]] = (data.get("founder_key_id"), str(data.get("signer") or ""))
             if self.verify_answers:
                 self._admit(data, event_id)
             elif data.get("kind") == "DECISION" and isinstance(data.get("digest"), str):
@@ -1363,6 +1373,7 @@ class MissionBook:
                 m.pull = None
             if data["state"] in ("ABANDONED", "SUPERSEDED"):
                 m.status = data["state"]
+                m.ended_command = data.get("command_digest")
         elif kind == "mission.observed":
             m.observations[data["check_id"]] = data
             if m.blocker is None:     # an observation of the unblocked loop serves any pending goal pull
@@ -1524,7 +1535,10 @@ class MissionBook:
         again under a new request that the founder, or a device still delegated DECISION, can answer. What the key
         approved and was already used for is untouched: its actions, receipts and reconciliations stay as recorded,
         and the answer stays in ``answers`` as history. A founder-key answer is never voided here, whatever key the
-        record names. Nothing later reverses it: delegating the key again revives no voided answer."""
+        record names. Nothing later reverses it: delegating the key again revives no voided answer.
+
+        A mission that key's own LIFECYCLE command ended (ABANDONED or SUPERSEDED) stays ended, and its
+        compensations not yet dispatched are held (``MissionState.compensation_hold``)."""
         kid = data.get("device_key_id")
         for rid, answer in list(self.answers.items()):
             key, principal = self._signer_of.get(answer.get("command_digest"), (None, ""))
@@ -1554,6 +1568,20 @@ class MissionBook:
             m = self.missions.get(answer.get("mission_id"))
             if m is not None and approval:
                 m.approved_scopes.discard(request.get("scope_digest"))
+        # Ending a mission starts the compensations signed with its executed strategies, one Gate dispatch per turn.
+        # Those the Gate has not dispatched yet are future execution. When the command that ended the mission was
+        # this device key's, they are held from here on: each runs only on an approval of its exact scope
+        # (MissionEngine._run_compensation asks for it). The mission stays ended, and a compensation the Gate
+        # already dispatched is recorded from the Gate's record as before. The acceptance record of a command
+        # follows the lifecycle record it wrote, so the signer is looked up here, not when the mission ended.
+        for m in self.missions.values():
+            key, principal = self._lifecycle_signer.get(m.ended_command, (None, ""))
+            if m.ended_command is None or m.compensation_hold is not None or key != kid \
+                    or not principal.startswith("device:"):
+                continue                     # not ended, held by an earlier revocation, or ended by another signer
+            m.compensation_hold = {"device_key_id": kid, "signer": principal, "revocation_event": event_id,
+                                   "revocation_command": data.get("command_digest"),
+                                   "lifecycle_command": m.ended_command, "at": data.get("at")}
 
     def _admit(self, accepted: dict, event_id: str | None) -> None:
         """A signed DECISION's acceptance: the answer rows citing it count, re-derived, if the command path's own
@@ -3328,6 +3356,26 @@ class MissionEngine:
                                                         "reasons": ["founder rejected this compensating action"]},
                                 key=[mid, aid, "compensated"])
             return "DECLINED"
+        held = m.compensation_hold
+        if held is not None and scope not in m.approved_scopes:
+            # Founder policy 2026-11-11: the device key whose command ended this mission was revoked before the Gate
+            # dispatched this compensation (the lookup above found nothing for it). A revoked device's command
+            # starts no new execution, so the compensation needs a decision of its own for this exact scope. An
+            # approval that stands for the scope (the founder's, or a still delegated device's) is that decision;
+            # one the revoked key gave left the mission at the revocation.
+            self._request(m, kind="APPROVAL", scope_digest=scope, action_id=aid,
+                          why=f"compensation of {aid}: the mission was ended ({m.status}) by a command of the device "
+                              f"key {held['device_key_id']}, which was revoked at {held['at']} before this "
+                              "compensation was dispatched; a revoked device's command starts no new execution",
+                          recommendation=f"approve the compensating action signed with {aid} "
+                                         f"({manifest.capability_id} on {target}) if you want the effect undone",
+                          alternatives=["reject: the executed effect stands; nothing is run for it"],
+                          requested={"capability": manifest.capability_id, "target": target,
+                                     "consequence_class": manifest.consequence_class, "cost_usd": 0.0}, now=now,
+                          evidence={"original_receipt": original, "lifecycle": m.status, "ended_by": dict(held)},
+                          consequence="the executed effect stands; nothing is run for it", params=params,
+                          quoted=(held["signer"],), compensation=True)
+            return "WAITING"
         if m.status == "SUPERSEDED" and scope not in m.approved_scopes:
             # A successor mission may rely on this effect: undoing it is the founder's call, for this exact scope.
             self._request(m, kind="APPROVAL", scope_digest=scope, action_id=aid,

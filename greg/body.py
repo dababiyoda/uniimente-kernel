@@ -760,7 +760,11 @@ class Body:
                 raise MissionError("key already enrolled; revoke before re-delegating")
             self.journal.record("device.enrolled", {**grant, "command_digest": digest, "at": iso(self.clock())},
                                 key=[grant["device_key_id"], digest])
-            return {"device_key_id": grant["device_key_id"], "kinds": grant["kinds"], "expires_at": grant["expires_at"]}
+            # A key once revoked as a suspected compromise is delegated again on the founder's signature, like any
+            # other; the result says what that means and names its reviews (greg status shows it under the review).
+            suspected = revocation.suspected_reviews(self.journal, self.engine.book, grant["device_key_id"])
+            return {"device_key_id": grant["device_key_id"], "kinds": grant["kinds"], "expires_at": grant["expires_at"],
+                    **({"warning": revocation.SUSPECTED_AGAIN, "integrity_reviews": suspected} if suspected else {})}
         if kind == "DEVICE_REVOKE":
             # Founder policy 2026-11-11: from this record on, nothing the key approved and that was not yet used
             # authorizes a new effect (the mission fold derives that from the record, greg/missions.py); what

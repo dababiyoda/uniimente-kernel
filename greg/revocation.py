@@ -20,6 +20,10 @@ and a later reader find it on the ledger, and it builds the review:
   surfaces that already show pending decisions. The review rewrites nothing and revokes nothing further; the answer
   to its ask is only recorded, and only the founder key gives it (greg.asks FOUNDER_KEY_ANSWERS).
 
+A mission the revoked key's own command ended stays ended, and its compensations the Gate had not dispatched are
+held by the fold for a decision of their own (``MissionState.compensation_hold``); ``summary`` and the review list
+them.
+
 Limits: a command the body refused is not attributed to a key (the ledger keeps its digest and reason, not its
 signer). What a mission did after the key resumed it or the body ran under that mission's own founder-signed
 mandate; the review lists the resume, not everything after it. A ledger shows what a key signed, never who held it.
@@ -30,9 +34,11 @@ from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from greg import asks
+from greg.authority import AuthorityOffice
 from greg.founder import signing_bytes
 from greg.journal import Journal
-from greg.missions import GATE_SCOPE_ASKS, RECONCILIATION_ASKS, TERMINAL, MissionBook, MissionError
+from greg.missions import (GATE_SCOPE_ASKS, RECONCILIATION_ASKS, TERMINAL, MissionBook, MissionError,
+                           compensation_attempt)
 from provenance.ledger import sha256_json
 
 SUSPECTED = "suspected_compromise"
@@ -44,6 +50,8 @@ UNKNOWN = (
     "ledger holds its digest and reason (command.rejected), not its signer",
     "what a mission did after this key resumed it, or the body: it ran under the mission's own founder-signed "
     "mandate and is not listed as resting on the device",
+    "what happened after the point this review reads the ledger to: greg status (security.device_revocations) "
+    "shows what each revocation holds now",
     "who held the key: each signature listed verifies against the delegated key, which is all a ledger can show",
 )
 
@@ -78,6 +86,22 @@ def unreviewed_revocation(journal: Journal, kid: str) -> str | None:
             ended = ended or e.event_id
             reviewed = reviewed or e.payload.get(SUSPECTED) is True
     return ended if ended is not None and not reviewed else None
+
+
+def suspected_reviews(journal: Journal, book: MissionBook, kid: str) -> list[dict]:
+    """The integrity reviews of ``kid``: one per revocation record of the key that the founder signed as a suspected
+    compromise, with whether he has answered it. A suspected key that is delegated again is not refused (the
+    founder's own key signs the delegation), so the body says this on the delegation's result and in the status."""
+    return [{"request_id": review_id(e), "revoked_at": e.payload.get("at"),
+             "state": f"ANSWERED: {book.answers[review_id(e)].get('answer')}" if review_id(e) in book.answers
+             else "OPEN"}
+            for e in journal.replay("device.revoked")
+            if e.payload.get("device_key_id") == kid and e.payload.get(SUSPECTED) is True]
+
+
+SUSPECTED_AGAIN = ("this key was revoked as a suspected compromise. Whoever held it then can sign with it again from "
+                   "now on, and a command it forward-dated cannot be told from a new one: a compromised device gets "
+                   "a new key. Revoke this delegation if that was not intended.")
 
 
 def _revocations(revoked) -> set:
@@ -134,6 +158,28 @@ def _standing(book: MissionBook, rid, answer: dict | None, digest: str, revocati
     return "RECORD_ONLY: this answer authorizes no action"
 
 
+HELD = ("a signed compensation with no record at the point this review reads the ledger to: unless the Gate had "
+        "already dispatched it, it runs only on an approval of its own, never on this key's command")
+UNRECORDED = ("a dispatch the Gate granted under its approval, not yet recorded by the mission at the point this "
+              "review reads the ledger to")
+
+
+def owed_compensations(m, actions: list, compensated: list) -> list[dict]:
+    """The executed strategies of ended mission ``m`` that were signed with a compensation and have no
+    ``mission.compensated`` record among ``compensated``: what MissionEngine._compensate would still dispatch. A
+    strategy signed with no compensation runs nothing (a founder ask or an open obligation) and is not listed."""
+    if m is None:
+        return []
+    done = {}
+    for e in actions:
+        if e.payload.get("mission_id") == m.mission_id and e.payload.get("status") == "DONE":
+            done[e.payload["action_id"]] = e.payload.get("receipt")
+    closed = {e.payload.get("action_id") for e in compensated if e.payload.get("mission_id") == m.mission_id}
+    return [{"action_id": s["action_id"], "compensate": s["compensate"], "receipt": done[s["action_id"]]}
+            for s in m.spec.get("strategies", ())
+            if s.get("compensate") and s["action_id"] in done and s["action_id"] not in closed]
+
+
 def _action_row(event, basis: str, rested_on: dict) -> dict:
     p = event.payload
     return {"effect": basis, "event_id": event.event_id, "mission_id": p.get("mission_id"),
@@ -154,18 +200,37 @@ def build_review(journal: Journal, revoked) -> dict:
     public = delegations[-1].get("public_key") if delegations else None
     accepted = [e for e in asof.replay("command.accepted") if e.payload.get("founder_key_id") == kid
                 and str(e.payload.get("signer") or "").startswith("device:")]
-    withdrawn_at = {}
-    for e in asof.replay("decision.withdrawn"):
-        withdrawn_at.setdefault(e.payload.get("request_id"), pos[e.event_id])
-    # The Gate's own grant records, by ledger position: a dispatch it granted on an approval that the mission had
-    # not recorded yet when the key was revoked (the body stopped inside it) is an effect all the same.
-    ledger = journal.ledger
-    seq = {r.payload.get("event_id"): r.seq for r in ledger.by_type("event")}
-    granted = [r for r in ledger.by_type("event") if r.payload.get("type") == "greg.authority.grant_issued"
-               and r.payload.get("founder_approved_scope") and r.seq < seq[revoked.event_id]]
     actions = asof.replay("mission.action")
     observed = asof.replay("mission.observed")
     compensated = asof.replay("mission.compensated")
+    # Where each approval of this key stopped standing: a record that withdrew its request (a failed standing run,
+    # a restore, a revocation's trail), the revocation that voided it (which precedes its trail and, for a
+    # suspicion signed later, is the earlier revocation and not this marking record), or the paid run that used it.
+    stopped: dict = {}
+    for e in asof.replay("decision.withdrawn"):
+        stopped.setdefault(e.payload.get("request_id"), []).append(e.event_id)
+    for rid, void in book.voided.items():
+        stopped.setdefault(rid, []).append(void["voided_by"].get("revocation_event"))
+    # The Gate's own grant records, by ledger position. A dispatch it granted on an approval is an effect of that
+    # approval whenever the mission recorded it, or if it never did (the body stopped inside it).
+    ledger = journal.ledger
+    seq = {r.payload.get("event_id"): r.seq for r in ledger.by_type("event")}
+    issued = [r for r in ledger.by_type("event") if r.payload.get("type") == "greg.authority.grant_issued"]
+    grant_seq = {r.payload.get("grant_id"): r.seq for r in issued}
+    by_proposal = {r.payload.get("proposal_id"): r.payload.get("grant_id") for r in issued}
+
+    def grant_of(p: dict):
+        """The Gate grant one mission record accounts for: its receipt's, the one an unknown outcome names, or for
+        a compensation with neither (its dispatch was interrupted) the grant issued for its one proposal."""
+        receipt = ledger.find(p["receipt"]) if p.get("receipt") else None
+        if receipt is not None:
+            return receipt.payload.get("grant_id")
+        if p.get("grant_id") or "original_receipt" not in p:
+            return p.get("grant_id")
+        return by_proposal.get(AuthorityOffice.proposal_id(
+            p.get("scope_digest"), compensation_attempt(p.get("action_id"), p.get("original_receipt"))))
+    grant = {e.event_id: grant_of(e.payload) for e in actions + observed + compensated}
+    recorded = set(grant.values()) - {None}       # grants the mission's own records account for
     lifecycles = {e.payload.get("command_digest"): e for e in asof.replay("mission.lifecycle")}
     critiques = {e.payload.get("command_digest"): e.payload for e in asof.replay("critique.recorded")}
     excluded = asof.replay("mission.strategy_excluded")
@@ -189,45 +254,49 @@ def build_review(journal: Journal, revoked) -> dict:
             basis["request_id"] = rid
             counted = answer is not None and answer.get("command_digest") == digest
             if counted and request.get("kind") in GATE_SCOPE_ASKS and signed.get("answer") == "approve":
-                end = min(withdrawn_at.get(rid, cut), cut)     # the approval stood from its acceptance to here
-                recorded = set()                               # grants the mission's own records account for
-                scoped = {r.payload.get("grant_id") for r in granted
-                          if r.payload.get("scope_digest") == request.get("scope_digest") and r.seq > seq[event.event_id]}
-                for e in observed if scoped else ():
+                # The approval stood from its acceptance to ``end``. What rested on it: each dispatch the Gate
+                # granted for its exact scope in that span (``under``), whenever the mission recorded it. A grant
+                # issued once the approval no longer stood rested on another decision (the answer to the ask that
+                # followed) and is not this key's. A record that names no grant is placed by where it stands.
+                scope, mission_id = request.get("scope_digest"), request.get("mission_id")
+                paid_run = next((e.event_id for e in actions if rid in book.consumed and pos[e.event_id] > at
+                                 and e.payload.get("mission_id") == mission_id and e.payload.get("status") == "DONE"
+                                 and e.payload.get("scope_digest") == scope
+                                 and e.payload.get("cost_cap_usd", 0.0) > 0), None)
+                ends = [x for x in stopped.get(rid, []) + [paid_run] if x in pos] + [revoked.event_id]
+                end, end_seq = min(pos[x] for x in ends), min(seq[x] for x in ends)
+                under = [r for r in issued if r.payload.get("founder_approved_scope")
+                         and r.payload.get("scope_digest") == scope and seq[event.event_id] < r.seq < end_seq]
+                grants = {r.payload.get("grant_id") for r in under}
+
+                def rested(e) -> bool:
+                    return e.payload.get("mission_id") == mission_id and (
+                        grant[e.event_id] in grants if grant[e.event_id] is not None else at < pos[e.event_id] <= end)
+                for e in observed:
                     # an observation outside the cone (SENSOR_SCOPE): its record names no scope, its receipt's grant does
                     p = e.payload
-                    if p.get("mission_id") == request.get("mission_id") and at < pos[e.event_id] <= end and p.get("receipt"):
-                        receipt = ledger.find(p["receipt"])
-                        grant_id = receipt.payload.get("grant_id") if receipt is not None else None
-                        if grant_id in scoped:
-                            effects.append({"effect": "an observation read under its approval", "event_id": e.event_id,
-                                            "mission_id": p.get("mission_id"), "check_id": p.get("check_id"),
-                                            "capability": p.get("capability"), "receipt": p.get("receipt"),
-                                            "scope_digest": request.get("scope_digest"), "grant_id": grant_id,
-                                            "at": p.get("at"), "rested_on": basis})
-                            recorded.add(grant_id)
+                    if p.get("mission_id") == mission_id and grant[e.event_id] in grants:
+                        effects.append({"effect": "an observation read under its approval", "event_id": e.event_id,
+                                        "mission_id": p.get("mission_id"), "check_id": p.get("check_id"),
+                                        "capability": p.get("capability"), "receipt": p.get("receipt"),
+                                        "scope_digest": scope, "grant_id": grant[e.event_id],
+                                        "at": p.get("at"), "rested_on": basis})
                 for e in actions:
                     p = e.payload
-                    if (p.get("mission_id") == request.get("mission_id") and at < pos[e.event_id] <= end
-                            and p.get("scope_digest") == request.get("scope_digest")
+                    if (rested(e) and p.get("scope_digest") == scope
                             and p.get("route") not in ("founder_reconciliation", "standing_reconciliation")
                             and (p.get("receipt") or p.get("status") == "UNCERTAIN")):
                         effects.append(_action_row(e, "an action dispatched under its approval", basis))
-                        receipt = ledger.find(p["receipt"]) if p.get("receipt") else None
-                        recorded.add(receipt.payload.get("grant_id") if receipt is not None else p.get("grant_id"))
-                for r in granted:
+                for r in under:
                     g = r.payload
-                    if g.get("scope_digest") == request.get("scope_digest") and r.seq > seq[event.event_id] \
-                            and g.get("grant_id") not in recorded:
-                        effects.append({"effect": "a dispatch the Gate granted under its approval, not yet recorded "
-                                                  "by the mission when the key was revoked",
-                                        "mission_id": request.get("mission_id"), "action_id": request.get("action_id"),
-                                        "scope_digest": g.get("scope_digest"), "grant_id": g.get("grant_id"),
-                                        "proposal_id": g.get("proposal_id"), "rested_on": basis})
+                    if g.get("grant_id") not in recorded:
+                        effects.append({"effect": UNRECORDED, "mission_id": mission_id,
+                                        "action_id": request.get("action_id"), "scope_digest": scope,
+                                        "grant_id": g.get("grant_id"), "proposal_id": g.get("proposal_id"),
+                                        "rested_on": basis})
                 for e in compensated:
                     p = e.payload
-                    if (p.get("mission_id") == request.get("mission_id") and at < pos[e.event_id] <= end
-                            and p.get("scope_digest") == request.get("scope_digest")):
+                    if rested(e) and p.get("scope_digest") == scope:
                         effects.append({**_action_row(e, "a compensation dispatched under its approval", basis),
                                         "original_receipt": p.get("original_receipt")})
             elif counted and request.get("kind") in RECONCILIATION_ASKS:
@@ -250,10 +319,24 @@ def build_review(journal: Journal, revoked) -> dict:
                                 "mission_id": applied.payload.get("mission_id"),
                                 "state": applied.payload.get("state"), "rested_on": basis})
                 if applied.payload.get("state") in ("ABANDONED", "SUPERSEDED"):
+                    # Ending a mission starts its signed compensations. Those the Gate granted before this key's
+                    # revocation ran on this command; from the revocation on each needed an approval of its own
+                    # (the fold's hold), so a later one is not this key's, and one with no record is listed as held.
+                    mid = applied.payload.get("mission_id")
+                    m = book.missions.get(mid)
+                    hold = (m.compensation_hold if m is not None else None) or {}
+                    limit = seq.get(hold.get("revocation_event"), seq[revoked.event_id])
                     for e in compensated:
-                        if e.payload.get("mission_id") == applied.payload.get("mission_id") \
-                                and pos[e.event_id] > pos[applied.event_id] and e.payload.get("receipt"):
+                        p = e.payload
+                        if (p.get("mission_id") == mid and pos[e.event_id] > pos[applied.event_id]
+                                and (p.get("receipt") or p.get("status") == "UNCERTAIN")
+                                and grant_seq.get(grant[e.event_id], seq[e.event_id]) < limit):
                             effects.append(_action_row(e, "a compensation run after it ended the mission", basis))
+                    for owed in owed_compensations(m, actions, compensated):
+                        effects.append({"effect": HELD, "mission_id": mid, "action_id": owed["action_id"],
+                                        "capability": owed["compensate"].get("capability"),
+                                        "target": owed["compensate"].get("target"),
+                                        "original_receipt": owed["receipt"], "rested_on": basis})
         elif kind == "CRITIQUE":
             critique = critiques.get(digest) or {}
             row.update(critique_id=critique.get("critique_id"), target_event_id=signed.get("target_event_id"),
@@ -404,13 +487,39 @@ def resumed_and_running(journal: Journal, book: MissionBook) -> dict[str, dict]:
     return out
 
 
+def held_compensations(journal: Journal, book: MissionBook) -> dict[str, list[dict]]:
+    """Per revocation record: each mission that revocation holds (the revoked key's own command had ended it) and
+    still has a signed compensation without a record, with the open ask for each one that has been asked. A reading
+    of the fold's hold for the founder's status; a compensation that has its record is on the mission, not here."""
+    out: dict[str, list[dict]] = {}
+    held = {mid: m for mid, m in book.missions.items() if m.compensation_hold is not None}
+    if not held:
+        return out
+    actions, compensated = journal.replay("mission.action"), journal.replay("mission.compensated")
+    for mid, m in sorted(held.items()):
+        rows = []
+        for owed in owed_compensations(m, actions, compensated):
+            ask = next((rid for rid, r in book.requests.items() if r.get("mission_id") == mid
+                        and r.get("kind") == "APPROVAL" and r.get("compensation") and rid not in book.withdrawn
+                        and r.get("action_id") == owed["action_id"] and rid not in book.answers), None)
+            rows.append({"action_id": owed["action_id"], "capability": owed["compensate"].get("capability"),
+                         "target": owed["compensate"].get("target"), "awaits": ask or "asked at the body's next turn"})
+        if rows:
+            out.setdefault(m.compensation_hold["revocation_event"], []).append(
+                {"mission_id": mid, "state": m.status, "compensations_held": rows})
+    return out
+
+
 def summary(journal: Journal, book: MissionBook) -> list[dict]:
     """Each device revocation on the ledger for the founder's status: what it voided, what the key resumed that is
-    still running, and whether a review is open."""
+    still running, what it ended whose compensations wait for a decision, and whether a review is open."""
     answered = {rid: a.get("answer") for rid, a in book.answers.items()}
     revocations = journal.replay("device.revoked")
     running = resumed_and_running(journal, book) if revocations else {}
+    holding = held_compensations(journal, book) if revocations else {}
     out = []
+    pos = journal.positions("") if revocations else {}
+    enrolled = journal.replay("device.enrolled") if revocations else []
     for revoked in revocations:
         p = revoked.payload
         voided = sorted(rid for rid, v in book.voided.items()
@@ -421,9 +530,16 @@ def summary(journal: Journal, book: MissionBook) -> list[dict]:
             row["marks_revocation"] = p["marks_revocation"]
         if p.get("device_key_id") in running:     # nothing is paused for it: the founder decides (pause it, or not)
             row["resumed_and_still_running"] = running[p["device_key_id"]]
+        if revoked.event_id in holding:           # nothing of it runs on the revoked key's command
+            row["ended_missions_held"] = holding[revoked.event_id]
         if p.get(SUSPECTED) is True:
             rid = review_id(revoked)
             row["integrity_review"] = {"request_id": rid, "recorded": journal.retained(REVIEW_RECORD, [rid]) is not None,
                                        "state": f"ANSWERED: {answered[rid]}" if rid in answered else "OPEN"}
+            again = [e.payload for e in enrolled if e.payload.get("device_key_id") == p.get("device_key_id")
+                     and pos[e.event_id] > pos[revoked.event_id]]
+            if again:                             # the founder delegated the suspected key again: said, not refused
+                row["suspected_key_delegated_again"] = [{"at": d.get("at"), "command_digest": d.get("command_digest")}
+                                                        for d in again]
         out.append(row)
     return out

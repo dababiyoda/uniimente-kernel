@@ -83,9 +83,11 @@ def greg(home, *args):
 
 
 def read(home):
-    """Read-only view of the Body's canonical ledger (the Body process owns the writer)."""
+    """Read-only view of the Body's canonical ledger (the Body process owns the writer). A line the running Body is
+    still writing is left out, not a refusal: see test_greg_body_supervised.history."""
     config = json.loads((Path(home) / "body.json").read_text())
-    ledger = EvidenceLedger(config["constitution_hash"], str(Path(home) / "ledger.jsonl"), read_only=True)
+    ledger = EvidenceLedger(config["constitution_hash"], str(Path(home) / "ledger.jsonl"), read_only=True,
+                            tail="ignore")
     try:
         journal = Journal(EventSpine(ledger), actor="spiffe://uniimente.internal/greg/test-observer")
         out = {kind: [e.payload for e in journal.replay(kind)]

@@ -33,7 +33,7 @@ LIVENESS_TESTS = "tests/unit/test_repo_health_gates.py"
 PLANTED = "check_planted_mutants.py"
 UNWIRED_TEST = "test_unwired_gates_match_the_shrink_only_list"   # what the planted gate makes fail, unmutated
 CAUGHT_RULE = ('caught = (result.returncode == 1 and f"FAILED {tests}::" in result.stdout\n'
-               '                      and "ERROR collecting" not in result.stdout)')
+               '                          and "ERROR collecting" not in result.stdout)')
 RUNNER_MUTANTS = [
     (RUNNER, "any non-zero pytest exit counts as caught", CAUGHT_RULE, "caught = result.returncode != 0"),
     (RUNNER, "a failed test in a run that did not finish counts as caught",
@@ -42,11 +42,13 @@ RUNNER_MUTANTS = [
     (RUNNER, "the word FAILED anywhere in the output counts as caught",
      'f"FAILED {tests}::" in result.stdout', '"FAILED " in result.stdout'),
     (RUNNER, "a failed test beside a collection error counts as caught",
-     '\n                      and "ERROR collecting" not in result.stdout)', ")"),
+     '\n                          and "ERROR collecting" not in result.stdout)', ")"),
     (RUNNER, "an anchor at several sites is applied", "if original.count(old) != 1:", "if original.count(old) == 0:"),
-    (RUNNER, "a stale mutant does not fail the gate", 'print("STALE", name)\n                invalid += 1',
-     'print("STALE", name)'),
-    (RUNNER, "a surviving mutant does not fail the gate", "invalid += not caught", "invalid += 0"),
+    (RUNNER, "a stale mutant does not fail the gate", 'print("STALE", name, flush=True)\n                    return False',
+     'print("STALE", name, flush=True)\n                    return True'),
+    (RUNNER, "a surviving mutant does not fail the gate", "invalid = verdicts.count(False)", "invalid = 0"),
+    (RUNNER, "two mutants share one worker's scratch copy at once", "repo, env, command = free.pop()",
+     "repo, env, command = free[0]"),
     (RUNNER, "a named test that already fails counts as a catch for every mutant",
      "if (baseline.returncode != 0) if planted is None else", "if False if planted is None else"),
     (RUNNER, "on a planted tree the planted failure itself counts as a catch",

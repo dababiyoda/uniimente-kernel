@@ -143,3 +143,36 @@ def test_on_a_planted_tree_only_a_different_failing_test_is_a_catch(tmp_path, ca
     assert status == 1 and "SURVIVED_OR_INVALID" in out                # the planted failure alone is no catch
     status, out = planted_run("grow the kept list", "KEPT = ()", "KEPT = (50,)", first="test_kept_list_is_empty")
     assert status == 1 and "BASELINE_FAILS" in out and "CAUGHT" not in out   # the tree does not fail where it says
+
+
+def test_parallel_workers_judge_each_mutant_alone_and_count_the_same(tmp_path, capsys):
+    """Three workers, six mutants of one file: each mutant is applied and reverted in its own worker's copy, so a
+    caught mutant cannot make a neighbour's run fail and a survivor cannot hide behind one. The verdicts and the
+    count equal the one-worker run's."""
+    root = _repo(tmp_path)
+    tests = "tests/test_guard.py"
+    mutants = [("guard.py", "drop the limit", "n < 10", "True"),
+               ("guard.py", "comment only", "# limit", "# l"),
+               ("guard.py", "raise the limit", "n < 10", "n < 11"),
+               ("guard.py", "comment again", "# limit", "# x"),
+               ("guard.py", "gone anchor", "n <= 10", "True"),
+               ("guard.py", "admit all", "return n < 10", "return n == n")]
+    verdicts = {}
+    for workers in (1, 3):
+        status = mutation_harness.run(mutants, tests, "h-", root=root, purge_dirs=("tests",), workers=workers)
+        out = capsys.readouterr().out
+        verdicts[workers] = (status, sorted(line for line in out.splitlines() if not line.startswith("BASELINE")))
+    assert verdicts[1] == verdicts[3]
+    status, lines = verdicts[3]
+    assert status == 1 and "3/6 caught" in lines
+    assert {"CAUGHT drop the limit", "CAUGHT raise the limit", "CAUGHT admit all", "SURVIVED_OR_INVALID comment only",
+            "SURVIVED_OR_INVALID comment again", "STALE gone anchor"} <= set(lines)
+    assert "n < 10  # limit" in (root / "guard.py").read_text()
+
+
+def test_the_worker_count_comes_from_the_environment_and_is_never_below_one(monkeypatch):
+    monkeypatch.setenv("MUTATION_WORKERS", "2")
+    assert mutation_harness.default_workers() == 2
+    for bad in ("0", "-3", "many", ""):
+        monkeypatch.setenv("MUTATION_WORKERS", bad)
+        assert 1 <= mutation_harness.default_workers() <= 3

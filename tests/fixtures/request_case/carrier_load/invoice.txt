@@ -1,0 +1,8 @@
+SYNTHETIC — not a real party
+Carrier invoice
+Load reference: LD-240117
+Agreed amount: 1850.00
+Accessorial: detention 75.00 approval APP-7731
+Invoice amount: 1925.00
+Currency: USD
+Remit with the load reference so the payment can be matched.

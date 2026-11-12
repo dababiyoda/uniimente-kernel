@@ -863,6 +863,8 @@ STRENGTHENS = {
     "organs.exchange": ("routing", "proof", "eligibility", "settlement"),
     "organs.exchange_status": ("proof",),
     "business.reconcile": ("proof", "settlement"),
+    "case.assess": ("eligibility", "proof", "routing", "settlement"),
+    "case.packet": ("proof", "settlement", "compounding"),
     "worker.commission": ("capability_formation", "routing", "settlement", "compounding"),
     "worker.appraise": ("proof", "eligibility", "reliability"),
     "browser.session": ("proof", "capability_formation", "settlement"),
@@ -1068,6 +1070,37 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                                                                   "beancount/hledger exact single-posting "
                                                                   "matching (DISCOVER, no code copied)"}),
                            _lazy("greg.business_loop", "reconcile")),
+    "case.assess": (_builtin("case.assess", "case.assess",
+                             "Read one request-led case folder against a founder-signed rulebook: facts with their "
+                             "sources, conflicts, each rule met, not met or unknown, eligibility, the route, payment "
+                             "observed or not known, with estimated, reconciled and unknown amounts kept apart "
+                             "(read-only)", "api",
+                             "read_only", "fs:", {"rulebook": "path", "rulebook_sha256": "str", "folder": "path",
+                                                  "reference": "str", "statement": "path?", "columns": "dict?",
+                                                  "minor_units": "bool?"},
+                             {"eligibility": "str", "unresolved": "list", "disputes": "list", "route": "dict",
+                              "accepted": "bool|null", "payment_observed": "bool", "projection": "dict",
+                              "request_recorded": "bool", "packet_current": "bool", "assessment_digest": "str",
+                              "complete": "bool", "decided": "list?"},
+                             filesystem="read-scoped", retry_safe=True, tests=("tests/unit/test_greg_request_case.py",),
+                             provenance={"source": "uniimente-kernel/greg/cases.py",
+                                         "mechanism_from": "greg/business_loop.py reconcile; greg/dataplane.py flags; "
+                                                           "greg/capabilities.py faithful_text; greg/missions.py "
+                                                           "complete/decided judgment"}),
+                    _lazy("greg.cases", "assess")),
+    "case.packet": (_builtin("case.packet", "case.packet",
+                             "Deliver one new case packet (Markdown and JSON twin) for the case's current assessment "
+                             "into the founder's delivery root, saying what changed; never overwrites one", "api",
+                             "internal_write", "deliver:", {"rulebook": "path", "rulebook_sha256": "str",
+                                                            "folder": "path", "reference": "str",
+                                                            "statement": "path?", "columns": "dict?",
+                                                            "minor_units": "bool?"},
+                             {"path": "str", "json_path": "str", "name": "str", "assessment_digest": "str",
+                              "sha256": "str", "json_sha256": "str", "packet": "dict"},
+                             filesystem="deliver-write", tests=("tests/unit/test_greg_request_case.py",),
+                             provenance={"source": "uniimente-kernel/greg/cases.py",
+                                         "mechanism_from": "greg/ventures.py one-new-file delivery"}),
+                    _lazy("greg.cases", "packet")),
     "venture.status": (_builtin("venture.status", "venture.assessment_status",
                                 "Has a decision memo been delivered for this signal manifest, and with what "
                                 "binding verdict", "api", "read_only", "deliver:", {"manifest": "path"},

@@ -160,6 +160,8 @@ jobs:
         run: python scripts/ci/check_effect_call_allowlist_mutants.py
       - name: Node revocation and enrolled-node receipt mutations (NODE_REVOKE founder-only, receipts admitted only inside the node's cone)
         run: python scripts/ci/check_node_revoke_mutants.py
+      - name: Request-case mutations (three-valued eligibility, conflicts, duplicates, estimates never shown as actuals)
+        run: python scripts/ci/check_request_case_mutants.py
 
   verifier:
     # Its V2 re-runs tests/unit, so inside job 1 it pushed that job past its 30 minutes once the

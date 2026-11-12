@@ -96,6 +96,8 @@ def reconcile(params: dict, ctx: InvocationContext) -> dict:
         index, row = hits[0]
         return {**result, "matched": True, "row": index + 2,
                 "row_sha256": hashlib.sha256(repr(sorted(row.items())).encode()).hexdigest(),
+                # the row's own values as exported, so an actual is read from the statement, never from the estimate
+                "posting": {name: row.get(column) for name, column in columns.items()},
                 "detail": f"one posting of {expected} {currency} carries {reference}"}
     if hits:
         return {**result, "matched": False, "rows": [i + 2 for i, _ in hits],

@@ -644,6 +644,9 @@ function_owner_records:
       - module: greg.ventures
         qualnames: [verify_delivery]
         why: "re-renders a venture memo for appraisal (DELIVERING 'venture.assess'): the same interface for a different deliverable"
+      - module: greg.cases
+        qualnames: [verify_delivery]
+        why: "re-renders a case packet for appraisal (DELIVERING 'case.packet'): the same interface for a different deliverable"
     migration_path: >-
       the organ-exchange template signs organ.exchange; the capabilities.py bindings and the DELIVERING entry then
       follow the owner, and the alternate becomes HISTORICAL once no retained closure needs its verify_delivery

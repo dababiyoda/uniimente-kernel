@@ -512,6 +512,12 @@ def main(argv=None) -> int:
                            help="shared-work: the engagement you arrange and pay yourself")
             q.add_argument("--statement", default="statement.csv",
                            help="business-case: file name of the payment statement you export into the case folder")
+            q.add_argument("--reference", help="request-case: the case reference the documents carry (6+ characters)")
+            q.add_argument("--request", help="request-case: names the request this mission answers")
+            q.add_argument("--rulebook", help="request-case: the rulebook JSON, signed with the mission by its sha256")
+            q.add_argument("--case-folder", help="request-case: the folder the case's documents are saved into")
+            q.add_argument("--preapprove-packet", action="store_true",
+                           help="request-case: put the case packet write in the cone (default: ask before it)")
             q.add_argument("--print-only", action="store_true", help="show the mission without signing")
             q.add_argument("--problem", help="cognition: bounded problem JSON to review and sign")
         if name == "accept":
@@ -799,6 +805,14 @@ def main(argv=None) -> int:
                                                    acceptance=args.acceptance, statement=args.statement,
                                                    workspace_root=Layout(home).workspace, venture=args.venture,
                                                    approve_writes=args.approve_writes)
+                elif args.target == "request-case":
+                    missing = [f for f in ("reference", "request", "rulebook", "case_folder") if not getattr(args, f)]
+                    if missing:
+                        raise BodyError("request-case needs " + ", ".join("--" + f.replace("_", "-") for f in missing))
+                    spec = templates.request_case(reference=args.reference, request=args.request,
+                                                  rulebook=Path(args.rulebook), folder=Path(args.case_folder),
+                                                  statement=args.statement, venture=args.venture,
+                                                  preapprove_packet=args.preapprove_packet)
                 elif args.target == "cognition":
                     if not args.problem:
                         raise BodyError('cognition needs --problem')

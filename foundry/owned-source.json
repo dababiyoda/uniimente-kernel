@@ -464,6 +464,7 @@
     "greg/builders.py",
     "greg/business_loop.py",
     "greg/capabilities.py",
+    "greg/cases.py",
     "greg/cathedral.py",
     "greg/chromebook/REVIEW_BRANCH",
     "greg/chromebook/install.sh",

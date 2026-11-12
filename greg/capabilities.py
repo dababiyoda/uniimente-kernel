@@ -669,13 +669,22 @@ NO_BROWSER = "no Chrome or Chromium is installed on this body"
 
 
 def chrome_candidates() -> list[str]:
-    """Every installed browser GREG may render with, in the order it tries them. Nothing is run here."""
+    """Every installed browser GREG may render with, in the order it tries them. Nothing is run here.
+
+    GREG_CHROMIUM, when set, is the founder's choice and the only candidate; set to anything but the absolute path of
+    an executable file it is refused by name, and no other browser is run in its place."""
+    chosen = os.environ.get("GREG_CHROMIUM", "")
+    if chosen:
+        if not (os.path.isabs(chosen) and Path(chosen).is_file() and os.access(chosen, os.X_OK)):
+            raise CapabilityError(f"GREG_CHROMIUM is set to {chosen!r}, which is not the absolute path of an "
+                                  "executable file; GREG runs the browser that variable names or none (unset it "
+                                  "to let GREG choose among the installed browsers)")
+        return [chosen]
     shells = sorted(glob.glob(f"{PLAYWRIGHT_BROWSERS}/chromium_headless_shell-*/chrome-headless-shell-*/"
                               "chrome-headless-shell"), reverse=True)
     full = sorted(glob.glob(f"{PLAYWRIGHT_BROWSERS}/chromium-*/chrome-linux*/chrome"))
-    return [candidate for candidate in (os.environ.get("GREG_CHROMIUM", ""), *shells, *HEADLESS_SHELL_CANDIDATES,
-                                        *CHROME_CANDIDATES, *full)
-            if candidate and Path(candidate).is_file() and os.access(candidate, os.X_OK)]
+    return [candidate for candidate in (*shells, *HEADLESS_SHELL_CANDIDATES, *CHROME_CANDIDATES, *full)
+            if Path(candidate).is_file() and os.access(candidate, os.X_OK)]
 
 
 def chrome_binary() -> str:
@@ -688,7 +697,10 @@ def browser_installed() -> tuple[bool, str]:
     """What ``CapabilityManifest.available`` answers for browser.render, looked up each time it is asked: a path fixed
     at import can be gone when the capability runs (Playwright replaces a build's directory on upgrade). Nothing is
     run: this says a browser is installed, not that it renders."""
-    return (True, "available") if chrome_candidates() else (False, NO_BROWSER)
+    try:
+        return (True, "available") if chrome_candidates() else (False, NO_BROWSER)
+    except CapabilityError as exc:      # GREG_CHROMIUM names no browser
+        return False, str(exc)
 
 
 AVAILABLE_AT_CALL_TIME["browser.render"] = browser_installed

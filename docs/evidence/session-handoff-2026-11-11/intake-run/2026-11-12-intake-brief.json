@@ -1,0 +1,2132 @@
+{
+ "assessment": {
+  "checks": {
+   "ran": true,
+   "why": null
+  },
+  "counts": {
+   "behavioural_conflicts": 7,
+   "hold": 6,
+   "not_checked": 1,
+   "ready": 4,
+   "take_after": 1,
+   "test_runs": {
+    "errored": 0,
+    "failed": 12,
+    "not_run": 0,
+    "passed": 50,
+    "timed_out": 0
+   },
+   "textual_conflicts": 0,
+   "units": 12
+  },
+  "order": [
+   "290-authority",
+   "291-worker",
+   "273",
+   "278",
+   "294-retained-receipt",
+   "298-unmeasured-check",
+   "302-ci-time-limit",
+   "300-revoked-device",
+   "301-appraiser",
+   "304-compile-unread",
+   "303-rejected-credit",
+   "293-browser"
+  ],
+  "units": [
+   {
+    "after": [],
+    "arrives_with": [
+     "291-worker"
+    ],
+    "checks": [
+     {
+      "detail": "nothing was supplied for this unit",
+      "name": "",
+      "status": "no result for this exact head"
+     }
+    ],
+    "claims": [
+     {
+      "claim": "",
+      "detail": "",
+      "status": "no claims supplied"
+     }
+    ],
+    "hold": [],
+    "kind": "ready to take",
+    "name": "290-authority",
+    "not_checked": [],
+    "notes": [
+     "arrives with 291-worker"
+    ],
+    "recommendation": "ready to take",
+    "sha": "facea1703dded45e495d0e6dfe059e001ffc9565",
+    "tests": [
+     {
+      "alone": {
+       "measured": true,
+       "state": "passed"
+      },
+      "file": "tests/unit/test_greg_authority_attach_state.py",
+      "merged": {
+       "measured": true,
+       "state": "passed"
+      }
+     }
+    ]
+   },
+   {
+    "after": [
+     "290-authority"
+    ],
+    "arrives_with": [],
+    "checks": [
+     {
+      "detail": "nothing was supplied for this unit",
+      "name": "",
+      "status": "no result for this exact head"
+     }
+    ],
+    "claims": [
+     {
+      "claim": "",
+      "detail": "",
+      "status": "no claims supplied"
+     }
+    ],
+    "hold": [
+     "its own test fails on its own head (tests/unit/test_greg_egress.py)",
+     "behavioural conflict: merging it breaks 273's test tests/unit/test_greg_background_dispatch.py::test_a_cancel_ingested_after_the_adapter_returned_is_not_recorded_as_an_interruption",
+     "behavioural conflict: merging it breaks 273's test tests/unit/test_greg_background_dispatch.py::test_a_cancel_the_worker_finished_before_seeing_is_reconciled_not_recorded_done",
+     "behavioural conflict: merging it breaks 273's test tests/unit/test_greg_background_dispatch.py::test_a_dispatch_released_while_body_stopped_is_written_records_nothing_after_it",
+     "behavioural conflict: merging it breaks 273's test tests/unit/test_greg_background_dispatch.py::test_a_long_worker_does_not_freeze_the_other_missions",
+     "behavioural conflict: merging it breaks 273's test tests/unit/test_greg_background_dispatch.py::test_a_mission_stepped_after_its_own_background_outcome_landed_mid_turn_reads_the_recorded_state",
+     "behavioural conflict: merging it breaks 273's test tests/unit/test_greg_background_dispatch.py::test_an_error_after_the_hand_off_kills_the_next_turn_as_it_did_inline",
+     "behavioural conflict: merging it breaks 273's test tests/unit/test_greg_background_dispatch.py::test_nothing_is_written_after_body_stopped_names_an_unfinished_dispatch"
+    ],
+    "kind": "hold",
+    "name": "291-worker",
+    "not_checked": [],
+    "notes": [],
+    "recommendation": "hold: its own test fails on its own head (tests/unit/test_greg_egress.py)",
+    "sha": "41fcc41f04911ccb1f0f8d5dfc18158999a18def",
+    "tests": [
+     {
+      "alone": {
+       "measured": true,
+       "state": "passed"
+      },
+      "file": "tests/unit/test_greg_authority_attach_state.py",
+      "merged": {
+       "measured": true,
+       "state": "passed"
+      }
+     },
+     {
+      "alone": {
+       "measured": true,
+       "state": "passed"
+      },
+      "file": "tests/unit/test_greg_authority_registered_identity.py",
+      "merged": {
+       "measured": true,
+       "state": "passed"
+      }
+     },
+     {
+      "alone": {
+       "measured": true,
+       "state": "passed"
+      },
+      "file": "tests/unit/test_greg_capabilities.py",
+      "merged": {
+       "measured": true,
+       "state": "passed"
+      }
+     },
+     {
+      "alone": {
+       "measured": true,
+       "state": "failed"
+      },
+      "file": "tests/unit/test_greg_egress.py",
+      "merged": {
+       "measured": true,
+       "state": "failed"
+      }
+     },
+     {
+      "alone": {
+       "measured": true,
+       "state": "passed"
+      },
+      "file": "tests/unit/test_greg_handoff_evidence.py",
+      "merged": {
+       "measured": true,
+       "state": "passed"
+      }
+     }
+    ]
+   },
+   {
+    "after": [],
+    "arrives_with": [],
+    "checks": [
+     {
+      "detail": "nothing was supplied for this unit",
+      "name": "",
+      "status": "no result for this exact head"
+     }
+    ],
+    "claims": [
+     {
+      "claim": "",
+      "detail": "",
+      "status": "no claims supplied"
+     }
+    ],
+    "hold": [
+     "its own test fails on its own head (tests/integration/test_greg_body_supervised.py, tests/unit/test_greg_background_dispatch.py)",
+     "behavioural conflict: its test tests/unit/test_greg_background_dispatch.py::test_a_cancel_ingested_after_the_adapter_returned_is_not_recorded_as_an_interruption passes on its own head and fails on the merged tree (cause: 291-worker)",
+     "behavioural conflict: its test tests/unit/test_greg_background_dispatch.py::test_a_cancel_the_worker_finished_before_seeing_is_reconciled_not_recorded_done passes on its own head and fails on the merged tree (cause: 291-worker)",
+     "behavioural conflict: its test tests/unit/test_greg_background_dispatch.py::test_a_dispatch_released_while_body_stopped_is_written_records_nothing_after_it passes on its own head and fails on the merged tree (cause: 291-worker)",
+     "behavioural conflict: its test tests/unit/test_greg_background_dispatch.py::test_a_long_worker_does_not_freeze_the_other_missions passes on its own head and fails on the merged tree (cause: 291-worker)",
+     "behavioural conflict: its test tests/unit/test_greg_background_dispatch.py::test_a_mission_stepped_after_its_own_background_outcome_landed_mid_turn_reads_the_recorded_state passes on its own head and fails on the merged tree (cause: 291-worker)",
+     "behavioural conflict: its test tests/unit/test_greg_background_dispatch.py::test_an_error_after_the_hand_off_kills_the_next_turn_as_it_did_inline passes on its own head and fails on the merged tree (cause: 291-worker)",
+     "behavioural conflict: its test tests/unit/test_greg_background_dispatch.py::test_nothing_is_written_after_body_stopped_names_an_unfinished_dispatch passes on its own head and fails on the merged tree (cause: 291-worker)"
+    ],
+    "kind": "hold",
+    "name": "273",
+    "not_checked": [],
+    "notes": [],
+    "recommendation": "hold: its own test fails on its own head (tests/integration/test_greg_body_supervised.py, tests/unit/test_greg_background_dispatch.py)",
+    "sha": "331de165898ed5779ba87fc1532089a8f763dd4d",
+    "tests": [
+     {
+      "alone": {
+       "measured": true,
+       "state": "failed"
+      },
+      "file": "tests/integration/test_greg_body_supervised.py",
+      "merged": {
+       "measured": true,
+       "state": "failed"
+      }
+     },
+     {
+      "alone": {
+       "measured": true,
+       "state": "failed"
+      },
+      "file": "tests/unit/test_greg_background_dispatch.py",
+      "merged": {
+       "measured": true,
+       "state": "failed"
+      }
+     }
+    ]
+   },
+   {
+    "after": [],
+    "arrives_with": [],
+    "checks": [
+     {
+      "detail": "nothing was supplied for this unit",
+      "name": "",
+      "status": "no result for this exact head"
+     }
+    ],
+    "claims": [
+     {
+      "claim": "",
+      "detail": "",
+      "status": "no claims supplied"
+     }
+    ],
+    "hold": [],
+    "kind": "ready to take",
+    "name": "278",
+    "not_checked": [],
+    "notes": [
+     "its head does not contain the base (16 commit(s) behind)"
+    ],
+    "recommendation": "ready to take",
+    "sha": "a639add726df949c36a554aa87ba7c60cdabe66a",
+    "tests": [
+     {
+      "alone": {
+       "measured": true,
+       "state": "passed"
+      },
+      "file": "tests/unit/test_genomes_formal_b.py",
+      "merged": {
+       "measured": true,
+       "state": "passed"
+      }
+     },
+     {
+      "alone": {
+       "measured": true,
+       "state": "passed"
+      },
+      "file": "tests/unit/test_resource_bounds.py",
+      "merged": {
+       "measured": true,
+       "state": "passed"
+      }
+     }
+    ]
+   },
+   {
+    "after": [],
+    "arrives_with": [
+     "300-revoked-device"
+    ],
+    "checks": [
+     {
+      "detail": "nothing was supplied for this unit",
+      "name": "",
+      "status": "no result for this exact head"
+     }
+    ],
+    "claims": [
+     {
+      "claim": "",
+      "detail": "",
+      "status": "no claims supplied"
+     }
+    ],
+    "hold": [
+     "its own test fails on its own head (tests/unit/test_greg_retained_receipt.py)"
+    ],
+    "kind": "hold",
+    "name": "294-retained-receipt",
+    "not_checked": [],
+    "notes": [
+     "the merge keeps both sides' lines in .github/workflows/canonical-ci.yml; nobody reviewed that resolution",
+     "arrives with 300-revoked-device"
+    ],
+    "recommendation": "hold: its own test fails on its own head (tests/unit/test_greg_retained_receipt.py)",
+    "sha": "1643932e43759908959f7fe460fac762bc76a4cf",
+    "tests": [
+     {
+      "alone": {
+       "measured": true,
+       "state": "passed"
+      },
+      "file": "tests/integration/test_greg_retained_receipt_process.py",
+      "merged": {
+       "measured": true,
+       "state": "passed"
+      }
+     },
+     {
+      "alone": {
+       "measured": true,
+       "state": "failed"
+      },
+      "file": "tests/unit/test_greg_retained_receipt.py",
+      "merged": {
+       "measured": true,
+       "state": "failed"
+      }
+     },
+     {
+      "alone": {
+       "measured": true,
+       "state": "passed"
+      },
+      "file": "tests/unit/test_greg_retained_receipt_history.py",
+      "merged": {
+       "measured": true,
+       "state": "passed"
+      }
+     }
+    ]
+   },
+   {
+    "after": [],
+    "arrives_with": [
+     "304-compile-unread"
+    ],
+    "checks": [
+     {
+      "detail": "",
+      "name": "1 Kernel and organ tests",
+      "status": "passed"
+     },
+     {
+      "detail": "",
+      "name": "10 Mutation gates",
+      "status": "passed"
+     }
+    ],
+    "claims": [],
+    "hold": [],
+    "kind": "ready to take",
+    "name": "298-unmeasured-check",
+    "not_checked": [],
+    "notes": [
+     "the merge keeps both sides' lines in .github/workflows/canonical-ci.yml; nobody reviewed that resolution",
+     "arrives with 304-compile-unread"
+    ],
+    "recommendation": "ready to take",
+    "sha": "b9a34259543fa64465d40e1c1dea8e90e327f11f",
+    "tests": [
+     {
+      "alone": {
+       "measured": true,
+       "state": "passed"
+      },
+      "file": "tests/integration/test_greg_mind_constructs_capability.py",
+      "merged": {
+       "measured": true,
+       "state": "passed"
+      }
+     },
+     {
+      "alone": {
+       "measured": true,
+       "state": "passed"
+      },
+      "file": "tests/unit/test_greg_functional_reconstitution.py",
+      "merged": {
+       "measured": true,
+       "state": "passed"
+      }
+     },
+     {
+      "alone": {
+       "measured": true,
+       "state": "passed"
+      },
+      "file": "tests/unit/test_greg_precondition_unheld.py",
+      "merged": {
+       "measured": true,
+       "state": "passed"
+      }
+     }
+    ]
+   },
+   {
+    "after": [],
+    "arrives_with": [
+     "300-revoked-device",
+     "304-compile-unread"
+    ],
+    "checks": [
+     {
+      "detail": "",
+      "name": "1 Kernel and organ tests",
+      "status": "passed"
+     },
+     {
+      "detail": "",
+      "name": "9 Institutional verifier",
+      "status": "passed"
+     },
+     {
+      "detail": "",
+      "name": "10 Mutation gates",
+      "status": "passed"
+     }
+    ],
+    "claims": [],
+    "hold": [],
+    "kind": "not checked",
+    "name": "302-ci-time-limit",
+    "not_checked": [
+     "no test changed, and none was named for it"
+    ],
+    "notes": [
+     "arrives with 300-revoked-device, 304-compile-unread"
+    ],
+    "recommendation": "not checked: no test changed, and none was named for it",
+    "sha": "dca1a032d63a352c54de2048167b20a7f85ca193",
+    "tests": []
+   },
+   {
+    "after": [
+     "294-retained-receipt",
+     "302-ci-time-limit"
+    ],
+    "arrives_with": [],
+    "checks": [
+     {
+      "detail": "",
+      "name": "1 Kernel and organ tests",
+      "status": "passed"
+     },
+     {
+      "detail": "",
+      "name": "9 Institutional verifier",
+      "status": "passed"
+     },
+     {
+      "detail": "concluded in_progress, which is not a result",
+      "name": "10 Mutation gates",
+      "status": "no result for this exact head"
+     },
+     {
+      "detail": "it names head 0aa09c87",
+      "name": "10 Mutation gates",
+      "status": "result is for another head (stale)"
+     }
+    ],
+    "claims": [],
+    "hold": [
+     "its own test fails on its own head (tests/unit/test_greg_retained_receipt.py)"
+    ],
+    "kind": "hold",
+    "name": "300-revoked-device",
+    "not_checked": [],
+    "notes": [
+     "the merge keeps both sides' lines in .github/workflows/canonical-ci.yml; nobody reviewed that resolution"
+    ],
+    "recommendation": "hold: its own test fails on its own head (tests/unit/test_greg_retained_receipt.py)",
+    "sha": "b1f157fe533ec81e33830dfe36f656601eb19fe1",
+    "tests": [
+     {
+      "alone": {
+       "measured": true,
+       "state": "passed"
+      },
+      "file": "tests/integration/test_greg_retained_receipt_process.py",
+      "merged": {
+       "measured": true,
+       "state": "passed"
+      }
+     },
+     {
+      "alone": {
+       "measured": true,
+       "state": "failed"
+      },
+      "file": "tests/unit/test_greg_retained_receipt.py",
+      "merged": {
+       "measured": true,
+       "state": "failed"
+      }
+     },
+     {
+      "alone": {
+       "measured": true,
+       "state": "passed"
+      },
+      "file": "tests/unit/test_greg_retained_receipt_history.py",
+      "merged": {
+       "measured": true,
+       "state": "passed"
+      }
+     },
+     {
+      "alone": {
+       "measured": true,
+       "state": "passed"
+      },
+      "file": "tests/unit/test_greg_revoked_device_authority.py",
+      "merged": {
+       "measured": true,
+       "state": "passed"
+      }
+     },
+     {
+      "alone": {
+       "measured": true,
+       "state": "passed"
+      },
+      "file": "tests/unit/test_greg_revoked_device_review.py",
+      "merged": {
+       "measured": true,
+       "state": "passed"
+      }
+     }
+    ]
+   },
+   {
+    "after": [],
+    "arrives_with": [],
+    "checks": [
+     {
+      "detail": "nothing was supplied for this unit",
+      "name": "",
+      "status": "no result for this exact head"
+     }
+    ],
+    "claims": [
+     {
+      "claim": "",
+      "detail": "",
+      "status": "no claims supplied"
+     }
+    ],
+    "hold": [],
+    "kind": "ready to take",
+    "name": "301-appraiser",
+    "not_checked": [],
+    "notes": [],
+    "recommendation": "ready to take",
+    "sha": "bfaf210c8547dc34c58ac7de3fd502ac03c1d724",
+    "tests": [
+     {
+      "alone": {
+       "measured": true,
+       "state": "passed"
+      },
+      "file": "tests/unit/test_greg_appraiser_attach_state.py",
+      "merged": {
+       "measured": true,
+       "state": "passed"
+      }
+     },
+     {
+      "alone": {
+       "measured": true,
+       "state": "passed"
+      },
+      "file": "tests/unit/test_greg_failure_closure.py",
+      "merged": {
+       "measured": true,
+       "state": "passed"
+      }
+     }
+    ]
+   },
+   {
+    "after": [
+     "298-unmeasured-check",
+     "302-ci-time-limit"
+    ],
+    "arrives_with": [],
+    "checks": [
+     {
+      "detail": "nothing was supplied for this unit",
+      "name": "",
+      "status": "no result for this exact head"
+     }
+    ],
+    "claims": [
+     {
+      "claim": "",
+      "detail": "",
+      "status": "no claims supplied"
+     }
+    ],
+    "hold": [],
+    "kind": "take after",
+    "name": "304-compile-unread",
+    "not_checked": [],
+    "notes": [
+     "the merge keeps both sides' lines in .github/workflows/canonical-ci.yml; nobody reviewed that resolution"
+    ],
+    "recommendation": "take after 298-unmeasured-check, 302-ci-time-limit",
+    "sha": "1c4a758c4d660549472b7cc463c72c7d4d95c9b4",
+    "tests": [
+     {
+      "alone": {
+       "measured": true,
+       "state": "passed"
+      },
+      "file": "tests/integration/test_greg_mind_constructs_capability.py",
+      "merged": {
+       "measured": true,
+       "state": "passed"
+      }
+     },
+     {
+      "alone": {
+       "measured": true,
+       "state": "passed"
+      },
+      "file": "tests/unit/test_greg_compile_host_stop.py",
+      "merged": {
+       "measured": true,
+       "state": "passed"
+      }
+     },
+     {
+      "alone": {
+       "measured": true,
+       "state": "passed"
+      },
+      "file": "tests/unit/test_greg_compile_unanswered.py",
+      "merged": {
+       "measured": true,
+       "state": "passed"
+      }
+     },
+     {
+      "alone": {
+       "measured": true,
+       "state": "passed"
+      },
+      "file": "tests/unit/test_greg_functional_reconstitution.py",
+      "merged": {
+       "measured": true,
+       "state": "passed"
+      }
+     },
+     {
+      "alone": {
+       "measured": true,
+       "state": "passed"
+      },
+      "file": "tests/unit/test_greg_precondition_unheld.py",
+      "merged": {
+       "measured": true,
+       "state": "passed"
+      }
+     }
+    ]
+   },
+   {
+    "after": [],
+    "arrives_with": [],
+    "checks": [
+     {
+      "detail": "no check result was supplied for this revision",
+      "name": "",
+      "status": "no result for this exact head"
+     }
+    ],
+    "claims": [
+     {
+      "claim": "pytest of 9 files on b27e81f5 + 9097b276",
+      "claimed_result": "pass",
+      "detail": "",
+      "status": "stale: the claim names head 9097b276635742dfdcad98dfbae1dd78b3fddb5c, this unit is 0a9a246fa1afb7b098850636f359deba8e10e58d",
+      "tests": []
+     }
+    ],
+    "hold": [
+     "stale: its claims name another head"
+    ],
+    "kind": "hold",
+    "name": "303-rejected-credit",
+    "not_checked": [],
+    "notes": [],
+    "recommendation": "hold: stale: its claims name another head",
+    "sha": "0a9a246fa1afb7b098850636f359deba8e10e58d",
+    "tests": [
+     {
+      "alone": {
+       "measured": true,
+       "state": "passed"
+      },
+      "file": "tests/unit/test_greg_evidence_corrections.py",
+      "merged": {
+       "measured": true,
+       "state": "passed"
+      }
+     }
+    ]
+   },
+   {
+    "after": [],
+    "arrives_with": [],
+    "checks": [
+     {
+      "detail": "nothing was supplied for this unit",
+      "name": "",
+      "status": "no result for this exact head"
+     }
+    ],
+    "claims": [
+     {
+      "claim": "",
+      "detail": "",
+      "status": "no claims supplied"
+     }
+    ],
+    "hold": [
+     "its own test fails on its own head (tests/unit/test_greg_browser.py)"
+    ],
+    "kind": "hold",
+    "name": "293-browser",
+    "not_checked": [],
+    "notes": [
+     "the merge keeps both sides' lines in .github/workflows/canonical-ci.yml; nobody reviewed that resolution"
+    ],
+    "recommendation": "hold: its own test fails on its own head (tests/unit/test_greg_browser.py)",
+    "sha": "32ca8de75bd2764251800df67932d1c3dc0522a8",
+    "tests": [
+     {
+      "alone": {
+       "measured": true,
+       "state": "failed"
+      },
+      "file": "tests/unit/test_greg_browser.py",
+      "merged": {
+       "measured": true,
+       "state": "failed"
+      }
+     },
+     {
+      "alone": {
+       "measured": true,
+       "state": "passed"
+      },
+      "file": "tests/unit/test_greg_browser_binary.py",
+      "merged": {
+       "measured": true,
+       "state": "passed"
+      }
+     }
+    ]
+   }
+  ]
+ },
+ "inputs": {
+  "ancestry": {
+   "behind_base": {
+    "273": 0,
+    "278": 16,
+    "290-authority": 0,
+    "291-worker": 0,
+    "293-browser": 0,
+    "294-retained-receipt": 0,
+    "298-unmeasured-check": 0,
+    "300-revoked-device": 0,
+    "301-appraiser": 0,
+    "302-ci-time-limit": 0,
+    "303-rejected-credit": 0,
+    "304-compile-unread": 0
+   },
+   "contains": {
+    "273": [],
+    "278": [],
+    "290-authority": [],
+    "291-worker": [
+     "290-authority"
+    ],
+    "293-browser": [],
+    "294-retained-receipt": [],
+    "298-unmeasured-check": [],
+    "300-revoked-device": [
+     "294-retained-receipt",
+     "302-ci-time-limit"
+    ],
+    "301-appraiser": [],
+    "302-ci-time-limit": [],
+    "303-rejected-credit": [],
+    "304-compile-unread": [
+     "298-unmeasured-check",
+     "302-ci-time-limit"
+    ]
+   },
+   "contains_base": {
+    "273": true,
+    "278": false,
+    "290-authority": true,
+    "291-worker": true,
+    "293-browser": true,
+    "294-retained-receipt": true,
+    "298-unmeasured-check": true,
+    "300-revoked-device": true,
+    "301-appraiser": true,
+    "302-ci-time-limit": true,
+    "303-rejected-credit": true,
+    "304-compile-unread": true
+   }
+  },
+  "composed_tree": "ae73028df2505a4de187165a55537d5f2de69859",
+  "confinement": {
+   "body_setting": "supervised",
+   "filesystem": [
+    {
+     "abi": 7,
+     "filesystem": "landlock",
+     "writable": [
+      "<scratchpad>/intake-run/body/workspace/m_intake-d352d08f0c497faf/intake-scratch/trees/own-290-authority"
+     ]
+    },
+    {
+     "abi": 7,
+     "filesystem": "landlock",
+     "writable": [
+      "<scratchpad>/intake-run/body/workspace/m_intake-d352d08f0c497faf/intake-scratch/trees/own-291-worker"
+     ]
+    },
+    {
+     "abi": 7,
+     "filesystem": "landlock",
+     "writable": [
+      "<scratchpad>/intake-run/body/workspace/m_intake-d352d08f0c497faf/intake-scratch/trees/own-273"
+     ]
+    },
+    {
+     "abi": 7,
+     "filesystem": "landlock",
+     "writable": [
+      "<scratchpad>/intake-run/body/workspace/m_intake-d352d08f0c497faf/intake-scratch/trees/own-278"
+     ]
+    },
+    {
+     "abi": 7,
+     "filesystem": "landlock",
+     "writable": [
+      "<scratchpad>/intake-run/body/workspace/m_intake-d352d08f0c497faf/intake-scratch/trees/own-294-retained-receipt"
+     ]
+    },
+    {
+     "abi": 7,
+     "filesystem": "landlock",
+     "writable": [
+      "<scratchpad>/intake-run/body/workspace/m_intake-d352d08f0c497faf/intake-scratch/trees/own-298-unmeasured-check"
+     ]
+    },
+    {
+     "abi": 7,
+     "filesystem": "landlock",
+     "writable": [
+      "<scratchpad>/intake-run/body/workspace/m_intake-d352d08f0c497faf/intake-scratch/trees/own-300-revoked-device"
+     ]
+    },
+    {
+     "abi": 7,
+     "filesystem": "landlock",
+     "writable": [
+      "<scratchpad>/intake-run/body/workspace/m_intake-d352d08f0c497faf/intake-scratch/trees/own-301-appraiser"
+     ]
+    },
+    {
+     "abi": 7,
+     "filesystem": "landlock",
+     "writable": [
+      "<scratchpad>/intake-run/body/workspace/m_intake-d352d08f0c497faf/intake-scratch/trees/own-304-compile-unread"
+     ]
+    },
+    {
+     "abi": 7,
+     "filesystem": "landlock",
+     "writable": [
+      "<scratchpad>/intake-run/body/workspace/m_intake-d352d08f0c497faf/intake-scratch/trees/own-303-rejected-credit"
+     ]
+    },
+    {
+     "abi": 7,
+     "filesystem": "landlock",
+     "writable": [
+      "<scratchpad>/intake-run/body/workspace/m_intake-d352d08f0c497faf/intake-scratch/trees/own-293-browser"
+     ]
+    },
+    {
+     "abi": 7,
+     "filesystem": "landlock",
+     "writable": [
+      "<scratchpad>/intake-run/body/workspace/m_intake-d352d08f0c497faf/intake-scratch/trees/composed"
+     ]
+    },
+    {
+     "abi": 7,
+     "filesystem": "landlock",
+     "writable": [
+      "<scratchpad>/intake-run/body/workspace/m_intake-d352d08f0c497faf/intake-scratch/trees/onbase-273"
+     ]
+    },
+    {
+     "abi": 7,
+     "filesystem": "landlock",
+     "writable": [
+      "<scratchpad>/intake-run/body/workspace/m_intake-d352d08f0c497faf/intake-scratch/trees/without-290-authority"
+     ]
+    },
+    {
+     "abi": 7,
+     "filesystem": "landlock",
+     "writable": [
+      "<scratchpad>/intake-run/body/workspace/m_intake-d352d08f0c497faf/intake-scratch/trees/without-291-worker"
+     ]
+    },
+    {
+     "abi": 7,
+     "filesystem": "landlock",
+     "writable": [
+      "<scratchpad>/intake-run/body/workspace/m_intake-d352d08f0c497faf/intake-scratch/trees/without-278"
+     ]
+    },
+    {
+     "abi": 7,
+     "filesystem": "landlock",
+     "writable": [
+      "<scratchpad>/intake-run/body/workspace/m_intake-d352d08f0c497faf/intake-scratch/trees/without-294-retained-receipt"
+     ]
+    },
+    {
+     "abi": 7,
+     "filesystem": "landlock",
+     "writable": [
+      "<scratchpad>/intake-run/body/workspace/m_intake-d352d08f0c497faf/intake-scratch/trees/without-298-unmeasured-check"
+     ]
+    },
+    {
+     "abi": 7,
+     "filesystem": "landlock",
+     "writable": [
+      "<scratchpad>/intake-run/body/workspace/m_intake-d352d08f0c497faf/intake-scratch/trees/without-302-ci-time-limit"
+     ]
+    },
+    {
+     "abi": 7,
+     "filesystem": "landlock",
+     "writable": [
+      "<scratchpad>/intake-run/body/workspace/m_intake-d352d08f0c497faf/intake-scratch/trees/without-300-revoked-device"
+     ]
+    },
+    {
+     "abi": 7,
+     "filesystem": "landlock",
+     "writable": [
+      "<scratchpad>/intake-run/body/workspace/m_intake-d352d08f0c497faf/intake-scratch/trees/without-301-appraiser"
+     ]
+    },
+    {
+     "abi": 7,
+     "filesystem": "landlock",
+     "writable": [
+      "<scratchpad>/intake-run/body/workspace/m_intake-d352d08f0c497faf/intake-scratch/trees/without-304-compile-unread"
+     ]
+    },
+    {
+     "abi": 7,
+     "filesystem": "landlock",
+     "writable": [
+      "<scratchpad>/intake-run/body/workspace/m_intake-d352d08f0c497faf/intake-scratch/trees/without-303-rejected-credit"
+     ]
+    },
+    {
+     "abi": 7,
+     "filesystem": "landlock",
+     "writable": [
+      "<scratchpad>/intake-run/body/workspace/m_intake-d352d08f0c497faf/intake-scratch/trees/without-293-browser"
+     ]
+    }
+   ],
+   "modes": [
+    "supervised: network denied, environment scrubbed, filesystem confined by Landlock (reads the runtime, writes only the clone)"
+   ],
+   "runs": 74
+  },
+  "generated_on": "2026-11-12",
+  "rehearsal": {
+   "also": null,
+   "base": "8d20532464b1533b28d71d8331ca3412a90dbb11",
+   "behavioural_conflicts": [
+    {
+     "caused_by": [
+      "291-worker"
+     ],
+     "note": "passes when this head is left out",
+     "test": "tests/unit/test_greg_background_dispatch.py::test_a_cancel_ingested_after_the_adapter_returned_is_not_recorded_as_an_interruption",
+     "unit": "273"
+    },
+    {
+     "caused_by": [
+      "291-worker"
+     ],
+     "note": "passes when this head is left out",
+     "test": "tests/unit/test_greg_background_dispatch.py::test_a_cancel_the_worker_finished_before_seeing_is_reconciled_not_recorded_done",
+     "unit": "273"
+    },
+    {
+     "caused_by": [
+      "291-worker"
+     ],
+     "note": "passes when this head is left out",
+     "test": "tests/unit/test_greg_background_dispatch.py::test_a_dispatch_released_while_body_stopped_is_written_records_nothing_after_it",
+     "unit": "273"
+    },
+    {
+     "caused_by": [
+      "291-worker"
+     ],
+     "note": "passes when this head is left out",
+     "test": "tests/unit/test_greg_background_dispatch.py::test_a_long_worker_does_not_freeze_the_other_missions",
+     "unit": "273"
+    },
+    {
+     "caused_by": [
+      "291-worker"
+     ],
+     "note": "passes when this head is left out",
+     "test": "tests/unit/test_greg_background_dispatch.py::test_a_mission_stepped_after_its_own_background_outcome_landed_mid_turn_reads_the_recorded_state",
+     "unit": "273"
+    },
+    {
+     "caused_by": [
+      "291-worker"
+     ],
+     "note": "passes when this head is left out",
+     "test": "tests/unit/test_greg_background_dispatch.py::test_an_error_after_the_hand_off_kills_the_next_turn_as_it_did_inline",
+     "unit": "273"
+    },
+    {
+     "caused_by": [
+      "291-worker"
+     ],
+     "note": "passes when this head is left out",
+     "test": "tests/unit/test_greg_background_dispatch.py::test_nothing_is_written_after_body_stopped_names_an_unfinished_dispatch",
+     "unit": "273"
+    }
+   ],
+   "clean": false,
+   "failing_before_the_merge": [
+    {
+     "test": "tests/unit/test_greg_egress.py::test_a_repaired_redirect_through_the_authority_office_is_done_not_uncertain",
+     "unit": "291-worker"
+    },
+    {
+     "test": "tests/unit/test_greg_egress.py::test_a_request_http_client_cannot_form_is_a_definite_refusal",
+     "unit": "291-worker"
+    },
+    {
+     "test": "tests/unit/test_greg_egress.py::test_a_same_host_location_urllib_repairs_is_repaired_then_checked[/nopath-/]",
+     "unit": "291-worker"
+    },
+    {
+     "test": "tests/unit/test_greg_egress.py::test_a_same_host_location_urllib_repairs_is_repaired_then_checked[/space-/My%20Report]",
+     "unit": "291-worker"
+    },
+    {
+     "test": "tests/unit/test_greg_egress.py::test_a_same_host_location_urllib_repairs_is_repaired_then_checked[/utf8-/caf%C3%A9]",
+     "unit": "291-worker"
+    },
+    {
+     "test": "tests/integration/test_greg_body_supervised.py::test_body_survives_hard_kill_waits_for_founder_and_stops_on_command",
+     "unit": "273"
+    },
+    {
+     "test": "tests/unit/test_greg_background_dispatch.py::test_a_body_closing_on_an_error_stops_and_records_its_running_worker_before_the_ledger_closes",
+     "unit": "273"
+    },
+    {
+     "test": "tests/unit/test_greg_background_dispatch.py::test_a_founder_cancel_or_detach_while_the_worker_runs_interrupts_it[cancel]",
+     "unit": "273"
+    },
+    {
+     "test": "tests/unit/test_greg_background_dispatch.py::test_a_founder_cancel_or_detach_while_the_worker_runs_interrupts_it[detach]",
+     "unit": "273"
+    },
+    {
+     "test": "tests/unit/test_greg_background_dispatch.py::test_a_founder_cancel_or_detach_while_the_worker_runs_interrupts_it[supersede]",
+     "unit": "273"
+    },
+    {
+     "test": "tests/unit/test_greg_background_dispatch.py::test_a_pause_while_the_worker_runs_does_not_interrupt_the_admitted_act",
+     "unit": "273"
+    },
+    {
+     "test": "tests/unit/test_greg_background_dispatch.py::test_a_worker_that_ignores_its_stop_has_its_process_group_killed_when_the_body_closes",
+     "unit": "273"
+    },
+    {
+     "test": "tests/unit/test_greg_retained_receipt.py::test_a_refused_read_reused_after_a_restart_passes_no_check_and_closes_no_mission[False-observed0]",
+     "unit": "294-retained-receipt"
+    },
+    {
+     "test": "tests/unit/test_greg_retained_receipt.py::test_a_refused_read_reused_after_a_restart_passes_no_check_and_closes_no_mission[False-observed0]",
+     "unit": "300-revoked-device"
+    },
+    {
+     "test": "tests/unit/test_greg_browser.py::test_a_mission_observes_javascript_rendered_truth_and_the_page_cannot_phone_home",
+     "unit": "293-browser"
+    },
+    {
+     "test": "tests/unit/test_greg_browser.py::test_the_signed_target_must_name_the_host_the_browser_contacts",
+     "unit": "293-browser"
+    }
+   ],
+   "kept_both_sides": {
+    "293-browser": [
+     ".github/workflows/canonical-ci.yml"
+    ],
+    "294-retained-receipt": [
+     ".github/workflows/canonical-ci.yml"
+    ],
+    "298-unmeasured-check": [
+     ".github/workflows/canonical-ci.yml"
+    ],
+    "300-revoked-device": [
+     ".github/workflows/canonical-ci.yml"
+    ],
+    "304-compile-unread": [
+     ".github/workflows/canonical-ci.yml"
+    ]
+   },
+   "limits": [
+    "only the named tests were run: a clean result does not prove the heads are compatible",
+    "a unit left out for a textual conflict was not tested in the merge",
+    "where both sides' lines were kept in a named file, that resolution was not reviewed by a person",
+    "read-only: nothing was merged, pushed or edited; no result here approves a merge"
+   ],
+   "merge_order": [
+    "290-authority",
+    "291-worker",
+    "273",
+    "278",
+    "294-retained-receipt",
+    "298-unmeasured-check",
+    "302-ci-time-limit",
+    "300-revoked-device",
+    "301-appraiser",
+    "304-compile-unread",
+    "303-rejected-credit",
+    "293-browser"
+   ],
+   "not_measured": [],
+   "textual_conflicts": {},
+   "tool": "compose_rehearsal/1",
+   "unchecked": [
+    "302-ci-time-limit"
+   ],
+   "units": [
+    {
+     "alone": {
+      "counts": {
+       "passed": 9
+      },
+      "failed": [],
+      "missing": []
+     },
+     "in_merge": true,
+     "merged": {
+      "counts": {
+       "passed": 9
+      },
+      "failed": [],
+      "missing": []
+     },
+     "name": "290-authority",
+     "sha": "facea1703dded45e495d0e6dfe059e001ffc9565",
+     "states": {
+      "alone": {
+       "tests/unit/test_greg_authority_attach_state.py": {
+        "measured": true,
+        "state": "passed"
+       }
+      },
+      "merged": {
+       "tests/unit/test_greg_authority_attach_state.py": {
+        "measured": true,
+        "state": "passed"
+       }
+      }
+     },
+     "tests": [
+      "tests/unit/test_greg_authority_attach_state.py"
+     ]
+    },
+    {
+     "alone": {
+      "counts": {
+       "error": 5,
+       "passed": 92
+      },
+      "failed": [
+       "tests/unit/test_greg_egress.py::test_a_repaired_redirect_through_the_authority_office_is_done_not_uncertain",
+       "tests/unit/test_greg_egress.py::test_a_request_http_client_cannot_form_is_a_definite_refusal",
+       "tests/unit/test_greg_egress.py::test_a_same_host_location_urllib_repairs_is_repaired_then_checked[/nopath-/]",
+       "tests/unit/test_greg_egress.py::test_a_same_host_location_urllib_repairs_is_repaired_then_checked[/space-/My%20Report]",
+       "tests/unit/test_greg_egress.py::test_a_same_host_location_urllib_repairs_is_repaired_then_checked[/utf8-/caf%C3%A9]"
+      ],
+      "missing": []
+     },
+     "in_merge": true,
+     "merged": {
+      "counts": {
+       "error": 5,
+       "passed": 92
+      },
+      "failed": [
+       "tests/unit/test_greg_egress.py::test_a_repaired_redirect_through_the_authority_office_is_done_not_uncertain",
+       "tests/unit/test_greg_egress.py::test_a_request_http_client_cannot_form_is_a_definite_refusal",
+       "tests/unit/test_greg_egress.py::test_a_same_host_location_urllib_repairs_is_repaired_then_checked[/nopath-/]",
+       "tests/unit/test_greg_egress.py::test_a_same_host_location_urllib_repairs_is_repaired_then_checked[/space-/My%20Report]",
+       "tests/unit/test_greg_egress.py::test_a_same_host_location_urllib_repairs_is_repaired_then_checked[/utf8-/caf%C3%A9]"
+      ],
+      "missing": []
+     },
+     "name": "291-worker",
+     "sha": "41fcc41f04911ccb1f0f8d5dfc18158999a18def",
+     "states": {
+      "alone": {
+       "tests/unit/test_greg_authority_attach_state.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_authority_registered_identity.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_capabilities.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_egress.py": {
+        "measured": true,
+        "state": "failed"
+       },
+       "tests/unit/test_greg_handoff_evidence.py": {
+        "measured": true,
+        "state": "passed"
+       }
+      },
+      "merged": {
+       "tests/unit/test_greg_authority_attach_state.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_authority_registered_identity.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_capabilities.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_egress.py": {
+        "measured": true,
+        "state": "failed"
+       },
+       "tests/unit/test_greg_handoff_evidence.py": {
+        "measured": true,
+        "state": "passed"
+       }
+      }
+     },
+     "tests": [
+      "tests/unit/test_greg_authority_attach_state.py",
+      "tests/unit/test_greg_authority_registered_identity.py",
+      "tests/unit/test_greg_capabilities.py",
+      "tests/unit/test_greg_egress.py",
+      "tests/unit/test_greg_handoff_evidence.py"
+     ]
+    },
+    {
+     "alone": {
+      "counts": {
+       "failed": 7,
+       "passed": 11
+      },
+      "failed": [
+       "tests/integration/test_greg_body_supervised.py::test_body_survives_hard_kill_waits_for_founder_and_stops_on_command",
+       "tests/unit/test_greg_background_dispatch.py::test_a_body_closing_on_an_error_stops_and_records_its_running_worker_before_the_ledger_closes",
+       "tests/unit/test_greg_background_dispatch.py::test_a_founder_cancel_or_detach_while_the_worker_runs_interrupts_it[cancel]",
+       "tests/unit/test_greg_background_dispatch.py::test_a_founder_cancel_or_detach_while_the_worker_runs_interrupts_it[detach]",
+       "tests/unit/test_greg_background_dispatch.py::test_a_founder_cancel_or_detach_while_the_worker_runs_interrupts_it[supersede]",
+       "tests/unit/test_greg_background_dispatch.py::test_a_pause_while_the_worker_runs_does_not_interrupt_the_admitted_act",
+       "tests/unit/test_greg_background_dispatch.py::test_a_worker_that_ignores_its_stop_has_its_process_group_killed_when_the_body_closes"
+      ],
+      "missing": []
+     },
+     "in_merge": true,
+     "merged": {
+      "counts": {
+       "failed": 14,
+       "passed": 4
+      },
+      "failed": [
+       "tests/integration/test_greg_body_supervised.py::test_body_survives_hard_kill_waits_for_founder_and_stops_on_command",
+       "tests/unit/test_greg_background_dispatch.py::test_a_body_closing_on_an_error_stops_and_records_its_running_worker_before_the_ledger_closes",
+       "tests/unit/test_greg_background_dispatch.py::test_a_cancel_ingested_after_the_adapter_returned_is_not_recorded_as_an_interruption",
+       "tests/unit/test_greg_background_dispatch.py::test_a_cancel_the_worker_finished_before_seeing_is_reconciled_not_recorded_done",
+       "tests/unit/test_greg_background_dispatch.py::test_a_dispatch_released_while_body_stopped_is_written_records_nothing_after_it",
+       "tests/unit/test_greg_background_dispatch.py::test_a_founder_cancel_or_detach_while_the_worker_runs_interrupts_it[cancel]",
+       "tests/unit/test_greg_background_dispatch.py::test_a_founder_cancel_or_detach_while_the_worker_runs_interrupts_it[detach]",
+       "tests/unit/test_greg_background_dispatch.py::test_a_founder_cancel_or_detach_while_the_worker_runs_interrupts_it[supersede]",
+       "tests/unit/test_greg_background_dispatch.py::test_a_long_worker_does_not_freeze_the_other_missions",
+       "tests/unit/test_greg_background_dispatch.py::test_a_mission_stepped_after_its_own_background_outcome_landed_mid_turn_reads_the_recorded_state",
+       "tests/unit/test_greg_background_dispatch.py::test_a_pause_while_the_worker_runs_does_not_interrupt_the_admitted_act",
+       "tests/unit/test_greg_background_dispatch.py::test_a_worker_that_ignores_its_stop_has_its_process_group_killed_when_the_body_closes",
+       "tests/unit/test_greg_background_dispatch.py::test_an_error_after_the_hand_off_kills_the_next_turn_as_it_did_inline",
+       "tests/unit/test_greg_background_dispatch.py::test_nothing_is_written_after_body_stopped_names_an_unfinished_dispatch"
+      ],
+      "missing": []
+     },
+     "name": "273",
+     "sha": "331de165898ed5779ba87fc1532089a8f763dd4d",
+     "states": {
+      "alone": {
+       "tests/integration/test_greg_body_supervised.py": {
+        "measured": true,
+        "state": "failed"
+       },
+       "tests/unit/test_greg_background_dispatch.py": {
+        "measured": true,
+        "state": "failed"
+       }
+      },
+      "merged": {
+       "tests/integration/test_greg_body_supervised.py": {
+        "measured": true,
+        "state": "failed"
+       },
+       "tests/unit/test_greg_background_dispatch.py": {
+        "measured": true,
+        "state": "failed"
+       }
+      }
+     },
+     "tests": [
+      "tests/integration/test_greg_body_supervised.py",
+      "tests/unit/test_greg_background_dispatch.py"
+     ]
+    },
+    {
+     "alone": {
+      "counts": {
+       "passed": 64
+      },
+      "failed": [],
+      "missing": []
+     },
+     "in_merge": true,
+     "merged": {
+      "counts": {
+       "passed": 64
+      },
+      "failed": [],
+      "missing": []
+     },
+     "name": "278",
+     "sha": "a639add726df949c36a554aa87ba7c60cdabe66a",
+     "states": {
+      "alone": {
+       "tests/unit/test_genomes_formal_b.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_resource_bounds.py": {
+        "measured": true,
+        "state": "passed"
+       }
+      },
+      "merged": {
+       "tests/unit/test_genomes_formal_b.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_resource_bounds.py": {
+        "measured": true,
+        "state": "passed"
+       }
+      }
+     },
+     "tests": [
+      "tests/unit/test_genomes_formal_b.py",
+      "tests/unit/test_resource_bounds.py"
+     ]
+    },
+    {
+     "alone": {
+      "counts": {
+       "failed": 1,
+       "passed": 64
+      },
+      "failed": [
+       "tests/unit/test_greg_retained_receipt.py::test_a_refused_read_reused_after_a_restart_passes_no_check_and_closes_no_mission[False-observed0]"
+      ],
+      "missing": []
+     },
+     "in_merge": true,
+     "merged": {
+      "counts": {
+       "failed": 1,
+       "passed": 64
+      },
+      "failed": [
+       "tests/unit/test_greg_retained_receipt.py::test_a_refused_read_reused_after_a_restart_passes_no_check_and_closes_no_mission[False-observed0]"
+      ],
+      "missing": []
+     },
+     "name": "294-retained-receipt",
+     "sha": "1643932e43759908959f7fe460fac762bc76a4cf",
+     "states": {
+      "alone": {
+       "tests/integration/test_greg_retained_receipt_process.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_retained_receipt.py": {
+        "measured": true,
+        "state": "failed"
+       },
+       "tests/unit/test_greg_retained_receipt_history.py": {
+        "measured": true,
+        "state": "passed"
+       }
+      },
+      "merged": {
+       "tests/integration/test_greg_retained_receipt_process.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_retained_receipt.py": {
+        "measured": true,
+        "state": "failed"
+       },
+       "tests/unit/test_greg_retained_receipt_history.py": {
+        "measured": true,
+        "state": "passed"
+       }
+      }
+     },
+     "tests": [
+      "tests/integration/test_greg_retained_receipt_process.py",
+      "tests/unit/test_greg_retained_receipt.py",
+      "tests/unit/test_greg_retained_receipt_history.py"
+     ]
+    },
+    {
+     "alone": {
+      "counts": {
+       "passed": 31
+      },
+      "failed": [],
+      "missing": []
+     },
+     "in_merge": true,
+     "merged": {
+      "counts": {
+       "passed": 31
+      },
+      "failed": [],
+      "missing": []
+     },
+     "name": "298-unmeasured-check",
+     "sha": "b9a34259543fa64465d40e1c1dea8e90e327f11f",
+     "states": {
+      "alone": {
+       "tests/integration/test_greg_mind_constructs_capability.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_functional_reconstitution.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_precondition_unheld.py": {
+        "measured": true,
+        "state": "passed"
+       }
+      },
+      "merged": {
+       "tests/integration/test_greg_mind_constructs_capability.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_functional_reconstitution.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_precondition_unheld.py": {
+        "measured": true,
+        "state": "passed"
+       }
+      }
+     },
+     "tests": [
+      "tests/integration/test_greg_mind_constructs_capability.py",
+      "tests/unit/test_greg_functional_reconstitution.py",
+      "tests/unit/test_greg_precondition_unheld.py"
+     ]
+    },
+    {
+     "alone": {
+      "counts": {},
+      "failed": [],
+      "missing": []
+     },
+     "in_merge": true,
+     "merged": {
+      "counts": {},
+      "failed": [],
+      "missing": []
+     },
+     "name": "302-ci-time-limit",
+     "sha": "dca1a032d63a352c54de2048167b20a7f85ca193",
+     "states": {
+      "alone": {},
+      "merged": {}
+     },
+     "tests": []
+    },
+    {
+     "alone": {
+      "counts": {
+       "failed": 1,
+       "passed": 149
+      },
+      "failed": [
+       "tests/unit/test_greg_retained_receipt.py::test_a_refused_read_reused_after_a_restart_passes_no_check_and_closes_no_mission[False-observed0]"
+      ],
+      "missing": []
+     },
+     "in_merge": true,
+     "merged": {
+      "counts": {
+       "failed": 1,
+       "passed": 149
+      },
+      "failed": [
+       "tests/unit/test_greg_retained_receipt.py::test_a_refused_read_reused_after_a_restart_passes_no_check_and_closes_no_mission[False-observed0]"
+      ],
+      "missing": []
+     },
+     "name": "300-revoked-device",
+     "sha": "b1f157fe533ec81e33830dfe36f656601eb19fe1",
+     "states": {
+      "alone": {
+       "tests/integration/test_greg_retained_receipt_process.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_retained_receipt.py": {
+        "measured": true,
+        "state": "failed"
+       },
+       "tests/unit/test_greg_retained_receipt_history.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_revoked_device_authority.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_revoked_device_review.py": {
+        "measured": true,
+        "state": "passed"
+       }
+      },
+      "merged": {
+       "tests/integration/test_greg_retained_receipt_process.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_retained_receipt.py": {
+        "measured": true,
+        "state": "failed"
+       },
+       "tests/unit/test_greg_retained_receipt_history.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_revoked_device_authority.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_revoked_device_review.py": {
+        "measured": true,
+        "state": "passed"
+       }
+      }
+     },
+     "tests": [
+      "tests/integration/test_greg_retained_receipt_process.py",
+      "tests/unit/test_greg_retained_receipt.py",
+      "tests/unit/test_greg_retained_receipt_history.py",
+      "tests/unit/test_greg_revoked_device_authority.py",
+      "tests/unit/test_greg_revoked_device_review.py"
+     ]
+    },
+    {
+     "alone": {
+      "counts": {
+       "passed": 57
+      },
+      "failed": [],
+      "missing": []
+     },
+     "in_merge": true,
+     "merged": {
+      "counts": {
+       "passed": 57
+      },
+      "failed": [],
+      "missing": []
+     },
+     "name": "301-appraiser",
+     "sha": "bfaf210c8547dc34c58ac7de3fd502ac03c1d724",
+     "states": {
+      "alone": {
+       "tests/unit/test_greg_appraiser_attach_state.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_failure_closure.py": {
+        "measured": true,
+        "state": "passed"
+       }
+      },
+      "merged": {
+       "tests/unit/test_greg_appraiser_attach_state.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_failure_closure.py": {
+        "measured": true,
+        "state": "passed"
+       }
+      }
+     },
+     "tests": [
+      "tests/unit/test_greg_appraiser_attach_state.py",
+      "tests/unit/test_greg_failure_closure.py"
+     ]
+    },
+    {
+     "alone": {
+      "counts": {
+       "passed": 67
+      },
+      "failed": [],
+      "missing": []
+     },
+     "in_merge": true,
+     "merged": {
+      "counts": {
+       "passed": 67
+      },
+      "failed": [],
+      "missing": []
+     },
+     "name": "304-compile-unread",
+     "sha": "1c4a758c4d660549472b7cc463c72c7d4d95c9b4",
+     "states": {
+      "alone": {
+       "tests/integration/test_greg_mind_constructs_capability.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_compile_host_stop.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_compile_unanswered.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_functional_reconstitution.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_precondition_unheld.py": {
+        "measured": true,
+        "state": "passed"
+       }
+      },
+      "merged": {
+       "tests/integration/test_greg_mind_constructs_capability.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_compile_host_stop.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_compile_unanswered.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_functional_reconstitution.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_precondition_unheld.py": {
+        "measured": true,
+        "state": "passed"
+       }
+      }
+     },
+     "tests": [
+      "tests/integration/test_greg_mind_constructs_capability.py",
+      "tests/unit/test_greg_compile_host_stop.py",
+      "tests/unit/test_greg_compile_unanswered.py",
+      "tests/unit/test_greg_functional_reconstitution.py",
+      "tests/unit/test_greg_precondition_unheld.py"
+     ]
+    },
+    {
+     "alone": {
+      "counts": {
+       "passed": 47
+      },
+      "failed": [],
+      "missing": []
+     },
+     "in_merge": true,
+     "merged": {
+      "counts": {
+       "passed": 47
+      },
+      "failed": [],
+      "missing": []
+     },
+     "name": "303-rejected-credit",
+     "sha": "0a9a246fa1afb7b098850636f359deba8e10e58d",
+     "states": {
+      "alone": {
+       "tests/unit/test_greg_evidence_corrections.py": {
+        "measured": true,
+        "state": "passed"
+       }
+      },
+      "merged": {
+       "tests/unit/test_greg_evidence_corrections.py": {
+        "measured": true,
+        "state": "passed"
+       }
+      }
+     },
+     "tests": [
+      "tests/unit/test_greg_evidence_corrections.py"
+     ]
+    },
+    {
+     "alone": {
+      "counts": {
+       "error": 2,
+       "passed": 42
+      },
+      "failed": [
+       "tests/unit/test_greg_browser.py::test_a_mission_observes_javascript_rendered_truth_and_the_page_cannot_phone_home",
+       "tests/unit/test_greg_browser.py::test_the_signed_target_must_name_the_host_the_browser_contacts"
+      ],
+      "missing": []
+     },
+     "in_merge": true,
+     "merged": {
+      "counts": {
+       "error": 2,
+       "passed": 42
+      },
+      "failed": [
+       "tests/unit/test_greg_browser.py::test_a_mission_observes_javascript_rendered_truth_and_the_page_cannot_phone_home",
+       "tests/unit/test_greg_browser.py::test_the_signed_target_must_name_the_host_the_browser_contacts"
+      ],
+      "missing": []
+     },
+     "name": "293-browser",
+     "sha": "32ca8de75bd2764251800df67932d1c3dc0522a8",
+     "states": {
+      "alone": {
+       "tests/unit/test_greg_browser.py": {
+        "measured": true,
+        "state": "failed"
+       },
+       "tests/unit/test_greg_browser_binary.py": {
+        "measured": true,
+        "state": "passed"
+       }
+      },
+      "merged": {
+       "tests/unit/test_greg_browser.py": {
+        "measured": true,
+        "state": "failed"
+       },
+       "tests/unit/test_greg_browser_binary.py": {
+        "measured": true,
+        "state": "passed"
+       }
+      }
+     },
+     "tests": [
+      "tests/unit/test_greg_browser.py",
+      "tests/unit/test_greg_browser_binary.py"
+     ]
+    }
+   ]
+  },
+  "renderer": "greg.intake.render/1",
+  "request": {
+   "base": "8d20532464b1533b28d71d8331ca3412a90dbb11",
+   "claims": {
+    "298-unmeasured-check": {
+     "checks": [
+      {
+       "conclusion": "success",
+       "head_sha": "b9a34259543fa64465d40e1c1dea8e90e327f11f",
+       "name": "1 Kernel and organ tests"
+      },
+      {
+       "conclusion": "success",
+       "head_sha": "b9a34259543fa64465d40e1c1dea8e90e327f11f",
+       "name": "10 Mutation gates"
+      }
+     ],
+     "head_sha": "b9a34259543fa64465d40e1c1dea8e90e327f11f",
+     "validation": []
+    },
+    "300-revoked-device": {
+     "checks": [
+      {
+       "conclusion": "success",
+       "head_sha": "b1f157fe533ec81e33830dfe36f656601eb19fe1",
+       "name": "1 Kernel and organ tests"
+      },
+      {
+       "conclusion": "success",
+       "head_sha": "b1f157fe533ec81e33830dfe36f656601eb19fe1",
+       "name": "9 Institutional verifier"
+      },
+      {
+       "conclusion": "in_progress",
+       "head_sha": "b1f157fe533ec81e33830dfe36f656601eb19fe1",
+       "name": "10 Mutation gates"
+      },
+      {
+       "conclusion": "cancelled",
+       "head_sha": "0aa09c87",
+       "name": "10 Mutation gates"
+      }
+     ],
+     "head_sha": "b1f157fe533ec81e33830dfe36f656601eb19fe1",
+     "validation": []
+    },
+    "302-ci-time-limit": {
+     "checks": [
+      {
+       "conclusion": "success",
+       "head_sha": "dca1a032d63a352c54de2048167b20a7f85ca193",
+       "name": "1 Kernel and organ tests"
+      },
+      {
+       "conclusion": "success",
+       "head_sha": "dca1a032d63a352c54de2048167b20a7f85ca193",
+       "name": "9 Institutional verifier"
+      },
+      {
+       "conclusion": "success",
+       "head_sha": "dca1a032d63a352c54de2048167b20a7f85ca193",
+       "name": "10 Mutation gates"
+      }
+     ],
+     "head_sha": "dca1a032d63a352c54de2048167b20a7f85ca193",
+     "validation": []
+    },
+    "303-rejected-credit": {
+     "checks": [],
+     "head_sha": "9097b276635742dfdcad98dfbae1dd78b3fddb5c",
+     "validation": [
+      {
+       "command": "pytest of 9 files on b27e81f5 + 9097b276",
+       "evidence": "202 passed, 1 skipped",
+       "result": "pass"
+      }
+     ]
+    }
+   },
+   "repository": "<scratchpad>/intake-run/code/kernel",
+   "timeout_seconds": 900,
+   "union": [
+    ".github/workflows/canonical-ci.yml"
+   ],
+   "units": [
+    {
+     "name": "290-authority",
+     "sha": "facea1703dded45e495d0e6dfe059e001ffc9565"
+    },
+    {
+     "name": "291-worker",
+     "sha": "41fcc41f04911ccb1f0f8d5dfc18158999a18def"
+    },
+    {
+     "name": "273",
+     "sha": "331de165898ed5779ba87fc1532089a8f763dd4d"
+    },
+    {
+     "name": "278",
+     "sha": "a639add726df949c36a554aa87ba7c60cdabe66a"
+    },
+    {
+     "name": "294-retained-receipt",
+     "sha": "1643932e43759908959f7fe460fac762bc76a4cf"
+    },
+    {
+     "name": "298-unmeasured-check",
+     "sha": "b9a34259543fa64465d40e1c1dea8e90e327f11f"
+    },
+    {
+     "name": "302-ci-time-limit",
+     "sha": "dca1a032d63a352c54de2048167b20a7f85ca193"
+    },
+    {
+     "name": "300-revoked-device",
+     "sha": "b1f157fe533ec81e33830dfe36f656601eb19fe1"
+    },
+    {
+     "name": "301-appraiser",
+     "sha": "bfaf210c8547dc34c58ac7de3fd502ac03c1d724"
+    },
+    {
+     "name": "304-compile-unread",
+     "sha": "1c4a758c4d660549472b7cc463c72c7d4d95c9b4"
+    },
+    {
+     "name": "303-rejected-credit",
+     "sha": "0a9a246fa1afb7b098850636f359deba8e10e58d"
+    },
+    {
+     "name": "293-browser",
+     "sha": "32ca8de75bd2764251800df67932d1c3dc0522a8"
+    }
+   ]
+  },
+  "request_digest": "sha256:d352d08f0c497fafec4f5b4d0c9e3925bf9444eacf8079f45cdae117e4687503",
+  "skipped_tests": {
+   "273": [],
+   "278": [],
+   "290-authority": [],
+   "291-worker": [],
+   "293-browser": [],
+   "294-retained-receipt": [],
+   "298-unmeasured-check": [],
+   "300-revoked-device": [],
+   "301-appraiser": [],
+   "302-ci-time-limit": [],
+   "303-rejected-credit": [],
+   "304-compile-unread": []
+  }
+ },
+ "inputs_digest": "sha256:4f76a7e5891da2fa012a32ef159298c1bcbeac163fc05cdd09f28669944b67f0",
+ "markdown": "2026-11-12-intake-brief.md",
+ "markdown_sha256": "6a6040b67bc29149f64726854d2206b9118dae064d4769fb886dae4ae5a65f9d",
+ "renderer": "greg.intake.render/1",
+ "request": {
+  "base": "8d20532464b1533b28d71d8331ca3412a90dbb11",
+  "claims": {
+   "298-unmeasured-check": {
+    "checks": [
+     {
+      "conclusion": "success",
+      "head_sha": "b9a34259543fa64465d40e1c1dea8e90e327f11f",
+      "name": "1 Kernel and organ tests"
+     },
+     {
+      "conclusion": "success",
+      "head_sha": "b9a34259543fa64465d40e1c1dea8e90e327f11f",
+      "name": "10 Mutation gates"
+     }
+    ],
+    "head_sha": "b9a34259543fa64465d40e1c1dea8e90e327f11f",
+    "validation": []
+   },
+   "300-revoked-device": {
+    "checks": [
+     {
+      "conclusion": "success",
+      "head_sha": "b1f157fe533ec81e33830dfe36f656601eb19fe1",
+      "name": "1 Kernel and organ tests"
+     },
+     {
+      "conclusion": "success",
+      "head_sha": "b1f157fe533ec81e33830dfe36f656601eb19fe1",
+      "name": "9 Institutional verifier"
+     },
+     {
+      "conclusion": "in_progress",
+      "head_sha": "b1f157fe533ec81e33830dfe36f656601eb19fe1",
+      "name": "10 Mutation gates"
+     },
+     {
+      "conclusion": "cancelled",
+      "head_sha": "0aa09c87",
+      "name": "10 Mutation gates"
+     }
+    ],
+    "head_sha": "b1f157fe533ec81e33830dfe36f656601eb19fe1",
+    "validation": []
+   },
+   "302-ci-time-limit": {
+    "checks": [
+     {
+      "conclusion": "success",
+      "head_sha": "dca1a032d63a352c54de2048167b20a7f85ca193",
+      "name": "1 Kernel and organ tests"
+     },
+     {
+      "conclusion": "success",
+      "head_sha": "dca1a032d63a352c54de2048167b20a7f85ca193",
+      "name": "9 Institutional verifier"
+     },
+     {
+      "conclusion": "success",
+      "head_sha": "dca1a032d63a352c54de2048167b20a7f85ca193",
+      "name": "10 Mutation gates"
+     }
+    ],
+    "head_sha": "dca1a032d63a352c54de2048167b20a7f85ca193",
+    "validation": []
+   },
+   "303-rejected-credit": {
+    "checks": [],
+    "head_sha": "9097b276635742dfdcad98dfbae1dd78b3fddb5c",
+    "validation": [
+     {
+      "command": "pytest of 9 files on b27e81f5 + 9097b276",
+      "evidence": "202 passed, 1 skipped",
+      "result": "pass"
+     }
+    ]
+   }
+  },
+  "repository": "<scratchpad>/intake-run/code/kernel",
+  "timeout_seconds": 900,
+  "union": [
+   ".github/workflows/canonical-ci.yml"
+  ],
+  "units": [
+   {
+    "name": "290-authority",
+    "sha": "facea1703dded45e495d0e6dfe059e001ffc9565"
+   },
+   {
+    "name": "291-worker",
+    "sha": "41fcc41f04911ccb1f0f8d5dfc18158999a18def"
+   },
+   {
+    "name": "273",
+    "sha": "331de165898ed5779ba87fc1532089a8f763dd4d"
+   },
+   {
+    "name": "278",
+    "sha": "a639add726df949c36a554aa87ba7c60cdabe66a"
+   },
+   {
+    "name": "294-retained-receipt",
+    "sha": "1643932e43759908959f7fe460fac762bc76a4cf"
+   },
+   {
+    "name": "298-unmeasured-check",
+    "sha": "b9a34259543fa64465d40e1c1dea8e90e327f11f"
+   },
+   {
+    "name": "302-ci-time-limit",
+    "sha": "dca1a032d63a352c54de2048167b20a7f85ca193"
+   },
+   {
+    "name": "300-revoked-device",
+    "sha": "b1f157fe533ec81e33830dfe36f656601eb19fe1"
+   },
+   {
+    "name": "301-appraiser",
+    "sha": "bfaf210c8547dc34c58ac7de3fd502ac03c1d724"
+   },
+   {
+    "name": "304-compile-unread",
+    "sha": "1c4a758c4d660549472b7cc463c72c7d4d95c9b4"
+   },
+   {
+    "name": "303-rejected-credit",
+    "sha": "0a9a246fa1afb7b098850636f359deba8e10e58d"
+   },
+   {
+    "name": "293-browser",
+    "sha": "32ca8de75bd2764251800df67932d1c3dc0522a8"
+   }
+  ]
+ },
+ "request_digest": "sha256:d352d08f0c497fafec4f5b4d0c9e3925bf9444eacf8079f45cdae117e4687503"
+}

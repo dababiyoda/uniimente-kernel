@@ -1,0 +1,33 @@
+{"repository": "<scratchpad>/intake-run/code/kernel",
+ "base": "8d20532464b1533b28d71d8331ca3412a90dbb11",
+ "timeout_seconds": 900,
+ "union": [".github/workflows/canonical-ci.yml"],
+ "units": [
+  {"name": "290-authority", "sha": "facea1703dded45e495d0e6dfe059e001ffc9565"},
+  {"name": "291-worker", "sha": "41fcc41f04911ccb1f0f8d5dfc18158999a18def"},
+  {"name": "273", "sha": "331de165898ed5779ba87fc1532089a8f763dd4d"},
+  {"name": "278", "sha": "a639add726df949c36a554aa87ba7c60cdabe66a"},
+  {"name": "294-retained-receipt", "sha": "1643932e43759908959f7fe460fac762bc76a4cf"},
+  {"name": "298-unmeasured-check", "sha": "b9a34259543fa64465d40e1c1dea8e90e327f11f"},
+  {"name": "302-ci-time-limit", "sha": "dca1a032d63a352c54de2048167b20a7f85ca193"},
+  {"name": "300-revoked-device", "sha": "b1f157fe533ec81e33830dfe36f656601eb19fe1"},
+  {"name": "301-appraiser", "sha": "bfaf210c8547dc34c58ac7de3fd502ac03c1d724"},
+  {"name": "304-compile-unread", "sha": "1c4a758c4d660549472b7cc463c72c7d4d95c9b4"},
+  {"name": "303-rejected-credit", "sha": "0a9a246fa1afb7b098850636f359deba8e10e58d"},
+  {"name": "293-browser", "sha": "32ca8de75bd2764251800df67932d1c3dc0522a8"}],
+ "claims": {
+  "302-ci-time-limit": {"head_sha": "dca1a032d63a352c54de2048167b20a7f85ca193", "validation": [], "checks": [
+    {"name": "1 Kernel and organ tests", "head_sha": "dca1a032d63a352c54de2048167b20a7f85ca193", "conclusion": "success"},
+    {"name": "9 Institutional verifier", "head_sha": "dca1a032d63a352c54de2048167b20a7f85ca193", "conclusion": "success"},
+    {"name": "10 Mutation gates", "head_sha": "dca1a032d63a352c54de2048167b20a7f85ca193", "conclusion": "success"}]},
+  "300-revoked-device": {"head_sha": "b1f157fe533ec81e33830dfe36f656601eb19fe1", "validation": [], "checks": [
+    {"name": "1 Kernel and organ tests", "head_sha": "b1f157fe533ec81e33830dfe36f656601eb19fe1", "conclusion": "success"},
+    {"name": "9 Institutional verifier", "head_sha": "b1f157fe533ec81e33830dfe36f656601eb19fe1", "conclusion": "success"},
+    {"name": "10 Mutation gates", "head_sha": "b1f157fe533ec81e33830dfe36f656601eb19fe1", "conclusion": "in_progress"},
+    {"name": "10 Mutation gates", "head_sha": "0aa09c87", "conclusion": "cancelled"}]},
+  "298-unmeasured-check": {"head_sha": "b9a34259543fa64465d40e1c1dea8e90e327f11f", "validation": [], "checks": [
+    {"name": "1 Kernel and organ tests", "head_sha": "b9a34259543fa64465d40e1c1dea8e90e327f11f", "conclusion": "success"},
+    {"name": "10 Mutation gates", "head_sha": "b9a34259543fa64465d40e1c1dea8e90e327f11f", "conclusion": "success"}]},
+  "303-rejected-credit": {"head_sha": "9097b276635742dfdcad98dfbae1dd78b3fddb5c", "validation": [
+    {"command": "pytest of 9 files on b27e81f5 + 9097b276", "result": "pass", "evidence": "202 passed, 1 skipped"}], "checks": []}
+ }}

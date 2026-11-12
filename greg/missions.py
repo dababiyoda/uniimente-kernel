@@ -1023,13 +1023,15 @@ def rank_key(s: dict, index: int, failing: set, manifest, record: dict | None, v
 
 
 def first_choice(spec: dict, failing: set, *, manifest_for, records: dict, failed=(), excluded=(),
-                 held=()) -> str | None:
+                 held=(), detached=()) -> str | None:
     """The strategy the mission's own selection ranks first for these failing checks, or None.
 
     The candidates are ``_pursue``'s: strategies advancing a failing check, not failed, not excluded, whose
     signed preconditions (``requires``) are not among the failing checks, and not ``held``: strategies whose
-    typed inputs cannot resolve now, which ``_pursue`` holds the same way (``MissionEngine._inputs``). A caller
-    without the ledger (``goal_from_mission``) passes none and keeps the signed order."""
+    typed inputs cannot resolve now, which ``_pursue`` holds the same way (``MissionEngine._inputs``). A strategy in
+    ``detached`` (its signed capability detached by the founder) ranks first only when no other candidate remains,
+    as ``_pursue`` passes it over. A caller without the ledger (``goal_from_mission``) passes none and keeps the
+    signed order."""
     value = float(spec.get("value_per_check_usd", 1.0))
     ranked = []
     for index, s in enumerate(spec["strategies"]):
@@ -1039,7 +1041,8 @@ def first_choice(spec: dict, failing: set, *, manifest_for, records: dict, faile
         manifest = manifest_for(s)
         key = rank_key(s, index, failing, manifest, records.get(manifest.capability_id) if manifest else None, value)
         ranked.append((*key[:3], s["action_id"]))
-    return min(ranked)[3] if ranked else None
+    runnable = [r for r in ranked if r[3] not in detached]
+    return min(runnable or ranked)[3] if ranked else None
 
 
 def strategy_scope(m: "MissionState | None", manifests: dict, action_id: str, *, now: datetime) -> dict:
@@ -1800,6 +1803,13 @@ class MissionEngine:
             manifest = self.genesis.find_attached(s["function"])
         return manifest
 
+    def _detached(self, s: dict) -> str | None:
+        """The capability a strategy names, when the founder detached it (a signed CAPABILITY_DETACH is the only way a
+        capability becomes DETACHED); else None. A strategy that names a function resolves to an attached
+        implementation of it or to none (``_resolve``), so it is never passed over here."""
+        cid = s.get("capability")
+        return cid if cid is not None and self.registry.state.get(cid) == "DETACHED" else None
+
     def _askable(self, m: "MissionState | None", mission_id: str, action_id: str, *, now: datetime) -> dict:
         """The exact scope of a strategy the founder may be asked about ahead of the mission's loop, or
         MissionError saying why not. One predicate for ``request_decision`` and ``ask_refusal``."""
@@ -1833,7 +1843,7 @@ class MissionEngine:
         held = {s["action_id"] for s in m.spec["strategies"] if set(s["advances"]) & checks and self._held(m, s)}
         first = first_choice(m.spec, checks, manifest_for=self._manifest_for,
                              records=routing.track_record(self.journal), failed=m.failed, excluded=m.excluded,
-                             held=held)
+                             held=held, detached={s["action_id"] for s in m.spec["strategies"] if self._detached(s)})
         if first != action_id:
             raise MissionError(f"for {', '.join(sorted(checks))} the mission's own selection runs {first} first, not "
                                f"{action_id}: it would ask for (or run) {first}, so an approve of {action_id} could "
@@ -3712,11 +3722,25 @@ class MissionEngine:
                             "failing_checks": sorted(failing), "reconsider": "founder revises mission"})
             return {"state": "BLOCKED", "blocker": m.blocker}
         candidates.sort(key=lambda c: c[:3])
-        s = candidates[0][3]
-        routing_decision = {"chosen": s["action_id"], "expected_value": round(-candidates[0][0], 4),
-                            "reliability": round(candidates[0][4], 4),
+        # A strategy whose signed capability the founder detached does not run (the office refuses it). While another
+        # candidate remains it is passed over in rank order, and nothing is asked about the detached tool: the next
+        # one is pursued under its own exact scope, cone and approval (an approval of the detached strategy's scope is
+        # not its approval). Only a founder detach is passed over: an approval voided by a revocation, a quarantined
+        # or an unavailable capability takes the path it took before. With every candidate detached, the first is
+        # pursued as before, and its attach is asked for.
+        runnable = [c for c in candidates if self._detached(c[3]) is None]
+        ranked = runnable or candidates
+        s = ranked[0][3]
+        routing_decision = {"chosen": s["action_id"], "expected_value": round(-ranked[0][0], 4),
+                            "reliability": round(ranked[0][4], 4),
                             "alternatives": [{"action_id": c[3]["action_id"], "expected_value": round(-c[0], 4),
-                                              "reliability": round(c[4], 4)} for c in candidates[1:6]]}
+                                              "reliability": round(c[4], 4)} for c in ranked[1:6]]}
+        passed = [c for c in candidates if runnable and c[:3] < ranked[0][:3]]
+        if passed:      # said where the founder reads the run: the record of the action and any ask it raises
+            routing_decision["passed_over"] = [
+                {"action_id": c[3]["action_id"], "capability": c[3]["capability"], "expected_value": round(-c[0], 4),
+                 "why": f"the founder detached {c[3]['capability']}: it does not run, and its attach is not asked for "
+                        "while another signed strategy remains"} for c in passed]
         manifest, adapter, _ = self._resolve(s)
         if manifest is None and prepare_for is not None:
             return {"state": "NOTHING_TO_PREPARE"}

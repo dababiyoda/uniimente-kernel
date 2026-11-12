@@ -299,6 +299,18 @@ delegated again (now said on the result and in the status; open question 14).
   `python -m acceptance directive --against 8d205324`.
 - Not run here: the whole test suite (about 90 minutes), the other mutation gates, hosted CI, the phone page in a
   browser. No independent review.
+- Run for the fix round (2026-11-12, in this container, the two bullets above describe the first draft): 36 test
+  files (the two of this unit, the four of the retained-receipt branch, every test file that names a revocation,
+  a device or a delegation, the blocker, standing-approval, allowlist, health, packaging and integrity gates):
+  812 passed, 3 skipped (no playwright, no bubblewrap, no black-start environment), 1 failed for a missing numpy in
+  that environment and passed in the solver environment (14 passed); after the last test change the two files of
+  this unit and the health gates again: 98 passed. `scripts/ci/check_revoked_device_mutants.py`: 69 of 69 and 43
+  of 43 mutants caught. `scripts/ci/check_retained_receipt_mutants.py`: 31 of 31 and 8 of 8.
+  `python -m governance.integrity --check`: 13 protected artifacts, all as authorized. `python -m acceptance
+  check` and `python -m acceptance directive --against 8d205324`: exit 0. The reviewer's random-interleaving probe,
+  40 seeds: 40 passed (it does not cover an abandon).
+- Not run for the fix round: the whole test suite, the other mutation gates, hosted CI, the phone page in a
+  browser. The fix round has not been independently reviewed.
 
 ## Rollback
 

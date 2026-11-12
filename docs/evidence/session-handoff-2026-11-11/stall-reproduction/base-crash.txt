@@ -1,0 +1,9 @@
+states: ["BLOCKED", "WAITING", "WAITING", "WAITING", "WAITING", "WAITING", "WAITING", "WAITING"]
+asks: ["NO_STRATEGY"]
+withdrawn: 0
+actions: []
+failed: {}
+observed: [[false, null, "field 'result.fitness' absent"], [false, null, "field 'result.fitness' absent"]]
+routing: []
+unmet: []
+first reading output: {"schema": "greg-competency-compilation/0.2", "abstentions": "[\"ABSTAIN: ['worker stopped (exit 137); result unknown']\"]", "state": "ABSTAIN"}

@@ -1,0 +1,29 @@
+SYNTHETIC — not a real party. Sandbox test material: every contract, company, person, amount and date in this file is invented.
+document: payer draw register (the payer's own record of draws already received on this subcontract)
+contract_reference: SYN-SC-2026-0417
+as_of: 2026-11-06
+draw 1 status: settled
+draw 1 period_end_date: 2026-07-31
+draw 1 gross_billed: 30000.00
+draw 1 net_paid: 27000.00
+draw 1 paid_date: 2026-08-14
+draw 2 status: settled
+draw 2 period_end_date: 2026-08-31
+draw 2 gross_billed: 35200.00
+draw 2 net_paid: 31680.00
+draw 2 paid_date: 2026-09-15
+draw 3 status: settled
+draw 3 period_end_date: 2026-09-30
+draw 3 gross_billed: 32000.00
+draw 3 net_paid: 28800.00
+draw 3 paid_date: 2026-10-14
+draw 4 status: open
+draw 4 period_end_date: 2026-10-31
+draw 4 received_date: 2026-11-03
+draw 4 gross_billed: 39000.00
+draw 4 net_requested: 35100.00
+draw 4 net_paid: not paid
+draw 4 note: under review
+other draws on this contract: none
+
+Note: The request under review is not entered in this register until the payer decides it.

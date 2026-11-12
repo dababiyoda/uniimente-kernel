@@ -1,0 +1,12 @@
+SYNTHETIC — not a real party. Sandbox test material: every contract, company, person, amount and date in this file is invented.
+document: lien waiver (prior draw)
+contract_reference: SYN-SC-2026-0417
+claimant: Synthetic Masonry Subcontractor B (SYNTHETIC)
+draw_number: 3
+waiver_type: unconditional
+amount_waived: 28800.00
+signed: yes
+signed_by: authorized officer of Synthetic Masonry Subcontractor B (SYNTHETIC)
+date: 2026-10-20
+
+Waiver text: The claimant has been paid 28,800.00 for labour and materials furnished through the period ending 2026-09-30 (draw 3) and waives and releases any lien or claim for that amount.

@@ -1,0 +1,26 @@
+SYNTHETIC — not a real party. Sandbox test material: every contract, company, person, amount and date in this file is invented.
+document: pay application (application for progress payment)
+contract_reference: SYN-SC-2026-0417
+from: Synthetic Masonry Subcontractor B (SYNTHETIC)
+to: Synthetic General Contractor A (SYNTHETIC)
+draw_number: 4
+period_end_date: 2026-10-31
+submitted_date: 2026-11-06
+currency: USD
+L1 percent_complete_to_date: 100
+L1 previously_billed: 12000.00
+L2 percent_complete_to_date: 100
+L2 previously_billed: 43200.00
+L3 percent_complete_to_date: 65
+L3 previously_billed: 38400.00
+L4 percent_complete_to_date: 30
+L4 previously_billed: 3600.00
+L5 percent_complete_to_date: 0
+L5 previously_billed: 0.00
+CO-01 percent_complete_to_date: 50
+CO-01 previously_billed: 0.00
+retainage_withheld: 3900.00
+amount_requested: 35100.00
+attachments: schedule of values; inspection sign-off for draw 4; unconditional lien waiver for draw 3
+
+Remarks: Resubmitted on 2026-11-06 because we have had no answer on draw 4. Please process. North and east elevations are laid up to the third-floor bearing line. Lintel reinforcement under CO-01 is installed at the east openings. Interior partitions are started on level 1.

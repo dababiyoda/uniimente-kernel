@@ -90,6 +90,8 @@ MUTANTS = [
     # packets: never overwritten, re-rendered by the appraiser
     ("a different packet already on disk is taken as this one", "greg/cases.py",
      '    if on_disk != files:', '    if False:'),
+    ("a current packet changed on disk is returned as it is", "greg/cases.py",
+     '    if not intact:', '    if False:'),
     ("the appraiser accepts a changed packet", "greg/cases.py",
      '        if not path.is_file() or path.read_bytes() != data:', '        if not path.is_file():'),
     ("the appraiser re-reads a case without the body's ledger", "greg/appraisal.py",

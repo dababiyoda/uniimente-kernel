@@ -1222,3 +1222,18 @@ def test_text_is_compared_in_one_form_whatever_its_case(tmp_path):
     a = assess(params(rulebook, folder), ctx(tmp_path))
     assert a["facts"]["load_reference"]["state"] == "known" and a["conflicts"] == []
     assert a["eligibility"] == "eligible" and {r["state"] for r in a["rules"]} == {"met"}
+
+
+def test_a_folder_already_at_the_next_packets_name_is_never_overwritten(tmp_path):
+    """Second fix round: a packet already current is returned as it is on file, so the byte check in _deliver now
+    guards the other case, a folder already at the name the next packet takes (a half-copied folder, another
+    process's) that is not this mission's latest packet. It is refused and left as it was."""
+    rulebook, folder = case_files(tmp_path)
+    name = assess(params(rulebook, folder), ctx(tmp_path, "case.packet"))["packet"]["name"]
+    squatter = tmp_path / "deliver" / "cases" / name
+    squatter.mkdir(parents=True)
+    (squatter / "packet.md").write_text("someone else's file\n")
+    with pytest.raises(CapabilityError, match="nothing overwritten"):
+        packet(params(rulebook, folder), ctx(tmp_path, "case.packet"))
+    assert [p.name for p in squatter.iterdir()] == ["packet.md"]
+    assert (squatter / "packet.md").read_text() == "someone else's file\n"

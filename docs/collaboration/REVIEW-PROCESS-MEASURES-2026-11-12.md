@@ -41,6 +41,8 @@ second process, not an independent operator).
 | #311 | a path the body cannot look at raised `OSError` out of every tick; a 45 s timeout and missing bubblewrap were untyped refusals; a helper still writing the killed browser's profile turned the timeout into an unknown outcome | independent review (M1-M3, medium) | after push; CI green |
 | #312 | open asks are not re-checked when a detach or re-attach changes what the selection would run (an approve of one strategy runs another; a moot ask blocks the mission); the alternative chosen may itself be unattached, and a re-attach no longer unblocks (regression) | independent review (X1-X5, medium, each reproduced by a skeptic) | after push |
 | #304 | the ten-step one-machine test failed once in job 1 with a torn ledger tail (`partial or blank history record`); #304 does not touch the ledger | CI job 1 | after push; root cause under investigation |
+| operational slice (orchestration) | **a finding list cut short on its way to the fixer**: the review confirmed 35 findings in three lenses; the workflow passed the fix agent the first 20,000 characters, so 13 confirmed findings (one lens's F7-F14, another's F1-F9) were never received; the fixer said so | the fix agent's own report ("the finding list I received was cut off during F6") | after the first fix round; the second round reads the whole review file itself |
+| operational slice, case 2 | the transfer worked without product code, but the rule language has no lookup, loop or conditional, so case 2's rulebook is 2,199 generated lines tied to one contract; a duplicate has no route of its own; a payment is read for a declined case; a later draw's payment is never counted; needs are static, so extra facts are asked for | the pre-registered withheld case and its frozen naive baseline (12/12 against GREG's 11/12) | after case 1 was built and reviewed |
 | #308 | `a995c3ce` (the session's own fix for job 11) moved job 8's two `GITHUB_ENV` lines into a new shell: job 8 ran with the browser variables empty and **passed** | independent review (F1, medium) | after push; **CI green**, so only review could see it |
 | candidate `e0f84ed1` | a genome test raced the clock (UNKNOWN after 18,110 of 20,000 states on a loaded runner) | CI job 1 | after push; #309 |
 | #291 + #273 | #273's call site refused beside #291 (13 of 17 tests) | composing by hand (2026-11-11); found again unaided by the intake mission (2026-11-12) | before intake |
@@ -98,6 +100,7 @@ is the operational slice (built after all five), whose review results will be re
 | #311 fix round and independent re-check (2 agents) | 877,905 | 184 | 66 min |
 | #312 independent review (7 agents, each finding verified) | 2,113,240 | 180 | 27 min |
 | #305 round-3 re-check (2 lenses) | 740,673 | 109 | 29 min |
+| operational slice: build, withheld case, three-lens review, fix, transfer measurement, naive baseline (8 agents) | 3,563,099 | 634 | 324 min |
 | earlier single-unit reviews and fix rounds | not recorded | | |
 
 Integration delay: none of these units has reached the integration line (`8d205324` unchanged since 2026-11-11);

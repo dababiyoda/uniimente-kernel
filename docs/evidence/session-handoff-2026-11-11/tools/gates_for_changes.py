@@ -32,3 +32,33 @@ for gate in sorted((wt / "scripts" / "ci").glob("check_*mutant*.py")):
         named = {g: sorted(v) for g, v in hit.items() if g != "(module)"}
         print(f"RUN {gate.name}: " + ("; ".join(f"{g} -> {', '.join(v)}" for g, v in sorted(named.items())) if named
                                       else ", ".join(sorted(hit['(module)']))))
+
+
+# --- stored patches a test keeps applicable (added 2026-11-12 after #300's CI failure) -------------------------
+# A draft patch kept in the repository is another consumer of the file it patches. A test that asserts it still
+# applies fails when a branch rewraps or moves the lines the patch is anchored on, and no test of the changed
+# behaviour names it.
+def _guarded_patches(worktree):
+    import re as _re
+    import subprocess as _sp
+    from pathlib import Path as _P
+    root = _P(worktree)
+    found = set()
+    for test in (root / "tests").rglob("test_*.py"):
+        try:
+            text = test.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        for match in _re.finditer(r"[\"']([\w./-]+\.patch)[\"']", text):
+            if (root / match.group(1)).is_file():
+                found.add((match.group(1), str(test.relative_to(root))))
+    for patch, test in sorted(found):
+        check = _sp.run(["git", "-C", str(root), "apply", "--check", patch], capture_output=True, text=True)
+        state = "applies" if check.returncode == 0 else "DOES NOT APPLY: " + check.stderr.strip().splitlines()[0]
+        print(f"PATCH {patch} (kept applicable by {test}): {state}")
+
+
+if __name__ == "__main__":
+    import sys as _sys
+    if len(_sys.argv) > 1:
+        _guarded_patches(_sys.argv[1])

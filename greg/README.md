@@ -201,6 +201,58 @@ suspending Chromebook; the heartbeat file is unsigned local evidence; nothing he
 | One command from a fresh clone to a designated, supervised Body 1 | `greg/chromebook/install.sh` composes doctor, init, keygen, enroll, service install and designate; idempotent; never sees the passphrase; ports #122's Python 3.11+ selection and durable `greg` command | `tests/unit/test_greg_chromebook_install.py` (container, no systemd; not run on ChromeOS) |
 | Verifier evidence names the tree it measured | `verifier/run_binding.py` (ported from #85) adds `head_commit` and `tracked_tree` to every run record | `tests/unit/test_run_record_head_binding.py` |
 
+## Intake recommendation: GREG's first mission for its own development (2026-11-12)
+
+Founder requirement: "Given selected open changes, produce an evidence-backed intake recommendation, identify
+behavioral conflicts, prepare a reversible composition, execute the relevant checks, and explain what remains
+unproven." It is an ordinary signed mission (`intake-recommendation` in `greg/templates.py`): one capability,
+`brief.intake` (`greg/intake.py`), and one read-only sensor, `brief.intake_status`.
+
+What it does, for one repository inside a read root, a base and an ordered list of units `{name, sha}`:
+
+- takes full 40-character SHAs only (a branch name or a short SHA is refused) and fetches nothing;
+- composes the heads in memory and runs each head's changed tests on its own tree and on the merged tree. The
+  rehearsal is `greg/intake_rehearsal.py`, the same code `scripts/compose_rehearsal.py` runs from the command line;
+- runs those tests only inside the envelope GREG uses for a worker's acceptance tests. On a host without
+  bubblewrap they are refused under the body's `required` setting and run on the `supervised` floor (network
+  denied; Landlock where the kernel has it) when the founder chose that. There is no third posture;
+- matches the author's claims and check results, supplied in the mission as data, to what ran here;
+- delivers one Markdown file and its JSON twin under `briefs/` in the delivery root, never overwriting another.
+  Its sections, in order: exact revisions, dependency order, textual conflicts, behavioural conflicts a clean merge
+  does not reveal, claims matched to executed evidence, missing or stale appraisals, a reproducible recipe, what
+  remains unproven, approval boundaries.
+
+Each test file on each tree gets one of five words, never merged: `passed`, `failed`, `timed out`, `not run` (with
+the reason), `errored`. Each unit gets one of `ready to take`, `take after <unit>`, `hold: <reason>`,
+`not checked: <reason>`; never `ready` while one of its checks gave no result. A test that fails on the unit's own head is
+`not checked`, not `hold`: it ran inside the envelope (no socket, even to localhost; the temporary directory inside
+the tree; a scrubbed environment), and nothing here separates the head's code from that confinement. On 2026-11-12,
+on twelve real heads, five units held for this reason all passed those files outside the envelope. A behavioural
+conflict, a difference measured inside one envelope between the head and the merge, still holds. A recommendation
+written by an earlier renderer is not re-judged by a later one: the appraiser says it is stale and a fresh
+recommendation is needed.
+
+It approves nothing. Composing heads for development and approving a protected merge are separate boundaries: the
+mission composes in scratch and writes a file; protected integration needs the founder's and the integrator's
+approval. By default the delivery itself stops at a founder approval; `--preauthorize-delivery` signs it into the
+mission instead.
+
+```bash
+# request.json: {"repository": "/abs/path", "base": "<sha40>", "units": [{"name": "290", "sha": "<sha40>"}, ...],
+#                "union": [".github/workflows/canonical-ci.yml"], "claims": {"290": {...}}, "timeout_seconds": 900}
+python -m greg --home ~/.uniimente/greg mission new intake-recommendation --intake request.json --key ~/.greg-founder.pem
+python -m greg --home ~/.uniimente/greg decisions                    # the delivery waits for your approval
+python -m greg --home ~/.uniimente/greg decide <request_id> approve --key ~/.greg-founder.pem
+```
+
+Limits: only the tests a head changed (or the mission names) are run, so a clean result does not prove the heads
+compatible; tests run with no network, so a test that needs it fails on both trees alike; a head's tests are that
+head's code, and a head that forges its own test output is not detected; the appraiser re-renders the file from
+its receipt and compares the bytes, and does not run the tests again; a repository whose configuration names a
+merge driver is refused; claims are whatever the mission's author supplied (nothing is read from a hosting
+service). Tests: `tests/unit/test_greg_intake.py`, `tests/integration/test_greg_intake_mission.py`; mutation gate
+`scripts/ci/check_intake_mutants.py`.
+
 ## Using it (developer mode today)
 
 **Alfonso's Chromebook first-body route: [`CHROMEBOOK_FIRST_MISSION.md`](CHROMEBOOK_FIRST_MISSION.md).**

@@ -1,4 +1,8 @@
-"""Each rule of scripts/compose_rehearsal.py must fail a behavioural test when removed.
+"""Each rule of the composition rehearsal must fail a behavioural test when removed.
+
+The rehearsal is ``greg/intake_rehearsal.py`` (one implementation; GREG's ``brief.intake`` capability runs the same
+code); ``scripts/compose_rehearsal.py`` is the command line over it, with the runner that starts pytest as the person
+at the terminal.
 
     python scripts/ci/check_compose_rehearsal_mutants.py
 
@@ -13,7 +17,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from mutation_harness import ROOT, run  # noqa: E402
 
 TESTS = "tests/unit/test_compose_rehearsal.py"
-T = "scripts/compose_rehearsal.py"
+T = "greg/intake_rehearsal.py"
+CLI = "scripts/compose_rehearsal.py"
 SORTED = '            (already_failing if node in alone else behavioural).append({"test": node, "unit": unit.name})'
 
 MUTANTS = [
@@ -33,7 +38,7 @@ MUTANTS = [
     (T, "an extra test file that already fails on the base is not a conflict",
      "            (already_failing if node in before else behavioural).append({\"test\": node, \"unit\": \"(also)\"})",
      "            behavioural.append({\"test\": node, \"unit\": \"(also)\"})"),
-    (T, "a run in which pytest never started counts as failing",
+    (CLI, "a run in which pytest never started counts as failing",
      "    elif not counts and not failed:      # pytest printed no summary: collection or start-up failed",
      "    elif False:"),
     (T, "only the test files a head changed are run by default",
@@ -50,11 +55,11 @@ MUTANTS = [
      "        if kept and kept_both is not None:\n            kept_both[unit.name] = kept\n", ""),
     (T, "a head that fails on the base alone is blamed on the base, not on a neighbour",
      '            if reruns[key]["ran"] and conflict["test"] in reruns[key]["failed"]:', "            if False:"),
-    (T, "a conflict makes the command exit 1",
+    (CLI, "a conflict makes the command exit 1",
      '    return 0 if report["clean"] else 1', "    return 0"),
     (T, "a report with a textual conflict is not clean",
      '        "clean": not textual and not behavioural,', '        "clean": not behavioural,'),
 ]
 
 if __name__ == "__main__":
-    raise SystemExit(run(MUTANTS, TESTS, prefix="compose-rehearsal-mutants-", root=ROOT, purge_dirs=("scripts", "tests")))
+    raise SystemExit(run(MUTANTS, TESTS, prefix="compose-rehearsal-mutants-", root=ROOT, purge_dirs=("greg", "scripts", "tests")))

@@ -38,14 +38,14 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from compiler.ucl_compiler import compile_constitution
 from events.spine import EventSpine
-from greg import (anchor, asks, compute, dataplane, doctor, gravity, improvement, metrics, models, presence,
-                  revocation, sop, tribunal)
+from greg import anchor, asks, compute, dataplane, doctor, gravity, improvement, metrics, models, presence, sop, tribunal
 from greg.authority import AuthorityOffice
 from greg.capabilities import BUILTINS, CapabilityRegistry, SecretBroker
 from greg.founder import FounderAuthError, FounderVerifier, instant, key_id, spent_nonce, validate_device_grant
 from greg.genesis import Genesis
 from greg.journal import Journal, iso, utcnow
 from greg.missions import MissionEngine, MissionError
+from greg import revocation   # its own line: the D-LIC-1 draft patch is anchored on the import line above
 from greg.workers import WORKER_CONFINEMENT, confinement_mode
 from identity.machine_passport import PassportRegistry
 from provenance.commit_witness import WitnessSigner

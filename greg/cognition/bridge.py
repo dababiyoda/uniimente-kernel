@@ -65,7 +65,7 @@ from cortex.schemas import validate as validate_cortex
 
 from .contracts import (CognitionError, CognitiveReceipt, ConsequenceVector, ProblemGeometry, canonical, digest,
                         retained_data, strict_data, number, integer, outcome_state_for)
-from .budget import ThinkingBudget
+from .budget import ThinkingBudget, note_host_stop
 
 ROOT = Path(__file__).resolve().parents[2]
 ROUTER = "cognition.cortex"
@@ -184,7 +184,11 @@ def run_worker(problem: dict, records: list, *, withheld_organs: dict, semantic_
                             input_bytes=None if memory_records is None else canonical(memory_records).encode())
     except CapabilityError as exc:
         raise CognitionError(f"worker isolation refused: {exc}") from exc
+    except subprocess.TimeoutExpired:
+        note_host_stop("timeout", process="cortex")
+        raise
     if proc.returncode:
+        note_host_stop("worker_exit", process="cortex", returncode=proc.returncode)
         raise CognitionError(f"cortex worker stopped (exit {proc.returncode}); result unknown")
     if len(proc.stdout) > 512 * 1024:
         raise CognitionError("cortex worker output exceeds 512 KiB")

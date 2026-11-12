@@ -562,14 +562,37 @@ def _field(output, path: str):
     return cut["prefix"] if cut else value
 
 
+# A Competency Compiler receipt (greg.cognition.compiler.SCHEMA, any version), and the states in which its
+# ``result`` is an answer: ANSWERED; WORLD_UNVERIFIED, the conditional answer of a high-consequence question (the
+# same state without a result is an abstention the executed method passed up); HUMAN_JUDGMENT_RECORDED, the
+# founder's signed decision. REFUTED is a negative result and PLANNED is the whole of what ``execute: false`` asked
+# for, so neither abstained. In every other state (ABSTAIN, UNKNOWN, CAPABILITY_DEFICIT, PROHIBITED,
+# HUMAN_JUDGMENT_REQUIRED, FORMALIZATION_INCOMPLETE, a composition's STAGE_ABSTAINED and the rest) nothing answered.
+COMPILATION = "greg-competency-compilation/"
+COMPILE_ANSWERS = ("ANSWERED", "WORLD_UNVERIFIED", "HUMAN_JUDGMENT_RECORDED")
+COMPILE_DECIDED = ("REFUTED", "PLANNED")
+
+
 def unanswered(output) -> str | None:
     """Why a cognitive sensor receipt carries no answer; None when it answered or refuted.
 
     A receipt that abstained (budget exhausted, timeout, capability deficit, evidence
     expired, no quorum...) did not measure the world. Reading its missing field as a
     negative observation would book the world as unchanged and blame the strategy.
-    REFUTED is a real negative result and stays one."""
-    if not isinstance(output, dict) or "abstention_state" not in output:
+    REFUTED is a real negative result and stays one.
+
+    Two receipt shapes reach a check through ``cognition.solve``, and each is read by its own typed fields: a
+    cortex receipt by ``abstention_state``, a Competency Compiler receipt by ``schema``, ``state`` and ``result``.
+    The compile receipt has no ``abstention_state``; read by that key alone it always looked answered, so a
+    question the host stopped was recorded as a measured failure."""
+    if not isinstance(output, dict):
+        return None
+    if isinstance(output.get("schema"), str) and output["schema"].startswith(COMPILATION):
+        state = output.get("state")
+        if state in COMPILE_DECIDED or (state in COMPILE_ANSWERS and output.get("result") is not None):
+            return None
+        return str(state)
+    if "abstention_state" not in output:
         return None
     if output.get("abstention_state") in ("NONE", "REFUTED"):
         return None
@@ -2172,12 +2195,15 @@ class MissionEngine:
             # asked and the mission re-observed forever.
             # The streak counts observation rounds, not readings: three unmeasurable checks are one round, not
             # three (review of #209, E3).
+            # A round the Mind declined (``declined``: a compile receipt with no answer and no host stop) ends the
+            # streak like a measured reading. It is recorded as unmeasured so that nobody is blamed for it, but the
+            # sensor did not fail to read: counted, a deficit followed by one stalled pass would be two rounds.
             rounds = []
             for obs in reversed([e.payload for e in self.journal.replay("mission.observed")
                                  if e.payload["mission_id"] == m.mission_id]):
                 if obs["check_id"] not in errors:
                     continue
-                if measured(obs):
+                if measured(obs) or obs.get("declined"):
                     break
                 if obs.get("at") not in rounds or obs.get("at") is None:
                     rounds.append(obs.get("at"))
@@ -2450,6 +2476,7 @@ class MissionEngine:
         for check in m.current_checks():
             sensor = check["sensor"]
             failure_class = None          # typed where a capability failure was raised, when one was
+            declined = None               # why the Mind gave no answer, where its receipt says the host did not stop it
             manifest, adapter, missing = self._resolve(sensor)
             if manifest is None:
                 self._deficit(m, sensor, now, purpose=f"sensor for {check['check_id']}")
@@ -2502,6 +2529,7 @@ class MissionEngine:
                     sensor_errors.add(check["check_id"])
                     inconclusive.add(check["check_id"])
                 fault = outcome.output.get("capability_fault") if isinstance(outcome.output, dict) else None
+                stopped = False      # this reading is already recorded as one a fault or the host kept from reading
                 if not passed and isinstance(fault, dict) and self.genesis is not None \
                         and fault.get("capability_id") in self.registry.manifests:
                     # A construction the Mind invoked faulted: attribute it to that capability, so the
@@ -2520,27 +2548,51 @@ class MissionEngine:
                         failure_class = failure_class or "executor_error"
                         sensor_errors.add(check["check_id"])
                         self.mind_faults.add(check["check_id"])
+                        stopped = True
                     elif failure_class in ("transient", "budget_exceeded"):
                         # The host (or a resource ceiling) stopped the construction: the world was not
                         # measured. The SENSOR_RETRY path applies; no strategy is blamed for it.
                         detail = f"sensor inconclusive ({failure_class}): {detail}"
                         sensor_errors.add(check["check_id"])
                         inconclusive.add(check["check_id"])
+                        stopped = True
                 views = disagreement(outcome.output)
                 if views and not passed:
                     self.disagreements[check["check_id"]] = {**views, "observation": outcome.receipt_hash}
-                why = None if passed else unanswered(outcome.output)
-                if why:
+                why = None if passed or stopped else unanswered(outcome.output)
+                host = outcome.output.get("host_stop") if why else None
+                if isinstance(host, dict) and host.get("failure_class") in ("transient", "budget_exceeded"):
+                    # The receipt carries no answer because the host (or a resource ceiling) ended the compiled
+                    # decision: a worker timed out or exited abnormally, or the compute budget ran out (the
+                    # receipt's typed ``host_stop``, greg.cognition.compiler). The world was not measured, and a
+                    # later read may succeed, so the reading takes the path of a construction the host stopped:
+                    # SENSOR_RETRY with a back-off, and the founder asked once after three unmeasured rounds.
+                    # Before, it was recorded as a measured failure, and a question with no strategy asked the
+                    # founder for one the first time the host stalled.
+                    failure_class = host["failure_class"]
+                    detail = f"sensor inconclusive ({failure_class}): {detail}"
+                    sensor_errors.add(check["check_id"])
+                    inconclusive.add(check["check_id"])
+                elif why:
                     # The receipt abstained: the world was not measured. The mission keeps its
                     # retry cadence (learned routing settles the lead engine's resource failure
                     # from these retries); _record_routing_outcomes never blames the strategy.
                     detail = f"sensor inconclusive ({why}): {detail}"
                     unread.add(check["check_id"])
+                    if "host_stop" in outcome.output:
+                        # A compile receipt says whether the host stopped it, and this one says it did not: the
+                        # Mind declined (a deficit, a prohibition, a question for a person, missing inputs). That
+                        # is no failed measurement, so it ends the run of unmeasured rounds the SENSOR_FAILURE
+                        # question counts, as it did when it was recorded as a measured failure. A cortex receipt
+                        # cannot say, and its abstentions count as before.
+                        declined = why
             data = {"mission_id": m.mission_id, "check_id": check["check_id"], "passed": passed,
                     "detail": detail[:300], "receipt": outcome.receipt_hash, "rung": m.rung, "at": iso(now),
                     "capability": manifest.capability_id}     # the sensor as resolved (a spec may name a function)
             if failure_class is not None:
                 data["failure_class"] = failure_class
+            if declined is not None:
+                data["declined"] = declined
             self.journal.record("mission.observed", data, key=[m.mission_id, check["check_id"], outcome.proposal_id])
             if outcome.receipt_hash:
                 evidence.append(outcome.receipt_hash)

@@ -14,7 +14,7 @@ from .catalog import FAMILIES, NATIVE_QUALIFIED
 from .contracts import (CognitionError, CognitiveCapabilityProfile, CognitiveReceipt, ConsequenceVector,
                         ProblemGeometry, canonical, digest, outcome_state_for, strict_data, retained_data)
 from .verification import metaconsensus, verify
-from .budget import ThinkingBudget, validate_request
+from .budget import ThinkingBudget, note_host_stop, validate_request
 from cortex.outcomes import classify_greg
 from greg.models import Refusal
 
@@ -137,10 +137,16 @@ def candidates(params, geometry, registry, journal=None):
 def _numeric(family, data, geometry):
     from greg.capabilities import run_isolated
     request = canonical({"data": data, "geometry": asdict(geometry)})
-    proc = run_isolated([sys.executable, "-I", str(Path(__file__).with_name("worker.py")), family],
-                        cwd=ROOT, timeout=geometry.latency_limit, input_bytes=request.encode(),
-                        extra_env={"OPENBLAS_NUM_THREADS": "1", "OMP_NUM_THREADS": "1", "MKL_NUM_THREADS": "1"})
+    try:
+        proc = run_isolated([sys.executable, "-I", str(Path(__file__).with_name("worker.py")), family],
+                            cwd=ROOT, timeout=geometry.latency_limit, input_bytes=request.encode(),
+                            extra_env={"OPENBLAS_NUM_THREADS": "1", "OMP_NUM_THREADS": "1", "MKL_NUM_THREADS": "1"})
+    except subprocess.TimeoutExpired:
+        note_host_stop("timeout", process="solver")
+        raise
     if proc.returncode:
+        # ``reason`` keeps this cause only as the text below; the note carries it as a fact (budget.note_host_stop)
+        note_host_stop("worker_exit", process="solver", returncode=proc.returncode)
         raise CognitionError(f"worker stopped (exit {proc.returncode}); result unknown")
     if len(proc.stdout) > 256 * 1024:
         raise CognitionError("worker output exceeds limit")
@@ -178,8 +184,14 @@ def independent_verify(family, data, answer, proof_class, geometry):
     # this budget after the worker's own start-up, which the worker cannot time
     payload = canonical({"family": family, "data": data, "answer": answer, "proof_class": proof_class,
                          "geometry": asdict(geometry), "deadline": time.time() + geometry.latency_limit})
-    proc = run_isolated([sys.executable, "-I", str(Path(__file__).with_name("worker.py")), "verify"],
-                        cwd=ROOT, timeout=geometry.latency_limit, input_bytes=payload.encode())
+    try:
+        proc = run_isolated([sys.executable, "-I", str(Path(__file__).with_name("worker.py")), "verify"],
+                            cwd=ROOT, timeout=geometry.latency_limit, input_bytes=payload.encode())
+    except subprocess.TimeoutExpired:
+        note_host_stop("timeout", process="verifier")
+        raise
+    if proc.returncode:
+        note_host_stop("worker_exit", process="verifier", returncode=proc.returncode)
     if proc.returncode or len(proc.stdout) > 256 * 1024:
         raise CognitionError("independent verifier unavailable")
     out = json.loads(proc.stdout)

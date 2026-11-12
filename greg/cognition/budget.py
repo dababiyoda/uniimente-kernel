@@ -23,6 +23,8 @@ budget can hold it.
 """
 from __future__ import annotations
 
+from contextlib import contextmanager
+import contextvars
 from datetime import datetime, timezone
 import time
 
@@ -45,6 +47,38 @@ def _range(interval, *, high=1e12):
 
 # Below this an inner run cannot solve (45% of its limit) and still verify; the cortex floors the solver at 10 ms.
 MIN_STEP_SECONDS = 0.1
+
+# Typed notes of worker processes the host ended while one compiled decision ran. ``cortex.reason`` and
+# ``bridge.reason_cortex`` turn a worker that timed out or exited abnormally into an abstaining receipt, and for
+# the abnormal exit the cause survives only as text in ``missing_information``. The place that launches the worker
+# knows the cause as a fact, so it notes it here; the Competency Compiler collects the notes into its receipt's
+# ``host_stop`` (compiler.run), which the mission engine reads instead of any message.
+_HOST_STOPS: contextvars.ContextVar = contextvars.ContextVar("greg_cognition_host_stops", default=None)
+HOST_STOP_CAUSES = ("timeout", "worker_exit")
+
+
+def note_host_stop(cause: str, *, process: str, returncode: int | None = None) -> None:
+    """Record that the host ended a worker process: ``timeout`` (it did not finish inside its limit) or
+    ``worker_exit`` (it exited with a non-zero status: a signal, a resource ceiling, an interpreter that died).
+    A worker that ran and reported its own error exits 0 and is never noted. Outside a compiled decision nobody
+    collects, and the note is dropped."""
+    if cause not in HOST_STOP_CAUSES:
+        raise CognitionError(f"unknown host stop cause {cause!r}")
+    log = _HOST_STOPS.get()
+    if log is not None:
+        log.append({"cause": cause, "process": process, **({} if returncode is None else {"returncode": returncode})})
+
+
+@contextmanager
+def host_stops():
+    """Collect the host stops noted while the block runs (one compiled decision); the outer collector, if any,
+    is restored afterwards and does not see them."""
+    log: list = []
+    token = _HOST_STOPS.set(log)
+    try:
+        yield log
+    finally:
+        _HOST_STOPS.reset(token)
 
 
 def optional_step(*, decision_improvement_range, total_cost_range, remaining_seconds,

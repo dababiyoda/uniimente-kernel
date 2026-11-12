@@ -164,6 +164,8 @@ jobs:
         run: python scripts/ci/check_reconstitution_mutants.py
       - name: Unmeasured-check mutations (a check a faulted capability could not read is never pursued, never retried unseen, and blames no strategy)
         run: python scripts/ci/check_unmeasured_check_mutants.py
+      - name: Compile-unanswered mutations (a compile receipt that did not answer is no measured failure; a host stop is retried, not asked about at once)
+        run: python scripts/ci/check_compile_unanswered_mutants.py
 
   verifier:
     # Its V2 re-runs tests/unit, so inside job 1 it pushed that job past its 30 minutes once the

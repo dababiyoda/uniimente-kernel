@@ -323,7 +323,9 @@ def test_each_case_lands_in_its_section_with_its_word(full):
     behavioural = section(text, "4. Behavioural conflicts a clean merge does not reveal")
     assert "- `tests/test_total.py::test_total`, a test of **consumer**: passes on its own head, fails on the merged " \
            "tree. Cause: **steeper**; passes when this head is left out." in behavioural
-    assert "Failing before the merge (not a composition problem):\n- `tests/test_broken.py::test_never_passed` " \
+    assert "Failing on their own head before the merge, inside the test envelope (not a composition problem, and not " \
+           "separated from the confinement: run them outside it before reading them as defects):\n" \
+           "- `tests/test_broken.py::test_never_passed` " \
            "(from broken)" in behavioural                                   # (iii): listed apart, not as a conflict
     assert "| consumer | `tests/test_total.py` | passed | failed |" in behavioural
     assert "| broken | `tests/test_broken.py` | failed | failed |" in behavioural
@@ -382,7 +384,9 @@ def test_each_unit_gets_one_of_four_recommendations_and_ready_only_when_everythi
                                "own head and fails on the merged tree (cause: steeper)")
     assert got["steeper"] == "hold: behavioural conflict: merging it breaks consumer's test tests/test_total.py::test_total"
     assert got["flat"] == "hold: textual conflict with what was merged before it, in pkg.py, tests/test_base.py"
-    assert got["broken"] == "hold: its own test fails on its own head (tests/test_broken.py)"
+    assert got["broken"] == "hold: a check failed for this revision"      # its lint failed for this exact head;
+    assert next(u for u in intake.assess(out["inputs"])["units"] if u["name"] == "broken")["not_checked"][0].startswith(             # its own-head failure is not the reason
+        "its own test fails on its own head inside the test envelope (tests/test_broken.py)")
     assert got["slow"] == "not checked: tests/test_slow.py timed out on its own head (no result within 7s)"
     assert got["silent"].startswith("hold: textual conflict")                # it rewrites the line steeper rewrote
     assert got["old"] == "ready to take"
@@ -395,7 +399,8 @@ def test_each_unit_gets_one_of_four_recommendations_and_ready_only_when_everythi
     summary = section(text, "Recommendation")
     assert f"| label | `{shas['label']}` | ready to take |" in summary
     assert "- **consumer** also: stale: its claims name another head" in summary
-    assert "- **broken** also: a check failed for this revision" in summary
+    assert "- **broken** also: its own test fails on its own head inside the test envelope " \
+           "(tests/test_broken.py); a failure there is not separated from the confinement" in summary
     assert "- **old** also: its head does not contain the base (1 commit(s) behind)" in summary
 
 
@@ -443,7 +448,7 @@ def test_a_failure_with_no_result_on_the_other_tree_is_listed_apart_from_conflic
     assert report["failing_before_the_merge"] == [] and report["not_measured"] == [{
         "test": f"{BROKEN}::test_never_passed", "unit": "broken",
         "note": "fails alone; the merged tree gave no result for this file"}]
-    assert out["recommendations"]["broken"] == "hold: its own test fails on its own head (tests/test_broken.py)"
+    assert out["recommendations"]["broken"].startswith("not checked: its own test fails on its own head inside")
 
 
 def test_a_cause_is_named_only_from_a_rerun_that_gave_a_result(repo, tmp_path, monkeypatch):
@@ -629,6 +634,40 @@ def test_the_delivered_file_is_the_render_of_the_receipted_inputs_and_an_edit_is
     forged["inputs"]["rehearsal"]["behavioural_conflicts"] = []
     assert intake.verify_delivery(forged, tmp_path / "out") == (False, "retained inputs do not match their digest")
     assert intake.verify_delivery({"path": str(md)}, tmp_path / "out")[0] is False
+
+
+def test_a_file_from_another_renderer_is_not_judged_but_sent_back_for_a_fresh_recommendation(repo, tmp_path,
+                                                                                               monkeypatch):
+    """A receipt whose inputs name another renderer cannot be re-derived by this one. Re-rendering it with today's
+    rules would refute a file that was true when written (or certify one by rules it was not written under); the
+    appraiser says it is stale and that a fresh recommendation is needed."""
+    path, shas = repo
+    out = run(tmp_path, path, shas, ["steeper", "consumer"], Script({TOTAL: breaks_with_steeper}), monkeypatch)
+    old = json.loads(json.dumps(out))
+    old["inputs"]["renderer"] = "greg.intake.render/1"
+    old["inputs_digest"] = intake.digest(old["inputs"])
+    ok, why = intake.verify_delivery(old, tmp_path / "out")
+    assert ok is False and why == ("rendered by greg.intake.render/1; this appraiser renders greg.intake.render/2: the "
+                                   "file is not re-derivable here, so a fresh recommendation is needed, not a verdict "
+                                   "on it")
+    assert intake.verify_delivery(out, tmp_path / "out")[0] is True
+
+
+def test_a_test_failing_on_its_own_head_in_the_envelope_never_holds_and_never_readies_the_unit(repo, tmp_path,
+                                                                                            monkeypatch):
+    """2026-11-12, twelve real heads: five units were held "its own test fails on its own head" and every one of those
+    files passed on its own head outside the envelope (a denied localhost socket; a temporary directory inside the
+    tree). A failure on the head's own tree is not separated from the confinement: not checked, never held as the
+    head's defect, never ready. A behavioural conflict, measured as a difference inside one envelope, still holds."""
+    path, shas = repo
+    script = Script({BROKEN: lambda tree: ("fail", ["test_never_passed"]), TOTAL: breaks_with_steeper})
+    out = run(tmp_path, path, shas, ["steeper", "consumer", "broken"], script, monkeypatch)
+    got = out["recommendations"]
+    assert got["broken"].startswith("not checked: its own test fails on its own head inside the test envelope")
+    assert got["consumer"].startswith("hold: behavioural conflict") and got["steeper"].startswith("hold: behavioural")
+    text = Path(out["path"]).read_text()
+    assert "not separated from the confinement" in section(text, "8. What remains unproven")
+    assert "even to localhost" in section(text, "8. What remains unproven")
 
 
 def test_a_second_delivery_never_overwrites_the_first(repo, tmp_path, monkeypatch):

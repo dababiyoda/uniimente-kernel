@@ -47,7 +47,7 @@ import shutil
 from greg import intake_rehearsal as rehearsal
 from greg.capabilities import READ_ONLY_GIT_ENV, CapabilityError, InvocationContext, _inside
 
-RENDERER = "greg.intake.render/1"
+RENDERER = "greg.intake.render/2"     # /2: an own-head failure in the envelope is not checked, not held
 KIND = "intake"
 SHA = re.compile(r"[0-9a-f]{40}")
 NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,40}")
@@ -514,9 +514,14 @@ def assess(inputs: dict) -> dict:
         if name in report["textual_conflicts"]:
             hold.append("textual conflict with what was merged before it, in "
                         + ", ".join(report["textual_conflicts"][name]))
+        # A test that fails on its own head ran inside the envelope (no socket, a temporary directory inside the
+        # tree, a scrubbed environment), and nothing here separates the head's code from that confinement: on
+        # 2026-11-12 five such failures on twelve real heads all passed outside it. Only a difference measured
+        # inside one envelope (own head against the merge) holds a unit; this is left not checked, never ready.
         broken = [t["file"] for t in tests if t["alone"]["state"] == FAILED]
         if broken:
-            hold.append("its own test fails on its own head (" + ", ".join(broken) + ")")
+            unchecked.append("its own test fails on its own head inside the test envelope (" + ", ".join(broken)
+                             + "); a failure there is not separated from the confinement")
         for conflict in conflicts:
             cause = ", ".join(conflict["caused_by"]) or "no single head"
             if conflict["unit"] == name:
@@ -670,7 +675,8 @@ def render(inputs: dict) -> str:
         lines.append(f"- `{_shown(conflict['test'], NODE_TEXT)}`, a test of **{conflict['unit']}**: passes on its own "
                      f"head, fails on the merged tree. Cause: **{cause}**; {_shown(conflict['note'], 400)}.")
     if report["failing_before_the_merge"]:
-        lines += ["", "Failing before the merge (not a composition problem):"]
+        lines += ["", "Failing on their own head before the merge, inside the test envelope (not a composition problem, "
+                  "and not separated from the confinement: run them outside it before reading them as defects):"]
         lines += [f"- `{_shown(item['test'], NODE_TEXT)}` (from {item['unit']})"
                   + (f": {_shown(item['note'])}" if item.get("note") else "")
                   for item in report["failing_before_the_merge"]]
@@ -713,8 +719,10 @@ def render(inputs: dict) -> str:
     lines += [f"- **{name}**: {_shown(note, 400)}" for name in judged["order"] for note in by_name[name]["notes"]
               if "nobody reviewed" in note or "does not contain the base" in note]
     modes = "; ".join(confinement["modes"]) or "no test was started"
-    lines += [f"- the tests ran under: {modes} (body setting: {confinement['body_setting']}); a test that needs the "
-              "network or a file outside its tree fails here on both trees alike",
+    lines += [f"- the tests ran under: {modes} (body setting: {confinement['body_setting']}); a test that opens any "
+              "socket (even to localhost), reaches the network, reads a file outside its tree or expects its "
+              "temporary directory outside its tree fails here on both trees alike, which is why a failure on a "
+              "head's own tree is reported as not checked, not as a defect of the head",
               "- a head's tests are that head's code: a head that forges its own test output is not detected here",
               "- all units' tests ran in one exported copy of the merged tree, one after another: a test that "
               "rewrites that copy can change a later result",
@@ -781,6 +789,9 @@ def verify_delivery(output: dict, deliver_root: Path | None, ledger=None, *, con
         if digest(request(inputs["request"])) != output.get("request_digest") \
                 or inputs.get("request_digest") != output.get("request_digest"):
             return False, "the receipted request does not match its digest"
+        if inputs.get("renderer") != RENDERER:
+            return False, (f"rendered by {inputs.get('renderer')!s:.40}; this appraiser renders {RENDERER}: the "
+                           "file is not re-derivable here, so a fresh recommendation is needed, not a verdict on it")
         text = render(inputs)
     except (CapabilityError, KeyError, TypeError, ValueError, AttributeError) as exc:
         return False, f"the receipted inputs cannot be rendered ({type(exc).__name__})"

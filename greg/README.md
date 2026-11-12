@@ -224,7 +224,13 @@ What it does, for one repository inside a read root, a base and an ordered list 
 
 Each test file on each tree gets one of five words, never merged: `passed`, `failed`, `timed out`, `not run` (with
 the reason), `errored`. Each unit gets one of `ready to take`, `take after <unit>`, `hold: <reason>`,
-`not checked: <reason>`; never `ready` while one of its checks gave no result.
+`not checked: <reason>`; never `ready` while one of its checks gave no result. A test that fails on the unit's own head is
+`not checked`, not `hold`: it ran inside the envelope (no socket, even to localhost; the temporary directory inside
+the tree; a scrubbed environment), and nothing here separates the head's code from that confinement. On 2026-11-12,
+on twelve real heads, five units held for this reason all passed those files outside the envelope. A behavioural
+conflict, a difference measured inside one envelope between the head and the merge, still holds. A recommendation
+written by an earlier renderer is not re-judged by a later one: the appraiser says it is stale and a fresh
+recommendation is needed.
 
 It approves nothing. Composing heads for development and approving a protected merge are separate boundaries: the
 mission composes in scratch and writes a file; protected integration needs the founder's and the integrator's

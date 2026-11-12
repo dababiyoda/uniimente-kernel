@@ -323,7 +323,7 @@ def test_real_tests_in_the_real_envelope_find_the_conflict_and_the_recipe_agrees
     assert states["slow"]["alone"][SLOW] == states["slow"]["merged"][SLOW] == {
         "state": "timed out", "measured": False, "why": "no result within 15s"}
     assert out["recommendations"]["slow"].startswith("not checked: tests/test_slow.py timed out")
-    assert out["recommendations"]["broken"].startswith("hold: its own test fails on its own head")
+    assert out["recommendations"]["broken"].startswith("not checked: its own test fails on its own head inside")
     assert confinement["body_setting"] == setting and "refused" not in confinement["modes"] and confinement["modes"]
     assert all(mode.startswith(("envelope: ", "supervised: network denied")) for mode in confinement["modes"])
     assert out["checks"]["ran"] is True and intake.verify_delivery(out, tmp_path / "out")[0]

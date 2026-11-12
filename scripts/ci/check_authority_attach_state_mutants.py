@@ -16,14 +16,14 @@ BODY = "greg/body.py"
 TESTS = "tests/unit/test_greg_authority_attach_state.py"
 MUTANTS = [
     (AUTHORITY, "the office never consults attach state",
-     "        unattached = self.attach_refusal(manifest)\n", "        unattached = None\n"),
+     "        unattached = self.attach_refusal(manifest, adapter, ctx)\n", "        unattached = None\n"),
     (AUTHORITY, "a non-ATTACHED state executes", 'if state != "ATTACHED":', "if False:"),
     (AUTHORITY, "an unregistered capability executes", "        if state is None:\n            return f",
      "        if False:\n            return f"),
     (AUTHORITY, "the refusal leaves no record", '"type": "greg.authority.refused_unattached"',
      '"type": "greg.authority.refused_unattached_unrecorded"'),
-    (BODY, "the body builds its office without the registry",
-     "ledger=self.ledger, registry=self.registry)", "ledger=self.ledger)"),
+    (BODY, "the body builds its office with no registry",
+     "ledger=self.ledger, registry=self.registry)", "ledger=self.ledger, registry=None)"),
 ]
 
 

@@ -37,12 +37,20 @@ def _body_with(tmp_path, mid="m:hand"):
 def _produce(body, state, action_id, output):
     """Run one action whose adapter returns ``output``, through the real Gate, and record it as the mission's
     completed action, as the engine does."""
-    manifest, _, _ = body.engine._resolve({"capability": "fs.read"})
-    outcome = body.office.act(
-        mission_id=state.mission_id, cone=state.cone, command_digest=state.command_digest, manifest=manifest,
-        adapter=lambda params, ctx: output, ctx=body.engine._context(state, manifest),
-        params={"path": action_id}, target="fs:" + action_id, cost_usd=0.0, expected_outcome="strategy executed",
-        evidence_refs=[], attempt=0, spent_usd=0.0, approved_scopes=set())
+    manifest, real, _ = body.engine._resolve({"capability": "fs.read"})
+
+    def stand_in(params, ctx):
+        return output
+    body.registry.adapters["fs.read"] = stand_in      # the office runs a capability's registered adapter only
+    try:
+        outcome = body.office.act(
+            mission_id=state.mission_id, cone=state.cone, command_digest=state.command_digest, manifest=manifest,
+            adapter=stand_in, ctx=body.engine._context(state, manifest),
+            params={"path": action_id}, target="fs:" + action_id, cost_usd=0.0,
+            expected_outcome="strategy executed", evidence_refs=[], attempt=0, spent_usd=0.0,
+            approved_scopes=set())
+    finally:
+        body.registry.adapters["fs.read"] = real
     assert outcome.status == "DONE", outcome.reasons
     body.journal.record("mission.action", {
         "mission_id": state.mission_id, "action_id": action_id, "attempt": 0, "status": "DONE",

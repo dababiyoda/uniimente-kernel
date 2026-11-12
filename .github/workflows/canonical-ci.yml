@@ -416,6 +416,15 @@ jobs:
           shell=$(ls -d "$PLAYWRIGHT_BROWSERS_PATH"/chromium_headless_shell-*/chrome-headless-shell-linux64/chrome-headless-shell | tail -n 1)
           test -x "$shell"
           "$shell" --version
+      # GREG asks for Chromium's own sandbox when it does not run as root (greg/computer.py). On this runner the
+      # first run of job 11 (106a8eb8) failed 6 tests with "No usable sandbox": Ubuntu's AppArmor restricts
+      # unprivileged user namespaces for binaries without a profile. This lets the test machine provide them; it
+      # does not change what GREG asks for.
+      - name: Let Chromium create its own sandbox on this runner, as job 11 does
+        run: |
+          if sysctl -n kernel.apparmor_restrict_unprivileged_userns >/dev/null 2>&1; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          fi
           echo "PLAYWRIGHT_BROWSERS_PATH=$PLAYWRIGHT_BROWSERS_PATH" >> "$GITHUB_ENV"
           echo "GREG_CHROMIUM=$shell" >> "$GITHUB_ENV"
       - name: Whole-machine mission, organ capabilities and hostile cases (organs required, no skips)
@@ -497,6 +506,15 @@ jobs:
           "$shell" --version
           echo "PLAYWRIGHT_BROWSERS_PATH=$PLAYWRIGHT_BROWSERS_PATH" >> "$GITHUB_ENV"
           echo "GREG_CHROMIUM=$shell" >> "$GITHUB_ENV"
+      # GREG asks for Chromium's own sandbox when it does not run as root (greg/computer.py). On this runner the
+      # first run of job 11 (106a8eb8) failed 6 tests with "No usable sandbox": Ubuntu's AppArmor restricts
+      # unprivileged user namespaces for binaries without a profile. This lets the test machine provide them; it
+      # does not change what GREG asks for.
+      - name: Let Chromium create its own sandbox on this runner (unprivileged user namespaces)
+        run: |
+          if sysctl -n kernel.apparmor_restrict_unprivileged_userns >/dev/null 2>&1; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          fi
       - name: Provision bubblewrap for the confined browser (#26 relay), as job 1 does
         run: |
           sudo apt-get update -q && sudo apt-get install -y -q bubblewrap

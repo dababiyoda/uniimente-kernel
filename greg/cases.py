@@ -43,6 +43,7 @@ import shutil
 
 from greg.capabilities import CapabilityError, InvocationContext, _inside, bounded_read, faithful_text
 from greg.textform import canon
+from provenance.digests import sha256_json
 
 RENDERER = "greg.cases/1"
 TYPES = ("text", "amount", "number", "percent", "date", "yes_no")
@@ -456,9 +457,9 @@ def _slug(text: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", str(text).lower()).strip("-")[:40] or "case"
 
 
-def _digest(value) -> str:
-    return "sha256:" + hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
-                                                 default=str).encode()).hexdigest()
+def assessment_digest(value) -> str:
+    """The digest an assessment is named and re-derived by: sorted-key compact JSON, non-ASCII kept as text."""
+    return sha256_json(value, ensure_ascii=False, default=str)
 
 
 def _requests(journal, channel: str, reference: str) -> list | None:
@@ -661,7 +662,7 @@ def assess(params: dict, ctx: InvocationContext) -> dict:
            "payment_observed": payment["state"] == "observed", "projection": projection,
            "request": {"channel": book["request"]["channel"], "records": request},
            "request_recorded": bool(request), "route": route}
-    out["assessment_digest"] = _digest(out)
+    out["assessment_digest"] = assessment_digest(out)
     name = f"case-{_slug(reference)}-{out['assessment_digest'][7:23]}"
     folder_out = Path(ctx.deliver_root).resolve() / "cases" if ctx.deliver_root else None
     current = folder_out is not None and _packet_on_disk(folder_out, name, out["assessment_digest"])
@@ -922,7 +923,7 @@ def verify_delivery(output: dict, deliver_root: Path | None, ledger=None, *, con
     assessment = dict(content.get("assessment") or {})
     digest = assessment.pop("assessment_digest", None)
     unshown = {k: v for k, v in assessment.items() if k not in ("complete", "decided")}
-    if digest is None or _digest(unshown) != digest:
+    if digest is None or assessment_digest(unshown) != digest:
         return False, "the packet's assessment digest is not the digest of its assessment"
     text, twin = render(content).encode("utf-8"), _json(content).encode("utf-8")
     if hashlib.sha256(text).hexdigest() != output.get("sha256") or hashlib.sha256(twin).hexdigest() != \

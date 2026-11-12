@@ -115,5 +115,5 @@ while payment is asked for counts one more ask.
   receipt that records it.
 - Beyond the brief's checks and asks, the template adds one check (no dispute) and two asks (forward the request
   through intake; settle a named dispute), and every person's step requires a current packet.
-- `greg/cases.py` is 940 lines: the rulebook loader and its expression language, extraction, the assessment, the packet
+- `greg/cases.py` is 941 lines: the rulebook loader and its expression language, extraction, the assessment, the packet
   renderer and the appraiser's re-render.

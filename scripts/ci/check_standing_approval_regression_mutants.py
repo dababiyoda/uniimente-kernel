@@ -70,9 +70,15 @@ MUTANTS = [
     ("every compensation counted as settled", "greg/autonomy.py",
      'settled = closed.get((p.get("mission_id"), p.get("action_id"))) in ("DONE", "FOUNDER_DECIDED")',
      "settled = True", COMPENSATION),
+    # Every closure is listed now, appraised or not (greg/autonomy.py _judging_closures), so the closure after a run
+    # is always its own and the window check alone is redundant: the mutant takes the first closure with a verdict
+    # after the run and drops the window check, which is how a later closure would judge a run outside its window.
     ("a later closure judges a run made before its window opened", "greg/autonomy.py",
-     "judged = windows[i] if i < len(windows) and windows[i][2] < at else None",
-     "judged = windows[i] if i < len(windows) else None", ORDER),
+     "            i = bisect_right(closures, at)\n"
+     "            judged = windows[i] if i < len(windows) and windows[i][2] < at else None\n",
+     "            i = next((k for k in range(bisect_right(closures, at), len(windows)) if windows[k][1] is not None),\n"
+     "                     len(windows))\n"
+     "            judged = windows[i] if i < len(windows) else None\n", ORDER),
     ("a verified-unmet closure judges its runs verified", "greg/autonomy.py",
      'kind = "verified" if judged is not None and judged[1] == "VERIFIED" else None',
      'kind = "verified" if judged is not None and judged[1] in ("VERIFIED", "VERIFIED_UNMET") else None', UNMET),

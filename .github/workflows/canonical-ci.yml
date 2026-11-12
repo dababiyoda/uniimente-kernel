@@ -134,6 +134,8 @@ jobs:
         run: python scripts/ci/check_worker_appraisal_mutants.py
       - name: Appraiser attach-state mutations (the separate appraiser runs nothing for a capability that is not ATTACHED)
         run: python scripts/ci/check_appraiser_attach_state_mutants.py
+      - name: Closure-keyed appraisal reader mutations (each reader asks about the closure it means, not the mission's latest record)
+        run: python scripts/ci/check_appraisal_closure_readers_mutants.py
       - name: Whole-output judgment mutations (a check decided over the output its receipt kept, never on what it could not measure)
         run: python scripts/ci/check_whole_output_mutants.py
       - name: Standing-approval regression mutations (a failed run under a standing approval withdraws it)

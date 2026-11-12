@@ -105,7 +105,12 @@ jobs:
     # 120-minute limit on the joined tree: cancelled twice on #274's 68b772cb with no test failed (10571 and 10572
     # passed; the gates after the suite took about 24 minutes), and 99 minutes on #196's 75a8fdf4. The limit bounds a
     # hung run, not a speed target.
-    timeout-minutes: 90
+    # By 2026-11-12 the gates alone had reached the 90-minute limit set here: on three heads based on 8d205324 this
+    # job took 79 min 49 s (#294, 1643932e), 85 min 6 s (#293, 32ca8de7) and 89 min 59 s (#298, b9a34259), and it was
+    # cancelled at 90 minutes with every mutant so far caught on two heads that add one more gate (#300, 0aa09c87;
+    # the composed candidate #299, eebd3b46). A cancelled gate job is not a passed one. The limit is doubled; running
+    # the gates as parallel shards would shorten the job instead and is the integrator's and the founder's choice.
+    timeout-minutes: 180
     steps:
       - uses: actions/checkout@v4
         with:

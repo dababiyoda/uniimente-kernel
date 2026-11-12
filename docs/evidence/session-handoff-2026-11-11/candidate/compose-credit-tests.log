@@ -1,0 +1,6 @@
+files: tests/unit/test_greg_precedents.py tests/unit/test_greg_routing_integrity.py tests/unit/test_greg_routing_integrity_sdk.py tests/unit/test_greg_sop_compounding.py 
+........................................................................ [ 35%]
+........................................................................ [ 71%]
+..........................................................               [100%]
+202 passed, 1 skipped in 321.80s (0:05:21)
+exit 0

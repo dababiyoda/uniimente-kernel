@@ -29,10 +29,14 @@ CLASSIFICATION = "UNVERIFIED_LOCAL_REVIEW_DATA"
 
 
 def _open(path, constitution, *, read_only):
+    """A review reads history the proof host or another note writer may be appending to at that moment, and the
+    file can end inside the line being written (the kernel grows it a page at a time while it copies one write).
+    That line was never acknowledged: a reader leaves it out (``tail="ignore"``) instead of failing the review. The
+    writer keeps the default and refuses a torn line, which only a crash leaves once it holds the writer lock."""
     path = Path(path)
     if not path.is_file() or not 0 < path.stat().st_size <= MAX_HISTORY:
         raise ValueError("existing bounded regular history file required")
-    return EvidenceLedger(constitution, str(path), read_only=read_only)
+    return EvidenceLedger(constitution, str(path), read_only=read_only, tail="ignore" if read_only else "refuse")
 
 
 def _prefix(ledger, head):
@@ -41,6 +45,9 @@ def _prefix(ledger, head):
         raise ValueError(reason)
     anchor = ledger.find(head)
     if anchor is None:
+        if ledger.unacknowledged_tail:     # it may be the line still being written: not absent, not yet readable
+            raise ValueError("review head is absent from acknowledged history, which ends with a line that was "
+                             "never completed (a write in progress, or torn by a crash); retry the review")
         raise ValueError("review head is absent from retained history")
     # A temporary read-only instance of the SAME canonical owner, never a store.
     snapshot = EvidenceLedger(ledger.constitution_hash, read_only=True)

@@ -29,6 +29,7 @@ import ipaddress
 import json
 from pathlib import Path
 import secrets
+import sys
 
 from events.spine import EventSpine
 from greg.body import Layout, consumed_nonces, device_delegations, status
@@ -57,26 +58,48 @@ class RemoteError(Exception):
         self.status = status
 
 
+UNREADABLE = "the body's history cannot be read right now; run greg status on the body's computer"
+
+
 class _Reader:
-    """A read-only view of the body's ledger for one request (revocation is immediate)."""
+    """A read-only view of the body's ledger for one request (revocation is immediate).
+
+    The body is usually running while this reads, and its last line may be one it is still writing: the kernel
+    grows the file a page at a time while it copies one write, so the file can end inside that line. The line was
+    never acknowledged, so it is left out (``tail="ignore"``), as every other observer of a running body does
+    (greg.body.observe). Each request reads again, so what this request did not see yet the next one does: a
+    delegation or a key enrolled by that line verifies on the next read, a revocation in it applies from the next
+    read (this one is answered as if it had come a moment before the body began the write, which is when the
+    revocation is not yet acknowledged either), a command accepted by it shows in the next /api/commands, and a
+    replayed nonce it spends is refused by the body, which verifies every command again. A
+    complete line that is not a record is still corruption: the read is refused with 503 and a fixed message,
+    never the ledger's own text (it names paths on the body's computer)."""
 
     def __init__(self, home: Path):
         self.layout = Layout(home)
         self.config = json.loads(self.layout.config.read_text())
 
     def __enter__(self):
-        self.ledger = EvidenceLedger(self.config["constitution_hash"], str(self.layout.ledger), read_only=True)
-        self.journal = Journal(EventSpine(self.ledger), actor="spiffe://uniimente.internal/greg/remote-reader")
-        founder = {}
-        for event in self.journal.replay("founder."):
-            if event.type == "greg.founder.enrolled":
-                founder[event.payload["key_id"]] = event.payload["public_key"]
-            elif event.type == "greg.founder.key_rotated":
-                founder.pop(event.payload["old_key_id"], None)
-                founder[event.payload["new_key_id"]] = event.payload["new_public_key"]
-        nonces = consumed_nonces(self.journal)
-        self.verifier = FounderVerifier(body_id=self.config["body_id"], enrolled=founder,
-                                        seen_nonce=nonces.__contains__, devices=device_delegations(self.journal))
+        try:
+            self.ledger = EvidenceLedger(self.config["constitution_hash"], str(self.layout.ledger), read_only=True,
+                                         tail="ignore")
+        except (OSError, ValueError):
+            raise RemoteError(503, UNREADABLE) from None
+        try:
+            self.journal = Journal(EventSpine(self.ledger), actor="spiffe://uniimente.internal/greg/remote-reader")
+            founder = {}
+            for event in self.journal.replay("founder."):
+                if event.type == "greg.founder.enrolled":
+                    founder[event.payload["key_id"]] = event.payload["public_key"]
+                elif event.type == "greg.founder.key_rotated":
+                    founder.pop(event.payload["old_key_id"], None)
+                    founder[event.payload["new_key_id"]] = event.payload["new_public_key"]
+            nonces = consumed_nonces(self.journal)
+            self.verifier = FounderVerifier(body_id=self.config["body_id"], enrolled=founder,
+                                            seen_nonce=nonces.__contains__, devices=device_delegations(self.journal))
+        except BaseException:
+            self.ledger.close()        # __exit__ never runs when __enter__ raises
+            raise
         return self
 
     def __exit__(self, *exc):
@@ -165,14 +188,26 @@ def make_server(home: str | Path, host: str = "127.0.0.1", port: int = 8765) -> 
             self.wfile.write(payload)
 
         def _run(self, method):
-            length = int(self.headers.get("Content-Length") or 0)
-            if length > MAX_COMMAND_BYTES:
-                return self._reply(*_json(413, {"error": "command too large"}))
-            body = self.rfile.read(length) if length else b""
+            # Every request gets an HTTP answer: an error handle() did not expect becomes 500 with a fixed message
+            # (the phone never sees exception text or paths), never a connection dropped without a response.
             try:
-                self._reply(*handle(home, method, self.path.split("?")[0], self.headers, body))
+                try:
+                    length = int(self.headers.get("Content-Length") or 0)
+                except ValueError:
+                    length = -1
+                if length < 0:
+                    raise RemoteError(400, "invalid Content-Length")
+                if length > MAX_COMMAND_BYTES:
+                    raise RemoteError(413, "command too large")
+                body = self.rfile.read(length) if length else b""
+                reply = handle(home, method, self.path.split("?")[0], self.headers, body)
             except RemoteError as exc:
-                self._reply(*_json(exc.status, {"error": str(exc)}))
+                reply = _json(exc.status, {"error": str(exc)})
+            except Exception as exc:
+                # The body's own computer gets the exception's type only: its text may carry request data.
+                sys.stderr.write(f"greg serve: {type(exc).__name__} answering {method} {self.path.split('?')[0]}\n")
+                reply = _json(500, {"error": "internal error; see the greg serve log on the body's computer"})
+            self._reply(*reply)
 
         def do_GET(self):
             self._run("GET")

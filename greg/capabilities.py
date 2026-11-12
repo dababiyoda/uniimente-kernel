@@ -178,7 +178,14 @@ class CapabilityManifest:
         for binary in self.binaries:
             if not Path(binary).is_absolute() or not os.access(binary, os.X_OK):
                 return False, f"binary {binary} not installed or not executable"
-        return True, "available"
+        asked_now = AVAILABLE_AT_CALL_TIME.get(self.capability_id)
+        return asked_now() if asked_now is not None else (True, "available")
+
+
+# A capability whose executable is chosen when it runs names no path in ``binaries`` (so its manifest, and the digest
+# the separate appraiser re-derives, are the same in every process) and is listed here instead: capability_id -> a
+# function answering (available, why) each time ``CapabilityManifest.available`` is asked.
+AVAILABLE_AT_CALL_TIME: dict = {}
 
 
 # -- secret broker ------------------------------------------------------------------
@@ -656,17 +663,35 @@ CHROME_CANDIDATES = (
     "/Applications/Chromium.app/Contents/MacOS/Chromium",
     "/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromium-browser",
 )
+HEADLESS_SHELL_CANDIDATES = ("/usr/bin/chrome-headless-shell",)
+PLAYWRIGHT_BROWSERS = "/opt/pw-browsers"
+NO_BROWSER = "no Chrome or Chromium is installed on this body"
+
+
+def chrome_candidates() -> list[str]:
+    """Every installed browser GREG may render with, in the order it tries them. Nothing is run here."""
+    shells = sorted(glob.glob(f"{PLAYWRIGHT_BROWSERS}/chromium_headless_shell-*/chrome-headless-shell-*/"
+                              "chrome-headless-shell"), reverse=True)
+    full = sorted(glob.glob(f"{PLAYWRIGHT_BROWSERS}/chromium-*/chrome-linux*/chrome"))
+    return [candidate for candidate in (os.environ.get("GREG_CHROMIUM", ""), *shells, *HEADLESS_SHELL_CANDIDATES,
+                                        *CHROME_CANDIDATES, *full)
+            if candidate and Path(candidate).is_file() and os.access(candidate, os.X_OK)]
 
 
 def chrome_binary() -> str:
     """The browser GREG drives: an installed Chrome/Chromium (founder-chosen via GREG_CHROMIUM)."""
-    shells = sorted(glob.glob("/opt/pw-browsers/chromium_headless_shell-*/chrome-headless-shell-*/chrome-headless-shell"),
-                    reverse=True)
-    for candidate in (os.environ.get("GREG_CHROMIUM", ""), *shells, "/usr/bin/chrome-headless-shell",
-                      *CHROME_CANDIDATES, *sorted(glob.glob("/opt/pw-browsers/chromium-*/chrome-linux*/chrome"))):
-        if candidate and Path(candidate).is_file() and os.access(candidate, os.X_OK):
-            return candidate
-    return CHROME_CANDIDATES[0]
+    found = chrome_candidates()
+    return found[0] if found else CHROME_CANDIDATES[0]
+
+
+def browser_installed() -> tuple[bool, str]:
+    """What ``CapabilityManifest.available`` answers for browser.render, looked up each time it is asked: a path fixed
+    at import can be gone when the capability runs (Playwright replaces a build's directory on upgrade). Nothing is
+    run: this says a browser is installed, not that it renders."""
+    return (True, "available") if chrome_candidates() else (False, NO_BROWSER)
+
+
+AVAILABLE_AT_CALL_TIME["browser.render"] = browser_installed
 
 
 class _VisibleText(HTMLParser):
@@ -973,7 +998,9 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                                 "browser", "read_only", "web:", {"url": "str"},
                                 {"title": "str", "text": "str", "dom_sha256": "str"},
                                 network="target-host-only", data_classes=("public_web",), retry_safe=True,
-                                binaries=(chrome_binary(),), target_from="url",
+                                # no ``binaries``: the browser is chosen when a render runs (chrome_binary) and
+                                # ``available`` asks browser_installed() then (AVAILABLE_AT_CALL_TIME)
+                                target_from="url",
                                 provenance={"source": "uniimente-kernel/greg/capabilities.py",
                                             "mechanism_from": "installed Chrome/Chromium --headless --dump-dom"}),
                        browser_render),

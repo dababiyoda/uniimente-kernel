@@ -11,7 +11,7 @@ explicit rules, producing "a case packet, justified next action, unresolved fact
 projection separating estimates from actual transactions", and exercising "missing evidence, conflicting information,
 changed conditions, duplicate requests, interruption, disputed completion, unknown payment status". The second,
 materially different case is pre-registered in [PREREGISTRATION.md](PREREGISTRATION.md) (first commit of this branch)
-and is not built here.
+and is not built here. Its measured result, from withheld material, is in [RESULT-case-2.md](RESULT-case-2.md).
 
 ## What was built
 

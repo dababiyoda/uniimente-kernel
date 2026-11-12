@@ -1022,14 +1022,12 @@ def rank_key(s: dict, index: int, failing: set, manifest, record: dict | None, v
     return -expected, route, index, estimate
 
 
-def first_choice(spec: dict, failing: set, *, manifest_for, records: dict, failed=(), excluded=(),
-                 held=()) -> str | None:
-    """The strategy the mission's own selection ranks first for these failing checks, or None.
-
-    The candidates are ``_pursue``'s: strategies advancing a failing check, not failed, not excluded, whose
-    signed preconditions (``requires``) are not among the failing checks, and not ``held``: strategies whose
-    typed inputs cannot resolve now, which ``_pursue`` holds the same way (``MissionEngine._inputs``). A caller
-    without the ledger (``goal_from_mission``) passes none and keeps the signed order."""
+def ranked_strategies(spec: dict, failing: set, *, manifest_for, records: dict, failed=(), excluded=(),
+                      held=()) -> list[str]:
+    """``_pursue``'s candidates for these failing checks, in its rank order (``rank_key``): strategies advancing a
+    failing check, not failed, not excluded, whose signed preconditions (``requires``) are not among the failing
+    checks, and not ``held``: strategies whose typed inputs cannot resolve now, which ``_pursue`` holds the same way
+    (``MissionEngine._inputs``)."""
     value = float(spec.get("value_per_check_usd", 1.0))
     ranked = []
     for index, s in enumerate(spec["strategies"]):
@@ -1039,7 +1037,23 @@ def first_choice(spec: dict, failing: set, *, manifest_for, records: dict, faile
         manifest = manifest_for(s)
         key = rank_key(s, index, failing, manifest, records.get(manifest.capability_id) if manifest else None, value)
         ranked.append((*key[:3], s["action_id"]))
-    return min(ranked)[3] if ranked else None
+    return [r[3] for r in sorted(ranked)]
+
+
+def first_choice(spec: dict, failing: set, *, manifest_for, records: dict, failed=(), excluded=(),
+                 held=(), detached=(), unresolved=()) -> str | None:
+    """The strategy the mission's own selection ranks first for these failing checks, or None.
+
+    The candidates are ``ranked_strategies``. Strategies in ``detached`` (their signed capability detached by the
+    founder) are passed over, as ``_pursue`` passes them over, only for the first other candidate whose capability
+    resolves now (not in ``unresolved``); otherwise the first in rank order is chosen, detached or not. A caller
+    without the ledger (``goal_from_mission``) passes none and keeps the signed order."""
+    ranked = ranked_strategies(spec, failing, manifest_for=manifest_for, records=records, failed=failed,
+                               excluded=excluded, held=held)
+    runnable = [a for a in ranked if a not in detached]
+    if runnable and runnable[0] not in unresolved:
+        return runnable[0]
+    return ranked[0] if ranked else None
 
 
 def strategy_scope(m: "MissionState | None", manifests: dict, action_id: str, *, now: datetime) -> dict:
@@ -1800,6 +1814,30 @@ class MissionEngine:
             manifest = self.genesis.find_attached(s["function"])
         return manifest
 
+    def _detached(self, s: dict) -> str | None:
+        """The capability a strategy names, when the founder detached it (a signed CAPABILITY_DETACH is the only way a
+        capability becomes DETACHED); else None. A strategy that names a function resolves to an attached
+        implementation of it or to none (``_resolve``), so it is never passed over here."""
+        cid = s.get("capability")
+        return cid if cid is not None and self.registry.state.get(cid) == "DETACHED" else None
+
+    def _choice(self, m: MissionState, checks: set) -> tuple[str | None, list[dict]]:
+        """The mission's own selection for these checks (``first_choice`` with what ``_pursue`` holds, passes over
+        and cannot resolve now), and the strategies ranked above it that it passed over because the founder detached
+        their tool. One rule for an ask made ahead of the loop and for re-checking an open ask (``_withdraw_moot_asks``)."""
+        strategies = [s for s in m.spec["strategies"] if set(s["advances"]) & checks]
+        held = {s["action_id"] for s in strategies if self._held(m, s)}
+        rank = dict(manifest_for=self._manifest_for, records=routing.track_record(self.journal), failed=m.failed,
+                    excluded=m.excluded, held=held)
+        first = first_choice(m.spec, checks, **rank, detached={s["action_id"] for s in strategies if self._detached(s)},
+                             unresolved={s["action_id"] for s in strategies if self._resolve(s)[0] is None})
+        ranked = ranked_strategies(m.spec, checks, **rank)
+        above = ranked[:ranked.index(first)] if first in ranked else []
+        by_id = {s["action_id"]: s for s in strategies}
+        return first, [{"action_id": a, "capability": by_id[a]["capability"],
+                        "why": f"the founder detached {by_id[a]['capability']}: it does not run, and its attach is not "
+                               "asked for while another signed strategy remains"} for a in above]
+
     def _askable(self, m: "MissionState | None", mission_id: str, action_id: str, *, now: datetime) -> dict:
         """The exact scope of a strategy the founder may be asked about ahead of the mission's loop, or
         MissionError saying why not. One predicate for ``request_decision`` and ``ask_refusal``."""
@@ -1830,10 +1868,7 @@ class MissionEngine:
                                f"the mission's loop pursues ({sorted(pursued)}): it would never run it")
         # Only the move the mission's own selection would run next for these checks may be asked about ahead:
         # one consequential decision is one ask, and its approve is what the mission then runs.
-        held = {s["action_id"] for s in m.spec["strategies"] if set(s["advances"]) & checks and self._held(m, s)}
-        first = first_choice(m.spec, checks, manifest_for=self._manifest_for,
-                             records=routing.track_record(self.journal), failed=m.failed, excluded=m.excluded,
-                             held=held)
+        first, passed = self._choice(m, checks)
         if first != action_id:
             raise MissionError(f"for {', '.join(sorted(checks))} the mission's own selection runs {first} first, not "
                                f"{action_id}: it would ask for (or run) {first}, so an approve of {action_id} could "
@@ -1845,7 +1880,7 @@ class MissionEngine:
                     and rid not in self.book.withdrawn and set(other["advances"]) & checks:
                 raise MissionError(f"an open APPROVAL ({rid}, {other['action_id']}) already asks about "
                                    f"{', '.join(sorted(set(other['advances']) & checks))}: one decision, one ask")
-        return scope
+        return {**scope, "passed_over": passed}
 
     def ask_refusal(self, mission_id: str, action_id: str, *, now: datetime) -> str | None:
         """Why ``request_decision`` would refuse to ask about this strategy now, or None. Records nothing."""
@@ -1872,14 +1907,20 @@ class MissionEngine:
         scope = self._askable(m, mission_id, action_id, now=now)
         s, cost = scope["strategy"], scope["cost_usd"]
         resource = None
+        # What the selection passed over to reach this move is part of the ask, as in the loop's own ask: a re-attach
+        # of that tool makes the ask moot (_withdraw_moot_asks).
+        passed = {"passed_over": scope["passed_over"]} if scope["passed_over"] else {}
         if cost > 0:
             from types import SimpleNamespace
             records = routing.track_record(self.journal)
             routing_decision = {"chosen": action_id, "reliability": routing.reliability(records.get(scope["capability"])),
-                                "asked_ahead_of_the_mission_loop": True}
+                                "asked_ahead_of_the_mission_loop": True, **passed}
             resource = self._spend_ask(m, s, SimpleNamespace(reasons=scope["outside_cone"]), routing_decision)
             if evidence:
                 resource = {**resource, "evidence": {**resource["evidence"], **evidence}}
+        elif passed:
+            evidence = {**(evidence or {}), "routing": {"chosen": action_id, "asked_ahead_of_the_mission_loop": True,
+                                                        **passed}}
         return self._request(
             m, kind="APPROVAL", scope_digest=scope["scope_digest"], move_digest=scope["move_digest"],
             action_id=action_id, why=(why or "; ".join(scope["outside_cone"]))[:400],
@@ -2124,6 +2165,60 @@ class MissionEngine:
             m = self.book.missions[m.mission_id]
         return m
 
+    def _withdraw_moot_asks(self, m: MissionState, now: datetime) -> MissionState:
+        """An open APPROVAL whose approve could not run the move it names once a founder detach or attach changed the
+        mission's own selection (``_choice``) for that move's checks. Withdrawn as a body event, never a founder answer,
+        so every open ask is one an approve can run; when it was the blocker, the loop selects again on this tick and
+        asks for, or runs, what it will actually run. The founder's earlier answers stay as recorded, and no approval
+        moves to another move. Two premises are re-checked, and only these:
+
+        * the move's own tool is detached and the selection runs another strategy for its checks (an approve of it
+          could only be passed over, and the office refuses an unattached capability);
+        * the ask recorded that a strategy was passed over to reach this move because its tool was detached, that tool
+          is no longer detached, and the selection runs that strategy again.
+
+        Any other change in what the selection runs (a track record, a hold) is not re-checked here."""
+        strategies = {s["action_id"]: s for s in m.spec["strategies"]}
+        pursued = pursued_checks(m.spec)
+        moot = []
+        for rid, r in self.book.requests.items():
+            if r.get("kind") != "APPROVAL" or r.get("mission_id") != m.mission_id or rid in self.book.answers \
+                    or rid in self.book.withdrawn or r.get("compensation") or r.get("action_id") not in strategies:
+                continue                       # another mission's, answered, withdrawn, a compensation, not a strategy
+            aid = r["action_id"]
+            gone = self._detached(strategies[aid])
+            evidence = r.get("evidence") if isinstance(r.get("evidence"), dict) else {}
+            passed = (evidence.get("routing") or {}).get("passed_over") if isinstance(evidence.get("routing"), dict) \
+                else None
+            back = {p.get("action_id"): p for p in passed or () if isinstance(p, dict)
+                    and p.get("action_id") in strategies and self._detached(strategies[p["action_id"]]) is None}
+            if gone is None and not back:
+                continue                       # neither premise changed: the selection is not re-run for it
+            checks = set(strategies[aid]["advances"]) & pursued
+            first, _ = self._choice(m, checks)
+            if first is None or first == aid:
+                continue
+            if gone is not None:
+                moot.append((rid, f"the founder detached {gone}: {aid} does not run, and the mission's own selection "
+                                  f"runs {first} for {', '.join(sorted(checks))}, so an approve of {aid} could change "
+                                  "nothing"))
+                continue
+            back = back.get(first)
+            if back is not None:
+                moot.append((rid, f"{back.get('capability')} is no longer detached (now "
+                                  f"{self.registry.state.get(back.get('capability'))}): {aid} was asked for because "
+                                  f"{first} was passed over, and the mission's own selection runs {first} again, so an "
+                                  f"approve of {aid} could change nothing"))
+        for rid, why in moot:
+            self.journal.record("decision.withdrawn", {"request_id": rid, "mission_id": m.mission_id, "why": why,
+                                                       "at": iso(now)}, key=[rid, "withdrawn"])
+            if (m.blocker or {}).get("request_id") == rid:
+                self._unblock(m, why)
+        if moot:
+            self.book.rebuild()
+            m = self.book.missions[m.mission_id]
+        return m
+
     def _inside_cone(self, m: MissionState, s: dict, now: datetime) -> bool:
         """A static strategy whose exact scope the mission's signed light cone admits now (no decision needed)."""
         try:
@@ -2215,6 +2310,7 @@ class MissionEngine:
         if resumed is not None:
             return resumed
         m = self._withdraw_spent_paid_asks(m, now)   # a paid ask the mission's spend has made unfundable
+        m = self._withdraw_moot_asks(m, now)         # an ask a founder detach or attach made one no approve can run
         # A shared body-level ask is not this mission's to finish: when it lapses, _shared_ask_lapsed asks about the
         # rest of the need with every candidate kept (#184).
         if m.blocker and m.blocker.get("request_id") in self.book.withdrawn and not m.blocker.get("shared_ask"):
@@ -3712,11 +3808,26 @@ class MissionEngine:
                             "failing_checks": sorted(failing), "reconsider": "founder revises mission"})
             return {"state": "BLOCKED", "blocker": m.blocker}
         candidates.sort(key=lambda c: c[:3])
-        s = candidates[0][3]
-        routing_decision = {"chosen": s["action_id"], "expected_value": round(-candidates[0][0], 4),
-                            "reliability": round(candidates[0][4], 4),
+        # A strategy whose signed capability the founder detached does not run (the office refuses it). While another
+        # candidate remains it is passed over in rank order, and nothing is asked about the detached tool: the next
+        # one is pursued under its own exact scope, cone and approval (an approval of the detached strategy's scope is
+        # not its approval). Only a founder detach is passed over: an approval voided by a revocation, a quarantined
+        # or an unavailable capability takes the path it took before. It is passed over only for an alternative whose
+        # own capability resolves now (first_choice applies the same rule): otherwise, as with every candidate
+        # detached, the first is pursued as before and its attach is asked for, so re-attaching it unblocks the mission.
+        runnable = [c for c in candidates if self._detached(c[3]) is None]
+        ranked = runnable if runnable and self._resolve(runnable[0][3])[0] is not None else candidates
+        s = ranked[0][3]
+        routing_decision = {"chosen": s["action_id"], "expected_value": round(-ranked[0][0], 4),
+                            "reliability": round(ranked[0][4], 4),
                             "alternatives": [{"action_id": c[3]["action_id"], "expected_value": round(-c[0], 4),
-                                              "reliability": round(c[4], 4)} for c in candidates[1:6]]}
+                                              "reliability": round(c[4], 4)} for c in ranked[1:6]]}
+        passed = [c for c in candidates if c[:3] < ranked[0][:3]]
+        if passed:      # said where the founder reads the run: the record of the action and any ask it raises
+            routing_decision["passed_over"] = [
+                {"action_id": c[3]["action_id"], "capability": c[3]["capability"], "expected_value": round(-c[0], 4),
+                 "why": f"the founder detached {c[3]['capability']}: it does not run, and its attach is not asked for "
+                        "while another signed strategy remains"} for c in passed]
         manifest, adapter, _ = self._resolve(s)
         if manifest is None and prepare_for is not None:
             return {"state": "NOTHING_TO_PREPARE"}
@@ -3901,6 +4012,10 @@ class MissionEngine:
                                            **exact_reach(manifest.capability_id, bound_params),
                                            **({"spend": f"${float(s['cost_usd']):.2f} for this one action"}
                                               if float(s.get("cost_usd", 0.0)) > 0 else {})},
+                                # an unpaid ask carries the routing too when a detached strategy was passed over: what
+                                # the founder reads, and the premise _withdraw_moot_asks re-checks (a paid ask carries
+                                # it in its resource evidence)
+                                evidence={"routing": routing_decision} if routing_decision.get("passed_over") else None,
                                 now=now, resource=self._spend_ask(m, s, outcome, routing_decision)
                                 if float(s.get("cost_usd", 0.0)) > 0 else None, params=bound_params)
             self._block(m, {"type": "decision", "request_id": rid, "action_id": aid, "why": record["reasons"][:3],

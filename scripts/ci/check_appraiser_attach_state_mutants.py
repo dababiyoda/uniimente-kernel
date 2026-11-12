@@ -197,14 +197,12 @@ MUTANTS = [
     (CORRECTIONS, "a correction lists a check the appraiser left open as a failed check",
      'if v is False\n                                                             '
      'and k not in (p.get("not_established") or ())),', 'if v is False),'),
-    # The fold reads each closure's standing (greg/appraisal.py ``standings``), which an UNAVAILABLE never is, so
-    # the mutant is anchored where it reads that verdict: take the closure's final record, UNAVAILABLE included.
+    # The fold reads each run's own closure's standing (greg/appraisal.py ``Standings.judging``), which an
+    # UNAVAILABLE never is, so the mutant is anchored where it reads that verdict: an UNAVAILABLE final record counts.
     (AUTONOMY, "an appraisal that judged nothing counts as a verified run towards an autonomy level",
-     '            stands = closure.standing\n            at_closure.append(closure.at)\n'
-     '            own.append((mid, closure.verdict, closure.start, closure.at,\n',
-     '            stands = closure.record\n            at_closure.append(closure.at)\n'
-     '            own.append((mid, "VERIFIED" if stands is not None and stands.payload.get("verdict") in '
-     '("VERIFIED", "UNAVAILABLE") else closure.verdict, closure.start, closure.at,\n'),
+     '            kind = "verified" if closure is not None and closure.verdict == "VERIFIED" else None',
+     '            kind = "verified" if closure is not None and (closure.verdict == "VERIFIED" or getattr('
+     'closure.record, "payload", {}).get("verdict") == "UNAVAILABLE") else None'),
     (MISSION_CONTROL, "every appraisal row reads as the achievement's",
      'f"{closure_kinds.get(closure, \'closure\')} {str(closure)[:8]}" if closure else "achievement"', '"achievement"'),
     (MISSION_CONTROL, "the Proof view does not show which closure an appraisal is for",

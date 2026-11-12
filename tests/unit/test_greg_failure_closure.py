@@ -105,6 +105,39 @@ def test_a_run_dependent_inner_request_never_settles_one_claim_twice(tmp_path, m
         assert sorted((o["mission_id"], o["correct"]) for o in outcomes) == [("m:f-one", False), ("m:okay", True)]
     finally:
         body.close()
+    # A reading settles only under the closure whose appraisal re-derived it (greg/appraisal.py
+    # ``Standings.judging``), so one claim settles again only through a later closure: a standing mission whose
+    # second check drifts holds twice, and each hold re-derives one reading of the same cognitive claim.
+    from greg import appraisal
+    (tmp_path / "held").mkdir()
+    home, key, body_id, _ = make_body(tmp_path / "held")
+    note = workspace(home, "m:held") / "c.txt"
+    note.parent.mkdir(parents=True, exist_ok=True)
+    note.write_text("drift")
+    spec = mission("m:held", checks=blackbox("m:held", 3, 1e6)["success_checks"] + [note_check("c", note, "ok")],
+                   strategies=[write_strategy("w", "c.txt", "ok", ["c"])],
+                   capabilities=["cognition.solve", "fs.read", "fs.write"],
+                   targets=("cognition:*", "fs:*", "workspace:*"), closure={"kind": "infinite", "cadence_seconds": 60})
+    clock = Clock()
+    body = Body(home, clock=clock).open()
+    try:
+        body.boot()
+        for cid in METHODS:
+            body.apply(signed(key, body_id, "CAPABILITY_ATTACH", {"capability_id": cid}))
+        body.apply(signed(key, body_id, "MISSION", spec))
+        for n in range(11):
+            if n == 5:
+                note.write_text("drift again")
+            body.tick()
+            clock.advance(31)
+        book, position = appraisal.standings(body.journal), body.journal.positions("")
+        settled = [o for o in body.journal.replay("mission.observed") if o.payload["check_id"] == "good"
+                   and book.judging("m:held", position[o.event_id], reading=True) is not None]
+        assert len({book.judging("m:held", position[o.event_id], reading=True).event_id for o in settled}) == 2
+        outcomes = [o for o in settlement.measured_outcomes(body.journal) if o["mission_id"] == "m:held"]
+        assert [(o["check_id"], o["correct"]) for o in outcomes] == [("good", True)]
+    finally:
+        body.close()
 
 
 def test_a_verified_failure_is_never_read_as_a_success(tmp_path):

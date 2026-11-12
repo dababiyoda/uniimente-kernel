@@ -25,15 +25,19 @@ RECONCILED = f"{TESTS}::test_a_run_the_founder_reconciled_as_executed_and_proven
 RECONCILED_OK = f"{TESTS}::test_a_reconciled_run_that_worked_keeps_its_standing_approval"
 COMPENSATION = f"{TESTS}::test_compensations_are_counted_against_the_run_tuple_and_judge_nothing"
 UNMET = f"{TESTS}::test_an_effective_run_closed_by_an_unmet_closure_stays_unappraised"
-WINDOW_RUNS = "for run in ran[bisect_right(ats, start):bisect_left(ats, closure)]:"
+# Which closure judges a run is one rule (greg/appraisal.py ``Standings.judging``): its own closure, the first one
+# recorded after it, whose window holds it. The window mutants are anchored there.
+APPRAISAL = "greg/appraisal.py"
+OWN_CLOSURE = ("        closure = self._by_mission[mission_id][i]\n        if not closure.start < position:\n"
+               "            return None\n")
 MUTANTS = [
     ("body hook removed", "greg/body.py",
      "        autonomy.regress(self.journal, self.engine.book, now)"
      "   # failure evidence withdraws a standing approval first\n", "", INEFFECTIVE),
     ("ineffective evidence ignored", "greg/autonomy.py",
      'if p.get("verdict") == "ineffective" and run is not None', 'if False and run is not None', INEFFECTIVE),
-    ("refuted closures ignored", "greg/autonomy.py", 'if verdict != "REFUTED" or mid not in own:', "if True:",
-     REFUTED),
+    ("refuted closures ignored", "greg/autonomy.py",
+     'if refuted is None or refuted.payload.get("verdict") != "REFUTED":', "if True:", REFUTED),
     ("withdrawal does not void", "greg/autonomy.py", '"voids_approval": True,', '"voids_approval": False,',
      INEFFECTIVE),
     ("approvals asked after the failed run withdrawn too", "greg/autonomy.py",
@@ -46,10 +50,11 @@ MUTANTS = [
     ("a refuted run does not drop the level", "greg/autonomy.py",
      'SEVERE = ("refuted", "ineffective")', 'SEVERE = ("ineffective",)', CLIMB),
     # review round 1 (WU09-F1, F2, R-1, R-2)
-    ("a refuted window reaches runs before its start", "greg/autonomy.py",
-     WINDOW_RUNS, "for run in ran[:bisect_left(ats, closure)]:", WINDOW),
-    ("a refuted window reaches runs after its closure", "greg/autonomy.py",
-     WINDOW_RUNS, "for run in ran[bisect_right(ats, start):]:", FRESH_REFUTED),
+    ("a refuted window reaches runs before its start (the newest closure judges every run)", APPRAISAL,
+     OWN_CLOSURE, "        closure = self._by_mission[mission_id][-1]\n", WINDOW),
+    ("a refuted window reaches runs after its closure (the closure before a run judges it)", APPRAISAL,
+     "        i = bisect_right(ats, position)\n", "        i = max(bisect_right(ats, position) - 1, 0)\n",
+     FRESH_REFUTED),
     ("an ineffective run does not drop the level", "greg/autonomy.py",
      'SEVERE = ("refuted", "ineffective")', 'SEVERE = ("refuted",)', DROP),
     ("canary ignores the Wilson bound", "greg/autonomy.py",
@@ -57,9 +62,11 @@ MUTANTS = [
      "if recent >= CANARY_MIN_VERIFIED:", WILSON),
     ("a verified run placed where its verdict landed", "greg/autonomy.py",
      'r["outcomes"].append((at, kind))  # the run',
-     'r["outcomes"].append((judged[4] if judged else at, kind))  # the run', ORDER),
-    ("every run rescanned for each refuted window", "greg/autonomy.py",
-     WINDOW_RUNS, "for run in [r for a, r in zip(ats, ran) if start < a < closure]:", COST),
+     'r["outcomes"].append((pos.get(closure.standing.event_id, at) if kind == "verified" else at, kind))  # the run',
+     ORDER),
+    ("every closure rescanned for each run", APPRAISAL,
+     "        i = bisect_right(ats, position)\n",
+     "        i = next((k for k, at in enumerate(ats) if at > position), len(ats))\n", COST),
     # review round 2 (WU09-ATK-1, ATK-2, TF-1)
     ("a founder-reconciled run is never judged", "greg/autonomy.py",
      "    out += _reconciled_ineffective(journal, pos, runs, own)\n", "", RECONCILED),
@@ -70,18 +77,16 @@ MUTANTS = [
     ("every compensation counted as settled", "greg/autonomy.py",
      'settled = closed.get((p.get("mission_id"), p.get("action_id"))) in ("DONE", "FOUNDER_DECIDED")',
      "settled = True", COMPENSATION),
-    # Every closure is listed now, appraised or not (greg/autonomy.py _judging_closures), so the closure after a run
-    # is always its own and the window check alone is redundant: the mutant takes the first closure with a verdict
-    # after the run and drops the window check, which is how a later closure would judge a run outside its window.
-    ("a later closure judges a run made before its window opened", "greg/autonomy.py",
-     "            i = bisect_right(closures, at)\n"
-     "            judged = windows[i] if i < len(windows) and windows[i][2] < at else None\n",
-     "            i = next((k for k in range(bisect_right(closures, at), len(windows)) if windows[k][1] is not None),\n"
-     "                     len(windows))\n"
-     "            judged = windows[i] if i < len(windows) else None\n", ORDER),
+    # Every closure is listed, appraised or not, so the closure after a run is always its own and the window check
+    # alone is redundant: the mutant takes the first closure with a verdict after the run and drops the window check,
+    # which is how a later closure would judge a run outside its window.
+    ("a later closure judges a run made before its window opened", APPRAISAL, OWN_CLOSURE,
+     "        closure = next((c for c in self._by_mission[mission_id][i:] if c.standing is not None),\n"
+     "                       self._by_mission[mission_id][i])\n", ORDER),
     ("a verified-unmet closure judges its runs verified", "greg/autonomy.py",
-     'kind = "verified" if judged is not None and judged[1] == "VERIFIED" else None',
-     'kind = "verified" if judged is not None and judged[1] in ("VERIFIED", "VERIFIED_UNMET") else None', UNMET),
+     'kind = "verified" if closure is not None and closure.verdict == "VERIFIED" else None',
+     'kind = "verified" if closure is not None and closure.verdict in ("VERIFIED", "VERIFIED_UNMET") else None',
+     UNMET),
 ]
 
 

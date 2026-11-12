@@ -3,9 +3,14 @@
 Every GREG event carries a mission id. ``correlate`` turns the journal into one
 trace per mission: registration, founder decisions (requested -> answered, with
 latency), actions (capability, status, receipt, cost), observations, blocks and
-appraised outcomes, in time order. ``metrics`` computes institutional numbers
-over a window (closures, verified-appraisal rate, actions, blocks, decision
-latency, cost). ``why_changed`` compares two windows and attributes the delta
+appraised outcomes, in time order. An appraisal's span names the closure it judged
+and whether it stands for that closure (greg/appraisal.py ``standings``: its final
+appraisal, when that established a verdict), and its capability is that of the last
+run the closure judged (``Standings.judging``), never a run another closure judged.
+``metrics`` computes institutional numbers over a window (closures,
+verified-appraisal rate, actions, blocks, decision latency, cost); the rate counts
+each closure's standing once, and an appraisal that established nothing
+(UNAVAILABLE) counts as neither. ``why_changed`` compares two windows and attributes the delta
 to the missions and capabilities whose events moved it, citing event ids.
 ``otel_spans`` exports the same traces in the OpenTelemetry span shape
 (trace id per mission, span per event) so a standard collector can ingest them;
@@ -29,6 +34,9 @@ def _kind(e: dict) -> str:
 
 
 def correlate(events: list[dict], mission_id: str | None = None) -> dict:
+    from greg.appraisal import standings_of_events
+    book = standings_of_events(events)
+    judged: dict[int, str | None] = {}        # closure -> the capability of the last run it judged
     traces: dict[str, list] = defaultdict(list)
     requested: dict[str, str] = {}
     asked_for: dict[str, str | None] = {}     # request id -> the capability the ask is for
@@ -53,7 +61,17 @@ def correlate(events: list[dict], mission_id: str | None = None) -> dict:
             last_capability[mid] = p.get("capability")
             span.update(capability=p.get("capability"), status=p.get("status"), receipt=p.get("receipt"),
                         cost_usd=float(p.get("cost_usd") or 0.0))
-        elif kind in ("mission.appraised", "organ.appraised"):   # organ.appraised: an organ exchange's own check
+            closure = book.judging(mid, book.pos.get(e["event_id"])) if p.get("status") == "DONE" else None
+            if closure is not None:
+                judged[id(closure)] = p.get("capability")
+        elif kind == "mission.appraised":
+            closure = book.named_by(e["event_id"])
+            stands = closure is not None and closure.standing is not None \
+                and closure.standing.event_id == e["event_id"]
+            span.update(verdict=p.get("verdict"), stands=stands,
+                        closure=(closure.event_id or "achievement") if closure is not None else None,
+                        capability=p.get("capability") or (judged.get(id(closure)) if closure is not None else None))
+        elif kind == "organ.appraised":       # an organ exchange's own check
             span.update(verdict=p.get("verdict"))
         elif kind in ("mission.blocked", "mission.lifecycle"):
             # A GREG block names its blocker (an ask, a missing capability): it belongs to what it waits on,
@@ -83,7 +101,7 @@ def _contributions(events: list[dict], start: str | None, end: str | None) -> di
             key = (mid, s.get("capability") or "-")
             if s["kind"] == "mission.achieved":
                 r = rows["closures"][key]; r[0] += 1; r[1] = 1; r[2].append(s["event_id"])
-            elif s["kind"] == "mission.appraised":
+            elif s["kind"] == "mission.appraised" and s.get("stands"):   # each closure's standing, once
                 r = rows["verified_rate"][key]; r[0] += s.get("verdict") == "VERIFIED"; r[1] += 1; r[2].append(s["event_id"])
             elif s["kind"] == "mission.action":
                 r = rows["actions"][key]; r[0] += 1; r[1] = 1; r[2].append(s["event_id"])
@@ -123,8 +141,9 @@ def why_changed(events: list[dict], metric: str, *, split: str, start: str | Non
             drivers.append({"mission_id": key[0], "capability": key[1], "before": b[:2], "after": a[:2],
                             "delta": round(delta, 4), "events": a[2] or b[2]})
     anomalies = [s for mid, t in correlate([e for e in events if _in(e, split, end)])["missions"].items()
-                 for s in t["spans"] if s["kind"] == "mission.blocked" or s.get("verdict") not in (None, "VERIFIED")
-                 or (s.get("answer") not in (None, "approve"))]
+                 for s in t["spans"] if s["kind"] == "mission.blocked" or (s.get("answer") not in (None, "approve"))
+                 or (s.get("verdict") not in (None, "VERIFIED")
+                     and (s["kind"] != "mission.appraised" or s.get("stands")))]
     for d in drivers:
         d["after_window_anomalies"] = [{k: a[k] for k in ("event_id", "kind", "reason", "verdict") if k in a}
                                        for a in anomalies if a["event_id"] in

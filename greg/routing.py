@@ -9,9 +9,10 @@ unknown capability starts at 0.5 and every verified success or failure moves it.
 
 Proof feeds routing (verification weighting, after memory/causal.py): when the
 independent appraiser REFUTES a closure because its receipts or the re-observed
-world do not hold, every capability that acted inside that closure's window loses
-reliability (``_run_outcome``: each closure judges its own runs, never the mission
-as a whole, and a verdict on an old closure never reaches a newer one's runs).
+world do not hold, every capability whose run that closure judges loses reliability
+(``_run_outcome``: each run is judged by its own closure, greg/appraisal.py
+``Standings.judging``, never by the mission as a whole and never by another closure
+in its own closure's place).
 A refutation for reasons that are not the capability's (signature, inbox, replay
 boundary) does not move routing, and neither does a check the appraiser left open
 because it ran no sensor for it or read the world too late (``not_established`` on
@@ -66,14 +67,12 @@ def dispatch_outcomes(events):
 def _run_outcome(book, mission_id, event_id) -> str | None:
     """What the independent appraisal says of one completed run: "verified", "refuted" or None.
 
-    Each closure judges the runs inside its own window (greg/appraisal.py ``standings``), never the mission as a
-    whole: a refuted hold counts against the runs of that hold only, and a verdict on an earlier closure does not
-    reach runs a later hold covers. Where two windows hold the same run (a bounded mission that closed unmet and
-    was then achieved), the newest closure that covers the run decides, as the mission's latest closure always
-    did: the earlier closure's verdict keeps its own place on the ledger and no longer reaches this run. A run no
-    closure covers yet, or whose closure is unappraised, is neither."""
-    covering = book.covering(mission_id, book.pos.get(event_id, -1))
-    closure = covering[-1] if covering else None
+    The run's own closure judges it (greg/appraisal.py ``Standings.judging``, the one rule routing shares with the
+    earned-autonomy ladder and settlement): the first closure of the mission recorded after the run. A refuted hold
+    counts against the runs of that hold only; a run that a failure closure judged keeps that closure's verdict when
+    the mission is later achieved, and the achievement's verdict never reaches it. A run no closure judges yet (after
+    the mission's newest closure), or whose own closure is unappraised or ended UNAVAILABLE, is neither."""
+    closure = book.judging(mission_id, book.pos.get(event_id, -1))
     appraisal = closure.standing if closure is not None else None
     if appraisal is None:
         return None

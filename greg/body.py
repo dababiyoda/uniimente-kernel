@@ -1069,9 +1069,10 @@ class Body:
         """Record where each closure happened and have it appraised by a separate process.
 
         A closure that waited for a capability to be attached again is appraised first, before the closures recorded
-        since. It is the older closure, and several readers take a mission's latest appraisal on the ledger
-        (greg/sop.py verified_appraisals, greg/metrics.py, greg/routing.py): the appraisal of the mission's newest
-        closure is the one they should find."""
+        since. It is the older closure, so the appraisals land in the order of their closures. No reader of standing
+        depends on that order any more: each binds an appraisal to the closure it names (greg/appraisal.py
+        ``standings``). History views that list appraisals as recorded (Mission Control's Proof list, the morning
+        report) still show the newest closure's appraisal last."""
         self._appraise_reattached(now)
         self._appraise_new_closures(now)
 
@@ -1103,7 +1104,7 @@ class Body:
                 self._appraise_closure(event.payload["mission_id"], event.event_id, now)
 
     def _reattached_closures(self) -> list[tuple[str, str | None]]:
-        """Closures to appraise again: the latest appraisal ran nothing in the name of a capability that was not
+        """Closures to appraise again: each one's latest appraisal ran nothing in the name of a capability that was not
         ATTACHED, and since then the state of one of those capabilities was changed and all of them are ATTACHED now
         (the founder attached what was not run).
 

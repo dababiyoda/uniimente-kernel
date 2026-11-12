@@ -221,25 +221,23 @@ def _mission_verdicts(journal, book=None) -> dict:
 
 
 def _observation_appraisal(journal, settling=None, book=None):
-    """The appraisal an observation settles under: that of the closure it belongs to, which is the first closure
-    recorded at or after it. A reading before a failure closure settles under that closure's own VERIFIED_UNMET; one
-    after it waits for the achievement's own VERIFIED; a reading before a standing mission's second hold settles
-    under that hold's appraisal, whatever its first or third hold was found to be. A refuted achievement then
-    withdraws only what it claimed, never the failure the appraiser verified (TXT-R5-1), and a failure's appraisal
-    never credits the success that followed it (TXT-R4-1). A reading taken after the mission's newest closure
-    belongs to no closure yet: it is read under the newest one until a later closure claims it, as before.
-    ``settling`` (the per-mission map this function once fell back on) is accepted and no longer consulted: every
-    reading is settled by a closure's own appraisal."""
+    """The appraisal an observation settles under: that of its own closure, by the one rule routing and the
+    earned-autonomy ladder read too (greg/appraisal.py ``Standings.judging``): the first closure recorded after the
+    reading, when the reading was taken after the last run completed in that closure's window. Those are the readings
+    the closure's appraisal re-derived. A reading before a failure closure settles under that closure's own
+    VERIFIED_UNMET; one after it waits for the achievement's own VERIFIED; a reading before a standing mission's
+    second hold settles under that hold's appraisal, whatever its first or third hold was found to be. A refuted
+    achievement then withdraws only what it claimed, never the failure the appraiser verified (TXT-R5-1), and a
+    failure's appraisal never credits the success that followed it (TXT-R4-1). A reading taken after the mission's
+    newest closure, or before a later run of its own window, was evaluated by no appraisal: it stays unsettled until a
+    closure claims it and that closure's own appraisal settles it. ``settling`` (the per-mission map this function
+    once fell back on) is accepted and no longer consulted."""
     from greg.appraisal import standings
     book = standings(journal) if book is None else book
 
     def appraisal(event):
-        mid = event.payload.get("mission_id")
-        at = book.pos.get(event.event_id)
-        closures = book.of(mid)
-        if at is None or not closures:
-            return None
-        return _settles(book.following(mid, at) or closures[-1])
+        closure = book.judging(event.payload.get("mission_id"), book.pos.get(event.event_id), reading=True)
+        return _settles(closure)
     return appraisal
 
 
@@ -261,7 +259,7 @@ def measured_outcomes(journal):
     for event in journal.replay("mission.observed"):
         data = event.payload
         appraisal = appraisal_of(event)
-        if appraisal is None or not data.get("receipt"):
+        if not data.get("receipt") or (appraisal is None and not constructed):
             continue
         record = journal.ledger.find(data["receipt"])
         if record is None or record.record_type != "receipt":
@@ -270,21 +268,27 @@ def measured_outcomes(journal):
         compiled = _compiled(receipt)
         built = _constructed(receipt, constructed) if compiled is None else None
         if built is not None:             # a construction's certified answer: credited through its compile receipt
+            # A reading no appraisal re-derived settles nothing, but it is still a reading of the claim: a world
+            # outcome the founder reports on its receipt (awaiting_realization offers the claim on its latest one)
+            # belongs to the claim, and counts once the claim settles under a reading its closure did re-derive.
             registration = registrations.get(data["mission_id"], {})
             outcome = _constructed_outcome(
                 built, constructed, registration,
                 next((c for c in registration.get("spec", {}).get("success_checks", [])
                       if c["check_id"] == data["check_id"]), None),
                 witnesses.get(record.payload.get("witness_id"), {}).get("capability"),
-                data, event, appraisal)
+                data, event, appraisal or SimpleNamespace(event_id=None))
             if outcome is not None:
                 identity = _outcome_identity(outcome)
-                observations[identity] = outcome
+                if appraisal is not None:
+                    observations[identity] = outcome
                 claim_receipts[identity].add(data["receipt"])
                 promise = _promise(built, functions.get(outcome["method"]))
                 world_seen[identity].update({e.event_id: e for e in world.get(data["receipt"], {}).values()
                                              if e.payload.get("compile_receipt") == built["receipt_id"]
                                              and promise is not None and _promised(e.payload) == promise})
+            continue
+        if appraisal is None:
             continue
         if compiled is not None:
             receipt = compiled["selected_receipt"]
@@ -978,9 +982,11 @@ def _weigh_investigations(journal, rows, settling=None) -> None:
     for row in rows:
         if not settles(row):
             row["priority"], row["decision_impact"] = "hold", None
-            row["priority_why"] = ("no appraisal settles this claim's observations (the mission's latest is "
-                                   f"{row.get('mission_appraisal') or 'none'}), so no resolution can change "
-                                   "competence until it is re-appraised")
+            row["priority_why"] = ("no appraisal settles this claim's observations: each reading settles only "
+                                   "under its own closure's appraisal, and none of theirs is an eligible settling "
+                                   "one (the mission's current closure stands "
+                                   f"{row.get('mission_appraisal') or 'unappraised'}), so no resolution can change "
+                                   "competence until that closure is appraised")
         elif not row.get("check_passed", True):
             row["priority"], row["decision_impact"] = "hold", None
             row["priority_why"] = "the signed check failed: the answer is scored wrong whatever the world value"
@@ -1057,9 +1063,9 @@ def awaiting_realization(journal) -> list[dict]:
                         "claim": identity, "receipts_for_claim": receipts, "mission_id": mission_id,
                         "mission_appraisal": latest_verdict.get(mission_id),
                         "settles": ("once for the claim" if appraised else
-                                    "only once the mission's latest appraisal is an eligible settling appraisal "
-                                    "(VERIFIED, or VERIFIED_UNMET for a verified failure closure, with the required "
-                                    "checks): until then a report is recorded and scores nothing")
+                                    "only once the closure its readings belong to has an eligible settling appraisal "
+                                    "of its own (VERIFIED, or VERIFIED_UNMET for a verified failure closure, with the "
+                                    "required checks): until then a report is recorded and scores nothing")
                                    + "; a second, different value on any of its receipts is a conflict scored as "
                                      "neither",
                         "world_state": state["state"],

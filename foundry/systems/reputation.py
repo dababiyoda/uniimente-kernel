@@ -55,15 +55,31 @@ def score(records: list[dict], *, now: str, half_life_days: float = 90.0) -> dic
 
 
 def from_greg(events) -> list[dict]:
-    """Capability outcome records from GREG: each appraised closure credits the capabilities it used."""
-    used: dict[str, set] = {}
-    records = []
+    """Capability outcome records from GREG: each closure's standing appraisal credits or charges the capabilities of
+    the runs it judged.
+
+    Which closure judges a run is the one rule every GREG reader shares (greg/appraisal.py ``Standings.judging``): the
+    run's own closure, the first one recorded after it. A verdict therefore reaches only the runs its closure
+    evaluated, never another closure's runs (founder ruling of 2026-11-12: "A stale appraisal cannot qualify a
+    different closure"). Only a closure's standing counts: its final appraisal, when that established VERIFIED,
+    VERIFIED_UNMET or REFUTED. An appraisal answered UNAVAILABLE (nothing re-run, appraised too late, no verdict) is
+    no outcome at all, neither success nor failure ("Unreadable evidence remains unknown until reconciled")."""
+    from greg.appraisal import standings_of_events
+    events = list(events)
+    book = standings_of_events(events)
+    judged: dict[str, set] = {}         # standing appraisal event id -> capabilities of the runs its closure judged
     for e in events:
         kind, p = e["type"].removeprefix("greg."), e["payload"]
         if kind == "mission.action" and p.get("status") == "DONE":
-            used.setdefault(p["mission_id"], set()).add(p.get("capability") or "?")   # legacy records name none
-        elif kind == "mission.appraised":
-            for capability in sorted(used.get(p["mission_id"], ())):
+            closure = book.judging(p.get("mission_id"), book.pos.get(e["event_id"]))
+            stands = closure.standing if closure is not None else None
+            if stands is not None:
+                judged.setdefault(stands.event_id, set()).add(p.get("capability") or "?")   # legacy records name none
+    records = []
+    for e in events:
+        if e["type"].removeprefix("greg.") == "mission.appraised" and e["event_id"] in judged:
+            p = e["payload"]
+            for capability in sorted(judged[e["event_id"]]):
                 records.append({"subject": capability, "context": "greg", "verdict": p["verdict"],
                                 "at": e.get("at") or p.get("at") or "1970-01-01T00:00:00Z",
                                 "evidence": [e["event_id"]], "incident": p["verdict"] == "REFUTED"})

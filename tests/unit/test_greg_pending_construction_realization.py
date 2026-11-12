@@ -133,7 +133,7 @@ def test_one_claim_reobserved_on_many_receipts_is_offered_once_and_leaves_once_a
     [row] = settlement.awaiting_realization(journal)
     assert row["receipt"] == later[-1] and row["receipts_for_claim"] == 3
     assert row["claim"].startswith("sha256:") and row["mission_appraisal"] is None
-    assert row["settles"].startswith("only once the mission's latest appraisal is an eligible settling appraisal")
+    assert row["settles"].startswith("only once the closure its readings belong to has an eligible settling appraisal")
     settlement.record_realization(journal, receipt=first, realized=2, source="founder_reported")   # an older one
     assert settlement.awaiting_realization(journal) == []
 
@@ -278,7 +278,7 @@ def test_the_row_says_when_a_report_will_settle_following_the_missions_latest_ap
     appraise(journal, "REFUTED")
     [row] = settlement.awaiting_realization(journal)
     assert row["mission_appraisal"] == "REFUTED"
-    assert row["settles"].startswith("only once the mission's latest appraisal is an eligible settling appraisal")
+    assert row["settles"].startswith("only once the closure its readings belong to has an eligible settling appraisal")
 
 
 

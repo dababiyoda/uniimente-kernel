@@ -94,7 +94,7 @@ def test_an_unknown_build_cost_is_reported_as_unknown_not_zero(tmp_path):
 @pytest.mark.parametrize("who", ["m:a", "m:b"])
 def test_a_rejected_appraisal_of_either_mission_cancels_the_credit(tmp_path, who):
     led = a_then_b(tmp_path)
-    led.appraise(who, verdict="REJECTED")                      # the latest appraisal wins
+    led.appraise(who, verdict="REJECTED")                      # the achievement's final appraisal stands
     measured = compounding.retained_reuse(led.j)
     assert measured["reuses"] == []
     if who == "m:b":

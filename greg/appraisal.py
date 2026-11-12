@@ -34,9 +34,12 @@ independently written implementation or an OS sandbox against the host owner.
 """
 from __future__ import annotations
 
+from bisect import bisect_left, bisect_right
 import json
 from pathlib import Path
 import sys
+import threading
+import weakref
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
@@ -870,25 +873,29 @@ def _verdict(request, checks, findings, required=(), unmet=False, not_run=None, 
     return judged
 
 
-# -- which appraisal counts for which closure ----------------------------------------------------------------------
+# -- which appraisal counts for which closure, and which closure judges a run or a reading --------------------------
 #
 # The one reader of ``mission.appraised`` for every question of standing ("is this closure verified, refuted or
-# unappraised?", "which closure is the mission's current one?", "which closures cover this run?"). It lives here
-# because this module defines both things a reader needs: the window of a closure (``appraise``: from the
-# registration, or a standing mission's previous hold, to the closure) and how a verdict names the closure it judged
-# (``_verdict``: ``closure_event``). A reader that scans for "the mission's latest appraisal" lets a late verdict
-# about an old closure overwrite the standing of a newer one (founder ruling of 2026-11-12: "Bind an appraisal to the
-# specific closure and evidence it actually evaluates. A stale appraisal cannot qualify a different closure").
+# unappraised?", "which closure is the mission's current one?", "which closure judges this run, this reading?"). It
+# lives here because this module defines everything a reader needs: the window of a closure and what its appraisal
+# re-reads in it (``appraise``), and how a verdict names the closure it judged (``_verdict``: ``closure_event``). A
+# reader that scans for "the mission's latest appraisal" lets a late verdict about an old closure overwrite the
+# standing of a newer one (founder ruling of 2026-11-12: "Bind an appraisal to the specific closure and evidence it
+# actually evaluates. A stale appraisal cannot qualify a different closure").
 #
-# How a record names its closure:
+# How a record names its closure (each record is read against the ledger as it stood when it was written: it can
+# name only a closure recorded before it):
 #   - ``closure_event`` is the event id of the ``mission.held`` or ``mission.unmet`` it judged;
-#   - a record with no ``closure_event`` judged the mission's achievement (``mission.achieved``). Records written
+#   - a record with no ``closure_event`` judged the mission's achievement (``mission.achieved``; on a ledger that
+#     registers one mission id more than once, as the Foundry's sample journal does, the achievement since the
+#     latest registration before the record: windows open at a registration). Records written
 #     before closures were named (before 2026-09-27, when only achievements were appraised) carry no such field
 #     either and are read the same way: they judged an achievement, the only closure that was appraised then.
-#   - on a ledger that holds no achievement of that mission (cut, or built by hand), a record that names no closure
-#     still stands for one: an achievement the ledger does not hold, placed where the record itself sits.
-#   - a record whose ``closure_event`` names nothing on the ledger, or a closure of another mission, counts for no
-#     closure (``Standings.unbound``).
+#   - when the ledger holds no achievement of that mission before the record (cut, or built by hand), a record that
+#     names no closure still stands for one: an achievement the ledger does not hold, placed where the record itself
+#     sits. An achievement recorded later is a closure of its own, and records after it judged that one.
+#   - a record whose ``closure_event`` names nothing recorded before it, or a closure of another mission, counts for
+#     no closure (``Standings.unbound``).
 #
 # When a closure has several appraisals, the final one is its standing. The body has a closure appraised again only
 # while its latest answer is that nothing was run for a capability that is not ATTACHED (greg/body.py
@@ -896,7 +903,33 @@ def _verdict(request, checks, findings, required=(), unmet=False, not_run=None, 
 # and a VERIFIED, VERIFIED_UNMET or REFUTED is never followed by another appraisal of the same closure. A final
 # UNAVAILABLE (nothing run, appraised too late, no verdict in three runs) establishes nothing: the closure is
 # unappraised. A closure with no appraisal of its own is unappraised too, whatever any other closure was found to be.
+#
+# Which closure judges a run or a reading: one rule, ``Standings.judging``, for routing (greg/routing.py), the
+# earned-autonomy ladder (greg/autonomy.py), settlement (greg/cognition/settlement.py) and every other reader that
+# credits or charges a run or a reading. It follows from what a closure's appraisal re-reads (``appraise``): every
+# completed run of the mission from the registration to the closure (exactly-once, approvals, preconditions; a hold or
+# a failure closure re-renders the deliveries of its own window), and the readings taken after the last run completed
+# in the closure's window (``after``: "a pre-action reading cannot prove the action's outcome"). So:
+#   - a run is judged by its own closure: the first closure of the mission recorded after the run, when that
+#     closure's window holds it. The engine recorded that closure on what the run left behind, and its appraisal
+#     judged exactly that. A later closure whose window also holds the run (an achievement after a failure closure:
+#     both windows open at the registration) re-checks the run's receipt but judges the world as it stood after the
+#     failure closure, which the founder or another run may have changed since. Its VERIFIED is no evidence that the
+#     run succeeded and its REFUTED none that the run failed: it never judges the run in its own closure's place,
+#     before or after that closure's own appraisal lands.
+#   - a reading is judged by its own closure on the same terms, and only when it was taken after the last run
+#     completed in that closure's window: those are the readings the closure's appraisal re-derives. A reading taken
+#     before a later run of its window is superseded by that run, and no appraisal re-derives it.
+#   - the judgment is that closure's standing. A run or a reading with no own closure yet (after the mission's newest
+#     closure), one whose own closure is unappraised or whose final appraisal is UNAVAILABLE, and a reading taken
+#     before a later run of its window, is unjudged: unappraised for routing and the earned ladder, unsettled for
+#     settlement. It never borrows a verdict from a closure that did not evaluate it.
+# What a mission stands on now (its current closure: the achievement, or the newest closure while there is none) is
+# a different question, asked by readers of the mission as a whole (sop, metrics, compounding, Goal Gravity).
 ESTABLISHES = ("VERIFIED", "VERIFIED_UNMET", "REFUTED")
+CLOSING = {"mission.held": "held", "mission.achieved": "achieved", "mission.unmet": "unmet"}
+FOLDED = ("mission.registered", "mission.held", "mission.achieved", "mission.unmet", "mission.appraised",
+          "mission.action")
 
 
 class Closure:
@@ -936,13 +969,66 @@ class Closure:
 
 
 class Standings:
-    """Every closure on a ledger with its own appraisals. Read-only; built by ``standings``."""
+    """Every closure on a ledger with its own appraisals, folded in ledger order by ``standings``, which keeps one
+    per journal and folds in only what was recorded since. Readers treat it as read-only and ask it again after a
+    write."""
 
-    def __init__(self, pos, by_mission, by_event, named, unbound, appraised):
+    def __init__(self, pos):
         self.pos = pos                  # event id -> ledger position, the order every window here is measured in
-        self._by_mission, self._by_event, self._named = by_mission, by_event, named
-        self.unbound = unbound          # appraisals that name no closure on this ledger
-        self.appraised = appraised      # mission ids in the order of their first appraisal on the ledger
+        self._by_mission = {}           # mission id -> its closures in ledger order
+        self._ats = {}                  # mission id -> the positions of those closures, for bisection
+        self._by_event = {}             # closure event id -> its closure
+        self._achievement = {}          # mission id -> the achievement an appraisal naming no closure judged
+        self._opened = {}               # mission id -> position of its registration or its newest hold so far
+        self._runs = {}                 # mission id -> positions of its completed (DONE) runs, ascending
+        self._named = {}                # appraisal event id -> the closure it judged
+        self.unbound = []               # appraisals that name no closure on this ledger
+        self._order = {}                # mission ids in the order of their first appraisal on the ledger
+        self.last = -1                  # position of the last event folded
+
+    @property
+    def appraised(self) -> list:
+        """Mission ids in the order of their first appraisal on the ledger."""
+        return list(self._order)
+
+    def _fold(self, kind, event, at) -> None:
+        """Fold one event of a ``FOLDED`` kind recorded at ledger position ``at`` (after every event folded so far)."""
+        p = event.payload
+        mid = p.get("mission_id")
+        self.last = max(self.last, at)
+        if kind == "mission.action":
+            if p.get("status") == "DONE":
+                self._runs.setdefault(mid, []).append(at)
+            return
+        if kind in CLOSING:             # a closure: its window opened at the latest start before it
+            closure = Closure(mid, event.event_id, CLOSING[kind], self._opened.get(mid, -1), at)
+            self._add(closure)
+            self._by_event[event.event_id] = closure
+            prior = self._achievement.get(mid)
+            if kind == "mission.achieved" and (prior is None or prior.event_id is None):
+                self._achievement[mid] = closure    # the first one recorded; an implied one stood only until it
+        if kind in ("mission.registered", "mission.held"):
+            self._opened[mid] = at
+        if kind == "mission.registered":    # a record naming no closure judged this registration's achievement
+            self._achievement.pop(mid, None)
+        if kind != "mission.appraised":
+            return
+        self._order.setdefault(mid, None)
+        wanted = p.get("closure_event")
+        closure = self._by_event.get(wanted) if wanted else self._achievement.get(mid)
+        if closure is None and not wanted:      # no achievement on the ledger before it: one it does not hold
+            closure = Closure(mid, None, "achieved", self._opened.get(mid, -1), at)
+            self._add(closure)
+            self._achievement[mid] = closure
+        if closure is None or closure.mission_id != mid:
+            self.unbound.append(event)
+            return
+        closure.appraisals.append(event)
+        self._named[event.event_id] = closure
+
+    def _add(self, closure) -> None:
+        self._by_mission.setdefault(closure.mission_id, []).append(closure)
+        self._ats.setdefault(closure.mission_id, []).append(closure.at)
 
     def of(self, mission_id) -> list:
         """The mission's closures in ledger order."""
@@ -962,7 +1048,7 @@ class Standings:
 
     def achievement(self, mission_id):
         """The mission's achievement, or None. An appraisal that names no closure judged this one."""
-        return next((c for c in self.of(mission_id) if c.kind == "achieved"), None)
+        return self._achievement.get(mission_id)
 
     def current(self, mission_id):
         """The closure the mission stands on now: its achievement when it has one (terminal for a bounded
@@ -970,96 +1056,117 @@ class Standings:
         hold, or a failure closure recorded since). None before the first closure."""
         return self.achievement(mission_id) or (self.of(mission_id) or [None])[-1]
 
-    def covering(self, mission_id, position) -> list:
-        """The closures whose window holds this ledger position (a run, a reading), oldest first. A bounded
-        mission that closed unmet and was then achieved has two windows over the same run; a standing mission's
-        holds do not overlap. Window starts never fall as closures climb, so the answer is one slice."""
-        closures = self.of(mission_id)
-        first = self._after(closures, position)
-        end = first
-        while end < len(closures) and closures[end].start < position:
-            end += 1
-        return closures[first:end]
-
-    def following(self, mission_id, position):
-        """The first closure recorded at or after this ledger position, or None: the closure a reading taken
-        there belongs to (the closure that then claimed it), whatever any later closure says."""
-        closures = self.of(mission_id)
-        first = self._after(closures, position - 1)
-        return closures[first] if first < len(closures) else None
-
-    @staticmethod
-    def _after(closures, position) -> int:
-        """Index of the first closure recorded after this position (closures are in ledger order)."""
-        lo, hi = 0, len(closures)
-        while lo < hi:
-            middle = (lo + hi) // 2
-            if closures[middle].at > position:
-                hi = middle
-            else:
-                lo = middle + 1
-        return lo
+    def judging(self, mission_id, position, *, reading=False):
+        """The closure that judges the run (or, with ``reading``, the reading) this mission recorded at this ledger
+        position, or None while none does (the rule in the section comment above). It is the run's own closure: the
+        first closure of the mission recorded after it, when that closure's window holds it. A reading is judged by
+        that closure only when it was taken after the last run completed in the window. Its judgment is the
+        closure's ``standing``; no other closure ever judges in its place."""
+        if position is None or position < 0:
+            return None
+        ats = self._ats.get(mission_id, ())
+        i = bisect_right(ats, position)
+        if i >= len(ats):
+            return None                 # after the mission's newest closure: no closure has evaluated it yet
+        closure = self._by_mission[mission_id][i]
+        if not closure.start < position:
+            return None
+        if reading:
+            runs = self._runs.get(mission_id, ())
+            last = bisect_left(runs, closure.at)    # runs before the closure; the last one in the window, if any
+            if last and runs[last - 1] > closure.start and runs[last - 1] > position:
+                return None             # a later run of its window superseded it: no appraisal re-derived it
+        return closure
 
     def current_records(self) -> dict:
         """mission id -> (its current closure, that closure's final appraisal), for every mission whose current
         closure has an appraisal of its own. In the order of each mission's first appraisal on the ledger."""
         out = {}
-        for mission_id in self.appraised:
+        for mission_id in self._order:
             closure = self.current(mission_id)
             if closure is not None and closure.appraisals:
                 out[mission_id] = (closure, closure.record)
         return out
 
 
-def ledger_positions(journal, prefix: str = "mission.") -> dict:
-    """event id -> position among the journal's ``prefix`` events (a journal with no index is replayed once)."""
-    if hasattr(journal, "positions"):
-        return journal.positions(prefix)
-    return {e.event_id: i for i, e in enumerate(journal.replay(prefix))}
+# One Standings per journal (keyed by its event spine), folded forward from what the spine recorded since the last
+# call: a reader on the engine's per-tick path does not replay the ledger again. A history the spine replaced
+# (``since`` reports it restarted) is folded again from the beginning.
+_KEPT = weakref.WeakKeyDictionary()
+_LOCK = threading.RLock()
 
 
-def standings(journal, pos=None) -> Standings:
-    """Every closure on this journal, each with the appraisals that name it (see the section comment above).
+def _fold_from_scratch(journal, pos) -> Standings:
+    book = Standings(pos)
+    events = sorted(((pos.get(e.event_id, -1), e.event_id, kind, e) for kind in FOLDED for e in journal.replay(kind)),
+                    key=lambda m: (m[0], m[1]))
+    for at, _, kind, event in events:
+        if at >= 0:                     # an event recorded after ``pos`` was read is folded by the next call
+            book._fold(kind, event, at)
+    return book
 
-    ``pos`` is the caller's own position map when it compares windows with other events (it must cover every
-    ``mission.`` event); by default the positions among ``mission.`` events. One pass over the closures in ledger
-    order and one over the appraisals: n log n on a long standing history. Writes nothing."""
-    pos = ledger_positions(journal) if pos is None else pos
-    appraisals = journal.replay("mission.appraised")
-    marks = [(pos.get(e.event_id, -1), e.event_id, kind, e.payload.get("mission_id"))
-             for kind in ("mission.registered", "mission.held", "mission.achieved", "mission.unmet")
-             for e in journal.replay(kind)]
-    achieved = {mid for _, _, kind, mid in marks if kind == "mission.achieved"}
-    implied = {}                        # mission id -> its first appraisal that names no closure, no achievement held
-    for event in appraisals:
-        mid = event.payload.get("mission_id")
-        if not event.payload.get("closure_event") and mid not in achieved:
-            implied.setdefault(mid, event)
-    marks += [(pos.get(e.event_id, -1), e.event_id, "implied", mid) for mid, e in implied.items()]
-    opened, by_mission, by_event, achievement = {}, {}, {}, {}
-    kinds = {"mission.held": "held", "mission.achieved": "achieved", "mission.unmet": "unmet", "implied": "achieved"}
-    for at, event_id, kind, mid in sorted(marks, key=lambda m: (m[0], m[1])):
-        if kind in kinds:               # a closure: its window opened at the latest start before it
-            closure = Closure(mid, None if kind == "implied" else event_id, kinds[kind], opened.get(mid, -1), at)
-            by_mission.setdefault(mid, []).append(closure)
-            if kind != "implied":
-                by_event[event_id] = closure
-            if kinds[kind] == "achieved":
-                achievement.setdefault(mid, closure)
-        if kind in ("mission.registered", "mission.held"):
-            opened[mid] = at
-    named, unbound, order = {}, [], {}
-    for event in appraisals:
-        mid = event.payload.get("mission_id")
-        order.setdefault(mid, None)
-        wanted = event.payload.get("closure_event")
-        closure = by_event.get(wanted) if wanted else achievement.get(mid)
-        if closure is None or closure.mission_id != mid:
-            unbound.append(event)
-            continue
-        closure.appraisals.append(event)
-        named[event.event_id] = closure
-    return Standings(pos, by_mission, by_event, named, unbound, list(order))
+
+def standings(journal) -> Standings:
+    """Every closure on this journal, each with the appraisals that name it, and the completed runs each window
+    holds (see the section comment above). Positions are ledger positions among all of the journal's events
+    (``Standings.pos``), so a reader can place any event, a run, a reading or a receipt, against the windows. Writes
+    nothing. A journal with a spine is folded once and then forward; any other is folded from scratch."""
+    spine = getattr(journal, "spine", None)
+    if spine is None or not hasattr(journal, "since") or not hasattr(journal, "positions"):
+        pos = (journal.positions("") if hasattr(journal, "positions")
+               else {e.event_id: i for i, e in enumerate(journal.replay("mission."))})
+        return _fold_from_scratch(journal, pos)
+    with _LOCK:
+        kept = _KEPT.get(spine)
+        if kept is not None:
+            book, cursor = kept
+            arrived, cursor, restarted = journal.since(cursor, "mission.")
+            if not restarted:
+                book.pos = pos = journal.positions("")  # read after ``since``: it places every event that returned
+                for event in arrived:
+                    kind = event.type.removeprefix("greg.")
+                    at = pos.get(event.event_id, -1)
+                    if kind in FOLDED and at > book.last:   # not folded already by the fold that started it
+                        book._fold(kind, event, at)
+                _KEPT[spine] = (book, cursor)
+                return book
+        _, cursor, _ = journal.since(None, "\x00")      # where the next call starts; no event has that prefix
+        book = _fold_from_scratch(journal, journal.positions(""))
+        _KEPT[spine] = (book, cursor)
+        return book
+
+
+
+
+class _Events:
+    """GREG's journal as the Foundry systems receive it: event dicts (``type``, ``event_id``, ``payload``) in ledger
+    order, or in the order of their ``seq`` when every one carries it (foundry/systems/observability.py)."""
+
+    def __init__(self, events):
+        events = list(events)
+        if events and all("seq" in e for e in events):
+            events = sorted(events, key=lambda e: e["seq"])
+        self._events = [_Event(e["type"], e["event_id"], e["payload"]) for e in events]
+
+    def replay(self, prefix: str = "") -> list:
+        wanted = "greg." + prefix
+        return [e for e in self._events if e.type.startswith(wanted)]
+
+    def positions(self, prefix: str = "") -> dict:
+        return {e.event_id: i for i, e in enumerate(self.replay(prefix))}
+
+
+class _Event:
+    __slots__ = ("type", "event_id", "payload")
+
+    def __init__(self, kind, event_id, payload):
+        self.type, self.event_id, self.payload = kind, event_id, payload
+
+
+def standings_of_events(events) -> Standings:
+    """``standings`` of a list of journal event dicts, for the Foundry readers that receive the journal that way
+    (``greg foundry reputation``, ``trace``, ``changed``, ``why``): the same closures, windows and rule."""
+    return standings(_Events(events))
 
 
 if __name__ == "__main__":

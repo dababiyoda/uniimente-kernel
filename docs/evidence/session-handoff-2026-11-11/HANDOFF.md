@@ -1,111 +1,127 @@
-# Session handoff, 2026-11-11 (session `session_01Kucyfm9exT5imDVYvHTYSv`)
+# Session handoff, 2026-11-12 (session `session_01Kucyfm9exT5imDVYvHTYSv`)
 
-Rewritten at 23:29 UTC (read from the clock). It replaces the 19:30, 17:45 and 14:49 versions, kept in this
-branch's history. This branch is evidence only: **not for merge**.
+Rewritten at 02:12 UTC on 2026-11-12 (read from the clock). It replaces the 23:29, 19:30, 17:45 and 14:49 versions
+of 2026-11-11, kept in this branch's history. This branch is evidence only: **not for merge**.
 
 Reality status of everything below: a cloud container, test keys, no founder device. VEPMC 0. No merge,
 deployment, spending, publication or outside contact happened.
 
-What happened since 19:30: the account's usage limit stopped every running agent at about 19:45 UTC. Work resumed
-at 23:12 UTC. Nothing was lost: every unit branch and the two interrupted worktrees were committed or snapshotted
-and pushed.
+## 0. What governs the work now
 
-## 1. Refs, read at 23:29 UTC
+The founder's clarification of 2026-11-12 01:54 UTC, kept verbatim on #295
+(`docs/intent/sources/CONVERGENCE-CLARIFICATION-2026-11-12-source.md`, record
+`docs/intent/INTENT-20261112-CONVERGENCE-USEFUL-PATH.json`). In order:
+
+1. Finish the active repair and review rounds.
+2. Compose compatible work on one reversible candidate and run checks on that exact revision.
+3. Repair the integration line's timeout and closure-appraisal defects.
+4. Exercise one useful operational mission through the connected machinery.
+5. Transfer the retained capability into a second, materially different case and measure what transferred.
+6. Use the observed bottleneck to select the next intelligence or capability-formation build.
+
+The founder's five engineering answers (unreadable receipt stays unknown; smallest browser implementation that
+passes the declared requirements; rejection history scoped with explicit requalification; a late appraisal
+mismatch is stale, not a refutation; prepare the intake package, approval stays the founder's and the integrator's)
+are in that source file. They are recommendations to reconcile with canonical contracts, not constitutional changes.
+
+## 1. Refs, read at 02:12 UTC
 
 | Ref | Head | Note |
 |---|---|---|
-| #196 `claude/greg-full-machine-completion-whgiee` | `8d20532464b1533b28d71d8331ca3412a90dbb11` | integration line, unchanged since 11:48 |
-| #290 | `facea1703dded45e495d0e6dfe059e001ffc9565` | contains #196's head |
-| #291 `egregore/fervent-mayer-syy5d6` | `41fcc41f04911ccb1f0f8d5dfc18158999a18def` | contains #290's head |
-| #273 | `331de165898ed5779ba87fc1532089a8f763dd4d` | based on `8d205324` |
-| #278 | `a639add726df949c36a554aa87ba7c60cdabe66a` | based on `f1646209`, an ancestor of #196's head |
+| #196 `claude/greg-full-machine-completion-whgiee` | `8d20532464b1533b28d71d8331ca3412a90dbb11` | integration line, unchanged since 2026-11-11 11:48 |
+| #290 | `facea170` | another session |
+| #291 | `41fcc41f` | this session; every check passed |
+| #273 | `331de165` | another session |
+| #278 | `a639add7` | another session |
 
-## 2. Draft pull requests opened by this session (all into #196's branch, base `8d205324`)
+## 2. Draft pull requests opened by this session (all into #196's branch)
 
-| PR | Branch | Pushed head | State at 23:29 |
+| PR | Branch | Pushed head | State at 02:12 |
 |---|---|---|---|
-| #291 | `egregore/fervent-mayer-syy5d6` | `41fcc41f` | every check passed; the body records it |
-| #293 | `claude/browser-render-qualified-binary-20261111` | `da2aff57` | all ten Canonical CI jobs passed on this head. A fix round for its review is running locally |
-| #294 | `claude/retained-negative-receipt-20261111` | `e24b326c` | Canonical CI failed at artifact upload after the tests ran (runner service error; not re-run because a new head is coming). Local head `a01997fd`, also pushed as `checkpoint/retained-negative-receipt-a01997fd`. A fix round is running locally |
-| #295 | `claude/intent-20261111-absolute-opus-maximus` | `fb3515b7` | pushed 23:27 with the founder's resume message and the first disposition record; a new CI run starts |
-| #296 | `claude/compose-rehearsal-20261111` | `0b0bb6d3` | job 1 failed at artifact upload; re-run requested once |
-| #297 | `claude/seed-path-collection-clock-20261111` | `0454ab62` | check suite completed, no failure reported |
+| #293 | `claude/browser-render-qualified-binary-20261111` | `32ca8de7` | review round answered; CI running. A smallest-implementation recommendation is owed (founder answer 3) |
+| #294 | `claude/retained-negative-receipt-20261111` | `1643932e` | one reader of a receipt; compensation recovery from the Gate's record; CI running |
+| #295 | `claude/intent-20261111-absolute-opus-maximus` | `16fa6cba` | the founder's messages, two disposition records, the defect-class register; CI running |
+| #296 | `claude/compose-rehearsal-20261111` | `0b0bb6d3` | the rehearsal tool |
+| #297 | `claude/seed-path-collection-clock-20261111` | `0454ab62` | |
+| #298 | `claude/unmeasured-check-not-pursued-20261111` | `b9a34259` | the replay fix, repaired after review, plus two acceptance locks; Canonical CI queued behind its earlier run |
+| #299 | `candidate/composed-20261112` | `45c3644b` | **evidence only.** Eleven heads on one tree. Local: the 20 changed test files plus health gates, 415 passed, 1 skipped (no supervisord). CI running. Local head `e6905364` adds #300 and #295 at `16fa6cba`; pushed once its tests pass |
+| #300 | `claude/revoked-device-authority-20261111` | `934a9f77` | stacked on #294. 245 passed locally. Its 16 gates are left to CI jobs 6 and 10. The fix round is not independently reviewed |
 
-## 3. Unit branches, all pushed, no pull request yet
+Push-time `collaboration-receipt` failures on #295 and #298 are the run that starts before the body carries the
+new head; the run after the body edit passed on both.
 
-Read each head and its tests before trusting it. A label is not a result.
+## 3. Unit branches without a pull request
 
-| Unit | Branch | Head | State |
-|---|---|---|---|
-| replay fix (a check a faulted capability could not read is not pursued) | `claude/unmeasured-check-not-pursued-20261111` | `e917a0db` | stacked on the locks. Independent review running. A rehearsal with #214 is running (#214's tests cover the same situation) |
-| two acceptance locks (test only) | `claude/acceptance-locks-20261111` | `1f4bf62d` | reviewed together with the replay fix |
-| revoked-device approvals | `claude/revoked-device-authority-20261111` | `f35b7986` | reviewed; four fixes owed. The interrupted fix round is at `checkpoint/revoked-device-fix-wip-20261111` (`d1f69b25`) and in `reviews/device-fix-wip.patch` here |
-| appraiser runs no detached sensor | `claude/appraiser-detached-sensor-20261111` | `bf8e4b9f` | built; diff read; review owed |
-| corrected evidence stops earning credit | `claude/correction-containment-credit-20261111` | `b01d319f` | built; diff read; review owed |
-| goal intake counted by independent source | `claude/goal-intake-accumulation-20261111` | `1106795d` | built; three scenarios worse than baseline; Mechanism Card to be renumbered MC-0004 |
-| S69.A6 map corrections | `claude/directive-map-s69a6-20261111` | `a69f5b72` | built; review owed |
+| Unit | Branch | Local head | Pushed head | State |
+|---|---|---|---|---|
+| appraiser runs no detached sensor | `claude/appraiser-detached-sensor-20261111` | moving | `bf8e4b9f` | reviewed (`reviews/review-appraiser.md`); fix round running. Rule given: a late re-read mismatch is stale, never REFUTED |
+| a rejected answer stops earning credit | `claude/correction-containment-credit-20261111` | moving | `b01d319f` | reviewed (`reviews/review-credit.md`); fix round running. Rule given: rejection scoped to answer, evidence, conditions and version; explicit founder-signed requalification |
+| a compile the host stalled is not a measured failure | `claude/compile-unanswered-unread-20261112` | moving | none | being built, stacked on #298. Defect reproduced on `8d205324` (`stall-reproduction/`) |
+| intake recommendation as a GREG mission | `claude/intake-recommendation-mission-20261112` | moving | none | being built, stacked on #296. The first useful mission the founder named |
+| goal intake counted by independent source | `claude/goal-intake-accumulation-20261111` | `c9ec07c8` | `c9ec07c8` | built; independent review owed |
+| S69.A6 map corrections | `claude/directive-map-s69a6-20261111` | `a69f5b72` | `a69f5b72` | built; independent review owed |
 
-## 4. Agents running at 23:29 (Agent tool, in this session; they commit locally and push nothing)
+## 4. Agents running at 02:12 (Agent tool; they commit locally and push nothing)
 
-1. **Finish #294** in worktree `scratchpad/negreceipt` from `a01997fd`: one compensation-recovery lookup that reads
-   the Gate's record through `AuthorityOffice.outcome_of` (covering a revoked approval and a detached or unavailable
-   capability), and tests plus mutants for the 11 survivors its review found.
-2. **Attack the replay fix** at `scratchpad/review-unmeasured` (`e917a0db`), including whether a construction that
-   faults for ever and cannot be repaired now retries without ever asking the founder.
-3. **Fix #293's review findings** in worktree `scratchpad/browser` from `da2aff57`.
+1. Appraiser fix round, worktree `scratchpad/appraiser`.
+2. Credit fix round, worktree `scratchpad/credit`.
+3. Compile-unread build, worktree `scratchpad/compile-unread`.
+4. Intake-recommendation mission build, worktree `scratchpad/intake-mission`.
 
-If this session stops before they report: their commits are on those local branches in the scratchpad worktrees.
-Read `git log` there, run the tests named in each brief, and never take a count from a commit message without
-running it.
+If this session stops before they report: their commits are on those local branches. Read `git log` there, run the
+tests each brief names, and take no count from a commit message without running it.
 
-## 5. One decision made today that later work depends on
+## 5. Two checks to run before any push (both on this branch, `tools/`)
 
-`_run_compensation` never reads the Gate's own record of a compensation's dispatch. Two reviews found it
-separately (#294's adjacent gap; the revoked-device unit's first finding). The device fix round had started a
-second inline reader of a receipt. Decision: one implementation, in #294, through `outcome_of`, which #294 made
-the one reader. The device branch is then restacked on #294's new head and drops its copy. The reasoning is in
-`docs/collaboration/REPOSITORY-DISPOSITIONS-2026-11-11.md` on #295.
+- `stale_anchor_scan.py <worktree> <base>`: mutation-gate strings that matched a changed file on the base and no
+  longer match once. A heuristic: a mutant's replacement text and generic lines show up as suspects.
+- `gates_for_changes.py <worktree> <base>`: every gate and cortex-gate group that mutates a changed file. **Run
+  them.** A matching anchor does not show that a test still reaches the line (found by CI on #298).
 
-## 6. What this directory holds
+Where they helped and where they did not is in `docs/collaboration/REPOSITORY-DISPOSITIONS-2026-11-12.md` on #295.
 
-- `reviews/`: the raw result of every builder, reviewer, designer and reader agent that finished, and the device
-  fix-round patch.
-- `reviewer-probes/`: the probe scripts the reviewers wrote, by unit.
-- `workflow-journals/`: journals of the six workflow runs of the day and their scripts. The four afternoon runs
-  ended when the usage limit was reached; a journal shows which agents finished.
-- `NEXT-CHAIN-DECISION.md`: the work-selection record (self-review; binds nobody).
-- `staffing-proof/`, `receipt-process/`, `browser-probe/`, `scout/`: earlier evidence of the day.
+## 6. Next steps, in order
 
-## 7. Next steps, in order
+1. When the candidate's tests on `e6905364` pass, push it and update #299's body (the eleven-head run's result,
+   the two added heads, the new conflict in `docs/FOUNDER_INTENT_LEDGER.md` resolved by keeping both sides).
+2. As each fix-round or build agent reports: read the diff, run its tests, run the two checks above and the gates
+   they list, commission an independent review where there is none, push, open a draft pull request with a version 2
+   receipt, add the head to the candidate.
+3. Run the intake-recommendation mission on the real open heads and hand its output to the #196 integrator.
+4. Write the seven-behaviour mission on the candidate (entry point; interruption and restart; capability identity
+   and device revocation; completed work kept when a dependency fails; uncertainty, timeout, refusal, failure and
+   refutation kept apart; an appraisal bound to its closure; an account of outcome, costs, uncertainty and next
+   step), including the combined experiment the founder named.
+5. Unit: the five appraisal readers key on the closure they mean (`reviewer-probes`, `p13b_retry_window.py`).
+6. #293: build the small variant (candidate order plus the fixes that do not depend on the render check), run the
+   requirement tests on both, recommend.
+7. Operational slice: request to settlement reconciliation on a synthetic case with explicit rules, the adverse
+   cases the founder listed, then a second materially different case. Two readings of the existing business path
+   are in `reviews/read-runtime.json` and `reviews/read-evidence.json`; the synthesis is not written.
+8. Representation repair: no further pilot before a baseline, budget, withheld cases and success conditions are
+   declared on a decision taken from the working mission.
 
-1. When agent 1 reports: read its diff, run the receipt and compensation files and the gate, compose with #291 and
-   #273, push #294 once with a body update.
-2. Restack the device branch on #294's new head; finish its four fixes from the checkpoint; drop its reader.
-3. When agent 2 reports: fix what it confirms, then open one draft pull request for the locks and the replay fix.
-4. When agent 3 reports: read, run, push #293 once with a body update.
-5. Independent reviews of the appraiser, credit, intake and map units; then draft pull requests, each rehearsed
-   with `scripts/compose_rehearsal.py --union .github/workflows/canonical-ci.yml --union
-   docs/FOUNDER_INTENT_LEDGER.md` against #290, #291, #294 and the others.
-6. Representation repair (board claim 6805031119, branch not created): two of three designs finished. Redo the
-   adversary and the synthesis, commit the pre-registration, then build and run once. Neither pilot shows a gain
-   over a simple baseline yet.
-7. Business path: the third reader and the synthesis did not run. No build there until they do.
+## 7. Decisions that are the founder's
 
-## 8. Decisions that are the founder's
-
-- Intake of #290, #291, #293, #294, #295, #296, #297 into #196.
+- Intake of #290, #291, #293, #294, #295, #296, #297, #298, #300 into #196. #299 is not for merge.
+- #300: question 12 (who may approve a held compensation), question 3 (a mission a revoked device resumed keeps
+  running), question 13 (a revocation during a turn), question 14 (re-delegating a suspected key), and adopting the
+  optional `suspected_compromise` field.
 - #291 reverses #290's choice that an office without a registry "keeps its earlier behaviour".
-- #294 reads an unclassed or unreadable receipt as UNCERTAIN. The alternative is REFUSED.
-- Revoked-device approvals: the unit adds an optional `suspected_compromise: true` to a founder-signed
-  DEVICE_REVOKE. No protected authority file is touched; adopting the field is the founder's.
 - `GREG_REQUIRE_BROWSER=1` in Canonical CI.
 - The stray tracked file at the root of `8d205324`
-  (`orker-evidence-replay.py with the fallback tier in place of the constant policies#`, 27 bytes, from
-  `9ee9b612`).
-- One CI step that runs every `scripts/ci/check_*_mutants.py`, which would end the recurring step-list conflict.
-- From the locks unit: whether a signed `auto_attach` may still attach a different implementation after the
-  founder detached one without asking; whether a mission precondition is read again at the Gate's commit.
-- From the credit unit: four questions about what a founder rejection withholds and what lifts it
-  (`reviews/build-credit.json`, `founder_questions`).
-- From the intake unit: whether GREG's own observation of a change clears what a goal has already woken on, and
-  whether a bare mention counts (`reviews/build-intake.json`, `founder_questions`).
+  (`orker-evidence-replay.py with the fallback tier in place of the constant policies#`, 27 bytes, from `9ee9b612`).
+- One CI step that runs every `scripts/ci/check_*_mutants.py`, which would end the recurring step-list conflict
+  (five of the candidate's six textual conflicts are that list).
+- From the locks on #298: whether a signed `auto_attach` may attach a different implementation after the founder
+  detached one without asking; whether a mission precondition is read again at the Gate's commit.
+- From the intake-count unit: whether GREG's own observation of a change clears what a goal has already woken on.
+
+## 8. What this directory holds
+
+- `reviews/`: the raw result of every builder, reviewer, designer and reader agent that finished.
+- `reviewer-probes/`: the probe scripts the reviewers wrote, by unit.
+- `workflow-journals/`: journals of the six workflow runs of 2026-11-11.
+- `tools/`: the two checks above, `run_cortex_groups.py`, `union_resolve.py`.
+- `stall-reproduction/`: the compile-timeout defect on `8d205324`.
+- `NEXT-CHAIN-DECISION.md`, `staffing-proof/`, `receipt-process/`, `browser-probe/`, `scout/`: earlier evidence.

@@ -1,0 +1,20 @@
+s....................................................................... [ 17%]
+........................................................................ [ 34%]
+........................................................................ [ 51%]
+........................................................................ [ 69%]
+........................................................................ [ 86%]
+........................................................                 [100%]
+=============================== warnings summary ===============================
+tests/unit/test_greg_authority_registered_identity.py::test_only_the_listed_sites_may_shape_a_dispatch
+tests/unit/test_greg_authority_registered_identity.py::test_only_the_body_builds_an_authority_office_and_it_names_its_registry
+  <unknown>:866: SyntaxWarning: invalid escape sequence '\.'
+
+tests/unit/test_greg_authority_registered_identity.py::test_only_the_listed_sites_may_shape_a_dispatch
+tests/unit/test_greg_authority_registered_identity.py::test_only_the_body_builds_an_authority_office_and_it_names_its_registry
+  <unknown>:868: SyntaxWarning: invalid escape sequence '\+'
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+SKIPPED [1] tests/integration/test_greg_body_supervised.py:95: supervisord (requirements-dev) not installed; no substitute supervisor is used
+415 passed, 1 skipped, 4 warnings in 521.75s (0:08:41)
+exit 0

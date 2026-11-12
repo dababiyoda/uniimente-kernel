@@ -254,6 +254,16 @@ success conditions:
   by a fact's value, iteration and rounding in the language, and needs taken from what an evaluation actually reads.
   This is the bulk of the work. It is a change to the rulebook language, not a small one.
 
+## Re-run after the second review fix round
+
+The second fix round changed `greg/cases.py`, `greg/missions.py` and case 1's fixture rulebook (the frozen case-2
+fixtures, rulebook and grading translation are untouched). Re-run on that tree, every number above is unchanged:
+`measure_case2.py --json` is byte-identical to its output at `2ae43abb`, and so are the outputs of `measure_case2.py`,
+`count_asks.py`, `count_asks_case2.py` and `probe_case2.py`. Why: the changes touch reason wording (the grading reads
+only the fact name before ' from '), facts that declare values (case 2's rulebook declares none), packet naming and
+currency (no withheld case receives a second intake message or a reverted document), and what an ask repeats (not
+graded).
+
 ## Reproduce
 
 ```

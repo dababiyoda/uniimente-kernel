@@ -53,6 +53,11 @@ def appraisals(body):
     return {e.payload["mission_id"]: e.payload for e in body.journal.replay("mission.appraised")}
 
 
+def appraisals_of(body, mission_id):
+    """Every appraisal record of one mission, in ledger order."""
+    return [e.payload for e in body.journal.replay("mission.appraised") if e.payload["mission_id"] == mission_id]
+
+
 def test_a_failed_mission_closes_unmet_and_is_appraised_as_a_verified_failure(tmp_path):
     body, *_ = run(tmp_path, [blackbox("m:fails", 1, 0.0), blackbox("m:passes", 1, 1e6)])
     try:
@@ -108,6 +113,12 @@ def test_a_verified_failure_is_never_read_as_a_success(tmp_path):
         assert "m:fails" not in verified_appraisals(body.journal)          # precedents, SOPs
         assert track_record(body.journal)["cognition.solve"]["verified"] == 0
         assert not body.journal.replay("mission.achieved")
+        # Those two readers now take a success only from an achievement or a hold (greg/appraisal.py standings), but
+        # others read the verdict word itself (the earned level, Goal Gravity's appraised_verified), so the
+        # appraiser's own record of a failure closure must never say VERIFIED.
+        [unmet] = body.journal.replay("mission.unmet")
+        assert [(a["verdict"], a["closure_event"]) for a in appraisals_of(body, "m:fails")] == [
+            ("VERIFIED_UNMET", unmet.event_id)]
     finally:
         body.close()
 

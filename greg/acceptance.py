@@ -121,7 +121,11 @@ def report(home: str | Path) -> dict:
     with observe(home, actor="spiffe://uniimente.internal/greg/acceptance-reader") as journal:
         ok, chain = journal.ledger.verify_chain()
         achieved = {e.payload["mission_id"] for e in journal.replay("mission.achieved")}
-        appraised = {e.payload["mission_id"]: e.payload["verdict"] for e in journal.replay("mission.appraised")}
+        # each achievement's own verdict (greg/appraisal.py standings): the appraisal of another closure of the
+        # same mission, such as an earlier failure closure appraised late, is not the achievement's
+        from greg.appraisal import standings
+        book = standings(journal)
+        appraised = {m: book.achievement(m).verdict for m in achieved}
         first = sorted(m for m in achieved if m.startswith("m:first-mission-"))
         verified_first = [m for m in first if appraised.get(m) == "VERIFIED"]
         ventures = sorted(m for m in achieved if m.startswith("m:venture-rehearsal-") and appraised.get(m) == "VERIFIED")

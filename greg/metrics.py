@@ -53,12 +53,27 @@ def _fixture(value) -> bool:
     return False
 
 
+def _achievement_appraisals(journal: Journal):
+    """mission id -> the appraisal of that mission's achievement, or None while the achievement is unappraised.
+
+    Both projections below count achievements, so the appraisal they read is the achievement's own (greg/appraisal.py
+    ``standings``): the verdict of an earlier failure closure of the same mission, whenever it was recorded, says
+    nothing about the achievement."""
+    from greg.appraisal import standings
+    book = standings(journal)
+
+    def appraisal(mission_id):
+        closure = book.achievement(mission_id)
+        return closure.record if closure is not None else None
+    return appraisal
+
+
 def vepmc(journal: Journal) -> dict:
     ledger = journal.ledger
     seq = {r.payload.get("event_id"): r.seq for r in ledger.by_type("event")}
     registered = {e.payload["mission_id"]: seq[e.event_id] for e in journal.replay("mission.registered")}
     achieved = {e.payload["mission_id"]: (e, seq[e.event_id]) for e in journal.replay("mission.achieved")}
-    appraised = {e.payload["mission_id"]: e for e in journal.replay("mission.appraised")}
+    appraisal_of = _achievement_appraisals(journal)
     contexts = {e.payload["mission_id"]: e.payload for e in journal.replay("mission.closure_context")}
     accepted_designations = {e.payload["digest"]: seq[e.event_id] for e in journal.replay("command.accepted")
                              if e.payload.get("kind") == "BODY_DESIGNATE" and e.payload.get("signer") == "founder"}
@@ -70,7 +85,7 @@ def vepmc(journal: Journal) -> dict:
     tiers = founder_tier(journal)
     rows = []
     for mid, (event, done_seq) in achieved.items():
-        appraisal = appraised.get(mid)
+        appraisal = appraisal_of(mid)
         checks = appraisal.payload.get("checks", {}) if appraisal else {}
         receipts = [e for e in journal.replay("mission.observed")
                     if e.payload["mission_id"] == mid and e.payload.get("receipt")]
@@ -155,7 +170,7 @@ def sandbox_whole_machine(journal: Journal) -> dict:
     ledger = journal.ledger
     seq = {r.payload.get("event_id"): r.seq for r in ledger.by_type("event")}
     registered = {e.payload["mission_id"]: seq[e.event_id] for e in journal.replay("mission.registered")}
-    appraised = {e.payload["mission_id"]: e.payload for e in journal.replay("mission.appraised")}
+    appraisal_of = _achievement_appraisals(journal)
     recoveries = [seq[e.event_id] for e in journal.replay("body.recovered")]
     reconciliations = {e.payload.get("request_id") for e in journal.replay("decision.requested")
                        if e.payload.get("kind") == "RECONCILIATION"}
@@ -173,7 +188,8 @@ def sandbox_whole_machine(journal: Journal) -> dict:
             sensors[(e.payload["mission_id"], check["check_id"])] = check.get("sensor", {}).get("capability", "")
     for event in journal.replay("mission.achieved"):
         mid, done = event.payload["mission_id"], seq[event.event_id]
-        checks = (appraised.get(mid) or {}).get("checks", {})
+        appraisal = appraisal_of(mid)
+        checks = appraisal.payload.get("checks", {}) if appraisal else {}
         observed = [e.payload for e in journal.replay("mission.observed") if e.payload["mission_id"] == mid]
         outputs = []
         for o in observed:
@@ -203,7 +219,7 @@ def sandbox_whole_machine(journal: Journal) -> dict:
                                    for o, sensor, out in outputs),
             "interruption_reconciled": any(registered.get(mid, 1 << 60) < r < done for r in recoveries)
                                        and any(requested_for.get(rid) == mid for rid in reconciliations & answered),
-            "appraised_verified": (appraised.get(mid) or {}).get("verdict") == "VERIFIED",
+            "appraised_verified": bool(appraisal) and appraisal.payload.get("verdict") == "VERIFIED",
         }
         rows.append({"mission_id": mid, **row, "whole_machine": all(row.values()),
                      "missing": [s for s in STAGES if not row[s]]})

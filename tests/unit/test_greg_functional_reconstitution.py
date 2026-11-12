@@ -20,8 +20,8 @@ One story, on the builder route (no networkx or scipy needed):
 4. restarted      The body stops and starts.
 5. reattached     The founder signs CAPABILITY_ATTACH for the detached capability.
 
-The last test is a measured defect, kept as a strict expected failure: in a nearby mission shape the completed write
-IS dispatched again. The test before it is its control.
+The tests after the story are nearby mission shapes. In one of them the completed write WAS dispatched again on #196
+at 8d205324; that defect is fixed, and the test that recorded it as a strict expected failure now passes.
 
 Reality tier: an in-process Body in a cloud container, a test clock, a per-test founder key (not Alfonso's), a
 deterministic StaticBuilder, built code in real isolated interpreters. No founder device.
@@ -115,7 +115,10 @@ def _serving(body):
 @pytest.fixture(scope="module")
 def story(tmp_path_factory):
     """The five moments above, recorded after each. The fixture asserts nothing, and raises nothing under the
-    mutants of scripts/ci/check_reconstitution_mutants.py: each test below fails on its own clause."""
+    mutants of scripts/ci/check_reconstitution_mutants.py. Two of the tests below fail under none of those mutants
+    (the write completed once; it is never dispatched again): in this story the write advances only a check that
+    never stops passing, so no route could dispatch it twice. The no-replay rule is pinned by the mission shapes
+    after the story (independent review, finding 7)."""
     home, key, body_id, data = make_body(tmp_path_factory.mktemp("reconstitution"))
     doc = data / "FIRST_MISSION.md"
     doc.write_text(RUNBOOK)
@@ -251,7 +254,7 @@ def test_only_the_founders_own_attach_returns_the_detached_capability_to_service
     assert len(after["builder_calls"]) == 5 and after["states"][-1] == "HOLDING", after["states"]
 
 
-# -- a measured defect: the completed write is replayed in a nearby mission shape ------------------------------------
+# -- nearby mission shapes: a faulted reading beside other checks -----------------------------------------------------
 def _loss_beside(tmp_path, monkeypatch, *, other_check_fails):
     """The write's own check is read through the formed function. After the write a person appends a line to the
     note (both checks on it still hold). Then the same dependency is removed as in the story above; with
@@ -313,3 +316,61 @@ def test_a_completed_write_is_not_replayed_when_the_function_that_reads_it_fault
     the instrument that reads it."""
     writes, actions, kept, states = _loss_beside(tmp_path, monkeypatch, other_check_fails=True)
     assert writes == ["note.md"] and actions == [("DONE", 0)] and kept, (writes, actions, kept, states)
+
+
+def _fault_beside_flag(tmp_path, monkeypatch, *, flag_requires_the_count):
+    """Two writes, each with its own check: the note (its open steps counted by the formed function) and a flag
+    file. Both complete and the mission holds. Then the formed function loses its dependency and, in the same pass,
+    the flag file is changed so its check really fails. Returns the tick states after that, the kinds of every
+    question asked, each action's records, and whether a line a person added to the note is still there."""
+    home, key, body_id, _ = make_body(tmp_path)
+    ws = workspace(home, "m:beside")
+    note, flag = ws / "note.md", ws / "flag.txt"
+    extra = {"requires": ["note-open-items"]} if flag_requires_the_count else {}
+    spec = mission("m:beside", checks=[_function_check("note-open-items", note, 2), note_check("flag", flag, "on")],
+                   strategies=[write_strategy("note", "note.md", "- [ ] enroll key\n- [ ] accept closure\n",
+                                              ["note-open-items"]),
+                               write_strategy("flag", "flag.txt", "on", ["flag"], **extra)],
+                   capabilities=["fs.read", "fs.write", f"built.{FUNCTION}.*"], budget=1.0, auto_attach=True,
+                   closure={"kind": "infinite", "cadence_seconds": 60})
+    spec["capability_specs"] = [dict(CONTRACT)]
+    drop(home, signed(key, body_id, "MISSION", spec))
+    clock, calls = Clock(), []
+    body = _open(home, clock, builders.StaticBuilder(FIRST, SECOND, identity="static-test"), calls)
+    try:
+        before = _ticks(body, clock, 6)
+        if before[-1] != "HOLDING" or sorted(calls) != ["flag.txt", "note.md"]:
+            pytest.fail(f"the story did not reach two completed writes and a holding mission: {before}, {calls}")
+        note.write_text(note.read_text() + "- [x] reviewed by a person\n")      # still two open steps
+        monkeypatch.setattr(builders, "ALLOWED_IMPORTS", builders.ALLOWED_IMPORTS - {"re"})
+        flag.write_text("off")
+        states = _ticks(body, clock, 4)
+        if "REPAIRED" not in states:
+            pytest.fail(f"the function was not repaired: {states}")
+        actions = {aid: [(a["status"], a["attempt"]) for a in _events(body, "mission.action") if a["action_id"] == aid]
+                   for aid in ("note", "flag")}
+        return (states, [r["kind"] for r in _events(body, "decision.requested")], actions,
+                "reviewed by a person" in note.read_text())
+    finally:
+        body.close()
+
+
+def test_a_real_failure_beside_a_faulted_reading_is_pursued_in_the_same_pass(tmp_path, monkeypatch):
+    """Leaving the faulted check out of what is pursued must not hold back the check that really fails: its own
+    strategy runs in the pass that sees both, and the write behind the faulted check is not repeated."""
+    states, asked, actions, kept = _fault_beside_flag(tmp_path, monkeypatch, flag_requires_the_count=False)
+    assert states[0] == "ACTED", states
+    assert actions == {"note": [("DONE", 0)], "flag": [("DONE", 0), ("DONE", 1)]} and kept, (actions, kept)
+    assert asked == [], asked
+
+
+def test_a_route_that_waits_only_on_a_faulted_reading_waits_for_the_repair_and_asks_nobody(tmp_path, monkeypatch):
+    """The flag's strategy requires the count, and the function that reads the count has just faulted for the first
+    time. Nothing can run yet, and self-repair replaces the function on its second strike: the mission looks again,
+    repairs, then rewrites the flag. With the faulted check only left out of what is pursued, the founder was asked
+    for a strategy here and the question was withdrawn two passes later (independent review, finding 4). On #196
+    at 8d205324 nothing was asked, and the completed note was written a second time over the person's line."""
+    states, asked, actions, kept = _fault_beside_flag(tmp_path, monkeypatch, flag_requires_the_count=True)
+    assert states[:3] == ["SENSOR_RETRY", "REPAIRED", "ACTED"], states
+    assert asked == [], asked
+    assert actions == {"note": [("DONE", 0)], "flag": [("DONE", 0), ("DONE", 1)]} and kept, (actions, kept)

@@ -30,9 +30,9 @@ MUTANTS = [
      '        # 2. registered but detached\n        for manifest in self.registry.by_function(function):\n'
      '            if self.registry.state[manifest.capability_id] in ("VERIFIED", "DETACHED"):'),
     (MISSIONS, "a formed capability that keeps faulting is never re-formed",
-     '            if streak < 2:\n                continue\n'
+     '            if streak < 2:\n                self.awaiting_repair.add(check_id)\n                continue\n'
      '            repaired, deferred = self._form(m, manifest.function, now, lambda: self.genesis.repair(',
-     '            if True:\n                continue\n'
+     '            if True:\n                self.awaiting_repair.add(check_id)\n                continue\n'
      '            repaired, deferred = self._form(m, manifest.function, now, lambda: self.genesis.repair('),
     (MISSIONS, "a check that could not be measured is pursued alone: the write it reads is dispatched again",
      '        if errors and errors == failing:', '        if False:'),

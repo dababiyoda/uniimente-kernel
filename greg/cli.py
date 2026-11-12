@@ -480,7 +480,8 @@ def main(argv=None) -> int:
             q.add_argument("--github", action="append", default=[], help="owner/name (engineering-brief)")
             q.add_argument("--daily", action="store_true", help="engineering-brief: standing daily mission")
             q.add_argument("--preauthorize-delivery", action="store_true",
-                           help="engineering-brief, venture-assessment: sign delivery into the cone (no approval stop)")
+                           help="engineering-brief, venture-assessment, intake-recommendation: sign delivery into "
+                                "the cone (no approval stop)")
             q.add_argument("--stale-days", type=int, default=14)
             q.add_argument("--railscout", help="venture-assessment: RailScout checkout")
             q.add_argument("--wmi", help="venture-assessment: WealthMachineIntelligence checkout")
@@ -514,6 +515,8 @@ def main(argv=None) -> int:
                            help="business-case: file name of the payment statement you export into the case folder")
             q.add_argument("--print-only", action="store_true", help="show the mission without signing")
             q.add_argument("--problem", help="cognition: bounded problem JSON to review and sign")
+            q.add_argument("--intake", help="intake-recommendation: JSON file {repository, base, units: [{name, sha}], "
+                                            "union?, claims?, timeout_seconds?}; full 40-character SHAs only")
         if name == "accept":
             q.add_argument("event_id"); q.add_argument("--text", default="accepted after morning review")
         if name == "decide":
@@ -836,6 +839,22 @@ def main(argv=None) -> int:
                         raise BodyError(f"organ-exchange needs --{', --'.join(missing)}")
                     spec = templates.organ_exchange(daleobanks_root=args.daleobanks, wmi_root=args.wmi,
                                                     signal=args.signal, preauthorize_delivery=args.preauthorize_delivery)
+                elif args.target == "intake-recommendation":
+                    from greg.capabilities import CapabilityError
+                    if not args.intake:
+                        raise BodyError("intake-recommendation needs --intake with a JSON file: "
+                                        "{repository, base, units: [{name, sha}]}")
+                    asked = json.loads(Path(args.intake).read_text())
+                    known = {"repository", "base", "units", "union", "claims", "timeout_seconds"}
+                    whole = isinstance(asked, dict) and {"repository", "base", "units"} <= set(asked)
+                    if not whole or set(asked) - known:
+                        raise BodyError("the --intake file must hold repository, base and units "
+                                        "(and may hold union, claims, timeout_seconds)")
+                    try:
+                        spec = templates.intake_recommendation(**asked,
+                                                               preauthorize_delivery=args.preauthorize_delivery)
+                    except (CapabilityError, TypeError) as exc:
+                        raise BodyError(f"intake-recommendation: {exc}") from None
                 else:
                     raise BodyError(f"unknown template {args.target}; known: {sorted(templates.TEMPLATES)}")
             from greg.missions import validate_mission

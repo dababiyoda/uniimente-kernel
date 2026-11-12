@@ -58,7 +58,29 @@ def _guarded_patches(worktree):
         print(f"PATCH {patch} (kept applicable by {test}): {state}")
 
 
+def _owned_source_inventory(worktree, base):
+    """Another consumer of every new source file: foundry/owned-source.json must list each file under the trees it
+    covers (tests/unit/test_greg_packaging.py compares it with foundry.systems.build._files). Seen 2026-11-12: #305
+    added greg/intake.py and greg/intake_rehearsal.py and CI job 1 failed on the inventory, not on the unit."""
+    import json as _json, subprocess as _sp
+    root = Path(worktree)
+    inv = root / "foundry" / "owned-source.json"
+    if not inv.is_file():
+        return
+    listed = set(_json.loads(inv.read_text()).get("files", []))
+    added = _sp.run(["git", "-C", str(root), "diff", "--name-only", "--diff-filter=AR", base, "HEAD"],
+                    capture_output=True, text=True).stdout.split()
+    untracked = _sp.run(["git", "-C", str(root), "ls-files", "--others", "--exclude-standard"],
+                        capture_output=True, text=True).stdout.split()
+    tops = {f.split("/")[0] for f in listed if "/" in f}
+    for f in sorted(set(added) | set(untracked)):
+        if "/" in f and f.split("/")[0] in tops and not f.startswith(("tests/", "docs/")) and f not in listed:
+            print(f"INVENTORY {f}: not in foundry/owned-source.json (tests/unit/test_greg_packaging.py will fail)")
+
+
 if __name__ == "__main__":
     import sys as _sys
     if len(_sys.argv) > 1:
         _guarded_patches(_sys.argv[1])
+    if len(_sys.argv) > 2:
+        _owned_source_inventory(_sys.argv[1], _sys.argv[2])

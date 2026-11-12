@@ -164,6 +164,8 @@ jobs:
         run: python scripts/ci/check_authority_attach_state_mutants.py
       - name: Authority registered-identity mutations (the office runs a capability's own registered adapter only)
         run: python scripts/ci/check_authority_registered_identity_mutants.py
+      - name: Revoked-device mutations (a revoked device's unused approval authorizes nothing; completed effects and history stay; a suspected compromise opens a review)
+        run: python scripts/ci/check_revoked_device_mutants.py
       - name: Retained-receipt mutations (a retained Gate receipt is read by its result, as the call that produced it read it)
         run: python scripts/ci/check_retained_receipt_mutants.py
       - name: Functional reconstitution mutations (a lost function returns by another mechanism; a completed write is not repeated; a founder detach stands)

@@ -315,6 +315,33 @@ def _approved_before(journal, ledger, seq, requests, answers, scope_digest, at_s
     return False
 
 
+def _signer_revoked(journal: Journal, ledger, seq: dict, answer: dict, answer_seq: int, dispatched_seq: int) -> bool:
+    """The DECISION behind this answer was signed by a device key that was revoked after the answer and before
+    the dispatch. A founder key's answer is never voided this way."""
+    commands = [e.payload for e in journal.replay("command.accepted")
+                if e.payload.get("digest") == answer.get("command_digest")]
+    env = commands[0].get("envelope") if commands and isinstance(commands[0].get("envelope"), dict) else {}
+    kid = env.get("founder_key_id")
+    if kid is None or kid in _founder_keys(journal, answer_seq, ledger):
+        return False
+    return any(e.type == "greg.device.revoked" and e.payload.get("device_key_id") == kid
+               and answer_seq < seq.get(e.event_id, -1) < dispatched_seq for e in journal.replay("device."))
+
+
+def _approval_in_force(journal, ledger, seq, requests, answers, scope_digest, at_seq, dispatched_seq) -> bool:
+    """Founder policy 2026-11-11: a signature stays valid as history, but an approval a device key signed
+    authorizes no new effect once that key is revoked. An approved action ran honestly only if some approval of
+    its exact scope was still in force when the Gate dispatched it: signed by the founder key, or by a device key
+    not revoked between its answer and that dispatch. An action dispatched before the revocation keeps its
+    approval; one dispatched after it needed a new decision (the body voids the old one and asks again)."""
+    for request in requests:
+        answer = answers.get(request.payload["request_id"])
+        if _approved_before(journal, ledger, seq, [request], answers, scope_digest, at_seq) \
+                and not _signer_revoked(journal, ledger, seq, answer[0], answer[1], dispatched_seq):
+            return True
+    return False
+
+
 def _formed_registry(journal: Journal, workspace) -> object:
     """The body's registry as retained: built-ins plus every capability Genesis formed (constructed,
     acquired, built), re-pinned and re-checked as at restart, with nothing written to the ledger."""
@@ -623,6 +650,13 @@ def appraise(request: dict) -> dict:
                              and registered_seq < seq[r.event_id] < achieved_seq)
         grants = {r.payload.get("grant_id"): r.payload for r in ledger.by_type("event")
                   if r.payload.get("type") == "greg.authority.grant_issued" and r.seq < achieved_seq}
+        # where the Gate dispatched each action: its grant's record. A dispatch whose completion was unknown and
+        # that the founder later reconciled as executed has no receipt; its UNCERTAIN record names the grant.
+        grant_seq = {r.payload.get("grant_id"): r.seq for r in ledger.by_type("event")
+                     if r.payload.get("type") == "greg.authority.grant_issued" and r.seq < achieved_seq}
+        uncertain_grant = {(e.payload["action_id"], e.payload.get("attempt")): e.payload.get("grant_id")
+                           for e in journal.replay("mission.action")
+                           if e.payload["mission_id"] == mid and e.payload["status"] == "UNCERTAIN"}
         by_id = {s["action_id"]: s for s in spec["strategies"]}
         spent = 0.0
         for event in journal.replay("mission.action"):
@@ -653,6 +687,14 @@ def appraise(request: dict) -> dict:
                     approvals_ok = False
                     why = "; ".join(outside) if outside else "its grant claims a founder approval"
                     findings.append(f"{action['action_id']}: executed without a prior founder approval ({why})")
+                elif outside or human:
+                    grant_id = receipt.payload.get("grant_id") if receipt is not None else \
+                        uncertain_grant.get((action["action_id"], action.get("attempt")))
+                    if not _approval_in_force(journal, ledger, seq, requests, answers, action.get("scope_digest"),
+                                              at_seq, grant_seq.get(grant_id, at_seq)):
+                        approvals_ok = False
+                        findings.append(f"{action['action_id']}: dispatched under an approval that was void: the "
+                                        "device key that signed it had been revoked before the dispatch")
             spent += float(action.get("cost_usd", 0.0) or 0.0)
         checks["approval_boundaries_honored"] = approvals_ok
         checks["approval_boundary_encountered"] = approvals_seen > 0

@@ -227,6 +227,22 @@ class AuthorityOffice:
         worker = self.passports.issue(kind="agent", creator="greg-authority-office", owner_organ="uniimente-kernel",
                                       legal_principal=PRINCIPAL, declared_capabilities=[manifest.capability_id],
                                       budget_ceiling_usd=cost_usd, consequence_class=consequence, ttl_seconds=900)
+        try:
+            return self._act_as(worker, manifest=manifest, mission_id=mission_id, params=params, target=target,
+                                consequence=consequence, cost_usd=cost_usd, command_digest=command_digest,
+                                evidence_refs=evidence_refs, evidence_confidence=evidence_confidence,
+                                expected_outcome=expected_outcome, scope=scope, proposal_id=proposal_id,
+                                approved_scopes=approved_scopes, signed_scopes=signed_scopes, outside=outside,
+                                ctx=ctx, adapter=adapter, cone=cone, spent_usd=spent_usd, base=base)
+        finally:
+            # The call has returned, including a refusal or an unknown outcome. This passport
+            # was live only while the call held it. Leaving it until the 900s TTL fills the
+            # ceiling and the body stops. A revocation is a different record and is not retired.
+            self.passports.retire(worker.passport_id)
+
+    def _act_as(self, worker, *, manifest, mission_id, params, target, consequence, cost_usd,
+                command_digest, evidence_refs, evidence_confidence, expected_outcome, scope,
+                proposal_id, approved_scopes, signed_scopes, outside, ctx, adapter, cone, spent_usd, base):
         proposal = Proposal(actor=worker.passport_id, legal_principal=PRINCIPAL,
                             action_class="greg." + manifest.capability_id, objective=mission_id,
                             payload={"capability": manifest.capability_id, "params": params,

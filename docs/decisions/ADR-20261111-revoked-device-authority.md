@@ -1,8 +1,9 @@
 # ADR: a revoked device's unused authority authorizes nothing
 
 - Decision ID: ADR-20261111-revoked-device-authority
-- Status: proposed. A sandbox draft on the local branch `claude/revoked-device-authority-20261111`, based on the
-  integration head `8d205324` (#196). Not pushed, not merged; adoption is a founder decision.
+- Status: proposed. A sandbox draft on the branch `claude/revoked-device-authority-20261111` (draft pull request
+  #300), stacked on #294 (`1643932e`), which is based on the integration head `8d205324` (#196). Not merged;
+  adoption is a founder decision.
 - Date: 2026-11-11; fix round 2026-11-12 after an independent review (see "Independent review and fix round")
 - Decision owner: Alfonso Lopez
 - Founder intent: `INTENT-20261111-REVOKED-DEVICE-AUTHORITY`

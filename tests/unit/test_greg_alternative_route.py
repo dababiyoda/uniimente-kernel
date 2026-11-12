@@ -704,3 +704,18 @@ def test_an_ask_made_ahead_of_the_loop_records_the_pass_over_and_is_withdrawn_on
     r.tick()
     assert rid in r.withdrawn()
     r.until(lambda: r.asks("APPROVAL", "b"), "the approval ask for B")
+
+
+def test_with_a_goals_pull_pending_the_moot_ask_is_withdrawn_before_preparation(run):
+    """A goal pulled the mission while it waited on B's APPROVAL (``observe_now``: preparation while the founder
+    decides, ``_prepare``). The detach makes that ask moot: it is withdrawn before preparation is reached, and B2,
+    inside the cone, runs; preparation never ran on the moot ask."""
+    r = run(alternative="fs.write", inside=True)
+    r.a_done()
+    ask_b = r.until(lambda: r.asks("APPROVAL", "b"), "the approval ask for B")[0]
+    assert r.body.engine.observe_now(MID, r.clock(), cause="a goal bound to the mission woke")
+    r.detach()
+    r.tick()
+    assert ask_b["request_id"] in r.withdrawn() and r.events("mission.prepared") == []
+    r.until(lambda: done(r, "b2"), "B2 done")
+    assert [c[0] for c in r.calls] == ["artifact.store", "fs.write"] and len(r.asks("APPROVAL", "b")) == 1

@@ -1,0 +1,409 @@
+{
+ "assessment": {
+  "checks": {
+   "ran": true,
+   "why": null
+  },
+  "counts": {
+   "behavioural_conflicts": 1,
+   "hold": 2,
+   "not_checked": 0,
+   "ready": 0,
+   "take_after": 0,
+   "test_runs": {
+    "errored": 0,
+    "failed": 1,
+    "not_run": 0,
+    "passed": 11,
+    "timed_out": 0
+   },
+   "textual_conflicts": 0,
+   "units": 2
+  },
+  "order": [
+   "304-compile-unread",
+   "303-old"
+  ],
+  "units": [
+   {
+    "after": [],
+    "arrives_with": [],
+    "checks": [
+     {
+      "detail": "nothing was supplied for this unit",
+      "name": "",
+      "status": "no result for this exact head"
+     }
+    ],
+    "claims": [
+     {
+      "claim": "",
+      "detail": "",
+      "status": "no claims supplied"
+     }
+    ],
+    "hold": [
+     "behavioural conflict: merging it breaks 303-old's test tests/unit/test_greg_evidence_corrections.py::test_a_reading_the_canonical_reader_calls_unanswered_is_neither_blamed_nor_credited"
+    ],
+    "kind": "hold",
+    "name": "304-compile-unread",
+    "not_checked": [],
+    "notes": [],
+    "recommendation": "hold: behavioural conflict: merging it breaks 303-old's test tests/unit/test_greg_evidence_corrections.py::test_a_reading_the_canonical_reader_calls_unanswered_is_neither_blamed_nor_credited",
+    "sha": "1c4a758c4d660549472b7cc463c72c7d4d95c9b4",
+    "tests": [
+     {
+      "alone": {
+       "measured": true,
+       "state": "passed"
+      },
+      "file": "tests/integration/test_greg_mind_constructs_capability.py",
+      "merged": {
+       "measured": true,
+       "state": "passed"
+      }
+     },
+     {
+      "alone": {
+       "measured": true,
+       "state": "passed"
+      },
+      "file": "tests/unit/test_greg_compile_host_stop.py",
+      "merged": {
+       "measured": true,
+       "state": "passed"
+      }
+     },
+     {
+      "alone": {
+       "measured": true,
+       "state": "passed"
+      },
+      "file": "tests/unit/test_greg_compile_unanswered.py",
+      "merged": {
+       "measured": true,
+       "state": "passed"
+      }
+     },
+     {
+      "alone": {
+       "measured": true,
+       "state": "passed"
+      },
+      "file": "tests/unit/test_greg_functional_reconstitution.py",
+      "merged": {
+       "measured": true,
+       "state": "passed"
+      }
+     },
+     {
+      "alone": {
+       "measured": true,
+       "state": "passed"
+      },
+      "file": "tests/unit/test_greg_precondition_unheld.py",
+      "merged": {
+       "measured": true,
+       "state": "passed"
+      }
+     }
+    ]
+   },
+   {
+    "after": [],
+    "arrives_with": [],
+    "checks": [
+     {
+      "detail": "nothing was supplied for this unit",
+      "name": "",
+      "status": "no result for this exact head"
+     }
+    ],
+    "claims": [
+     {
+      "claim": "",
+      "detail": "",
+      "status": "no claims supplied"
+     }
+    ],
+    "hold": [
+     "behavioural conflict: its test tests/unit/test_greg_evidence_corrections.py::test_a_reading_the_canonical_reader_calls_unanswered_is_neither_blamed_nor_credited passes on its own head and fails on the merged tree (cause: 304-compile-unread)"
+    ],
+    "kind": "hold",
+    "name": "303-old",
+    "not_checked": [],
+    "notes": [],
+    "recommendation": "hold: behavioural conflict: its test tests/unit/test_greg_evidence_corrections.py::test_a_reading_the_canonical_reader_calls_unanswered_is_neither_blamed_nor_credited passes on its own head and fails on the merged tree (cause: 304-compile-unread)",
+    "sha": "9097b276635742dfdcad98dfbae1dd78b3fddb5c",
+    "tests": [
+     {
+      "alone": {
+       "measured": true,
+       "state": "passed"
+      },
+      "file": "tests/unit/test_greg_evidence_corrections.py",
+      "merged": {
+       "measured": true,
+       "state": "failed"
+      }
+     }
+    ]
+   }
+  ]
+ },
+ "inputs": {
+  "ancestry": {
+   "behind_base": {
+    "303-old": 0,
+    "304-compile-unread": 0
+   },
+   "contains": {
+    "303-old": [],
+    "304-compile-unread": []
+   },
+   "contains_base": {
+    "303-old": true,
+    "304-compile-unread": true
+   }
+  },
+  "composed_tree": "9bf656b069020102f6526a04193c585e4c563897",
+  "confinement": {
+   "body_setting": "supervised",
+   "filesystem": [
+    {
+     "abi": 7,
+     "filesystem": "landlock",
+     "writable": [
+      "<scratchpad>/intake-run3/body/workspace/m_intake-445bc04fda645f7b/intake-scratch/trees/own-304-compile-unread"
+     ]
+    },
+    {
+     "abi": 7,
+     "filesystem": "landlock",
+     "writable": [
+      "<scratchpad>/intake-run3/body/workspace/m_intake-445bc04fda645f7b/intake-scratch/trees/own-303-old"
+     ]
+    },
+    {
+     "abi": 7,
+     "filesystem": "landlock",
+     "writable": [
+      "<scratchpad>/intake-run3/body/workspace/m_intake-445bc04fda645f7b/intake-scratch/trees/composed"
+     ]
+    },
+    {
+     "abi": 7,
+     "filesystem": "landlock",
+     "writable": [
+      "<scratchpad>/intake-run3/body/workspace/m_intake-445bc04fda645f7b/intake-scratch/trees/onbase-303-old"
+     ]
+    },
+    {
+     "abi": 7,
+     "filesystem": "landlock",
+     "writable": [
+      "<scratchpad>/intake-run3/body/workspace/m_intake-445bc04fda645f7b/intake-scratch/trees/without-304-compile-unread"
+     ]
+    }
+   ],
+   "modes": [
+    "supervised: network denied, environment scrubbed, filesystem confined by Landlock (reads the runtime, writes only the clone)"
+   ],
+   "runs": 14
+  },
+  "generated_on": "2026-11-12",
+  "rehearsal": {
+   "also": null,
+   "base": "8d20532464b1533b28d71d8331ca3412a90dbb11",
+   "behavioural_conflicts": [
+    {
+     "caused_by": [
+      "304-compile-unread"
+     ],
+     "note": "passes when this head is left out",
+     "test": "tests/unit/test_greg_evidence_corrections.py::test_a_reading_the_canonical_reader_calls_unanswered_is_neither_blamed_nor_credited",
+     "unit": "303-old"
+    }
+   ],
+   "clean": false,
+   "failing_before_the_merge": [],
+   "kept_both_sides": {},
+   "limits": [
+    "only the named tests were run: a clean result does not prove the heads are compatible",
+    "a unit left out for a textual conflict was not tested in the merge",
+    "where both sides' lines were kept in a named file, that resolution was not reviewed by a person",
+    "read-only: nothing was merged, pushed or edited; no result here approves a merge"
+   ],
+   "merge_order": [
+    "304-compile-unread",
+    "303-old"
+   ],
+   "not_measured": [],
+   "textual_conflicts": {},
+   "tool": "compose_rehearsal/1",
+   "unchecked": [],
+   "units": [
+    {
+     "alone": {
+      "counts": {
+       "passed": 67
+      },
+      "failed": [],
+      "missing": []
+     },
+     "in_merge": true,
+     "merged": {
+      "counts": {
+       "passed": 67
+      },
+      "failed": [],
+      "missing": []
+     },
+     "name": "304-compile-unread",
+     "sha": "1c4a758c4d660549472b7cc463c72c7d4d95c9b4",
+     "states": {
+      "alone": {
+       "tests/integration/test_greg_mind_constructs_capability.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_compile_host_stop.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_compile_unanswered.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_functional_reconstitution.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_precondition_unheld.py": {
+        "measured": true,
+        "state": "passed"
+       }
+      },
+      "merged": {
+       "tests/integration/test_greg_mind_constructs_capability.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_compile_host_stop.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_compile_unanswered.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_functional_reconstitution.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_precondition_unheld.py": {
+        "measured": true,
+        "state": "passed"
+       }
+      }
+     },
+     "tests": [
+      "tests/integration/test_greg_mind_constructs_capability.py",
+      "tests/unit/test_greg_compile_host_stop.py",
+      "tests/unit/test_greg_compile_unanswered.py",
+      "tests/unit/test_greg_functional_reconstitution.py",
+      "tests/unit/test_greg_precondition_unheld.py"
+     ]
+    },
+    {
+     "alone": {
+      "counts": {
+       "passed": 47
+      },
+      "failed": [],
+      "missing": []
+     },
+     "in_merge": true,
+     "merged": {
+      "counts": {
+       "failed": 1,
+       "passed": 46
+      },
+      "failed": [
+       "tests/unit/test_greg_evidence_corrections.py::test_a_reading_the_canonical_reader_calls_unanswered_is_neither_blamed_nor_credited"
+      ],
+      "missing": []
+     },
+     "name": "303-old",
+     "sha": "9097b276635742dfdcad98dfbae1dd78b3fddb5c",
+     "states": {
+      "alone": {
+       "tests/unit/test_greg_evidence_corrections.py": {
+        "measured": true,
+        "state": "passed"
+       }
+      },
+      "merged": {
+       "tests/unit/test_greg_evidence_corrections.py": {
+        "measured": true,
+        "state": "failed"
+       }
+      }
+     },
+     "tests": [
+      "tests/unit/test_greg_evidence_corrections.py"
+     ]
+    }
+   ]
+  },
+  "renderer": "greg.intake.render/2",
+  "request": {
+   "base": "8d20532464b1533b28d71d8331ca3412a90dbb11",
+   "claims": {},
+   "repository": "<scratchpad>/intake-run3/code/kernel",
+   "timeout_seconds": 1200,
+   "union": [
+    ".github/workflows/canonical-ci.yml"
+   ],
+   "units": [
+    {
+     "name": "304-compile-unread",
+     "sha": "1c4a758c4d660549472b7cc463c72c7d4d95c9b4"
+    },
+    {
+     "name": "303-old",
+     "sha": "9097b276635742dfdcad98dfbae1dd78b3fddb5c"
+    }
+   ]
+  },
+  "request_digest": "sha256:445bc04fda645f7bfff454b4b3ff5172b1e4ea5ef420efe52ddbc17fb8d2d77b",
+  "skipped_tests": {
+   "303-old": [],
+   "304-compile-unread": []
+  }
+ },
+ "inputs_digest": "sha256:3bdbb447a162a23fa676836c7717b55b90a591ef6caa5b455a1bf18440c74e77",
+ "markdown": "2026-11-12-intake-brief.md",
+ "markdown_sha256": "4d1a7ae841d20c289e26f09ae399eeb9369331ac8f249c0e5bccbaf809b6f154",
+ "renderer": "greg.intake.render/2",
+ "request": {
+  "base": "8d20532464b1533b28d71d8331ca3412a90dbb11",
+  "claims": {},
+  "repository": "<scratchpad>/intake-run3/code/kernel",
+  "timeout_seconds": 1200,
+  "union": [
+   ".github/workflows/canonical-ci.yml"
+  ],
+  "units": [
+   {
+    "name": "304-compile-unread",
+    "sha": "1c4a758c4d660549472b7cc463c72c7d4d95c9b4"
+   },
+   {
+    "name": "303-old",
+    "sha": "9097b276635742dfdcad98dfbae1dd78b3fddb5c"
+   }
+  ]
+ },
+ "request_digest": "sha256:445bc04fda645f7bfff454b4b3ff5172b1e4ea5ef420efe52ddbc17fb8d2d77b"
+}

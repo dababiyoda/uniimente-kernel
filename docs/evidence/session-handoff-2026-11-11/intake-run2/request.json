@@ -1,0 +1,7 @@
+{"repository": "<scratchpad>/intake-run2/code/kernel", "base": "8d20532464b1533b28d71d8331ca3412a90dbb11", "timeout_seconds": 1200,
+ "union": [".github/workflows/canonical-ci.yml"],
+ "units": [
+  {"name": "304-compile-unread", "sha": "1c4a758c4d660549472b7cc463c72c7d4d95c9b4"},
+  {"name": "303-old", "sha": "9097b276635742dfdcad98dfbae1dd78b3fddb5c"},
+  {"name": "303-rejected-credit", "sha": "0a9a246fa1afb7b098850636f359deba8e10e58d"},
+  {"name": "runner-baseline", "sha": "18e228a909c9a59a9c584e6fc1470c844133bcf7"}]}

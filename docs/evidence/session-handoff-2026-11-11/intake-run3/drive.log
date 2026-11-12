@@ -1,0 +1,16 @@
+start 15:42:52
+init 0
+enroll 0
+new 0
+run1 0
+request req-97438c673cc20744807533b1
+decide 0
+exec start 15:42:57
+run2 0
+exec end 16:00:52
+total 28
+drwxr-xr-x 2 root root  4096 Nov 12 16:00 .
+drwxr-xr-x 3 root root  4096 Nov 12 15:42 ..
+-rw-r--r-- 1 root root 11097 Nov 12 16:00 2026-11-12-intake-brief.json
+-rw-r--r-- 1 root root  5741 Nov 12 16:00 2026-11-12-intake-brief.md
+end 16:00:53

@@ -1,0 +1,603 @@
+{
+ "assessment": {
+  "checks": {
+   "ran": true,
+   "why": null
+  },
+  "counts": {
+   "behavioural_conflicts": 0,
+   "hold": 0,
+   "not_checked": 0,
+   "ready": 3,
+   "take_after": 1,
+   "test_runs": {
+    "errored": 0,
+    "failed": 0,
+    "not_run": 0,
+    "passed": 18,
+    "timed_out": 0
+   },
+   "textual_conflicts": 0,
+   "units": 4
+  },
+  "order": [
+   "304-compile-unread",
+   "303-old",
+   "303-rejected-credit",
+   "runner-baseline"
+  ],
+  "units": [
+   {
+    "after": [],
+    "arrives_with": [],
+    "checks": [
+     {
+      "detail": "nothing was supplied for this unit",
+      "name": "",
+      "status": "no result for this exact head"
+     }
+    ],
+    "claims": [
+     {
+      "claim": "",
+      "detail": "",
+      "status": "no claims supplied"
+     }
+    ],
+    "hold": [],
+    "kind": "ready to take",
+    "name": "304-compile-unread",
+    "not_checked": [],
+    "notes": [],
+    "recommendation": "ready to take",
+    "sha": "1c4a758c4d660549472b7cc463c72c7d4d95c9b4",
+    "tests": [
+     {
+      "alone": {
+       "measured": true,
+       "state": "passed"
+      },
+      "file": "tests/integration/test_greg_mind_constructs_capability.py",
+      "merged": {
+       "measured": true,
+       "state": "passed"
+      }
+     },
+     {
+      "alone": {
+       "measured": true,
+       "state": "passed"
+      },
+      "file": "tests/unit/test_greg_compile_host_stop.py",
+      "merged": {
+       "measured": true,
+       "state": "passed"
+      }
+     },
+     {
+      "alone": {
+       "measured": true,
+       "state": "passed"
+      },
+      "file": "tests/unit/test_greg_compile_unanswered.py",
+      "merged": {
+       "measured": true,
+       "state": "passed"
+      }
+     },
+     {
+      "alone": {
+       "measured": true,
+       "state": "passed"
+      },
+      "file": "tests/unit/test_greg_functional_reconstitution.py",
+      "merged": {
+       "measured": true,
+       "state": "passed"
+      }
+     },
+     {
+      "alone": {
+       "measured": true,
+       "state": "passed"
+      },
+      "file": "tests/unit/test_greg_precondition_unheld.py",
+      "merged": {
+       "measured": true,
+       "state": "passed"
+      }
+     }
+    ]
+   },
+   {
+    "after": [],
+    "arrives_with": [
+     "303-rejected-credit"
+    ],
+    "checks": [
+     {
+      "detail": "nothing was supplied for this unit",
+      "name": "",
+      "status": "no result for this exact head"
+     }
+    ],
+    "claims": [
+     {
+      "claim": "",
+      "detail": "",
+      "status": "no claims supplied"
+     }
+    ],
+    "hold": [],
+    "kind": "ready to take",
+    "name": "303-old",
+    "not_checked": [],
+    "notes": [
+     "arrives with 303-rejected-credit"
+    ],
+    "recommendation": "ready to take",
+    "sha": "9097b276635742dfdcad98dfbae1dd78b3fddb5c",
+    "tests": [
+     {
+      "alone": {
+       "measured": true,
+       "state": "passed"
+      },
+      "file": "tests/unit/test_greg_evidence_corrections.py",
+      "merged": {
+       "measured": true,
+       "state": "passed"
+      }
+     }
+    ]
+   },
+   {
+    "after": [
+     "303-old"
+    ],
+    "arrives_with": [],
+    "checks": [
+     {
+      "detail": "nothing was supplied for this unit",
+      "name": "",
+      "status": "no result for this exact head"
+     }
+    ],
+    "claims": [
+     {
+      "claim": "",
+      "detail": "",
+      "status": "no claims supplied"
+     }
+    ],
+    "hold": [],
+    "kind": "take after",
+    "name": "303-rejected-credit",
+    "not_checked": [],
+    "notes": [],
+    "recommendation": "take after 303-old",
+    "sha": "0a9a246fa1afb7b098850636f359deba8e10e58d",
+    "tests": [
+     {
+      "alone": {
+       "measured": true,
+       "state": "passed"
+      },
+      "file": "tests/unit/test_greg_evidence_corrections.py",
+      "merged": {
+       "measured": true,
+       "state": "passed"
+      }
+     }
+    ]
+   },
+   {
+    "after": [],
+    "arrives_with": [],
+    "checks": [
+     {
+      "detail": "nothing was supplied for this unit",
+      "name": "",
+      "status": "no result for this exact head"
+     }
+    ],
+    "claims": [
+     {
+      "claim": "",
+      "detail": "",
+      "status": "no claims supplied"
+     }
+    ],
+    "hold": [],
+    "kind": "ready to take",
+    "name": "runner-baseline",
+    "not_checked": [],
+    "notes": [
+     "the merge keeps both sides' lines in .github/workflows/canonical-ci.yml; nobody reviewed that resolution"
+    ],
+    "recommendation": "ready to take",
+    "sha": "18e228a909c9a59a9c584e6fc1470c844133bcf7",
+    "tests": [
+     {
+      "alone": {
+       "measured": true,
+       "state": "passed"
+      },
+      "file": "tests/unit/test_mutation_harness.py",
+      "merged": {
+       "measured": true,
+       "state": "passed"
+      }
+     },
+     {
+      "alone": {
+       "measured": true,
+       "state": "passed"
+      },
+      "file": "tests/unit/test_repo_health_gates.py",
+      "merged": {
+       "measured": true,
+       "state": "passed"
+      }
+     }
+    ]
+   }
+  ]
+ },
+ "inputs": {
+  "ancestry": {
+   "behind_base": {
+    "303-old": 0,
+    "303-rejected-credit": 0,
+    "304-compile-unread": 0,
+    "runner-baseline": 0
+   },
+   "contains": {
+    "303-old": [],
+    "303-rejected-credit": [
+     "303-old"
+    ],
+    "304-compile-unread": [],
+    "runner-baseline": []
+   },
+   "contains_base": {
+    "303-old": true,
+    "303-rejected-credit": true,
+    "304-compile-unread": true,
+    "runner-baseline": true
+   }
+  },
+  "composed_tree": "8446eb27321d58792ca87df6e2a8d298f39b75f2",
+  "confinement": {
+   "body_setting": "supervised",
+   "filesystem": [
+    {
+     "abi": 7,
+     "filesystem": "landlock",
+     "writable": [
+      "<scratchpad>/intake-run2/body/workspace/m_intake-bddc95821caf28a6/intake-scratch/trees/own-304-compile-unread"
+     ]
+    },
+    {
+     "abi": 7,
+     "filesystem": "landlock",
+     "writable": [
+      "<scratchpad>/intake-run2/body/workspace/m_intake-bddc95821caf28a6/intake-scratch/trees/own-303-old"
+     ]
+    },
+    {
+     "abi": 7,
+     "filesystem": "landlock",
+     "writable": [
+      "<scratchpad>/intake-run2/body/workspace/m_intake-bddc95821caf28a6/intake-scratch/trees/own-303-rejected-credit"
+     ]
+    },
+    {
+     "abi": 7,
+     "filesystem": "landlock",
+     "writable": [
+      "<scratchpad>/intake-run2/body/workspace/m_intake-bddc95821caf28a6/intake-scratch/trees/own-runner-baseline"
+     ]
+    },
+    {
+     "abi": 7,
+     "filesystem": "landlock",
+     "writable": [
+      "<scratchpad>/intake-run2/body/workspace/m_intake-bddc95821caf28a6/intake-scratch/trees/composed"
+     ]
+    }
+   ],
+   "modes": [
+    "supervised: network denied, environment scrubbed, filesystem confined by Landlock (reads the runtime, writes only the clone)"
+   ],
+   "runs": 18
+  },
+  "generated_on": "2026-11-12",
+  "rehearsal": {
+   "also": null,
+   "base": "8d20532464b1533b28d71d8331ca3412a90dbb11",
+   "behavioural_conflicts": [],
+   "clean": true,
+   "failing_before_the_merge": [],
+   "kept_both_sides": {
+    "runner-baseline": [
+     ".github/workflows/canonical-ci.yml"
+    ]
+   },
+   "limits": [
+    "only the named tests were run: a clean result does not prove the heads are compatible",
+    "a unit left out for a textual conflict was not tested in the merge",
+    "where both sides' lines were kept in a named file, that resolution was not reviewed by a person",
+    "read-only: nothing was merged, pushed or edited; no result here approves a merge"
+   ],
+   "merge_order": [
+    "304-compile-unread",
+    "303-old",
+    "303-rejected-credit",
+    "runner-baseline"
+   ],
+   "not_measured": [],
+   "textual_conflicts": {},
+   "tool": "compose_rehearsal/1",
+   "unchecked": [],
+   "units": [
+    {
+     "alone": {
+      "counts": {
+       "passed": 67
+      },
+      "failed": [],
+      "missing": []
+     },
+     "in_merge": true,
+     "merged": {
+      "counts": {
+       "passed": 67
+      },
+      "failed": [],
+      "missing": []
+     },
+     "name": "304-compile-unread",
+     "sha": "1c4a758c4d660549472b7cc463c72c7d4d95c9b4",
+     "states": {
+      "alone": {
+       "tests/integration/test_greg_mind_constructs_capability.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_compile_host_stop.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_compile_unanswered.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_functional_reconstitution.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_precondition_unheld.py": {
+        "measured": true,
+        "state": "passed"
+       }
+      },
+      "merged": {
+       "tests/integration/test_greg_mind_constructs_capability.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_compile_host_stop.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_compile_unanswered.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_functional_reconstitution.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_greg_precondition_unheld.py": {
+        "measured": true,
+        "state": "passed"
+       }
+      }
+     },
+     "tests": [
+      "tests/integration/test_greg_mind_constructs_capability.py",
+      "tests/unit/test_greg_compile_host_stop.py",
+      "tests/unit/test_greg_compile_unanswered.py",
+      "tests/unit/test_greg_functional_reconstitution.py",
+      "tests/unit/test_greg_precondition_unheld.py"
+     ]
+    },
+    {
+     "alone": {
+      "counts": {
+       "passed": 47
+      },
+      "failed": [],
+      "missing": []
+     },
+     "in_merge": true,
+     "merged": {
+      "counts": {
+       "passed": 47
+      },
+      "failed": [],
+      "missing": []
+     },
+     "name": "303-old",
+     "sha": "9097b276635742dfdcad98dfbae1dd78b3fddb5c",
+     "states": {
+      "alone": {
+       "tests/unit/test_greg_evidence_corrections.py": {
+        "measured": true,
+        "state": "passed"
+       }
+      },
+      "merged": {
+       "tests/unit/test_greg_evidence_corrections.py": {
+        "measured": true,
+        "state": "passed"
+       }
+      }
+     },
+     "tests": [
+      "tests/unit/test_greg_evidence_corrections.py"
+     ]
+    },
+    {
+     "alone": {
+      "counts": {
+       "passed": 47
+      },
+      "failed": [],
+      "missing": []
+     },
+     "in_merge": true,
+     "merged": {
+      "counts": {
+       "passed": 47
+      },
+      "failed": [],
+      "missing": []
+     },
+     "name": "303-rejected-credit",
+     "sha": "0a9a246fa1afb7b098850636f359deba8e10e58d",
+     "states": {
+      "alone": {
+       "tests/unit/test_greg_evidence_corrections.py": {
+        "measured": true,
+        "state": "passed"
+       }
+      },
+      "merged": {
+       "tests/unit/test_greg_evidence_corrections.py": {
+        "measured": true,
+        "state": "passed"
+       }
+      }
+     },
+     "tests": [
+      "tests/unit/test_greg_evidence_corrections.py"
+     ]
+    },
+    {
+     "alone": {
+      "counts": {
+       "passed": 23
+      },
+      "failed": [],
+      "missing": []
+     },
+     "in_merge": true,
+     "merged": {
+      "counts": {
+       "passed": 23
+      },
+      "failed": [],
+      "missing": []
+     },
+     "name": "runner-baseline",
+     "sha": "18e228a909c9a59a9c584e6fc1470c844133bcf7",
+     "states": {
+      "alone": {
+       "tests/unit/test_mutation_harness.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_repo_health_gates.py": {
+        "measured": true,
+        "state": "passed"
+       }
+      },
+      "merged": {
+       "tests/unit/test_mutation_harness.py": {
+        "measured": true,
+        "state": "passed"
+       },
+       "tests/unit/test_repo_health_gates.py": {
+        "measured": true,
+        "state": "passed"
+       }
+      }
+     },
+     "tests": [
+      "tests/unit/test_mutation_harness.py",
+      "tests/unit/test_repo_health_gates.py"
+     ]
+    }
+   ]
+  },
+  "renderer": "greg.intake.render/2",
+  "request": {
+   "base": "8d20532464b1533b28d71d8331ca3412a90dbb11",
+   "claims": {},
+   "repository": "<scratchpad>/intake-run2/code/kernel",
+   "timeout_seconds": 1200,
+   "union": [
+    ".github/workflows/canonical-ci.yml"
+   ],
+   "units": [
+    {
+     "name": "304-compile-unread",
+     "sha": "1c4a758c4d660549472b7cc463c72c7d4d95c9b4"
+    },
+    {
+     "name": "303-old",
+     "sha": "9097b276635742dfdcad98dfbae1dd78b3fddb5c"
+    },
+    {
+     "name": "303-rejected-credit",
+     "sha": "0a9a246fa1afb7b098850636f359deba8e10e58d"
+    },
+    {
+     "name": "runner-baseline",
+     "sha": "18e228a909c9a59a9c584e6fc1470c844133bcf7"
+    }
+   ]
+  },
+  "request_digest": "sha256:bddc95821caf28a62d9df6186283b985a15798913592f2ddf0a787bd73682595",
+  "skipped_tests": {
+   "303-old": [],
+   "303-rejected-credit": [],
+   "304-compile-unread": [],
+   "runner-baseline": []
+  }
+ },
+ "inputs_digest": "sha256:4a16e252df7ba99265da755820e4747f879d6f07b9467f9e5ac226ee626c5a27",
+ "markdown": "2026-11-12-intake-brief.md",
+ "markdown_sha256": "58ba0259c81db4c6eff697fef9428389d1a9f06830f6c5b1e5a71057c5093070",
+ "renderer": "greg.intake.render/2",
+ "request": {
+  "base": "8d20532464b1533b28d71d8331ca3412a90dbb11",
+  "claims": {},
+  "repository": "<scratchpad>/intake-run2/code/kernel",
+  "timeout_seconds": 1200,
+  "union": [
+   ".github/workflows/canonical-ci.yml"
+  ],
+  "units": [
+   {
+    "name": "304-compile-unread",
+    "sha": "1c4a758c4d660549472b7cc463c72c7d4d95c9b4"
+   },
+   {
+    "name": "303-old",
+    "sha": "9097b276635742dfdcad98dfbae1dd78b3fddb5c"
+   },
+   {
+    "name": "303-rejected-credit",
+    "sha": "0a9a246fa1afb7b098850636f359deba8e10e58d"
+   },
+   {
+    "name": "runner-baseline",
+    "sha": "18e228a909c9a59a9c584e6fc1470c844133bcf7"
+   }
+  ]
+ },
+ "request_digest": "sha256:bddc95821caf28a62d9df6186283b985a15798913592f2ddf0a787bd73682595"
+}

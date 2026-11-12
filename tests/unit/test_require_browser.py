@@ -88,3 +88,31 @@ def test_greg_chromium_names_the_browser_when_it_is_an_executable_file(tmp_path,
     assert chromium_path() == str(exe)
     monkeypatch.setenv("GREG_CHROMIUM", str(tmp_path))      # a directory is not a browser
     assert chromium_path() != str(tmp_path)
+
+
+def _ci_steps():
+    import yaml
+    jobs = yaml.safe_load((ROOT / ".github/workflows/canonical-ci.yml").read_text(encoding="utf-8"))["jobs"]
+    return [(job, step) for job, spec in jobs.items() for step in spec.get("steps", [])]
+
+
+def test_ci_names_the_browser_in_the_step_that_installed_it():
+    # Review of #308 (F1): a995c3ce put job 8's two GITHUB_ENV lines into the following sysctl step, a new shell
+    # where $shell and $PLAYWRIGHT_BROWSERS_PATH are unset. Both variables reached the test step empty, step 9 drove
+    # whatever browser the fallback found, and job 8 still passed. A step that exports them must compute them.
+    writers = [(job, step) for job, step in _ci_steps() if "GREG_CHROMIUM=" in (step.get("run") or "")]
+    assert {job for job, _ in writers} >= {"one_machine", "browser"}, writers
+    for job, step in writers:
+        run = step["run"]
+        assert "shell=$(" in run and run.index("shell=$(") < run.index("GREG_CHROMIUM="), (job, step.get("name"))
+        assert "PLAYWRIGHT_BROWSERS_PATH=" in run.split("GREG_CHROMIUM=")[0], (job, step.get("name"))
+
+
+def test_every_ci_step_that_requires_the_browser_first_checks_the_named_binary():
+    # The variable is read where it is used: a step under GREG_REQUIRE_BROWSER=1 fails before pytest when
+    # GREG_CHROMIUM does not name an executable, so a lost or empty variable can never pass as the fallback browser.
+    required = [(job, step) for job, step in _ci_steps() if str((step.get("env") or {}).get(REQUIRE)) == "1"]
+    assert {job for job, _ in required} >= {"one_machine", "browser"}, required
+    for job, step in required:
+        first = (step.get("run") or "").strip().splitlines()[0]
+        assert first.startswith('test -x "$GREG_CHROMIUM" ||') and "exit 1" in first, (job, step.get("name"), first)

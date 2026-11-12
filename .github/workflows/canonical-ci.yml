@@ -445,6 +445,8 @@ jobs:
           shell=$(ls -d "$PLAYWRIGHT_BROWSERS_PATH"/chromium_headless_shell-*/chrome-headless-shell-linux64/chrome-headless-shell | tail -n 1)
           test -x "$shell"
           "$shell" --version
+          echo "PLAYWRIGHT_BROWSERS_PATH=$PLAYWRIGHT_BROWSERS_PATH" >> "$GITHUB_ENV"
+          echo "GREG_CHROMIUM=$shell" >> "$GITHUB_ENV"
       # GREG asks for Chromium's own sandbox when it does not run as root (greg/computer.py). On this runner the
       # first run of job 11 (106a8eb8) failed 6 tests with "No usable sandbox": Ubuntu's AppArmor restricts
       # unprivileged user namespaces for binaries without a profile. This lets the test machine provide them; it
@@ -454,8 +456,6 @@ jobs:
           if sysctl -n kernel.apparmor_restrict_unprivileged_userns >/dev/null 2>&1; then
             sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
           fi
-          echo "PLAYWRIGHT_BROWSERS_PATH=$PLAYWRIGHT_BROWSERS_PATH" >> "$GITHUB_ENV"
-          echo "GREG_CHROMIUM=$shell" >> "$GITHUB_ENV"
       - name: Whole-machine mission, organ capabilities and hostile cases (organs required, no skips)
         working-directory: kernel
         env:
@@ -475,7 +475,9 @@ jobs:
           # test_cross_organ_mission.py reads the same checkouts under these names
           UNIIMENTE_DALEOBANKS_DIR: "${{ github.workspace }}/organs/daleobanks"
           UNIIMENTE_WEALTHMACHINE_DIR: "${{ github.workspace }}/organs/wealthmachine"
-        run: python -m pytest -q -rs tests/integration/test_one_machine.py tests/integration/test_one_machine_ten_steps.py tests/integration/test_one_mission_fifteen_steps.py tests/integration/test_organ_staffing_figures.py tests/integration/test_combined_construction_outcome.py tests/integration/test_one_machine_attacks.py tests/unit/test_greg_organs.py tests/unit/test_greg_organ_exchange_verdict.py tests/unit/test_greg_organ_bridge.py tests/unit/test_greg_daleobanks_bridge.py tests/unit/test_greg_bind_from_check.py tests/unit/test_greg_model_identity_policy.py tests/unit/test_greg_organ_exchange.py::test_real_organs tests/unit/test_greg_media_case.py::test_real_daleobanks_consumes_the_minds_receipts tests/unit/test_greg_task_fabric.py::test_on_the_real_daleobanks_its_own_checks_pass_a_distorted_draft_and_the_mind_holds_it_back tests/unit/test_cross_organ_mission.py::test_full_three_process_mission --junitxml="$RUNNER_TEMP/job8.xml"
+        run: |
+          test -x "$GREG_CHROMIUM" || { echo "::error::GREG_CHROMIUM does not name the browser installed above: '$GREG_CHROMIUM'"; exit 1; }
+          python -m pytest -q -rs tests/integration/test_one_machine.py tests/integration/test_one_machine_ten_steps.py tests/integration/test_one_mission_fifteen_steps.py tests/integration/test_organ_staffing_figures.py tests/integration/test_combined_construction_outcome.py tests/integration/test_one_machine_attacks.py tests/unit/test_greg_organs.py tests/unit/test_greg_organ_exchange_verdict.py tests/unit/test_greg_organ_bridge.py tests/unit/test_greg_daleobanks_bridge.py tests/unit/test_greg_bind_from_check.py tests/unit/test_greg_model_identity_policy.py tests/unit/test_greg_organ_exchange.py::test_real_organs tests/unit/test_greg_media_case.py::test_real_daleobanks_consumes_the_minds_receipts tests/unit/test_greg_task_fabric.py::test_on_the_real_daleobanks_its_own_checks_pass_a_distorted_draft_and_the_mind_holds_it_back tests/unit/test_cross_organ_mission.py::test_full_three_process_mission --junitxml="$RUNNER_TEMP/job8.xml"
       - name: Count job 8's skips (it says it never skips; pytest exits 0 on a skip, so the count is reported)
         if: always()
         run: >-
@@ -555,4 +557,6 @@ jobs:
       - name: Browser tests (a missing or unrunnable browser fails; other skips are listed)
         env:
           GREG_REQUIRE_BROWSER: "1"
-        run: python -m pytest -q -rs tests/unit/test_greg_computer.py tests/unit/test_greg_browser.py tests/integration/test_greg_mission_control_browser.py tests/integration/test_greg_phone_asks.py tests/integration/test_greg_phone_e2e.py tests/integration/test_greg_confined_egress.py tests/integration/test_greg_mcp_token.py
+        run: |
+          test -x "$GREG_CHROMIUM" || { echo "::error::GREG_CHROMIUM does not name the browser installed above: '$GREG_CHROMIUM'"; exit 1; }
+          python -m pytest -q -rs tests/unit/test_greg_computer.py tests/unit/test_greg_browser.py tests/integration/test_greg_mission_control_browser.py tests/integration/test_greg_phone_asks.py tests/integration/test_greg_phone_e2e.py tests/integration/test_greg_confined_egress.py tests/integration/test_greg_mcp_token.py

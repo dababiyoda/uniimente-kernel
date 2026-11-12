@@ -61,19 +61,20 @@ class World:
     def record(self, kind, payload, key):
         return self.journal.record(kind, payload, key=key)
 
-    def accept(self, event_id, text="on reflection this was right", *, signed=True):
-        return self.reject(event_id, text, signed=signed, verdict="accept")
+    def accept(self, event_id, text="on reflection this was right", *, signed=True, signer="founder"):
+        return self.reject(event_id, text, signed=signed, verdict="accept", signer=signer)
 
-    def reject(self, event_id, text="wrong", *, signed=True, verdict="reject"):
+    def reject(self, event_id, text="wrong", *, signed=True, verdict="reject", signer="founder"):
         """A founder critique as the body records one: the critique row, and the accepted signed CRITIQUE command
-        behind it (``greg/tribunal.py``, ``Body.apply``). ``signed=False`` writes the row alone: nobody signed it."""
+        behind it (``greg/tribunal.py``, ``Body.apply``), with the principal that signed it (``signer``: ``founder``
+        or ``device:<label>``). ``signed=False`` writes the row alone: nobody signed it."""
         self.rejections = getattr(self, "rejections", 0) + 1
         digest = "sha256:" + sha(f"critique-{self.rejections}")
         body = {"target_event_id": event_id, "verdict": verdict, "evidence_type": "founder_judgment", "text": text}
         row = self.journal.record("critique.recorded", {"critique_id": "crit-" + digest[7:31], **body,
                                                         "command_digest": digest}, key="crit-" + digest[7:31])
         if signed:
-            self.journal.record("command.accepted", {"kind": "CRITIQUE", "digest": digest,
+            self.journal.record("command.accepted", {"kind": "CRITIQUE", "digest": digest, "signer": signer,
                                                      "envelope": {"kind": "CRITIQUE", "body": body}}, key=digest)
         return row
 
@@ -810,7 +811,8 @@ def test_a_founder_rejection_withholds_the_answer_whichever_receipt_or_mission_d
     w = World()
     for mid in ("m:x", "m:y"):
         w.mission(mid, SOLVE)
-    w.mission("m:z", ("x", "cognition.solve", {"problem_id": "another"}, SOLVE[3]))      # another question
+    # another question: other inputs. A problem_id alone is a label, not a question (review of 0a9a246f, N5)
+    w.mission("m:z", ("x", "cognition.solve", {"problem_id": "another", "data": [9]}, SOLVE[3]))
     first = solve(w, "m:x")
     w.achieve("m:x", first)
     [closure] = w.journal.replay("mission.achieved")
@@ -827,7 +829,9 @@ def test_a_founder_rejection_withholds_the_answer_whichever_receipt_or_mission_d
     contained = corrections.contained_receipts(w.journal)
     assert set(contained) == {first, again, elsewhere} and not set(kept) & set(contained)
     assert sorted(corrections.contained_missions(w.journal)) == ["m:x", "m:y"]
-    assert sorted(corrections.rejected_missions(w.journal)) == ["m:x", "m:y"]
+    # m:y only asked the same computation: its claim is under review and its reading earns nothing, but it did not
+    # deliver the rejected closure, so its own runs keep their credit (review of 0a9a246f, N4)
+    assert sorted(corrections.rejected_missions(w.journal)) == ["m:x"]
     assert w.state("m:x")["state"] == w.state("m:y")["state"] == "NEEDS_REVIEW"
     [c] = w.tick()                                          # the tick records the cause it was already read as
     [invalidated] = w.journal.replay("evidence.invalidated")
@@ -870,7 +874,9 @@ def test_a_rejection_does_not_reach_another_question_other_inputs_another_versio
     w.mission("m:question", ("x", "cognition.solve", question, {**at_most_1, "value": 2}))      # a different question
     w.mission("m:inputs", ("x", "cognition.solve", {**question, "data": [1, 2]}, at_most_1))    # different inputs
     w.mission("m:version", SOLVE)                           # the same question, answered by another method version
-    w.mission("m:unrelated", ("u", "cognition.solve", {"problem_id": "something else"}, at_most_1))
+    # an unrelated question: other inputs and another predicate (a problem_id alone is a label, N5)
+    w.mission("m:unrelated", ("u", "cognition.solve", {"problem_id": "something else", "data": "unrelated"},
+                              {"op": "exists", "field": "result.plan"}))
     rejected = solve(w, "m:x")
     w.achieve("m:x", rejected)
     [closure] = w.journal.replay("mission.achieved")
@@ -942,6 +948,176 @@ def test_the_founders_signed_acceptance_lifts_his_rejection_of_that_answer_and_n
     assert corrections.contained_receipts(w.journal)[cited]["rejection"] == again.payload["critique_id"]
     w.accept(event_of(w, early))                            # accepting any reading of the answer lifts it too
     assert set(corrections.contained_receipts(w.journal)) == {other}
+
+
+# -- review of 0a9a246f (2026-11-12): the reach of a rejection, labels, refutations, signers, forged rows -----------
+
+def run_of(w, mid, action_id, *, bound=None):
+    """One completed fs.write run of ``mid``, with its Gate receipt on the ledger; ``bound``: a reading it bound."""
+    receipt = w.ledger.append("receipt", {"action_id": f"{mid}:{action_id}", "result": {"output": {"written": 1}}})
+    w.record("mission.action", {"mission_id": mid, "action_id": action_id, "capability": "fs.write", "status": "DONE",
+                                "receipt": receipt.hash, "attempt": 1,
+                                **({"bindings": [{"from_receipt": bound}]} if bound else {})}, key=[mid, action_id, 1])
+    return receipt.hash
+
+
+def test_a_rejection_does_not_reach_another_missions_runs_that_only_shared_the_computation():
+    """N4. Reproduced on 0a9a246f on a real body: the founder rejected m:first's closure for its note. m:second had
+    asked the same computation and written its own note; its write lost its routing reliability (founder_rejected
+    2 against 1 without the shared computation) and its earned level fell to SHADOW. A rejection withholds the
+    answer's readings, wherever they are, and the runs the rejected closure rests on: not the runs of another
+    mission that merely asked the same computation. A mission whose run bound the rejected answer does rest on it."""
+    from greg import routing
+    from greg.sop import REQUIRED_CHECKS
+    w = World()
+    w.mission("m:first", SOLVE)
+    w.mission("m:second", SOLVE)
+    w.mission("m:bound", SOLVE)
+    first = solve(w, "m:first")
+    run_of(w, "m:first", "write")
+    w.achieve("m:first", first)
+    shared = solve(w, "m:second")                       # the same question, the same answer, in another mission
+    run_of(w, "m:second", "write")                      # and a run that does not use it
+    w.achieve("m:second", shared)
+    used = solve(w, "m:bound")
+    run_of(w, "m:bound", "write", bound=used)           # a run that bound the answer
+    w.achieve("m:bound", solve(w, "m:bound"))
+    for mid in ("m:first", "m:second", "m:bound"):
+        w.record("mission.appraised", {"mission_id": mid, "verdict": "VERIFIED",
+                                       "checks": {k: True for k in REQUIRED_CHECKS}}, key=[mid, "appraised", 1])
+    assert routing.track_record(w.journal)["fs.write"]["verified"] == 3
+    closures = {e.payload["mission_id"]: e for e in w.journal.replay("mission.achieved")}
+    said = w.reject(closures["m:first"].event_id, "the note is badly worded")
+    assert {first, shared, used} <= set(corrections.contained_receipts(w.journal))      # the answer, wherever it is
+    assert sorted(corrections.rejected_missions(w.journal)) == ["m:bound", "m:first"]  # before: m:second too
+    record = routing.track_record(w.journal)["fs.write"]
+    assert (record["done"], record["verified"], record["founder_rejected"]) == (1, 1, 2)   # m:second's run counts
+    assert sorted(corrections.contained_missions(w.journal)) == ["m:bound", "m:first", "m:second"]
+    assert {mid: w.state(mid)["state"] for mid in closures} == dict.fromkeys(closures, "NEEDS_REVIEW")
+    effect = corrections.critique_effect(w.journal, {"target_event_id": closures["m:first"].event_id,
+                                                     "verdict": "reject"})
+    assert effect["runs_withheld"] == ["m:bound", "m:first"]
+    assert effect["missions_withheld"] == ["m:bound", "m:first", "m:second"]
+    [c] = w.tick()
+    assert c["class"] == "FOUNDER_REJECTED"
+    reached = {x["mission_id"]: x.get("answer_only", False) for x in c["affected"]["claims"]}
+    assert reached == {"m:first": False, "m:second": True, "m:bound": False}
+    assert said.payload["critique_id"] == corrections.contained_receipts(w.journal)[shared]["rejection"]
+
+
+def test_a_problem_id_is_a_label_and_a_relabelled_rejected_answer_stays_withheld():
+    """N5. Reproduced on 0a9a246f on a real body: the rejected question re-signed under another problem_id (the same
+    data, predicate, method, version and answer) earned the credit back; under the same problem_id it did not. A
+    problem_id names a question and changes nothing about it (``corrections.LABEL_PARAMS``)."""
+    w = World()
+    w.mission("m:x", SOLVE)
+    w.mission("m:relabelled", ("x", "cognition.solve", {"problem_id": "another label"}, SOLVE[3]))
+    w.mission("m:inputs", ("x", "cognition.solve", {"problem_id": "another label", "data": [1]}, SOLVE[3]))
+    checks = {mid: w.journal.replay("mission.registered")[i].payload["spec"]["success_checks"][0]
+              for i, mid in enumerate(("m:x", "m:relabelled", "m:inputs"))}
+    assert corrections.sensor_key(checks["m:x"]) == corrections.sensor_key(checks["m:relabelled"])
+    assert corrections.sensor_key(checks["m:x"]) != corrections.sensor_key(checks["m:inputs"])
+    rejected = solve(w, "m:x")
+    w.achieve("m:x", rejected)
+    [closure] = w.journal.replay("mission.achieved")
+    w.reject(closure.event_id)
+    relabelled, other = solve(w, "m:relabelled"), solve(w, "m:inputs")
+    contained = corrections.contained_receipts(w.journal)
+    assert relabelled in contained and other not in contained                   # before: relabelled escaped
+    index = corrections.Index(w.journal)
+    assert index.identity(index.by_receipt[relabelled]) == index.identity(index.by_receipt[rejected])
+
+
+def test_a_later_run_whose_own_answer_the_verifier_refuted_is_no_failed_replication():
+    """N6. Reproduced on 0a9a246f on a real body: m:second asked m:first's question, the independent verifier
+    refuted the engine's new candidate, and the compile receipt said REFUTED with no result. It was booked
+    REPLICATION_FAILED against m:first's verified answer, withheld its credit and asked the founder. That run shows
+    its own candidate was wrong, not the earlier answer: no cause, no withholding. A compilation that refutes the
+    claim with a counterexample in its result stays a real negative (test above)."""
+    refuted_runs = ({"schema": COMPILE_SCHEMA, "state": "REFUTED", "result": None,
+                     "selected_receipt": {"method": "cognition.swarm", "method_version": "1.0"}},
+                    {"abstention_state": "REFUTED", "method": "cognition.swarm", "method_version": "1.0",
+                     "output": {"fitness": 7}, "evaluator_result": {"verdict": "REFUTED"}})
+    for later in refuted_runs:
+        assert corrections.refuted_own_answer(later)
+        w = World()
+        for mid in ("m:first", "m:second"):
+            w.mission(mid, SOLVE)
+        first = solve(w, "m:first")
+        w.achieve("m:first", first)
+        w.read("m:second", "x", later, passed=False, capability="cognition.solve", detail="field 'result.fitness' absent")
+        assert w.tick() == [] and corrections.contained_receipts(w.journal) == {}    # before: REPLICATION_FAILED
+        assert w.state("m:first")["state"] == "CURRENT" and w.open_asks() == []
+    assert not corrections.refuted_own_answer({"schema": COMPILE_SCHEMA, "state": "REFUTED",
+                                               "result": {"counterexample": [3]}})
+    assert not corrections.refuted_own_answer({"abstention_state": "NONE", "output": {"x": 1}})
+
+
+def test_the_rejection_report_names_who_signed_each_rejection_and_each_requalification():
+    """N10. A delegated device key may sign a CRITIQUE today (``greg.founder.DEVICE_KINDS``), so it can lift the
+    founder's rejection. The report now says who signed each; whether a device may is the founder's to decide and
+    is not changed."""
+    w = World()
+    w.mission("m:x", SOLVE)
+    w.mission("m:q", ("y", "cognition.solve", {"problem_id": "q", "data": [2]}, SOLVE[3]))
+    w.achieve("m:x", solve(w, "m:x"))
+    w.achieve("m:q", solve(w, "m:q", "y", fitness=0.03))
+    closures = {e.payload["mission_id"]: e for e in w.journal.replay("mission.achieved")}
+    w.reject(closures["m:x"].event_id)
+    w.reject(closures["m:q"].event_id, signer="device:phone")
+    w.accept(closures["m:x"].event_id, signer="device:phone")
+    report = corrections.rejection_report(w.journal)
+    assert [(r["target_event_id"], r["signed_by"]) for r in report["standing"]] == [
+        (closures["m:q"].event_id, "device:phone")]
+    [lifted] = report["requalified"]
+    assert (lifted["signed_by"], lifted["requalified_by_signer"]) == ("founder", "device:phone")
+
+
+def test_a_bare_correction_row_the_readings_do_not_produce_withholds_nothing(W):
+    """Reproduced on 0a9a246f on a real body: an ``evidence.correction`` row written by hand (REPLICATION_FAILED,
+    impugning the measurement) with no failing reading behind it took a mission's settled credit. A recorded cause
+    withholds credit only while the rule that records it, run again on the ledger, still produces it."""
+    W.record("evidence.correction", {"cause_id": "cause-forged", "class": "REPLICATION_FAILED", "why": "forged",
+                                     "impugns_measurement": True, "root": {"receipt": W.rb, "mission_id": "m:b"},
+                                     "affected": {"claims": [], "receipts": [W.rb]}}, key=["cause-forged", "correction"])
+    assert corrections.contained_receipts(W.journal) == {} and corrections.contained_missions(W.journal) == {}
+    W.read("m:r", "a", file_read("/docs/a.txt", "alpha v1"), passed=False)     # a real failed replication of m:a
+    [c] = W.tick()
+    assert c["class"] == "REPLICATION_FAILED" and W.ra in corrections.contained_receipts(W.journal)
+    assert W.rb not in corrections.contained_receipts(W.journal)
+    # a bare requalification row that names no reading lifts nothing either (only a later passing reading does)
+    W.record("evidence.requalified", {"cause_id": c["cause_id"], "root": W.ra, "by": {"event_id": "nothing"},
+                                      "restores_permission": False}, key=[c["cause_id"], "requalified"])
+    assert W.ra in corrections.contained_receipts(W.journal)
+    W.read("m:r", "a", file_read("/docs/a.txt", "alpha v1"))                  # the same sensor passes again
+    W.tick()
+    assert W.ra not in corrections.contained_receipts(W.journal)
+
+
+def test_a_negative_self_report_of_a_rejected_mission_stays_in_its_precedents(W, tmp_path):
+    """N9. A rejection may only lower what precedents show: a positive self-report of a run in a rejected mission is
+    left out and counted, a negative one stays (``greg.precedents``)."""
+    from greg.capabilities import BUILTINS, InvocationContext
+    from greg.precedents import precedents
+    for n, result in enumerate(("positive", "negative")):
+        W.ledger.append("witness", {"witness_id": f"wit-{n}", "action_class": "greg.fs.write", "policy_version": "p"})
+        receipt = W.ledger.append("receipt", {"action_id": f"act-w{n}", "witness_id": f"wit-{n}",
+                                              "result": {"output": {}}})
+        W.ledger.append("outcome", {"action_ref": f"act-w{n}", "result_class": result,
+                                    "validation_status": "self_reported"})
+        W.record("mission.action", {"mission_id": "m:a", "action_id": f"w{n}", "capability": "fs.write",
+                                    "status": "DONE", "receipt": receipt.hash, "attempt": 1}, key=["m:a", f"w{n}", 1])
+    manifest, _ = BUILTINS["memory.precedents"]
+    ctx = InvocationContext(workspace=tmp_path, read_roots=(), secrets=None, manifest=manifest, journal=W.journal,
+                            target="memory:fs.write")
+
+    def shown():
+        evidence = precedents({"capability": "fs.write"}, ctx)["action_evidence"]
+        return evidence["count"], evidence["by_validation_and_result"], evidence.get("withheld_by_founder_rejection", 0)
+    assert shown() == (2, {"self_reported": {"positive": 1, "negative": 1}}, 0)
+    [closure] = [e for e in W.journal.replay("mission.achieved") if e.payload["mission_id"] == "m:a"]
+    W.reject(closure.event_id)
+    assert shown() == (1, {"self_reported": {"negative": 1}}, 1)
 
 
 def rejection_world():
@@ -1119,7 +1295,7 @@ def test_settlement_withholds_a_constructions_contained_answer_and_names_the_cau
     feasible = {"op": "eq", "field": "result.feasible", "value": True}
 
     def read(mid, problem, n, ok=True):
-        params = {"problem_id": problem}
+        params = {"problem_id": problem, "data": problem}           # the input the mission signed
         built = {"schema": COMPILE_SCHEMA, "state": "ANSWERED", "authority_created": False,
                  "selected_receipt": None, "method_or_composition_selected": method,
                  "confidence_type": "certified: a problem-level certificate", "inputs_digest": settlement.digest(params),
@@ -1145,9 +1321,11 @@ def test_settlement_withholds_a_constructions_contained_answer_and_names_the_cau
     def rows(mid):
         return [e.payload for e in w.journal.replay("cognition.settled") if e.payload["mission_id"] == mid]
     for mid, problem in (("m:one", "staff:monday"), ("m:two", "staff:tuesday"), ("m:keep", "staff:friday")):
-        w.mission(mid, ("c", "cognition.solve", {"problem_id": problem}, feasible))
-    w.mission("m:fails", ("c", "cognition.solve", {"problem_id": "staff:sunday"}, feasible))
-    w.mission("m:again", ("c", "cognition.solve", {"problem_id": "staff:tuesday"}, feasible))   # m:two's question
+        # each problem its own input: a problem_id alone is a label, not a question (review of 0a9a246f, N5)
+        w.mission(mid, ("c", "cognition.solve", {"problem_id": problem, "data": problem}, feasible))
+    w.mission("m:fails", ("c", "cognition.solve", {"problem_id": "staff:sunday", "data": "staff:sunday"}, feasible))
+    w.mission("m:again", ("c", "cognition.solve", {"problem_id": "staff:tuesday", "data": "staff:tuesday"},
+                          feasible))                                     # m:two's question
     one = read("m:one", "staff:monday", 1)
     w.achieve("m:one", one)
     appraise("m:one", "VERIFIED")

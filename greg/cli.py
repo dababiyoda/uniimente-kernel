@@ -17,6 +17,11 @@
     greg founder attest --key K                   founder-tier attestation alone (e.g. after key rotation)
     greg founder rotate --key OLD --new-key NEW   the enrolled key signs its replacement by a protected key
     greg device enroll --pubkey HEX --label phone --key K   delegate a narrow key to a phone
+    greg device revoke KEY_ID --key K [--suspected-compromise]   end a delegation; what the key approved and
+                                                    was not yet used authorizes nothing more (the flag also opens
+                                                    a retrospective review of everything it signed; with the flag,
+                                                    a key already revoked gets the review of that revocation)
+    greg device reviews                             read-only: revocations, what each voided, the reviews
     greg node enroll NODE_ID --pubkey HEX --cone CONE.json --key K   admit a node's own key (founder-signed)
     greg node revoke NODE_ID --key K | greg node list   end a node's enrollment; read-only node states
     greg serve                                   loopback remote channel for the phone
@@ -480,7 +485,8 @@ def main(argv=None) -> int:
             q.add_argument("--github", action="append", default=[], help="owner/name (engineering-brief)")
             q.add_argument("--daily", action="store_true", help="engineering-brief: standing daily mission")
             q.add_argument("--preauthorize-delivery", action="store_true",
-                           help="engineering-brief, venture-assessment: sign delivery into the cone (no approval stop)")
+                           help="engineering-brief, venture-assessment, intake-recommendation: sign delivery into "
+                                "the cone (no approval stop)")
             q.add_argument("--stale-days", type=int, default=14)
             q.add_argument("--railscout", help="venture-assessment: RailScout checkout")
             q.add_argument("--wmi", help="venture-assessment: WealthMachineIntelligence checkout")
@@ -514,6 +520,8 @@ def main(argv=None) -> int:
                            help="business-case: file name of the payment statement you export into the case folder")
             q.add_argument("--print-only", action="store_true", help="show the mission without signing")
             q.add_argument("--problem", help="cognition: bounded problem JSON to review and sign")
+            q.add_argument("--intake", help="intake-recommendation: JSON file {repository, base, units: [{name, sha}], "
+                                            "union?, claims?, timeout_seconds?}; full 40-character SHAs only")
         if name == "accept":
             q.add_argument("event_id"); q.add_argument("--text", default="accepted after morning review")
         if name == "decide":
@@ -557,6 +565,12 @@ def main(argv=None) -> int:
     de.add_argument("--kinds", default="DECISION,CRITIQUE,BODY_PAUSE,BODY_RESUME,BODY_STOP")
     de.add_argument("--days", type=int, default=30)
     dr = ds.add_parser("revoke"); dr.add_argument("device_key_id")
+    dr.add_argument("--suspected-compromise", action="store_true",
+                    help="also open a retrospective integrity review: every command the key signed and every effect "
+                         "that rested on one, listed for you (it rewrites nothing and revokes nothing further). For a "
+                         "key you already revoked, sign it again with this flag: it opens the review of that "
+                         "revocation, once")
+    ds.add_parser("reviews", help="read-only: each device revocation, what it voided, and the integrity reviews")
     for q in (de, dr):
         q.add_argument("--key", required=True); q.add_argument("--no-passphrase", action="store_true")
         q.add_argument("--ttl-hours", type=int, default=24)
@@ -836,6 +850,26 @@ def main(argv=None) -> int:
                         raise BodyError(f"organ-exchange needs --{', --'.join(missing)}")
                     spec = templates.organ_exchange(daleobanks_root=args.daleobanks, wmi_root=args.wmi,
                                                     signal=args.signal, preauthorize_delivery=args.preauthorize_delivery)
+                elif args.target == "intake-recommendation":
+                    from greg.capabilities import CapabilityError
+                    if not args.intake:
+                        raise BodyError("intake-recommendation needs --intake with a JSON file: "
+                                        "{repository, base, units: [{name, sha}]}")
+                    try:
+                        asked = json.loads(Path(args.intake).read_text(encoding="utf-8"))
+                    except (OSError, ValueError) as exc:     # ValueError: not UTF-8, or not JSON
+                        raise BodyError(f"--intake {args.intake}: not a readable JSON file "
+                                        f"({type(exc).__name__}: {' '.join(str(exc).split())[:160]})") from None
+                    known = {"repository", "base", "units", "union", "claims", "timeout_seconds"}
+                    whole = isinstance(asked, dict) and {"repository", "base", "units"} <= set(asked)
+                    if not whole or set(asked) - known:
+                        raise BodyError("the --intake file must hold repository, base and units "
+                                        "(and may hold union, claims, timeout_seconds)")
+                    try:
+                        spec = templates.intake_recommendation(**asked,
+                                                               preauthorize_delivery=args.preauthorize_delivery)
+                    except (CapabilityError, TypeError) as exc:
+                        raise BodyError(f"intake-recommendation: {exc}") from None
                 else:
                     raise BodyError(f"unknown template {args.target}; known: {sorted(templates.TEMPLATES)}")
             from greg.missions import validate_mission
@@ -1221,7 +1255,19 @@ def main(argv=None) -> int:
                                                 "kinds": [k.strip() for k in args.kinds.split(",") if k.strip()],
                                                 "expires_at": expires.isoformat().replace("+00:00", "Z")}, args))
         elif args.cmd == "device" and args.device_cmd == "revoke":
-            print(_drop(home, "DEVICE_REVOKE", {"device_key_id": args.device_key_id}, args))
+            print(_drop(home, "DEVICE_REVOKE", {"device_key_id": args.device_key_id,
+                                                **({"suspected_compromise": True}
+                                                   if args.suspected_compromise else {})}, args))
+        elif args.cmd == "device" and args.device_cmd == "reviews":
+            from greg import revocation
+            from greg.missions import MissionBook
+            if Layout(home).ledger.exists():   # the body is the ledger's one writer: read it through a read-only view
+                with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                    data = {"revocations": revocation.summary(journal, MissionBook(journal)),
+                            "reviews": [e.payload for e in journal.replay(revocation.REVIEW_RECORD)]}
+            else:
+                data = {"revocations": [], "reviews": [], "reality_status": "NO_BODY_LEDGER"}
+            print(json.dumps(data, indent=1))
         elif args.cmd == "node" and args.node_cmd == "enroll":
             try:
                 cone = json.loads(Path(args.cone).expanduser().read_text())

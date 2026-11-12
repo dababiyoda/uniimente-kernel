@@ -62,18 +62,35 @@ class SopError(ValueError):
     """The runs are not one procedure, or a run does not fit its ratified workflow."""
 
 
+def current_appraisals(journal: Journal) -> dict:
+    """mission id -> (its current closure, that closure's final appraisal), from the one reader of
+    appraisals (greg/appraisal.py ``standings``). The current closure is the mission's achievement, or a standing
+    mission's newest closure; an appraisal of any other closure of the mission (an earlier failure closure, an
+    earlier hold) is not in here, whenever it was recorded. A mission whose current closure has no appraisal of its
+    own is absent: unappraised."""
+    from greg.appraisal import standings            # that module imports greg.missions, which the body imports first
+    return standings(journal).current_records()
+
+
 def verified_appraisals(journal: Journal) -> dict[str, str]:
-    """Latest appraisal wins; an achievement alone does not establish an outcome.
+    """mission id -> the appraisal that verified the mission's current closure: its achievement, or a standing
+    mission's newest hold. An achievement alone does not establish an outcome, and neither does the verdict of
+    another closure of the same mission.
 
     This is the body's separate-process appraisal, not an external trust root.
     Its event ID records which local evidence supported a proposal.
     """
-    latest = {}
-    for event in journal.replay("mission.appraised"):
-        latest[event.payload["mission_id"]] = event
-    return {mid: event.event_id for mid, event in latest.items()
-            if event.payload.get("verdict") == "VERIFIED"
-            and all(event.payload.get("checks", {}).get(check) is True for check in REQUIRED_CHECKS)}
+    return {mid: event.event_id for mid, (closure, event) in current_appraisals(journal).items()
+            if closure.verified(REQUIRED_CHECKS)}
+
+
+def awaiting_appraisal(journal: Journal) -> set[str]:
+    """Missions whose current closure is still waiting: its final appraisal is the appraiser's answer that it ran
+    nothing for a capability that is not ATTACHED (greg/body.py ``not_run_by_appraiser``). Such a closure is not yet
+    appraised: it is appraised again when the founder attaches the capability. It is not a failed appraisal, and no
+    reader should word or count it as one."""
+    from greg.body import not_run_by_appraiser      # body imports this module; the verdict vocabulary lives there
+    return {mid for mid, (_, event) in current_appraisals(journal).items() if not_run_by_appraiser(event.payload)}
 
 
 def closed_procedures(journal: Journal) -> dict[str, list]:
@@ -629,9 +646,10 @@ def trend(journal: Journal) -> dict:
     registered = _registered(journal)
     verified = verified_appraisals(journal)
     achieved = {e.payload["mission_id"] for e in journal.replay("mission.achieved")}
-    latest = {}
-    for event in journal.replay("mission.appraised"):
-        latest[event.payload["mission_id"]] = event.payload.get("verdict")
+    # the verdict of each mission's current closure (its achievement): another closure's verdict is not this run's
+    latest = {mid: event.payload.get("verdict") for mid, (_, event) in current_appraisals(journal).items()}
+    for mid in awaiting_appraisal(journal):    # not yet appraised: neither a run that held quality nor one that failed
+        del latest[mid]
     owners = {e.event_id: e.payload.get("mission_id") for e in journal.replay()}
     rejected = {owners.get(e.payload["target_event_id"]) for e in journal.replay("critique.recorded")
                 if e.payload["verdict"] == "reject"}

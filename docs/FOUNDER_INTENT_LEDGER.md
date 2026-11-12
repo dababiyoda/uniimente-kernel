@@ -2,6 +2,58 @@
 
 # Founder Intent Ledger
 
+## Convergence, then a useful operational path — 2026-11-12
+
+`INTENT-20261112-CONVERGENCE-USEFUL-PATH` ([record](intent/INTENT-20261112-CONVERGENCE-USEFUL-PATH.json), [verbatim source](intent/sources/CONVERGENCE-CLARIFICATION-2026-11-12-source.md)): the founder's clarification of 2026-11-12 in session `session_01Kucyfm9exT5imDVYvHTYSv`. It is chat intent evidence, not founder authentication.
+
+- **Convergence first.** "Green results on separate branches do not establish compatibility." Keep a reversible composed candidate of the compatible work and run the checks on that exact revision. "Final merge approval and developmental composition are separate boundaries."
+- **Seven behaviours to show on the composed revision:** a mission through its actual entry point; correct outcomes through interruption and restart; capability identity and device revocation; completed work preserved when a dependency fails; uncertainty, timeout, refusal, failure and refutation told apart; an appraisal bound to the closure and evidence it evaluated; an account of outcome, costs, remaining uncertainty and next step.
+- **Dispositions say where value goes.** For each substantial component inspected: where the retained value goes, who consumes it, what behaviour changes, how that is verified.
+- **A useful operational path.** One bounded developmental slice from request to reconciliation on a sandbox case, its adverse cases, then a second materially different case with transfer measured. A completed internal workflow is not buyer demand.
+- **Review findings become engineering.** Each confirmed defect becomes a regression or adversarial case; other consumers of the same contract are examined; recurrence, review cost, integration delay and escaped defects are tracked.
+- **Access limits are exact.** Container browser operation, cloud desktop control, the founder's computer and founder-device acceptance are four different things.
+- **Five answers, as engineering recommendations:** intake is prepared, not performed; an unreadable receipt stays unknown; the smallest browser implementation that passes the declared requirements; a rejected answer earns no credit, scoped, with explicit requalification; a late appraisal mismatch is stale and grants nothing.
+
+**Changed axis:** immediate priority and sequence. **State:** active. **Authority delta:** none. **VEPMC:** 0.
+
+## Complete-machine execution on two tracks — 2026-11-11
+
+`INTENT-20261111-ABSOLUTE-OPUS-MAXIMUS` ([record](intent/INTENT-20261111-ABSOLUTE-OPUS-MAXIMUS.json), [four messages, verbatim](intent/sources/ABSOLUTE-OPUS-MAXIMUS-2026-11-11-source.md)): the founder's directives of 2026-11-11 in session `session_01Kucyfm9exT5imDVYvHTYSv`. They are chat intent evidence, not founder authentication.
+
+- **Two tracks.** Track A is developmental engineering in controlled conditions. Track B is founder and external acceptance. "VEPMC = 0 does not stop Track A." A missing signature blocks the action that needs it, not independent engineering. Track B evidence is never manufactured.
+- **Method.** Start from a real defect. Reproduce it on the exact parent, fix it in the canonical owner, verify it on one composed tree with its neighbours, hand it to the integration owner, recompute the next unfinished dependency, continue. "A small build is the next step. It is never a substitute for the destination."
+- **First named build.** Truthful recovery of a retained negative receipt, with an eight-step acceptance sequence.
+- **Proposed extensions, as bounded experiments:** representation repair, evidence-dependency correction, proof-bearing plans, adaptive cognitive organization, transferable capability propagation, developmental-process improvement, goal opportunity synthesis, functional reconstitution. Each has a minimum test in the source. Existing mechanisms are inspected first.
+- **Revoked devices.** Revocation invalidates a device's unused authority at once. Completed actions stay in the ledger. A suspected compromise opens a separate retrospective review.
+- **Reporting.** Lead with what GREG can reliably do now that it could not do before. No probability estimates or process-quality scores in place of engineering results.
+- **Dispositions (resume message, 23:12 UTC).** "every substantial component inspected should receive a documented disposition: integrate, extract useful parts, consolidate, preserve for a justified future use, or reject with reasons." Follow-through "must be demonstrated by working connections and verified capabilities." First record: [dispositions of 2026-11-11](collaboration/REPOSITORY-DISPOSITIONS-2026-11-11.md).
+
+**Changed axis:** sequence, immediate priority and evidence discipline. **State:** active. **Authority delta:** none. **VEPMC:** 0. The 2026-10-28 directive stays the controlling prompt and the 2026-10-30 correction stands.
+## A revoked device's unused authority authorizes nothing — 2026-11-11
+
+Founder message of 2026-11-11, section "Revoked-device approvals" ([verbatim source](intent/sources/REVOKED-DEVICE-AUTHORITY-2026-11-11-source.md)). It is intent evidence, not founder authentication. The brief for this work says draft #290 records this as an open gap (a DECISION a device signed before its revocation still counts). The finishing session did not find that sentence in #290's tree (`facea170`) and did not read the pull request page; the gap itself is reproduced by the first test.
+
+| Required field | INTENT-20261111-REVOKED-DEVICE-AUTHORITY |
+| --- | --- |
+| statement | My preferred policy is that revoking a device should immediately invalidate its unused authority to authorize future execution. Actions already legitimately completed must remain in the evidence ledger. Revocation must not erase history or pretend an external effect never happened. A suspected key compromise should trigger a separate retrospective integrity review. Distinguish historical validity of a signature from its continuing authority to approve a new effect. Develop and test that policy in the sandbox, but keep constitutional changes subject to the existing authenticated founder-approval process. Do not silently alter protected authority rules. |
+| source_refs | [verbatim source](intent/sources/REVOKED-DEVICE-AUTHORITY-2026-11-11-source.md); [record](intent/INTENT-20261111-REVOKED-DEVICE-AUTHORITY.json); [decision record](decisions/ADR-20261111-revoked-device-authority.md); [deliberation](collaboration/deliberation-revoked-device-authority-20261111.json) |
+| owner | Alfonso Lopez decides; the implementing session built the sandbox draft |
+| state | active; implemented as a local draft branch (`claude/revoked-device-authority-20261111` on #196's `8d205324`), not pushed |
+| binding_scope | `greg/` only: the mission fold, the DEVICE_REVOKE command, the founder-ask surfaces, the separate appraiser |
+| constitutional_constraints | changed axis: authority, narrowing only. No protected artifact is touched; a device stays a delegation; history is append-only; "keep constitutional changes subject to the existing authenticated founder-approval process" |
+| success_evidence | `tests/unit/test_greg_revoked_device_authority.py` on real bodies (copied unchanged onto `8d205324`, 42 of its 50 tests fail, the reproduction among them; 8 pass); `tests/unit/test_greg_revoked_device_review.py` (the findings of the independent review of `f35b7986`); `scripts/ci/check_revoked_device_mutants.py` |
+| failure_evidence | an action, compensation or observation dispatched after a `device.revoked` record on that key's approval; a receipt or answer changed by a revocation; a review that revokes or rewrites anything |
+| dependencies | `greg/founder.py` device delegation; the `decision.withdrawn` `voids_approval` precedent of `greg/recovery.py` and `greg/autonomy.py` |
+| conflicts | "an unpaid approve stands for the mission's lifetime" (`greg/goal_gravity.py` APPROVE_MEANS) is narrowed for a device key that is later revoked; the founder's own approvals are unchanged |
+| next_review_trigger | founder review of the draft and of the fourteen open questions in the decision record (above all: whether what a revoked device resumed is paused again, default: no; and whether the compensations of a mission it ended are rightly held, default: yes); a second independent review, of the fix round |
+| supersedes | the behaviour in which a revoked device's accepted answer kept authorizing new actions |
+| superseded_by | none |
+| implementation_refs | `greg/missions.py` (`MissionBook._revoked`, `unused_authority`), `greg/revocation.py`, `greg/body.py`, `greg/appraisal.py`, `greg/asks.py`, `greg/remote.py`, `greg/cli.py` |
+
+Product delta: after the founder revokes a phone, GREG acts on nothing the phone approved and had not yet been used for (actions, compensations and out-of-scope observations); it asks again, keeps every completed receipt, and on `--suspected-compromise` (with the revocation or later) lists everything the phone signed for the founder's review. Not changed: a mission or body the phone resumed keeps running; the status lists it. Reality: unit-tested on real bodies in a container, with per-test keys; built by two sessions of one agent. Authority delta: narrowing only. VEPMC: 0.
+
+Fix round, 2026-11-12. An independent review of `f35b7986` found the core rule sound and four defects, each reproduced before it was changed (decision record, "Independent review and fix round"). Product delta of the round: a mission the phone itself abandoned no longer runs its remaining compensations on the revoked phone's command (each waits for an approval of its own); a compensation the Gate completed before the revocation is recorded from the Gate's receipt instead of being asked again (the reading is the retained-receipt branch's, merged at `1bde5e16`, not a second one); the review no longer lists founder-approved dispatches as the phone's. The fix round itself has not been independently reviewed.
+
 ## Regular structural review and contributor orientation — 2026-11-05
 
 `INTENT-20261105-REGULAR-REVIEW` ([record](intent/INTENT-20261105-REGULAR-REVIEW.json), [verbatim source](intent/sources/REGULAR-REVIEW-2026-11-05-source.md), [deliberation](collaboration/deliberation-regular-review-20261105.json)): delete nothing; audit organization, duplication and elegance against well-organized open-source projects; improve documentation for human and agent comprehension; engage contributors on pain points; establish a regular review process. It is chat intent evidence, not founder authentication.

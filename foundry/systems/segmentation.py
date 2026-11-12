@@ -107,11 +107,25 @@ QUARANTINED = "TORN_TAIL_QUARANTINED"   # a chained record that a torn final lin
 
 
 class Journal:
-    """Append-only, hash-chained relay decisions in one JSONL file."""
+    """Append-only, hash-chained relay decisions in one JSONL file.
 
-    def __init__(self, path: Path):
+    Past ``max_records`` the oldest lines move to a sealed segment and the hot
+    file is rewritten as a ``COMPACTED`` checkpoint plus the newest
+    ``keep_records`` rows, re-chained so ``verify`` still holds. Segment files
+    together stay within ``max_segment_bytes``; past that they are deleted and
+    their bytes are folded into ``digested_head``. The hot chain stays checkable.
+    The folded payloads are then attested by that head, not stored.
+    """
+
+    def __init__(self, path: Path, *, max_records: int = 8192, keep_records: int = 1024,
+                 max_segment_bytes: int = 1_048_576):
+        if keep_records < 1 or max_records <= keep_records or max_segment_bytes < 1:
+            raise ValueError("journal retention bounds must leave a hot tail under a positive segment cap")
         self.path = Path(path)
         self.lock = threading.Lock()
+        self.max_records = max_records
+        self.keep_records = keep_records
+        self.max_segment_bytes = max_segment_bytes
 
     def append(self, entry: dict) -> dict:
         # One chain, possibly several writers (the body and its console both decide egress): the read of the head and
@@ -126,14 +140,81 @@ class Journal:
                     rows = self.read()                     # damage in a committed row raises: never append onto it
                     if moved:
                         rows.append(self._chain(rows, {"verdict": QUARANTINED, **moved}))
+                    if len(rows) >= self.max_records:
+                        rows = self._compact(rows)
                     return self._chain(rows, entry)
                 finally:
                     fcntl.flock(guard, fcntl.LOCK_UN)
 
-    def _chain(self, rows: list[dict], entry: dict) -> dict:
+    def _compact(self, rows: list[dict]) -> list[dict]:
+        """Seal the oldest rows and leave a checkpoint plus a re-chained hot tail."""
+        prefix, keep = rows[:-self.keep_records], rows[-self.keep_records:]
+        raw = self.path.read_bytes()
+        lines = [line for line in raw.split(b"\n") if line.strip()]
+        if len(lines) < len(prefix):
+            raise SegmentationError("journal compact could not find the rows it is sealing")
+        segment = b"\n".join(lines[:len(prefix)]) + b"\n"
+        digest = "sha256:" + hashlib.sha256(segment).hexdigest()
+        side = self.path.with_name(f"{self.path.name}.segment-{digest[7:23]}")
+        if side.exists() and side.read_bytes() != segment:
+            raise SegmentationError(f"{side.name} exists with other bytes")
+        if not side.exists():
+            temporary = side.with_name(side.name + ".tmp")
+            temporary.write_bytes(segment)
+            os.replace(temporary, side)
+        checkpoint = {
+            "verdict": "COMPACTED",
+            "folded": len(prefix),
+            "folded_head": prefix[-1]["hash"],
+            "segment": side.name,
+            "segment_sha256": digest,
+            "segment_retained": True,
+            "seq": 0,
+            "prev": GENESIS,
+        }
+        self._collapse_segments(checkpoint)
+        checkpoint["hash"] = "sha256:" + hashlib.sha256(
+            json.dumps(checkpoint, sort_keys=True).encode()).hexdigest()
+        chained = [checkpoint]
+        for entry in keep:
+            payload = {k: v for k, v in entry.items() if k not in ("seq", "prev", "hash")}
+            chained.append(self._link(chained, payload))
+        text = "".join(json.dumps(row, sort_keys=True) + "\n" for row in chained)
+        tmp = self.path.with_name(self.path.name + ".compact-tmp")
+        with open(tmp, "w", encoding="utf-8") as fh:
+            fh.write(text)
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.replace(tmp, self.path)
+        return chained
+
+    def _collapse_segments(self, checkpoint: dict) -> None:
+        segments = sorted(self.path.parent.glob(self.path.name + ".segment-*"))
+        total = sum(path.stat().st_size for path in segments)
+        if total <= self.max_segment_bytes:
+            return
+        head = checkpoint.get("digested_head", GENESIS)
+        count = int(checkpoint.get("digested_count") or 0)
+        for path in segments:
+            raw = path.read_bytes()
+            head = "sha256:" + hashlib.sha256(head.encode() + raw).hexdigest()
+            count += raw.count(b"\n")
+            path.unlink()
+        checkpoint["digested_head"] = head
+        checkpoint["digested_count"] = count
+        checkpoint["segment_retained"] = False
+        checkpoint.pop("segment", None)
+        checkpoint.pop("segment_sha256", None)
+
+    def _link(self, rows: list[dict], entry: dict) -> dict:
+        """The next chained row, not yet written. ``_chain`` writes it."""
         prev = rows[-1]["hash"] if rows else GENESIS
         body = {**entry, "seq": len(rows), "prev": prev}
         body["hash"] = "sha256:" + hashlib.sha256(json.dumps(body, sort_keys=True).encode()).hexdigest()
+        return body
+
+    def _chain(self, rows: list[dict], entry: dict) -> dict:
+        body = self._link(rows, entry)
         with open(self.path, "a") as fh:
             fh.write(json.dumps(body, sort_keys=True) + "\n")
         return body

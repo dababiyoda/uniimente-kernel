@@ -1153,6 +1153,7 @@ def _sense(body, loop: GoalGravityLoop, cursor: int) -> tuple[list[SignalEnvelop
     latest: dict[tuple, tuple] = {}            # one reading per (subject, attribute): the latest in ledger order
     path_changed = cursor == 0
     gate: dict = {}                            # grant_issued and witness records, read once if needed
+    closures = None                            # each appraisal bound to its closure, read once if needed
     for rec in records:
         if rec.record_type != "event":
             continue
@@ -1173,8 +1174,18 @@ def _sense(body, loop: GoalGravityLoop, cursor: int) -> tuple[list[SignalEnvelop
             trust = "attributed" if value == p["passed"] else "untrusted"
             latest[(p["mission_id"], p["check_id"])] = (rec.payload["event_id"], p["at"], rec.hash, value, trust)
         elif t == "greg.mission.appraised" and p.get("verdict") in ("VERIFIED", "REFUTED"):
-            latest[(p["mission_id"], "appraised_verified")] = (rec.payload["event_id"], rec.ts_utc, rec.hash,
-                                                               p["verdict"] == "VERIFIED", "attributed")
+            # The mission's reading is the verdict of its current closure (its achievement, or a standing mission's
+            # newest closure), as greg/appraisal.py ``standings`` binds each appraisal to the closure it judged. An
+            # appraisal of another closure of the mission, such as an earlier failure closure appraised late,
+            # moves nothing here.
+            if closures is None:
+                from greg.appraisal import standings
+                closures = standings(body.journal)
+            current = closures.current(p["mission_id"])
+            stands = current.standing if current is not None else None
+            if stands is not None and stands.event_id == rec.payload["event_id"]:
+                latest[(p["mission_id"], "appraised_verified")] = (rec.payload["event_id"], rec.ts_utc, rec.hash,
+                                                                   p["verdict"] == "VERIFIED", "attributed")
         elif t in ("greg.capability.registered", "greg.capability.state"):
             # Capability formation as perception: a capability that became usable (formed, recovered, attached)
             # or stopped being usable changes what a mission blocked on its function can do. Recorded by Genesis
@@ -1612,7 +1623,9 @@ def evidence(journal, goal_id: str) -> dict:
                   "answer_command": (_answer_row(book, rid) or {}).get("command_digest"),
                   "answer_signature_verified": signed_answer(signed, rid, _answer_row(book, rid)) is not None,
                   "answer_counted": rid in book.answers,
-                  "approve_means": _approve_means_of(book.requests[rid])}
+                  "approve_means": _approve_means_of(book.requests[rid]),
+                  # counted as history, yet authorizing nothing more: its signer device was revoked
+                  **({"answer_voided": book.voided[rid]["why"]} if rid in book.voided else {})}
                  for rid in requests],
         "mission_receipts": sorted({e.payload["receipt"] for e in journal.replay("mission.")
                                     if e.type in ("greg.mission.action", "greg.mission.observed")

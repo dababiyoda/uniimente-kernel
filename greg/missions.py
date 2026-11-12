@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import os
 
+import dataclasses
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 import hashlib
@@ -34,6 +35,7 @@ from typing import Any
 from jsonschema import Draft202012Validator, FormatChecker
 
 from greg.authority import RECEIPT_LIST_LIMIT, ActionOutcome, AuthorityOffice, text_bytes
+from greg.background import BACKGROUND_CAPABILITIES
 from greg.capabilities import CapabilityError, InvocationContext, ROUTES
 from greg.genesis import is_capability_fault
 from greg import asks, improvement, routing
@@ -403,6 +405,19 @@ def bound_value(edge: dict, output, whole=None, *, recorded_cut: bool = True):
 # Capabilities whose own adapter measures provider spend (not a worker's self-claim):
 # capability -> field of the adapter output holding the provider-reported USD.
 METERED_SPEND = {"worker.commission": "worker.cost_usd"}
+
+# ``mission.compensated`` statuses after which nothing is owed for the effect: undone through the Gate (DONE), or
+# decided by the founder (their answer to its COMPENSATION ask, or their rejection of the compensating action).
+# Any other status (REFUSED, UNAVAILABLE, UNCERTAIN) is a signed compensation that did not complete, and the
+# founder is asked about the effect.
+COMPENSATION_SETTLED = ("DONE", "FOUNDER_DECIDED", "DECLINED")
+
+
+def compensation_attempt(action_id: str, original_receipt) -> str:
+    """The attempt a compensation's one Gate proposal is derived from, with its exact scope: the strategy it undoes
+    and the receipt of the effect. The dispatch and the lookup of what the Gate kept for it name it by this one
+    function, so they cannot name two proposals."""
+    return f"compensate:{action_id}:{original_receipt}"
 
 
 def reconciliation_terms(capability: str | None, reserved: float) -> tuple[str, dict]:
@@ -909,6 +924,10 @@ class MissionState:
     # ran). A retry-safe dispatch is never reconciled, so its reservation stands.
     reserved: dict = field(default_factory=dict)
     uncertain_streak: dict = field(default_factory=dict)  # action_id -> consecutive dispatches of unknown outcome
+    ended_command: str | None = None    # digest of the command that ended the mission (ABANDONED or SUPERSEDED)
+    # Set when the device key whose command ended the mission is revoked (MissionBook._revoked): from then on a
+    # compensation the Gate had not dispatched runs only on an approval of its exact scope, never on that command.
+    compensation_hold: dict | None = None
 
     @property
     def mission_id(self):
@@ -1073,6 +1092,40 @@ def signed_answer(signed: dict, request_id: str, answer: Any) -> dict | None:
     return cmd
 
 
+# What an answer to each kind of founder ask can still authorize once it is recorded. Every ask kind raised anywhere
+# in greg/ is in exactly one class (tests/unit/test_greg_revoked_device_authority.py scans the source and pins it),
+# so a new kind cannot appear without deciding what a device revocation does to its answers.
+# - GATE_SCOPE_ASKS: an "approve" puts the ask's exact scope into the mission's ``approved_scopes``, where
+#   AuthorityOffice.act honours it for as long as it stays: an action or a compensation outside the cone or needing
+#   a human (APPROVAL), a read-only observation outside the cone (SENSOR_SCOPE).
+# - RECONCILIATION_ASKS: a reconcile_* answer settles one interrupted dispatch when the engine records it.
+# - NO_AUTHORITY_ASKS: an answer only lets the mission look again or closes the ask; with greg.asks
+#   ANSWER_ONLY_RECORDS (an answer is a record) and NOT_ANSWERABLE (no DECISION closes it), nothing to void.
+GATE_SCOPE_ASKS = ("APPROVAL", "SENSOR_SCOPE")
+RECONCILIATION_ASKS = ("RECONCILIATION",)
+NO_AUTHORITY_ASKS = ("NO_STRATEGY", "SENSOR_FAILURE", "COMPUTE", "BODY_AVAILABILITY")
+
+
+def unused_authority(request: dict, answer: dict, *, consumed: bool, reconciled: bool) -> str | None:
+    """What a recorded answer still authorizes that has not happened yet, or None (founder policy 2026-11-11: a
+    revoked device's unused authority authorizes no new effect; ``MissionBook`` voids exactly these).
+
+    - ``approval``: an approve of an ask whose scope the Gate honours (``GATE_SCOPE_ASKS``). An unpaid exact scope
+      stands for the mission's lifetime, so it is never used up; a paid one funds one run and is used once that run
+      happened (``consumed``).
+    - ``reconciliation``: a reconcile_* answer the engine has not recorded yet (``reconciled``). It would book or
+      release an interrupted dispatch, and "not executed" lets the action be dispatched again.
+
+    A rejection authorizes nothing, and neither does an answer that is only a record (greg.asks
+    ANSWER_ONLY_RECORDS) or one that only lets the mission look again (``NO_AUTHORITY_ASKS``)."""
+    kind, given = request.get("kind"), answer.get("answer")
+    if kind in GATE_SCOPE_ASKS and given == "approve" and not consumed:
+        return "approval"
+    if kind in RECONCILIATION_ASKS and str(given).startswith("reconcile_") and not reconciled:
+        return "reconciliation"
+    return None
+
+
 def answer_record(request: dict, body: dict, command_digest: str) -> dict:
     """The one shape of a ``decision.answered`` row: what ``MissionEngine.answer`` records for the signed DECISION
     ``body`` answering ``request``, and the only record the mission fold applies (re-derived from the signature,
@@ -1101,6 +1154,12 @@ class MissionBook:
     body, an unspent nonce, accepted inside its signed validity), and only if the command path's checks hold there.
     It takes effect at that acceptance. Any other row is kept in ``unverified`` and never moves a mission.
 
+    An answer a device key signed keeps its place in ``answers`` as history, but from the ledger position of that
+    key's ``device.revoked`` it authorizes nothing it had not already been used for (``unused_authority``): the
+    approved scope leaves the mission, the request counts as withdrawn and used up, and ``voided`` says which
+    revocation did it. The fold derives this from the revocation record alone, so it holds after a restart and
+    whatever else was or was not written; a later re-delegation of the key revives nothing.
+
     ``rebuild`` folds only the events retained since its previous call into the book's own state,
     then hands out copies, so callers see exactly what a fold from the first event gives (tests pin
     that) at a cost that follows new events and the number of missions, not the whole history.
@@ -1126,9 +1185,10 @@ class MissionBook:
 
     # What the fold keeps between rebuilds (#168 bd0c17dc, joined with the verified answer fold). The first seven are
     # handed to callers as copies; the rest are the fold's own.
-    _FOLD_SHOWN = ("missions", "requests", "answers", "withdrawn", "consumed", "unverified", "unverified_requests")
+    _FOLD_SHOWN = ("missions", "requests", "answers", "withdrawn", "consumed", "unverified", "unverified_requests",
+                   "voided")
     _FOLD_OWN = ("_restore", "_deficit_of", "_admitted", "_refused_commands", "_unverifiable", "_unverifiable_why",
-                 "_pending")
+                 "_pending", "_signer_of", "_reconciled", "_lifecycle_signer")
 
     def rebuild(self):
         """Fold the events retained since the previous rebuild into the book's own state, then hand out copies.
@@ -1191,6 +1251,7 @@ class MissionBook:
         self.consumed = set(state["consumed"])
         self.unverified = _own(unverified)
         self.unverified_requests = _own(state["unverified_requests"])
+        self.voided = _own(state["voided"])
 
     @property
     def _requests(self) -> dict:
@@ -1221,6 +1282,10 @@ class MissionBook:
         self._unverifiable: set[str] = set()   # DECISION digests with an acceptance record that does not verify
         self._unverifiable_why: dict[str, str] = {}   # digest -> the specific reason, when the fold knows one
         self._pending: dict = {}           # cited digest -> answer rows awaiting that DECISION's signed acceptance
+        self.voided: dict[str, dict] = {}  # request_id -> the withdrawal a device revocation made of its unused answer
+        self._signer_of: dict = {}         # DECISION digest -> (key id, principal) it was accepted from
+        self._reconciled: set[str] = set() # RECONCILIATION answers the engine has recorded (used, never voided)
+        self._lifecycle_signer: dict = {}  # LIFECYCLE digest -> (key id, principal) its acceptance record states
 
     def finish(self) -> None:
         """End of the replay: an answer row no signed DECISION it cites was accepted after is kept as data, with the
@@ -1247,8 +1312,16 @@ class MissionBook:
         time to judge a founder command against the mission state at its own ledger position. ``event_id``
         identifies a ``command.accepted`` record, where a signed DECISION's answer takes effect."""
         if kind == "command.accepted":
+            if data.get("kind") == "LIFECYCLE" and isinstance(data.get("digest"), str):
+                # Who ended a mission is read from the acceptance the body recorded for the command, on a verifying
+                # book too: ``mission.lifecycle`` itself is applied as recorded, and this reading can only hold a
+                # compensation back for a decision (_revoked), never authorize one.
+                self._lifecycle_signer[data["digest"]] = (data.get("founder_key_id"), str(data.get("signer") or ""))
             if self.verify_answers:
                 self._admit(data, event_id)
+            elif data.get("kind") == "DECISION" and isinstance(data.get("digest"), str):
+                # a replay-only stand-in applies rows as they are; it reads the signer the record states
+                self._signer_of[data["digest"]] = (data.get("founder_key_id"), str(data.get("signer") or ""))
             return
         if kind == "command.rejected":
             if isinstance(data.get("digest"), str):
@@ -1256,6 +1329,9 @@ class MissionBook:
             return
         if kind == "body.restored":
             self._restore = data      # a DECISION accepted after it is held to it (_refusal), as Body.apply holds it
+            return
+        if kind == "device.revoked":
+            self._revoked(data, event_id)
             return
         mid = data.get("mission_id")
         m = self.missions.get(mid)
@@ -1299,6 +1375,7 @@ class MissionBook:
                 m.pull = None
             if data["state"] in ("ABANDONED", "SUPERSEDED"):
                 m.status = data["state"]
+                m.ended_command = data.get("command_digest")
         elif kind == "mission.observed":
             m.observations[data["check_id"]] = data
             if m.blocker is None:     # an observation of the unblocked loop serves any pending goal pull
@@ -1358,6 +1435,12 @@ class MissionBook:
                 m.uncertain[aid] = data
             else:
                 m.uncertain.pop(aid, None)
+            if data.get("route") == "founder_reconciliation":
+                # the founder's answer about this dispatch has been recorded: it is used, whoever signed it
+                named = (data.get("reconciles") or {}).get("request_id")
+                self._reconciled |= {named} if named else {
+                    rid for rid, r in self.requests.items() if r.get("kind") == "RECONCILIATION"
+                    and r.get("mission_id") == m.mission_id and r.get("action_id") == aid and rid in self.answers}
             if data["status"] == "DONE":
                 m.actions_done += 1
                 m.spent_usd += data.get("cost_usd", 0.0)
@@ -1405,7 +1488,10 @@ class MissionBook:
             self.withdrawn[data["request_id"]] = data
             request = self.requests.get(data["request_id"])
             if data.get("voids_approval") and request:   # a restore from a backup: the approval is asked again
-                m.approved_scopes.discard(request["scope_digest"])
+                # One a device revocation voided left the mission at the revocation itself (_revoked). Its record,
+                # written afterwards, is the trail: it must not take the scope from an approval given since.
+                if data["request_id"] not in self.voided:
+                    m.approved_scopes.discard(request["scope_digest"])
                 self.consumed.add(data["request_id"])   # used up for every reader (Goal Gravity's answer_for too)
         elif kind == "decision.answered":
             self._answered(data)
@@ -1442,6 +1528,63 @@ class MissionBook:
             if request.get("action_id"):
                 m.failed[request["action_id"]] = "founder rejected: " + data.get("reason", "")[:200]
 
+    def _revoked(self, data: dict, event_id: str | None) -> None:
+        """A device key was revoked (a founder DEVICE_REVOKE, or a restore): from this record on, no answer that key
+        signed authorizes anything it had not already been used for (founder policy 2026-11-11).
+
+        Each such answer (``unused_authority``) is withdrawn here, at the revocation's own ledger position: an
+        approved scope leaves its mission, and the request counts as withdrawn and used up, so the mission asks
+        again under a new request that the founder, or a device still delegated DECISION, can answer. What the key
+        approved and was already used for is untouched: its actions, receipts and reconciliations stay as recorded,
+        and the answer stays in ``answers`` as history. A founder-key answer is never voided here, whatever key the
+        record names. Nothing later reverses it: delegating the key again revives no voided answer.
+
+        A mission that key's own LIFECYCLE command ended (ABANDONED or SUPERSEDED) stays ended, and its
+        compensations not yet dispatched are held (``MissionState.compensation_hold``)."""
+        kid = data.get("device_key_id")
+        for rid, answer in list(self.answers.items()):
+            key, principal = self._signer_of.get(answer.get("command_digest"), (None, ""))
+            if key != kid or not principal.startswith("device:") or rid in self.voided:
+                continue                     # another key's or the founder's, or one this key's revocation voided
+            request = self.requests.get(rid) or {}
+            unused = unused_authority(request, answer, consumed=rid in self.consumed,
+                                      reconciled=rid in self._reconciled)
+            if unused is None:               # used, or withdrawn before (a restore, a failed run: both use it up)
+                continue
+            approval = unused == "approval"
+            record = {
+                "request_id": rid, "mission_id": answer.get("mission_id"), "voids_answer": True,
+                **({"voids_approval": True} if approval else {}),
+                "why": (f"signed by {principal} ({kid}), a device key revoked at {data.get('at')}: "
+                        + ("its approval no longer authorizes a new dispatch" if approval else
+                           "its unrecorded reconciliation answer settles nothing")
+                        + "; what already ran under it stays as recorded, and the decision is asked again")[:400],
+                "voided_by": {"device_key_id": kid, "signer": principal, "revocation_event": event_id,
+                              "revocation_command": data.get("command_digest"),
+                              **({"restore_id": data["restore_id"]} if "restore_id" in data else {})},
+                "kind": request.get("kind"), "answer": answer.get("answer"),
+                "answer_command": answer.get("command_digest"), "at": data.get("at")}
+            self.voided[rid] = record
+            self.withdrawn[rid] = record     # every reader that honours a withdrawal honours this one
+            self.consumed.add(rid)           # the same scope returning is a new request, never this answer again
+            m = self.missions.get(answer.get("mission_id"))
+            if m is not None and approval:
+                m.approved_scopes.discard(request.get("scope_digest"))
+        # Ending a mission starts the compensations signed with its executed strategies, one Gate dispatch per turn.
+        # Those the Gate has not dispatched yet are future execution. When the command that ended the mission was
+        # this device key's, they are held from here on: each runs only on an approval of its exact scope
+        # (MissionEngine._run_compensation asks for it). The mission stays ended, and a compensation the Gate
+        # already dispatched is recorded from the Gate's record as before. The acceptance record of a command
+        # follows the lifecycle record it wrote, so the signer is looked up here, not when the mission ended.
+        for m in self.missions.values():
+            key, principal = self._lifecycle_signer.get(m.ended_command, (None, ""))
+            if m.ended_command is None or m.compensation_hold is not None or key != kid \
+                    or not principal.startswith("device:"):
+                continue                     # not ended, held by an earlier revocation, or ended by another signer
+            m.compensation_hold = {"device_key_id": kid, "signer": principal, "revocation_event": event_id,
+                                   "revocation_command": data.get("command_digest"),
+                                   "lifecycle_command": m.ended_command, "at": data.get("at")}
+
     def _admit(self, accepted: dict, event_id: str | None) -> None:
         """A signed DECISION's acceptance: the answer rows citing it count, re-derived, if the command path's own
         checks (``MissionEngine.answer``) hold here. Only at the one ``command.accepted`` record ``founder_facts``
@@ -1456,6 +1599,8 @@ class MissionBook:
             return
         self._admitted.add(digest)     # once: a byte-identical copy of the acceptance carries the same event id
         cmd = self._signed[digest]
+        # who signed it, from the verified envelope: a device's unused answer is voided when that key is revoked
+        self._signer_of[digest] = ((cmd.get("envelope") or {}).get("founder_key_id"), str(cmd.get("principal") or ""))
         for data in self._pending.pop(digest, []):
             rid = data.get("request_id")
             request = self.requests.get(rid) if isinstance(rid, str) else None
@@ -1488,6 +1633,8 @@ class MissionBook:
             return "the request was withdrawn before the DECISION's acceptance: the command path refuses it"
         if rid in self.answers:
             return "the request was already answered before this DECISION's acceptance"
+        if request.get("kind") in asks.FOUNDER_KEY_ANSWERS and cmd.get("principal") != "founder":
+            return "only the founder key answers this request: the command path refuses a device's answer"
         reconcile = str(data.get("answer")).startswith("reconcile_")
         if data.get("answer") not in DECISION_ANSWERS or reconcile != (request.get("kind") == "RECONCILIATION"):
             return "the answer does not fit the request's kind: the command path refuses it"
@@ -1531,6 +1678,9 @@ class MissionEngine:
         self.book = MissionBook(journal)
         self._stop_check = None
         self.selector = None          # the Body installs Goal Gravity here; None keeps the static order
+        # greg.background.Background when the Body's main loop runs a long adapter off its turn; None runs every
+        # dispatch inline (the Body's own tick() callers, the tests that drive a Body turn by turn)
+        self.background = None
 
     # -- founder inputs (already signature-verified by the body) ---------------
     def register(self, spec: dict, command_digest: str) -> str:
@@ -1564,11 +1714,13 @@ class MissionEngine:
                                                   "command_digest": command_digest}, key=command_digest)
         self.book.rebuild()
 
-    def answer(self, body: dict, command_digest: str):
+    def answer(self, body: dict, command_digest: str, *, signer: str = "founder"):
         rid, answer = body.get("request_id"), body.get("answer")
         request = self.book.requests.get(rid)
         if request is None or answer not in DECISION_ANSWERS:
             raise MissionError("unknown decision request or answer")
+        if request["kind"] in asks.FOUNDER_KEY_ANSWERS and signer != "founder":
+            raise MissionError(asks.FOUNDER_KEY_ANSWERS[request["kind"]])
         if rid in self.book.withdrawn:
             raise MissionError("request withdrawn: " + self.book.withdrawn[rid]["why"])
         if rid in self.book.answers:
@@ -1758,12 +1910,54 @@ class MissionEngine:
             # Goal Gravity orders the signed missions (greg.gravity.select); it never adds or drops one.
             ranked = list(dict.fromkeys(mid for mid in self.selector(order) if mid in self.book.missions))
             order = [self.book.missions[mid] for mid in ranked] + [m for m in order if m.mission_id not in ranked]
+        seen = self.background.recorded if self.background is not None else 0
         for m in order:
+            if self.background is not None and self.background.recorded != seen:
+                # A dispatch handed off earlier recorded its outcome while this turn handed off another one: the
+                # copies sorted above predate that record, so every mission is stepped from the book as it is now
+                # (integrator intake review of #273, item 1).
+                seen = self.background.recorded
+                self.book.rebuild()
+            m = self.book.missions.get(m.mission_id, m)
+            running = self.background.busy(m.mission_id) if self.background is not None else None
+            if running is not None:
+                # Its adapter is still running off the turn: the mission is not stepped (its write-ahead intent is
+                # in flight, not the trace of a body killed inside a dispatch) until the outcome is recorded.
+                summary.append({"mission_id": m.mission_id, "state": "WORKING", "action": running["action_id"],
+                                "attempt": running["attempt"], "since": iso(running["since"])})
+                continue
             if should_stop is not None and should_stop():
                 summary.append({"mission_id": m.mission_id, "state": "NOT_STEPPED", "why": "stop requested"})
                 continue
             summary.append({"mission_id": m.mission_id, **self._step(m, now)})
         return summary
+
+    def interrupt_withdrawn(self, now: datetime) -> list[dict]:
+        """Interrupt the running dispatches whose authority the founder withdrew while they ran (caller holds the turn).
+
+        A founder cancel of the mission (LIFECYCLE ABANDONED or SUPERSEDED) and the dispatched capability leaving the
+        ATTACHED state (a founder detach, or a quarantine: either makes it unusable for a new dispatch) stop its
+        adapter: the worker is terminated and its outcome recorded UNCERTAIN, then reconciled. A pause does not
+        interrupt an act the Gate already admitted (greg.background). Each interruption is recorded once."""
+        if self.background is None or not self.background.running:
+            return []
+        self.book.rebuild()
+        done = []
+        for mid, entry in sorted(self.background.running.items()):
+            m = self.book.missions.get(mid)
+            cid = entry.get("capability")
+            why = (f"the founder ended the mission ({m.status}) while its worker ran" if m is not None and m.status
+                   in ("ABANDONED", "SUPERSEDED") else
+                   f"{cid} became {self.registry.state.get(cid)} (no longer attached) while it ran"
+                   if cid is not None and cid in self.registry.manifests
+                   and self.registry.state.get(cid) != "ATTACHED" else None)
+            if why is not None and self.background.interrupt(mid, why):
+                record = {"mission_id": mid, "action_id": entry["action_id"], "attempt": entry["attempt"],
+                          "capability": cid, "why": why, "at": iso(now)}
+                self.journal.record("mission.dispatch_interrupted", record,
+                                    key=[mid, entry["action_id"], entry["attempt"], "interrupted"])
+                done.append(record)
+        return done
 
     def _ledger_reader(self):
         from greg.ventures import LedgerReader
@@ -1772,6 +1966,8 @@ class MissionEngine:
     def _context(self, m: MissionState, manifest) -> InvocationContext:
         # worker.appraise reads the ledger to bind a retained WorkOrder to its canonical commission receipt, as the
         # separate appraiser does: evidence a stopped body wrote before its receipt is never accepted (H.G11).
+        # brief.intake_status reads it to count only a recommendation GREG delivered under a receipt (review of
+        # 885b7b7a, F4: a planted pair closed the mission with no action).
         return InvocationContext(workspace=self.workspace_root / m.mission_id.replace(":", "_"),
                                  read_roots=self.read_roots, secrets=self.secrets, manifest=manifest,
                                  deliver_root=self.deliver_root, learned=improvement.learned(self.journal),
@@ -1781,7 +1977,8 @@ class MissionEngine:
                                  # commission receipt get a reader that cannot write
                                  journal=self._ledger_reader() if manifest.capability_id in ("venture.assess",
                                                                                              "daleobanks.verify",
-                                                                                             "worker.appraise")
+                                                                                             "worker.appraise",
+                                                                                             "brief.intake_status")
                                  else self.journal if manifest.capability_id in ("memory.precedents", "daleobanks.outcome")
                                  or manifest.capability_id.startswith(("artifact.", "cognition.", "pipeline.", "institution.",
                                                                        "organ.", "foundry.")) else None,
@@ -1903,6 +2100,8 @@ class MissionEngine:
     def _blocker_resolved(self, m: MissionState) -> tuple[bool, str]:
         b = m.blocker
         if b["type"] in ("decision", "reconciliation"):
+            if b["request_id"] in self.book.withdrawn:   # e.g. its signer device was revoked: the answer counts no more
+                return False, "the request was withdrawn: " + str(self.book.withdrawn[b["request_id"]].get("why"))[:200]
             answer = self.book.answers.get(b["request_id"])
             return (answer is not None, f"founder answered {answer['answer']}" if answer else "awaiting founder")
         if b["type"] == "capability":
@@ -2028,6 +2227,16 @@ class MissionEngine:
         if m.status in TERMINAL:
             if m.status == "ACHIEVED":
                 return {"state": m.status}
+            if self._recover_dispatch(m, now) is not None:
+                # The founder ended the mission before the restarted body stepped it: a dispatch the Gate claimed
+                # and the body never recorded is settled from the Gate's record first, as on a live mission. What
+                # ran is then on the mission's record, so it is compensated or reconciled like any other action.
+                self.book.rebuild()
+                m = self.book.missions[m.mission_id]
+            if (m.blocker or {}).get("type") == "reconciliation" and m.blocker["request_id"] in self.book.withdrawn:
+                # Its answer no longer counts (the device that signed it was revoked before it was recorded): the
+                # block is lifted and the same dispatch is asked about again, below, before anything is undone.
+                m = self._finish_withdrawal(m)
             if m.uncertain and self._unsettled(m) is not None:
                 # A question lost to a crash, or a reconciliation block a later decision displaced (the horizon's
                 # SCOPE_RENEWAL), is asked (an open one reused) before anything is undone.
@@ -2059,7 +2268,14 @@ class MissionEngine:
         # A shared body-level ask is not this mission's to finish: when it lapses, _shared_ask_lapsed asks about the
         # rest of the need with every candidate kept (#184).
         if m.blocker and m.blocker.get("request_id") in self.book.withdrawn and not m.blocker.get("shared_ask"):
+            reconciling = m.blocker.get("type") == "reconciliation"
             m = self._finish_withdrawal(m)
+            if reconciling:
+                # The answer about an interrupted dispatch no longer counts (its signer device was revoked before
+                # the answer was recorded): that dispatch is asked about again before anything is observed or run.
+                resumed = self._resume_unsettled(m, now)
+                if resumed is not None:
+                    return resumed
         # An open reconciliation stays the blocker past the horizon: its answer is recorded first, then renewal.
         if datetime.fromisoformat(m.cone.horizon.replace("Z", "+00:00")) <= now and \
                 (m.blocker or {}).get("type") != "reconciliation":
@@ -2154,7 +2370,16 @@ class MissionEngine:
         repaired = self._self_repair(m, now)
         if repaired is not None:
             return repaired
-        errors = set(self.sensor_errors)
+        # What this pass may pursue. A reading the evidence could not decide is not pursued (below). Neither is a
+        # check whose formed sensor capability itself faulted, whichever way the fault reached this pass (the sensor
+        # call failed, or the Mind's answer named the construction that faulted): no strategy mends the instrument
+        # that reads it, and self-repair replaces that capability on its second strike.
+        pursuable = failing - self.inconclusive - set(self.capability_faults)
+        # The pass re-observes, and pursues nothing, in two cases. Every failing check is a sensor error other than
+        # a fault the Mind named: the rule as it was, which a Mind-named fault never met because it was recorded as
+        # measured. Or nothing is left to pursue. A sensor the capability refused beside a Mind-named fault keeps
+        # its route, as it did when that fault counted as a measured failure.
+        errors = set(failing) if not pursuable or failing <= set(self.sensor_errors) - self.mind_faults else set()
         if errors and errors == failing:
             # The world was not measured; that is not a failed goal. Back off and
             # re-observe; escalate once after repeated measurement failure.
@@ -2191,7 +2416,10 @@ class MissionEngine:
         # and closes nothing. Before, it rode along with another check's real failure: its strategies were dispatched
         # and the failure closure named it as "re-observed failing" (review of #196, J1). A sensor the capability
         # refused keeps its route: a strategy may create what it reads (a catalog's offer before its discover).
-        return self._pursue(m, now, failing - self.inconclusive, evidence)
+        # A check whose formed sensor capability itself faulted is left out too (``pursuable`` above). Before, such a
+        # check rode along with another check's real failure, and the completed write that advances it was dispatched
+        # a second time, over whatever the world then held.
+        return self._pursue(m, now, pursuable, evidence)
 
     def _settle_uncertain(self, m: MissionState, s: dict, manifest, aid: str, attempt: int, scope_digest: str,
                           now: datetime, record: dict | None = None) -> dict:
@@ -2395,6 +2623,7 @@ class MissionEngine:
                     break
                 streak += 1
             if streak < 2:
+                self.awaiting_repair.add(check_id)
                 continue
             repaired, deferred = self._form(m, manifest.function, now, lambda: self.genesis.repair(
                 mission=m, capability_id=manifest.capability_id, failure=detail, params=params, now=now),
@@ -2431,6 +2660,8 @@ class MissionEngine:
         # pursued like any failing check, never certified as one: an abstaining receipt, an input not resolvable yet
         unread = self.unread = set()
         self.capability_faults = {}
+        self.mind_faults = set()        # checks whose fault the Mind's answer named (the sensor call itself was DONE)
+        self.awaiting_repair = set()    # faulted checks at their first strike: self-repair acts on the second
         self.disagreements = {}
         for check in m.current_checks():
             sensor = check["sensor"]
@@ -2496,6 +2727,15 @@ class MissionEngine:
                     failure_class = fault.get("failure_class")
                     if is_capability_fault(formed, detail, failure_class):
                         self.capability_faults[check["check_id"]] = (formed, detail, sensor.get("params", {}))
+                        # The construction that reads this check faulted, so the world was not measured. It is
+                        # recorded as a failed sensor call is: marked unmeasured and typed. Before, it was recorded
+                        # as a measured failure. Its strategy was then blamed for it, the retry path never counted
+                        # it (so nothing ever asked the founder), and a long predicate cut the fault's marker out
+                        # of the kept detail, which hid the fault from self-repair.
+                        detail = f"sensor inconclusive (capability fault): {detail}"
+                        failure_class = failure_class or "executor_error"
+                        sensor_errors.add(check["check_id"])
+                        self.mind_faults.add(check["check_id"])
                     elif failure_class in ("transient", "budget_exceeded"):
                         # The host (or a resource ceiling) stopped the construction: the world was not
                         # measured. The SENSOR_RETRY path applies; no strategy is blamed for it.
@@ -3095,13 +3335,20 @@ class MissionEngine:
         mid = m.mission_id
         required = {e.payload["action_id"] for e in self.journal.replay("mission.compensation_required")
                     if e.payload["mission_id"] == mid}
-        closed = {e.payload["action_id"] for e in self.journal.replay("mission.compensated")
+        closed = {e.payload["action_id"]: e.payload for e in self.journal.replay("mission.compensated")
                   if e.payload["mission_id"] == mid}
         strategies = {s["action_id"]: s for s in m.spec["strategies"]}
         rows, dispatched = [], False
         for action, klass in reversed(self._executed(m)):           # undo in reverse order of execution
             aid = action["action_id"]
             if aid in closed:
+                if closed[aid].get("status") not in COMPENSATION_SETTLED:
+                    # The signed compensation ran and did not complete. Its question is asked right after its
+                    # record, so a body stopped between the two kept the record and lost the question: it is asked
+                    # here, with the reasons the record kept. One ask per effect (its request id), so this records
+                    # nothing once the founder has the question, and nothing is dispatched for the effect again.
+                    self._compensation_ask(m, action, klass, now,
+                                           failure=closed[aid].get("reasons") or [closed[aid].get("status")])
                 continue
             decided = self._compensation_answer(m, action)
             if decided is not None and not decided.get("answer"):
@@ -3152,6 +3399,23 @@ class MissionEngine:
     def _run_compensation(self, m: MissionState, action: dict, klass: str, declared: dict, now: datetime) -> str:
         mid, aid, original = m.mission_id, action["action_id"], action.get("receipt")
         manifest, adapter, missing = self._resolve(declared)
+        params, target = declared.get("params", {}), declared["target"]
+        # The registered manifest names the compensation's exact scope also when its capability is detached or
+        # unavailable now, so what the Gate kept for it is found whatever the capability's state is.
+        known = manifest or self.registry.manifests.get(declared.get("capability"))
+        scope = None if known is None else self.office.scope_digest(
+            mission_id=mid, capability_id=known.capability_id, params=params, target=target,
+            consequence_class=known.consequence_class, cost_usd=0.0)
+        record = {"mission_id": mid, "action_id": aid, "capability": getattr(known, "capability_id", None),
+                  "target": target, "original_receipt": original, "scope_digest": scope}
+        settled = None if scope is None else self._dispatched_compensation(scope, aid, original)
+        if settled is not None:
+            # The Gate already dispatched this compensation and the body stopped before recording it. The Gate's
+            # record decides first, as for a strategy (_recover_dispatch), and whatever happened to the capability
+            # since. Deciding by the capability's state first said of a compensation that had completed that it
+            # "did not complete" (detached) or recorded it UNAVAILABLE with no receipt (attached, not runnable
+            # here), and hid a refusal's receipt and an unknown outcome the same way.
+            return self._record_compensation(m, action, klass, record, settled, now)
         if manifest is None:
             self._compensation_ask(m, action, klass, now, failure=[f"compensating capability {missing} is not usable"])
             return "ESCALATED"
@@ -3159,18 +3423,33 @@ class MissionEngine:
             self._compensation_ask(m, action, klass, now, failure=[
                 f"{manifest.capability_id} spends money by itself; GREG runs no unpaid compensation through it"])
             return "ESCALATED"
-        params, target = declared.get("params", {}), declared["target"]
-        scope = self.office.scope_digest(mission_id=mid, capability_id=manifest.capability_id, params=params,
-                                         target=target, consequence_class=manifest.consequence_class, cost_usd=0.0)
         if any(r["kind"] == "APPROVAL" and r["scope_digest"] == scope for r in self.book.open_requests()):
             return "WAITING"                    # the founder decides this exact scope; no re-evaluation meanwhile
-        record = {"mission_id": mid, "action_id": aid, "capability": manifest.capability_id, "target": target,
-                  "original_receipt": original, "scope_digest": scope}
         if scope in m.rejected_scopes:
             self.journal.record("mission.compensated", {**record, "status": "DECLINED", "receipt": None, "at": iso(now),
                                                         "reasons": ["founder rejected this compensating action"]},
                                 key=[mid, aid, "compensated"])
             return "DECLINED"
+        held = m.compensation_hold
+        if held is not None and scope not in m.approved_scopes:
+            # Founder policy 2026-11-11: the device key whose command ended this mission was revoked before the Gate
+            # dispatched this compensation (the lookup above found nothing for it). A revoked device's command
+            # starts no new execution, so the compensation needs a decision of its own for this exact scope. An
+            # approval that stands for the scope (the founder's, or a still delegated device's) is that decision;
+            # one the revoked key gave left the mission at the revocation.
+            self._request(m, kind="APPROVAL", scope_digest=scope, action_id=aid,
+                          why=f"compensation of {aid}: the mission was ended ({m.status}) by a command of the device "
+                              f"key {held['device_key_id']}, which was revoked at {held['at']} before this "
+                              "compensation was dispatched; a revoked device's command starts no new execution",
+                          recommendation=f"approve the compensating action signed with {aid} "
+                                         f"({manifest.capability_id} on {target}) if you want the effect undone",
+                          alternatives=["reject: the executed effect stands; nothing is run for it"],
+                          requested={"capability": manifest.capability_id, "target": target,
+                                     "consequence_class": manifest.consequence_class, "cost_usd": 0.0}, now=now,
+                          evidence={"original_receipt": original, "lifecycle": m.status, "ended_by": dict(held)},
+                          consequence="the executed effect stands; nothing is run for it", params=params,
+                          quoted=(held["signer"],), compensation=True)
+            return "WAITING"
         if m.status == "SUPERSEDED" and scope not in m.approved_scopes:
             # A successor mission may rely on this effect: undoing it is the founder's call, for this exact scope.
             self._request(m, kind="APPROVAL", scope_digest=scope, action_id=aid,
@@ -3192,7 +3471,7 @@ class MissionEngine:
             expected_outcome=f"compensation of {aid}", evidence_refs=[original] if original else [],
             # Unpaid by construction (cost 0; self-spending capabilities refused), so an overrun of the cone
             # by earlier spend is no reason to refuse undoing an effect: the budget clause sees what it adds.
-            attempt=f"compensate:{aid}:{original}", spent_usd=min(m.committed_usd, m.cone.budget_usd),
+            attempt=compensation_attempt(aid, original), spent_usd=min(m.committed_usd, m.cone.budget_usd),
             approved_scopes=m.approved_scopes)
         if outcome.status in ("OUTSIDE_SCOPE", "NEEDS_DECISION"):
             self._request(m, kind="APPROVAL", scope_digest=outcome.scope_digest, action_id=aid,
@@ -3206,9 +3485,36 @@ class MissionEngine:
                           consequence="the executed effect stands; nothing is run for it", params=params,
                           compensation=True)
             return "WAITING"
+        return self._record_compensation(m, action, klass, record, outcome, now)
+
+    def _dispatched_compensation(self, scope: str, aid: str, original) -> ActionOutcome | None:
+        """What the Gate itself holds for this compensation's one proposal; None when it never dispatched it.
+
+        A compensation writes no intent of its own before it is dispatched (a strategy writes mission.dispatching).
+        Its proposal is derived from its exact scope and the receipt it compensates, so the Gate's dispatch claim
+        and receipt are found again by that identity. A receipt is read by the office's one reader (positive: done;
+        negative: the capability's refusal with its own reason; anything else: unknown), and a claim with no
+        receipt is an unknown outcome, as in _recover_dispatch. Nothing is dispatched here, and nothing is
+        authorized by it: a compensation the Gate holds nothing for goes on to the capability, cone and approval
+        checks as before. A capability registered again under another consequence class has another scope, so a
+        dispatch made under the earlier one is not found by this lookup."""
+        proposal_id = self.office.proposal_id(scope, compensation_attempt(aid, original))
+        claim, receipt = self.office.prior(proposal_id)
+        if claim is None:
+            return None
+        base = dict(proposal_id=proposal_id, scope_digest=scope)
+        if receipt is not None:          # a compensation is unpaid by construction, so no cost is booked for it
+            return self.office.outcome_of(
+                receipt, cost_usd=0.0,
+                reused="retained receipt of a compensation the body did not record before it stopped", **base)
+        return ActionOutcome("UNCERTAIN", ["dispatch claimed without receipt; the body stopped inside it, so its "
+                                           "outcome is unknown"], grant_id=claim.payload.get("grant_id"), **base)
+
+    def _record_compensation(self, m: MissionState, action: dict, klass: str, record: dict, outcome, now) -> str:
+        """Record one Gate outcome of a compensation, once (its fact key), and ask about one that did not complete."""
         self.journal.record("mission.compensated", {**record, "status": outcome.status, "receipt": outcome.receipt_hash,
                                                     "reasons": [str(r)[:300] for r in outcome.reasons], "at": iso(now)},
-                            key=[mid, aid, "compensated"])
+                            key=[record["mission_id"], record["action_id"], "compensated"])
         if outcome.status != "DONE":            # refused, unavailable or uncertain: never blind-retried
             self._compensation_ask(m, action, klass, now, failure=outcome.reasons)
         return outcome.status
@@ -3416,6 +3722,15 @@ class MissionEngine:
             candidates.append((neg_expected, route, index, s, estimate))
         if not candidates and prepare_for is not None:
             return {"state": "NOTHING_TO_PREPARE"}
+        waits_on = {c for cs in held.values() for c in cs}
+        if not candidates and held and waits_on <= set(getattr(self, "awaiting_repair", ())):
+            # Every remaining route waits only on a check whose formed sensor capability faulted for the first time
+            # in a row. Self-repair replaces that capability on its second strike, so the mission looks again
+            # instead of asking the founder for a strategy; before, it asked and withdrew the question two passes
+            # later. A fault self-repair does not act on (a second strike it left alone) is not in the set, and
+            # the question below is asked as before.
+            self._schedule(m, now, 30)
+            return {"state": "SENSOR_RETRY", "checks": sorted(waits_on)}
         if not candidates:
             key = sha256_json({"failing": sorted(failing), "failed": sorted(m.failed), "excluded": sorted(m.excluded)})
             split = {c: v for c, v in sorted(getattr(self, "disagreements", {}).items()) if c in failing}
@@ -3469,7 +3784,12 @@ class MissionEngine:
                 # A check the evidence could not decide is not pursued, so it is not in ``failing``; the closure
                 # still names it as unmeasured, as the ask does (review of #209 by a separate session, F1).
                 unread = failing & (set(getattr(self, "sensor_errors", ())) | set(getattr(self, "unread", ())))
-                if not split and failing - unread:
+                # One failure closure per completed-action count, as a hold is recorded once. The mission reaches
+                # this point again at a later time when a blocker in between was lifted (its sensor detached, then
+                # attached again); recording the closure a second time under the same identity with a new time was
+                # refused by the journal, and that refusal crashed every later tick.
+                closed = self.journal.retained("mission.unmet", [m.mission_id, "unmet", m.actions_done]) is not None
+                if not split and failing - unread and not closed:
                     self.journal.record("mission.unmet", {
                         "mission_id": m.mission_id, "failing_checks": sorted(failing - unread),
                         **({"unmeasured_checks": sorted(unread | unmeasured)} if unread | unmeasured else {}),
@@ -3537,23 +3857,53 @@ class MissionEngine:
         # A founder-signed SOP pre-approval covers exactly this step's final scope: the one dispatched,
         # after any budget cap, so a pre-approval never covers a scope it did not name.
         signed = frozenset({scope}) if pre_approved(m.spec, s, manifest) else frozenset()
-        outcome = self.office.act(
-            mission_id=m.mission_id, cone=m.cone, command_digest=m.command_digest, manifest=manifest,
-            adapter=adapter, ctx=self._context(m, manifest), params=bound_params, target=s["target"],
-            cost_usd=float(s.get("cost_usd", 0.0)), expected_outcome=s.get("expected_outcome", "strategy executed"),
-            evidence_refs=evidence + [r for r in sources if r not in evidence], attempt=attempt,
-            spent_usd=m.committed_usd, approved_scopes=m.approved_scopes,
-            evidence_confidence=float(s.get("evidence_confidence", 1.0)), signed_scopes=signed)
-        if (manifest.capability_id == "worker.commission" and outcome.status == "DONE"
-                and isinstance(outcome.output, dict) and outcome.output.get("status") == "UNCERTAIN"):
-            # Extracted from #157 (#184): the Gate completed collection, but the cancellable worker stopped after
-            # possible partial effects and spend. Keep its receipt and route it through the same no-blind-retry
-            # reconciliation as any uncertain act, with the signed cap reserved.
-            outcome.status = "UNCERTAIN"
-            outcome.reasons = ["worker execution interrupted; partial outcome and spend require reconciliation"]
-        return self._record_outcome(m, s, manifest, outcome, attempt=attempt, routing_decision=routing_decision,
-                                    input_bindings=input_bindings, bindings=bindings, budget_capped=budget_capped,
-                                    prepare_for=prepare_for, now=now, bound_params=bound_params)
+        background = self.background if manifest.capability_id in BACKGROUND_CAPABILITIES else None
+        ctx = self._context(m, manifest)
+        if background is not None:
+            # Read from inside the adapter while the turn goes on: a lock-free predicate (the turn's stop check
+            # can read the inbox, which writes the ledger).
+            ctx = dataclasses.replace(ctx, stop_check=background.stop_for(m.mission_id))
+
+        def act(wrap):
+            return self.office.act(
+                mission_id=m.mission_id, cone=m.cone, command_digest=m.command_digest, manifest=manifest,
+                adapter=adapter, around=wrap, ctx=ctx, params=bound_params, target=s["target"],
+                cost_usd=float(s.get("cost_usd", 0.0)),
+                expected_outcome=s.get("expected_outcome", "strategy executed"),
+                evidence_refs=evidence + [r for r in sources if r not in evidence], attempt=attempt,
+                spent_usd=m.committed_usd, approved_scopes=m.approved_scopes,
+                evidence_confidence=float(s.get("evidence_confidence", 1.0)), signed_scopes=signed)
+
+        def finish(outcome, off_turn: bool):
+            mission, when = m, now
+            if off_turn:   # recorded after other turns ran: the mission as the ledger holds it now, at this time
+                self.book.rebuild()
+                mission, when = self.book.missions[m.mission_id], background.clock()
+            if off_turn and outcome.status == "DONE" and background.interrupted.get(m.mission_id):
+                # The founder withdrew this dispatch's authority while it ran (mission.dispatch_interrupted) and the
+                # adapter finished before it saw the stop: it is reconciled like any interrupted worker, never
+                # recorded as an ordinary success after its interruption (#273 re-review A).
+                outcome.status = "UNCERTAIN"
+                outcome.reasons = ["interrupted by the founder while it ran; it finished before it saw the stop, "
+                                   "so its outcome and spend require reconciliation"]
+            if (manifest.capability_id == "worker.commission" and outcome.status == "DONE"
+                    and isinstance(outcome.output, dict) and outcome.output.get("status") == "UNCERTAIN"):
+                # Extracted from #157 (#184): the Gate completed collection, but the cancellable worker stopped
+                # after possible partial effects and spend. Keep its receipt and route it through the same
+                # no-blind-retry reconciliation as any uncertain act, with the signed cap reserved.
+                outcome.status = "UNCERTAIN"
+                outcome.reasons = ["worker execution interrupted; partial outcome and spend require reconciliation"]
+            return self._record_outcome(mission, s, manifest, outcome, attempt=attempt,
+                                        routing_decision=routing_decision, input_bindings=input_bindings,
+                                        bindings=bindings, budget_capped=budget_capped, prepare_for=prepare_for,
+                                        now=when, bound_params=bound_params)
+
+        if background is None:
+            return finish(act(lambda a: a), False)
+        result = background.dispatch(m.mission_id, aid, attempt, act, finish, capability=manifest.capability_id)
+        if result is None:   # the adapter runs off the turn; the mission is WORKING until its outcome is recorded
+            return {"state": "WORKING", "action": aid, "attempt": attempt}
+        return result
 
     def _recover_dispatch(self, m: MissionState, now: datetime) -> dict | None:
         """Settle a dispatch this body began but never recorded, before anything else is decided.
@@ -3581,14 +3931,10 @@ class MissionEngine:
                 # observation nothing to close over, so observation decides first, as it did before this recovery.
                 continue
             base = dict(proposal_id=intent["proposal_id"], scope_digest=intent["scope_digest"])
-            if receipt is not None:
-                result = receipt.payload.get("result") or {}
-                outcome = ActionOutcome(
-                    "DONE" if result.get("result_class") == "positive" else "REFUSED",
-                    ["retained receipt of a dispatch the body did not record before it stopped"]
-                    if result.get("result_class") == "positive" else [result.get("observed_outcome", "failed")],
-                    output=result.get("output"), receipt_hash=receipt.hash, grant_id=receipt.payload.get("grant_id"),
-                    cost_usd=float(s.get("cost_usd", 0.0)), **base)
+            if receipt is not None:      # read as the office reads every receipt: its result decides, not its existence
+                outcome = self.office.outcome_of(
+                    receipt, cost_usd=float(s.get("cost_usd", 0.0)),
+                    reused="retained receipt of a dispatch the body did not record before it stopped", **base)
             else:
                 outcome = ActionOutcome("UNCERTAIN", ["dispatch claimed without receipt; the body stopped inside "
                                                       "it, so its outcome is unknown"],
@@ -3606,6 +3952,17 @@ class MissionEngine:
         scope the dispatch bound (its mcp.act reach and an ask's move digest are read from it)."""
         bound_params = bound_params if bound_params is not None else dict(s.get("params") or {})
         aid = s["action_id"]
+        if (manifest.capability_id == "worker.commission" and outcome.status == "DONE"
+                and isinstance(outcome.output, dict) and outcome.output.get("status") == "UNCERTAIN"):
+            # Extracted from #157 (#184): the Gate completed collection, but the cancellable worker stopped after
+            # possible partial effects and spend. Keep its receipt and route it through the same no-blind-retry
+            # reconciliation as any uncertain act, with the signed cap reserved. Read here, where every outcome is
+            # recorded: in the dispatch alone, a body stopped between that receipt and this record recovered the
+            # receipt as an ordinary DONE, booked the signed cap as spent and asked for no reconciliation. (The
+            # dispatch keeps its own, now redundant, copy of this rule so this change leaves the dispatch site
+            # as it was: PR #273 restructures that site, and the two then merge without a conflict there.)
+            outcome.status = "UNCERTAIN"
+            outcome.reasons = ["worker execution interrupted; partial outcome and spend require reconciliation"]
         record = {"mission_id": m.mission_id, "action_id": aid, "attempt": attempt, "status": outcome.status,
                   "reasons": [str(r)[:300] for r in outcome.reasons], "receipt": outcome.receipt_hash,
                   "capability": manifest.capability_id, "route": manifest.route,

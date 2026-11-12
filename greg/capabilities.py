@@ -690,7 +690,9 @@ def chrome_candidates() -> list[str]:
 def chrome_binary() -> str:
     """The browser GREG drives: an installed Chrome/Chromium (founder-chosen via GREG_CHROMIUM)."""
     found = chrome_candidates()
-    return found[0] if found else CHROME_CANDIDATES[0]
+    if not found:       # a refusal, not a path that does not exist (whose FileNotFoundError the Gate cannot type)
+        raise CapabilityError(NO_BROWSER)
+    return found[0]
 
 
 def browser_installed() -> tuple[bool, str]:

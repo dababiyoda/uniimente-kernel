@@ -232,6 +232,25 @@ conflict, a difference measured inside one envelope between the head and the mer
 written by an earlier renderer is not re-judged by a later one: the appraiser says it is stale and a fresh
 recommendation is needed.
 
+After the independent review of 885b7b7a (2026-11-12; renderer `greg.intake.render/3`):
+
+- the sensor counts only a recommendation GREG delivered: a `brief.intake` receipt on the canonical ledger names the
+  file, and the file is still what that receipt renders (the appraiser's own `verify_delivery`). A pair planted in the
+  delivery folder, however exact, is counted apart as `not_delivered_by_greg` and closes nothing; the engine and the
+  appraiser hand the sensor a ledger it can read and not write;
+- a test file a head renamed, copied or turned into a link is run (rename and copy detection are off in the listing,
+  on both callers);
+- git reads only the named repository: no search upward from a plain directory, and a `.git` file, a worktree's
+  repository or an alternate object store outside the read roots is refused, as is a configuration include;
+- a head that contains a held head is held; when a textual conflict depends on the listed order, the head merged
+  first says so beside its recommendation;
+- check results are read check name by check name (a check with results only for another head holds the unit),
+  `in_progress`, `queued`, `pending` are running, `cancelled`, `skipped`, `neutral` are no result (only those for a
+  revision: not checked), a head is named by its full SHA or a prefix of at least 12 hex digits, "success" and
+  "N passed" read as a pass, and a claim this run contradicts keeps the unit from ready;
+- a STOP during a run delivers nothing, a run stopped by STOP or by the output ceiling is never "refused before it
+  ran", and one invocation has a time budget of an hour across all its files.
+
 It approves nothing. Composing heads for development and approving a protected merge are separate boundaries: the
 mission composes in scratch and writes a file; protected integration needs the founder's and the integrator's
 approval. By default the delivery itself stops at a founder approval; `--preauthorize-delivery` signs it into the

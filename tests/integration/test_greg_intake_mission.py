@@ -336,3 +336,55 @@ def test_real_tests_in_the_real_envelope_find_the_conflict_and_the_recipe_agrees
     by_hand = json.loads((tmp_path / "by-hand.json").read_text())
     assert by_hand["behavioural_conflicts"] == report["behavioural_conflicts"]
     assert by_hand["merge_order"] == ["steeper", "consumer"]
+
+
+def test_a_pair_planted_in_the_delivery_folder_before_the_mission_closes_nothing(tmp_path, monkeypatch):
+    """Review of 885b7b7a, F4: a hand-written Markdown file and twin naming this request, in the delivery folder
+    before the mission arrived, closed it ACHIEVED with no action and the appraiser VERIFIED that closure. GREG
+    delivered neither file, so the sensor counts neither: the mission asks for its delivery as any other would, and
+    closes on its own receipted file, which is what the appraiser then re-observes."""
+    import hashlib
+    monkeypatch.setattr(workers, "run_tests", Script())
+    home, key, body_id, repo, shas = start(tmp_path)
+    spec = spec_for(repo, shas, ["label"])
+    folder = Layout(home).home / "deliveries" / "briefs"
+    folder.mkdir(parents=True, exist_ok=True)
+    planted = folder / "2026-11-12-intake-brief.md"
+    planted.write_text("# Intake recommendation\n\n| label | ready to take |\n")
+    asked = spec["strategies"][0]["params"]
+    planted.with_suffix(".json").write_text(json.dumps({
+        "markdown": planted.name, "markdown_sha256": hashlib.sha256(planted.read_bytes()).hexdigest(),
+        "request": asked, "request_digest": intake.digest(asked)}))
+    drop(home, signed(key, body_id, "MISSION", spec))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        assert ticks(body, clock) == ["WAITING"]
+        reading = [e.payload for e in body.journal.replay("mission.observed")][-1]
+        output = body.ledger.find(reading["receipt"]).payload["result"]["output"]
+        assert output["matching"] == 0 and output["not_delivered_by_greg"] == 1
+        [request] = open_requests(body)
+        assert request["kind"] == "APPROVAL" and actions(body, spec["mission_id"]) == []
+        drop(home, signed(key, body_id, "DECISION", {"request_id": request["request_id"], "answer": "approve"}))
+        assert ticks(body, clock, 2) == ["ACTED", "ACHIEVED"]
+        assert actions(body, spec["mission_id"]) == [("deliver-intake-recommendation", "DONE")]
+        [verdict] = appraisals(body, spec["mission_id"])
+        assert verdict["verdict"] == "VERIFIED" and verdict["findings"] == [], verdict["findings"]
+        assert verdict["checks"]["world_reobserved"] is True
+
+
+def test_a_malformed_intake_file_is_one_line_of_error(tmp_path, capsys):
+    """Review of 885b7b7a, F16: a file that is not JSON printed a traceback."""
+    from greg import cli
+    home, _, _, _, _ = start(tmp_path)
+    base = ["--home", str(home), "mission", "new", "intake-recommendation", "--key", str(tmp_path / "founder.pem"),
+            "--no-passphrase"]
+    bad = tmp_path / "bad.json"
+    for text in ("{not json", "\udcff"):
+        bad.write_bytes(text.encode("utf-8", "surrogateescape"))
+        assert cli.main(base + ["--intake", str(bad)]) == 2
+        err = capsys.readouterr().err.strip()
+        assert "Traceback" not in err and len(err.splitlines()) == 1 and "--intake" in err, err
+    assert cli.main(base + ["--intake", str(tmp_path / "missing.json")]) == 2
+    err = capsys.readouterr().err.strip()
+    assert "Traceback" not in err and len(err.splitlines()) == 1 and "--intake" in err, err

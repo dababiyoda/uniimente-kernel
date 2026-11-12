@@ -259,8 +259,8 @@ def test_a_unit_left_out_for_a_textual_conflict_was_not_tested_in_the_merge_and_
     path, shas = repo
     out = run(tmp_path, path, shas, ["steeper", "flat"], Script(), monkeypatch)
     assert out["inputs"]["rehearsal"]["textual_conflicts"] == {"flat": ["pkg.py", "tests/test_base.py"]}
-    assert out["recommendations"] == {
-        "steeper": "ready to take",
+    assert out["recommendations"] == {      # which of the two is left out depends on the order: steeper says so too
+        "steeper": "ready to take (in the listed order; flat, listed after it, conflicts with it textually and is held)",
         "flat": "hold: textual conflict with what was merged before it, in pkg.py, tests/test_base.py"}
     text = Path(out["path"]).read_text()
     assert "| flat | `tests/test_base.py` | passed | not run (the unit was left out of the merge for a textual " \
@@ -316,8 +316,8 @@ def test_each_case_lands_in_its_section_with_its_word(full):
     assert "The mission listed the units as steeper, consumer, label2, label" in order
     # (c) textual conflicts, and how each was treated
     textual = section(text, "3. Textual conflicts")
-    assert "- **flat** was left out of the merged tree: it conflicts with what was merged before it in `pkg.py`, " \
-           "`tests/test_base.py`" in textual
+    assert "- **flat** was left out of the merged tree: it conflicts with what was merged before it (directly with " \
+           "steeper; which of them is left out depends on the listed order) in `pkg.py`, `tests/test_base.py`" in textual
     assert "Merged, in this order: steeper, consumer, label2, label, broken, slow, old." in textual
     # (d) the behavioural conflict a clean merge does not reveal: the test, whose test it is, and the named cause
     behavioural = section(text, "4. Behavioural conflicts a clean merge does not reveal")
@@ -647,7 +647,7 @@ def test_a_file_from_another_renderer_is_not_judged_but_sent_back_for_a_fresh_re
     old["inputs"]["renderer"] = "greg.intake.render/1"
     old["inputs_digest"] = intake.digest(old["inputs"])
     ok, why = intake.verify_delivery(old, tmp_path / "out")
-    assert ok is False and why == ("rendered by greg.intake.render/1; this appraiser renders greg.intake.render/2: the "
+    assert ok is False and why == ("rendered by greg.intake.render/1; this appraiser renders greg.intake.render/3: the "
                                    "file is not re-derivable here, so a fresh recommendation is needed, not a verdict "
                                    "on it")
     assert intake.verify_delivery(out, tmp_path / "out")[0] is True
@@ -681,21 +681,28 @@ def test_a_second_delivery_never_overwrites_the_first(repo, tmp_path, monkeypatc
     assert Path(other["twin"]).name == Path(other["path"]).name.replace(".md", ".json")
 
 
-def status(tmp_path, digest, **more) -> dict:
+def status(tmp_path, digest, *, ledger=None, **more) -> dict:
     ctx = InvocationContext(workspace=tmp_path / "workspace", read_roots=(), secrets=None,
-                            manifest=BUILTINS["brief.intake_status"][0], deliver_root=tmp_path / "out")
+                            manifest=BUILTINS["brief.intake_status"][0], deliver_root=tmp_path / "out", journal=ledger)
     return intake.intake_status({"request_digest": digest, **more}, ctx)
 
 
 def test_the_sensor_counts_only_an_intact_recent_recommendation_for_exactly_this_request(repo, tmp_path, monkeypatch):
     path, shas = repo
+    receipts = []
+
+    def status(tmp_path, digest, **more):                    # every delivery below was receipted, as the Gate does
+        return globals()["status"](tmp_path, digest, ledger=Ledger(receipts), **more)
     mine = intake.request_digest(params(path, shas, ["label"]))
     assert status(tmp_path, mine) == {"kind": "intake", "request_digest": mine, "matching": 0, "for_other_requests": 0,
-                                      "too_old": 0, "unusable": 0, "latest": None, "age_hours": None}
+                                      "too_old": 0, "unusable": 0, "not_delivered_by_greg": 0, "latest": None,
+                                      "age_hours": None}
     other = run(tmp_path, path, shas, ["consumer"], Script(), monkeypatch)        # a recommendation about other heads
+    receipts.append(other)
     assert status(tmp_path, mine)["matching"] == 0 and status(tmp_path, mine)["for_other_requests"] == 1
     assert status(tmp_path, other["request_digest"])["matching"] == 1
     out = run(tmp_path, path, shas, ["label"], Script(), monkeypatch)
+    receipts.append(out)
     seen = status(tmp_path, mine)
     assert seen["matching"] == 1 and seen["latest"] == Path(out["path"]).name and seen["sha256"] == out["sha256"]
     assert seen["for_other_requests"] == 1
@@ -732,7 +739,7 @@ def test_the_recipe_is_the_command_line_that_repeats_this_run(repo, tmp_path, mo
         "python", "scripts/compose_rehearsal.py", "--repo", str(path), "--base", shas["base"],
         "--unit", f"steeper={shas['steeper']}", "--unit", f"consumer={shas['consumer']}", "--union", "steps.txt",
         "--timeout", "60"]
-    assert f"Composed tree: `{out['inputs']['composed_tree']}`" in text
+    assert f"Composed tree id: `{out['inputs']['composed_tree']}`" in text
     named = intake.request({**params(path, shas, ["label"]),
                             "units": [{"name": "label", "sha": shas["label"], "tests": ["tests/test_base.py"]}]})
     assert "--tests label=tests/test_base.py" in intake.recipe(named)
@@ -746,3 +753,385 @@ def test_the_rehearsal_module_starts_no_test_itself(repo, tmp_path):
         intake_rehearsal.rehearse(path, shas["base"], [intake_rehearsal.Unit("label", shas["label"])], [], 30,
                                   tmp_path / "scratch")
     assert not hasattr(intake_rehearsal, "run_tests") and "import sys" not in Path(intake_rehearsal.__file__).read_text()
+
+
+# -- the independent review of 885b7b7a (2026-11-12): each finding, pinned -------------------------------------------
+
+class Ledger:
+    """What the sensor is handed: a read-only view of the canonical ledger (``greg.ventures.LedgerReader`` has the
+    same shape). ``outputs`` are what ``brief.intake`` returned, each kept under a Gate witness and receipt, as the
+    Consequence Gate writes them; ``other`` are receipts of another capability."""
+
+    def __init__(self, outputs=(), *, other=()):
+        from types import SimpleNamespace as Record
+        self.records = {"witness": [], "receipt": []}
+        for index, (capability, output) in enumerate([("brief.intake", o) for o in outputs]
+                                                     + [("fs.read", o) for o in other]):
+            self.records["witness"].append(Record(payload={"witness_id": f"w{index}", "capability": capability}))
+            self.records["receipt"].append(Record(payload={"witness_id": f"w{index}", "result": {
+                "result_class": "positive", "output": output}}))
+        self.ledger = self
+
+    def by_type(self, record_type):
+        return list(self.records.get(record_type, []))
+
+
+def test_a_pair_in_the_delivery_folder_that_greg_did_not_deliver_closes_nothing(repo, tmp_path, monkeypatch):
+    """F4. A hand-written Markdown file and twin, planted before the mission arrived, closed it ACHIEVED and the
+    appraiser VERIFIED it, with no action. The sensor now counts only a recommendation that GREG delivered under a
+    Gate receipt (``brief.intake``'s witness on the canonical ledger) and that is still exactly what that receipt
+    renders (the appraiser's own ``verify_delivery``). A copy re-derivable byte for byte but not receipted is not
+    GREG's delivery; without the ledger the sensor refuses rather than guess."""
+    path, shas = repo
+    out = run(tmp_path, path, shas, ["label"], Script(), monkeypatch)
+    mine = out["request_digest"]
+    folder = tmp_path / "out" / "briefs"
+    md, twin = Path(out["path"]), Path(out["twin"])
+    # the probe's pair: a Markdown file and a twin naming this request, with no inputs
+    planted = folder / "2026-01-01-intake-brief.md"
+    planted.write_text("# Intake recommendation\n\n| label | ready to take |\n")
+    planted.with_suffix(".json").write_text(json.dumps({
+        "markdown": planted.name, "markdown_sha256": hashlib.sha256(planted.read_bytes()).hexdigest(),
+        "request": out["inputs"]["request"], "request_digest": mine}))
+    # a re-derivable copy under another name: every byte is what the receipt's inputs render, and GREG wrote none
+    copy = folder / "2026-01-02-intake-brief.md"
+    copy.write_bytes(md.read_bytes())
+    copy.with_suffix(".json").write_bytes(intake.twin_bytes(out["inputs"], md.read_text(), copy.name))
+    seen = status(tmp_path, mine, ledger=Ledger())
+    assert seen["matching"] == 0 and seen["latest"] is None
+    assert seen["not_delivered_by_greg"] == 3                    # the planted pair, the copy and GREG's own (unreceipted)
+    # a receipt of another capability with the same output shape is not a delivery of this one
+    assert status(tmp_path, mine, ledger=Ledger(other=[out]))["matching"] == 0
+    seen = status(tmp_path, mine, ledger=Ledger([out]))
+    assert seen["matching"] == 1 and seen["latest"] == md.name and seen["not_delivered_by_greg"] == 2
+    # the receipted file, edited after delivery: no longer what its receipt renders
+    md.write_text(md.read_text() + "\nall good\n")
+    twin.write_bytes(intake.twin_bytes(out["inputs"], md.read_text(), md.name))   # even with a matching twin
+    seen = status(tmp_path, mine, ledger=Ledger([out]))
+    assert seen["matching"] == 0 and seen["unusable"] == 1
+    with pytest.raises(CapabilityError, match="canonical ledger"):
+        status(tmp_path, mine)
+
+
+def test_the_engine_and_the_appraiser_hand_the_sensor_a_ledger_it_cannot_write(tmp_path):
+    from greg import appraisal, missions
+    source = Path(missions.__file__).read_text()
+    assert '"brief.intake_status"' in source.split("def _context", 1)[1].split("def ", 1)[0]
+    assert "brief.intake_status" in Path(appraisal.__file__).read_text().split("cap in REOBSERVABLE", 1)[1][:2000]
+
+
+def test_a_renamed_copied_or_retyped_test_file_is_run_by_both_callers(repo, tmp_path, monkeypatch):
+    """F5. ``--diff-filter=AM`` with git's rename detection on dropped a renamed-and-edited test file: neither run nor
+    listed. The listing turns rename and copy detection off, so a renamed or copied file is an added one, and takes a
+    type change too. The command line reads the same function."""
+    path, shas = repo
+    big = "import pkg\n\n" + "".join(f"\ndef test_p{i}():\n    assert pkg.price({i}) == {2 * i}\n" for i in range(30))
+    (path / "tests" / "test_base.py").write_text(big)
+    git(path, "add", "-A")
+    git(path, "commit", "-qm", "prep")
+    shas["base"] = git(path, "rev-parse", "HEAD")
+    git(path, "config", "diff.renames", "copies")                    # a person's configuration, the command line's git
+    git(path, "checkout", "-q", "-b", "mover")
+    git(path, "mv", "tests/test_base.py", "tests/test_pricing.py")
+    (path / "tests" / "test_pricing.py").write_text(big.replace("== 4", "== 5"))
+    (path / "tests" / "test_copied.py").write_text(big)
+    (path / "tests" / "real.py").write_text("def test_r():\n    assert True\n")
+    git(path, "add", "-A")
+    git(path, "commit", "-qm", "mover")
+    shas["mover"] = git(path, "rev-parse", "HEAD")
+    git(path, "checkout", "-q", "-b", "retyped", shas["base"])
+    (path / "tests" / "test_base.py").unlink()
+    os.symlink("real.py", path / "tests" / "test_base.py")
+    (path / "tests" / "real.py").write_text("def test_r():\n    assert True\n")
+    git(path, "add", "-A")
+    git(path, "commit", "-qm", "retyped")
+    shas["retyped"] = git(path, "rev-parse", "HEAD")
+    git(path, "checkout", "-q", "base")
+    assert "R" in git(path, "diff", "--name-status", shas["base"], shas["mover"])     # git itself calls it a rename
+    assert intake_rehearsal.changed_tests(path, shas["base"], shas["mover"]) == ["tests/test_copied.py",
+                                                                                 "tests/test_pricing.py"]
+    assert intake_rehearsal.changed_tests(path, shas["base"], shas["retyped"]) == ["tests/test_base.py"]
+    script = Script()
+    out = run(tmp_path, path, shas, ["mover", "retyped"], script, monkeypatch)
+    assert ("own-mover", "tests/test_pricing.py", "supervised") in script.calls
+    assert ("own-retyped", "tests/test_base.py", "supervised") in script.calls
+    assert out["inputs"]["skipped_tests"] == {"mover": [], "retyped": []}
+
+
+def test_git_reads_only_the_named_repository_inside_the_read_roots(tmp_path, monkeypatch):
+    """F6. The path was inside the read roots, and git read a repository outside them: by searching upward from a
+    plain directory, through a ``.git`` file, or through an alternate object store. Each is refused, and a linked
+    worktree whose repository is inside the roots still works."""
+    outer = tmp_path / "outside" / "repo"
+    shas = build_repo(outer)
+    monkeypatch.setattr(workers, "run_tests", Script())
+    granted = outer / "granted"
+    granted.mkdir()
+    cases = {"a plain directory inside a repository": (granted, granted)}
+    pointer = tmp_path / "b" / "repo"
+    pointer.mkdir(parents=True)
+    (pointer / ".git").write_text(f"gitdir: {outer / '.git'}\n")
+    cases["a .git file pointing outside"] = (pointer, pointer.parent)
+    alternate = tmp_path / "c" / "repo"
+    alternate.mkdir(parents=True)
+    git(alternate, "init", "-q")
+    (alternate / ".git" / "objects" / "info" / "alternates").write_text(str(outer / ".git" / "objects") + "\n")
+    cases["an alternate object store outside"] = (alternate, alternate.parent)
+    included = tmp_path / "d" / "repo"
+    shutil.copytree(outer, included, symlinks=True)
+    git(included, "config", "include.path", str(tmp_path / "elsewhere.cfg"))
+    cases["a configuration include"] = (included, included.parent)
+    for why, (where, root) in cases.items():
+        ctx = context(tmp_path / why.replace(" ", "-"), read_root=root)
+        with pytest.raises(CapabilityError, match="outside the read roots|not a git repository|includes"):
+            intake.intake_recommendation(params(where, shas, ["label"]), ctx)
+    linked = tmp_path / "e"
+    shutil.copytree(outer, linked / "repo", symlinks=True)
+    git(linked / "repo", "worktree", "add", "-q", str(linked / "tree"), shas["label"])
+    out = intake.intake_recommendation(params(linked / "tree", shas, ["label"]), context(tmp_path / "e-ctx",
+                                                                                        read_root=linked))
+    assert out["recommendations"] == {"label": "ready to take"}
+
+
+def test_a_head_that_contains_a_held_head_is_held_too(repo, tmp_path, monkeypatch):
+    """F7. ``label2`` contains ``label``. With ``label`` held, ``label2`` was "take after label": taking it takes
+    ``label``'s held code. It inherits the hold, and says from which head."""
+    path, shas = repo
+    claims = {"label": {"head_sha": shas["label"],
+                        "checks": [{"name": "ci", "head_sha": shas["label"], "conclusion": "failure"}]}}
+    out = run(tmp_path, path, shas, ["label", "label2"], Script(), monkeypatch, claims=claims)
+    assert out["recommendations"]["label"] == "hold: a check failed for this revision"
+    assert out["recommendations"]["label2"] == ("hold: it contains label, which is held (a check failed for this "
+                                                "revision); taking it takes that code")
+
+
+def test_a_stop_during_the_last_run_delivers_nothing(repo, tmp_path, monkeypatch):
+    """F8. STOP pressed while the merged tree's test ran: the run ended "refused", nothing checked STOP afterwards,
+    and the recommendation was delivered with that file "refused before it ran"."""
+    path, shas = repo
+    stopped = []
+
+    def run_tests(tests, cwd, *, timeout, stop_check=None, confinement="required"):
+        if Path(cwd).name == "composed":
+            stopped.append(True)
+            return [{**outcome("refused", tests[0][-1], timeout),
+                     "tail": "acceptance confinement refused: stop requested; worker and its process namespace "
+                             "terminated"}]
+        return [outcome("pass", tests[0][-1], timeout)]
+    monkeypatch.setattr(workers, "run_tests", run_tests)
+    with pytest.raises(CapabilityError, match="stop requested"):
+        intake.intake_recommendation(params(path, shas, ["label"]),
+                                     context(tmp_path, stop_check=lambda: bool(stopped), read_root=path.parent))
+    assert stopped and delivered(tmp_path) == []
+
+
+@pytest.mark.parametrize("tail, word, why", [
+    ("acceptance confinement refused: stop requested; worker and its process namespace terminated", "not run",
+     "interrupted by a stop request; no result"),
+    ("acceptance confinement refused: worker exceeded the bounded stdout/stderr ceiling and was stopped", "errored",
+     "stopped when its output passed the output ceiling; no result was read")])
+def test_a_run_that_started_is_never_called_refused_before_it_ran(tail, word, why):
+    """F8. Both of these ran, inside the envelope or the supervised floor, and were stopped: neither is "envelope
+    unavailable" nor "refused before it ran"."""
+    result = {**outcome("refused", "tests/test_x.py", 30), "tail": tail}
+    for host in (True, False):
+        got, nodes, _ = intake.classify(result, "tests/test_x.py", 30, envelope=lambda: host)
+        assert got == {"state": word, "measured": False, "why": why} and nodes == []
+
+
+def test_a_textual_conflict_that_depends_on_the_order_is_said_on_both_units(repo, tmp_path, monkeypatch):
+    """F9. ``steeper`` and ``flat`` rewrite the same line. Whichever is listed first is merged and the other is
+    held; the first was "ready to take" and said nothing of it."""
+    path, shas = repo
+    for first, second in (("steeper", "flat"), ("flat", "steeper")):
+        out = run(tmp_path / first, path, shas, [first, second], Script(), monkeypatch)
+        assert out["recommendations"][first] == (f"ready to take (in the listed order; {second}, listed after it, "
+                                                 "conflicts with it textually and is held)")
+        assert out["recommendations"][second].startswith("hold: textual conflict with what was merged before it")
+        assert out["inputs"]["rehearsal"]["textual_conflicts_with"] == {second: [first]}
+        text = Path(out["path"]).read_text()
+        assert f"- **{second}** was left out of the merged tree: it conflicts with what was merged before it " \
+               f"(directly with {first}; which of them is left out depends on the listed order) in" \
+            in section(text, "3. Textual conflicts")
+
+
+def check_claims(repo, tmp_path, monkeypatch, record, name="case"):
+    path, shas = repo
+    out = run(tmp_path / name, path, shas, ["label"], Script(), monkeypatch, claims={"label": record})
+    return out["recommendations"]["label"], intake.assess(out["inputs"])["units"][0], Path(out["path"]).read_text()
+
+
+def test_check_results_are_read_per_check_name_and_in_the_words_a_hosting_service_uses(repo, tmp_path, monkeypatch):
+    """F10 and F11, checks: a stale failing check is not cleared by an unrelated passing one; "in_progress",
+    "queued", "pending" are running; a cancelled, skipped or neutral check is no result, and checks that gave only
+    those leave the unit not checked; a check SHA that is a prefix of the unit's of at least 12 hex digits names it."""
+    path, shas = repo
+    label, steeper = shas["label"], shas["steeper"]
+    got, _, _ = check_claims(repo, tmp_path, monkeypatch, {"checks": [
+        {"name": "ci", "head_sha": steeper, "conclusion": "failure"},
+        {"name": "lint", "head_sha": label, "conclusion": "success"}]}, "stale")
+    assert got == "hold: stale: check ci has results only for another head"
+    for word in ("in_progress", "queued", "pending", "waiting", "requested"):
+        got, unit, _ = check_claims(repo, tmp_path, monkeypatch, {"checks": [
+            {"name": "ci", "head_sha": label, "conclusion": word},
+            {"name": "lint", "head_sha": label, "conclusion": "success"}]}, word)
+        assert got == "not checked: a check is still running for this revision", word
+        assert [c["status"] for c in unit["checks"]] == ["still running", "passed"]
+    for words in (["skipped", "neutral"], ["cancelled"]):
+        got, unit, _ = check_claims(repo, tmp_path, monkeypatch, {"checks": [
+            {"name": f"c{i}", "head_sha": label, "conclusion": w} for i, w in enumerate(words)]}, words[0] + "-only")
+        assert got == ("not checked: every check supplied for this revision concluded without a result ("
+                       + ", ".join(words) + ")"), words
+    got, _, _ = check_claims(repo, tmp_path, monkeypatch, {"checks": [
+        {"name": "ci", "head_sha": label, "conclusion": "success"},
+        {"name": "docs", "head_sha": label, "conclusion": "skipped"}]}, "pass-and-skip")
+    assert got == "ready to take"
+    got, unit, _ = check_claims(repo, tmp_path, monkeypatch, {"checks": [
+        {"name": "ci", "head_sha": label[:12], "conclusion": "success"}]}, "prefix12")
+    assert got == "ready to take" and unit["checks"][0]["status"] == "passed"
+    got, unit, _ = check_claims(repo, tmp_path, monkeypatch, {"checks": [
+        {"name": "ci", "head_sha": label[:7], "conclusion": "success"}]}, "prefix7")
+    assert got == "hold: stale: check ci has results only for another head"
+    assert unit["checks"][0]["detail"].startswith(f"it names head {label[:7]}, shorter than 12 hex digits")
+
+
+def test_claims_are_read_in_the_words_people_write_and_a_different_result_is_never_ready(repo, tmp_path, monkeypatch):
+    """F10 and F11, claims: "success" and "1 passed" are a pass; a claim this run contradicts keeps the unit from
+    ready and is listed in section 8; a claim SHA that is a 12-digit prefix of the unit's names it."""
+    path, shas = repo
+    label = shas["label"]
+    for i, (said, head) in enumerate((("success", label), ("1 passed", label), ("3 passed in 0.2s", label),
+                                      ("PASSED", label[:12]))):
+        got, unit, _ = check_claims(repo, tmp_path, monkeypatch, {"head_sha": head, "validation": [
+            {"command": "pytest tests/test_shout.py", "result": said}]}, f"said{i}")
+        assert unit["claims"][0]["status"] == "re-executed here: same result", said
+        assert got == "ready to take"
+    got, unit, text = check_claims(repo, tmp_path, monkeypatch, {"head_sha": label, "validation": [
+        {"command": "pytest tests/test_shout.py", "result": "fail"}]}, "different")
+    assert unit["claims"][0]["status"] == "re-executed here: DIFFERENT result"
+    assert got == "not checked: a claim's result differs from what ran here: \"pytest tests/test_shout.py\" " \
+                  "(claimed fail; here pass)"
+    assert '- **label**: re-executed here: DIFFERENT result: "pytest tests/test_shout.py"' in \
+        section(text, "8. What remains unproven")
+    got, unit, _ = check_claims(repo, tmp_path, monkeypatch, {"head_sha": label, "validation": [
+        {"command": "pytest tests/test_shout.py", "result": "flaky"}]}, "unreadable")
+    assert unit["claims"][0]["status"] == "claimed result is not a pass or a fail"
+    assert got.startswith("not checked: a claim's result differs from what ran here")
+    got, unit, _ = check_claims(repo, tmp_path, monkeypatch, {"validation": [
+        {"command": "pytest tests/test_shout.py", "result": "pass"}]}, "nohead")
+    assert unit["claims"][0]["status"] == "stale: the claim names no head; this unit is " + label
+    assert got == "hold: stale: its claims name another head or none"
+
+
+def test_a_failure_whose_failing_tests_are_not_named_leaves_the_unit_not_checked(repo, tmp_path, monkeypatch):
+    """F13 survivor k: a failure on the merged tree whose failing tests the kept output does not name is a failure,
+    not a whole measurement: no conflict can be named from it, and the unit is not ready."""
+    path, shas = repo
+
+    def run_tests(tests, cwd, *, timeout, stop_check=None, confinement="required"):
+        file = tests[0][-1]
+        if Path(cwd).name == "composed":
+            return [{**outcome("pass", file, timeout), "returncode": 1, "passed": False,
+                     "tail": "...output cut...\n2 failed, 1 passed in 0.1s\n"}]
+        return [outcome("pass", file, timeout)]
+    monkeypatch.setattr(workers, "run_tests", run_tests)
+    out = intake.intake_recommendation(params(path, shas, ["label"]), context(tmp_path, read_root=path.parent))
+    assert out["inputs"]["rehearsal"]["behavioural_conflicts"] == []
+    assert out["recommendations"]["label"] == ("not checked: tests/test_shout.py failed on the merged tree (2 failing, "
+                                               "0 named in the kept output)")
+
+
+def test_check_results_only_for_another_head_hold_the_unit(repo, tmp_path, monkeypatch):
+    """F13 survivor o."""
+    path, shas = repo
+    got, unit, _ = check_claims(repo, tmp_path, monkeypatch, {"checks": [
+        {"name": "ci", "head_sha": shas["steeper"], "conclusion": "success"}]})
+    assert got == "hold: stale: check ci has results only for another head"
+    assert unit["checks"][0]["status"] == "result is for another head (stale)"
+
+
+def test_a_twin_already_there_with_other_bytes_is_never_overwritten(repo, tmp_path, monkeypatch):
+    """F13 survivor q."""
+    path, shas = repo
+    folder = tmp_path / "out" / "briefs"
+    folder.mkdir(parents=True)
+    from greg import briefs
+    there = folder / f"{briefs.NOW().date().isoformat()}-intake-brief.json"
+    there.write_text("not this recommendation's twin\n")
+    with pytest.raises(CapabilityError, match="already exists with different content; nothing was overwritten"):
+        run(tmp_path, path, shas, ["label"], Script(), monkeypatch)
+    assert there.read_text() == "not this recommendation's twin\n"
+
+
+def test_an_earlier_attempts_scratch_is_removed_before_the_rehearsal(repo, tmp_path, monkeypatch):
+    """F13 survivor n: what a killed process leaves in the mission's scratch never blocks or joins a new attempt."""
+    path, shas = repo
+    leftover = tmp_path / "workspace" / "intake-scratch" / "trees" / "own-label" / "half.py"
+    leftover.parent.mkdir(parents=True)
+    leftover.write_text("raise SystemExit('never run')\n")
+    out = run(tmp_path, path, shas, ["label"], Script(), monkeypatch)
+    assert out["recommendations"] == {"label": "ready to take"} and not leftover.exists()
+
+
+def test_a_file_whose_every_test_was_deselected_was_not_run():
+    """F14."""
+    file = "tests/test_x.py"
+    result = {**outcome("pass", file, 30), "returncode": 5, "passed": False, "tail": "\n3 deselected in 0.01s\n"}
+    got, _, _ = intake.classify(result, file, 30)
+    assert got == {"state": "not run", "measured": False, "why": "no test in the file ran to a result: 3 deselected "
+                                                                 "in 0.01s"}
+
+
+def test_the_composed_tree_is_named_as_an_identity_not_as_something_to_fetch(repo, tmp_path, monkeypatch):
+    """F15. The merge's objects live in the mission's scratch and are removed with it."""
+    path, shas = repo
+    out = run(tmp_path, path, shas, ["steeper", "consumer"], Script({TOTAL: breaks_with_steeper}), monkeypatch)
+    text = section(Path(out["path"]).read_text(), "7. Reproducible recipe")
+    tree = out["inputs"]["composed_tree"]
+    assert f"Composed tree id: `{tree}`. Its objects were written only to the mission's scratch, which was removed: " \
+           "nothing in the repository holds them, so it cannot be fetched." in text
+    with pytest.raises(Exception):
+        git(path, "cat-file", "-e", tree)
+
+
+def test_keeping_both_sides_works_inside_the_missions_scratch(repo, tmp_path, monkeypatch):
+    """F17. The scratch index of a keep-both-sides resolution was made in the process's temporary directory."""
+    path, shas = repo
+    (path / "steps.txt").write_text("step base\n")
+    git(path, "add", ".")
+    git(path, "commit", "-qm", "steps")
+    shas = {**shas, "base": git(path, "rev-parse", "HEAD")}
+    for name in ("alpha", "beta"):
+        shas[name] = branch(path, name, {"steps.txt": f"step base\nstep {name}\n"})
+    git(path, "checkout", "-q", "base")
+    made, real = [], intake_rehearsal.tempfile.TemporaryDirectory
+
+    def spy(*args, **kwargs):
+        made.append(kwargs.get("dir"))
+        return real(*args, **kwargs)
+    monkeypatch.setattr(intake_rehearsal.tempfile, "TemporaryDirectory", spy)
+    out = run(tmp_path, path, shas, ["alpha", "beta"], Script(), monkeypatch, union=["steps.txt"])
+    assert out["inputs"]["rehearsal"]["kept_both_sides"] == {"beta": ["steps.txt"]}
+    assert made and all(d is not None and (tmp_path / "workspace") in Path(d).parents for d in made)
+
+
+def test_one_invocation_has_a_time_budget_across_all_its_files(repo, tmp_path, monkeypatch):
+    """F3 (the ceiling only). Each file's timeout bounded one file; a selection of many files could hold the body's
+    turn for hours. One invocation now has a budget across every file it runs; a file that would start after it is
+    spent is not run, and says why."""
+    path, shas = repo
+    now = [0.0]
+    monkeypatch.setattr(intake, "_monotonic", lambda: now[0])
+    monkeypatch.setattr(intake, "MAX_INVOCATION_SECONDS", 100)
+    seen = []
+
+    def run_tests(tests, cwd, *, timeout, stop_check=None, confinement="required"):
+        seen.append(timeout)
+        now[0] += 60
+        return [outcome("pass", tests[0][-1], timeout)]
+    monkeypatch.setattr(workers, "run_tests", run_tests)
+    out = intake.intake_recommendation(params(path, shas, ["label", "consumer"], timeout_seconds=90),
+                                       context(tmp_path, read_root=path.parent))
+    assert seen == [90, 40]                     # the second file gets what is left of the budget, never more
+    assert out["recommendations"]["label"] == "not checked: tests/test_shout.py not run on the merged tree (the " \
+                                              "invocation's time budget of 100s was spent before it started)"

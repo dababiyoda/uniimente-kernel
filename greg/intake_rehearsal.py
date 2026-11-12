@@ -60,6 +60,13 @@ COUNT = re.compile(r"(\d+) (passed|failed|skipped|error|errors|xfailed|xpassed)"
 PYTEST = ("-B", "-m", "pytest", "-q", "-p", "no:cacheprovider", "-rfE", "--no-header")
 # The environment git and tar run in: None is the caller's own (the command line); a mission sets a scrubbed one.
 _ENV: contextvars.ContextVar = contextvars.ContextVar("greg_intake_rehearsal_env", default=None)
+# Where a rehearsal's own temporary files go (keep_both's scratch index): inside its scratch directory while
+# :func:`rehearse` runs, so a mission's rehearsal writes nothing outside its workspace.
+_WORK: contextvars.ContextVar = contextvars.ContextVar("greg_intake_rehearsal_work", default=None)
+# How a head's changed test files are listed. Rename and copy detection are off (a person's ``diff.renames`` setting
+# included): a test renamed or copied and edited is an added file, never an R or C entry an A/M filter would drop.
+# A type change (a file that became a symbolic link) is listed too. Both callers read this one listing.
+CHANGED = ("--no-renames", "--diff-filter=AMT")
 
 
 class RehearsalError(Exception):
@@ -120,7 +127,7 @@ def keep_both(root: Path, ours: str, theirs: str, tree: str, paths: list[str]) -
     only to the files the caller names, and the report says where it was applied. Objects only: a scratch index
     file, no working tree, no ref."""
     fork = git(root, "merge-base", ours, theirs, check=False).stdout.decode().strip()
-    with tempfile.TemporaryDirectory(prefix="compose-rehearsal-index-") as work:
+    with tempfile.TemporaryDirectory(prefix="compose-rehearsal-index-", dir=_WORK.get()) as work:
         index = {"GIT_INDEX_FILE": str(Path(work) / "index")}
 
         def scratch(*args: str, stdin: bytes | None = None) -> bytes:
@@ -197,7 +204,7 @@ def export(root: Path, treeish: str, dest: Path) -> Path:
 def changed_tests(root: Path, base: str, sha: str) -> list[str]:
     """The test files a head added or changed since it left the base."""
     fork = git(root, "merge-base", base, sha, check=False).stdout.decode().strip() or base
-    names = git(root, "diff", "--name-only", "--diff-filter=AM", fork, sha, "--", "tests").stdout.decode().splitlines()
+    names = git(root, "diff", "--name-only", *CHANGED, fork, sha, "--", "tests").stdout.decode().splitlines()
     return sorted(n for n in names if Path(n).name.startswith("test_") and n.endswith(".py"))
 
 
@@ -228,6 +235,30 @@ def rehearse(root: Path, base_ref: str, units: list[Unit], also: list[str], time
     """The rehearsal. ``run(tree, files, timeout)`` runs test files inside an exported tree and is always the
     caller's choice: this module starts no test itself. ``facts``, when given, is filled with what the report does
     not carry: the merged commit and its tree."""
+    Path(scratch).mkdir(parents=True, exist_ok=True)
+    token = _WORK.set(str(scratch))
+    try:
+        return _rehearse(root, base_ref, units, also, timeout, Path(scratch), union, run=run, facts=facts)
+    finally:
+        _WORK.reset(token)
+
+
+def conflicts_directly(root: Path, units: list[Unit], merged: list[str], textual: dict) -> dict[str, list[str]]:
+    """For each head left out for a textual conflict, the heads merged before it that conflict with it on their own
+    (``git merge-tree`` of the two heads). The verdict depends on the order: listed the other way round, the other
+    head would have been the one left out. Empty for a conflict only the combination of earlier heads produces."""
+    out = {}
+    for index, unit in enumerate(units):
+        if unit.name not in textual:
+            continue
+        out[unit.name] = [other.name for other in units[:index] if other.name in merged
+                          and git(root, "merge-tree", "--write-tree", "--name-only", "--no-messages", other.sha,
+                                  unit.sha, check=False).returncode == 1]
+    return out
+
+
+def _rehearse(root: Path, base_ref: str, units: list[Unit], also: list[str], timeout: int, scratch: Path,
+              union: tuple[str, ...], *, run, facts: dict | None) -> dict:
     base = resolve(root, base_ref)
     if not base:
         raise RehearsalError(f"unknown base {base_ref}")
@@ -343,6 +374,7 @@ def rehearse(root: Path, base_ref: str, units: list[Unit], also: list[str], time
         "also": {"tests": also, "base": base_also and {k: base_also[k] for k in ("counts", "failed")},
                  "merged": composed_also and {k: composed_also[k] for k in ("counts", "failed")}} if also else None,
         "merge_order": merged, "textual_conflicts": textual, "kept_both_sides": kept_both,
+        "textual_conflicts_with": conflicts_directly(root, units, merged, textual),
         # A head with no test to run was checked for nothing: it must not read as compatible.
         "unchecked": [u.name for u in units if not [f for f in u.tests if f not in own[u.name]["missing"]]],
         "behavioural_conflicts": behavioural, "failing_before_the_merge": already_failing,
@@ -360,6 +392,13 @@ def rehearse(root: Path, base_ref: str, units: list[Unit], also: list[str], time
                                "merged": composed[unit.name].get("states", {}) if unit.name in composed else None}
         report["not_measured"] = not_measured
     return report
+
+
+def _directly(report: dict, name: str) -> str:
+    """" (directly with A, B)" when those heads, merged before ``name``, conflict with it on their own."""
+    heads = (report.get("textual_conflicts_with") or {}).get(name) or []
+    return f" (directly with {', '.join(heads)}; which of them is left out depends on the listed order)" if heads \
+        else ""
 
 
 def markdown(report: dict) -> str:
@@ -382,7 +421,8 @@ def markdown(report: dict) -> str:
             for name, files in report["kept_both_sides"].items()] + [
             "", "Asked for on the command line for these files only. Nobody reviewed the result.", ""]
     if report["textual_conflicts"]:
-        lines += ["## Textual conflicts", ""] + [f"- **{name}** conflicts with what was merged before it in: "
+        lines += ["## Textual conflicts", ""] + [f"- **{name}** conflicts with what was merged before it"
+                                                  + _directly(report, name) + " in: "
                                                   + ", ".join(f"`{f}`" for f in files)
                                                   for name, files in report["textual_conflicts"].items()] + [""]
     if report["behavioural_conflicts"]:

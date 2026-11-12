@@ -160,11 +160,6 @@ jobs:
         run: python scripts/ci/check_effect_call_allowlist_mutants.py
       - name: Node revocation and enrolled-node receipt mutations (NODE_REVOKE founder-only, receipts admitted only inside the node's cone)
         run: python scripts/ci/check_node_revoke_mutants.py
-      # Moved here from job 8 on 2026-11-12: with the mutants of the independent review it has 95 (41 before
-      # 2026-11-11, then 50), and job 8 has a 30-minute limit. It needs only what this job installs. Not yet timed
-      # in CI.
-      - name: Evidence-correction mutations (a corrected reading marks what rests on it, and stops earning credit)
-        run: python scripts/ci/check_evidence_corrections_mutants.py
 
   verifier:
     # Its V2 re-runs tests/unit, so inside job 1 it pushed that job past its 30 minutes once the
@@ -447,6 +442,14 @@ jobs:
           UNIIMENTE_WEALTHMACHINE_ROOT: "${{ github.workspace }}/organs/wealthmachine"
           UNIIMENTE_WEALTHMACHINE_PYTHON: "${{ github.workspace }}/organs/wealthmachine-venv/bin/python"
         run: python scripts/ci/check_organ_verdict_mutants.py
+      # Runs here, not in job 1: job 1 already takes about its whole 120-minute limit on the base (#221, #260), and
+      # this gate needs only the kernel environment this job installs. Job 10 (mutation gates) is at its own limit
+      # (2026-11-12), so it stays here. 41 mutants took about 1.5 minutes; 50 (2026-11-11) took 3 min 17 s in a
+      # 4-CPU cloud container; with the mutants of the independent review of 2026-11-12 it has 81 and took 6 min 59 s
+      # in the same kind of container, idle. Not yet timed here.
+      - name: Evidence-correction mutations (a corrected reading marks what rests on it, and stops earning credit)
+        working-directory: kernel
+        run: python scripts/ci/check_evidence_corrections_mutants.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:

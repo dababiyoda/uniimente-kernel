@@ -539,6 +539,9 @@ from greg import sop  # noqa: E402
 from greg.cognition import compiler, settlement  # noqa: E402
 
 METHOD = "cognition.swarm"
+# The compile receipt schema settlement credits, whichever version that is: these tests write such receipts directly.
+# corrections never reads the schema string (it tells a compilation by its ``state`` field).
+COMPILE_SCHEMA = settlement.COMPILE_SCHEMAS[-1]
 SPHERE = {"function": "sphere", "bounds": [[-5.12, 5.12]] * 3, "budget": 300, "shift": [0.5, -0.25, 1.0]}
 
 
@@ -679,7 +682,7 @@ def test_a_compilation_that_held_no_answer_is_not_a_failed_replication():
     check = ("x", "cognition.solve", {"problem_id": "p"}, {"op": "lte", "field": "result.fitness", "value": 1})
     w.mission("m:x", check)
     w.mission("m:y", check)
-    answered = {"schema": "greg-competency-compilation/0.2", "state": "ANSWERED", "result": {"fitness": 0.02}}
+    answered = {"schema": COMPILE_SCHEMA, "state": "ANSWERED", "result": {"fitness": 0.02}}
     w.achieve("m:x", w.read("m:x", "x", answered, capability="cognition.solve"))
     for unanswered in ({**answered, "state": "CAPABILITY_DEFICIT", "result": None},
                        {"abstention_state": "CAPABILITY_DEFICIT", "output": None},
@@ -719,7 +722,7 @@ SOLVE = ("x", "cognition.solve", {"problem_id": "p"}, {"op": "lte", "field": "re
 
 def answer(fitness=0.02, method="cognition.swarm", version="1.0"):
     """A compile receipt as far as corrections reads one: the state, the answer and the method that gave it."""
-    return {"schema": "greg-competency-compilation/0.2", "state": "ANSWERED", "result": {"fitness": fitness},
+    return {"schema": COMPILE_SCHEMA, "state": "ANSWERED", "result": {"fitness": fitness},
             "selected_receipt": {"method": method, "method_version": version}}
 
 
@@ -730,6 +733,70 @@ def solve(w, mid, check="x", **kw):
 
 def event_of(w, receipt):
     return corrections.Index(w.journal).by_receipt[receipt]["event_id"]
+
+
+def test_a_reading_the_canonical_reader_calls_unanswered_is_neither_blamed_nor_credited(monkeypatch):
+    """One reader decides whether a reading answered: ``greg.missions.unanswered``. This module asks it and decides
+    nothing differently. The reader is being extended on another branch to read a compilation's ``state``; the
+    extension is stood in for here, with the five cases on which a second reader in this module had disagreed with
+    it (found by an independent review of that unit, 2026-11-12)."""
+    from greg import missions
+    canonical = missions.unanswered
+
+    def extended(output):
+        """The reader as it stands, plus compile receipts: PLANNED and a recorded human judgment are no answer of a
+        method, and neither is an ANSWERED or WORLD_UNVERIFIED receipt with no result."""
+        reason = canonical(output)
+        if reason is None and isinstance(output, dict) and "abstention_state" not in output:
+            state = output.get("state")
+            if state in ("PLANNED", "HUMAN_JUDGMENT_RECORDED") or (
+                    state in ("ANSWERED", "WORLD_UNVERIFIED") and output.get("result") is None):
+                reason = f"compilation {state} without an answer"
+        return reason
+    monkeypatch.setattr(missions, "unanswered", extended)
+    answered = answer()
+    cases = [{**answered, "state": "ANSWERED", "result": None}, {**answered, "state": "WORLD_UNVERIFIED", "result": None},
+             {**answered, "state": "HUMAN_JUDGMENT_RECORDED", "result": {"decision": "go"}},
+             {**answered, "state": "PLANNED"}, {**answered, "state": "PLANNED", "result": None},
+             {"abstention_state": "UNKNOWN", "reason_code": "TIMEOUT", "method": "cognition.swarm",
+              "method_version": "1.0", "output": {"fitness": 0.02}},          # a method's own receipt, as it stands
+             {"abstention_state": "EVIDENCE_EXPIRED", "method": "cognition.swarm", "method_version": "1.0",
+              "output": {"fitness": 0.02}}]
+    for unanswered in cases:
+        assert missions.unanswered(unanswered) is not None
+        assert corrections.held_no_answer(unanswered) is True and corrections.answer_digest(unanswered) is None
+        w = World()
+        for mid in ("m:x", "m:y"):
+            w.mission(mid, SOLVE)
+        first = w.read("m:x", "x", answered, capability="cognition.solve")
+        w.achieve("m:x", first)
+        w.read("m:y", "x", unanswered, passed=False, capability="cognition.solve", detail="field absent")
+        assert w.tick() == [] and w.state("m:x")["state"] == "CURRENT"          # not blamed on the first answer
+        w.read("m:y", "x", {**answered, "result": {"fitness": 7}}, passed=False, capability="cognition.solve",
+               detail="lte 1")                                                  # a reading that answered, and fails
+        [c] = w.tick()
+        assert c["class"] == "REPLICATION_FAILED" and first in corrections.contained_receipts(w.journal)
+        w.read("m:y", "x", unanswered, passed=True, capability="cognition.solve")     # says it passed, held no answer
+        w.tick()
+        assert not w.journal.replay("evidence.requalified")                     # so it restores no credit
+        assert first in corrections.contained_receipts(w.journal)
+        [closure] = w.journal.replay("mission.achieved")
+        w.reject(closure.event_id)                                              # and it carries no answer to compare:
+        again = w.read("m:x", "x", unanswered, capability="cognition.solve")    # it is not "the rejected answer"
+        assert again not in corrections.contained_receipts(w.journal)
+        assert corrections.Index(w.journal).by_receipt[again]["answer"] is None
+    for real in (answered, {**answered, "state": "REFUTED", "result": {"counterexample": [3]}},
+                 {"abstention_state": "NONE", "method": "m", "method_version": "1", "output": {"x": 1}},
+                 {"abstention_state": "REFUTED", "method": "m", "method_version": "1", "output": {"x": 1}}):
+        assert missions.unanswered(real) is None and corrections.held_no_answer(real) is False
+        assert corrections.answer_digest(real) is not None
+    monkeypatch.setattr(missions, "unanswered", canonical)      # as the reader stands on this branch: the interim
+    for state in ("UNKNOWN", "ABSTAIN", "CAPABILITY_DEFICIT"):   # half reads a compilation's abstention state
+        assert missions.unanswered({**answered, "state": state, "result": None}) is None
+        assert corrections.held_no_answer({**answered, "state": state, "result": None}) is True
+    for state in ("PLANNED", "HUMAN_JUDGMENT_RECORDED", "ANSWERED", "WORLD_UNVERIFIED", "REFUTED"):
+        output = {**answered, "state": state}                   # every other state is the canonical reader's alone
+        assert corrections.held_no_answer(output) is (missions.unanswered(output) is not None)
 
 
 def test_a_founder_rejection_withholds_the_answer_whichever_receipt_or_mission_delivers_it():
@@ -1052,7 +1119,7 @@ def test_settlement_withholds_a_constructions_contained_answer_and_names_the_cau
 
     def read(mid, problem, n, ok=True):
         params = {"problem_id": problem}
-        built = {"schema": "greg-competency-compilation/0.2", "state": "ANSWERED", "authority_created": False,
+        built = {"schema": COMPILE_SCHEMA, "state": "ANSWERED", "authority_created": False,
                  "selected_receipt": None, "method_or_composition_selected": method,
                  "confidence_type": "certified: a problem-level certificate", "inputs_digest": settlement.digest(params),
                  "problem_id": problem, "result": {"feasible": ok, "assigned": 3 if ok else 0},

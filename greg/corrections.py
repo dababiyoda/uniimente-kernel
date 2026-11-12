@@ -32,8 +32,9 @@ also name a reading no closure cites, or one a failure closure rests on):
   (an expiry inside other data, an MCP server's for instance, is that data's, not the measurement's);
 - REPLICATION_FAILED: the same signed sensor (instrument, input and predicate) read later fails on the same input
   (the same source digest, or a computation with no source). A later computation that held no answer (a capability
-  deficit, a timeout, a stopped worker: ``no_method_ran``) replicates nothing; one that answered and failed the
-  check, or REFUTED the claim, is a real negative;
+  deficit, a timeout, a stopped worker: ``held_no_answer``, which asks the canonical reader
+  ``greg.missions.unanswered``) replicates nothing and requalifies nothing; one that answered and failed the check,
+  or REFUTED the claim, is a real negative;
 - APPRAISAL_REFUTED: the closure's independent appraisal is REFUTED;
 - FOUNDER_REJECTED: a critique the founder signed rejects a reading (``signed_rejections``; a ``critique.recorded``
   row with no accepted signed command behind it is not his word). What a rejection rejects depends on the event it
@@ -111,10 +112,11 @@ SELF_REPORTED = ("APPRAISAL_REFUTED", "FOUNDER_REJECTED")
 # later VERIFIED appraisal of that closure restores what a refuted one withdrew; containment adds nothing to it.
 APPRAISED = ("APPRAISAL_REFUTED",)
 COMPUTATIONS = ("cognition.",)        # sensors whose reading is a computation on its signed input, not the world
-# The states of a compilation in which a method ran and said something. REFUTED is a real negative result. Every
-# other state (UNKNOWN after a timeout, ABSTAIN after a stopped worker, a deficit, an incomplete formalization, a
-# question for a human) holds no answer.
-ANSWERED = ("ANSWERED", "WORLD_UNVERIFIED", "REFUTED")
+# The states of a compilation that are abstention classes and carry no answer (``contracts.AbstentionClass`` without
+# NONE, REFUTED and WORLD_UNVERIFIED): UNKNOWN after a timeout, ABSTAIN after a stopped worker, a deficit, an
+# incomplete formalization. Used only by the interim half of ``held_no_answer``.
+ABSTAINED = ("ABSTAIN", "PROHIBITED", "HUMAN_REVIEW_REQUIRED", "CAPABILITY_DEFICIT", "EVIDENCE_EXPIRED",
+             "FORMALIZATION_INCOMPLETE", "UNKNOWN", "UNIDENTIFIED", "NO_QUORUM")
 # Fields of a certified answer that say how it was produced, not what it is (``settlement.ANSWER_PROVENANCE_FIELDS``).
 ANSWER_PROVENANCE = ("engine", "composed_of", "authority_created")
 MAX_DEPTH = 6                          # how deep an output is searched for evidence expiries
@@ -170,36 +172,51 @@ def expiries(output, depth: int = 0) -> list[str]:
     return found
 
 
-def no_method_ran(output) -> bool:
-    """A cognition receipt that holds no answer: a compilation that ended in any state but ``ANSWERED`` (a capability
-    deficit, a timeout recorded as UNKNOWN, a stopped worker recorded as ABSTAIN, an incomplete formalization), or a
-    method receipt that ended in a capability deficit. It neither fails nor replicates a claim another reading
-    answered: a host that stalls on a later mission says nothing about the method that answered the first. A
-    compilation that answered and failed the check, and one that REFUTED the claim, are real negatives."""
-    return isinstance(output, dict) and (output.get("state") not in (None, *ANSWERED)
-                                         or output.get("abstention_state") == "CAPABILITY_DEFICIT")
+def held_no_answer(output) -> bool:
+    """Whether one of GREG's own cognition receipts held no answer. The question, and its answer, are the canonical
+    reader's: ``greg.missions.unanswered`` (None when the receipt answered or refuted, a reason otherwise). A
+    reading that held no answer neither fails nor replicates a claim another reading answered, requalifies nothing
+    and carries no answer to compare: a host that stalls on a later mission says nothing about the method that
+    answered the first. A reading that answered and failed the check, and one that REFUTED the claim, are real
+    negatives.
+
+    One interim addition, to delete when the canonical reader reads a compilation's ``state`` (it is being extended
+    on another branch, and this unit does not edit ``greg/missions.py``). A compile receipt carries ``state`` and
+    no ``abstention_state``, so the reader as it stands here calls every compilation answered: a solver timeout
+    (state UNKNOWN) or a stopped worker (state ABSTAIN) on a later mission then counted as a failed replication of
+    a correct answer (review of b01d319f, F3). Until then a compilation whose state is itself an abstention class
+    (``ABSTAINED``) is put to the same reader as that abstention. Every other state is the canonical reader's
+    alone to decide; nothing here decides it differently."""
+    from greg.missions import unanswered
+    if not isinstance(output, dict):
+        return False
+    if unanswered(output) is not None:
+        return True
+    return "abstention_state" not in output and output.get("state") in ABSTAINED \
+        and unanswered({"abstention_state": output["state"]}) is not None
 
 
-def answered(output) -> str | None:
-    """The digest of what one of GREG's own cognition receipts answered: the method that ran, its version and its
-    answer. None when it holds no answer. A compilation names the method through the receipt of the method it
+def answer_digest(output) -> str | None:
+    """A narrower question than ``held_no_answer``, asked only of a reading that answered: WHICH answer does it
+    carry? The digest of the method that ran, its version and its result. None when the receipt held no answer, or
+    names no result to tell from another. A compilation names the method through the receipt of the method it
     selected; its answer is its ``result`` without the provenance fields. Timing, cost and receipt ids are not part
     of it, so the same answer delivered again under another receipt has the same digest."""
-    if not isinstance(output, dict):
+    if not isinstance(output, dict) or held_no_answer(output):
         return None
-    if "state" in output:
-        if output["state"] not in ANSWERED:
-            return None
+    if "abstention_state" in output:                        # a method's own receipt
+        method, version, result = output.get("method"), output.get("method_version"), output.get("output")
+    elif "state" in output:                                 # a compilation
         inner = output.get("selected_receipt") if isinstance(output.get("selected_receipt"), dict) else {}
-        result = output.get("result")
+        method = inner.get("method") or output.get("method_or_composition_selected")
+        version, result = inner.get("method_version"), output.get("result")
         if isinstance(result, dict):
             result = {k: v for k, v in result.items() if k not in ANSWER_PROVENANCE}
-        return sha256_json({"method": inner.get("method") or output.get("method_or_composition_selected"),
-                            "method_version": inner.get("method_version"), "answer": result})
-    if output.get("abstention_state") in ("NONE", "REFUTED", "WORLD_UNVERIFIED"):
-        return sha256_json({"method": output.get("method"), "method_version": output.get("method_version"),
-                            "answer": output.get("output")})
-    return None
+    else:
+        return None
+    if result is None:
+        return None
+    return sha256_json({"method": method, "method_version": version, "answer": result})
 
 
 def sensor_key(check: dict) -> str:
@@ -276,9 +293,10 @@ class Index:
             reading = {"event_id": e.event_id, "mission_id": p["mission_id"], "check_id": p["check_id"],
                        "receipt": p["receipt"], "seq": record.seq, "capability": p.get("capability"),
                        "passed": bool(p.get("passed")), "inconclusive": str(p.get("detail", "")).startswith("sensor "),
-                       "no_method": own and no_method_ran(output), "own": own,
-                       # what the reading answered: a computation's method and answer, a world reading's bytes
-                       "answer": answered(output) if own else (source or {}).get("digest"),
+                       # only GREG's own receipts are put to the canonical reader of "did this reading answer"
+                       "unanswered": own and held_no_answer(output), "own": own,
+                       # which answer the reading carries: a computation's method and result, a world reading's bytes
+                       "answer": answer_digest(output) if own else (source or {}).get("digest"),
                        "sensor": sensors.get((p["mission_id"], p["check_id"])), "source": source,
                        "expires": sorted(expiries(output)) if own else [], "at": p.get("at")}
             self.readings.append(reading)
@@ -308,7 +326,7 @@ class Index:
     # -- what a founder rejection rejects -----------------------------------------------------------------------
     def identity(self, reading: dict) -> str | None:
         """The answer a reading carries, as one digest: what was asked (the signed sensor: instrument, input,
-        predicate) and what was answered (``answered``, or a world reading's bytes). None when either is unknown."""
+        predicate) and what was answered (``answer_digest``, or a world reading's bytes). None when either is unknown."""
         if reading["answer"] is None or reading["sensor"] is None:
             return None
         return sha256_json({"asked": reading["sensor"], "answered": reading["answer"]})
@@ -451,7 +469,7 @@ class Index:
             if root["sensor"] and base["passed"]:
                 computed = src is None and str(base["capability"]).startswith(COMPUTATIONS)
                 for later in later_by_sensor[root["sensor"]]:
-                    if not counts(later) or later["passed"] or later["inconclusive"] or later["no_method"]:
+                    if not counts(later) or later["passed"] or later["inconclusive"] or later["unanswered"]:
                         continue
                     if computed and later["source"] is None or (
                             src is not None and later["source"] is not None and later["source"]["key"] == src["key"]
@@ -502,6 +520,7 @@ class Index:
             return None
         for later in self.readings:
             if (later["sensor"] == root["sensor"] and later["passed"] and not later["inconclusive"]
+                    and not later["unanswered"]         # a reading that held no answer requalifies nothing
                     and later["seq"] > root["seq"] and later["seq"] > cause["trigger_seq"]
                     and later["receipt"] != cause["trigger"].get("receipt")
                     and not (later["source"] and later["source"]["absent"])

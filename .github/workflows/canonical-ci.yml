@@ -392,8 +392,8 @@ jobs:
       - name: Kernel environment
         # organs.exchange runs organ code under the kernel's own interpreter, as the research line does, so it needs
         # the research line's pinned organ imports (python-dotenv). Until ubuntu-26.04 the ten-step proof that
-        # exercises it was skipped for want of bubblewrap namespaces.
-        run: pip install -r kernel/requirements-dev.txt -r kernel/requirements-cognition.txt -r kernel/requirements-research-line.txt
+        # exercises it was skipped for want of bubblewrap namespaces. Playwright (job 11's pin) drives the proof's step 9.
+        run: pip install -r kernel/requirements-dev.txt -r kernel/requirements-cognition.txt -r kernel/requirements-research-line.txt playwright==1.63.0
       - name: Each organ in its own environment, from its own requirements
         run: |
           python -m venv organs/daleobanks-venv
@@ -408,11 +408,22 @@ jobs:
           else
             echo "bubblewrap namespaces: NOT usable on this runner; the ten-step proof skips and says why"
           fi
+      # Without a browser the ten-step proof recorded step 9 (Mission Control at three widths) as NOT_RUN and passed.
+      - name: Install Playwright's Chromium for the ten-step proof's step 9, as job 11 does
+        run: |
+          export PLAYWRIGHT_BROWSERS_PATH="$RUNNER_TEMP/pw-browsers"
+          python -m playwright install --with-deps chromium
+          shell=$(ls -d "$PLAYWRIGHT_BROWSERS_PATH"/chromium_headless_shell-*/chrome-headless-shell-linux64/chrome-headless-shell | tail -n 1)
+          test -x "$shell"
+          "$shell" --version
+          echo "PLAYWRIGHT_BROWSERS_PATH=$PLAYWRIGHT_BROWSERS_PATH" >> "$GITHUB_ENV"
+          echo "GREG_CHROMIUM=$shell" >> "$GITHUB_ENV"
       - name: Whole-machine mission, organ capabilities and hostile cases (organs required, no skips)
         working-directory: kernel
         env:
           UNIIMENTE_REQUIRE_ORGANS: "1"
           GREG_REQUIRE_LANDLOCK: "1"
+          GREG_REQUIRE_BROWSER: "1"
           UNIIMENTE_DALEOBANKS_ROOT: "${{ github.workspace }}/organs/daleobanks"
           UNIIMENTE_DALEOBANKS_PYTHON: "${{ github.workspace }}/organs/daleobanks-venv/bin/python"
           UNIIMENTE_WEALTHMACHINE_ROOT: "${{ github.workspace }}/organs/wealthmachine"

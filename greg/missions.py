@@ -3086,8 +3086,11 @@ class MissionEngine:
 
     def _last_read(self, m: MissionState, check: dict) -> dict:
         """What a watched check's latest failing observation read in its signed field, shown to the person asked, so
-        they see exactly what is still missing (the facts a case waits on). Only a list, number or truth value, as its
-        receipt kept it and bounded like an approval's params; text and objects are not repeated into an ask."""
+        they see exactly what is still missing (the facts a case waits on). Only a number, a truth value or a flat list,
+        as its receipt kept it and bounded like an approval's params; text and objects are not repeated into an ask,
+        nor an object inside a list (a case's disputes carry the documents' own words). A flat list of strings is
+        repeated as the capability composed it: one a person is shown composes it in its own words, never a
+        document's text (greg.cases: fact, document, line and reason)."""
         seen = m.observations.get(check["check_id"])
         record = self.journal.ledger.find(seen["receipt"]) if seen and not seen.get("passed") and seen.get("receipt") \
             else None
@@ -3096,7 +3099,7 @@ class MissionEngine:
             value = _raw_field(output, check["predicate"].get("field", ""))
         except LookupError:
             return {}
-        if isinstance(value, (str, dict)):
+        if isinstance(value, (str, dict)) or isinstance(value, list) and any(isinstance(v, (dict, list)) for v in value):
             return {}
         return {"last_read": {"field": check["predicate"].get("field", ""), **params_view(value)}}
 

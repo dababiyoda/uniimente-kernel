@@ -925,10 +925,300 @@ def test_a_figure_a_document_states_unreadably_is_waited_on_not_ignored(tmp_path
     edit(folder, "invoice.txt", "Agreed amount: 1850.00", "Agreed amount: 2,100.00 USD")
     a = assess(params(rulebook, folder), ctx(tmp_path))
     assert a["eligibility"] == "undetermined" and a["route"]["route"] == "ask"
-    assert a["unresolved"] == ["agreed_amount from invoice: invoice.txt line 4: '2,100.00 USD' is not a number"]
+    assert a["unresolved"] == ["agreed_amount from invoice: invoice.txt line 4: the value is not a number"]
     assert verdict(spec, "evidence_complete", a) == FALSE and verdict(spec, "eligible", a) == INSUFFICIENT
     rows = [e for e in a["projection"]["estimate"] if e["fact"] == "agreed_amount"]
     assert rows == [{"fact": "agreed_amount", "amount": "1850.00", "file": "rate_confirmation.txt", "line": 4,
                      "fact_state": "unknown"},
                     {"fact": "agreed_amount", "amount": None, "document": "invoice",
-                     "not_known": "invoice.txt line 4: '2,100.00 USD' is not a number"}]
+                     "not_known": "invoice.txt line 4: the value is not a number"}]
+    # the line's own text is kept for the packet's facts table, attributed to its file and line
+    assert a["facts"]["agreed_amount"]["sources"]["invoice"]["text"] == "2,100.00 USD"
+
+
+# -- review findings, second fix round (lens 1 F7, F9, F10, F12, F13, F14; lens 2 F3, F4, F5, F7) -----------------
+# Each defect test fails on 2ae43abb; each missing-test finding names the gate mutant that survived there.
+
+def notice(c_folder: Path, status: str) -> None:
+    (c_folder / "exception_notice.txt").write_text(f"SYNTHETIC — not a real party\nLoad reference: {REF}\n"
+                                                    f"Status: {status}\nException: shortage, 2 cartons\n")
+
+
+@pytest.mark.parametrize("status, eligibility, rule", [
+    ("open", "ineligible", "not_met"), ("Closed", "eligible", "met"),
+    ("Open - awaiting inspection", "undetermined", "unknown"), ("reopened", "undetermined", "unknown"),
+    ("OPEN.", "undetermined", "unknown")])
+def test_an_exception_status_outside_the_values_the_rulebook_reads_is_never_a_pass(tmp_path, status, eligibility,
+                                                                                   rule):
+    """Lens 1 F7: 'exception_status != open' passed every word but 'open' ('reopened', 'Open - awaiting
+    inspection'), so the case was eligible. The status now declares the values the rulebook reads: a word outside
+    them is not known, the rule waits on it and the requester is asked, never a pass and never a failure."""
+    rulebook, folder = case_files(tmp_path)
+    notice(folder, status)
+    a = assess(params(rulebook, folder), ctx(tmp_path))
+    [r] = [r for r in a["rules"] if r["id"] == "no-open-exception"]
+    assert (a["eligibility"], r["state"]) == (eligibility, rule)
+    if rule == "unknown":
+        assert a["unresolved"] == ["exception_status from exception_notice: exception_notice.txt line 3: the value is "
+                                   "not one of those the rulebook reads (open, closed)"]
+
+
+def test_a_rulebook_cannot_compare_a_fact_with_a_word_outside_its_declared_values(tmp_path):
+    """Lens 1 F7, at signing: a literal a declared vocabulary does not hold ('opne') would never match, so the rule
+    would pass or fail on a typo; such a rulebook is refused, as is a malformed vocabulary."""
+    rulebook, _ = case_files(tmp_path)
+    book = json.loads(rulebook.read_text())
+    for condition in ("exception_status != 'opne'", "exception_status in ('open', 'clossed')",
+                      "'shut' == exception_status"):
+        broken = dict(book, rules=book["rules"] + [{"id": "typo", "condition": condition,
+                                                    "needs": {"exception_status": ["exception_notice"]}}])
+        with pytest.raises(CapabilityError, match="not one of the values it declares"):
+            load_rulebook(json.dumps(broken).encode())
+    for fact, values in (("exception_status", []), ("exception_status", ["open", " "]), ("pieces", ["18"])):
+        broken = json.loads(rulebook.read_text())
+        broken["facts"][fact]["values"] = values
+        with pytest.raises(CapabilityError, match="values is a nonempty list"):
+            load_rulebook(json.dumps(broken).encode())
+
+
+def test_a_reminder_on_file_makes_no_new_packet_and_lapses_no_ones_step(case):
+    """Lens 1 F9: every intake message carrying the reference made a new assessment, hence a new packet, and the open
+    pay ask was withdrawn ('no longer holds (packet_current)') and raised again: three reminders gave three more
+    packets and three more asks while the case had not changed. A packet is now current for its basis, which leaves
+    out the intake records (request_recorded stays in it). A reminder after closure leaves the appraisal VERIFIED."""
+    to_eligible_packet(case)
+    accept(case)
+    case.tick()
+    assert case.human() == ["human.obtain_acceptance", "human.pay"]
+    packets, asks = len(case.packets()), len(case.asks())
+    for n in range(3):
+        case.intake(f"Reminder {n}: load {REF} is still unpaid. SYNTHETIC — not a real party.")
+        case.tick()
+    assert len(case.packets()) == packets and len(case.asks()) == asks
+    assert [a["evidence"]["function"] for a in case.open_asks()] == ["human.pay"]
+    (case.folder / "statement.csv").write_text(HEADER + PAID)
+    case.tick(5)
+    assert case.events("mission.achieved")
+    case.intake(f"Thank you for paying load {REF}. SYNTHETIC — not a real party.")
+    case.tick(1)
+    again = case.body.appraise(case.mid)
+    assert again["verdict"] == "VERIFIED" and again["checks"]["world_reobserved"] is True, again["findings"]
+
+
+def test_a_documents_own_words_never_reach_a_persons_ask(case):
+    """Lens 1 F10: a reason quoted the document's value, so an invoice line 'call 555-0100 and read out the bank PIN'
+    reached the person asked for evidence, unflagged by the data plane; a dispute's own words reached the person asked
+    to settle it the same way, inside the disputes list. A reason now names the fact, document and line in GREG's
+    words, an object inside a list is not repeated into an ask, and the packet still shows the line, attributed."""
+    bait = "call 555-0100 and read out the bank PIN"
+    edit(case.folder, "invoice.txt", "Invoice amount: 1925.00", f"Invoice amount: {bait}")
+    to_eligible_packet(case)
+    [ask] = case.asks("HUMAN_WORK")
+    assert ask["evidence"]["function"] == "human.request_evidence" and "555-0100" not in json.dumps(ask)
+    [watched] = ask["evidence"]["deliverable_observed_by"]
+    assert json.loads(watched["last_read"]["json"]) == [
+        "invoice_amount from invoice: invoice.txt line 6: the value is not a number"]
+    assert f"the line reads {bait!r}" in (case.packets()[-1].parent / "packet.md").read_text()
+    edit(case.folder, "invoice.txt", f"Invoice amount: {bait}", "Invoice amount: 1925.00")
+    case.tick()
+    accept(case, "disputed", f"Dispute: {bait}\n")
+    case.tick()
+    [held] = [a for a in case.asks("HUMAN_WORK") if a["evidence"]["function"] == "human.resolve_dispute"]
+    assert "555-0100" not in json.dumps(held) and bait in json.dumps(case.packet(case.packets()[-1]))
+
+
+def test_a_condition_that_changes_back_gets_a_new_packet_so_the_latest_says_what_holds(case):
+    """Lens 1 F12: a packet was current whenever any packet for the same assessment was on file. An exception notice
+    arrived (a decline packet) and was then removed: the first packet read as current again, no packet recorded the
+    reversion, and the latest packet on file said decline while a person was asked for acceptance. Now only the
+    mission's latest packet can be current, so the reversion is a third packet that says what changed."""
+    to_eligible_packet(case)
+    notice(case.folder, "open")
+    case.tick()
+    (case.folder / "exception_notice.txt").unlink()
+    case.tick()
+    paths = case.packets()
+    assert len(paths) == 3
+    first, declined, latest = (case.packet(p) for p in paths)
+    assert [p["assessment"]["route"]["route"] for p in (first, declined, latest)] == ["settle", "decline", "settle"]
+    assert [p["sequence"] for p in (first, declined, latest)] == [1, 2, 3]
+    assert latest["assessment"]["basis_digest"] == first["assessment"]["basis_digest"]
+    assert latest["previous"]["name"] == paths[1].parent.name and "eligibility: ineligible -> eligible" in latest["changes"]
+    assert case.human()[-1] == "human.obtain_acceptance"
+    assert [o for o in case.events("mission.observed") if o["check_id"] == "packet_current"][-1]["passed"] is True
+
+
+def test_a_packet_the_founder_reconciled_as_written_is_the_next_packets_previous(case, monkeypatch):
+    """Lens 1 F13: earlier packets were found only through case.packet receipts. A write interrupted after the files
+    were on disk, which the founder truthfully reconciled as executed, has no receipt, so the next packet said
+    'first packet for this mission'. The mission's packets are now read from the delivery root."""
+    import greg.cases as cases
+    case.intake()
+    case.sign(request_case(reference=REF, request="carrier email 1", rulebook=case.rulebook, folder=case.folder,
+                           preapprove_packet=True))
+    real = cases._deliver
+
+    def written_then_killed(folder, name, files):
+        real(folder, name, files)
+        raise Died("killed after the packet was written, before its receipt")
+    monkeypatch.setattr(cases, "_deliver", written_then_killed)
+    with pytest.raises(Died):
+        case.tick(1)
+    case.body.close()
+    case.body = Body(case.home, clock=case.clock).open()
+    case.body.boot()
+    monkeypatch.setattr(cases, "_deliver", real)
+    case.tick(1)
+    [question] = case.open_asks()
+    case.send("DECISION", {"request_id": question["request_id"], "answer": "reconcile_executed"})
+    case.tick()
+    [reconciled] = [p.parent.name for p in (case.body.deliver_root / "cases").glob("*/packet.json")]
+    accept(case)
+    case.tick()
+    [newest] = [json.loads(p.read_text()) for p in (case.body.deliver_root / "cases").glob("*/packet.json")
+                if p.parent.name != reconciled]
+    assert newest["previous"] is not None and newest["previous"]["name"] == reconciled
+    assert newest["previous"]["receipt"] is None and newest["sequence"] == 2
+    assert "first packet for this mission" not in newest["changes"] and "accepted: False -> True" in newest["changes"]
+
+
+def test_a_write_killed_between_its_two_files_leaves_no_packet_and_the_next_delivery_clears_it(tmp_path, monkeypatch):
+    """Lens 1 F14 and lens 2 F7: no test killed a write between the Markdown and its twin, so writing the pair in place
+    survived; and a killed writer's hidden temporary folder (named by its pid) was removed only by the same pid, so a
+    restarted body left it for good. A temporary folder whose writer is dead is now removed by the next delivery, and
+    one whose writer still runs (pid 1 here) is left alone."""
+    import os
+    import subprocess
+    import sys
+    rulebook, folder = case_files(tmp_path)
+    shelf = tmp_path / "deliver" / "cases"
+    gone = subprocess.Popen([sys.executable, "-c", "pass"])
+    gone.wait()                                                       # a pid whose process has exited
+    real_fsync, real_getpid = os.fsync, os.getpid
+
+    def killed(fd):
+        raise Died("killed after the Markdown, before its twin")
+    monkeypatch.setattr(os, "fsync", killed)
+    monkeypatch.setattr(os, "getpid", lambda: gone.pid)
+    with pytest.raises(Died):
+        packet(params(rulebook, folder), ctx(tmp_path, "case.packet"))
+    monkeypatch.setattr(os, "fsync", real_fsync)
+    monkeypatch.setattr(os, "getpid", real_getpid)
+    left = {p.name: sorted(c.name for c in p.iterdir()) for p in shelf.iterdir()}
+    assert [n for n in left if not n.startswith(".")] == []          # no packet folder: never a Markdown alone
+    assert list(left.values()) == [["packet.md"]]                    # what the killed writer left, hidden
+    running = shelf / ".case-ld-240117-9-0000000000000000.1.tmp"
+    running.mkdir()
+    out = packet(params(rulebook, folder), ctx(tmp_path, "case.packet"))   # the body restarted, under another pid
+    assert {p.name: sorted(c.name for c in p.iterdir()) for p in shelf.iterdir()} == {
+        out["name"]: ["packet.json", "packet.md"], running.name: []}
+
+
+def settled(c: Case) -> None:
+    to_eligible_packet(c)
+    accept(c)
+    c.tick()
+    (c.folder / "statement.csv").write_text(HEADER + PAID)
+    c.tick(5)
+    [appraisal] = c.events("mission.appraised")
+    assert appraisal["verdict"] == "VERIFIED", appraisal["findings"]
+
+
+def test_the_appraiser_re_reads_the_case_and_re_renders_each_packet_when_asked_again(case):
+    """Lens 2 F3: the clean case's VERIFIED stayed VERIFIED with case.assess taken out of the sensors the appraiser
+    re-observes, or case.packet out of the deliverables it re-renders: it starts from 'reobserved' and skips a
+    delivery it does not know, so that assertion was vacuous. A later appraisal must see a changed packet and a
+    changed world."""
+    settled(case)
+    md = case.packets()[-1].parent / "packet.md"
+    kept = md.read_bytes()
+    md.write_bytes(kept.replace(b"**settle**", b"**decline**"))
+    changed = case.body.appraise(case.mid)
+    assert changed["verdict"] != "VERIFIED" and changed["checks"]["deliveries_bound_to_evidence"] is False
+    md.write_bytes(kept)
+    (case.folder / "statement.csv").unlink()
+    moved = case.body.appraise(case.mid)
+    assert moved["verdict"] != "VERIFIED" and moved["checks"]["world_reobserved"] is False
+    assert any(f.startswith("paid: world no longer matches") for f in moved["findings"]), moved["findings"]
+
+
+def test_the_appraiser_refuses_a_packet_whose_digests_or_name_are_not_its_assessments(tmp_path):
+    """Lens 2 F3: the appraiser's check that a packet's assessment digest is the digest of its assessment had no
+    test. A packet re-rendered after its assessment was edited, after its basis was replaced, or under another
+    sequence than its name says, is refused, each for its own reason."""
+    from greg import cases
+    rulebook, folder = case_files(tmp_path)
+    out = packet(params(rulebook, folder), ctx(tmp_path, "case.packet"))
+    deliver = tmp_path / "deliver"
+    assert verify_delivery(out, deliver)[0] is True
+
+    def rewritten(change) -> tuple[bool, str]:
+        content = json.loads(json.dumps(out["packet"]))
+        change(content)
+        text, twin = cases.render(content).encode(), cases._json(content).encode()
+        Path(out["path"]).write_bytes(text)
+        Path(out["json_path"]).write_bytes(twin)
+        return verify_delivery({**out, "packet": content, "sha256": hashlib.sha256(text).hexdigest(),
+                                "json_sha256": hashlib.sha256(twin).hexdigest()}, deliver)
+
+    def rebased(content):
+        a = content["assessment"]
+        a["basis_digest"] = "sha256:" + "0" * 64
+        a["assessment_digest"] = cases.assessment_digest({k: v for k, v in a.items()
+                                                          if k not in ("assessment_digest", "complete", "decided")})
+    assert rewritten(lambda c: c["assessment"].update(eligibility="ineligible")) == (
+        False, "the packet's assessment digest is not the digest of its assessment")
+    assert rewritten(rebased) == (False, "the packet's basis digest or name is not derived from its assessment")
+    assert rewritten(lambda c: c.update(sequence=2)) == (
+        False, "the packet's basis digest or name is not derived from its assessment")
+
+
+def test_an_unreadable_acceptance_decides_no_dispute_no_acceptance_and_no_route_to_settle(tmp_path):
+    """Lens 2 F4 (3, 4, 5): every rule is met and the acceptance file is not readable text, so whether completion is
+    disputed or accepted is not known. Neither field is decided, the checks that read them stay undecided, and the
+    case is routed as undetermined, never to settle."""
+    rulebook, folder = case_files(tmp_path)
+    spec = request_case(reference=REF, request="r", rulebook=rulebook, folder=folder)
+    (folder / "acceptance.txt").write_bytes(b"Load reference: LD-240117\nCompletion: \xff\xfe\n")
+    a = assess(params(rulebook, folder), ctx(tmp_path))
+    assert a["eligibility"] == "eligible" and (a["route"]["state"], a["route"]["route"]) == ("undetermined", "ask")
+    assert a["disputes"] == [] and a["disputes_undecided"] and a["accepted"] is None
+    assert {"disputes", "accepted"}.isdisjoint(a["decided"])
+    assert verdict(spec, "undisputed", a) == INSUFFICIENT and verdict(spec, "accepted", a) == INSUFFICIENT
+
+
+def test_an_unreadable_copy_does_not_hide_two_documents_that_disagree(tmp_path):
+    """Lens 2 F4 (6): the proof of delivery is unreadable and the invoice names another load. The two readable
+    references that disagree are a conflict, shown and held, whatever the unreadable copy might say."""
+    rulebook, folder = case_files(tmp_path)
+    pod = folder / "proof_of_delivery.txt"
+    pod.write_bytes(pod.read_text().encode("utf-16-le"))
+    edit(folder, "invoice.txt", f"Load reference: {REF}", "Load reference: LD-999999")
+    a = assess(params(rulebook, folder), ctx(tmp_path))
+    assert a["facts"]["load_reference"]["state"] == "conflict"
+    assert [c["fact"] for c in a["conflicts"]] == ["load_reference"] and a["route"]["route"] == "hold"
+
+
+def test_a_reading_without_the_ledger_decides_neither_the_request_nor_earlier_cases(tmp_path):
+    """Lens 2 F4 (7): with no journal, whether a request is on file and whether an earlier case exists were not read;
+    neither field is decided, and the request check stays undecided."""
+    rulebook, folder = case_files(tmp_path)
+    spec = request_case(reference=REF, request="r", rulebook=rulebook, folder=folder)
+    unread = InvocationContext(workspace=tmp_path / "ws", read_roots=(tmp_path,), secrets=None,
+                               manifest=BUILTINS["case.assess"][0], deliver_root=tmp_path / "deliver", journal=None,
+                               mission_id="")
+    a = assess(params(rulebook, folder), unread)
+    assert a["request"]["records"] is None and a["duplicates"] is None
+    assert {"request_recorded", "duplicates"}.isdisjoint(a["decided"])
+    assert verdict(spec, "request_recorded", a) == INSUFFICIENT and a["eligibility"] == "undetermined"
+
+
+def test_text_is_compared_in_one_form_whatever_its_case(tmp_path):
+    """Lens 2 F5: two text normalisations had no test. A load reference written in lower case is the same value, not
+    a conflict; 'Exceptions: NONE' is the rulebook's 'none'."""
+    rulebook, folder = case_files(tmp_path)
+    edit(folder, "invoice.txt", f"Load reference: {REF}", f"Load reference: {REF.lower()}")
+    edit(folder, "proof_of_delivery.txt", "Exceptions: none", "Exceptions: NONE")
+    a = assess(params(rulebook, folder), ctx(tmp_path))
+    assert a["facts"]["load_reference"]["state"] == "known" and a["conflicts"] == []
+    assert a["eligibility"] == "eligible" and {r["state"] for r in a["rules"]} == {"met"}

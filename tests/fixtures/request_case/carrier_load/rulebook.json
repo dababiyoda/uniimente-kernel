@@ -31,7 +31,7 @@
                    "pattern": "(?P<value>\\d[\\d,]*\\.\\d{2})"},
   "approved_accessorials": {"type": "amount", "many": true, "from": {"invoice": "Accessorial"},
                             "pattern": "(?P<value>\\d[\\d,]*\\.\\d{2})", "only": "approval\\s+[A-Z0-9-]{3,}"},
-  "exception_status": {"type": "text", "from": {"exception_notice": "Status"}},
+  "exception_status": {"type": "text", "from": {"exception_notice": "Status"}, "values": ["open", "closed"]},
   "exception_detail": {"type": "text", "from": {"exception_notice": "Exception"}},
   "completion": {"type": "text", "from": {"acceptance": "Completion"}},
   "dispute_reason": {"type": "text", "from": {"acceptance": "Dispute"}},

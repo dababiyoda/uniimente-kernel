@@ -27,8 +27,10 @@ inventing nothing:
   the same reference, compared by business_loop.reference_key) that is open or settled, named with a pointer to the
   first.
 
-``case.packet`` delivers one new packet per assessment (Markdown and a JSON twin) into the founder's delivery root
-and says what changed since the mission's previous packet. An earlier packet is never overwritten.
+``case.packet`` delivers one new packet (Markdown and a JSON twin) into the founder's delivery root each time the
+case's basis changes (the assessment without the intake records: a reminder changes nothing), numbered within the
+mission, and says what changed since the mission's previous packet, read from the delivery root. Only the mission's
+latest packet is current. An earlier packet is never overwritten.
 
 Text in documents is data: only the keys the rulebook declares are read, an instruction-shaped line steers nothing,
 and a document the data plane quarantines contributes no fact. The documents and rulebooks this module was built and
@@ -51,7 +53,7 @@ from greg.capabilities import CapabilityError, InvocationContext, _inside, bound
 from greg.textform import canon
 from provenance.digests import sha256_json
 
-RENDERER = "greg.cases/2"   # 2: absence, undecidable rules and conflicts no rule reads are rendered
+RENDERER = "greg.cases/3"   # 2: absence, undecidable rules, unread conflicts; 3: a sequence, a basis, attributed text
 TYPES = ("text", "amount", "number", "percent", "date", "yes_no")
 STATES = ("eligible", "ineligible", "undetermined", "disputed")
 BUILTIN = {"mission": ("reference",), "ledger": ("earlier cases",)}   # sources that are not documents
@@ -134,14 +136,29 @@ def _kind(node, facts: dict) -> str | None:
     return "list" if isinstance(node, (ast.List, ast.Tuple)) else None
 
 
+def _vocabulary(node, facts: dict) -> set | None:
+    """The values a text fact is declared to take (its ``values``), as compared; None: not a fact with a vocabulary."""
+    spec = facts.get(node.id) if isinstance(node, ast.Name) else None
+    return {_key(v) for v in spec["values"]} if spec and "values" in spec else None
+
+
 def _typecheck(condition: str, facts: dict) -> None:
     """Refuse, at signing, a comparison between two kinds of value (a date fact against text, a yes/no fact against
-    'yes') and an order on text or truth values: evaluated, each is undecidable, so a typo would hold every case."""
+    'yes') and an order on text or truth values: evaluated, each is undecidable, so a typo would hold every case. A
+    text literal compared with a fact that declares its values must be one of them: 'opne' would never match."""
     for node in ast.walk(ast.parse(condition.strip(), mode="eval")):
         if not isinstance(node, ast.Compare):
             continue
         left = node.left
         for op, right in zip(node.ops, node.comparators):
+            for fact, other in ((left, right), (right, left)):
+                vocabulary = _vocabulary(fact, facts)
+                literals = other.elts if isinstance(other, (ast.List, ast.Tuple)) else [other]
+                for literal in literals if vocabulary is not None else []:
+                    if isinstance(literal, ast.Constant) and isinstance(literal.value, str) \
+                            and _key(literal.value) not in vocabulary:
+                        raise CapabilityError(f"condition {condition!r} compares {fact.id} with {literal.value!r}, "
+                                              "which is not one of the values it declares")
             a, b = _kind(left, facts), _kind(right, facts)
             if isinstance(op, (ast.In, ast.NotIn)):
                 for element in right.elts if isinstance(right, (ast.List, ast.Tuple)) else []:
@@ -216,6 +233,9 @@ def load_rulebook(data: bytes) -> dict:
                     re.compile(spec[pattern])
                 except (re.error, TypeError):
                     raise CapabilityError(f"fact {fact!r}: {pattern} is not a regular expression") from None
+        if "values" in spec and (spec["type"] != "text" or not isinstance(spec["values"], list) or not spec["values"]
+                                 or not all(isinstance(v, str) and v.strip() for v in spec["values"])):
+            raise CapabilityError(f"fact {fact!r}: values is a nonempty list of the texts a text fact may take")
     for field in ("case_reference",):
         if book.get(field) not in facts:
             raise CapabilityError(f"the rulebook's {field} is one of its facts")
@@ -281,29 +301,35 @@ def _read_document(kind: str, spec: dict, folder: Path) -> dict:
 
 
 def _parse(spec: dict, raw: str):
-    """(value, None) or (None, why) for one value as its declared type."""
+    """(value, None) or (None, why) for one value as its declared type. The reason is in GREG's words and never
+    repeats the value: a person is asked for it by fact, document and line, and a document's text does not reach an
+    ask (the packet shows it, attributed, as ``text``). A text value outside the values its fact declares is not
+    known: the rulebook reads only those, so neither a pass nor a failure is made of a word it did not foresee."""
     from greg.business_loop import parse_amount
     text = raw.strip()
     if "pattern" in spec:
         found = re.search(spec["pattern"], text)
         if found is None:
-            return None, f"{text[:60]!r} does not match the declared pattern"
+            return None, "the value does not match the declared pattern"
         text = found.groupdict().get("value") or (found.group(1) if found.groups() else found.group(0))
     if not text:
         return None, "the value is empty"
     kind = spec["type"]
     if kind == "text":
-        return " ".join(canon(text).split()), None
+        value = " ".join(canon(text).split())
+        if "values" in spec and _key(value) not in {_key(v) for v in spec["values"]}:
+            return None, f"the value is not one of those the rulebook reads ({', '.join(spec['values'])})"
+        return value, None
     if kind in ("amount", "number", "percent"):
         value = parse_amount(text[:-1] if kind == "percent" and text.endswith("%") else text)
-        return (value, None) if value is not None else (None, f"{text[:60]!r} is not a number")
+        return (value, None) if value is not None else (None, "the value is not a number")
     if kind == "date":
         try:
             return date.fromisoformat(text), None
         except ValueError:
-            return None, f"{text[:60]!r} is not a date (YYYY-MM-DD)"
+            return None, "the value is not a date (YYYY-MM-DD)"
     word = text.casefold()
-    return (True, None) if word in YES else (False, None) if word in NO else (None, f"{text[:60]!r} is not yes or no")
+    return (True, None) if word in YES else (False, None) if word in NO else (None, "the value is not yes or no")
 
 
 def _shown(value) -> str | bool | None:
@@ -343,8 +369,8 @@ def _source(fact: str, spec: dict, kind: str, docs: dict, builtin: dict) -> dict
         if "only" in spec and not re.search(spec["only"], found.group(2)):
             continue        # the rulebook's filter as written: a flag it wants (?i) it writes itself
         value, why = _parse(spec, found.group(2))
-        if why:
-            return {"state": "unknown", "reason": f"{doc['file']} line {number}: {why}"}
+        if why:     # the line's text is kept for the packet's facts table only, attributed; the reason never quotes it
+            return {"state": "unknown", "reason": f"{doc['file']} line {number}: {why}", "text": found.group(2)[:60]}
         values.append({"value": value, "document": kind, "file": doc["file"], "sha256": doc["sha256"],
                        "line": number})
     if not values and not spec.get("many"):
@@ -761,11 +787,18 @@ def assess(params: dict, ctx: InvocationContext) -> dict:
            "payment_observed": payment["state"] == "observed", "projection": projection,
            "request": {"channel": book["request"]["channel"], "records": request},
            "request_recorded": bool(request), "route": route}
+    # The case's basis: everything assessed except which intake messages carry the reference. A reminder changes no
+    # fact, rule, route or check (request_recorded stays in it), so it makes no new packet and lapses no one's step.
+    out["basis_digest"] = basis_digest(out)
     out["assessment_digest"] = assessment_digest(out)
-    name = f"case-{_slug(reference)}-{out['assessment_digest'][7:23]}"
     folder_out = Path(ctx.deliver_root).resolve() / "cases" if ctx.deliver_root else None
-    current = folder_out is not None and _packet_on_disk(folder_out, name, out["assessment_digest"])
-    out.update(packet={"name": name, "delivered": current}, packet_current=current)
+    latest = _latest_packet(folder_out, reference, ctx.mission_id) if folder_out is not None else None
+    # Current only when the mission's latest packet is for this basis: an earlier packet for the same basis, followed
+    # by one for another (the world changed and changed back), is not what the latest packet on file says.
+    current = latest is not None and latest[1]["assessment"].get("basis_digest") == out["basis_digest"]
+    sequence = latest[1]["sequence"] if current else (latest[1]["sequence"] + 1 if latest else 1)
+    name = latest[0] if current else _packet_name(reference, sequence, out["basis_digest"])
+    out.update(packet={"name": name, "sequence": sequence, "delivered": current}, packet_current=current)
     undecided = {k for k, open_ in (("eligibility", eligibility == "undetermined"),
                                     ("unresolved", bool(undecidable) and not unresolved),
                                     ("disputes", bool(disputes_unknown)), ("accepted", accepted is None),
@@ -778,13 +811,35 @@ def assess(params: dict, ctx: InvocationContext) -> dict:
     return out
 
 
-def _packet_on_disk(folder: Path, name: str, digest: str) -> bool:
-    path = folder / name / "packet.json"
-    try:
-        return path.is_file() and json.loads(path.read_text(encoding="utf-8"))["assessment"]["assessment_digest"] \
-            == digest and (folder / name / "packet.md").is_file()
-    except (OSError, ValueError, KeyError, TypeError):
-        return False
+def basis_digest(assessment: dict) -> str:
+    """The digest of what a packet is current for: the assessment without its intake records and its own digests."""
+    return assessment_digest({k: v for k, v in assessment.items()
+                              if k not in ("request", "basis_digest", "assessment_digest", "packet", "packet_current",
+                                           "complete", "decided")})
+
+
+def _packet_name(reference: str, sequence: int, basis: str) -> str:
+    return f"case-{_slug(reference)}-{sequence}-{basis[7:23]}"
+
+
+def _latest_packet(folder: Path, reference: str, mission_id: str) -> tuple[str, dict] | None:
+    """(name, JSON twin) of the mission's latest packet on file: the highest sequence among this mission's packets for
+    this reference, rendered by this renderer, with both files present. Read from the delivery root, not from
+    receipts: a write the founder reconciled as executed has no receipt, and its packet is on file all the same.
+    A temporary folder (a write still in progress, or one a killed body left) is not a packet."""
+    found = []
+    for path in folder.glob(f"case-{_slug(reference)}-*/packet.json") if folder.is_dir() else []:
+        if path.is_symlink() or path.parent.is_symlink() or not (path.parent / "packet.md").is_file():
+            continue
+        try:
+            content = json.loads(bounded_read(path, "a packet exceeds the read ceiling").decode("utf-8"))
+            sequence = content["sequence"]
+            if content.get("renderer") == RENDERER and content.get("mission_id") == mission_id \
+                    and content["assessment"]["reference"] == reference and type(sequence) is int and sequence > 0:
+                found.append((sequence, path.parent.name, content))
+        except (CapabilityError, OSError, ValueError, KeyError, TypeError):
+            continue
+    return max(found, key=lambda f: (f[0], f[1]))[1:] if found else None
 
 
 # -- the packet ---------------------------------------------------------------------------------------------------
@@ -805,15 +860,13 @@ def _receipts(journal, mission_id: str, capability: str):
     return out
 
 
-def _previous(journal, mission_id: str, digest: str) -> tuple[dict | None, str | None]:
-    """The mission's latest delivered packet for another assessment, and its receipt."""
+def _packet_receipt(journal, mission_id: str, name: str) -> str | None:
+    """The receipt of the case.packet action that delivered the packet ``name``, if one did (a write the founder
+    reconciled as executed has none)."""
     if journal is None or not mission_id:
-        return None, None
-    for event, record in reversed(_receipts(journal, mission_id, "case.packet")):
-        content = ((record.payload.get("result") or {}).get("output") or {}).get("packet")
-        if isinstance(content, dict) and content.get("assessment", {}).get("assessment_digest") != digest:
-            return content, record.hash
-    return None, None
+        return None
+    return next((record.hash for event, record in reversed(_receipts(journal, mission_id, "case.packet"))
+                 if ((record.payload.get("result") or {}).get("output") or {}).get("name") == name), None)
 
 
 def changes(before: dict | None, after: dict) -> list[str]:
@@ -889,6 +942,7 @@ def render(content: dict) -> str:
     lines = [f"# Case packet {a['reference']}", "", f"**{label}**", "",
              f"- Mission: {content['mission_id'] or 'none'}", f"- Rulebook: {a['rulebook']['name']} "
              f"{a['rulebook']['version']} (sha256 {a['rulebook']['sha256']})",
+             f"- Packet {content['sequence']} for this mission; basis {a['basis_digest']}",
              f"- Assessment: {a['assessment_digest']}", f"- Renderer: {content['renderer']}", "",
              "## Next action", "",
              f"**{a['route']['route']}** ({a['route']['state']}): {a['route']['action']}", "",
@@ -937,13 +991,13 @@ def render(content: dict) -> str:
     lines += ["", "## Facts", "", "| Fact | State | Value and source |", "| --- | --- | --- |"]
     for fact, record in sorted(a["facts"].items()):
         cells = []
-        for kind, source in record["sources"].items():
+        for kind, source in sorted(record["sources"].items()):   # the twin's order: a render of the JSON alone
             if source["state"] == "value":
                 cells += [f"{v['value']} ({v.get('file') or kind}" + (f" line {v['line']}" if v.get("line") else "")
                           + ")" for v in source["values"]] or [f"none listed ({kind})"]
             else:
                 cells.append(f"{source['state']} ({kind}" + (f": {source['reason']}" if source.get("reason") else "")
-                             + ")")
+                             + (f"; the line reads {source['text']!r}" if source.get("text") else "") + ")")
         lines.append(f"| {fact} | {record['state']} | {'; '.join(cells)} |")
     lines += ["", "## Completion", "", f"Accepted: {_accepted_line(a)}"
               + (f" ({a['acceptance']['description']})" if a["acceptance"].get("description") else ""), "",
@@ -972,14 +1026,38 @@ def render(content: dict) -> str:
     return "\n".join(lines)
 
 
+def _alive(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except OSError:
+        return True             # it exists, under another user
+    return True
+
+
+TEMPORARY = re.compile(r"\.case-[a-z0-9-]+\.(\d+)\.tmp")
+
+
+def _sweep(folder: Path) -> None:
+    """Remove the temporary packet folders a dead writer left (a body killed between the two files, then restarted
+    under another pid). A folder whose writer still runs is left alone: it may be renaming it into place now."""
+    for path in folder.iterdir():
+        found = TEMPORARY.fullmatch(path.name)
+        if found and path.is_dir() and not path.is_symlink() and (int(found.group(1)) == os.getpid()
+                                                                  or not _alive(int(found.group(1)))):
+            shutil.rmtree(path, ignore_errors=True)
+
+
 def _deliver(folder: Path, name: str, files: dict) -> Path:
     """One new packet folder holding both files, or the identical one already there; a different one is never
     overwritten. The pair appears at once (a directory renamed into place), so an interrupted write leaves either
-    nothing or the whole packet, never a Markdown file without its twin."""
+    nothing or the whole packet, never a Markdown file without its twin; what a killed writer left in its temporary
+    folder is removed by the next delivery."""
     target = folder / name
+    _sweep(folder)
     if not target.exists():
         temporary = folder / f".{name}.{os.getpid()}.tmp"
-        shutil.rmtree(temporary, ignore_errors=True)
         temporary.mkdir(mode=0o755)
         for file, data in files.items():
             fd = os.open(temporary / file, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
@@ -1000,15 +1078,24 @@ def _deliver(folder: Path, name: str, files: dict) -> Path:
 
 
 def packet(params: dict, ctx: InvocationContext) -> dict:
-    """``case.packet``: assess the case now and deliver its packet, one new file pair per assessment."""
+    """``case.packet``: assess the case now and deliver its packet, one new file pair per change of basis."""
     if ctx.deliver_root is None:
         raise CapabilityError("this body has no delivery root configured")
     assessment = assess(params, ctx)
-    digest = assessment["assessment_digest"]
-    previous, previous_receipt = _previous(ctx.journal, ctx.mission_id, digest)
+    folder = Path(ctx.deliver_root).resolve() / "cases"
+    folder.mkdir(parents=True, exist_ok=True)
+    name = assessment["packet"]["name"]
+    if assessment["packet_current"]:
+        # The mission's latest packet is for this basis already (the same assessment, or one that differs only in
+        # the intake messages on file): it is the packet, unchanged on disk, and nothing new is written.
+        return _existing(folder, name)
+    basis = assessment["basis_digest"]
+    latest = _latest_packet(folder, assessment["reference"], ctx.mission_id)
+    previous, previous_receipt = (latest[1], _packet_receipt(ctx.journal, ctx.mission_id, latest[0])) if latest \
+        else (None, None)
     observed = [record.hash for event, record in (_receipts(ctx.journal, ctx.mission_id, "case.assess")
                                                   if ctx.journal is not None and ctx.mission_id else [])
-                if ((record.payload.get("result") or {}).get("output") or {}).get("assessment_digest") == digest][:1]
+                if ((record.payload.get("result") or {}).get("output") or {}).get("basis_digest") == basis][:1]
     files = [{"path": assessment["rulebook"]["path"], "sha256": assessment["rulebook"]["sha256"], "state": "read"}]
     files += [{"path": str(Path(assessment["folder"]) / d["file"]), "sha256": d.get("sha256"), "state": d["state"]}
               for d in assessment["documents"].values()]
@@ -1018,24 +1105,41 @@ def packet(params: dict, ctx: InvocationContext) -> dict:
                       "state": "read" if seen.get("exists") else "absent"})
     body = {key: value for key, value in assessment.items() if key not in ("packet", "packet_current")}
     content = {"renderer": RENDERER, "label": assessment["synthetic_label"], "mission_id": ctx.mission_id,
-               "assessment": body,
-               "previous": {"name": f"case-{_slug(assessment['reference'])}-"
-                                    f"{previous['assessment']['assessment_digest'][7:23]}",
+               "sequence": assessment["packet"]["sequence"], "assessment": body,
+               "previous": {"name": latest[0], "sequence": previous["sequence"],
                             "assessment_digest": previous["assessment"]["assessment_digest"],
                             "receipt": previous_receipt} if previous else None,
                "changes": changes(previous["assessment"] if previous else None, body),
                "evidence_trail": {"files": files, "receipts": observed + ([previous_receipt] if previous_receipt else []),
                                   "request_events": [r["event_id"] for r in assessment["request"]["records"] or []]}}
-    folder = Path(ctx.deliver_root).resolve() / "cases"
-    folder.mkdir(parents=True, exist_ok=True)
-    name = assessment["packet"]["name"]
     text, twin = render(content).encode("utf-8"), _json(content).encode("utf-8")
     delivered = _deliver(folder, name, {"packet.md": text, "packet.json": twin})
-    return {"path": str(delivered / "packet.md"), "json_path": str(delivered / "packet.json"), "name": name,
-            "assessment_digest": digest,
-            "route": assessment["route"]["route"], "eligibility": assessment["eligibility"],
+    return _output(delivered, content, text, twin)
+
+
+def _output(delivered: Path, content: dict, text: bytes, twin: bytes) -> dict:
+    a = content["assessment"]
+    return {"path": str(delivered / "packet.md"), "json_path": str(delivered / "packet.json"), "name": delivered.name,
+            "assessment_digest": a["assessment_digest"], "basis_digest": a["basis_digest"],
+            "route": a["route"]["route"], "eligibility": a["eligibility"],
             "sha256": hashlib.sha256(text).hexdigest(), "json_sha256": hashlib.sha256(twin).hexdigest(),
             "packet": content}
+
+
+def _existing(folder: Path, name: str) -> dict:
+    """The packet already on file at ``name``, when both files are still the render of its JSON twin; a changed one is
+    refused, never rewritten."""
+    target = folder / name
+    try:
+        twin = bounded_read(target / "packet.json", "a packet exceeds the read ceiling")
+        text = bounded_read(target / "packet.md", "a packet exceeds the read ceiling")
+        content = json.loads(twin.decode("utf-8"))
+        intact = render(content).encode("utf-8") == text and _json(content).encode("utf-8") == twin
+    except (CapabilityError, OSError, ValueError, KeyError, TypeError):
+        intact = False
+    if not intact:
+        raise CapabilityError(f"the packet at {name} is no longer the render of its own record; nothing overwritten")
+    return _output(target, content, text, twin)
 
 
 def verify_delivery(output: dict, deliver_root: Path | None, ledger=None, *, confined: bool = False) -> tuple[bool, str]:
@@ -1051,6 +1155,9 @@ def verify_delivery(output: dict, deliver_root: Path | None, ledger=None, *, con
     unshown = {k: v for k, v in assessment.items() if k not in ("complete", "decided")}
     if digest is None or assessment_digest(unshown) != digest:
         return False, "the packet's assessment digest is not the digest of its assessment"
+    if assessment.get("basis_digest") != basis_digest(assessment) or output.get("name") != _packet_name(
+            str(assessment.get("reference")), content.get("sequence"), str(assessment.get("basis_digest"))):
+        return False, "the packet's basis digest or name is not derived from its assessment"
     text, twin = render(content).encode("utf-8"), _json(content).encode("utf-8")
     if hashlib.sha256(text).hexdigest() != output.get("sha256") or hashlib.sha256(twin).hexdigest() != \
             output.get("json_sha256"):

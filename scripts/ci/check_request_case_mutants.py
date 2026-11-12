@@ -2,7 +2,9 @@
 lines it relies on) must fail a behavioural test in tests/unit/test_greg_request_case.py when removed: the three-valued
 combination, conflict detection, duplicate detection, the separation of estimates from reconciled actuals, and the
 2026-11-12 review fixes (reference matching, measured-only lapses, refused receipts, payment GREG cannot settle on,
-undecidable rules, the decline route, absence and unread conflicts shown) among them.
+undecidable rules, the decline route, absence and unread conflicts shown; then declared values, reminders that change
+nothing, a document's words kept out of asks, packet order and killed writes, the appraiser's re-reading, and the
+unknowns that stay undecided) among them.
 
     python scripts/ci/check_request_case_mutants.py
 
@@ -156,6 +158,77 @@ MUTANTS = [
     ("a figure a document states unreadably is left out of the estimate", "greg/cases.py",
      '                 for kind, s in record["sources"].items() if s["state"] == "unknown"]',
      '                 for kind, s in record["sources"].items() if False]'),
+    # second fix round (2026-11-12, lens 1 F7-F14 and lens 2 F3-F7)
+    ("a word outside the values a fact declares is read", "greg/cases.py",
+     '        if "values" in spec and _key(value) not in {_key(v) for v in spec["values"]}:', '        if False:'),
+    ("a rulebook may compare a fact with a word outside its values", "greg/cases.py",
+     '                    if isinstance(literal, ast.Constant) and isinstance(literal.value, str) \\',
+     '                    if False and isinstance(literal, ast.Constant) and isinstance(literal.value, str) \\'),
+    ("the fixture's exception status reads any word", "tests/fixtures/request_case/carrier_load/rulebook.json",
+     '"from": {"exception_notice": "Status"}, "values": ["open", "closed"]}', '"from": {"exception_notice": "Status"}}'),
+    ("a reminder on file makes a new packet", "greg/cases.py",
+     '                              if k not in ("request", "basis_digest", "assessment_digest",',
+     '                              if k not in ("basis_digest", "assessment_digest",'),
+    ("a reason repeats the document's value", "greg/cases.py",
+     '(None, "the value is not a number")', '(None, f"{text[:60]!r} is not a number")'),
+    ("an object inside a list is repeated into a person's ask", "greg/missions.py",
+     '        if isinstance(value, (str, dict)) or isinstance(value, list) and any(isinstance(v, (dict, list)) for v in '
+     'value):', '        if isinstance(value, (str, dict)):'),
+    ("the latest packet on file is the earliest", "greg/cases.py",
+     '    return max(found, key=lambda f: (f[0], f[1]))[1:] if found else None',
+     '    return min(found, key=lambda f: (f[0], f[1]))[1:] if found else None'),
+    ("a packet's name leaves out its sequence", "greg/cases.py",
+     '    return f"case-{_slug(reference)}-{sequence}-{basis[7:23]}"', '    return f"case-{_slug(reference)}-{basis[7:23]}"'),
+    ("a mission's earlier packet on file is not its previous one", "greg/cases.py",
+     '    latest = _latest_packet(folder, assessment["reference"], ctx.mission_id)\n', '    latest = None\n'),
+    ("a temporary folder a killed writer left stays", "greg/cases.py",
+     '    target = folder / name\n    _sweep(folder)\n', '    target = folder / name\n'),
+    ("a running writer's temporary folder is swept", "greg/cases.py",
+     '                                                                  or not _alive(int(found.group(1)))):',
+     '                                                                  or True):'),
+    ("the packet pair is written in place, not renamed into place at once", "greg/cases.py",
+     '        temporary = folder / f".{name}.{os.getpid()}.tmp"', '        temporary = target'),
+    ("the Markdown follows the in-memory order of a fact's sources", "greg/cases.py",
+     '        for kind, source in sorted(record["sources"].items()):', '        for kind, source in record["sources"].items():'),
+    # the appraiser re-reads the case and re-renders each packet (lens 2 F3)
+    ("the appraiser does not re-observe case.assess", "greg/appraisal.py",
+     '"institution.appraise", "organ.status", "case.assess"}', '"institution.appraise", "organ.status"}'),
+    ("the appraiser does not re-render case packets", "greg/appraisal.py",
+     '"organs.exchange": "greg.organ_exchange", "case.packet": "greg.cases"}', '"organs.exchange": "greg.organ_exchange"}'),
+    ("the appraiser does not check the packet's assessment digest", "greg/cases.py",
+     '    if digest is None or assessment_digest(unshown) != digest:', '    if digest is None:'),
+    ("the appraiser does not check the packet's basis and name", "greg/cases.py",
+     '    if assessment.get("basis_digest") != basis_digest(assessment) or output.get("name") != _packet_name(',
+     '    if False and output.get("name") != _packet_name('),
+    # unknown stays undecided (lens 2 F4)
+    ("a document on file without the key line gives no value instead of unknown", "greg/cases.py",
+     '    if not values and not spec.get("many"):', '    if False:'),
+    ("an undecidable condition is not met", "greg/cases.py",
+     '        return {"state": "unknown", "facts_used": used, "missing": [], "conflicts": [], **shown_absent,\n'
+     '                "reason": f"the condition cannot be decided',
+     '        return {"state": "not_met", "facts_used": used, "missing": [], "conflicts": [], **shown_absent,\n'
+     '                "reason": f"the condition cannot be decided'),
+    ("an undecidable dispute leaves the disputes decided", "greg/cases.py",
+     '("disputes", bool(disputes_unknown)),', '("disputes", False),'),
+    ("an undecidable acceptance leaves accepted decided", "greg/cases.py",
+     '("accepted", accepted is None),', '("accepted", False),'),
+    ("an eligible case with an undecidable dispute is routed to settle", "greg/cases.py",
+     '"undetermined": eligibility == "undetermined" or (eligibility == "eligible" and bool(disputes_unknown)),\n'
+     '             "eligible": eligibility == "eligible" and not disputes_unknown}',
+     '"undetermined": eligibility == "undetermined",\n             "eligible": eligibility == "eligible"}'),
+    ("an unknown source hides a conflict between the others", "greg/cases.py",
+     'state = ("conflict" if len(distinct) > 1 else "unknown" if unknown else',
+     'state = ("unknown" if unknown else "conflict" if len(distinct) > 1 else'),
+    ("a reading without the ledger decides the request and earlier cases", "greg/cases.py",
+     '("request_recorded", request is None), ("duplicates", duplicates is None))',
+     '("request_recorded", False), ("duplicates", False))'),
+    # text normalisation and the approval filter (lens 2 F5)
+    ("an accessorial without an approval counts as approved", "greg/cases.py",
+     '        if "only" in spec and not re.search(spec["only"], found.group(2)):', '        if False:'),
+    ("text values differing only in case are a conflict", "greg/cases.py",
+     '    return _key(value) if isinstance(value, str) else value', '    return value'),
+    ("rule text comparison is case-sensitive", "greg/cases.py",
+     '        return _key(a) == _key(b)', '        return a == b'),
 ]
 
 

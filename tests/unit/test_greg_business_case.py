@@ -226,3 +226,39 @@ def test_n3_refuses_a_case_whose_human_work_was_never_observed(tmp_path):
         j.record("mission.achieved", {"mission_id": mid, "evidence": []}, key=[mid, "achieved"])
         missing = devpath.business_loop_closed(j)["incomplete"][0]["missing"]
     assert "human_work_not_observed" in missing and "no_person_did_the_outward_work" not in missing
+
+
+def test_an_unreadable_statement_while_delivery_is_asked_lapses_no_precondition(tmp_path):
+    """Review of the operational slice (lens 2, F1): node N3's deliver ask requires 'paid'. A statement export that
+    stops being readable text measures nothing, so 'paid' is unknown, not failing: the person's deliver ask stays
+    open and is not withdrawn as 'no longer holds (paid)'. On 712c148c it was withdrawn and a NO_STRATEGY ask raised;
+    the engine change (greg/missions.py, measured failures only) is also exercised by the request-case tests."""
+    home, key, body_id, _ = make_body(tmp_path)
+    clock = Clock()
+    body = Body(home, clock=clock).open()
+    body.boot()
+    try:
+        drop(home, signed(key, body_id, "BODY_DESIGNATE", {"purpose": "first_founder_body"}, now=clock.now))
+        run(body, clock, 1, 0)
+        spec = case_spec(home)
+        mid = spec["mission_id"]
+        folder = workspace(home, mid)
+        drop(home, signed(key, body_id, "MISSION", spec, now=clock.now))
+        run(body, clock, 3, 0)
+        (folder / "acceptance.txt").write_text(f"Acme accepts {REF}: summary within 5 business days\n")
+        run(body, clock)
+        (folder / "statement.csv").write_text(HEADER + f"2026-10-02,Payment {REF},250.00,USD\n")
+        run(body, clock)
+        deliver = human_asks(body, mid)[-1]
+        assert deliver["evidence"]["function"] == "human.deliver"
+        (folder / "statement.csv").write_bytes(b"date,description\n\xff\xfe broken export\n")
+        run(body, clock)
+        paid = [e.payload for e in body.journal.replay("mission.observed")
+                if e.payload["mission_id"] == mid and e.payload["check_id"] == "paid"][-1]
+        assert paid["passed"] is False and paid["detail"].startswith("sensor inconclusive")
+        withdrawn = {e.payload["request_id"] for e in body.journal.replay("decision.withdrawn")}
+        assert deliver["request_id"] not in withdrawn
+        assert not [e for e in body.journal.replay("decision.requested")
+                    if e.payload["mission_id"] == mid and e.payload["kind"] == "NO_STRATEGY"]
+    finally:
+        body.close()

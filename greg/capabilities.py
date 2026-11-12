@@ -660,8 +660,10 @@ CHROME_CANDIDATES = (
 
 def chrome_binary() -> str:
     """The browser GREG drives: an installed Chrome/Chromium (founder-chosen via GREG_CHROMIUM)."""
-    for candidate in (os.environ.get("GREG_CHROMIUM", ""), *CHROME_CANDIDATES,
-                      *sorted(glob.glob("/opt/pw-browsers/chromium-*/chrome-linux/chrome"))):
+    shells = sorted(glob.glob("/opt/pw-browsers/chromium_headless_shell-*/chrome-headless-shell-*/chrome-headless-shell"),
+                    reverse=True)
+    for candidate in (os.environ.get("GREG_CHROMIUM", ""), *shells, "/usr/bin/chrome-headless-shell",
+                      *CHROME_CANDIDATES, *sorted(glob.glob("/opt/pw-browsers/chromium-*/chrome-linux*/chrome"))):
         if candidate and Path(candidate).is_file() and os.access(candidate, os.X_OK):
             return candidate
     return CHROME_CANDIDATES[0]

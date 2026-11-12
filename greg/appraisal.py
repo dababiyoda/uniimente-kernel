@@ -380,6 +380,28 @@ def _waited_on(journal: Journal, mid: str, closure_event: str | None) -> dict:
     return waited
 
 
+def _fresh_appraisal(journal: Journal, seq: dict, mid: str, closure_seq: int, terminal_closure: bool) -> dict:
+    """Where this mission's timely appraisal comes from, after a closure of it was appraised too late to judge.
+
+    A stale closure is not appraised again (the world it closed on is gone), and it is not silently final either:
+    a later closure of the mission that is already on the ledger has its own appraisal; otherwise the mission's next
+    closure is appraised when it is recorded. When the mission has ended and no further closure will be recorded,
+    the record says so: this closure stays unappraised. Nothing here asks the founder or grants anything."""
+    later = [(seq[e.event_id], kind, e.event_id) for kind in ("mission.achieved", "mission.held", "mission.unmet")
+             for e in journal.replay(kind) if e.payload["mission_id"] == mid and seq[e.event_id] > closure_seq]
+    if later:
+        _, kind, event_id = max(later)
+        return {"from": "later_closure", "closure": "achievement" if kind == "mission.achieved" else event_id,
+                "note": "a later closure of this mission is on the ledger; its own appraisal is the timely one"}
+    ended = [e.payload["state"] for e in journal.replay("mission.lifecycle")
+             if e.payload["mission_id"] == mid and e.payload["state"] in ("ABANDONED", "SUPERSEDED")]
+    if ended or terminal_closure:
+        return {"from": "none", "note": f"the mission is {ended[-1] if ended else 'ACHIEVED'}: no further closure "
+                                        "will be recorded, so this closure stays unappraised"}
+    return {"from": "next_closure", "note": "the mission's next closure (an achievement, a hold or a failure "
+                                            "closure) is appraised when it is recorded"}
+
+
 def _never_rerun(cid: str) -> str | None:
     """Why the appraiser never re-runs this built-in as a sensor, whatever its attach state: it re-reads, it does not
     act. ``REOBSERVABLE`` is a list of ids (it names ``cognition.settle``, which writes); the manifest decides."""
@@ -406,6 +428,7 @@ def appraise(request: dict) -> dict:
         unmeasured = []     # the checks whose sensor it therefore did not re-run
         waited_on = _waited_on(journal, mid, request.get("closure_event"))   # non-empty: this appraisal is late
         outdated = []       # the checks whose late re-reading disagrees: no evidence about the closure
+        stale = []          # what those readings said; kept apart from the findings, which are reasons
         registered = [e for e in journal.replay("mission.registered") if e.payload["mission_id"] == mid]
         unmet = False
         if request.get("closure_event"):  # a standing mission's hold after new action, or a failure closure
@@ -589,7 +612,7 @@ def appraise(request: dict) -> dict:
                     # Read later than the closure, after it waited for a capability to be attached again: this
                     # reading cannot refute it (``_waited_on``). The check is left open.
                     outdated.append(check["check_id"])
-                    findings.append(
+                    stale.append(
                         f"{check['check_id']}: not appraised in time ({', '.join(sorted(waited_on))} was not ATTACHED "
                         "when this closure was first appraised); the world as read now, later, " + (
                             "could not be re-measured" if now_ok is None else "no longer matches")
@@ -785,7 +808,10 @@ def appraise(request: dict) -> dict:
             ("deliveries_bound_to_evidence", delivered_ok, underived)) if held and left_open]
         return _verdict(request, checks, findings, required=required, unmet=unmet, not_run=not_run,
                         unmeasured=unmeasured, otherwise_whole=reobserved and delivered_ok,
-                        late={"waited_on": sorted(waited_on), "checks": sorted(outdated)} if outdated else None,
+                        late={"waited_on": sorted(waited_on), "checks": sorted(outdated), "stale": stale,
+                              "fresh_appraisal": _fresh_appraisal(
+                                  journal, seq, mid, achieved_seq,
+                                  terminal_closure=expected_kind == "bounded" and not unmet)} if outdated else None,
                         not_established=not_established)
     finally:
         ledger.close()
@@ -804,10 +830,16 @@ def _verdict(request, checks, findings, required=(), unmet=False, not_run=None, 
     something else refutes is REFUTED, and still says what was not run.
 
     It is also the verdict of a late appraisal (``_waited_on``) whose only disagreement is the world as read now
-    (``late``): the closure was not appraised in time and is neither verified nor refuted. That answer names no
-    capability to wait for, so the body records it once and does not appraise the closure again. What the record
-    itself refutes (a receipt not bound to the closure, a signature, a delivery that fails its re-derivation) is
-    REFUTED whenever it is appraised.
+    (``late``): the closure was not appraised in time and is neither verified nor refuted (founder ruling of
+    2026-11-12: "classify stale or mismatched evidence accurately. It cannot establish a timely appraisal or grant
+    permission. Preserve any separately valid refutation, and request fresh appraisal when required"). That answer
+    names no capability to wait for, so the body records it once and does not appraise the closure again; it says
+    where the mission's timely appraisal comes from instead (``_fresh_appraisal``). What the record itself refutes
+    (a receipt not bound to the closure, a signature, a delivery that fails its re-derivation) is REFUTED whenever
+    it is appraised.
+
+    A stale reading is never a reason. It is the finding of an UNAVAILABLE verdict (why nothing was judged); under
+    REFUTED it is listed only in ``appraised_late``, and ``refuted_by`` names the checks that did refute.
 
     ``not_established`` names the checks that are False without evidence against the closure (not run, or read too
     late). A reader that blames a capability for a False check reads this first (greg/routing.py)."""
@@ -822,13 +854,19 @@ def _verdict(request, checks, findings, required=(), unmet=False, not_run=None, 
         judged["not_run"] = dict(sorted(not_run.items()))
         if unmeasured:
             judged["unmeasured_checks"] = sorted(unmeasured)
-    if late:
-        judged["appraised_late"] = late
     if not_established:
         judged["not_established"] = sorted(not_established)
     if not_run or late:
         if otherwise_whole and all(checks.get(k) for k in required if k not in NOT_RUN_CHECKS):
             judged["verdict"] = "UNAVAILABLE"
+    if late:
+        waits = judged["verdict"] == "UNAVAILABLE" and bool(not_run)    # appraised again on an attach: not final yet
+        judged["appraised_late"] = {k: v for k, v in late.items()
+                                    if k != "fresh_appraisal" or (judged["verdict"] == "UNAVAILABLE" and not waits)}
+        if judged["verdict"] == "UNAVAILABLE":
+            judged["findings"] = [*findings, *late["stale"]]
+    if judged["verdict"] == "REFUTED" and not_established:
+        judged["refuted_by"] = sorted(k for k in required if not checks.get(k) and k not in not_established)
     return judged
 
 

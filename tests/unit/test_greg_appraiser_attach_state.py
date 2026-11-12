@@ -22,6 +22,12 @@ What must hold now:
 - that later appraisal reads a later world. A reading that still agrees is accepted. One that disagrees is no
   evidence about the closure (the founder did the work himself, a standing mission's world drifted): the appraisal is
   UNAVAILABLE once more, final, and nothing reads it as a failure. What the record itself refutes is still REFUTED;
+- founder ruling of 2026-11-12 on that case: "Late appraisal mismatch: classify stale or mismatched evidence
+  accurately. It cannot establish a timely appraisal or grant permission. Preserve any separately valid refutation,
+  and request fresh appraisal when required." So a refutation names its ground (``refuted_by``) and lists a stale
+  reading apart from its reasons; a stale verdict says where the mission's timely appraisal comes from (a later
+  closure, the next closure, or none because the mission ended); and neither a stale nor any other UNAVAILABLE
+  appraisal raises an autonomy level, answers an ask or lifts a blocker;
 - a check left open (not run, or read too late) is named ``not_established``, and routing does not blame a
   capability for it;
 - a mission whose latest appraisal waits for an attach is "not yet appraised" to the SOP trend, the N4 reading and
@@ -40,6 +46,7 @@ from __future__ import annotations
 import ast
 import dataclasses
 import json
+import os
 from pathlib import Path
 import subprocess
 
@@ -436,6 +443,7 @@ def test_a_re_attach_after_a_restart_is_still_appraised(tmp_path, child):
         assert [a["verdict"] for a in facts(body, "mission.appraised")] == ["UNAVAILABLE", "VERIFIED"]
 
 
+NO_FRESH = "the mission is ACHIEVED: no further closure will be recorded, so this closure stays unappraised"
 LATE = ("c: not appraised in time (fs.read was not ATTACHED when this closure was first appraised); the world as read "
         "now, later, no longer matches (contains 'final'), which is no evidence about the closure")
 
@@ -459,7 +467,11 @@ def test_a_late_re_reading_that_disagrees_does_not_refute_the_closure(tmp_path, 
         first, second = facts(body, "mission.appraised")
         assert (first["verdict"], second["verdict"]) == ("UNAVAILABLE", "UNAVAILABLE")
         assert second["findings"] == [LATE] and "not_run" not in second
-        assert second["appraised_late"] == {"waited_on": ["fs.read"], "checks": ["c"]}
+        # The mission is ACHIEVED and bounded: no further closure will come, and the record says so.
+        assert second["appraised_late"] == {
+            "waited_on": ["fs.read"], "checks": ["c"], "stale": [LATE],
+            "fresh_appraisal": {"from": "none", "note": NO_FRESH}}
+        assert "refuted_by" not in second
         assert second["checks"]["world_reobserved"] is False and second["not_established"] == ["world_reobserved"]
         assert not facts(body, "mission.appraisal_unavailable")  # an answer, not a failed run
         not_failure_evidence(body)
@@ -476,13 +488,19 @@ def test_a_late_re_reading_that_disagrees_does_not_refute_the_closure(tmp_path, 
         assert child.ran == ["adapter fs.read"]
         # asked for on demand, the appraiser gives the same answer: it reads the earlier appraisal from the ledger
         assert body.appraise(MID)["verdict"] == "UNAVAILABLE"
+        # the founder reads the reason in the morning report
+        from greg.tribunal import morning_report
+        reported = [a for a in morning_report(body.journal, body.engine)["appraisals"] if a["mission_id"] == MID][-1]
+        assert reported["findings"] == [LATE] and reported["appraised_late"]["fresh_appraisal"]["note"] == NO_FRESH
     from greg.console import Console
     from greg.mission_control import projection, render_view
     console = Console(home)
     rows = projection(console)["appraisals"]
     assert [(r["verdict"], r["closure"]) for r in rows] == [("UNAVAILABLE", "achievement")] * 2
     assert rows[0]["why"] == first["findings"][0] and rows[1]["why"] == LATE     # the two rows read differently
-    assert "not appraised in time (fs.read was not ATTACHED" in render_view(console, "proof", {})
+    assert "fresh_appraisal" not in rows[0] and rows[1]["fresh_appraisal"] == NO_FRESH
+    proof = render_view(console, "proof", {})                    # and on the Proof list, with that reason
+    assert "not appraised in time (fs.read was not ATTACHED" in proof and "Fresh appraisal: " + NO_FRESH in proof
 
 
 def test_a_failure_closure_appraised_late_does_not_speak_against_the_achievement_that_followed(tmp_path, child):
@@ -511,7 +529,11 @@ def test_a_failure_closure_appraised_late_does_not_speak_against_the_achievement
         # the waiting closure is appraised before the closure recorded since: the achievement's appraisal is last
         assert [(a["verdict"], a.get("closure_event")) for a in appraised] == [
             ("UNAVAILABLE", unmet.event_id), ("UNAVAILABLE", unmet.event_id), ("VERIFIED", None)]
-        assert appraised[1]["appraised_late"] == {"waited_on": ["fs.read"], "checks": ["status"]}
+        late = appraised[1]["appraised_late"]
+        assert (late["waited_on"], late["checks"]) == (["fs.read"], ["status"])
+        # its timely appraisal is the one of the closure recorded since, which is appraised normally (not late)
+        assert late["fresh_appraisal"]["from"] == "later_closure" and late["fresh_appraisal"]["closure"] == "achievement"
+        assert "appraised_late" not in appraised[2] and appraised[2]["checks"]["world_reobserved"] is True
         assert [f["kind"] for f in autonomy.failures(body.journal)] == ["ineffective"]     # the nudge; no "refuted"
         assert not [c for c in corrections.Index(body.journal).causes(body.clock()) if c["class"] == "APPRAISAL_REFUTED"]
         record = routing.track_record(body.journal)["fs.write"]
@@ -550,11 +572,25 @@ def test_a_standing_hold_appraised_late_after_the_world_drifted_is_not_refuted(t
         first, second = [a for a in facts(body, "mission.appraised") if a.get("closure_event") == hold.event_id]
         assert (first["verdict"], second["verdict"]) == ("UNAVAILABLE", "UNAVAILABLE")
         assert second["appraised_late"]["checks"] == ["c"] and second["not_established"] == ["world_reobserved"]
+        assert second["appraised_late"]["fresh_appraisal"]["from"] == "next_closure"     # the mission is still live
         assert not [a for a in facts(body, "mission.appraised") if a["verdict"] == "REFUTED"]
         assert autonomy.failures(body.journal) == []
         assert not [c for c in corrections.Index(body.journal).causes(body.clock()) if c["class"] == "APPRAISAL_REFUTED"]
         assert all(row["refuted"] == 0 for row in routing.track_record(body.journal).values())
         assert child.ran.count("adapter fs.read") == 1           # read once for that hold, then never again for it
+        # The mission repairs the drift at its cadence and holds again. That next closure is appraised normally
+        # (it is not late: nothing of its own waited), and it is what the latest-appraisal readers find.
+        from greg.sop import verified_appraisals
+        assert MID not in verified_appraisals(body.journal)
+        for _ in range(4):
+            clock.advance(3600)
+            body.tick()
+        first_hold, next_hold = body.journal.replay("mission.held")
+        latest = facts(body, "mission.appraised")[-1]
+        assert (latest["verdict"], latest["closure_event"]) == ("VERIFIED", next_hold.event_id)
+        assert "appraised_late" not in latest and "not_established" not in latest
+        assert MID in verified_appraisals(body.journal)
+        assert len([a for a in facts(body, "mission.appraised") if a["closure_event"] == hold.event_id]) == 2
     from greg.console import Console
     from greg.mission_control import projection
     assert projection(Console(home))["appraisals"][0]["closure"] == f"hold {hold.event_id[:8]}"
@@ -578,7 +614,133 @@ def test_a_late_appraisal_still_refutes_what_the_record_itself_refutes(tmp_path,
     monkeypatch.setattr(appraisal, "_founder_keys", lambda journal, before, ledger: {})
     verdict = appraisal.appraise(request)
     assert verdict["verdict"] == "REFUTED" and verdict["checks"]["founder_signature_verified"] is False
-    assert verdict["not_established"] == ["world_reobserved"] and LATE in verdict["findings"]
+    # refuted on the signature alone: the stale reading is listed as stale and is not among the reasons
+    assert verdict["refuted_by"] == ["founder_signature_verified"]
+    assert verdict["findings"] == ["mission body is not provably what an enrolled founder key signed"]
+    assert verdict["not_established"] == ["world_reobserved"]
+    assert verdict["appraised_late"] == {"waited_on": ["fs.read"], "checks": ["c"], "stale": [LATE]}
+
+
+def test_a_stale_reading_beside_a_real_ground_is_recorded_as_stale_and_the_ground_alone_refutes(
+        tmp_path, child, repo, github):  # noqa: F811
+    """Through the body and its separate appraiser. A brief's closure waits for its detached freshness sensor.
+    Meanwhile the delivered file is edited (it no longer matches its receipted evidence: a ground that does not
+    depend on when the world is read) and it ages past the freshness check (a later world). After the re-attach
+    the closure is REFUTED on the delivery alone. The stale reading is on the record as stale, and no reader takes
+    it for a reason: corrections names the delivery check only, routing counts no effect failure."""
+    from greg import corrections
+    clock = Clock()
+    home, key, body_id, mid, brief = delivered_brief(tmp_path, repo, clock)
+    detach(home, key, body_id, "brief.freshness")
+    with Body(home, clock=clock) as body:
+        body.tick()
+        assert [a["verdict"] for a in facts(body, "mission.appraised", mid)] == ["UNAVAILABLE"]
+        brief.write_text(brief.read_text() + "\nappended after delivery\n")
+        os.utime(brief, (946684800, 946684800))                  # last written in the year 2000
+        attach(home, key, body_id, "brief.freshness")
+        clock.advance(30)
+        body.tick()
+        assert child.ran == ["delivery brief.engineering", "adapter brief.freshness", "delivery brief.engineering"]
+        refuted = facts(body, "mission.appraised", mid)[-1]
+        assert refuted["verdict"] == "REFUTED" and refuted["refuted_by"] == ["deliveries_bound_to_evidence"]
+        assert refuted["findings"] == ["deliver-engineering-brief: delivered file differs from the render of the "
+                                       "receipted inputs"]
+        late = refuted["appraised_late"]
+        [stale] = late["stale"]
+        assert "not appraised in time (brief.freshness was not ATTACHED" in stale and "no longer matches" in stale
+        assert late["waited_on"] == ["brief.freshness"] and len(late["checks"]) == 1
+        assert "fresh_appraisal" not in late                     # a refuted closure was judged: nothing to ask for
+        assert refuted["not_established"] == ["world_reobserved"] and refuted["checks"]["world_reobserved"] is False
+        causes = [c for c in corrections.Index(body.journal).causes(body.clock()) if c["class"] == "APPRAISAL_REFUTED"]
+        assert causes and all(c["detail"]["failed_checks"] == ["deliveries_bound_to_evidence"] for c in causes)
+        assert routing.track_record(body.journal)["brief.engineering"]["refuted"] == 0
+        assert [f["kind"] for f in autonomy.failures(body.journal)] == ["refuted"]     # the real refutation stands
+
+
+def test_where_a_stale_closures_timely_appraisal_comes_from():
+    """``_fresh_appraisal`` in this process, over a hand-made record: a later closure of the same mission, the next
+    closure of a live mission, or none when the mission has ended."""
+    class Event:
+        def __init__(self, event_id, **payload):
+            self.event_id, self.payload = event_id, payload
+
+    record = {"mission.achieved": [Event("a-other", mission_id="m:other")],
+              "mission.held": [Event("h-1", mission_id=MID), Event("h-2", mission_id=MID), Event("h-x", mission_id="m:other")],
+              "mission.unmet": [Event("u-3", mission_id=MID)], "mission.lifecycle": []}
+    seq = {"h-1": 10, "h-2": 20, "u-3": 30, "h-x": 40, "a-other": 50}
+
+    class Journal:
+        def replay(self, kind):
+            return record[kind]
+
+    fresh = appraisal._fresh_appraisal
+    assert fresh(Journal(), seq, MID, 10, False)["closure"] == "u-3"        # the latest later closure of this mission
+    assert fresh(Journal(), seq, MID, 20, False)["from"] == "later_closure"
+    live = fresh(Journal(), seq, MID, 30, False)                            # earlier closures and another mission's
+    assert live["from"] == "next_closure" and "next closure" in live["note"]   # later ones are not its later closure
+    assert fresh(Journal(), seq, MID, 30, True) == {"from": "none", "note": NO_FRESH}
+    record["mission.lifecycle"] = [Event("l-1", mission_id="m:other", state="ABANDONED"),
+                                   Event("l-2", mission_id=MID, state="PAUSED")]
+    assert fresh(Journal(), seq, MID, 30, False)["from"] == "next_closure"   # paused, or another mission abandoned
+    record["mission.lifecycle"].append(Event("l-3", mission_id=MID, state="ABANDONED"))
+    ended = fresh(Journal(), seq, MID, 30, False)
+    assert ended["from"] == "none" and ended["note"].startswith("the mission is ABANDONED: no further closure")
+
+
+def test_an_appraisal_that_judged_nothing_grants_nothing(tmp_path, child):
+    """Neither answer of the appraiser that judges nothing (it ran no sensor; it read too late) raises an autonomy
+    level, answers an ask, approves a scope or lifts a blocker. A second mission on the same body waits on the
+    founder's approval of a write (the same capability, class and target pattern as the appraised mission's run).
+    The whole body's standing is compared before and after each of the two appraisals."""
+    home, key, body_id, note = note_mission(tmp_path, sensors=("fs.read", "fs.list"))
+    waiting = "m:asks"
+    drop(home, signed(key, body_id, "MISSION", mission(
+        waiting, checks=[note_check("n", workspace(home, waiting) / "n.txt", "wanted")],
+        strategies=[write_strategy("w", "n.txt", "wanted", ["n"])], capabilities=["fs.read"], ceiling="read_only")))
+    clock = Clock()
+    close_then_stop(home, clock)
+    detach(home, key, body_id, "fs.list")                        # a sensor only the appraised mission uses
+
+    def standing(body):
+        body.engine.book.rebuild()
+        missions = {mid: (m.status, (m.blocker or {}).get("request_id"), sorted(m.approved_scopes), m.actions_done)
+                    for mid, m in body.engine.book.missions.items()}
+        levels = [(t["tuple"]["capability"], t["level"], t["evidence"]["verified"], t["evidence"]["approved"])
+                  for t in autonomy.report(body.journal)["tuples"]]
+        return {"missions": missions, "levels": levels,
+                "open_asks": sorted(r["request_id"] for r in body.engine.book.open_requests()),
+                "answered": len(body.journal.replay("decision.answered")),
+                "withdrawn": len(body.journal.replay("decision.withdrawn")),
+                "unblocked": len(body.journal.replay("mission.unblocked")),
+                "lifecycle": len(body.journal.replay("mission.lifecycle")),
+                "actions": len(body.journal.replay("mission.action"))}
+
+    with Body(home, clock=clock) as body:
+        before = standing(body)
+        ask = before["missions"][waiting][1]
+        assert before["missions"][MID][0] == "ACHIEVED" and ask and before["open_asks"] == [ask]
+        assert before["missions"][waiting][2] == [] and before["levels"] == [("fs.write", "SHADOW", 0, 0)]
+        body.tick()                                              # the appraiser ran no sensor for fs.list
+        [first] = facts(body, "mission.appraised")
+        assert first["verdict"] == "UNAVAILABLE" and list(first["not_run"]) == ["fs.list"]
+        assert standing(body) == before
+        note.write_text("changed while fs.list was detached")
+        attach(home, key, body_id, "fs.list")
+        clock.advance(1)
+        body.tick()                                              # the appraiser read too late
+        stale = facts(body, "mission.appraised")[-1]
+        assert stale["verdict"] == "UNAVAILABLE" and stale["appraised_late"]["checks"] == ["c"]
+        assert standing(body) == before
+        for _ in range(3):
+            clock.advance(1)
+            body.tick()
+        assert standing(body) == before and len(facts(body, "mission.appraised")) == 2
+        # the control: the founder's own signed approval is what moves that ask, and nothing else did
+        drop(home, signed(key, body_id, "DECISION", {"request_id": ask, "answer": "approve"}))
+        clock.advance(1)
+        body.tick()
+        after = standing(body)
+        assert after["answered"] == before["answered"] + 1 and ask not in after["open_asks"]
 
 
 def test_only_an_earlier_appraisal_of_the_same_closure_that_ran_nothing_makes_an_appraisal_late():

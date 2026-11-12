@@ -313,6 +313,9 @@ def _appraisal_row(event, closure_kinds: dict) -> dict:
            "closure": f"{closure_kinds.get(closure, 'closure')} {str(closure)[:8]}" if closure else "achievement"}
     if data.get("verdict") == "UNAVAILABLE":
         row["why"] = "; ".join(str(f) for f in (data.get("findings") or [])[:3])[:900]
+        fresh = (data.get("appraised_late") or {}).get("fresh_appraisal") or {}
+        if fresh.get("note"):       # a stale closure: where the mission's timely appraisal comes from, or that none will
+            row["fresh_appraisal"] = str(fresh["note"])[:300]
     return row
 
 
@@ -614,7 +617,9 @@ def _proof(console, p, form) -> str:
             f"{(p.get('sandbox_integration') or {}).get('tier', '')}")]])
             + "</section><section><h2>Independent appraisals</h2>"
             + _table(["Mission", "Verdict", "Closure", "Why it was not appraised", "At"],
-                     [[_e(x["mission_id"]), _cls(x["verdict"]), _e(x.get("closure", "")), _e(x.get("why", "")), _e(x["at"])]
+                     [[_e(x["mission_id"]), _cls(x["verdict"]), _e(x.get("closure", "")),
+                       _e(x.get("why", "") + (". Fresh appraisal: " + x["fresh_appraisal"] if x.get("fresh_appraisal") else "")),
+                       _e(x["at"])]
                       for x in p["appraisals"][::-1]])
             + "</section>" + _traces_section(p.get("traces") or {}) + _resilience_section(p["resilience"])
             + "<section><h2>Quarantine</h2>"

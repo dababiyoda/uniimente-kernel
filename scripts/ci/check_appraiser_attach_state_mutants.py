@@ -6,7 +6,8 @@ immediately").
 
 Mutants are applied in a scratch copy of the repository, never to the working tree: to greg/appraisal.py and
 greg/body.py, and to the readers that must not take an appraisal that judged nothing for a failed one
-(greg/routing.py, greg/sop.py, greg/compounding.py, greg/mission_control.py). The copy runs without bytecode and its
+(greg/routing.py, greg/sop.py, greg/compounding.py, greg/mission_control.py, greg/corrections.py, greg/autonomy.py).
+The copy runs without bytecode and its
 __pycache__ is purged before each mutant. A mutant is caught only when
 tests/unit/test_greg_appraiser_attach_state.py reports a FAILED test (an import or collection error does not count).
 Exit status 1 if any mutant survives or no longer applies. The mission engine's safeguard that the same founder
@@ -21,6 +22,8 @@ ROUTING = "greg/routing.py"
 SOP = "greg/sop.py"
 COMPOUNDING = "greg/compounding.py"
 MISSION_CONTROL = "greg/mission_control.py"
+CORRECTIONS = "greg/corrections.py"
+AUTONOMY = "greg/autonomy.py"
 TESTS = "tests/unit/test_greg_appraiser_attach_state.py"
 MUTANTS = [
     # the rule: only ATTACHED runs, and only the reviewed read-only built-in this body holds registered
@@ -80,7 +83,37 @@ MUTANTS = [
      'checks["world_reobserved"] = reobserved and not unmeasured and not outdated',
      'checks["world_reobserved"] = reobserved and not unmeasured'),
     (APPRAISAL, "the late answer is not told apart from a refutation",
-     'late={"waited_on": sorted(waited_on), "checks": sorted(outdated)} if outdated else None,', 'late=None,'),
+     'terminal_closure=expected_kind == "bounded" and not unmet)} if outdated else None,',
+     'terminal_closure=expected_kind == "bounded" and not unmet)} if False else None,'),
+    # founder ruling 2026-11-12: a stale reading is classified as stale, a separate refutation is preserved and named,
+    # a fresh appraisal is pointed to, and nothing is granted
+    (APPRAISAL, "a stale reading is listed among the reasons",
+     '                    stale.append(\n', '                    findings.append(\n'),
+    (APPRAISAL, "a stale verdict does not say what the late reading found",
+     '            judged["findings"] = [*findings, *late["stale"]]', '            pass'),
+    (APPRAISAL, "a refutation beside a check left open does not name its ground",
+     '        judged["refuted_by"] = sorted(k for k in required if not checks.get(k) and k not in not_established)',
+     '        pass'),
+    (APPRAISAL, "a check left open is named as a ground of the refutation",
+     '        judged["refuted_by"] = sorted(k for k in required if not checks.get(k) and k not in not_established)',
+     '        judged["refuted_by"] = sorted(k for k in required if not checks.get(k))'),
+    (APPRAISAL, "a stale verdict does not say where a fresh appraisal comes from",
+     'if k != "fresh_appraisal" or (judged["verdict"] == "UNAVAILABLE" and not waits)}', 'if k != "fresh_appraisal"}'),
+    (APPRAISAL, "a refuted closure asks for a fresh appraisal",
+     'if k != "fresh_appraisal" or (judged["verdict"] == "UNAVAILABLE" and not waits)}', 'if True}'),
+    (APPRAISAL, "a later closure already on the ledger is not pointed to",
+     '    if later:\n        _, kind, event_id = max(later)', '    if False:\n        _, kind, event_id = max(later)'),
+    (APPRAISAL, "another mission's closure is taken for this mission's later closure",
+     'for e in journal.replay(kind) if e.payload["mission_id"] == mid and seq[e.event_id] > closure_seq]',
+     'for e in journal.replay(kind) if seq[e.event_id] > closure_seq]'),
+    (APPRAISAL, "an earlier closure is taken for a later one",
+     'for e in journal.replay(kind) if e.payload["mission_id"] == mid and seq[e.event_id] > closure_seq]',
+     'for e in journal.replay(kind) if e.payload["mission_id"] == mid and seq[e.event_id] != closure_seq]'),
+    (APPRAISAL, "a mission that ended is told its next closure will be appraised",
+     '    if ended or terminal_closure:', '    if False:'),
+    (APPRAISAL, "another mission's ending, or a pause, ends this mission",
+     'if e.payload["mission_id"] == mid and e.payload["state"] in ("ABANDONED", "SUPERSEDED")]',
+     'if e.payload["state"] in ("ABANDONED", "SUPERSEDED", "PAUSED")]'),
     (APPRAISAL, "a late answer is given only when a capability was also not run",
      '    if not_run or late:', '    if not_run:'),
     (APPRAISAL, "an appraisal of another closure of the mission makes this one late",
@@ -155,7 +188,17 @@ MUTANTS = [
     (MISSION_CONTROL, "the Proof list does not carry why an appraisal was UNAVAILABLE",
      '    if data.get("verdict") == "UNAVAILABLE":\n        row["why"]', '    if False:\n        row["why"]'),
     (MISSION_CONTROL, "the Proof view does not show why an appraisal was UNAVAILABLE",
-     '_e(x.get("why", ""))', '""'),
+     '_e(x.get("why", "") + (', '_e("" + ('),
+    (MISSION_CONTROL, "the Proof list does not carry where a stale closure's fresh appraisal comes from",
+     '        if fresh.get("note"):', '        if False:'),
+    (MISSION_CONTROL, "the Proof view does not show where a stale closure's fresh appraisal comes from",
+     '(". Fresh appraisal: " + x["fresh_appraisal"] if x.get("fresh_appraisal") else "")', '("")'),
+    (CORRECTIONS, "a correction lists a check the appraiser left open as a failed check",
+     'if v is False\n                                                             '
+     'and k not in (p.get("not_established") or ())),', 'if v is False),'),
+    (AUTONOMY, "an appraisal that judged nothing counts as a verified run towards an autonomy level",
+     'kind = "verified" if judged is not None and judged[1] == "VERIFIED" else None',
+     'kind = "verified" if judged is not None and judged[1] in ("VERIFIED", "UNAVAILABLE") else None'),
     (MISSION_CONTROL, "every appraisal row reads as the achievement's",
      'f"{closure_kinds.get(closure, \'closure\')} {str(closure)[:8]}" if closure else "achievement"', '"achievement"'),
     (MISSION_CONTROL, "the Proof view does not show which closure an appraisal is for",

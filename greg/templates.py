@@ -685,7 +685,8 @@ def request_case(*, reference: str, request: str, rulebook: Path, folder: Path, 
     no dispute, eligible, completion accepted, payment observed (business.reconcile's own matching) and a packet
     delivered for the current assessment. GREG's only write is the packet (``case.packet``, one new file per
     assessment). Every act toward a person is ``human.*`` work, one costed ask each: asking the requester for exactly
-    the missing facts, settling a named dispute, obtaining written acceptance, and the payment itself, which a person
+    the missing facts, declining with the failed rules, settling a named dispute, obtaining written acceptance, and
+    the payment itself, which a person
     makes outside GREG. GREG contacts, commits to and pays no one. Each of those steps requires a current packet, so
     the person asked always has the assessment it rests on; a step whose precondition stops holding is withdrawn
     (greg/missions.py) and the mission re-plans.
@@ -756,6 +757,13 @@ def request_case(*, reference: str, request: str, rulebook: Path, folder: Path, 
             person("request-evidence", "human.request_evidence", ["evidence_complete"], ["packet_current"],
                    f"ask the requester for exactly the facts this ask lists (the latest case packet names each with "
                    f"its document) and save the documents into {folder}"),
+            # the rulebook's "decline" route: a person tells the requester, citing the failed rules; corrected
+            # documents, if they come, make the same case eligible again (whether a declined case should end its
+            # mission is the founder's: abandon it, as today)
+            person("decline", "human.decline", ["eligible"], ["packet_current"],
+                   "the case is declined under the rulebook: tell the requester, citing each rule the latest case "
+                   f"packet names as not met; if they send corrected documents, save them into {folder}; GREG tells "
+                   "no one"),
             person("resolve-dispute", "human.resolve_dispute", ["undisputed"], ["packet_current"],
                    "the case is held: settle the dispute the latest case packet names with the parties and save the "
                    f"corrected or confirming document into {folder}"),

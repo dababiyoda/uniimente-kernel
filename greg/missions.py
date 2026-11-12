@@ -2594,11 +2594,14 @@ class MissionEngine:
             if declined is not None:
                 return self._honor_refusal(m, now, *declined)
             step = next((s for s in m.spec["strategies"] if s["action_id"] == m.blocker.get("action_id")), {})
-            lapsed = sorted(set(step.get("requires", [])) & failing)
+            measured_failing = failing - set(self.sensor_errors) - set(self.unread)
+            lapsed = sorted(set(step.get("requires", [])) & measured_failing)
             if lapsed:
                 # The person is not left asked for a step whose precondition observation says no longer holds (a case
                 # that stopped being eligible while its payment was asked for): the ask is withdrawn and the mission
                 # re-plans on the measured world; the step is asked again, as a new ask, once its preconditions hold.
+                # Only a measured failure lapses a precondition: a sensor error, a timeout or a reading the evidence
+                # could not decide measured nothing, and the ask stays open on it.
                 rid = m.blocker["request_id"]
                 why = (f"a precondition of {step['action_id']} no longer holds ({', '.join(lapsed)}), so the person is "
                        "not left asked for it; GREG took no action for it")

@@ -352,7 +352,8 @@ def test_a_duplicate_request_is_recognized_and_gets_no_second_settlement_path(ca
     assert a["route"]["route"] == "decline" and first_mid in a["route"]["reason"]
     # the statement carries the first case's posting: it is not counted again for this one
     assert a["payment_observed"] is False and a["projection"]["actual"] == [] and first_mid in a["payment"]["reason"]
-    assert case.human(second["mission_id"]) == [] and len(a["request"]["records"]) == 2
+    # the one person's step is the rulebook's decline route; nobody is asked to accept or pay
+    assert case.human(second["mission_id"]) == ["human.decline"] and len(a["request"]["records"]) == 2
     assert len(case.events("mission.achieved")) == 1 and not case.events("mission.achieved", second["mission_id"])
 
 
@@ -474,7 +475,9 @@ def test_unknown_payment_status_is_three_different_not_knowns_and_the_actual_col
     assert "no statement exported yet" in seen["none"][0] and "ambiguous: 2 postings" in seen["ambiguous"][0]
     assert "not readable text" in seen["unreadable"][0]
     assert seen["unreadable"][1] == INSUFFICIENT             # unread is not "not observed"
-    assert seen["none"][1] == FALSE and seen["ambiguous"][1] == FALSE   # observed: no single posting settles it
+    # two postings may be a double payment: not known, so no check reads it as not paid and nobody pays again on it
+    assert seen["ambiguous"][1] == INSUFFICIENT
+    assert seen["none"][1] == FALSE                          # observed: no statement, so no payment is observed
 
 
 def test_an_unreadable_document_leaves_its_facts_unknown_and_eligibility_undecided(tmp_path):
@@ -604,6 +607,23 @@ def test_three_verified_cases_teach_a_procedure_whose_next_case_needs_no_packet_
         mid = settle(c, spec, folder, "LD-240120")
         assert c.asks("APPROVAL", mid) == [] and len(c.asks(mid=mid)) == 2      # only the two people's steps
         assert c.human(mid) == ["human.obtain_acceptance", "human.pay"]
+        # the case the procedure ran is an earlier case like any other: the same load submitted again is a duplicate,
+        # and the posting that settled it is not counted a second time (before, only template-made cases were found)
+        again = validate_mission(request_case(reference="LD-240120", request="carrier email 4 (reminder)",
+                                              rulebook=c.rulebook, folder=folder))
+        c.sign(again)
+        c.tick()
+        for ask in c.open_asks(again["mission_id"]):
+            if ask["kind"] == "APPROVAL":
+                c.approve(ask)
+        c.tick()
+        [path] = [p for p in c.body.deliver_root.glob("cases/*/packet.json")
+                  if json.loads(p.read_text())["mission_id"] == again["mission_id"]]
+        a = json.loads(path.read_text())["assessment"]
+        assert [(d["mission_id"], d["state"]) for d in a["duplicates"]] == [(mid, "settled")]
+        assert a["eligibility"] == "ineligible" and a["projection"]["actual"] == []
+        assert c.human(again["mission_id"]) == ["human.decline"] and not c.events("mission.achieved",
+                                                                                  again["mission_id"])
     finally:
         c.close()
 
@@ -629,3 +649,286 @@ def test_the_cli_drafts_a_request_case_and_refuses_one_without_its_rulebook(tmp_
         hashlib.sha256(rulebook.read_bytes()).hexdigest()
     refused = cli("--reference", REF, "--request", "carrier email 1", "--case-folder", str(folder))
     assert refused.returncode != 0 and "--rulebook" in (refused.stderr + refused.stdout)
+
+
+# -- review findings (2026-11-12 fix round): each test fails on 712c148c ------------------------------------------
+
+def edit(folder: Path, name: str, old: str, new: str) -> None:
+    path = folder / name
+    text = path.read_text()
+    assert old in text
+    path.write_text(text.replace(old, new))
+
+
+def with_rule(rulebook: Path, rule: dict, facts: dict | None = None) -> None:
+    """The fixture rulebook with one more rule (and facts), written back: a different rulebook, signed anew."""
+    book = json.loads(rulebook.read_text())
+    book["rules"].append(rule)
+    book["facts"].update(facts or {})
+    rulebook.write_text(json.dumps(book))
+
+
+def test_an_earlier_case_is_found_whatever_made_it_and_however_its_reference_is_written(tmp_path):
+    """T1, F3: a case is recognized by the reference its case.assess checks read, not by the template that made it
+    (a ratified procedure's run has another origin), and references are compared after folding compatibility forms,
+    dashes and case (a non-breaking hyphen or full-width digits are the same load). A longer reference is another."""
+    home, *_ = make_body(tmp_path)
+    rulebook, folder = case_files(tmp_path / "data")
+    procedure = request_case(reference=REF, request="from a procedure", rulebook=rulebook, folder=folder)
+    procedure["provenance"] = {"origin": "sop:sop-0123456789abcdef", "planner": "greg.sop/1",
+                               "procedure_id": "sop-0123456789abcdef"}
+    specs = [procedure,
+             request_case(reference="LD‑240117", request="non-breaking hyphen", rulebook=rulebook, folder=folder),
+             request_case(reference="ＬＤ-２４０１１７", request="full width",
+                          rulebook=rulebook, folder=folder),
+             request_case(reference="LD-2401170", request="a longer reference", rulebook=rulebook, folder=folder),
+             request_case(reference=REF, request="this one", rulebook=rulebook, folder=folder)]
+    with Body(home) as body:
+        for n, spec in enumerate(specs):
+            body.journal.record("mission.registered", {"mission_id": spec["mission_id"], "spec": spec,
+                                                       "command_digest": str(n)}, key=spec["mission_id"])
+        a = assess(params(rulebook, folder), ctx(tmp_path / "data", journal=EventReader(body.journal),
+                                                 mission_id=specs[-1]["mission_id"]))
+    assert [d["mission_id"] for d in a["duplicates"]] == [s["mission_id"] for s in specs[:3]]
+    assert a["failed_rules"] == ["not-a-duplicate"]
+
+
+def test_a_longer_reference_is_another_case_in_the_request_and_on_the_statement(tmp_path):
+    """T12: a request or a posting for LD-2401170 is not one for LD-240117; one for LD-240117 followed by
+    punctuation, or written with a non-breaking hyphen, is."""
+    from greg.dataplane import ingest
+    home, *_ = make_body(tmp_path)
+    rulebook, folder = case_files(tmp_path / "data")
+    (folder / "statement.csv").write_text(HEADER + "2026-11-10,Carrier payment LD-2401170,1925.00,USD\n")
+    with Body(home) as body:
+        ingest(body.journal, source="mail://carrier", channel=CHANNEL, content="Please pay load LD-2401170.")
+        other = assess(params(rulebook, folder), ctx(tmp_path / "data", journal=EventReader(body.journal)))
+        ingest(body.journal, source="mail://carrier", channel=CHANNEL, content="Please pay load LD‑240117.")
+        this = assess(params(rulebook, folder), ctx(tmp_path / "data", journal=EventReader(body.journal)))
+    assert other["request_recorded"] is False and other["request"]["records"] == []
+    assert this["request_recorded"] is True and len(this["request"]["records"]) == 1
+    assert other["payment_observed"] is False and other["projection"]["actual"] == []
+    assert other["payment"]["reason"] == "not known yet: no posting carries the case reference"
+
+
+def test_a_timed_out_assessment_lapses_no_precondition_and_the_persons_ask_stays_open(case, monkeypatch):
+    """T2, F5: a timeout measures nothing. The open acceptance ask is not withdrawn as 'no longer holds', and once
+    the sensor reads again no second ask is raised for the same act."""
+    import greg.cases as cases
+    to_eligible_packet(case)
+    [acceptance] = case.asks("HUMAN_WORK")
+    seen = len(case.events("mission.observed"))
+    real = cases.assess
+
+    def timed_out(p, x):
+        raise TimeoutError("reading the case folder timed out")
+    monkeypatch.setattr(cases, "assess", timed_out)
+    case.tick(1)
+    latest = case.events("mission.observed")[seen:]
+    assert latest and all(o["detail"].startswith("sensor ") for o in latest)       # nothing was measured
+    monkeypatch.setattr(cases, "assess", real)
+    case.tick()
+    assert acceptance["request_id"] not in {e.payload["request_id"] for e in
+                                            case.body.journal.replay("decision.withdrawn")}
+    assert case.human() == ["human.obtain_acceptance"]
+    assert [a["request_id"] for a in case.open_asks()] == [acceptance["request_id"]]
+
+
+def test_an_unreadable_document_lapses_no_precondition_it_could_not_measure(case):
+    """T2: a proof of delivery rewritten as UTF-16 leaves eligibility undecided: the withdrawal names only the
+    precondition observation measured failing (the packet for the new assessment), never eligibility."""
+    to_eligible_packet(case)
+    [acceptance] = case.asks("HUMAN_WORK")
+    pod = case.folder / "proof_of_delivery.txt"
+    pod.write_bytes(pod.read_text().encode("utf-16-le"))
+    case.tick()
+    why = {e.payload["request_id"]: e.payload["why"] for e in case.body.journal.replay("decision.withdrawn")}
+    assert "(packet_current)" in why[acceptance["request_id"]] and "eligible" not in why[acceptance["request_id"]]
+
+
+def test_a_refused_assessment_is_unread_for_every_check_that_shares_it(case):
+    """T3: the seven checks read one sensor. When it is refused (the rulebook changed after signing), every check is
+    a sensor error: none is judged a decided failure on an absent field, the open ask stays open, and nobody is asked
+    to forward a request that is already on file."""
+    to_eligible_packet(case)
+    [acceptance] = case.asks("HUMAN_WORK")
+    seen = len(case.events("mission.observed"))
+    with case.rulebook.open("ab") as fh:
+        fh.write(b"\n")
+    case.tick(1)
+    latest = case.events("mission.observed")[seen:]
+    assert {o["check_id"] for o in latest} == {c["check_id"] for c in case.spec["success_checks"]}
+    assert all(o["detail"].startswith("sensor REFUSED: capability refused: the rulebook differs") for o in latest), \
+        [o["detail"][:80] for o in latest]
+    case.tick()
+    assert case.human() == ["human.obtain_acceptance"]
+    assert [a["request_id"] for a in case.open_asks()] == [acceptance["request_id"]]
+
+
+def test_an_accessorial_without_an_approval_number_is_not_approved(tmp_path):
+    """T4, F2: the rulebook's filter is applied as written. Its approval number is upper case: 'approval pending'
+    and 'approval not-given' carry none, so an invoice that adds them is not the agreed amount plus approvals."""
+    rulebook, folder = case_files(tmp_path)
+    edit(folder, "invoice.txt", "approval APP-7731", "approval pending")
+    a = assess(params(rulebook, folder), ctx(tmp_path))
+    assert a["facts"]["approved_accessorials"]["sources"]["invoice"]["values"] == []
+    assert a["eligibility"] == "ineligible" and a["failed_rules"] == ["invoice-matches-agreement"]
+    rulebook, folder = case_files(tmp_path / "second")
+    edit(folder, "invoice.txt", "Invoice amount: 1925.00",
+         "Accessorial: lumper 300.00 approval not-given\nInvoice amount: 2225.00")
+    a = assess(params(rulebook, folder), ctx(tmp_path / "second"))
+    assert [v["value"] for v in a["facts"]["approved_accessorials"]["sources"]["invoice"]["values"]] == ["75.00"]
+    assert a["eligibility"] == "ineligible" and a["route"]["route"] == "decline"
+
+
+def test_a_statement_greg_cannot_settle_on_is_not_known_and_asks_nobody_to_pay_again(tmp_path):
+    """T5, F6: a statement whose columns are not the signed ones was never read for the reference, and one whose
+    postings carry the reference with another amount may be a partial payment: both are not known, like an
+    ambiguous one. A readable statement no posting of which names the case is measured: no payment observed."""
+    rulebook, folder = case_files(tmp_path)
+    spec = request_case(reference=REF, request="r", rulebook=rulebook, folder=folder)
+    statement = folder / "statement.csv"
+    out = {}
+    for name, text in (("other columns", f"Created,Memo,Amt,Cur\n2026-11-10,Carrier payment {REF},1925.00,USD\n"),
+                       ("another amount", HEADER + PAID.replace("1925.00", "1850.00")),
+                       ("no posting", HEADER + "2026-11-10,Carrier payment LD-239999,1925.00,USD\n")):
+        statement.write_text(text)
+        a = assess(params(rulebook, folder), ctx(tmp_path))
+        assert a["payment"]["state"] == "unknown" and a["projection"]["actual"] == []
+        out[name] = (a["payment"]["reason"], verdict(spec, "paid", a))
+    assert out["other columns"][1] == INSUFFICIENT and "lacks the signed columns" in out["other columns"][0]
+    assert out["another amount"][1] == INSUFFICIENT and "differ in amount or currency" in out["another amount"][0]
+    assert out["no posting"][1] == FALSE
+
+
+def test_an_ambiguous_statement_while_payment_is_asked_raises_no_second_ask_to_pay(case):
+    """T5: two postings arrive while the payment ask is open. Before, 'paid' read a decided failure and GREG asked a
+    person to pay again; now it is not known, and the founder is asked about the reading instead."""
+    to_eligible_packet(case)
+    accept(case)
+    case.tick()
+    assert case.human() == ["human.obtain_acceptance", "human.pay"]
+    (case.folder / "statement.csv").write_text(HEADER + PAID + PAID.replace("11-10", "11-11"))
+    for _ in range(4):
+        case.tick()
+    assert case.human().count("human.pay") == 1 and not case.events("mission.achieved")
+    paid = [o for o in case.events("mission.observed") if o["check_id"] == "paid"]
+    assert paid[-1]["detail"].startswith("sensor inconclusive")
+    assert any(a["kind"] == "SENSOR_FAILURE" for a in case.open_asks())
+
+
+@pytest.mark.parametrize("rule, facts, edits", [
+    ({"id": "per-piece-rate", "description": "at most 500 per piece", "condition": "invoice_amount / pieces <= 500",
+      "needs": {"invoice_amount": ["invoice"], "pieces": ["bill_of_lading"]}}, None,
+     ("bill_of_lading.txt", "Pieces: 18", "Pieces: 0")),
+    ({"id": "closed-before-delivery", "description": "an exception closed before delivery",
+      "condition": "exception_closed <= delivered_date",
+      "needs": {"exception_closed": ["exception_notice"], "delivered_date": ["proof_of_delivery"]}},
+     {"exception_closed": {"type": "date", "from": {"exception_notice": "Closed"}}}, None)])
+def test_a_rule_the_facts_cannot_decide_leaves_the_evidence_check_undecided(tmp_path, rule, facts, edits):
+    """T6: no fact is missing, yet the rule cannot be decided (a division by zero; an order on an optional document
+    not on file). Before, 'evidence complete' passed and the packet said nothing was unresolved."""
+    rulebook, folder = case_files(tmp_path)
+    with_rule(rulebook, rule, facts)
+    if edits:
+        edit(folder, *edits)
+    spec = request_case(reference=REF, request="r", rulebook=rulebook, folder=folder)
+    a = assess(params(rulebook, folder), ctx(tmp_path))
+    assert a["eligibility"] == "undetermined" and a["unresolved"] == []
+    assert verdict(spec, "evidence_complete", a) == INSUFFICIENT and "unresolved" not in a["decided"]
+    md = Path(packet(params(rulebook, folder), ctx(tmp_path, "case.packet"))["path"]).read_text()
+    assert "None the decision waits on." not in md and "Not decidable on the facts on file:" in md
+    assert rule["id"] in a["route"]["reason"]
+    [why] = a["undecidable"]
+    assert why.startswith(f"rule {rule['id']} cannot be decided on the facts on file")
+
+
+def test_a_declined_case_asks_a_person_to_decline_it_as_the_rulebook_routes(case):
+    """T7: the rulebook routes an ineligible case to 'decline; a person tells the requester'. Before, no step did
+    that and the mission stopped at a generic no-strategy question."""
+    edit(case.folder, "proof_of_delivery.txt", "Signed: yes", "Signed: no")
+    to_eligible_packet(case)
+    a = case.packet(case.packets()[-1])["assessment"]
+    assert a["eligibility"] == "ineligible" and a["route"]["route"] == "decline"
+    assert case.human() == ["human.decline"] and not case.asks("NO_STRATEGY")
+    [ask] = case.asks("HUMAN_WORK")
+    assert [w["check_id"] for w in ask["evidence"]["deliverable_observed_by"]] == ["eligible"]
+
+
+def test_no_acceptance_on_file_is_shown_as_not_yet_never_as_a_refusal(tmp_path):
+    """T8: absence of the counterparty's response and a written refusal are different lines in the packet."""
+    rulebook, folder = case_files(tmp_path)
+    first = packet(params(rulebook, folder), ctx(tmp_path, "case.packet"))
+    assert "Accepted: not yet: no written acceptance is on file (acceptance.txt not on file)" in \
+        Path(first["path"]).read_text()
+    assert first["packet"]["assessment"]["acceptance"]["absent"] == [{"fact": "completion",
+                                                                       "documents": ["acceptance"]}]
+    (folder / "acceptance.txt").write_text(f"Load reference: {REF}\nCompletion: disputed\n")
+    second = packet(params(rulebook, folder), ctx(tmp_path, "case.packet"))
+    assert "Accepted: no, the written response does not accept completion (completion: disputed)" in \
+        Path(second["path"]).read_text()
+
+
+def test_two_kinds_of_value_are_never_compared_silently(tmp_path):
+    """T9: a date fact against text is refused when the rulebook is signed, and, evaluated anyway, is undecidable,
+    never silently met or not met."""
+    from greg import cases
+    rulebook, folder = case_files(tmp_path)
+    book = json.loads(rulebook.read_text())
+    for condition in ("delivered_date != '2026-11-05'", "pod_signed == 'yes'", "pieces in ('18', '19')",
+                      "load_reference < 'LD'"):
+        name = condition.split()[0]
+        broken = dict(book, rules=book["rules"] + [{"id": "typo", "condition": condition,
+                                                    "needs": {name: list(book["facts"][name]["from"])}}])
+        with pytest.raises(CapabilityError, match="compares a|looks for a|orders a"):
+            load_rulebook(json.dumps(broken).encode())
+    with pytest.raises(CapabilityError, match="compares a text with a number"):
+        load_rulebook(json.dumps(dict(book, acceptance={**book["acceptance"], "condition": "completion == 1"})).encode())
+    docs = {k: cases._read_document(k, s, folder) for k, s in book["documents"].items()}
+    facts = cases._facts(book, docs, {"mission": {"reference": REF}, "ledger": {"earlier cases": 0}})
+    for condition in ("delivered_date != '2026-11-05'", "delivered_date == '2026-11-05'"):
+        seen = cases.evaluate(condition, {"delivered_date": ["proof_of_delivery"]}, facts)
+        assert seen["state"] == "unknown" and "not the same kind of value" in seen["reason"]
+
+
+def test_documents_that_disagree_on_a_fact_no_rule_reads_are_shown_not_dropped(tmp_path):
+    """T10: the bill of lading names another consignee. No rule reads the consignee, so the case is not held (the
+    rulebook's to say), but the conflict is in the assessment, the route's reason and the packet."""
+    rulebook, folder = case_files(tmp_path)
+    edit(folder, "bill_of_lading.txt", "Consignee: Synthetic Receiving Co", "Consignee: Other Receiving LLC")
+    out = packet(params(rulebook, folder), ctx(tmp_path, "case.packet"))
+    a = out["packet"]["assessment"]
+    md = Path(out["path"]).read_text()
+    assert "Documents also disagree on facts no rule reads" in md and "Other Receiving LLC" in md
+    assert a["conflicts"] == [] and [c["fact"] for c in a["other_conflicts"]] == ["consignee"]
+    assert [(v["value"], v["file"]) for v in a["other_conflicts"][0]["values"]] == [
+        ("Synthetic Receiving Co", "rate_confirmation.txt"), ("Other Receiving LLC", "bill_of_lading.txt")]
+    assert a["route"]["route"] == "settle" and "consignee" in a["route"]["reason"]
+
+
+def test_an_estimate_a_document_states_is_shown_when_another_document_omits_the_line(tmp_path):
+    """T11: an invoice without an 'Agreed amount' line is silent on it, not unreadable: the rate confirmation's
+    figure is the estimate the rule used, with its file and line."""
+    rulebook, folder = case_files(tmp_path)
+    edit(folder, "invoice.txt", "Agreed amount: 1850.00\n", "")
+    a = assess(params(rulebook, folder), ctx(tmp_path))
+    assert [e for e in a["projection"]["estimate"] if e["fact"] == "agreed_amount"] == [
+        {"fact": "agreed_amount", "amount": "1850.00", "file": "rate_confirmation.txt", "line": 4}]
+    assert a["eligibility"] == "eligible" and a["facts"]["agreed_amount"]["sources"]["invoice"]["state"] == "silent"
+
+
+def test_a_figure_a_document_states_unreadably_is_waited_on_not_ignored(tmp_path):
+    """F1: the invoice restates the agreed amount as '2,100.00 USD', which does not parse. It may disagree with the
+    rate confirmation, so the rule that reads the agreed amount waits on it and the requester is asked for it."""
+    rulebook, folder = case_files(tmp_path)
+    spec = request_case(reference=REF, request="r", rulebook=rulebook, folder=folder)
+    edit(folder, "invoice.txt", "Agreed amount: 1850.00", "Agreed amount: 2,100.00 USD")
+    a = assess(params(rulebook, folder), ctx(tmp_path))
+    assert a["eligibility"] == "undetermined" and a["route"]["route"] == "ask"
+    assert a["unresolved"] == ["agreed_amount from invoice: invoice.txt line 4: '2,100.00 USD' is not a number"]
+    assert verdict(spec, "evidence_complete", a) == FALSE and verdict(spec, "eligible", a) == INSUFFICIENT
+    rows = [e for e in a["projection"]["estimate"] if e["fact"] == "agreed_amount"]
+    assert rows == [{"fact": "agreed_amount", "amount": "1850.00", "file": "rate_confirmation.txt", "line": 4,
+                     "fact_state": "unknown"},
+                    {"fact": "agreed_amount", "amount": None, "document": "invoice",
+                     "not_known": "invoice.txt line 4: '2,100.00 USD' is not a number"}]

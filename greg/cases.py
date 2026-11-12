@@ -10,16 +10,22 @@ inventing nothing:
 * A fact is known, absent (an optional document not on file) or unknown, and unknown says why: the document is not
   on file, the key is not in it, it is not readable text (``faithful_text``), the data plane quarantined it
   (greg.dataplane), the value does not parse as its type, or two documents give different values (a conflict: both
-  values are kept with their sources and GREG picks neither).
-* A rule is met, not_met or unknown, and unknown names exactly the facts it waits on. Eligibility is eligible (every
-  rule met), ineligible (some rule not met; unknown rules then do not matter) or undetermined (none failed, some
-  unknown). A value the facts cannot settle is left out of the output's ``decided`` fields (``complete: false``), so
-  no mission check reads an unknown as a pass or as a failure.
+  values are kept with their sources and GREG picks neither). A document read but silent on a fact makes no claim;
+  a claim that cannot be read may disagree, so a rule reading that fact waits on it even from another document.
+* A rule is met, not_met or unknown, and unknown names exactly the facts it waits on, or why the facts on file cannot
+  decide it (``undecidable``: two kinds of value compared, a division by zero, an order on absence). Eligibility is
+  eligible (every rule met), ineligible (some rule not met; unknown rules then do not matter) or undetermined (none
+  failed, some unknown). A value the facts cannot settle is left out of the output's ``decided`` fields
+  (``complete: false``), so no mission check reads an unknown as a pass or as a failure. A rulebook that compares two
+  kinds of value is refused when it is signed.
 * Payment is observed only by business.reconcile's own matching (greg.business_loop.reconcile) of exactly one
-  statement row. Anything else is "not known", with its reason. The accounting projection keeps estimates, the
-  reconciled actual and the unknown in three separate columns; the actual column is read from the statement row.
-* A duplicate is read from the body's own ledger: an earlier request-case mission for the same reference that is
-  open or settled, named with a pointer to the first.
+  statement row. Anything else is "not known", with its reason; only "no statement yet" and "no posting names the
+  case" are measured absences, and a statement GREG cannot settle on (other columns, two postings, another amount)
+  decides no check. The accounting projection keeps estimates, the reconciled actual and the unknown in three
+  separate columns; the actual column is read from the statement row.
+* A duplicate is read from the body's own ledger: an earlier case mission (any mission whose case.assess checks read
+  the same reference, compared by business_loop.reference_key) that is open or settled, named with a pointer to the
+  first.
 
 ``case.packet`` delivers one new packet per assessment (Markdown and a JSON twin) into the founder's delivery root
 and says what changed since the mission's previous packet. An earlier packet is never overwritten.
@@ -45,7 +51,7 @@ from greg.capabilities import CapabilityError, InvocationContext, _inside, bound
 from greg.textform import canon
 from provenance.digests import sha256_json
 
-RENDERER = "greg.cases/1"
+RENDERER = "greg.cases/2"   # 2: absence, undecidable rules and conflicts no rule reads are rendered
 TYPES = ("text", "amount", "number", "percent", "date", "yes_no")
 STATES = ("eligible", "ineligible", "undetermined", "disputed")
 BUILTIN = {"mission": ("reference",), "ledger": ("earlier cases",)}   # sources that are not documents
@@ -103,6 +109,50 @@ def _names(condition: str) -> set[str]:
         elif isinstance(node, ast.Constant) and not isinstance(node.value, (str, int, float, bool, type(None))):
             raise CapabilityError(f"condition {condition!r} holds a literal of an unsupported type")
     return names
+
+
+KINDS = {"text": "text", "amount": "number", "number": "number", "percent": "number", "date": "date",
+         "yes_no": "truth value"}
+
+
+def _kind(node, facts: dict) -> str | None:
+    """The kind of value an expression of the rulebook language yields, where it is fixed by the rulebook (None:
+    absence, or not fixed)."""
+    if isinstance(node, ast.Constant):
+        value = node.value
+        return None if value is None else "truth value" if isinstance(value, bool) else \
+            "text" if isinstance(value, str) else "number"
+    if isinstance(node, ast.Name):
+        spec = facts.get(node.id)
+        return None if spec is None else "list" if spec.get("many") else KINDS[spec["type"]]
+    if isinstance(node, ast.Call):
+        return "date" if node.func.id == "date" else "number"
+    if isinstance(node, ast.BinOp) or isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.USub):
+        return "number"
+    if isinstance(node, (ast.BoolOp, ast.Compare, ast.UnaryOp)):
+        return "truth value"
+    return "list" if isinstance(node, (ast.List, ast.Tuple)) else None
+
+
+def _typecheck(condition: str, facts: dict) -> None:
+    """Refuse, at signing, a comparison between two kinds of value (a date fact against text, a yes/no fact against
+    'yes') and an order on text or truth values: evaluated, each is undecidable, so a typo would hold every case."""
+    for node in ast.walk(ast.parse(condition.strip(), mode="eval")):
+        if not isinstance(node, ast.Compare):
+            continue
+        left = node.left
+        for op, right in zip(node.ops, node.comparators):
+            a, b = _kind(left, facts), _kind(right, facts)
+            if isinstance(op, (ast.In, ast.NotIn)):
+                for element in right.elts if isinstance(right, (ast.List, ast.Tuple)) else []:
+                    kind = _kind(element, facts)
+                    if a not in (None, "list") and kind is not None and kind != a:
+                        raise CapabilityError(f"condition {condition!r} looks for a {a} among {kind} values")
+            elif a is not None and b is not None and a != b:
+                raise CapabilityError(f"condition {condition!r} compares a {a} with a {b}")
+            elif not isinstance(op, (ast.Eq, ast.NotEq)) and (a or b) in ("text", "truth value", "list"):
+                raise CapabilityError(f"condition {condition!r} orders a {a or b}; only numbers and dates have an order")
+            left = right
 
 
 def _needs(spec: dict, facts: dict, where: str) -> dict:
@@ -184,12 +234,14 @@ def load_rulebook(data: bytes) -> dict:
             needs = _needs(item, facts, f"{where} {ident}")
             if not _names(item.get("condition")) <= set(needs):
                 raise CapabilityError(f"{where} {ident} reads a fact it does not list in needs")
+            _typecheck(item["condition"], facts)
             if "name" in item and item["name"] not in facts:
                 raise CapabilityError(f"{where} {ident} names a fact the rulebook does not declare")
     acceptance = book.get("acceptance")
     if not isinstance(acceptance, dict) or not _names(acceptance.get("condition")) <= set(
             _needs(acceptance, facts, "acceptance")):
         raise CapabilityError("the rulebook says when completion counts as accepted (acceptance: needs, condition)")
+    _typecheck(acceptance["condition"], facts)
     settlement = book.get("settlement")
     if not isinstance(settlement, dict) or any(settlement.get(k) not in facts for k in ("amount", "currency")):
         raise CapabilityError("the rulebook names the amount and currency facts a settlement reconciles")
@@ -288,15 +340,16 @@ def _source(fact: str, spec: dict, kind: str, docs: dict, builtin: dict) -> dict
         found = LINE.match(line)
         if not found or _key(found.group(1)) != wanted:
             continue
-        if "only" in spec and not re.search(spec["only"], found.group(2), re.IGNORECASE):
-            continue
+        if "only" in spec and not re.search(spec["only"], found.group(2)):
+            continue        # the rulebook's filter as written: a flag it wants (?i) it writes itself
         value, why = _parse(spec, found.group(2))
         if why:
             return {"state": "unknown", "reason": f"{doc['file']} line {number}: {why}"}
         values.append({"value": value, "document": kind, "file": doc["file"], "sha256": doc["sha256"],
                        "line": number})
     if not values and not spec.get("many"):
-        return {"state": "unknown", "reason": f"{doc['file']} has no {spec['from'][kind]!r} line"}
+        # read, and silent on this fact: no claim to disagree with, and no value where a rule needs this document's
+        return {"state": "silent", "reason": f"{doc['file']} has no {spec['from'][kind]!r} line"}
     return {"state": "value", "values": values}
 
 
@@ -307,8 +360,10 @@ def _facts(book: dict, docs: dict, builtin: dict) -> dict:
         values = [v for s in sources.values() if s["state"] == "value" for v in s["values"]]
         distinct = {} if spec.get("many") else {_same_key(v["value"]): v for v in values}
         unknown = {k: s["reason"] for k, s in sources.items() if s["state"] == "unknown"}
+        silent = {k: s["reason"] for k, s in sources.items() if s["state"] == "silent"}
         state = ("conflict" if len(distinct) > 1 else "unknown" if unknown else
-                 "absent" if not values and not spec.get("many") else "known")
+                 ("unknown" if silent else "absent") if not values and not spec.get("many") else "known")
+        unknown = {**unknown, **silent} if state == "unknown" else unknown
         out[fact] = {"type": spec["type"], "many": bool(spec.get("many")), "state": state, "sources": sources,
                      **({"unknown": unknown} if unknown else {})}
         if state == "conflict":
@@ -316,23 +371,29 @@ def _facts(book: dict, docs: dict, builtin: dict) -> dict:
     return out
 
 
-def _resolve(needs: dict, facts: dict) -> tuple[dict, list, list]:
-    """(environment, missing, conflicts) for one rule: the value of each needed fact from the kinds it is needed
-    from, the facts still unknown there and why, and the needed facts two documents disagree on."""
-    env, missing, conflicts = {}, [], []
+def _resolve(needs: dict, facts: dict) -> tuple[dict, list, list, list]:
+    """(environment, missing, conflicts, absent) for one rule: the value of each needed fact from the kinds it is
+    needed from; the facts still unknown and why; the needed facts two documents disagree on; and the needed facts
+    whose documents are optional and not on file (their value is absence). A fact is missing where a kind the rule
+    reads has no value, and also where any other document's claim to it could not be read: that claim may disagree,
+    and a disagreement is a conflict, so the rule waits on it."""
+    env, missing, conflicts, absent = {}, [], [], []
     for fact, kinds in needs.items():
         record = facts[fact]
         if record["state"] == "conflict":
             conflicts.append(fact)
             continue
-        gaps = [(k, record["sources"][k]["reason"]) for k in kinds if record["sources"][k]["state"] == "unknown"]
+        sources = record["sources"]
+        gaps = [(k, sources[k]["reason"]) for k in kinds if sources[k]["state"] in ("unknown", "silent")]
+        gaps += [(k, s["reason"]) for k, s in sources.items() if k not in kinds and s["state"] == "unknown"]
         if gaps:
             missing += [{"fact": fact, "document": k, "reason": why} for k, why in gaps]
             continue
-        values = [v["value"] for k in kinds if record["sources"][k]["state"] == "value"
-                  for v in record["sources"][k]["values"]]
+        values = [v["value"] for k in kinds if sources[k]["state"] == "value" for v in sources[k]["values"]]
         env[fact] = values if record["many"] else (values[0] if values else None)
-    return env, missing, conflicts
+        if env[fact] is None:
+            absent.append({"fact": fact, "documents": [k for k in kinds if sources[k]["state"] == "absent"]})
+    return env, missing, conflicts, absent
 
 
 # -- the rulebook language, evaluated ------------------------------------------------------------------------------
@@ -348,12 +409,14 @@ def _number(value):
 
 
 def _equal(a, b) -> bool:
-    if isinstance(a, bool) or isinstance(b, bool) or a is None or b is None:
-        return a is b or (isinstance(a, bool) and isinstance(b, bool) and a == b)
+    """Equality of two values of one kind; absence (an optional document not on file) equals only absence. Two
+    kinds (a date and a text) are not compared: that is undecidable, never silently false (a rulebook typo)."""
+    if a is None or b is None:
+        return a is b
     if isinstance(a, str) and isinstance(b, str):
         return _key(a) == _key(b)
     if type(a) is not type(b):
-        return False
+        raise _Undecidable(f"{_shown(a)!r} and {_shown(b)!r} are not the same kind of value")
     return a == b
 
 
@@ -436,19 +499,20 @@ def _eval(node, env):
 def evaluate(condition: str, needs: dict, facts: dict) -> dict:
     """One condition, three-valued: met, not_met, or unknown with exactly the facts it waits on (or why the facts it
     has cannot decide it). Never a pass or a failure on an unknown."""
-    env, missing, conflicts = _resolve(needs, facts)
+    env, missing, conflicts, absent = _resolve(needs, facts)
     used = {f: ([_shown(v) for v in value] if isinstance(value, list) else _shown(value)) for f, value in env.items()}
+    shown_absent = {"absent": absent} if absent else {}     # a value of None is an optional document not on file
     if missing or conflicts:
-        return {"state": "unknown", "facts_used": used, "missing": missing, "conflicts": conflicts}
+        return {"state": "unknown", "facts_used": used, "missing": missing, "conflicts": conflicts, **shown_absent}
     try:
         result = _eval(ast.parse(condition.strip(), mode="eval"), env)
     except (_Undecidable, ArithmeticError, decimal.DecimalException, ValueError, TypeError) as exc:
-        return {"state": "unknown", "facts_used": used, "missing": [], "conflicts": [],
+        return {"state": "unknown", "facts_used": used, "missing": [], "conflicts": [], **shown_absent,
                 "reason": f"the condition cannot be decided on these facts: {exc}"[:300]}
     if not isinstance(result, bool):
-        return {"state": "unknown", "facts_used": used, "missing": [], "conflicts": [],
+        return {"state": "unknown", "facts_used": used, "missing": [], "conflicts": [], **shown_absent,
                 "reason": "the condition does not yield true or false"}
-    return {"state": "met" if result else "not_met", "facts_used": used}
+    return {"state": "met" if result else "not_met", "facts_used": used, **shown_absent}
 
 
 # -- the assessment -----------------------------------------------------------------------------------------------
@@ -467,20 +531,31 @@ def _requests(journal, channel: str, reference: str) -> list | None:
     retained as untrusted data, never a command). None: this reading has no journal."""
     if journal is None:
         return None
-    wanted = canon(reference).casefold()
+    from greg.business_loop import carries_reference
     return [{"event_id": e.event_id, "source": e.payload.get("source"), "content_sha256": e.payload.get("content_sha256"),
              "at": e.payload.get("at"), "quarantined": e.payload.get("quarantined"),
              "instruction_flags": e.payload.get("instruction_flags")}
             for e in journal.replay("external.ingested")
-            if e.payload.get("channel") == channel and wanted in canon(str(e.payload.get("content", ""))).casefold()]
+            if e.payload.get("channel") == channel and carries_reference(str(e.payload.get("content", "")), reference)]
+
+
+def case_reference(spec: dict) -> str | None:
+    """The case reference a mission assesses: what its case.assess checks read, signed in the mission, whatever made
+    it (the request-case template, a ratified procedure's run, a hand-written spec). None: not a case."""
+    references = {(check.get("sensor") or {}).get("params", {}).get("reference")
+                  for check in spec.get("success_checks") or [] if isinstance(check, dict)
+                  and (check.get("sensor") or {}).get("capability") == "case.assess"}
+    return next(iter(references)) if len(references) == 1 and isinstance(next(iter(references)), str) else None
 
 
 def _earlier_cases(journal, reference: str, mission_id: str) -> list | None:
-    """Request-case missions registered on this body before this one for the same reference that are open or
-    settled (abandoned and superseded ones are neither), first first. None: this reading has no journal."""
+    """Case missions (case_reference) registered on this body before this one for the same reference that are open
+    or settled (abandoned and superseded ones are neither), first first. References are compared by
+    business_loop.reference_key. None: this reading has no journal."""
+    from greg.business_loop import reference_key
     if journal is None:
         return None
-    wanted, cases, closed, earlier = _key(reference), [], {}, True
+    wanted, cases, closed, earlier = reference_key(reference), [], {}, True
     for event in journal.replay("mission."):
         data = event.payload
         mid = data.get("mission_id")
@@ -488,10 +563,8 @@ def _earlier_cases(journal, reference: str, mission_id: str) -> list | None:
             earlier = earlier and mid != mission_id   # only those registered before this mission count as earlier
             if not earlier:
                 continue
-            spec = data.get("spec") or {}
-            provenance = spec.get("provenance") or {}
-            if provenance.get("origin") == "template:request-case" \
-                    and _key((provenance.get("inputs") or {}).get("reference", "")) == wanted:
+            theirs = case_reference(data.get("spec") or {})
+            if theirs is not None and reference_key(theirs) == wanted:
                 cases.append({"mission_id": mid, "registered_event": event.event_id})
         elif event.type == "greg.mission.achieved":
             closed.setdefault(mid, "settled")
@@ -513,7 +586,7 @@ def _payment(book: dict, facts: dict, params: dict, reference: str, ctx: Invocat
         return {"state": "unknown", "observed": False, "decided": False,
                 "reason": "not known: no statement file was signed with this assessment"}
     needs = {settle[k]: list(book["facts"][settle[k]]["from"]) for k in ("amount", "currency")}
-    env, missing, conflicts = _resolve(needs, facts)
+    env, missing, conflicts, _ = _resolve(needs, facts)
     if missing or conflicts or env.get(settle["amount"]) is None or not isinstance(env.get(settle["currency"]), str):
         return {"state": "unknown", "observed": False, "decided": False,
                 "reason": "the amount or currency to reconcile is not known yet: " + "; ".join(
@@ -541,26 +614,32 @@ def _payment(book: dict, facts: dict, params: dict, reference: str, ctx: Invocat
                 "reason": f"not known: {seen['detail']}"}
     if seen.get("exists") is False:
         why = "not known: no statement exported yet, so no payment is observed"
-    elif seen.get("matches", 0) > 1:
-        why = f"not known: {seen['detail']}"
+    elif seen.get("missing_columns") or seen.get("matches", 0) > 1 or seen.get("near_misses"):
+        # The statement was not read for this reference (its columns are not the signed ones), or it shows postings
+        # carrying the reference that GREG cannot settle on (two of them; another amount or currency). Payment is
+        # not known either way, so no check reads it as not paid and nobody is asked to pay again on it.
+        return {**expected, "state": "unknown", "observed": False, "decided": False,
+                "reason": "not known: " + seen["detail"]}
     else:
         why = f"not known yet: {seen['detail']}"
     return {**expected, "state": "unknown", "observed": False, "decided": True, "reason": why}
 
 
 def _route(book: dict, eligibility: str, disputes: list, disputes_unknown: list, failed: list, unresolved: list,
-           duplicates: list) -> dict:
+           duplicates: list, undecidable: list, other_conflicts: list) -> dict:
     holds = {"disputed": bool(disputes), "ineligible": eligibility == "ineligible",
              "undetermined": eligibility == "undetermined" or (eligibility == "eligible" and bool(disputes_unknown)),
              "eligible": eligibility == "eligible" and not disputes_unknown}
     entry = next(r for r in book["routing"] if holds[r["state"]])
+    unread = f"; documents disagree on {', '.join(c['fact'] for c in other_conflicts)}, which no rule reads (shown " \
+             "in the packet, not held)" if other_conflicts else ""
     reasons = {"disputed": "; ".join(d["name"] for d in disputes),
                "ineligible": "; ".join(f"rule {r['id']} not met: {r['description']}" for r in failed)
                + (f"; first case with this reference: {duplicates[0]['mission_id']} ({duplicates[0]['state']})"
                   if duplicates else ""),
-               "undetermined": "; ".join(unresolved) or "; ".join(disputes_unknown)
+               "undetermined": "; ".join(unresolved + undecidable) or "; ".join(disputes_unknown)
                or "a rule cannot be decided on the facts it has",
-               "eligible": "every rule is met"}
+               "eligible": "every rule is met" + unread}
     return {"state": entry["state"], "route": entry["route"], "action": entry["action"],
             "reason": reasons[entry["state"]][:1000]}
 
@@ -595,6 +674,10 @@ def assess(params: dict, ctx: InvocationContext) -> dict:
     needed = {f for item in (book["rules"] + (book.get("disputes") or []) + [book["acceptance"]])
               for f in item["needs"]} | {book["settlement"][k] for k in ("amount", "currency")}
     conflicts = [{"fact": f, "values": facts[f]["conflict"]} for f in sorted(needed) if facts[f]["state"] == "conflict"]
+    # documents that disagree on a fact no rule, dispute, acceptance or settlement reads: shown, never silently
+    # dropped; whether such a disagreement should hold a case is the rulebook's to say (it would read the fact)
+    other_conflicts = [{"fact": f, "values": facts[f]["conflict"]} for f in sorted(set(facts) - needed)
+                       if facts[f]["state"] == "conflict"]
     disputes = [{"kind": "conflict", "fact": c["fact"], "values": c["values"],
                  "name": f"{c['fact']}: " + " vs ".join(f"{v['value']} ({v.get('file', v['document'])}"
                                                          + (f" line {v['line']})" if v.get("line") else ")")
@@ -626,6 +709,16 @@ def assess(params: dict, ctx: InvocationContext) -> dict:
         gaps += [m for d in dispute_checks if d["state"] == "unknown" for m in d["missing"]]
         gaps += acceptance.get("missing", []) if acceptance["state"] == "unknown" else []
         unresolved = sorted({f"{m['fact']} from {m['document']}: {m['reason']}" for m in gaps})
+    # A condition the facts on file cannot decide although none is missing (two kinds of value compared, a division
+    # by zero, an order on an absent optional document): no fact is missing, and the evidence is not complete
+    # either. The requester cannot supply it; the rulebook decides it.
+    undecidable = []
+    if eligibility != "ineligible":
+        waiting = ([("rule " + r["id"], r) for r in rules] if eligibility == "undetermined" else []) \
+            + [("dispute " + d["id"], d) for d in dispute_checks] + [("acceptance", acceptance)]
+        undecidable = [f"{name} cannot be decided on the facts on file (no fact is missing; the rulebook decides "
+                       f"it, not the requester): {item['reason']}" for name, item in waiting
+                       if item["state"] == "unknown" and item.get("reason")]
     payment = _payment(book, facts, params, reference, ctx)
     if duplicates:
         # a posting carrying this reference belongs to the earlier case: it is never counted a second time here
@@ -636,17 +729,22 @@ def assess(params: dict, ctx: InvocationContext) -> dict:
                                               "case's"}
     estimate = []
     for fact in book.get("estimate") or []:
+        # each document's own figure with its line, whatever another document says or omits; a figure a document
+        # carries unreadably is a not-known row of its own; a fact no document gives is one not-known row
         record = facts[fact]
-        if record["state"] == "known":
-            estimate += [{"fact": fact, "amount": _shown(v["value"]), "file": v.get("file"), "line": v.get("line")}
-                         for s in record["sources"].values() if s["state"] == "value" for v in s["values"]]
-        else:
-            estimate.append({"fact": fact, "amount": None, "not_known": record["state"]})
+        state = {"fact_state": record["state"]} if record["state"] != "known" else {}
+        rows = [{"fact": fact, "amount": _shown(v["value"]), "file": v.get("file"), "line": v.get("line"), **state}
+                for s in record["sources"].values() if s["state"] == "value" for v in s["values"]]
+        rows += [{"fact": fact, "amount": None, "not_known": s["reason"], "document": kind}
+                 for kind, s in record["sources"].items() if s["state"] == "unknown"]
+        estimate += rows or ([] if record["state"] == "known" else
+                             [{"fact": fact, "amount": None, "not_known": record["state"]}])
     projection = {"currency": payment.get("currency"), "estimate": estimate,
                   "actual": [payment["actual"]] if payment["state"] == "observed" else [],
                   "unknown": [] if payment["state"] == "observed" else [{"reason": payment["reason"]}]}
     request = _requests(journal, book["request"]["channel"], reference)
-    route = _route(book, eligibility, disputes, disputes_unknown, failed, unresolved, duplicates or [])
+    route = _route(book, eligibility, disputes, disputes_unknown, failed, unresolved, duplicates or [], undecidable,
+                   other_conflicts)
     shown_docs = {k: {key: v for key, v in d.items() if key != "text"} for k, d in docs.items()}
     out = {"synthetic_label": book["label"], "reference": reference, "mission_id": ctx.mission_id,
            "rulebook": {"name": book["rulebook"], "version": book["version"], "path": str(rulebook_path),
@@ -655,8 +753,9 @@ def assess(params: dict, ctx: InvocationContext) -> dict:
            "facts": {f: {**r, "sources": {k: ({**s, "values": [{**v, "value": _shown(v["value"])} for v in s["values"]]}
                                               if s["state"] == "value" else s) for k, s in r["sources"].items()}}
                      for f, r in facts.items()},
-           "conflicts": conflicts, "rules": rules, "eligibility": eligibility,
-           "failed_rules": [r["id"] for r in failed], "unresolved": unresolved, "disputes": disputes,
+           "conflicts": conflicts, "other_conflicts": other_conflicts, "rules": rules, "eligibility": eligibility,
+           "failed_rules": [r["id"] for r in failed], "unresolved": unresolved, "undecidable": undecidable,
+           "disputes": disputes,
            "disputes_undecided": disputes_unknown, "dispute_checks": dispute_checks, "duplicates": duplicates,
            "acceptance": acceptance, "accepted": accepted, "payment": payment,
            "payment_observed": payment["state"] == "observed", "projection": projection,
@@ -668,6 +767,7 @@ def assess(params: dict, ctx: InvocationContext) -> dict:
     current = folder_out is not None and _packet_on_disk(folder_out, name, out["assessment_digest"])
     out.update(packet={"name": name, "delivered": current}, packet_current=current)
     undecided = {k for k, open_ in (("eligibility", eligibility == "undetermined"),
+                                    ("unresolved", bool(undecidable) and not unresolved),
                                     ("disputes", bool(disputes_unknown)), ("accepted", accepted is None),
                                     ("payment_observed", not payment["decided"]),
                                     ("request_recorded", request is None), ("duplicates", duplicates is None))
@@ -762,6 +862,22 @@ def _fact_view(record: dict) -> str:
     return f"{record['state']} {values}" if values else record["state"]
 
 
+def _accepted_line(a: dict) -> str:
+    """Accepted, refused in writing, no acceptance on file, or not known: a document not on file is never shown in
+    the form of a refusal."""
+    acceptance = a["acceptance"]
+    if a["accepted"] is None:
+        return "not known"
+    if a["accepted"]:
+        return "yes"
+    files = [a["documents"][k]["file"] for entry in acceptance.get("absent", []) for k in entry["documents"]
+             if k in a["documents"]]
+    if files:
+        return f"not yet: no written acceptance is on file ({', '.join(sorted(set(files)))} not on file)"
+    used = ", ".join(f"{k}: {v}" for k, v in sorted(acceptance.get("facts_used", {}).items()))
+    return f"no, the written response does not accept completion ({used})"
+
+
 def _json(content: dict) -> str:
     return json.dumps(content, sort_keys=True, indent=1, ensure_ascii=False) + "\n"
 
@@ -793,17 +909,25 @@ def render(content: dict) -> str:
         waiting = "; ".join([f"{m['fact']} from {m['document']}: {m['reason']}" for m in rule.get("missing", [])]
                             + [f"{c}: documents disagree" for c in rule.get("conflicts", [])]
                             + ([rule["reason"]] if rule.get("reason") else []))
-        used = ", ".join(f"{k}={v}" for k, v in sorted(rule["facts_used"].items()))
+        used = ", ".join(f"{k}={'absent (not on file)' if v is None else v}"
+                         for k, v in sorted(rule["facts_used"].items()))
         lines.append(f"| {rule['id']}: {rule['description']} | {rule['state']} | {used} | {waiting} |")
     lines += ["", "## Unresolved facts", ""]
-    lines += [f"- {u}" for u in a["unresolved"]] or ["None the decision waits on."]
+    lines += [f"- {u}" for u in a["unresolved"]] or ([] if a.get("undecidable") else ["None the decision waits on."])
+    if a.get("undecidable"):
+        lines += ["", "Not decidable on the facts on file:"] + [f"- {u}" for u in a["undecidable"]]
     unknown_elsewhere = sorted({f"{m['fact']} from {m['document']}: {m['reason']}" for r in a["rules"]
                                 for m in r.get("missing", [])} - set(a["unresolved"]))
     if unknown_elsewhere:
         lines += ["", "Also unknown, but no decision waits on them now:"] + [f"- {u}" for u in unknown_elsewhere]
     lines += ["", "## Conflicts and disputes", ""]
-    lines += [f"- {d['name']}" for d in a["disputes"]] or ["None."]
+    lines += [f"- {d['name']}" for d in a["disputes"]] or ([] if a.get("other_conflicts") else ["None."])
     lines += [f"- undecided: {d}" for d in a["disputes_undecided"]]
+    if a.get("other_conflicts"):
+        lines += ["", "Documents also disagree on facts no rule reads (shown, not held):"]
+        lines += [f"- {c['fact']}: " + " vs ".join(f"{v['value']} ({v.get('file', v['document'])}"
+                                                    + (f" line {v['line']})" if v.get("line") else ")")
+                                                    for v in c["values"]) for c in a["other_conflicts"]]
     lines += ["", "## Earlier cases with this reference", ""]
     if a["duplicates"] is None:
         lines.append("Not read: this assessment had no journal.")
@@ -821,13 +945,15 @@ def render(content: dict) -> str:
                 cells.append(f"{source['state']} ({kind}" + (f": {source['reason']}" if source.get("reason") else "")
                              + ")")
         lines.append(f"| {fact} | {record['state']} | {'; '.join(cells)} |")
-    lines += ["", "## Completion", "", f"Accepted: {a['accepted'] if a['accepted'] is not None else 'not known'}"
+    lines += ["", "## Completion", "", f"Accepted: {_accepted_line(a)}"
               + (f" ({a['acceptance']['description']})" if a["acceptance"].get("description") else ""), "",
               "## Accounting projection", "",
               f"Currency: {a['projection']['currency'] or 'not known'}", "", "### Estimate", ""]
     for row in a["projection"]["estimate"]:
-        lines.append(f"- {row['fact']}: {row['amount']} ({row['file']} line {row['line']})" if row["amount"] is not None
-                     else f"- {row['fact']}: not known ({row['not_known']})")
+        lines.append(f"- {row['fact']}: {row['amount']} ({row['file']} line {row['line']})"
+                     + (f", the fact is {row['fact_state']} across documents" if row.get("fact_state") else "")
+                     if row["amount"] is not None else f"- {row['fact']}: not known"
+                     + (f" in {row['document']}" if row.get("document") else "") + f" ({row['not_known']})")
     lines += ["", "### Actual (reconciled statement rows only)", ""]
     lines += [f"- {row['amount']} {row['currency']}: {row['statement']} row {row['row']} (statement sha256 "
               f"{row['statement_sha256']}, row sha256 {row['row_sha256']})" for row in a["projection"]["actual"]] \

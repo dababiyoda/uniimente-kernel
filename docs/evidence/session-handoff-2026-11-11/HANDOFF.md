@@ -1,5 +1,62 @@
 # Session handoff, 2026-11-12 (session `session_01Kucyfm9exT5imDVYvHTYSv`)
 
+**Addendum written at 10:13 UTC on 2026-11-12 (read from the clock). Read this first; the 02:12 record below it is kept
+as written and is stale where the two differ.**
+
+## A. What happened between 03:45 and 10:01 UTC
+
+The account's 5-hour usage limit stopped all four running agents at about 03:45 UTC (reset 06:20 UTC), and the
+session's worker restarted several times. Work resumed at 10:01 UTC. Nothing was lost: every worktree and commit was
+on disk, and since 10:07 every unit's unpushed work is also on the remote under `checkpoint/*` or its own branch.
+
+## B. Pull requests, read at 10:12 UTC
+
+| PR | Head | State |
+|---|---|---|
+| #293 browser | `32ca8de7` | every check passed |
+| #294 retained receipt | `1643932e` | every job that had finished at 03:11 passed (job 10 included); job 1 was still running then and no failure has been reported since |
+| #295 intent and dispositions | `16fa6cba` | no failure reported. Two further register rows are committed at `8943aee2` on `checkpoint/intent-register-20261112`, not yet on the pull request |
+| #298 unmeasured check | `b9a34259` | **every check passed** (job 10 in 89 min 59 s of a 90-minute limit) |
+| #299 composed candidate, evidence only | `b27e81f5` | on `eebd3b46` the full suite (job 1) and jobs 2 to 9 passed on the exact composed revision; job 10 cancelled at 90 minutes. `b27e81f5` adds #302 and #301; 304 passed locally; CI running |
+| #300 revoked device | `b1f157fe` | on `0aa09c87` jobs 1 to 9 passed; job 10 cancelled at 90 minutes while catching mutants. `b1f157fe` carries #302; CI running |
+| #301 appraiser | `bfaf210c` | opened 03:44; its check suite completed with no failure |
+| #302 CI time limit | `dca1a032` | opened 10:04; raises job 10 from 90 to 180 minutes with the measurements; CI running |
+
+**Job 10 is a capacity problem, not a caught defect.** It took 80, 85 and 90 minutes on three heads based on
+`8d205324`; any head that adds a gate is cancelled. #302 doubles the limit. Parallel shards are the structural
+answer and are the integrator's and the founder's choice.
+
+## C. Units not yet in a pull request
+
+| Unit | Branch | Head | State at 10:12 |
+|---|---|---|---|
+| a compile the host stalled is not a measured failure | `claude/compile-unanswered-unread-20261112` (pushed) | `0f2b5052` | independently reviewed: sound, with fixes (`reviews/review-compile-unread.md`). Fix round running: a host-stopped reading must never pass a check; isolation-unavailable carried as a host stop; exit codes typed as `mechanisms.run` does; three surviving mutants |
+| a rejected answer stops earning credit | `claude/correction-containment-credit-20261111`; work in progress at `checkpoint/correction-containment-credit-fix-wip-20261112` | `29c6c2cc` | fix round running; told to use `missions.unanswered` instead of its own reader |
+| intake recommendation as a GREG mission | `checkpoint/intake-recommendation-mission-wip-20261112` | `7b2bee41` | build running (tests next) |
+| composed-machine acceptance test (seven behaviours) | `claude/composed-machine-acceptance-20261112` (local, no commits yet) | `eebd3b46` | agent `a4e9468e8fc9b4cb4` stopped by the limit seven minutes in; **not resumed yet**; brief at `briefs/seven-behaviours.md`. Fast-forward its worktree to the candidate head first |
+| goal intake by independent source; S69.A6 map | pushed | `c9ec07c8`; `a69f5b72` | independent review owed |
+
+Agents are kept to three at a time: four at once used the whole 5-hour allowance in about four and a half hours.
+
+## D. Queued, briefs written (`briefs/`)
+
+`seven-behaviours.md` (next), `browser-smallest.md`, `operational-slice.md`. Not yet briefed: the unit that keys the
+five appraisal readers on their closure (specification in `reviews/fix-appraiser.md`); the answered-ask re-block
+loop (found twice, on the base; specification in the same file); independent re-reviews of the fix rounds of #300
+and #301.
+
+## E. New since 02:12 for the founder
+
+- Six questions from the compile-unread review (`reviews/review-compile-unread.md`, end), chiefly: whether a
+  reading the verifier REFUTED is a measured failure of the check, and whether the direct cortex route should get
+  the same retry at the cost of re-measuring the verdicts bound to `cortex.reason`.
+- From #301: whether a late re-reading that still agrees may be credited as VERIFIED.
+- Whether job 10 should become parallel shards.
+
+---
+
+## The record of 02:12 UTC, kept as written
+
 Rewritten at 02:12 UTC on 2026-11-12 (read from the clock). It replaces the 23:29, 19:30, 17:45 and 14:49 versions
 of 2026-11-11, kept in this branch's history. This branch is evidence only: **not for merge**.
 

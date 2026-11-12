@@ -4,8 +4,9 @@
 
 The decisions are those of the smallest repair measured against #293's render check
 (docs/evidence/greg-browser-binary/2026-11-12-smallest): the order (headless shells first, both full-build layouts),
-the manifest naming no binary, GREG_CHROMIUM refused by name, no installed browser and an unstartable one refused.
-A mutant counts as caught only when tests/unit/test_greg_browser_choice.py reports a FAILED test (an import or
+the manifest naming no binary, GREG_CHROMIUM refused by name, no installed browser and an unstartable one refused;
+and, from the review of #311, a path GREG cannot look at never raising OSError, a timeout and missing bubblewrap typed
+as the host's (transient), and a profile that cannot be removed never replacing the answer. A mutant counts as caught only when tests/unit/test_greg_browser_choice.py reports a FAILED test (an import or
 collection error does not count). The tests run stand-in executables, so the gate needs no browser and no network.
 A scratch copy is mutated; the live source never is. Exit 1 on any survivor or stale anchor.
 """
@@ -19,8 +20,8 @@ TESTS = "tests/unit/test_greg_browser_choice.py"
 C = "greg/capabilities.py"
 
 ORDER = "    return [candidate for candidate in (*shells, *HEADLESS_SHELL_CANDIDATES, *CHROME_CANDIDATES, *full)"
-INSTALLED = "            if Path(candidate).is_file() and os.access(candidate, os.X_OK)]"
-A_CHOICE = "        if not (os.path.isabs(chosen) and Path(chosen).is_file() and os.access(chosen, os.X_OK)):"
+INSTALLED = "            if os.path.isfile(candidate) and os.access(candidate, os.X_OK)]"
+A_CHOICE = "        if not (os.path.isabs(chosen) and os.path.isfile(chosen) and os.access(chosen, os.X_OK)):"
 NONE_FOUND = "    if not found:       # a refusal, not a path that does not exist (whose FileNotFoundError the Gate cannot type)\n        raise CapabilityError(NO_BROWSER)\n    return found[0]"
 REFUSED_CHOICE = (A_CHOICE + """
             raise CapabilityError(f"GREG_CHROMIUM is set to {chosen!r}, which is not the absolute path of an "
@@ -29,6 +30,11 @@ REFUSED_CHOICE = (A_CHOICE + """
         return [chosen]
 """)
 NOT_STARTED = "                except OSError as exc:      # installed, and the system cannot start it (or it is gone): a refusal"
+TIMED_OUT = ('            raise CapabilityError("browser did not finish rendering within 45 seconds",\n'
+             '                                  failure_class="transient") from exc')
+NO_NAMESPACES = ('        raise CapabilityError(f"confined egress needs bubblewrap network namespaces here: {exc}",\n'
+                 '                              failure_class="transient") from None')
+PROFILE = '    with tempfile.TemporaryDirectory(prefix="greg-browser-", ignore_cleanup_errors=True) as profile:'
 
 MUTANTS = [
     # which installed browsers, in which order
@@ -45,15 +51,19 @@ MUTANTS = [
     (C, "a directory is not an installed browser", INSTALLED,
      "            if os.access(candidate, os.X_OK)]"),
     (C, "a file that is not executable is not an installed browser", INSTALLED,
-     "            if Path(candidate).is_file()]"),
+     "            if os.path.isfile(candidate)]"),
+    (C, "an installed name GREG cannot look at is passed over, never an OSError", INSTALLED,
+     "            if Path(candidate).is_file() and os.access(candidate, os.X_OK)]"),
     # the founder's choice
     (C, "the founder's chosen browser is the one used", "        return [chosen]\n",
      "        ignored = [chosen]\n"),
     (C, "a choice that names no executable file is refused, not passed over for another browser", REFUSED_CHOICE,
-     "        if os.path.isabs(chosen) and Path(chosen).is_file() and os.access(chosen, os.X_OK):\n"
+     "        if os.path.isabs(chosen) and os.path.isfile(chosen) and os.access(chosen, os.X_OK):\n"
      "            return [chosen]\n"),
     (C, "a choice that is not an absolute path is refused", A_CHOICE,
-     "        if not (Path(chosen).is_file() and os.access(chosen, os.X_OK)):"),
+     "        if not (os.path.isfile(chosen) and os.access(chosen, os.X_OK)):"),
+    (C, "a choice GREG cannot look at is refused by name, never an OSError", A_CHOICE,
+     "        if not (os.path.isabs(chosen) and Path(chosen).is_file() and os.access(chosen, os.X_OK)):"),
     (C, "a refused choice makes the capability unavailable with that reason",
      "    except CapabilityError as exc:      # GREG_CHROMIUM names no browser\n        return False, str(exc)",
      '    except CapabilityError as exc:      # GREG_CHROMIUM names no browser\n        return True, "available"'),
@@ -65,6 +75,13 @@ MUTANTS = [
      '        return True, "available"'),
     (C, "an installed browser the system cannot start is a refusal, not an unknown outcome", NOT_STARTED,
      "                except ValueError as exc:"),
+    # what the record says of a timeout and of this host, and what a helper left writing cannot change
+    (C, "a render past its limit is the host's timeout, not an untyped refusal", TIMED_OUT,
+     '            raise CapabilityError("browser did not finish rendering within 45 seconds") from exc'),
+    (C, "no bubblewrap behind the relay is the host's refusal, not an untyped one", NO_NAMESPACES,
+     '        raise CapabilityError(f"confined egress needs bubblewrap network namespaces here: {exc}") from None'),
+    (C, "a profile that cannot be removed never replaces the answer", PROFILE,
+     '    with tempfile.TemporaryDirectory(prefix="greg-browser-") as profile:'),
     # the manifest and the office
     (C, "the office asks what is installed when it asks whether browser.render is available",
      '        return asked_now() if asked_now is not None else (True, "available")',

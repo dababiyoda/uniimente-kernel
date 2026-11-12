@@ -669,13 +669,14 @@ NO_BROWSER = "no Chrome or Chromium is installed on this body"
 
 
 def chrome_candidates() -> list[str]:
-    """Every installed browser GREG may render with, in the order it tries them. Nothing is run here.
+    """Every installed browser GREG may render with, in the order it tries them. Nothing is run here, and no OSError
+    leaves here: a path GREG cannot look at (a name too long, a directory it cannot search) is not a file.
 
     GREG_CHROMIUM, when set, is the founder's choice and the only candidate; set to anything but the absolute path of
     an executable file it is refused by name, and no other browser is run in its place."""
     chosen = os.environ.get("GREG_CHROMIUM", "")
     if chosen:
-        if not (os.path.isabs(chosen) and Path(chosen).is_file() and os.access(chosen, os.X_OK)):
+        if not (os.path.isabs(chosen) and os.path.isfile(chosen) and os.access(chosen, os.X_OK)):
             raise CapabilityError(f"GREG_CHROMIUM is set to {chosen!r}, which is not the absolute path of an "
                                   "executable file; GREG runs the browser that variable names or none (unset it "
                                   "to let GREG choose among the installed browsers)")
@@ -684,7 +685,7 @@ def chrome_candidates() -> list[str]:
                               "chrome-headless-shell"), reverse=True)
     full = sorted(glob.glob(f"{PLAYWRIGHT_BROWSERS}/chromium-*/chrome-linux*/chrome"))
     return [candidate for candidate in (*shells, *HEADLESS_SHELL_CANDIDATES, *CHROME_CANDIDATES, *full)
-            if Path(candidate).is_file() and os.access(candidate, os.X_OK)]
+            if os.path.isfile(candidate) and os.access(candidate, os.X_OK)]
 
 
 def chrome_binary() -> str:
@@ -745,7 +746,9 @@ def browser_render(params, ctx: InvocationContext) -> dict:
     if parts.scheme != "https" and not (parts.scheme == "http" and loopback):
         raise CapabilityError("browser.render loads https pages (http only on this machine's loopback)")
     binary = chrome_binary()
-    with tempfile.TemporaryDirectory(prefix="greg-browser-") as profile:
+    # A helper of a browser killed at the limit can go on writing the profile: failing to remove the profile never
+    # replaces the answer. Neither the helper nor a profile it keeps writing is removed here.
+    with tempfile.TemporaryDirectory(prefix="greg-browser-", ignore_cleanup_errors=True) as profile:
         common = [binary, "--headless=new", "--disable-gpu", "--no-first-run", "--no-default-browser-check",
                   "--disable-extensions", "--disable-background-networking", "--disable-sync",
                   "--disable-component-update", "--disable-default-apps", "--mute-audio", "--hide-scrollbars",
@@ -778,8 +781,9 @@ def browser_render(params, ctx: InvocationContext) -> dict:
                 proc = _render_behind_relay(argv, ctx.egress, host, int(authority.rsplit(":", 1)[1]), loopback,
                                             Path(profile), env)
                 route = f"relay: only {authority}, every request journaled"
-        except subprocess.TimeoutExpired as exc:
-            raise CapabilityError("browser did not finish rendering within 45 seconds") from exc
+        except subprocess.TimeoutExpired as exc:      # the limit was reached: no measured failure of the browser
+            raise CapabilityError("browser did not finish rendering within 45 seconds",
+                                  failure_class="transient") from exc
     if proc.returncode or not proc.stdout.strip():
         raise CapabilityError("browser could not render the page: " + proc.stderr.decode("utf-8", "replace")[-300:])
     dom_cut = len(proc.stdout) > MAX_READ_BYTES * 4
@@ -808,8 +812,9 @@ def _render_behind_relay(argv, relay, host: str, port: int, loopback: bool, prof
     from greg.worker_isolation import WorkerIsolationError, _backend
     try:
         _backend(require_bubblewrap=True)
-    except WorkerIsolationError as exc:
-        raise CapabilityError(f"confined egress needs bubblewrap network namespaces here: {exc}") from None
+    except WorkerIsolationError as exc:     # this host cannot confine the browser: isolation unavailable
+        raise CapabilityError(f"confined egress needs bubblewrap network namespaces here: {exc}",
+                              failure_class="transient") from None
     scoped = Relay({"browser.render": {"allow": [[host, port]], "external": not loopback}}, relay.journal,
                    connect=relay.connect, proxy=relay.proxy)
     with Door(scoped, "browser.render") as door:

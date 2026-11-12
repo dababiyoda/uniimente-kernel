@@ -33,7 +33,8 @@ tree for checks; it is evidence, not a merge request.
 ## 2. Defect classes found in this session's own work
 
 Six independent reviews ran (retained receipts, browser, revoked device, the replay fix, the appraiser unit, the
-credit unit). Each returned "sound, with fixes". CI then found two more defects the reviews had not. The reviewers were separate agents on the same model: a second process, not an
+credit unit). Each returned "sound, with fixes". CI then found three more defects the reviews had not, and one
+capacity limit (rows eight and nine, added 2026-11-12 10:15 UTC). The reviewers were separate agents on the same model: a second process, not an
 independent operator.
 
 | Class | First seen | Seen again | What now checks for it | What still escapes |
@@ -44,6 +45,8 @@ independent operator.
 | **Unmeasured read as measured.** A reading that established nothing is counted as a failure | #298's defect (a faulted instrument) | a Mind-named fault recorded as measured; a solver timeout; a late appraisal re-read | Regression tests per case on #298; the appraiser and compile-unread units in flight | Each was found by a person or reviewer building the shape; no general test generates such shapes |
 | **A fix that regresses a neighbouring mission shape** | the replay fix (a refused read lost its route) | the appraiser unit (an old closure blamed for a later world); the credit unit (a host stall cost a correct method its credit) | Independent review before a pull request, with base-against-head probes | Three of three were found only by review, none by the author's tests |
 | **A silent loop.** A mission retries or re-blocks for ever and asks nobody | the replay fix (unseen `SENSOR_RETRY`) | an answered `NO_STRATEGY` ask re-blocks every cadence (on the line; recorded on #209 and by the appraiser review) | Tests that count asks and ticks on #298 | The answered-ask churn is not fixed |
+| **A stored patch left unable to apply.** A draft patch kept in the repository is another consumer of the file it patches; a test keeps it applicable; no test of the changed behaviour names it | #300 (`934a9f77`): an import line in `greg/body.py` rewrapped, found by CI job 9 seventy-five minutes after the push | — | `gates_for_changes.py` now runs `git apply --check` for every stored patch a test names (it flags `934a9f77` and passes `0aa09c87`) | Only patches a test names by path. Seven other stored patches in the tree do not apply and no test says they should |
+| **A check that stops instead of failing.** A job cancelled at its time limit reports neither pass nor fail, and a targeted local run can miss what only the whole run covers | Canonical CI job 10 on #300 and #299: cancelled at 90 minutes, every mutant so far caught. The job took 80 to 90 minutes on three base heads | the composed candidate's targeted local run (238 passed) missed the licence test that the full suite then failed on #300 | Draft #302 raises the limit to 180 minutes and records the measurements. Pull-request bodies record a cancelled job as `fail`, never as passed | The composed candidate carries every unit's gate and may exceed 180 minutes. Parallel shards are the structural answer and are not decided |
 | **A count stated before it was read** | #294's `c4c0ca53` message (18/18 written, 17/18 measured) | — | Rule in every brief: no result that was not read from output | — |
 
 **Cost, so far.** The three reviews whose run time was recorded took 43, 43 and 48 minutes of one agent each.

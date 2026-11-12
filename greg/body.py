@@ -89,11 +89,49 @@ RESTORE_LIFTS = "a BODY_RESUME signed by the founder key and issued after the re
 # The separate-process appraiser (greg/appraisal.py) judges a closure VERIFIED or REFUTED, and a failure closure
 # (mission.unmet) VERIFIED_UNMET or REFUTED. A run killed, timed out or without a readable verdict judged nothing
 # (acceptance H.G7): it is one unavailable attempt, retried on a later tick, and after APPRAISAL_ATTEMPTS of them the
-# closure is recorded appraised UNAVAILABLE (final, never VERIFIED).
+# closure is recorded appraised UNAVAILABLE (final, never VERIFIED). The appraiser also answers UNAVAILABLE itself
+# when it ran nothing for a capability that is not ATTACHED (``not_run_by_appraiser``): recorded at once, never
+# VERIFIED, and appraised again only after the founder attaches that capability. That later appraisal reads a later
+# world; when the world no longer agrees the appraiser answers UNAVAILABLE once more (``appraised_late``), and that
+# one is final.
 APPRAISER_VERDICTS = ("VERIFIED", "VERIFIED_UNMET", "REFUTED")
 APPRAISAL_ATTEMPTS = 3
 STOP_JOIN_SECONDS = 60       # a stopped body waits this long for its interrupted workers to record their outcomes
 APPRAISAL_TIMEOUT_SECONDS = 120
+
+
+def not_run_by_appraiser(verdict) -> dict:
+    """capability id -> why, when this is the appraiser's own answer that it ran nothing in the name of a capability
+    this body does not leave ATTACHED (greg/appraisal.py ``_withheld``), so the closure is neither verified nor
+    refuted. Empty for every other verdict, and for a run that gave none.
+
+    Such an answer is recorded at once as appraised UNAVAILABLE: it is not a failed run, so it uses none of the
+    APPRAISAL_ATTEMPTS and is not repeated on the next tick. ``Body._reattached_closures`` has the closure appraised
+    again after the founder attaches what was not run."""
+    if not isinstance(verdict, dict) or verdict.get("verdict") != "UNAVAILABLE":
+        return {}
+    named = verdict.get("not_run")
+    return named if isinstance(named, dict) else {}
+
+
+def appraised_late(verdict) -> dict:
+    """What the appraiser said was not established, when this is its own answer that it appraised a closure too late
+    to refute it: the closure had waited for a capability to be attached again, and the world as read afterwards no
+    longer agrees (greg/appraisal.py ``_waited_on``). Empty for every other verdict.
+
+    Recorded at once, like any verdict the appraiser gave. It names no capability to wait for, so on its own it is
+    final: ``_reattached_closures`` never has the closure appraised again."""
+    if not isinstance(verdict, dict) or verdict.get("verdict") != "UNAVAILABLE":
+        return {}
+    late = verdict.get("appraised_late")
+    return late if isinstance(late, dict) else {}
+
+
+def appraiser_answered(verdict) -> bool:
+    """True for a verdict the appraiser itself gave: VERIFIED, VERIFIED_UNMET, REFUTED, or one of its two own
+    UNAVAILABLE answers. A run that was killed, timed out or printed anything else judged nothing (acceptance H.G7)."""
+    return isinstance(verdict, dict) and (verdict.get("verdict") in APPRAISER_VERDICTS
+                                          or bool(not_run_by_appraiser(verdict)) or bool(appraised_late(verdict)))
 
 
 def unfinished_main_loop_boots(journal: Journal, now: datetime) -> list[str]:
@@ -1082,7 +1120,21 @@ class Body:
         return result
 
     def _close_out(self, now):
-        """Record where each closure happened and have it appraised by a separate process."""
+        """Record where each closure happened and have it appraised by a separate process.
+
+        A closure that waited for a capability to be attached again is appraised first, before the closures recorded
+        since. It is the older closure, and several readers take a mission's latest appraisal on the ledger
+        (greg/sop.py verified_appraisals, greg/metrics.py, greg/routing.py): the appraisal of the mission's newest
+        closure is the one they should find."""
+        self._appraise_reattached(now)
+        self._appraise_new_closures(now)
+
+    def _appraise_reattached(self, now):
+        for mid, closure_event in self._reattached_closures():
+            self._appraise_closure(mid, closure_event, now)
+
+    def _appraise_new_closures(self, now):
+        """Every closure that has no appraisal yet: each achievement, hold and failure closure, once."""
         contexts = {e.payload["mission_id"] for e in self.journal.replay("mission.closure_context")}
         # an achievement is judged as its own closure: an appraisal of an earlier failure or hold of the same
         # mission (it names that closure_event) never stands in for the appraisal of its success (TXT-R4-1)
@@ -1104,16 +1156,49 @@ class Body:
             if event.event_id not in judged:
                 self._appraise_closure(event.payload["mission_id"], event.event_id, now)
 
+    def _reattached_closures(self) -> list[tuple[str, str | None]]:
+        """Closures to appraise again: the latest appraisal ran nothing in the name of a capability that was not
+        ATTACHED, and since then the state of one of those capabilities was changed and all of them are ATTACHED now
+        (the founder attached what was not run).
+
+        One appraisal per attach, never one per tick: the new appraisal is recorded after the change that caused it,
+        so only a later change causes another. An UNAVAILABLE that came from runs without a verdict names no such
+        capability and stays final (acceptance H.G7)."""
+        latest = {}
+        for event in self.journal.replay("mission.appraised"):
+            latest[event.payload["mission_id"], event.payload.get("closure_event")] = event
+        waiting = {closure: event for closure, event in latest.items() if not_run_by_appraiser(event.payload)}
+        if not waiting:
+            return []
+        position = self.journal.positions("")
+        changed_at = {event.payload["capability_id"]: position.get(event.event_id, -1)
+                      for event in self.journal.replay("capability.state")}
+        due = []
+        for closure, event in waiting.items():
+            needed, since = list(not_run_by_appraiser(event.payload)), position.get(event.event_id, -1)
+            if all(self.registry.state.get(cid) == "ATTACHED" for cid in needed) \
+                    and any(changed_at.get(cid, -1) > since for cid in needed):
+                due.append(closure)
+        return due
+
     def _appraise_closure(self, mid: str, closure_event: str | None, now):
         """One appraiser run for one closure, recorded; a run that gave no verdict is retried on a later tick.
 
         The appraiser is a separate process. When it is killed, times out or writes no readable verdict, it judged
         nothing, so nothing is recorded as its verdict (acceptance H.G7): the run is one unavailable attempt and
         the closure is appraised again on the next tick. After APPRAISAL_ATTEMPTS such runs the closure is recorded
-        appraised UNAVAILABLE, which is final: it is never VERIFIED and the closure is not appraised again."""
+        appraised UNAVAILABLE, which is final: it is never VERIFIED and the closure is not appraised again.
+
+        The appraiser's own UNAVAILABLE (``not_run_by_appraiser``: it ran nothing for a capability that is not
+        ATTACHED; ``appraised_late``: it appraised too late to refute) is a verdict it gave, not a failed run:
+        recorded at once, with no attempt counted."""
         unavailable = [e.payload for e in self.journal.replay("mission.appraisal_unavailable")
                        if e.payload["mission_id"] == mid and e.payload.get("closure_event") == closure_event]
         prior = [u["why"] for u in unavailable]
+        # A closure appraised again (after a re-attach) keeps its earlier appraisal: the later one is its own fact.
+        earlier = sum(1 for e in self.journal.replay("mission.appraised")
+                      if e.payload["mission_id"] == mid and e.payload.get("closure_event") == closure_event)
+        again = [earlier] if earlier else []
         if len(prior) >= APPRAISAL_ATTEMPTS:
             # the body died between the last unavailable run and its final record: finish it, run nothing more
             last = unavailable[-1]
@@ -1121,11 +1206,11 @@ class Body:
                 "mission_id": mid, "head": last["head"], "verdict": "UNAVAILABLE", "checks": {},
                 "findings": prior, "appraiser": "separate process", "attempts": len(prior),
                 **({"closure_event": closure_event} if closure_event else {})},
-                key=[mid, "appraised", closure_event or last["head"]])
+                key=[mid, "appraised", closure_event or last["head"], *again])
             return
         verdict = self.appraise(mid, closure_event=closure_event)
-        key = [mid, "appraised", closure_event or verdict["head"]]
-        if verdict["verdict"] in APPRAISER_VERDICTS:
+        key = [mid, "appraised", closure_event or verdict["head"], *again]
+        if appraiser_answered(verdict):
             self.journal.record("mission.appraised", verdict, key=key)
             return
         attempt, why = len(prior) + 1, verdict["findings"][0]
@@ -1173,7 +1258,7 @@ class Body:
             verdict = json.loads(child.stdout)
         except ValueError:
             return unavailable("the appraiser exited 0 without a readable verdict")
-        if not isinstance(verdict, dict) or verdict.get("verdict") not in APPRAISER_VERDICTS:
+        if not appraiser_answered(verdict):
             return unavailable("the appraiser exited 0 without a readable verdict")
         return verdict
 

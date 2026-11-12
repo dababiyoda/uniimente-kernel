@@ -3781,7 +3781,12 @@ class MissionEngine:
                 # A check the evidence could not decide is not pursued, so it is not in ``failing``; the closure
                 # still names it as unmeasured, as the ask does (review of #209 by a separate session, F1).
                 unread = failing & (set(getattr(self, "sensor_errors", ())) | set(getattr(self, "unread", ())))
-                if not split and failing - unread:
+                # One failure closure per completed-action count, as a hold is recorded once. The mission reaches
+                # this point again at a later time when a blocker in between was lifted (its sensor detached, then
+                # attached again); recording the closure a second time under the same identity with a new time was
+                # refused by the journal, and that refusal crashed every later tick.
+                closed = self.journal.retained("mission.unmet", [m.mission_id, "unmet", m.actions_done]) is not None
+                if not split and failing - unread and not closed:
                     self.journal.record("mission.unmet", {
                         "mission_id": m.mission_id, "failing_checks": sorted(failing - unread),
                         **({"unmeasured_checks": sorted(unread | unmeasured)} if unread | unmeasured else {}),

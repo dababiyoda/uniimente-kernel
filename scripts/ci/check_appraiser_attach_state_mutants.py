@@ -48,6 +48,9 @@ MUTANTS = [
      'never = _never_rerun(cap) if cap in REOBSERVABLE else None', 'never = None'),
     (APPRAISAL, "a delivery is re-derived for a capability that is not ATTACHED",
      'withheld = _not_attached(registry, action["capability"])', 'withheld = None'),
+    (APPRAISAL, "only a brief is held back: a detached venture or organ exchange has its organs re-run",
+     'withheld = _not_attached(registry, action["capability"])',
+     'withheld = _not_attached(registry, action["capability"]) if action["capability"] == "brief.engineering" else None'),
     # the verdict: never VERIFIED on what was not run, never REFUTED for it alone, never hiding a real refutation
     (APPRAISAL, "the re-observation check passes on a sensor that was not run",
      'checks["world_reobserved"] = reobserved and not unmeasured and not outdated',

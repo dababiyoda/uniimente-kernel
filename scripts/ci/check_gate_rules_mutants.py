@@ -65,6 +65,8 @@ RUNNER_MUTANTS = [
      "or failed[:1] != expected:"),
     (RUNNER, "on a planted tree a test named with the planted name as its prefix counts as the planted one",
      "planted not in failures(result.stdout)", "planted not in result.stdout"),
+    (RUNNER, "the summary is read from wherever its heading's words last appear, even inside a failure message",
+     "SUMMARY_HEADING.fullmatch(line)", '"short test summary info" in line'),
     (RUNNER, "every copy runs pytest with one shared base temporary directory",
      "f\"--basetemp={Path(temp) / f'pytest{index}'}\"", "f\"--basetemp={Path(temp) / 'pytest'}\""),
     (RUNNER, "every copy imports from the first copy", '"PYTHONPATH": str(repo)',

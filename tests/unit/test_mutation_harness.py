@@ -181,6 +181,23 @@ def test_the_planted_test_is_named_whole_never_as_a_prefix(tmp_path, capsys):
     assert status == 0 and "CAUGHT grow the kept list" in out and "1/1 caught" in out
 
 
+def test_a_failure_message_with_the_summary_headings_words_is_not_the_summary(tmp_path, capsys):
+    """Found by the independent re-check of 9de5075b: the summary was read from the last place its heading's words
+    appeared, so a planted test failing with those words in its message moved the reading inside its own summary
+    line, and a mutant under which only the planted test still failed read CAUGHT. Only a whole heading line counts."""
+    guard = 'NOTE = "planted"\n'
+    root = _tree(tmp_path, guard,
+                 "import guard\n\n\ndef test_planted():\n    if guard.NOTE != 'fixed':\n"
+                 "        raise ValueError(guard.NOTE)\n\n\ndef test_pin():\n    assert True\n")
+    status = mutation_harness.run([("guard.py", "reword the note", 'NOTE = "planted"',
+                                    'NOTE = "short test summary info"')], TESTS, "h-",
+                                  root=root, purge_dirs=("tests",), failing_first="test_planted")
+    out = capsys.readouterr().out
+    assert status == 1 and "SURVIVED_OR_INVALID reword the note" in out and "0/1 caught" in out
+    assert mutation_harness.failures("x\n== short test summary info ==\nFAILED t.py::a - ValueError: "
+                                     "short test summary info\n") == ["FAILED t.py::a"]
+
+
 def test_parallel_workers_judge_each_mutant_alone_and_count_the_same(tmp_path, capsys):
     """Three workers, six mutants of one file: each mutant is applied and reverted in its own worker's copy, so a
     caught mutant cannot make a neighbour's run fail and a survivor cannot hide behind one. The verdicts and the

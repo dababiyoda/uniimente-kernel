@@ -68,13 +68,18 @@ def purge(repo: Path, dirs: tuple[str, ...]) -> None:
             shutil.rmtree(cache, ignore_errors=True)
 
 
+SUMMARY_HEADING = re.compile(r"=+ short test summary info =+")
+
+
 def failures(stdout: str) -> list[str]:
     """``FAILED <test id>`` and ``ERROR <test id>`` lines of pytest's closing short summary, each without its message.
-    Only the summary is read: a test's own output can contain lines that begin with those words."""
-    _, found, summary = stdout.rpartition("short test summary info")
-    if not found:
+    Only the summary is read: a test's own output can contain lines that begin with those words. The summary starts
+    after pytest's last whole heading line; a failure message that contains the heading's words is not a heading."""
+    lines = stdout.splitlines()
+    starts = [i for i, line in enumerate(lines) if SUMMARY_HEADING.fullmatch(line)]
+    if not starts:
         return []
-    return [line.split(" - ", 1)[0] for line in summary.splitlines() if line.startswith(("FAILED ", "ERROR "))]
+    return [line.split(" - ", 1)[0] for line in lines[starts[-1] + 1:] if line.startswith(("FAILED ", "ERROR "))]
 
 
 def default_workers() -> int:

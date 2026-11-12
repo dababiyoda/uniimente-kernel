@@ -4,9 +4,10 @@
 
 Founder, 2026-11-12: "Determine whether GREG can repair the missing function through an allowed alternative, obtain
 appraisal, and finish." "Capability repair cannot restore revoked authority." The rule is in greg/missions.py
-``_pursue``: a candidate whose signed capability the founder detached is passed over while another candidate remains,
-and the next one runs under its own scope, cone and approval. ``first_choice`` applies the same rule to asks made ahead
-of the mission's loop. The mutants remove or widen that rule at each decision point the founder named:
+``_pursue``: a candidate whose signed capability the founder detached is passed over for the next candidate, when that
+one's own capability resolves now, and the next one runs under its own scope, cone and approval. ``first_choice``
+applies the same rule to asks made ahead of the mission's loop, and ``_withdraw_moot_asks`` to asks already open. The
+mutants remove or widen that rule at each decision point the founder named:
 
 * detached against revoked: only a founder detach is passed over, not a quarantined tool and not an approval a
   revoked device gave;
@@ -14,7 +15,12 @@ of the mission's loop. The mutants remove or widen that rule at each decision po
 * the attach ask: none is raised while an alternative remains, and the record says why the preferred one was passed
   over;
 * the completed effect: the alternative is one of the strategies that advance a failing check, so a completed effect
-  is never chosen again.
+  is never chosen again;
+* an alternative whose own tool cannot run now is not chosen: the detached tool's attach is asked for, and its
+  re-attach unblocks the mission (review of #312, X3);
+* an open APPROVAL is withdrawn, as a body event, when a founder detach or attach made it one no approve can run: the
+  move's own tool is detached while the selection runs another, or a strategy the ask records as passed over is no
+  longer detached and the selection runs it again; nothing else withdraws it (review of #312, X1, X2, X4, X5).
 
 Mutants are applied in a scratch copy of the repository, never to the working tree; the copy runs without bytecode and
 its __pycache__ is purged before each mutant. A mutant is caught only when tests/unit/test_greg_alternative_route.py
@@ -52,7 +58,33 @@ MUTANTS = [
                '            if self._detached(candidates[0][3]) else [c for c in candidates if self._detached(c[3]) is None]\n'),
     # asks made ahead of the loop follow the mission's own selection
     (MISSIONS, "an ask ahead of the loop may name the detached strategy the mission will not run",
-     '    runnable = [r for r in ranked if r[3] not in detached]\n', '    runnable = []\n'),
+     '    runnable = [a for a in ranked if a not in detached]\n', '    runnable = []\n'),
+    # an alternative is chosen only when its own tool can run now (X3)
+    (MISSIONS, "the detached strategy is passed over for an alternative whose tool is not attached",
+     '        ranked = runnable if runnable and self._resolve(runnable[0][3])[0] is not None else candidates\n',
+     '        ranked = runnable or candidates\n'),
+    (MISSIONS, "the selection behind an ask passes over a detached strategy for an alternative that cannot run",
+     '    if runnable and runnable[0] not in unresolved:\n', '    if runnable:\n'),
+    (MISSIONS, "the engine gives the selection no alternative that cannot resolve",
+     '                             unresolved={s["action_id"] for s in strategies if self._resolve(s)[0] is None})\n',
+     '                             unresolved=())\n'),
+    # an open APPROVAL a detach made moot is withdrawn (X2, X5), and only when the selection runs another move
+    (MISSIONS, "an open APPROVAL for a detached strategy stays the blocker while the selection runs another",
+     '            if gone is not None:\n                moot.append((rid, f"the founder detached {gone}',
+     '            if False:\n                moot.append((rid, f"the founder detached {gone}'),
+    (MISSIONS, "an open APPROVAL for a detached strategy is withdrawn even when no other strategy remains",
+     '            if first is None or first == aid:\n                continue\n            if gone is not None:\n',
+     '            if (first is None or first == aid) and gone is None:\n                continue\n'
+     '            if gone is not None:\n'),
+    # an open APPROVAL a re-attach made moot is withdrawn (X1, X4)
+    (MISSIONS, "the alternative's ask stays the blocker after the passed-over tool is attached again",
+     '            back = back.get(first)\n', '            back = None\n'),
+    (MISSIONS, "an unpaid ask raised for an alternative does not record which strategy was passed over",
+     '                                evidence={"routing": routing_decision} if routing_decision.get("passed_over") else None,\n',
+     '                                evidence=None,\n'),
+    (MISSIONS, "an ask made ahead of the loop does not record which strategy the selection passed over",
+     '        passed = {"passed_over": scope["passed_over"]} if scope["passed_over"] else {}\n',
+     '        passed = {}\n'),
 ]
 
 

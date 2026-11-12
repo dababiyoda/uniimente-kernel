@@ -28,13 +28,18 @@ Measured on the composed candidate 98df0260, before any change to greg/missions.
   ran. B2 never runs.
 
 After this change (greg/missions.py ``_pursue``: a candidate whose signed capability the founder detached is passed
-over while another candidate remains), both cases run B2 on the tick after the detach, under B2's own scope, ask
+over for the next candidate, when that one's own capability resolves now), both cases run B2 on the tick after the
+detach, under B2's own scope, ask
 nothing about the detached tool, and record in B2's action why B was passed over. The unreadable gauge is still an
 unmeasured reading: SENSOR_RETRY, then a SENSOR_FAILURE ask, and nothing closes until the gauge reads again. The tests
 below pin what the founder named: the detached tool is never invoked, an alternative outside the cone stops at its
 own approval, an approval voided by a device revocation is asked for again and not routed around, a quarantined tool
 is not passed over, and the completed effect runs once. One gap stays, as a strict expected failure: with no signed
 alternative left, the same-function case still blocks without telling the founder.
+
+The review of #312 (2026-11-12, X1-X5) added the tests at the end of this file: an open APPROVAL that a founder detach
+or attach made one no approve can run is withdrawn as a body event (``_withdraw_moot_asks``), and an alternative whose
+own tool is not attached is not chosen, so a re-attach of the detached tool unblocks the mission as on the base.
 """
 from __future__ import annotations
 
@@ -113,7 +118,7 @@ def counted(body, calls: list, *capabilities: str) -> None:
 
 
 def spec(home, data, *, alternative: str, inside: bool, a_inside: bool = False, b_inside: bool = False,
-         alt_cost: float = COST_ALT) -> dict:
+         alt_cost: float = COST_ALT, b_cost: float = COST_B) -> dict:
     copy = workspace(home, MID) / "copy.txt"
     materialize = {"namespace": NAMESPACE, "address": ADDRESS, "relative_path": "copy.txt"}
     alt_params = {"relative_path": "copy.txt", "content": NOTE} if alternative in ("fs.write", UNATTACHED) \
@@ -142,7 +147,7 @@ def spec(home, data, *, alternative: str, inside: bool, a_inside: bool = False, 
              "cost_usd": COST_A},
             {"action_id": "b", "capability": "artifact.materialize", "params": materialize,
              "target": "workspace:copy.txt", "advances": ["b"], "requires": ["a"],
-             "rationale": "restore the retained bytes as the working copy (preferred)", "cost_usd": COST_B},
+             "rationale": "restore the retained bytes as the working copy (preferred)", "cost_usd": b_cost},
             {"action_id": "b2", "capability": alternative, "params": alt_params, "target": "workspace:copy.txt",
              "advances": ["b"], "requires": ["a"], "rationale": "write the working copy another way (alternative)",
              "cost_usd": alt_cost}],
@@ -156,14 +161,14 @@ class Run:
     """One body, its founder key and the mission; ``tick`` keeps the state the mission reported each turn."""
 
     def __init__(self, tmp_path, *, alternative: str = "fs.write", inside: bool = True, a_inside: bool = False,
-                 b_inside: bool = False, alt_cost: float = COST_ALT, strategies=None):
+                 b_inside: bool = False, alt_cost: float = COST_ALT, b_cost: float = COST_B, strategies=None):
         self.home, self.key, self.body_id, self.data = make_body(tmp_path)
         (self.data / "note.txt").write_text(NOTE)
         self.gauge = self.data / "gauge.txt"
         self.gauge.write_text("gauge: green\n")
         self.clock, self.calls, self.states = Clock(), [], []
         self.spec = spec(self.home, self.data, alternative=alternative, inside=inside, a_inside=a_inside,
-                         b_inside=b_inside, alt_cost=alt_cost)
+                         b_inside=b_inside, alt_cost=alt_cost, b_cost=b_cost)
         if strategies is not None:
             self.spec["strategies"] = [s for s in self.spec["strategies"] if s["action_id"] in strategies]
         self.body = Body(self.home, clock=self.clock).open()
@@ -480,7 +485,6 @@ def done(r: Run, action: str):
     return [a for a in r.actions(action) if a["status"] == "DONE"]
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason="X1: nothing re-checks an open APPROVAL when a re-attach changes the selection; the B2 ask stays the blocker")
 def test_x1_a_reattach_withdraws_the_alternatives_ask_and_b_runs_on_its_own_approval(run):
     """X1: B approved, its tool detached before it ran, B2 (outside the cone) asked for, then the founder re-attaches
     the tool. Before: the mission stayed WAITING on the B2 ask, and approving B2 ran B. Now the B2 ask is withdrawn
@@ -495,7 +499,7 @@ def test_x1_a_reattach_withdraws_the_alternatives_ask_and_b_runs_on_its_own_appr
     r.attach()
     r.tick()
     assert ask_b2["request_id"] in r.withdrawn(), (r.states, r.mission().blocker)
-    assert "artifact.materialize is attached again" in r.withdrawn()[ask_b2["request_id"]]
+    assert "artifact.materialize is no longer detached (now ATTACHED)" in r.withdrawn()[ask_b2["request_id"]]
     r.until(lambda: done(r, "b"), "B done on its own approval")
     assert [(a["action_id"], a["status"], a["cost_usd"]) for a in r.actions()] == [
         ("a", "DONE", COST_A), ("b", "DONE", COST_B)]
@@ -508,7 +512,6 @@ def test_x1_a_reattach_withdraws_the_alternatives_ask_and_b_runs_on_its_own_appr
     assert r.answered() == answered and [a["action_id"] for a in r.actions()] == ["a", "b"]
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason="X1 (P5): the B2 ask stays the blocker after the re-attach although B is inside the cone")
 def test_x1_inside_the_cone_a_reattach_lets_b_run_without_an_answer(run):
     """X1, variant P5: B lies inside the cone. The tool is detached right after A, B2 is asked for, the tool is
     re-attached: the B2 ask is withdrawn and B runs inside the cone with no founder answer."""
@@ -524,7 +527,6 @@ def test_x1_inside_the_cone_a_reattach_lets_b_run_without_an_answer(run):
     assert [c[0] for c in r.calls] == ["artifact.store", "artifact.materialize"]
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason="X4: the B2 ask stays open after the re-attach; approving it asks for B (two decisions)")
 def test_x4_reattach_while_the_alternatives_ask_is_open_asks_once_for_b(run):
     """X4: B never asked; the tool is detached, B2 asked for, the tool re-attached. Before: the B2 ask stayed the
     blocker, approving it changed nothing and then B was asked (two decisions). Now the B2 ask is withdrawn and B is
@@ -546,7 +548,6 @@ def test_x4_reattach_while_the_alternatives_ask_is_open_asks_once_for_b(run):
     assert [c[0] for c in r.calls] == ["artifact.store", "artifact.materialize"]
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason="X2: _step waits on an open APPROVAL before _pursue's pass-over is reached")
 def test_x2_a_detach_while_bs_approval_is_open_withdraws_it_and_b2_runs_inside_the_cone(run):
     """X2: the mission is waiting on APPROVAL B when the founder detaches B's tool. Before: it kept waiting on that
     ask, and either answer ran B2. Now the ask is withdrawn on the next tick and B2, inside the cone, runs."""
@@ -566,7 +567,6 @@ def test_x2_a_detach_while_bs_approval_is_open_withdraws_it_and_b2_runs_inside_t
         r.answer(ask_b)
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason="X5: the APPROVAL for the detached B stays the blocker until the founder answers it")
 def test_x5_outside_the_cone_the_withdrawn_ask_gives_way_to_b2s_own(run):
     """X5: as X2 with B2 outside the cone. B's ask is withdrawn, B2 is asked for under its own scope, nothing runs
     until the founder answers it, and B's scope is never approved."""
@@ -586,7 +586,6 @@ def test_x5_outside_the_cone_the_withdrawn_ask_gives_way_to_b2s_own(run):
     assert [c[0] for c in r.calls] == ["artifact.store", "fs.write"] and r.actions("b") == []
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason="X3: B is passed over for a B2 whose own tool is not attached; the attach asked for is B2's function")
 def test_x3_an_alternative_whose_tool_cannot_run_is_not_chosen_and_a_reattach_unblocks(run):
     """X3: B2 names a registered capability of another function that was never attached. Before: B was passed over
     for B2, the attach asked for was B2's function, and re-attaching B's tool left the mission waiting for good. Now B
@@ -606,7 +605,6 @@ def test_x3_an_alternative_whose_tool_cannot_run_is_not_chosen_and_a_reattach_un
     assert [c[0] for c in r.calls] == ["artifact.store", "artifact.materialize"] and r.actions("b2") == []
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason="X3: after the B2 attach is rejected, re-attaching B's tool lifts nothing")
 def test_x3_after_the_founder_rejects_the_attach_a_reattach_still_unblocks(run):
     """X3, reject path: the founder rejects the attach ask, then re-attaches B's tool. Before: no open ask and a
     blocker nothing lifts. Now B is asked for, as on the base."""
@@ -619,3 +617,90 @@ def test_x3_after_the_founder_rejects_the_attach_a_reattach_still_unblocks(run):
     r.attach()
     r.until(lambda: r.asks("APPROVAL", "b"), "the approval ask for B")
     assert r.actions("b2") == [] and UNATTACHED not in [c[0] for c in r.calls]
+
+
+# What the re-check leaves alone: each premise is re-checked only where the founder's detach or attach changed it.
+
+def test_with_no_alternative_left_the_open_approval_for_the_detached_strategy_stays(run):
+    """Only B advances its check: detaching B's tool while its APPROVAL is open withdraws nothing (an approve of it is
+    kept for after a re-attach, as on the base), and approving it asks for the tool."""
+    r = run(alternative="fs.write", strategies=("a", "b"))
+    r.a_done()
+    ask_b = r.until(lambda: r.asks("APPROVAL", "b"), "the approval ask for B")[0]
+    r.detach()
+    r.tick(3)
+    assert r.withdrawn() == {} and r.mission().blocker["request_id"] == ask_b["request_id"]
+    r.answer(ask_b)
+    [attach] = r.until(lambda: r.asks("CAPABILITY_ATTACH"), "the attach ask")
+    assert attach["authority_requested"]["function"] == "artifact.materialize"
+    r.attach()
+    r.until(lambda: done(r, "b"), "B done on the approval given while its tool was detached")
+    assert [c[0] for c in r.calls] == ["artifact.store", "artifact.materialize"]
+
+
+def test_a_quarantined_tool_does_not_withdraw_its_open_approval(run):
+    """Only a founder detach is re-checked: a quarantined tool leaves B's open APPROVAL as the blocker."""
+    r = run(alternative="fs.write", inside=True)
+    r.a_done()
+    ask_b = r.until(lambda: r.asks("APPROVAL", "b"), "the approval ask for B")[0]
+    r.body.registry.set_state("artifact.materialize", "QUARANTINED")
+    r.tick(3)
+    assert r.withdrawn() == {} and r.mission().blocker["request_id"] == ask_b["request_id"]
+    assert r.actions("b2") == []
+
+
+def test_an_alternative_that_cannot_run_leaves_the_detached_strategys_approval_open(run):
+    """B2's own tool is not attached: the selection does not pass over B for it, so B's open APPROVAL stays, and no
+    ask ahead of the loop may name B2."""
+    r = run(alternative=UNATTACHED, inside=False)
+    r.a_done()
+    ask_b = r.until(lambda: r.asks("APPROVAL", "b"), "the approval ask for B")[0]
+    r.detach()
+    r.tick(3)
+    assert r.withdrawn() == {} and r.mission().blocker["request_id"] == ask_b["request_id"]
+    refusal = r.body.engine.ask_refusal(MID, "b2", now=r.clock())
+    assert refusal is not None and "runs b first" in refusal
+
+
+def test_an_excluded_passed_over_strategy_does_not_withdraw_the_alternatives_ask(run):
+    """The founder excluded B after B2 was asked for in its place: re-attaching B's tool does not make B the selection
+    again, so B2's ask stays."""
+    r = run(alternative="fs.write", inside=False)
+    r.a_done()
+    r.detach()
+    ask_b2 = r.until(lambda: r.asks("APPROVAL", "b2"), "the approval ask for B2")[0]
+    r.body.engine.exclude_strategy(MID, "b", "founder critique: not this route", "critique:test")
+    r.attach()
+    r.tick(3)
+    assert r.withdrawn() == {} and r.mission().blocker["request_id"] == ask_b2["request_id"]
+
+
+def test_an_unpaid_alternatives_ask_records_the_pass_over_and_is_withdrawn_on_reattach(run):
+    """B and B2 cost nothing (B still ranks first, by signed order): B2's ask is not a spend ask, and still records
+    why B was passed over, so a re-attach of B's tool withdraws it."""
+    r = run(alternative="fs.write", inside=False, alt_cost=0.0, b_cost=0.0)
+    r.a_done()
+    r.detach()
+    ask_b2 = r.until(lambda: r.asks("APPROVAL", "b2"), "the approval ask for B2")[0]
+    assert "resource" not in ask_b2 and ask_b2["evidence"]["routing"]["passed_over"][0]["action_id"] == "b"
+    r.attach()
+    r.tick()
+    assert ask_b2["request_id"] in r.withdrawn()
+    r.until(lambda: r.asks("APPROVAL", "b"), "the approval ask for B")
+
+
+def test_an_ask_made_ahead_of_the_loop_records_the_pass_over_and_is_withdrawn_on_reattach(run):
+    """A goal asks ahead about B2 while B's tool is detached (the engine's own request_decision): that ask names B as
+    passed over, the loop waits on it, and a re-attach withdraws it."""
+    r = run(alternative="fs.write", inside=False)
+    r.a_done()
+    r.detach()
+    rid = r.body.engine.request_decision(MID, "b2", why="asked ahead", recommendation="approve", now=r.clock())
+    [ask_b2] = r.asks("APPROVAL", "b2")
+    assert ask_b2["request_id"] == rid and ask_b2["evidence"]["routing"]["passed_over"][0]["action_id"] == "b"
+    r.tick(2)
+    assert r.mission().blocker["request_id"] == rid and len(r.asks("APPROVAL", "b2")) == 1
+    r.attach()
+    r.tick()
+    assert rid in r.withdrawn()
+    r.until(lambda: r.asks("APPROVAL", "b"), "the approval ask for B")

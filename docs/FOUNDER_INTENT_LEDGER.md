@@ -2,6 +2,20 @@
 
 # Founder Intent Ledger
 
+## Convergence, then a useful operational path — 2026-11-12
+
+`INTENT-20261112-CONVERGENCE-USEFUL-PATH` ([record](intent/INTENT-20261112-CONVERGENCE-USEFUL-PATH.json), [verbatim source](intent/sources/CONVERGENCE-CLARIFICATION-2026-11-12-source.md)): the founder's clarification of 2026-11-12 in session `session_01Kucyfm9exT5imDVYvHTYSv`. It is chat intent evidence, not founder authentication.
+
+- **Convergence first.** "Green results on separate branches do not establish compatibility." Keep a reversible composed candidate of the compatible work and run the checks on that exact revision. "Final merge approval and developmental composition are separate boundaries."
+- **Seven behaviours to show on the composed revision:** a mission through its actual entry point; correct outcomes through interruption and restart; capability identity and device revocation; completed work preserved when a dependency fails; uncertainty, timeout, refusal, failure and refutation told apart; an appraisal bound to the closure and evidence it evaluated; an account of outcome, costs, remaining uncertainty and next step.
+- **Dispositions say where value goes.** For each substantial component inspected: where the retained value goes, who consumes it, what behaviour changes, how that is verified.
+- **A useful operational path.** One bounded developmental slice from request to reconciliation on a sandbox case, its adverse cases, then a second materially different case with transfer measured. A completed internal workflow is not buyer demand.
+- **Review findings become engineering.** Each confirmed defect becomes a regression or adversarial case; other consumers of the same contract are examined; recurrence, review cost, integration delay and escaped defects are tracked.
+- **Access limits are exact.** Container browser operation, cloud desktop control, the founder's computer and founder-device acceptance are four different things.
+- **Five answers, as engineering recommendations:** intake is prepared, not performed; an unreadable receipt stays unknown; the smallest browser implementation that passes the declared requirements; a rejected answer earns no credit, scoped, with explicit requalification; a late appraisal mismatch is stale and grants nothing.
+
+**Changed axis:** immediate priority and sequence. **State:** active. **Authority delta:** none. **VEPMC:** 0.
+
 ## Complete-machine execution on two tracks — 2026-11-11
 
 `INTENT-20261111-ABSOLUTE-OPUS-MAXIMUS` ([record](intent/INTENT-20261111-ABSOLUTE-OPUS-MAXIMUS.json), [four messages, verbatim](intent/sources/ABSOLUTE-OPUS-MAXIMUS-2026-11-11-source.md)): the founder's directives of 2026-11-11 in session `session_01Kucyfm9exT5imDVYvHTYSv`. They are chat intent evidence, not founder authentication.

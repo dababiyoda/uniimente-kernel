@@ -15,6 +15,8 @@ name: Canonical CI
 # (Mind, Genesis, the real DALEOBANKS and WealthMachine code, a worker, SIGKILL and founder
 # reconciliation, independent re-derivation) with its hostile cases, and never skips.
 # A ninth runs the institutional verifier V1-V5 beside job 1 instead of after it.
+# An eleventh installs Python Playwright and its Chromium and runs the browser tests with
+# GREG_REQUIRE_BROWSER=1, so a missing browser fails instead of reading as skipped.
 # The two pre-existing workflows (tests.yml, ade1-standing-cognition.yml) are
 # preserved but reduced to manual dispatch so they cannot double-execute.
 # They are not deleted: UNIIMENTE_FINAL_BUILD_ORDER §2 and §12 forbid
@@ -454,3 +456,45 @@ jobs:
           path: one-machine-evidence/
           if-no-files-found: warn
           retention-days: 30
+
+  browser:
+    name: "11 · Browser tests in a real Chromium (Playwright and its browser required, never skipped)"
+    runs-on: ubuntu-latest
+    # Until 2026-11-12 no job installed Python Playwright or a browser, so browser.session (greg/computer.py), Mission
+    # Control and the phone page in Chromium, and browser.render behind the relay skipped on every change ("could not
+    # import 'playwright'"), and the phone test had stopped matching the decision record (e166308c) unseen.
+    # GREG_REQUIRE_BROWSER=1 turns a missing or unrunnable browser into a failure (tests/browser_requirement.py).
+    # These modules took about 4 minutes in a container; the limit bounds a hung run.
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      # Cognition: the First Mission that Mission Control drives selects with cognition.dp_knapsack (numpy).
+      # Playwright: the pin directive-completion.yml installs; its browser build is fetched below.
+      - run: pip install -r requirements-dev.txt -r requirements-cognition.txt playwright==1.63.0
+      # GREG_CHROMIUM is Playwright's Chrome Headless Shell. In a container, full Chrome for Testing 153's one-shot
+      # `--headless=new --dump-dom` (browser.render) loaded the page and never printed it or exited, while the
+      # headless shell, Playwright's own default for headless launches, rendered at once; Playwright drives either.
+      - name: Install Playwright's Chromium and its system libraries; name the binary every browser test drives
+        run: |
+          export PLAYWRIGHT_BROWSERS_PATH="$RUNNER_TEMP/pw-browsers"
+          python -m playwright install --with-deps chromium
+          shell=$(ls -d "$PLAYWRIGHT_BROWSERS_PATH"/chromium_headless_shell-*/chrome-headless-shell-linux64/chrome-headless-shell | tail -n 1)
+          test -x "$shell"
+          "$shell" --version
+          echo "PLAYWRIGHT_BROWSERS_PATH=$PLAYWRIGHT_BROWSERS_PATH" >> "$GITHUB_ENV"
+          echo "GREG_CHROMIUM=$shell" >> "$GITHUB_ENV"
+      - name: Provision bubblewrap for the confined browser (#26 relay), as job 1 does
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q bubblewrap
+          if bwrap --unshare-user --unshare-pid --unshare-net --die-with-parent --ro-bind / / -- /usr/bin/true; then
+            echo "bubblewrap namespaces: usable"
+          else
+            echo "bubblewrap namespaces: NOT usable on this runner; the confined browser tests skip and say why"
+          fi
+      - name: Browser tests (a missing or unrunnable browser fails; other skips are listed)
+        env:
+          GREG_REQUIRE_BROWSER: "1"
+        run: python -m pytest -q -rs tests/unit/test_greg_computer.py tests/unit/test_greg_browser.py tests/integration/test_greg_mission_control_browser.py tests/integration/test_greg_phone_asks.py tests/integration/test_greg_phone_e2e.py tests/integration/test_greg_confined_egress.py tests/integration/test_greg_mcp_token.py

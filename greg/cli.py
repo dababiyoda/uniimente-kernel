@@ -846,7 +846,8 @@ def main(argv=None) -> int:
                                         "{repository, base, units: [{name, sha}]}")
                     asked = json.loads(Path(args.intake).read_text())
                     known = {"repository", "base", "units", "union", "claims", "timeout_seconds"}
-                    if not isinstance(asked, dict) or set(asked) - known or not {"repository", "base", "units"} <= set(asked):
+                    whole = isinstance(asked, dict) and {"repository", "base", "units"} <= set(asked)
+                    if not whole or set(asked) - known:
                         raise BodyError("the --intake file must hold repository, base and units "
                                         "(and may hold union, claims, timeout_seconds)")
                     try:

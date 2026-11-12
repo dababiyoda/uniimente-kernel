@@ -31,11 +31,18 @@ second process, not an independent operator).
 | #305 | five false holds (the test envelope, not the code) | running the mission on 12 real heads, then re-running outside the envelope | after build, before PR |
 | #305 | a planted file pair closes the mission VERIFIED with no action; a renamed test is skipped | independent review (17 findings, 2 high reproduced by the session) | after PR |
 | #305 | a head and its descendant in one selection hide the old head's test | the pre-registered second case | after PR |
+| #305 fix round | F18 (a fix for the first review) hides a measured behavioural conflict whenever another head or the base also edited the broken test's file; the head that caused it reads 'ready to take' and the command line exits 0 clean | second independent review (R1, high; reproduced by a skeptic) | after the fix round was pushed |
+| #305 fix round | a cancelled re-run masks a stale failure; symlinked packs and `core.attributesFile` escape the pin; F18 reads head-controlled links in GREG's process; six mutants of new code survive a gate printing 42/42 | the same review (R2-R4, R6, R8, medium) | after push |
+| #307 | the planted-mode baseline runs with `-x` and never sees a later failing test; nothing pins per-copy isolation | independent review (F1, F2, medium) | after push; CI green |
+| #308 | `a995c3ce` (the session's own fix for job 11) moved job 8's two `GITHUB_ENV` lines into a new shell: job 8 ran with the browser variables empty and **passed** | independent review (F1, medium) | after push; **CI green**, so only review could see it |
+| candidate `e0f84ed1` | a genome test raced the clock (UNKNOWN after 18,110 of 20,000 states on a loaded runner) | CI job 1 | after push; #309 |
 | #291 + #273 | #273's call site refused beside #291 (13 of 17 tests) | composing by hand (2026-11-11); found again unaided by the intake mission (2026-11-12) | before intake |
 
 Every independently reviewed unit in this window had at least one high-severity defect its author's tests did not
 catch (#301, #303, #304, #305, and the earlier rounds of #294 and #300). In three units (#303, #304, #305) a
-second pass found further high or medium defects after the first fix round.
+second pass found further high or medium defects after the first fix round. In #305 the second pass's high finding
+was caused by a fix for the first (F18): fixes to decision logic need the same review as the logic. #307 and #308
+(tooling) each had medium findings; #308's was invisible to CI because the job it broke still passed.
 
 ## 2. The stale-anchor scan: where it helps, where it cannot
 
@@ -76,6 +83,7 @@ is the operational slice (built after all five), whose review results will be re
 | intake mission independent review | 378,936 | 67 | 26 min |
 | composed-machine acceptance test build | 683,890 | 54 | 45 min |
 | #303/#304 second fix-round review | 438,583 | 116 | 33 min |
+| review of #305's fix round, #307 and #308 (13 agents, each finding re-checked by a skeptic) | 3,899,583 | 430 | 76 min |
 | revoked-device, appraiser and two authority fixes (one workflow) | 4,944,815 | 1,104 | 223 min |
 | credit, goal intake and two acceptance locks (one workflow) | 3,212,433 | 692 | 128 min |
 | representation-repair design panel | 1,680,096 | 158 | 27 min |

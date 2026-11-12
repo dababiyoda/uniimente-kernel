@@ -591,7 +591,7 @@ def unanswered(output) -> str | None:
         state = output.get("state")
         if state in COMPILE_DECIDED or (state in COMPILE_ANSWERS and output.get("result") is not None):
             return None
-        return str(state)
+        return str(state) if isinstance(state, str) and state else "NO_STATE"
     if "abstention_state" not in output:
         return None
     if output.get("abstention_state") in ("NONE", "REFUTED"):
@@ -599,20 +599,56 @@ def unanswered(output) -> str | None:
     return str(output.get("reason_code") or output.get("abstention_state"))
 
 
+# The fields of a cognitive receipt that hold its answer, by shape. A compile receipt answers in ``result``, with
+# the confidence of that result (``confidence_type``) and the executed method's own receipt (``selected_receipt``);
+# a cortex receipt answers in ``output``, with its proof (``proof_type``, ``proof_artifact``) and ``uncertainty``.
+# Every other field describes the receipt itself: its state (``state``, ``abstention_state``, ``reason_code``),
+# why it holds no answer (``host_stop``, ``capability_deficit``, ``missing_information``) and what it did not do
+# (``authority_created``). An empty path names the whole receipt, answer included.
+ANSWER_FIELDS = {"compile": ("result", "confidence_type", "selected_receipt"),
+                 "cortex": ("output", "proof_type", "proof_artifact", "uncertainty")}
+
+
+def reads_answer(output, path: str) -> bool:
+    """Whether a predicate's field reads the answer of a cognitive receipt, not the receipt's own state.
+
+    Asked only of a receipt ``unanswered`` says carries no answer. On such a receipt a predicate about the answer
+    reads nothing: ``absent result.counterexample`` is satisfied by a receipt with no result at all, and the
+    mission closed ACHIEVED, appraised VERIFIED, on a question the Mind declined (review of 1c4a758c, N1). That
+    reading is unmeasured on either side of its predicate. A predicate about the receipt's own state (``state``
+    equals PROHIBITED: "the Mind refuses this act") reads what the receipt says and is judged as it is."""
+    if not isinstance(output, dict) or not path:
+        return True
+    shape = "compile" if isinstance(output.get("schema"), str) and output["schema"].startswith(COMPILATION) \
+        else "cortex"
+    return _canon(path.split(".", 1)[0]) in {_canon(name) for name in ANSWER_FIELDS[shape]}
+
+
 HOST_STOP_CLASSES = ("transient", "budget_exceeded", "executor_error")
+# The reason codes a cortex receipt (the direct route: an operation or a cortex problem, with no compilation around
+# it) carries for a stop the host or a resource ceiling made: its solver or worker timed out or overran the
+# enclosing deadline (TIMEOUT), or its compute budget ran out (BUDGET_EXHAUSTED). The compile route reads the same
+# two codes from the executed method's receipt (``compiler._host_stop``).
+CORTEX_STOP_CODES = {"TIMEOUT": "transient", "BUDGET_EXHAUSTED": "budget_exceeded"}
 
 
 def host_stop(output) -> str | None:
     """The failure class of the stop a cognitive receipt names when it carries no answer; None otherwise.
 
     A Competency Compiler receipt says in a typed field (``host_stop``) that a worker timed out, exited abnormally
-    or could not be launched, or that the compute budget ran out, before any method answered. Such a reading
-    establishes nothing in either direction: it is no failure of its check, and it is no success either when the
-    predicate is one an empty receipt satisfies (``absent``, or an equality with None). Whether a receipt carries
-    an answer is ``unanswered``'s reading alone; this adds only the receipt's own word on why it does not."""
-    stop = output.get("host_stop") if unanswered(output) else None
-    return stop["failure_class"] if isinstance(stop, dict) and stop.get("failure_class") in HOST_STOP_CLASSES \
-        else None
+    or could not be launched, or that the compute budget ran out, before any method answered. A cortex receipt on
+    the direct route has no such field; it says so in its own typed ``reason_code`` (``CORTEX_STOP_CODES``). Such
+    a reading establishes nothing in either direction: it is no failure of its check, and no success whatever its
+    predicate. Whether a receipt carries an answer is ``unanswered``'s reading alone; this adds only the receipt's
+    own word on why it does not."""
+    if not unanswered(output):
+        return None
+    stop = output.get("host_stop")
+    if isinstance(stop, dict) and stop.get("failure_class") in HOST_STOP_CLASSES:
+        return stop["failure_class"]
+    if "abstention_state" in output and "host_stop" not in output:
+        return CORTEX_STOP_CODES.get(output.get("reason_code"))
+    return None
 
 
 def blames_strategy(reason: str) -> bool:
@@ -2544,6 +2580,16 @@ class MissionEngine:
                     detail = f"sensor inconclusive (incomplete evidence): {detail}"
                     sensor_errors.add(check["check_id"])
                     inconclusive.add(check["check_id"])
+                if passed and unanswered(outcome.output) \
+                        and reads_answer(outcome.output, check["predicate"].get("field", "")):
+                    # The receipt carries no answer (the Mind declined, or the host stopped it), and the predicate
+                    # reads the answer: what it found is the answer's absence, not a reading of the world. It is
+                    # unmeasured, as a missing answer is under a predicate it fails (``why`` below): it never
+                    # passes and never fails. Before, ``absent result.counterexample`` passed on a deficit and on
+                    # a signed budget below the smallest step, and the mission closed ACHIEVED on a question
+                    # nobody answered (review of 1c4a758c, N1). A predicate about the receipt's own state still
+                    # reads it (``reads_answer``).
+                    passed = False
                 fault = outcome.output.get("capability_fault") if isinstance(outcome.output, dict) else None
                 stopped = False      # this reading is already recorded as one a fault or the host kept from reading
                 if not passed and isinstance(fault, dict) and self.genesis is not None \

@@ -18,6 +18,10 @@ The rule, each part mutated in a scratch copy of the repository (never the worki
   of unmeasured rounds (``declined``); a fault the Mind named, or a construction the host stopped, is still handled
   first and recorded once;
 - the appraiser certifies no success on a receipt the host stopped, read from the ledger or re-read by itself;
+- a predicate on the answer of a receipt that holds none (``reads_answer``) is unmeasured, at the engine and the
+  appraiser; a cortex receipt names a host stop in its own ``reason_code`` (TIMEOUT, BUDGET_EXHAUSTED); a process
+  the host cannot start (EAGAIN, ENOMEM, EMFILE, ENFILE) is a launch refused, typed transient; a worker its memory
+  ceiling stopped exits ``MEMORY_CEILING_EXIT``, typed budget_exceeded;
 - routing does not book a reading the Mind declined as the method's failure.
 
 The shared loop judges one test file per run. The first file holds the unit-level tests, so most mutants are judged
@@ -39,6 +43,8 @@ BUDGET = "greg/cognition/budget.py"
 CORTEX = "greg/cognition/cortex.py"
 BRIDGE = "greg/cognition/bridge.py"
 SETTLEMENT = "greg/cognition/settlement.py"
+WORKER = "greg/cognition/worker.py"
+CAPABILITIES = "greg/capabilities.py"
 READS = "        if state in COMPILE_DECIDED or (state in COMPILE_ANSWERS and output.get(\"result\") is not None):"
 ANSWERS = 'COMPILE_ANSWERS = ("ANSWERED", "WORLD_UNVERIFIED", "HUMAN_JUDGMENT_RECORDED")'
 CLASSES = 'HOST_STOP_CLASSES = ("transient", "budget_exceeded", "executor_error")'
@@ -47,6 +53,37 @@ NAMED = '        named = {inner.get("reason_code"), *((inner.get("outcome") or {
 REFUSED = "    if refused and not budget.never_enough:"
 HALTED = "                    passed, failure_class = False, halted\n"
 UNIT = ("tests/unit/test_greg_compile_host_stop.py", [
+    # review of 1c4a758c (N1, N2, N3 and the low items)
+    (MISSIONS, "a compile receipt's result is read as its own state",
+     'ANSWER_FIELDS = {"compile": ("result", "confidence_type", "selected_receipt"),',
+     'ANSWER_FIELDS = {"compile": ("confidence_type", "selected_receipt"),'),
+    (MISSIONS, "a cortex receipt's output is read as its own state",
+     '                 "cortex": ("output", "proof_type", "proof_artifact", "uncertainty")}',
+     '                 "cortex": ("proof_type", "proof_artifact", "uncertainty")}'),
+    (MISSIONS, "every field of a receipt with no answer is read as its state",
+     '    return _canon(path.split(".", 1)[0]) in {_canon(name) for name in ANSWER_FIELDS[shape]}',
+     "    return False"),
+    (MISSIONS, "an empty path, the whole receipt, is read as its state",
+     "    if not isinstance(output, dict) or not path:\n        return True\n    shape",
+     "    if not isinstance(output, dict) or not path:\n        return False\n    shape"),
+    (MISSIONS, "a cortex receipt's TIMEOUT names no host stop",
+     'CORTEX_STOP_CODES = {"TIMEOUT": "transient", "BUDGET_EXHAUSTED": "budget_exceeded"}',
+     'CORTEX_STOP_CODES = {"BUDGET_EXHAUSTED": "budget_exceeded"}'),
+    (MISSIONS, "a cortex receipt's spent budget names no host stop",
+     'CORTEX_STOP_CODES = {"TIMEOUT": "transient", "BUDGET_EXHAUSTED": "budget_exceeded"}',
+     'CORTEX_STOP_CODES = {"TIMEOUT": "transient"}'),
+    (MISSIONS, "a reason code overrides a compile receipt's own word on its stop",
+     '    if "abstention_state" in output and "host_stop" not in output:', "    if True:"),
+    (MISSIONS, "a compile receipt with no state is read as the text None",
+     '        return str(state) if isinstance(state, str) and state else "NO_STATE"', "        return str(state)"),
+    (BUDGET, "a worker its memory ceiling stopped is typed as one that died on its own",
+     "CEILING_EXITS = (*CEILING_SIGNALS, MEMORY_CEILING_EXIT)", "CEILING_EXITS = CEILING_SIGNALS"),
+    (WORKER, "the worker's memory ceiling is a traceback's exit 1",
+     "        os._exit(MEMORY_CEILING_EXIT)", "        raise"),
+    (CAPABILITIES, "the host's exhaustion at launch passes as a raw OSError",
+     "HOST_EXHAUSTED = (errno.EAGAIN, errno.ENOMEM, errno.EMFILE, errno.ENFILE)", "HOST_EXHAUSTED = ()"),
+    (CAPABILITIES, "a missing executable is typed as the host's exhaustion",
+     "        if exc.errno not in HOST_EXHAUSTED:\n            raise", "        if False:\n            raise"),
     (MISSIONS, "a compile receipt is read as answered whatever its state: a host stop is a measured failure again",
      READS, "        if True:"),
     (MISSIONS, "a refuted compile receipt is read as an abstention",
@@ -66,8 +103,8 @@ UNIT = ("tests/unit/test_greg_compile_host_stop.py", [
      '    if not isinstance(output, dict):\n        return None\n    if isinstance(output.get("schema"), str)',
      '    if not isinstance(output, dict):\n        return "no receipt"\n    if isinstance(output.get("schema"), str)'),
     (MISSIONS, "a stop is read from a receipt that answered, or from an output that is no receipt",
-     '    stop = output.get("host_stop") if unanswered(output) else None',
-     '    stop = output.get("host_stop") if isinstance(output, dict) else None'),
+     '    if not unanswered(output):\n        return None\n    stop = output.get("host_stop")',
+     '    if not isinstance(output, dict):\n        return None\n    stop = output.get("host_stop")'),
     (MISSIONS, "a worker that died on its own is not a stop: its question is the Mind declining",
      CLASSES, 'HOST_STOP_CLASSES = ("transient", "budget_exceeded")'),
     (ROUTING, "a reading the Mind declined is booked as the method's failure",
@@ -114,7 +151,7 @@ UNIT = ("tests/unit/test_greg_compile_host_stop.py", [
     (BUDGET, "a worker its CPU ceiling killed is typed as one that died on its own",
      "CEILING_SIGNALS = (-signal.SIGXCPU, -signal.SIGKILL)", "CEILING_SIGNALS = ()"),
     (BUDGET, "a worker that died on its own is typed transient",
-     'if returncode in CEILING_SIGNALS else "executor_error"', 'if returncode in CEILING_SIGNALS else "transient"'),
+     'if returncode in CEILING_EXITS else "executor_error"', 'if returncode in CEILING_EXITS else "transient"'),
     (BUDGET, "a refusal the launcher did not type is noted as a stop",
      '    elif failure_class not in ("transient", "budget_exceeded"):\n        return\n', ""),
     (BUDGET, "any budget below the smallest step counts as never enough, declared or not",
@@ -142,6 +179,19 @@ UNIT = ("tests/unit/test_greg_compile_host_stop.py", [
      '        note_host_stop("launch_refused", process="cortex", failure_class=exc.failure_class)\n', ""),
 ])
 BODY = ("tests/unit/test_greg_compile_unanswered.py", [
+    # review of 1c4a758c (N1, N8): a predicate on the answer of a receipt with none; a fault read twice
+    (MISSIONS, "a predicate on the answer of a receipt that holds none passes: a declined question closes ACHIEVED",
+     "                if passed and unanswered(outcome.output) \\\n",
+     "                if False and unanswered(outcome.output) \\\n"),
+    (APPRAISAL, "the appraiser certifies a success read from the answer of a retained receipt that holds none",
+     '            elif passed and unanswered(receipt.payload["result"].get("output")) \\\n',
+     '            elif False and unanswered(receipt.payload["result"].get("output")) \\\n'),
+    (APPRAISAL, "the appraiser takes its own re-reading with no answer for the world",
+     '                    if now_ok and unanswered(output) and reads_answer(',
+     '                    if False and unanswered(output) and reads_answer('),
+    (MISSIONS, "a construction the host stopped is read a second time as the Mind declining (unit test)",
+     "                why = None if passed or stopped or halted else unanswered(outcome.output)",
+     "                why = None if passed or halted else unanswered(outcome.output)"),
     (MISSIONS, "a host stop is read as the Mind declining: the founder is asked for a strategy at the first stall",
      "                if halted:\n", "                if False:\n"),
     (MISSIONS, "a reading the host stopped still passes a check an empty receipt satisfies",

@@ -155,12 +155,16 @@ def no_counterexample(check_id="clean"):
             "predicate": {"op": "absent", "field": "result.counterexample"}}
 
 
-@pytest.mark.parametrize("op", ["absent", "equals"])
+@pytest.mark.parametrize("op", ["absent", "equals", "own state"])
 def test_a_reading_the_host_stopped_never_passes_a_check(tmp_path, host, op):
     """Unreadable evidence stays unknown. Before, a predicate an empty receipt satisfies passed on a reading the
-    host had stopped, and the mission closed ACHIEVED on a question no method had answered."""
+    host had stopped, and the mission closed ACHIEVED on a question no method had answered. A host stop holds back
+    even a predicate on the receipt's own state, which a receipt the Mind declined may satisfy: the host, not the
+    Mind, ended it, so its state is not the Mind's word (review of 1c4a758c: since N1 only this case tells the two
+    rules apart)."""
     predicate = {"absent": {"op": "absent", "field": "result.counterexample"},
-                 "equals": {"op": "equals", "field": "result", "value": None}}[op]
+                 "equals": {"op": "equals", "field": "result", "value": None},
+                 "own state": {"op": "exists", "field": "state"}}[op]
     check = {**no_counterexample(), "predicate": predicate}
     with Run(tmp_path) as run:
         host.stall("timeout")
@@ -171,6 +175,133 @@ def test_a_reading_the_host_stopped_never_passes_a_check(tmp_path, host, op):
         assert all(o["detail"].startswith("sensor inconclusive (transient): ") for o in observed)
         assert run.mission("m:empty").status != "ACHIEVED" and run.events("mission.achieved") == []
         assert run.events("mission.appraised") == [] and run.events("decision.requested") == []
+
+
+# -- review of 1c4a758c: a predicate on the answer of a receipt that holds none reads nothing -------------------------
+
+def subdir(tmp_path, name):
+    path = tmp_path / name
+    path.mkdir()
+    return path
+
+
+DECLINED = {"deficit": {"attach": (), "extra": {}},
+            "budget below the minimum step": {"attach": (METHOD,),
+                                              "extra": {"geometry": {"geometry": "optimization", "latency_budget": 0.01}}}}
+
+
+@pytest.mark.parametrize("case", sorted(DECLINED))
+def test_a_question_the_mind_declined_never_passes_a_check_on_its_answer(tmp_path, case):
+    """N1. Reproduced on 1c4a758c: with no method attached (CAPABILITY_DEFICIT), or a signed thinking budget below
+    the smallest step (ABSTAIN, no host stop), ``absent result.counterexample`` passed on the empty receipt: ACHIEVED,
+    appraised VERIFIED, on a question nobody answered. The reading is unmeasured: it neither passes nor fails, and
+    it keeps the Mind's own word for why (``declined``). The budget shape names no host stop: the same signed budget
+    is refused the same way on every repeat, so the reading is the Mind declining the request as signed."""
+    with Run(tmp_path, attach=DECLINED[case]["attach"]) as run:
+        check = no_counterexample()
+        check["sensor"]["params"]["compile"].update(DECLINED[case]["extra"])
+        run.sign("MISSION", question("m:declined", check))
+        states = [run.tick("m:declined") for _ in range(3)]
+        assert "ACHIEVED" not in states and run.events("mission.achieved") == []       # before: ACHIEVED
+        assert run.events("mission.appraised") == []                                    # before: VERIFIED
+        observed = run.events("mission.observed", "m:declined")
+        declined = run.output(observed[0])["state"]
+        assert run.output(observed[0])["host_stop"] is None
+        assert all(o["passed"] is False and o["declined"] == declined and "failure_class" not in o
+                   for o in observed), observed
+        assert all(o["detail"].startswith(f"sensor inconclusive ({declined}): field 'result.counterexample' absent")
+                   for o in observed)
+        assert run.events("mission.unmet") == [] and run.events("routing.outcome") == []
+
+
+def test_the_appraiser_certifies_no_success_on_a_receipt_with_no_answer(tmp_path, monkeypatch):
+    """N1, at the appraiser. The engine is made to close as it did on 1c4a758c (a predicate on the answer of a
+    receipt with none passes); the separate appraiser reads the retained receipt and refuses the closure."""
+    monkeypatch.setattr(greg.missions, "reads_answer", lambda output, path: False)
+    with Run(tmp_path, attach=()) as run:
+        run.sign("MISSION", question("m:declined", no_counterexample()))
+        assert run.tick("m:declined") == "ACHIEVED"
+        [appraised] = run.events("mission.appraised", "m:declined")
+        assert appraised["verdict"] == "REFUTED"                                        # before: VERIFIED
+        assert appraised["checks"]["checks_rederived_from_receipts"] is False
+        assert any(f.startswith("clean: the receipt carries no answer (CAPABILITY_DEFICIT), so a predicate on its "
+                                "answer proves no success") for f in appraised["findings"]), appraised["findings"]
+        # its own re-reading has no answer either: it measured nothing
+        assert appraised["checks"]["world_reobserved"] is False
+        assert any(f.startswith("clean: the world could not be re-measured") for f in appraised["findings"])
+
+
+def test_a_direct_cortex_reading_the_host_timed_out_is_retried_and_never_passes(tmp_path, host):
+    """N2. The direct cortex route (an operation, no compilation): the host times the solver out and the receipt
+    says so in its own typed ``reason_code`` (TIMEOUT). Reproduced on 1c4a758c: ``absent output.counterexample``
+    passed on it, ACHIEVED and VERIFIED. It is a host stop: unmeasured, typed transient, re-read with the back-off
+    of the compile route, and asked about once after three unmeasured rounds."""
+    params = {"problem_id": "real:q", "operation": "swarm_minimize", "data": dict(SPHERE)}
+    for op, predicate in (("absent", {"op": "absent", "field": "output.counterexample"}),
+                          ("lte", {"op": "lte", "field": "output.fitness", "value": 1e6})):
+        with Run(subdir(tmp_path, op)) as run:
+            host.stall("timeout")
+            check = {"check_id": "direct", "description": "q", "predicate": predicate,
+                     "sensor": {"capability": "cognition.solve", "target": "cognition:bb", "params": params}}
+            run.sign("MISSION", question("m:direct", check))
+            assert [run.tick("m:direct") for _ in range(4)] == ["SENSOR_RETRY", "SENSOR_RETRY", "WAITING", "BLOCKED"]
+            observed = run.events("mission.observed", "m:direct")
+            assert run.output(observed[0])["reason_code"] == "TIMEOUT"
+            assert all(o["passed"] is False and o["failure_class"] == "transient" and "declined" not in o
+                       for o in observed), observed
+            assert [a["kind"] for a in run.events("decision.requested")] == ["SENSOR_FAILURE"]
+            assert run.events("mission.achieved") == [] and run.events("mission.appraised") == []
+        host.recover()
+
+
+@pytest.mark.parametrize("code", ["EAGAIN", "ENOMEM"])
+def test_a_solver_the_host_could_not_fork_is_a_host_stop(tmp_path, monkeypatch, code):
+    """N3. Reproduced on 1c4a758c: fork failing with EAGAIN (or ENOMEM) raised a raw OSError past the launcher;
+    the compile receipt named no stop, NO_STRATEGY was asked at 0 s, and ``absent`` passed. The launcher now types
+    the host's exhaustion transient (``capabilities.HOST_EXHAUSTED``), so the reading is a host stop. The fault is
+    injected where ``run_isolated`` starts the process (``_launch``), below the launcher."""
+    import errno
+    real = caps._launch
+
+    def launch(argv, **kwargs):
+        if any("worker.py" in str(a) for a in argv):
+            raise OSError(getattr(errno, code), "the host is out of it")
+        return real(argv, **kwargs)
+    monkeypatch.setattr(caps, "_launch", launch)
+    for op, check in (("lte", fitness_check()), ("absent", no_counterexample("good"))):
+        with Run(subdir(tmp_path, op)) as run:
+            run.sign("MISSION", question("m:launch", check))
+            assert [run.tick("m:launch") for _ in range(2)] == ["SENSOR_RETRY", "SENSOR_RETRY"]   # before: BLOCKED
+            observed = run.events("mission.observed", "m:launch")
+            stop = run.output(observed[0])["host_stop"]
+            assert stop["failure_class"] == "transient" and stop["cause"] == "launch_refused", stop
+            assert all(o["passed"] is False and o["failure_class"] == "transient" for o in observed), observed
+            assert run.events("decision.requested") == [] and run.events("mission.achieved") == []
+
+
+def test_a_construction_the_host_stopped_is_recorded_once_and_not_as_declined(tmp_path, monkeypatch):
+    """N8. A compile receipt names a construction fault the host caused (``capability_fault`` typed transient) and
+    carries no answer. The fault path records the reading as a host stop. It is not read a second time as the
+    Mind's abstention: that would prefix its detail twice and mark it ``declined``, which ends the run of
+    unmeasured rounds and books no failure of the method, so the founder would never be asked."""
+    from greg.cognition import compiler
+    real = compiler.run
+
+    def faulted(params, **kwargs):
+        receipt = real(params, **kwargs)
+        receipt["capability_fault"] = {"capability_id": METHOD, "detail": "worker stopped by the host",
+                                       "failure_class": "transient"}
+        return receipt
+    monkeypatch.setattr(compiler, "run", faulted)
+    tight = fitness_check(geometry={"geometry": "optimization", "latency_budget": 0.01})     # no answer, no stop
+    with Run(tmp_path) as run:
+        run.sign("MISSION", question("m:fault", tight))
+        run.tick("m:fault")
+        [read] = run.events("mission.observed", "m:fault")
+        assert run.output(read)["result"] is None and run.output(read)["capability_fault"]["failure_class"] == "transient"
+        assert "declined" not in read and read["failure_class"] == "transient", read
+        assert read["detail"].startswith("sensor inconclusive (transient): ") and read["detail"].count("sensor ") == 1
+        assert routing.observation_method_failed(read)
 
 
 def test_a_host_that_never_recovers_is_asked_about_once_after_three_unmeasured_rounds(tmp_path, host):
@@ -384,8 +515,11 @@ def test_the_appraiser_certifies_no_failure_on_a_compile_receipt_that_did_not_an
 def test_the_appraiser_certifies_no_success_on_a_receipt_the_host_stopped(tmp_path, host, monkeypatch):
     """Defence in depth, where the appraiser re-derives a success closure from the retained receipt. The engine is
     made to close as it did before this change (it no longer reads the stop); the separate appraiser reads the
-    receipt's own ``host_stop`` and refuses the closure, though its own re-run of the sensor answers."""
+    receipt's own ``host_stop`` and refuses the closure, though its own re-run of the sensor answers. The engine's
+    later rule (a predicate on the answer of a receipt with none is unmeasured, ``reads_answer``) is switched off
+    with it: the appraiser imports both readers itself, so only the engine's copies are replaced."""
     monkeypatch.setattr(greg.missions, "host_stop", lambda output: None)
+    monkeypatch.setattr(greg.missions, "reads_answer", lambda output, path: False)
     with Run(tmp_path) as run:
         host.stall("timeout")
         run.sign("MISSION", question("m:empty", no_counterexample()))
@@ -399,12 +533,17 @@ def test_the_appraiser_certifies_no_success_on_a_receipt_the_host_stopped(tmp_pa
                    for f in appraised["findings"]), appraised["findings"]
 
 
-def test_the_appraiser_does_not_take_its_own_stopped_reread_for_the_world(tmp_path, host):
+@pytest.mark.parametrize("field", ["answer", "own state"])
+def test_the_appraiser_does_not_take_its_own_stopped_reread_for_the_world(tmp_path, host, field):
     """Where the appraiser re-observes the world. The mission closed on a real answer; the appraiser's own host
     then stops its re-run of the sensor. An empty re-reading satisfies the predicate and measured nothing, so the
-    closure is not verified. The appraiser runs in this process here so that its launches can be stopped."""
+    closure is not verified. The appraiser runs in this process here so that its launches can be stopped. A
+    predicate on the receipt's own state is held back too (since N1 only that case needs the host-stop rule)."""
+    check = no_counterexample()
+    if field == "own state":
+        check["predicate"] = {"op": "exists", "field": "state"}
     with Run(tmp_path) as run:
-        run.sign("MISSION", question("m:empty", no_counterexample()))
+        run.sign("MISSION", question("m:empty", check))
         assert run.tick("m:empty") == "ACHIEVED"
         request = run.body.appraisal_request("m:empty")
         assert appraisal.appraise(request)["verdict"] == "VERIFIED"

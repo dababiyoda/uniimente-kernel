@@ -30,7 +30,7 @@ import signal
 import time
 
 from egregore.resources import ResourceGovernor
-from .contracts import CognitionError, integer, number
+from .contracts import MEMORY_CEILING_EXIT, CognitionError, integer, number
 
 POLICY_VERSION = "seed-thinking-budget/0.1"
 REQUIRED_COST_SCOPE = frozenset(("compute", "latency", "attention", "maintenance", "retry", "verification"))
@@ -60,6 +60,8 @@ HOST_STOP_CAUSES = ("timeout", "worker_exit", "launch_refused")
 # The worker's CPU ceiling is the one thing that kills it by these signals on its own (RLIMIT_CPU: SIGXCPU, then
 # SIGKILL at the hard limit); ``greg.mechanisms.run`` types a package runner's exit the same way.
 CEILING_SIGNALS = (-signal.SIGXCPU, -signal.SIGKILL)
+# ... and the memory ceiling (RLIMIT_AS) by this status: the worker turns the MemoryError into it (worker.run).
+CEILING_EXITS = (*CEILING_SIGNALS, MEMORY_CEILING_EXIT)
 
 
 def note_host_stop(cause: str, *, process: str, returncode: int | None = None,
@@ -69,7 +71,8 @@ def note_host_stop(cause: str, *, process: str, returncode: int | None = None,
 
     * ``timeout``: it did not finish inside its limit: ``transient``;
     * ``worker_exit``: it exited with a non-zero status: ``budget_exceeded`` when its CPU ceiling killed it
-      (SIGXCPU or SIGKILL), ``executor_error`` for any other exit (the worker died on its own);
+      (SIGXCPU or SIGKILL) or its memory ceiling stopped it (``MEMORY_CEILING_EXIT``), ``executor_error`` for any
+      other exit (the worker died on its own);
     * ``launch_refused``: the launcher refused to start it and typed the refusal ``transient`` or
       ``budget_exceeded`` (isolation unavailable on this host, for one). A refusal it typed otherwise, or not at
       all, is a refusal of the request and is not noted.
@@ -81,7 +84,7 @@ def note_host_stop(cause: str, *, process: str, returncode: int | None = None,
     if cause == "timeout":
         failure_class = "transient"
     elif cause == "worker_exit":
-        failure_class = "budget_exceeded" if returncode in CEILING_SIGNALS else "executor_error"
+        failure_class = "budget_exceeded" if returncode in CEILING_EXITS else "executor_error"
     elif failure_class not in ("transient", "budget_exceeded"):
         return
     log = _HOST_STOPS.get()

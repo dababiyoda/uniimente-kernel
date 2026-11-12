@@ -29,7 +29,7 @@ from greg import routing
 from greg.cognition import bridge, budget, compiler, cortex, settlement
 from greg.cognition.contracts import CognitionError, ProblemGeometry, digest
 from greg.cognition.cortex import reason, registry_view
-from greg.missions import COMPILATION, host_stop, unanswered
+from greg.missions import COMPILATION, host_stop, reads_answer, unanswered
 from tests.unit.test_greg_compile_unanswered import METHOD, Host, compile_params
 
 
@@ -95,6 +95,81 @@ def test_a_host_stop_is_read_only_from_a_receipt_that_did_not_answer():
     assert host_stop(compiled("UNKNOWN", host_stop="transient")) is None
     # an output that is not a cognitive receipt cannot claim one
     assert host_stop({"host_stop": stopped, "text": "from a file"}) is None
+
+
+def test_a_predicate_reads_the_answer_or_the_receipts_own_state():
+    """N1 (review of 1c4a758c). On a receipt with no answer, a predicate about the answer reads nothing; one about
+    the receipt's own state reads it. The answer's fields are named per shape (``missions.ANSWER_FIELDS``)."""
+    declined = compiled("CAPABILITY_DEFICIT", host_stop=None)
+    for path in ("result", "result.counterexample", "confidence_type", "selected_receipt.output.x", ""):
+        assert reads_answer(declined, path), path
+    for path in ("state", "host_stop", "host_stop.failure_class", "capability_deficit", "authority_created",
+                 "schema", "problem_id"):
+        assert not reads_answer(declined, path), path
+    cortex_receipt = {"abstention_state": "UNKNOWN", "reason_code": "TIMEOUT", "output": None}
+    for path in ("output", "output.counterexample", "proof_artifact.x", "proof_type", "uncertainty.statement"):
+        assert reads_answer(cortex_receipt, path), path
+    for path in ("abstention_state", "reason_code", "missing_information", "method"):
+        assert not reads_answer(cortex_receipt, path), path
+    # the receipt's own state names a state, never the text "None"
+    assert unanswered(compiled(None)) == "NO_STATE" and unanswered({"schema": compiler.SCHEMA}) == "NO_STATE"
+
+
+def test_a_cortex_receipt_names_a_host_stop_in_its_own_reason_code():
+    """N2. The direct route's receipt has no ``host_stop`` field; its typed ``reason_code`` says TIMEOUT for a
+    solver or worker the host timed out (or an overrun deadline) and BUDGET_EXHAUSTED for a spent compute budget.
+    Any other code, or an answer, names no stop."""
+    def receipt(state, code, **extra):
+        return {"abstention_state": state, "reason_code": code, "output": None, **extra}
+    assert host_stop(receipt("UNKNOWN", "TIMEOUT")) == "transient"
+    assert host_stop(receipt("ABSTAIN", "BUDGET_EXHAUSTED")) == "budget_exceeded"
+    for code in ("SOLVER_UNKNOWN", "INSUFFICIENT_EVIDENCE", "CAPABILITY_UNAVAILABLE", "POLICY_REFUSAL", None):
+        assert host_stop(receipt("ABSTAIN", code)) is None, code
+    assert host_stop(receipt("NONE", "TIMEOUT", output={"x": 1})) is None           # it answered
+    assert host_stop(receipt("REFUTED", "TIMEOUT")) is None                          # a refutation, decided
+    # a compile receipt says it in its own field, and its word stands: no reason code overrides it
+    assert host_stop(compiled("UNKNOWN", host_stop=None, reason_code="TIMEOUT")) is None
+
+
+def test_a_worker_its_memory_ceiling_stopped_is_typed_budget_exceeded(tmp_path):
+    """A worker whose allocation its memory ceiling (RLIMIT_AS) refuses raised MemoryError, exited 1 like any crash
+    and was typed executor_error, a worker that died on its own. It now exits MEMORY_CEILING_EXIT, which the note
+    types budget_exceeded, as it types the CPU ceiling's signals. The worker runs here as a real process, with a
+    solver that runs out of memory put in its table."""
+    import sys
+    from greg.cognition.contracts import MEMORY_CEILING_EXIT
+    with budget.host_stops() as noted:
+        budget.note_host_stop("worker_exit", process="solver", returncode=MEMORY_CEILING_EXIT)
+        budget.note_host_stop("worker_exit", process="solver", returncode=1)
+    assert [n["failure_class"] for n in noted] == ["budget_exceeded", "executor_error"]
+    code = ("import sys; sys.argv = ['worker.py', 'oom']\n"
+            "import greg.cognition.worker as w\n"
+            "def oom(data, geometry):\n    raise MemoryError\n"
+            "w.SOLVERS['oom'] = oom\nw.run()\n")
+    proc = subprocess.run([sys.executable, "-c", code], cwd=compiler.ROOT,
+                          input=b'{"data": {}, "geometry": {"latency_limit": 5}}', capture_output=True, timeout=60)
+    assert proc.returncode == MEMORY_CEILING_EXIT, proc.stderr[-400:]
+
+
+@pytest.mark.parametrize("code", ["EAGAIN", "ENOMEM", "EMFILE", "ENFILE"])
+def test_a_process_the_host_cannot_start_is_a_typed_transient_refusal(monkeypatch, tmp_path, code):
+    """N3. ``run_isolated`` typed a refusal it made itself (isolation unavailable) but let the host's own
+    exhaustion through as a raw OSError, which no launch site notes. It now refuses that launch, typed transient. A
+    missing or forbidden executable is the command's, and stays the OSError it is."""
+    import errno
+
+    def launch(argv, **kwargs):
+        raise OSError(getattr(errno, code), "exhausted")
+    monkeypatch.setattr(caps, "_launch", launch)
+    with pytest.raises(caps.CapabilityError) as refused:
+        caps.run_isolated(["/bin/true"], cwd=tmp_path, isolate_network=False)
+    assert refused.value.failure_class == "transient" and code in str(refused.value)
+
+    def missing(argv, **kwargs):
+        raise FileNotFoundError(errno.ENOENT, "no such file")
+    monkeypatch.setattr(caps, "_launch", missing)
+    with pytest.raises(FileNotFoundError):
+        caps.run_isolated(["/no/such/binary"], cwd=tmp_path, isolate_network=False)
 
 
 def test_a_reading_the_mind_declined_is_not_the_methods_failure():

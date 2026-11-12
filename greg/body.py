@@ -89,7 +89,9 @@ RESTORE_LIFTS = "a BODY_RESUME signed by the founder key and issued after the re
 # (acceptance H.G7): it is one unavailable attempt, retried on a later tick, and after APPRAISAL_ATTEMPTS of them the
 # closure is recorded appraised UNAVAILABLE (final, never VERIFIED). The appraiser also answers UNAVAILABLE itself
 # when it ran nothing for a capability that is not ATTACHED (``not_run_by_appraiser``): recorded at once, never
-# VERIFIED, and appraised again only after the founder attaches that capability.
+# VERIFIED, and appraised again only after the founder attaches that capability. That later appraisal reads a later
+# world; when the world no longer agrees the appraiser answers UNAVAILABLE once more (``appraised_late``), and that
+# one is final.
 APPRAISER_VERDICTS = ("VERIFIED", "VERIFIED_UNMET", "REFUTED")
 APPRAISAL_ATTEMPTS = 3
 APPRAISAL_TIMEOUT_SECONDS = 120
@@ -107,6 +109,26 @@ def not_run_by_appraiser(verdict) -> dict:
         return {}
     named = verdict.get("not_run")
     return named if isinstance(named, dict) else {}
+
+
+def appraised_late(verdict) -> dict:
+    """What the appraiser said was not established, when this is its own answer that it appraised a closure too late
+    to refute it: the closure had waited for a capability to be attached again, and the world as read afterwards no
+    longer agrees (greg/appraisal.py ``_waited_on``). Empty for every other verdict.
+
+    Recorded at once, like any verdict the appraiser gave. It names no capability to wait for, so on its own it is
+    final: ``_reattached_closures`` never has the closure appraised again."""
+    if not isinstance(verdict, dict) or verdict.get("verdict") != "UNAVAILABLE":
+        return {}
+    late = verdict.get("appraised_late")
+    return late if isinstance(late, dict) else {}
+
+
+def appraiser_answered(verdict) -> bool:
+    """True for a verdict the appraiser itself gave: VERIFIED, VERIFIED_UNMET, REFUTED, or one of its two own
+    UNAVAILABLE answers. A run that was killed, timed out or printed anything else judged nothing (acceptance H.G7)."""
+    return isinstance(verdict, dict) and (verdict.get("verdict") in APPRAISER_VERDICTS
+                                          or bool(not_run_by_appraiser(verdict)) or bool(appraised_late(verdict)))
 
 
 def unfinished_main_loop_boots(journal: Journal, now: datetime) -> list[str]:
@@ -1044,7 +1066,21 @@ class Body:
         return result
 
     def _close_out(self, now):
-        """Record where each closure happened and have it appraised by a separate process."""
+        """Record where each closure happened and have it appraised by a separate process.
+
+        A closure that waited for a capability to be attached again is appraised first, before the closures recorded
+        since. It is the older closure, and several readers take a mission's latest appraisal on the ledger
+        (greg/sop.py verified_appraisals, greg/metrics.py, greg/routing.py): the appraisal of the mission's newest
+        closure is the one they should find."""
+        self._appraise_reattached(now)
+        self._appraise_new_closures(now)
+
+    def _appraise_reattached(self, now):
+        for mid, closure_event in self._reattached_closures():
+            self._appraise_closure(mid, closure_event, now)
+
+    def _appraise_new_closures(self, now):
+        """Every closure that has no appraisal yet: each achievement, hold and failure closure, once."""
         contexts = {e.payload["mission_id"] for e in self.journal.replay("mission.closure_context")}
         # an achievement is judged as its own closure: an appraisal of an earlier failure or hold of the same
         # mission (it names that closure_event) never stands in for the appraisal of its success (TXT-R4-1)
@@ -1065,8 +1101,6 @@ class Body:
         for event in self.journal.replay("mission.held") + self.journal.replay("mission.unmet"):
             if event.event_id not in judged:
                 self._appraise_closure(event.payload["mission_id"], event.event_id, now)
-        for mid, closure_event in self._reattached_closures():
-            self._appraise_closure(mid, closure_event, now)
 
     def _reattached_closures(self) -> list[tuple[str, str | None]]:
         """Closures to appraise again: the latest appraisal ran nothing in the name of a capability that was not
@@ -1102,7 +1136,8 @@ class Body:
         appraised UNAVAILABLE, which is final: it is never VERIFIED and the closure is not appraised again.
 
         The appraiser's own UNAVAILABLE (``not_run_by_appraiser``: it ran nothing for a capability that is not
-        ATTACHED) is a verdict it gave, not a failed run: recorded at once, with no attempt counted."""
+        ATTACHED; ``appraised_late``: it appraised too late to refute) is a verdict it gave, not a failed run:
+        recorded at once, with no attempt counted."""
         unavailable = [e.payload for e in self.journal.replay("mission.appraisal_unavailable")
                        if e.payload["mission_id"] == mid and e.payload.get("closure_event") == closure_event]
         prior = [u["why"] for u in unavailable]
@@ -1121,7 +1156,7 @@ class Body:
             return
         verdict = self.appraise(mid, closure_event=closure_event)
         key = [mid, "appraised", closure_event or verdict["head"], *again]
-        if verdict["verdict"] in APPRAISER_VERDICTS or not_run_by_appraiser(verdict):
+        if appraiser_answered(verdict):
             self.journal.record("mission.appraised", verdict, key=key)
             return
         attempt, why = len(prior) + 1, verdict["findings"][0]
@@ -1169,8 +1204,7 @@ class Body:
             verdict = json.loads(child.stdout)
         except ValueError:
             return unavailable("the appraiser exited 0 without a readable verdict")
-        if not isinstance(verdict, dict) or not (verdict.get("verdict") in APPRAISER_VERDICTS
-                                                 or not_run_by_appraiser(verdict)):
+        if not appraiser_answered(verdict):
             return unavailable("the appraiser exited 0 without a readable verdict")
         return verdict
 

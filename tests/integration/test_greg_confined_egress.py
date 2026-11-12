@@ -14,6 +14,7 @@ import pytest
 
 from greg.body import Body, init_body
 from greg.capabilities import BUILTINS
+from tests.browser_requirement import no_browser, playwright_api
 from tests.greg_fixtures import drop, mission, signed
 
 pytest.importorskip("cryptography")
@@ -363,8 +364,8 @@ def test_the_browser_renders_behind_the_relay_and_its_page_cannot_reach_anything
     from functools import partial
     from greg.worker_isolation import WorkerIsolationError, _backend
     manifest, _ = BUILTINS["browser.render"]
-    if not manifest.available()[0]:
-        pytest.skip("no runnable browser here")
+    if not manifest.available()[0]:      # a failure under GREG_REQUIRE_BROWSER=1 (tests/browser_requirement.py)
+        no_browser("no runnable browser here")
     try:
         _backend(require_bubblewrap=True)
     except WorkerIsolationError as exc:
@@ -441,9 +442,10 @@ def test_a_browser_session_drives_pages_behind_the_relay_and_nothing_else_leaves
     from functools import partial
     from greg.worker_isolation import WorkerIsolationError, _backend
     manifest, _ = BUILTINS["browser.session"]
-    pytest.importorskip("playwright")
+    if playwright_api() is None:         # a failure under GREG_REQUIRE_BROWSER=1 (tests/browser_requirement.py)
+        no_browser("browser.session needs Python Playwright")
     if not manifest.available()[0]:
-        pytest.skip("no runnable browser here")
+        no_browser("no runnable browser here")
     try:
         _backend(require_bubblewrap=True)
     except WorkerIsolationError as exc:

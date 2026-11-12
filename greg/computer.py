@@ -71,8 +71,15 @@ class BoundaryStop(Exception):
 
 
 def chromium() -> str:
-    candidates = sorted(glob.glob("/opt/pw-browsers/chromium-*/chrome-linux/chrome"))
-    for path in candidates[::-1] + ["/usr/bin/chromium", "/usr/bin/chromium-browser", "/usr/bin/google-chrome"]:
+    """The Chromium ``browser.session`` launches: the founder's GREG_CHROMIUM when it names an executable (as for
+    ``browser.render``), else the newest Playwright build in /opt/pw-browsers, else a system Chromium or Chrome.
+
+    Playwright's builds are ``chrome-linux64/chrome`` since it ships Chrome for Testing (``chrome-linux/chrome``
+    before); matching only the old layout passed over the installed build (2026-11-12)."""
+    chosen = os.environ.get("GREG_CHROMIUM", "")
+    candidates = sorted(glob.glob("/opt/pw-browsers/chromium-*/chrome-linux*/chrome"))
+    for path in ([chosen] if chosen and Path(chosen).is_file() else []) + candidates[::-1] + [
+            "/usr/bin/chromium", "/usr/bin/chromium-browser", "/usr/bin/google-chrome"]:
         if os.access(path, os.X_OK):
             return path
     raise CapabilityError("no Chromium installed on this body")

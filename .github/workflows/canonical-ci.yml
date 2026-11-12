@@ -172,6 +172,8 @@ jobs:
         run: python scripts/ci/check_unmeasured_check_mutants.py
       - name: Browser binary mutations (an unconfined render uses an installed browser only after it rendered a local page; behind the relay no browser starts outside the namespace; GREG_CHROMIUM is the only browser run, or is refused by name)
         run: python scripts/ci/check_browser_binary_mutants.py
+      - name: Composition rehearsal mutations (a test that passes alone and fails merged is reported with its cause; nothing is merged)
+        run: python scripts/ci/check_compose_rehearsal_mutants.py
 
   verifier:
     # Its V2 re-runs tests/unit, so inside job 1 it pushed that job past its 30 minutes once the

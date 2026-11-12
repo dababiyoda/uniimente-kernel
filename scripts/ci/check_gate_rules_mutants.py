@@ -13,9 +13,9 @@ Three groups, each run by the shared runner in a scratch copy of the repository,
   until the mutant adds that gate to the kept list. With the mutant applied the only failing test is the pin, which
   is what this group shows: growing the list in the same change as a new unwired gate is refused.
 
-Before any mutant, both test files must pass unmutated: the runner has no baseline of its own, and a test that fails
-for another reason would otherwise count as a catch. A mutant is caught only by a FAILED test. Exit status 1 if the
-baseline fails or any mutant survives or no longer applies.
+Before any mutant, both test files must pass unmutated. The shared runner now checks that itself (BASELINE_FAILS);
+this gate keeps its own check as well, because one of its mutants removes the runner's. A mutant is caught only by a
+FAILED test. Exit status 1 if the baseline fails or any mutant survives or no longer applies.
 """
 import shutil
 import subprocess
@@ -31,6 +31,7 @@ REVIEW = "scripts/repo_review.py"
 RUNNER_TESTS = "tests/unit/test_mutation_harness.py"
 LIVENESS_TESTS = "tests/unit/test_repo_health_gates.py"
 PLANTED = "check_planted_mutants.py"
+UNWIRED_TEST = "test_unwired_gates_match_the_shrink_only_list"   # what the planted gate makes fail, unmutated
 CAUGHT_RULE = ('caught = (result.returncode == 1 and f"FAILED {tests}::" in result.stdout\n'
                '                      and "ERROR collecting" not in result.stdout)')
 RUNNER_MUTANTS = [
@@ -46,6 +47,10 @@ RUNNER_MUTANTS = [
     (RUNNER, "a stale mutant does not fail the gate", 'print("STALE", name)\n                invalid += 1',
      'print("STALE", name)'),
     (RUNNER, "a surviving mutant does not fail the gate", "invalid += not caught", "invalid += 0"),
+    (RUNNER, "a named test that already fails counts as a catch for every mutant",
+     "if (baseline.returncode != 0) if planted is None else", "if False if planted is None else"),
+    (RUNNER, "on a planted tree the planted failure itself counts as a catch",
+     "caught = caught and planted not in result.stdout", "pass"),
 ]
 LIVENESS_MUTANTS = [
     (REVIEW, "every gate reads as wired", '"wired": gate.name in workflows,', '"wired": True,'),
@@ -79,8 +84,10 @@ def main() -> int:
         shutil.copytree(ROOT, planted, ignore=shutil.ignore_patterns(".git", "__pycache__", ".pytest_cache"))
         (planted / "scripts" / "ci" / PLANTED).write_text(
             '"""Planted by check_gate_rules_mutants.py: a mutation gate no workflow names."""\nMUTANTS = []\n')
+        # The planted gate makes the liveness test fail before any mutant; the mutant is caught only when the pin
+        # fails in its place. Until 2026-11-12 the runner took the planted failure itself for a catch.
         status |= run(GROWTH_MUTANTS, LIVENESS_TESTS, prefix="gate-rules-growth-", root=planted,
-                      purge_dirs=("scripts", "tests"))
+                      purge_dirs=("scripts", "tests"), failing_first=UNWIRED_TEST)
     return status
 
 

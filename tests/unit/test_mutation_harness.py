@@ -110,3 +110,36 @@ def test_an_anchor_at_two_sites_is_stale_not_applied(tmp_path, capsys):
     root = _repo(tmp_path)
     status, out = _verdict(root, capsys, "ambiguous anchor", "n", "m")
     assert status == 1 and "STALE ambiguous anchor" in out and "0/1 caught" in out
+
+
+def test_a_named_test_that_already_fails_judges_no_mutant(tmp_path, capsys):
+    """Without a baseline, a test that fails for a reason of its own made every mutant read as caught (81 of 81 on a
+    merged tree, 2026-11-12). The runner now refuses to judge: it says so, catches nothing and fails the gate."""
+    root = _tree(tmp_path, "def allowed(n):\n    return n < 10\n",
+                 "import guard\n\n\ndef test_limit():\n    assert not guard.allowed(10)\n\n\n"
+                 "def test_unrelated_and_already_failing():\n    assert guard.allowed(99)\n")
+    status, out = _verdict(root, capsys, "drop the limit", "n < 10", "True")
+    assert status == 1 and "BASELINE_FAILS tests/test_guard.py" in out and "CAUGHT" not in out
+    assert "0/1 caught" in out
+    assert "n < 10" in (root / "guard.py").read_text()                 # and nothing was applied anywhere
+
+
+def test_on_a_planted_tree_only_a_different_failing_test_is_a_catch(tmp_path, capsys):
+    """A gate may mutate a tree that is planted to fail. The planted failure is named; it must be the first failure
+    before any mutant, and a mutant is caught only when another test of the file fails in its place."""
+    guard = "LIMIT = 10\nKEPT = ()\n\n\ndef allowed(n):\n    return n < LIMIT or n in KEPT\n"
+    test = ("import guard\n\n\ndef test_planted():\n    assert guard.allowed(50)\n\n\n"
+            "def test_kept_list_is_empty():\n    assert guard.KEPT == ()\n")
+    root = _tree(tmp_path, guard, test)
+
+    def planted_run(name, old, new, first="test_planted"):
+        status = mutation_harness.run([("guard.py", name, old, new)], TESTS, "h-", root=root, purge_dirs=("tests",),
+                                      failing_first=first)
+        return status, capsys.readouterr().out
+
+    status, out = planted_run("grow the kept list", "KEPT = ()", "KEPT = (50,)")
+    assert status == 0 and "CAUGHT grow the kept list" in out          # the planted test passes, the pin fails
+    status, out = planted_run("a mutant that changes nothing", "LIMIT = 10", "LIMIT = 11")
+    assert status == 1 and "SURVIVED_OR_INVALID" in out                # the planted failure alone is no catch
+    status, out = planted_run("grow the kept list", "KEPT = ()", "KEPT = (50,)", first="test_kept_list_is_empty")
+    assert status == 1 and "BASELINE_FAILS" in out and "CAUGHT" not in out   # the tree does not fail where it says

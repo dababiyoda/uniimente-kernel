@@ -429,6 +429,120 @@ def _fresh_appraisal(journal: Journal, seq: dict, mid: str, closure_seq: int, te
                                             "closure) is appraised when it is recorded"}
 
 
+AUTO_ATTACHED_BY = "founder-signed mission auto_attach (read_only)"   # greg/genesis.py AUTO_ATTACH and its engine form
+
+
+def _accepted_envelope(journal: Journal, ledger, seq: dict, digest, kind: str, before: int):
+    """The one accepted command with this digest before ``before``, if its retained envelope is that digest's own,
+    of ``kind``, and re-verifies against a founder key enrolled when it was accepted. Else None.
+
+    Device keys are not consulted: a device may sign only ``greg.founder.DEVICE_KINDS``, and neither MISSION nor
+    CAPABILITY_ATTACH is one of them."""
+    commands = [e for e in journal.replay("command.accepted")
+                if digest and e.payload.get("digest") == digest and seq.get(e.event_id, 1 << 60) < before]
+    if len(commands) != 1 or not isinstance(commands[0].payload.get("envelope"), dict):
+        return None
+    env = commands[0].payload["envelope"]
+    public = _founder_keys(journal, seq[commands[0].event_id], ledger).get(env.get("founder_key_id"))
+    if public is None or sha256_json(env) != digest or env.get("kind") != kind:
+        return None
+    try:
+        Ed25519PublicKey.from_public_bytes(bytes.fromhex(public)).verify(bytes.fromhex(env["signature"]),
+                                                                          _signing_bytes(env))
+    except (InvalidSignature, ValueError, KeyError, TypeError):
+        return None
+    return env
+
+
+def _formed_attach_unauthorized(journal: Journal, ledger, seq: dict, cid: str, served_seq: int) -> str | None:
+    """Why the ledger does not show a capability Genesis formed as authorized to serve at ``served_seq``; None when it
+    does, and for every built-in (acceptance C.G9; directive sections 22 and 35).
+
+    The Body's registry is a projection of the ledger, so a ``capability.state ATTACHED`` record is all it takes for
+    a capability to serve, and ``_formed_registry`` re-projects the same record. Nothing upstream re-checks where
+    that record came from. Here, re-derived from the ledger before the receipt:
+
+    1. formation: ``deficit.opened`` -> a passing ``genesis.verified`` -> ``capability.registered`` with the same
+       deficit, in that order (the builder route verifies its source as ``built:<sha256>``);
+    2. the attach in force when it served (its last state change before the receipt is ATTACHED, after the
+       registration, from VERIFIED, DETACHED or ATTACHED, never from QUARANTINED: ``Body.apply`` refuses that);
+    3. that attach's authority: an accepted CAPABILITY_ATTACH naming this capability, re-verified against an enrolled
+       founder key; or a signed MISSION, registered before the attach, whose ``auto_attach`` allows read_only, for a
+       read_only capability inside its signed light cone, not formed for cognition (Genesis._attach). The licence
+       half of auto_attach is not re-derived: it reads the host's package records, which can change after the attach
+       without any authority changing (a stated limit)."""
+    if cid in BUILTINS:
+        return None
+    registered = [e for e in journal.replay("capability.registered")
+                  if e.payload.get("manifest", {}).get("capability_id") == cid
+                  and seq.get(e.event_id, 1 << 60) < served_seq]
+    if not registered:
+        return f"{cid} served a receipt with no capability.registered record before it"
+    reg = registered[-1]
+    reg_seq, manifest = seq[reg.event_id], CapabilityManifest.from_dict(reg.payload["manifest"])
+    deficit = reg.payload.get("deficit_id")
+    opened = [seq[e.event_id] for e in journal.replay("deficit.opened")
+              if deficit and e.payload.get("deficit_id") == deficit and seq.get(e.event_id, 1 << 60) < reg_seq]
+    verified_as = {cid, "built:" + str(manifest.provenance.get("source_sha256"))}
+    passed = [e for e in journal.replay("genesis.verified")
+              if deficit and e.payload.get("deficit_id") == deficit and e.payload.get("passed") is True
+              and e.payload.get("capability_id") in verified_as
+              and opened and opened[0] < seq.get(e.event_id, 1 << 60) < reg_seq]
+    if not opened or not passed:
+        return (f"{cid} served without its formation chain on the ledger (deficit.opened -> passing "
+                "genesis.verified -> capability.registered)")
+    states = [e for e in journal.replay("capability.state")
+              if e.payload.get("capability_id") == cid and reg_seq < seq.get(e.event_id, 1 << 60) < served_seq]
+    if not states or states[-1].payload.get("state") != "ATTACHED":
+        return f"{cid} served while its last recorded state was {states[-1].payload.get('state') if states else 'VERIFIED'}"
+    attach, attach_seq = states[-1].payload, seq[states[-1].event_id]
+    prior = states[-2].payload.get("state") if len(states) > 1 else reg.payload.get("state", "VERIFIED")
+    if prior not in ("VERIFIED", "DETACHED", "ATTACHED"):
+        return f"{cid} was attached from {prior}; only a verified capability may be attached"
+    by = attach.get("by") or ""
+    if by == "founder command":
+        # Body.apply records the state change while dispatching and the command's acceptance just after: the command
+        # must be accepted before the capability serves, not before the state record.
+        env = _accepted_envelope(journal, ledger, seq, attach.get("command_digest"), "CAPABILITY_ATTACH", served_seq)
+        if env is None:
+            env = _accepted_envelope(journal, ledger, seq, attach.get("command_digest"),
+                                     (_accepted_kind(journal, attach.get("command_digest")) or ""), served_seq)
+            if env is not None:
+                return (f"{cid} was attached citing a founder {env['kind']} command, not a CAPABILITY_ATTACH "
+                        "that names it")
+            return f"{cid} was attached by {by!r} with no founder command on the ledger that re-verifies"
+        if (env.get("body") or {}).get("capability_id") != cid:
+            return f"{cid} was attached citing a founder CAPABILITY_ATTACH that names another capability"
+        return None
+    if by.startswith(AUTO_ATTACHED_BY):
+        missions = [e for e in journal.replay("mission.registered")
+                    if e.payload.get("mission_id") == attach.get("mission_id")
+                    and seq.get(e.event_id, 1 << 60) < attach_seq]
+        env = (_accepted_envelope(journal, ledger, seq, missions[0].payload.get("command_digest"), "MISSION",
+                                  served_seq) if len(missions) == 1 else None)
+        if env is None or env.get("body") != missions[0].payload.get("spec"):
+            return f"{cid} was auto-attached with no signed mission on the ledger behind it"
+        spec = env["body"]
+        if (spec.get("auto_attach") or {}).get("max_consequence_class") != "read_only":
+            return f"{cid} was auto-attached by a mission whose signed scope pre-authorizes no attach"
+        if manifest.consequence_class != "read_only":
+            return f"{cid} is {manifest.consequence_class}; a signed auto_attach covers read_only capabilities only"
+        if not LightCone.from_dict(spec["light_cone"])._capability_inside(cid):
+            return f"{cid} is outside the signed mission's light cone; its auto_attach does not reach it"
+        if by == AUTO_ATTACHED_BY and manifest.function.startswith("cognition."):
+            return f"{cid} was formed for cognition; it is attached only by the founder's own command"
+        return None
+    return f"{cid} was attached by {by!r}, with no founder command and no signed mission scope behind it"
+
+
+def _accepted_kind(journal: Journal, digest) -> str | None:
+    """The kind of the accepted command with this digest, as retained (verified separately), or None."""
+    for event in journal.replay("command.accepted"):
+        if digest and event.payload.get("digest") == digest and isinstance(event.payload.get("envelope"), dict):
+            return event.payload["envelope"].get("kind")
+    return None
+
+
 def _never_rerun(cid: str) -> str | None:
     """Why the appraiser never re-runs this built-in as a sensor, whatever its attach state: it re-reads, it does not
     act. ``REOBSERVABLE`` is a list of ids (it names ``cognition.settle``, which writes); the manifest decides."""
@@ -713,6 +827,25 @@ def appraise(request: dict) -> dict:
         if len(receipts) != len(set(receipts)):   # only a real duplicate is reported as one
             findings.append("duplicate receipt: one Gate receipt is cited by more than one completed action")
 
+        # 4a. formed capabilities authorized (acceptance C.G9): every receipt in this closure's window that a capability
+        # Genesis formed served, action or observation, is preceded by its formation chain and by an attach some founder
+        # authority carries. Built-ins are the reviewed code itself; ``_formed_attach_unauthorized`` says why not.
+        served = {}
+        for event in [*action_events, *(e for e in journal.replay("mission.observed")
+                                        if e.payload["mission_id"] == mid
+                                        and registered_seq < seq[e.event_id] < achieved_seq)]:
+            data = event.payload
+            receipt = ledger.find(data["receipt"]) if data.get("receipt") and data.get("capability") else None
+            if receipt is not None and data["capability"] not in BUILTINS:
+                served.setdefault(data["capability"], receipt.seq)
+        authorized = True
+        for cid, served_seq in sorted(served.items()):
+            why = _formed_attach_unauthorized(journal, ledger, seq, cid, served_seq)
+            if why:
+                authorized = False
+                findings.append(why)
+        checks["formed_capabilities_authorized"] = authorized
+
         # 4b. deliverables: the delivered file must be exactly the render of the receipted inputs
         # A standing mission's closure covers only the actions since its previous closure:
         # earlier deliveries were judged at their own closure against the evidence of that
@@ -842,7 +975,7 @@ def appraise(request: dict) -> dict:
         required = ("chain_intact", "registered_once", "achieved_claimed", "closure_matches_signed_rule",
                     "founder_signature_verified", "closure_evidence_bound", "checks_rederived_from_receipts",
                     "world_reobserved", "exactly_once", "deliveries_bound_to_evidence",
-                    "approval_boundaries_honored", "preconditions_honored")
+                    "approval_boundaries_honored", "preconditions_honored", "formed_capabilities_authorized")
         # A check that is False only because of something not run, or read too late, speaks neither for nor against
         # the closure. Named here so that no reader has to guess it from the other fields.
         not_established = [name for name, held, left_open in (

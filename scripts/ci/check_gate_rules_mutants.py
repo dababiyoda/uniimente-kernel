@@ -8,8 +8,11 @@ Three groups, each run by the shared runner in a scratch copy of the repository,
   pytest exits 1, reports a FAILED test in the named file and reports no collection error; an anchor that does not
   occur exactly once is STALE; a stale or surviving mutant fails the gate; before any mutant every named test runs and
   none fails, or on a planted tree the planted test alone, named whole; each scratch copy has its own pytest base
-  temporary directory and its own import path; an exception while judging one mutant loses no other verdict; and
-  MUTATION_WORKERS is used only as a whole number from 1 to the CPU count, a value not used being reported;
+  temporary directory and its own import path; an exception while judging one mutant loses no other verdict;
+  MUTATION_WORKERS is used only as a whole number from 1 to the CPU count, a value not used being reported; and with
+  more than one worker a catch counts only if it holds alone, after every parallel run has ended, in the copy the
+  baseline ran in: the failing test passes by itself unmutated and fails with the mutant applied, the whole file
+  standing in for a test that cannot pass by itself, and a copy whose tests no longer pass unmutated judges nothing;
 * gate liveness (scripts/repo_review.py, tests/unit/test_repo_health_gates.py): a gate no workflow names reads as
   unwired, and an anchor that left its target reads as stale;
 * the pin on KEPT_UNWIRED_GATES. The copy first receives a gate no workflow names, so the liveness test fails there
@@ -39,7 +42,7 @@ LIVENESS_TESTS = "tests/unit/test_repo_health_gates.py"
 PLANTED = "check_planted_mutants.py"
 UNWIRED_TEST = "test_unwired_gates_match_the_shrink_only_list"   # what the planted gate makes fail, unmutated
 CAUGHT_RULE = ('caught = (result.returncode == 1 and f"FAILED {tests}::" in result.stdout\n'
-               '                          and "ERROR collecting" not in result.stdout)')
+               '                      and "ERROR collecting" not in result.stdout)')
 RUNNER_MUTANTS = [
     (RUNNER, "any non-zero pytest exit counts as caught", CAUGHT_RULE, "caught = result.returncode != 0"),
     (RUNNER, "a failed test in a run that did not finish counts as caught",
@@ -48,7 +51,7 @@ RUNNER_MUTANTS = [
     (RUNNER, "the word FAILED anywhere in the output counts as caught",
      'f"FAILED {tests}::" in result.stdout', '"FAILED " in result.stdout'),
     (RUNNER, "a failed test beside a collection error counts as caught",
-     '\n                          and "ERROR collecting" not in result.stdout)', ")"),
+     '\n                      and "ERROR collecting" not in result.stdout)', ")"),
     (RUNNER, "an anchor at several sites is applied", "if original.count(old) != 1:", "if original.count(old) == 0:"),
     (RUNNER, "a stale mutant does not fail the gate", 'print("STALE", name, flush=True)\n                    return False',
      'print("STALE", name, flush=True)\n                    return True'),
@@ -77,6 +80,20 @@ RUNNER_MUTANTS = [
      're.fullmatch("[0-9]+", asked) and 1 <= int(asked) <= cpus', "asked.isdigit() and int(asked) >= 1"),
     (RUNNER, "a worker count that is not used is dropped without a word",
      "print(message, file=sys.stderr, flush=True)", "None"),
+    (RUNNER, "a catch made beside other copies is counted without a lone run", "if caught and workers > 1:",
+     "if caught and workers > 99:"),
+    (RUNNER, "the lone run is made without the mutant applied",
+     "path.write_text(original.replace(old, new))\n                return alone(argv)",
+     "path.write_text(original)\n                return alone(argv)"),
+    (RUNNER, "a catch the first failing test does not make alone is refuted without the whole file",
+     'print("CAUGHT", name, flush=True)\n                        return True\n',
+     'print("CAUGHT", name, flush=True)\n                        return True\n                    return False\n'),
+    (RUNNER, "the whole file never decides a catch", "if catches(mutated(mutant, command)):", "if False:"),
+    (RUNNER, "a copy whose tests fail unmutated after other mutants still judges a mutant",
+     "if not passes_unmutated(None):", "if False:"),
+    (RUNNER, "the lone run is made in a copy other than the baseline's",
+     "repo, env, command = copies[0]                # the copy the baseline ran in",
+     "repo, env, command = copies[-1]               # the copy the baseline ran in"),
 ]
 LIVENESS_MUTANTS = [
     (REVIEW, "every gate reads as wired", '"wired": gate.name in workflows,', '"wired": True,'),

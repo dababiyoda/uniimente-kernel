@@ -37,11 +37,27 @@ is set but not used is reported on stderr). Each copy has its own pytest base te
 ``PYTHONPATH``, so a process a test starts outside the copy still imports that copy; a mutant is applied, tested and
 reverted inside its own copy only. The copies still share HOME, TMPDIR, the network and the machine: a test that fails
 only under load, or when another run holds the same fixed path or port, can pass the baseline (which runs alone) and
-fail under a mutant (not measured; recorded 2026-11-12). On 2026-11-12 the composed candidate's gate job took 176 of
-its 180 minutes with every mutant run one after another; its two slowest gates (43 and 34 minutes) both use this
-runner. An exception while judging one mutant (a timeout, a target that is not there) reads as
-``SURVIVED_OR_INVALID`` with its reason, and the other mutants are still judged. Results are printed as they finish;
-the closing count and the exit status do not depend on the order.
+fail under a mutant. (A review on 2026-11-13 showed it: one test holding a fixed path, a real mutant beside a no-op
+one, three runs each: the no-op mutant read as caught in 1 or 2 of 3 runs.)
+
+So with more than one worker no catch is taken from a parallel run. After every parallel run has ended, each mutant a
+parallel run caught is judged again, one at a time, in the copy the baseline ran in. The test that failed is run by
+itself, unmutated, where it must pass, then with the mutant applied: if it fails, the mutant is caught. Where that
+test cannot pass by itself (it relies on an earlier test of the file), or alone does not fail (beside other copies a
+test can fail first for a reason of its own, before the test that catches the mutant), the whole named file decides:
+unmutated it must pass as the baseline did, and with the mutant applied the rule above decides. A mutant whose tests
+failed only beside other copies reads ``SURVIVED_OR_INVALID`` with that reason. If the named tests no longer pass
+unmutated after the other mutants ran, the mutant is not judged (``SURVIVED_OR_INVALID``, with that reason): the
+copy's surroundings have changed, so no run of it shows what the mutant did. The unmutated run is made again before
+every mutated one, never reused, because a run can leave its surroundings changed. With one worker every mutant is
+judged alone already and no second run is made, as before; a mutant that leaves state behind outside its copy can then
+still make a later mutant read as caught.
+
+On 2026-11-12 the composed candidate's gate job took 176 of its 180 minutes with every mutant run one after another;
+its two slowest gates (43 and 34 minutes) both use this runner. An exception while judging one mutant (a timeout, a
+target that is not there) reads as ``SURVIVED_OR_INVALID`` with its reason, and the other mutants are still judged. A
+survivor is printed when its parallel run finishes, a catch once it is confirmed; the closing count and the exit
+status do not depend on the order.
 
 New gates should use this runner. Gates with a different contract (another
 timeout, a single target, no purge) keep their own loop rather than change
@@ -129,6 +145,15 @@ def run(mutants: list[tuple[str, str, str, str]], tests: str, prefix: str, *,
             return 1
         free = list(copies)
 
+        def catches(result: subprocess.CompletedProcess) -> bool:
+            """pytest exits 1 with a FAILED test in the named file and no collection error; on a planted tree that
+            test is not the planted one."""
+            caught = (result.returncode == 1 and f"FAILED {tests}::" in result.stdout
+                      and "ERROR collecting" not in result.stdout)
+            if planted is not None:           # the planted failure itself is no catch: another test must fail
+                caught = caught and planted not in failures(result.stdout)
+            return caught
+
         def judge(mutant) -> bool:
             target, name, old, new = mutant
             with lock:
@@ -147,10 +172,10 @@ def run(mutants: list[tuple[str, str, str, str]], tests: str, prefix: str, *,
                                             timeout=timeout)
                 finally:
                     path.write_text(original)
-                caught = (result.returncode == 1 and f"FAILED {tests}::" in result.stdout
-                          and "ERROR collecting" not in result.stdout)
-                if planted is not None:           # the planted failure itself is no catch: another test must fail
-                    caught = caught and planted not in failures(result.stdout)
+                caught = catches(result)
+                if caught and workers > 1:        # beside other copies: judged again alone, once they have all ended
+                    return [line[len("FAILED "):] for line in failures(result.stdout)
+                            if line.startswith(f"FAILED {tests}::") and line != planted][:1] or [None]
                 with lock:
                     print("CAUGHT" if caught else "SURVIVED_OR_INVALID", name, flush=True)
                 return caught
@@ -164,6 +189,59 @@ def run(mutants: list[tuple[str, str, str, str]], tests: str, prefix: str, *,
 
         with ThreadPoolExecutor(max_workers=workers) as pool:
             verdicts = list(pool.map(judge, mutants))
+
+        # Every parallel run has ended. A catch made beside other copies counts only if it holds alone.
+        repo, env, command = copies[0]                # the copy the baseline ran in, each mutant reverted
+
+        def alone(argv: list[str]) -> subprocess.CompletedProcess:
+            purge(repo, purge_dirs)
+            return subprocess.run(argv, cwd=repo, env=env, capture_output=True, text=True, timeout=timeout)
+
+        def passes_unmutated(node: str | None) -> bool:
+            # Run again before every mutated run, never reused: a run may leave its surroundings changed.
+            if node is None:                         # the whole file, judged as the baseline was
+                result = alone(full)
+                return (result.returncode == (0 if planted is None else 1)
+                        and failures(result.stdout) == ([] if planted is None else [planted]))
+            return alone(command[:-1] + [node]).returncode == 0
+
+        def mutated(mutant, argv: list[str]) -> subprocess.CompletedProcess:
+            target, name, old, new = mutant
+            path = repo / target
+            original = path.read_text()
+            try:
+                path.write_text(original.replace(old, new))
+                return alone(argv)
+            finally:
+                path.write_text(original)
+
+        def confirm(mutant, node: str | None) -> bool:
+            name = mutant[1]
+            try:
+                if node is not None and passes_unmutated(node):     # the one test, by its whole id
+                    result = mutated(mutant, command[:-1] + [node])
+                    if (f"FAILED {node}" in failures(result.stdout) and result.returncode == 1
+                            and "ERROR collecting" not in result.stdout):
+                        print("CAUGHT", name, flush=True)
+                        return True
+                # That test cannot pass by itself, or alone it does not catch the mutant (beside other copies a test
+                # can fail first for a reason of its own, before the one that catches): the whole file decides.
+                if not passes_unmutated(None):
+                    print("SURVIVED_OR_INVALID", name, "(not judged: the named tests no longer pass unmutated after "
+                          "the other mutants ran)", flush=True)
+                    return False
+                if catches(mutated(mutant, command)):
+                    print("CAUGHT", name, flush=True)
+                    return True
+                print("SURVIVED_OR_INVALID", name, "(its tests failed only beside other copies: alone, with the "
+                      f"mutant applied, {tests} gave no catch)", flush=True)
+                return False
+            except Exception as failure:             # as in a parallel run: this mutant only is not judged
+                print("SURVIVED_OR_INVALID", name, f"(not judged: {type(failure).__name__}: {failure})", flush=True)
+                return False
+
+        verdicts = [confirm(mutant, verdict[0]) if isinstance(verdict, list) else verdict
+                    for mutant, verdict in zip(mutants, verdicts)]
     invalid = verdicts.count(False)
     print(f"{len(mutants) - invalid}/{len(mutants)} caught")
     return int(bool(invalid))

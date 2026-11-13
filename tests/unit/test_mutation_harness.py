@@ -273,6 +273,10 @@ def test_each_copy_has_its_own_base_temporary_directory_and_import_path(tmp_path
     out = capsys.readouterr().out
     assert "CAUGHT drop the limit" in out and "1/4 caught" in out and status == 1              # control, then:
     assert all(f"SURVIVED_OR_INVALID comment only {i}" in out for i in range(3)), out
+    # Since 2026-11-13 each catch made beside other copies is judged again alone, which turns such a fault back into a
+    # survivor in the verdicts above (refuted, or not judged when the copy's records already disagree); so no mutant
+    # that changes nothing may have been caught in a parallel run at all: each reads as a plain survivor.
+    assert all(f"SURVIVED_OR_INVALID comment only {i}\n" in out for i in range(3)), out
     records = [p for p in runs.iterdir() if not p.name.startswith(".")]
     assert len({p.read_text().split("\n")[0] for p in records}) >= 2           # the check did span two copies
 
@@ -291,6 +295,92 @@ def test_an_exception_while_judging_one_mutant_loses_no_other_verdict(tmp_path, 
         assert status == 1 and "1/3 caught" in out and "CAUGHT drop the limit" in out
         assert "SURVIVED_OR_INVALID a target that is not there (not judged: FileNotFoundError" in out
         assert "SURVIVED_OR_INVALID comment only" in out
+
+
+SHARED_PATH_TEST = '''from pathlib import Path
+
+from guard import allowed
+
+HERE = Path(__file__).resolve().parents[1]            # this scratch copy's root
+HELD = Path(HELD_PATH)                                # outside every copy: one fixed path every run of this file shares
+
+
+def test_limit():
+    assert not allowed(10)
+
+
+def test_the_fixed_path_is_this_copys():
+    if not HELD.exists():
+        HELD.write_text(str(HERE))
+    assert HELD.read_text() == str(HERE)
+'''
+
+
+def test_a_catch_made_only_beside_other_copies_is_not_counted(tmp_path, capsys):
+    """The independent review of the composed candidate, 2026-11-13 (hold B on #307): the parallel copies share HOME,
+    TMPDIR, the network and the machine, so a test that holds a fixed path failed in a copy where nothing was wrong,
+    and a mutant that changes nothing read as caught (in 1 or 2 of 3 runs). Here the fixed path is taken by the copy the
+    baseline runs in, so every no-op mutant judged in another copy fails there. Each catch is now judged again alone,
+    with the mutant applied, and only a real one stands."""
+    held = tmp_path / "held"
+    root = _tree(tmp_path, "def allowed(n):\n    return n < 10  # limit\n",
+                 SHARED_PATH_TEST.replace("HELD_PATH", repr(str(held))))
+    mutants = [("guard.py", f"comment only {i}", "# limit", f"# limit {i}") for i in range(4)] + [
+        ("guard.py", "drop the limit", "n < 10", "True")]
+    status = mutation_harness.run(mutants, TESTS, "h-", root=root, purge_dirs=("tests",), workers=3)
+    out = capsys.readouterr().out
+    assert status == 1 and "1/5 caught" in out and "CAUGHT drop the limit" in out, out
+    assert all(f"SURVIVED_OR_INVALID comment only {i}" in out for i in range(4)), out
+    assert "failed only beside other copies: alone, with the mutant applied, tests/test_guard.py gave no catch" \
+        in out, out                                                              # the interference did happen
+    assert held.read_text().endswith("repo0")                                   # taken by the baseline's copy
+
+
+def test_a_catch_hidden_behind_a_test_that_failed_beside_other_copies_still_stands(tmp_path, capsys):
+    """Beside other copies a parallel run can stop (``-x``) at a test failing for a reason of its own, before the test
+    that catches the mutant. Alone that first test passes even with the mutant; the whole file, run alone, then
+    decides, and every real mutant is caught. Three mutants run at once, so at least two are judged outside the copy
+    that holds the fixed path."""
+    held = tmp_path / "held"
+    test = SHARED_PATH_TEST.replace("HELD_PATH", repr(str(held)))
+    first, second = test.index("def test_limit"), test.index("def test_the_fixed_path")
+    test = test[:first] + test[second:] + "\n\n" + test[first:second].rstrip() + "\n"   # the fixed path first
+    root = _tree(tmp_path, "def allowed(n):\n    return n < 10  # limit\n", test)
+    mutants = [("guard.py", "drop the limit", "n < 10", "True"), ("guard.py", "raise the limit", "n < 10", "n < 11"),
+               ("guard.py", "admit all", "return n < 10", "return n == n")]
+    status = mutation_harness.run(mutants, TESTS, "h-", root=root, purge_dirs=("tests",), workers=3)
+    out = capsys.readouterr().out
+    assert status == 0 and "3/3 caught" in out, out
+    assert test.index("def test_the_fixed_path") < test.index("def test_limit")
+
+
+def test_a_test_that_cannot_pass_alone_is_judged_with_its_whole_file(tmp_path, capsys):
+    """A failing test that relies on an earlier test of the file cannot be run by itself: the whole named file, run
+    alone, passes unmutated and fails with the mutant applied, so the catch stands."""
+    root = _tree(tmp_path, "def allowed(n):\n    return n < 10  # limit\n",
+                 "import guard\n\nSTATE = {}\n\n\ndef test_prepare():\n    STATE['limit'] = 10\n\n\n"
+                 "def test_limit_after_prepare():\n    assert not guard.allowed(STATE['limit'])\n")
+    mutants = [("guard.py", "drop the limit", "n < 10", "True"), ("guard.py", "comment only", "# limit", "# l")]
+    status = mutation_harness.run(mutants, TESTS, "h-", root=root, purge_dirs=("tests",), workers=2)
+    out = capsys.readouterr().out
+    assert status == 1 and "1/2 caught" in out and "CAUGHT drop the limit" in out, out
+    assert "SURVIVED_OR_INVALID comment only" in out
+
+
+def test_a_mutant_judged_after_its_surroundings_changed_is_not_judged(tmp_path, capsys):
+    """A mutant's run leaves a file outside the copy, after which the named test fails unmutated: nothing run in that
+    copy now shows what any mutant did. Each catch reads as not judged, with that reason, never as caught."""
+    mark = tmp_path / "left-behind"
+    root = _tree(tmp_path, "POLLUTE = False\n\n\ndef allowed(n):\n    return n < 10\n",
+                 "from pathlib import Path\n\nimport guard\n\nMARK = Path(" + repr(str(mark)) + ")\n\n\n"
+                 "def test_limit():\n    if guard.POLLUTE:\n        MARK.write_text('left behind')\n"
+                 "    assert not MARK.exists() and not guard.allowed(10)\n")
+    mutants = [("guard.py", "leave a file behind", "POLLUTE = False", "POLLUTE = True"),
+               ("guard.py", "drop the limit", "n < 10", "True")]
+    status = mutation_harness.run(mutants, TESTS, "h-", root=root, purge_dirs=("tests",), workers=2)
+    out = capsys.readouterr().out
+    assert status == 1 and "0/2 caught" in out and "CAUGHT" not in out, out
+    assert out.count("not judged: the named tests no longer pass unmutated after the other mutants ran") == 2, out
 
 
 def test_the_worker_count_comes_from_the_environment_and_is_never_below_one(monkeypatch):

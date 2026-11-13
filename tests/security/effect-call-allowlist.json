@@ -530,8 +530,8 @@
    "serves": [
     "capability:browser.render"
    ],
-   "justification": "confined browser.render: the browser runs in a bubblewrap network namespace whose only way out is a door to a relay allowlisted for the target alone; without namespaces nothing runs; the bwrap that builds the namespace is the file found first on the body's ambient PATH (worker_isolation._backend probes it, relay_door.namespace_argv runs it), run with the body's privileges",
-   "pin": "739a84cccece6baef83b326cd8ac186e3ba6ae3d67325c888fc6f7a19d0cd06e"
+   "justification": "confined browser.render: the browser runs in a bubblewrap network namespace whose only way out is a door to a relay allowlisted for the target alone, ended at RENDER_SECONDS; without namespaces nothing runs, and on this route no browser is started outside the namespace (the binary is the first installed candidate, handed over without the check cannot_render runs); the bwrap that builds the namespace is the file found first on the body's ambient PATH (worker_isolation._backend probes it, relay_door.namespace_argv runs it), run with the body's privileges",
+   "pin": "7d79ed6f0a8668bf2035d524d795b2287c7d2d2a507447b01febbe36d1dd46e9"
   },
   {
    "module": "greg/capabilities.py",
@@ -564,8 +564,19 @@
    "serves": [
     "capability:browser.render"
    ],
-   "justification": "unconfined browser.render: headless Chrome, fresh profile, resolving only the signed web:<host> target (every other name maps to NOTFOUND)",
-   "pin": "10c21536f6b953c575074c971ae4f6698d23abc024f49efbd5ba9eb86a554505"
+   "justification": "unconfined browser.render (ctx.egress is None): headless Chrome, fresh profile, resolving only the signed web:<host> target (every other name maps to NOTFOUND), ended at RENDER_SECONDS; the binary is GREG_CHROMIUM or the first installed candidate, used only after it passed cannot_render's check",
+   "pin": "357ce42dfcded27e1d1ae2c1646c2446d2f844649fa33e7449813c602acbdbc1"
+  },
+  {
+   "module": "greg/capabilities.py",
+   "qualname": "cannot_render",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "capability:browser.render"
+   ],
+   "justification": "the check that an installed browser can render at all. Where it runs: directly under the body's own process with nothing of GREG's around it but the flags below, and only on the unconfined route (browser_render calls chrome_binary only when ctx.egress is None); a body configured for confined egress never starts it. What it runs: the unconfined render's own command line and sandbox rule on a data: page, every name mapped to NOTFOUND and every request sent to the closed port 127.0.0.1:9 with no bypass, a fresh profile as HOME and working directory, an environment of PATH, LANG and HOME, ended at RENDER_SECONDS; it contacts no host. One run per build of a binary, again for a build that failed only after RENDER_RETRY_SECONDS, again after a render with that binary never returned or could not be started, and no new run once one call has judged for JUDGING_SECONDS",
+   "pin": "45f40d6cf38227fd758c0f40874371516409c06082b94bcb5da15b148226af63"
   },
   {
    "module": "greg/capabilities.py",

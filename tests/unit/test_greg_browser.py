@@ -6,6 +6,7 @@ IP literal. The browser is the installed Chrome/Chromium; the test skips (never 
 no browser can run here.
 """
 from functools import partial
+import os
 import http.server
 import socket
 import threading
@@ -54,13 +55,16 @@ def web(tmp_path):
         threading.Thread(target=server.serve_forever, daemon=True).start()
     url = f"http://127.0.0.1:{servers[1].server_address[1]}/index.html"
     manifest, adapter = BUILTINS["browser.render"]
+    # A skip is not a pass: where a browser is expected (GREG_REQUIRE_BROWSER=1), a browser that is missing or
+    # cannot render fails these tests instead of leaving the route unexercised.
+    missing = pytest.fail if os.environ.get("GREG_REQUIRE_BROWSER") == "1" else pytest.skip
     ok, why = manifest.available()
     if not ok:
-        pytest.skip(f"no runnable browser: {why}")
+        missing(f"no runnable browser: {why}")
     try:
         adapter({"url": url}, InvocationContext(workspace=tmp_path, read_roots=(), secrets=None, manifest=manifest))
     except CapabilityError as exc:
-        pytest.skip(f"browser present but cannot run here: {exc}")
+        missing(f"browser present but cannot run here: {exc}")
     hits.clear()
     yield url, hits
     for server in servers:

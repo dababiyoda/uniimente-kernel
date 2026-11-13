@@ -22,6 +22,7 @@ state. Process completion never closes a mission: only re-observed evidence does
 """
 from __future__ import annotations
 
+import copy
 import os
 
 from dataclasses import dataclass, field
@@ -1310,7 +1311,7 @@ class MissionEngine:
                  recommendation: str, alternatives: list | None = None, requested: dict, now: datetime,
                  resource: dict | None = None, evidence: dict | None = None, quoted: tuple = (),
                  instance: dict | None = None, consequence: str = "the mission waits; no action is taken",
-                 move_digest: str | None = None) -> str:
+                 move_digest: str | None = None, prepared: dict | None = None) -> str:
         """One escalation per exact scope, recorded through the founder-ask contract (greg/asks.py).
 
         ``resource`` makes it a section-60 resource ask: evidence, costed options with their
@@ -1341,6 +1342,8 @@ class MissionEngine:
                    "created_at": iso(now), "reality_status": "RECORDED_LOCAL_MESSAGE"}
         if kind == "APPROVAL":
             message["move_digest"] = move_digest or scope_digest
+        if prepared is not None:   # an unsigned command for the founder to sign; it acts on nothing by itself
+            message["prepared_command"] = prepared
         if evidence is not None:
             message["evidence"] = evidence
         if resource is not None:
@@ -2789,6 +2792,117 @@ class MissionEngine:
                                  [{"option": "do nothing: the mission tries its other strategies", "cost": "none",
                                    "expected_effect": "this step keeps abstaining"}]})
 
+    def _resolution_ask(self, m: MissionState, s: dict, aid: str, receipt: dict, now: datetime) -> dict | None:
+        """Abstention-to-resolution (greg/cognition/resolution.py): the receipt names the one founder decision that
+        would let this step answer, so GREG asks exactly that, once, with the command already prepared and unsigned.
+
+        * ATTACH: a CAPABILITY_ATTACH ask preparing the attach; the mission blocks on that capability and re-runs
+          the step once it is usable (the blocker Genesis's awaiting-attach path already uses).
+        * SUPPLY_INPUTS / CORRECT_DECLARATION: one signed MISSION cannot revise another's strategy, so a NO_STRATEGY
+          ask prepares a successor MISSION: this mission's signed spec with a new id and the step's request
+          completed (the values the founder alone holds are listed under ``founder_supplies``) or its declaration
+          corrected. Nothing else changes: the same light cone, ceiling, budget, capabilities and targets.
+        * HUMAN_HANDOFF: a HUMAN_JUDGMENT ask; the question belongs to a person, so the mission waits.
+        * SELECT_LOCAL_MODEL: a NO_STRATEGY ask preparing MODEL_ROUTE_SET for a local route; the founder names the
+          model.
+        * FORM, or no resolution: None, and the existing paths (Genesis, the informational attach ask) run.
+
+        Asking grants nothing: a prepared command acts only once the founder signs it, and ``auto_attach`` never
+        consumes one."""
+        from greg.cognition import resolution as resolutions
+        r = resolutions.read(receipt)
+        if r is None or r["kind"] == "FORM" or s.get("capability") != "cognition.solve":
+            return None
+        params = s.get("params") or {}
+        scope = sha256_json({"resolution": r, "action": aid, "params": params})
+        evidence = {"resolution": r, "receipt_id": receipt.get("receipt_id"),
+                    "abstention": receipt.get("abstention_state") or receipt.get("state")}
+        no_cost = {"option": "do nothing: the mission keeps waiting", "cost": "none",
+                   "expected_effect": "this step keeps abstaining; nothing is attached, signed or run"}
+        if r["kind"] == "ATTACH":
+            cid = next((c for c in r["capabilities"] if c in self.registry.manifests), None)
+            if cid is None:
+                return None
+            rid = self._request(
+                m, kind="CAPABILITY_ATTACH", scope_digest=scope, action_id=aid,
+                why=f"{aid} abstained: {r['why']}"[:400],
+                recommendation=f"attach {cid} with: greg attach {cid}",
+                requested={"capabilities": [cid], "spend": "none requested"}, now=now,
+                resource={"resource": "capability", "evidence": evidence,
+                          "expected_effect": f"{aid} re-runs once {cid} is usable; the mission's own checks and the "
+                                             "independent appraiser still decide",
+                          "uncertainty": "read from the abstaining receipt, not verified: the re-run may still "
+                                         "abstain if another route is missing",
+                          "options": [{"option": f"greg attach {cid}", "cost": "none in money",
+                                       "expected_effect": f"{cid} becomes routable for this and later missions"},
+                                      no_cost]},
+                prepared={"kind": "CAPABILITY_ATTACH", "body": {"capability_id": cid}, "founder_supplies": []})
+            self._block(m, {"type": "capability", "capability_id": cid, "request_id": rid, "action_id": aid,
+                            "reconsider": f"{cid} becomes usable"})
+            return {"state": "WAITING", "blocker": m.blocker}
+        if r["kind"] == "HUMAN_HANDOFF":
+            rid = self._request(m, kind="HUMAN_JUDGMENT", scope_digest=scope, action_id=aid,
+                                why=f"{aid}: {r['why']}"[:400],
+                                recommendation="a person decides this; GREG assembled the evidence and acts on nothing",
+                                alternatives=["answer the question yourself", "name the person who decides",
+                                              "abandon the mission"],
+                                requested={"human_judgment": aid}, now=now, evidence=evidence)
+            self._block(m, {"type": "decision", "request_id": rid, "action_id": aid,
+                            "reconsider": "a person answers; the mission never closes on the machine's view"})
+            return {"state": "WAITING", "blocker": m.blocker}
+        if r["kind"] == "SELECT_LOCAL_MODEL":
+            prepared = {"kind": "MODEL_ROUTE_SET", "body": {"order": ["ollama"]},
+                        "founder_supplies": [{"path": ["ollama_model"], "from": "local_model"}]}
+            recommendation = "select a local model for the route, then re-run: greg model route ollama <model>"
+        else:
+            successor = self._successor(m, s, r)
+            if successor is None:
+                return None
+            prepared = {"kind": "MISSION", "body": successor[0], "founder_supplies": successor[1]}
+            recommendation = (f"sign the prepared successor {successor[0]['mission_id']}, supplying "
+                              f"{', '.join(r['inputs'])}" if r["kind"] == "SUPPLY_INPUTS" else
+                              f"sign the prepared successor {successor[0]['mission_id']}, declared {r['declare']}")
+        rid = self._request(m, kind="NO_STRATEGY", scope_digest=scope, action_id=aid,
+                            why=f"{aid} abstained: {r['why']}"[:400], recommendation=recommendation[:400],
+                            alternatives=["sign the prepared command", "revise the mission yourself",
+                                          "abandon the mission"],
+                            requested={"prepared_command": prepared["kind"], "spend": "none requested"},
+                            now=now, evidence=evidence, prepared=prepared)
+        self._block(m, {"type": "decision", "request_id": rid, "action_id": aid,
+                        "reconsider": "the founder signs the prepared command or answers"})
+        return {"state": "WAITING", "blocker": m.blocker}
+
+    def _successor(self, m: MissionState, s: dict, r: dict) -> tuple[dict, list] | None:
+        """This mission's signed spec with a new id and the abstaining request completed or re-declared; the paths
+        of the values only the founder holds. Every step that asked the same request is changed alike."""
+        params = s.get("params") or {}
+        wrap = "problem" if "problem" in params else "compile" if "compile" in params else None
+        if wrap is None:
+            return None
+        body = copy.deepcopy(m.spec)
+        n = 1
+        while f"{m.mission_id}-r{n}" in self.book.missions:
+            n += 1
+        body["mission_id"] = f"{m.mission_id}-r{n}"
+        supplies, changed = [], 0
+        steps = [("strategies", i, ["params"], x) for i, x in enumerate(body.get("strategies") or [])]
+        steps += [("success_checks", i, ["sensor", "params"], (x or {}).get("sensor") or {})
+                  for i, x in enumerate(body.get("success_checks") or [])]
+        for key, i, prefix, step in steps:
+            if step.get("capability") != "cognition.solve" or step.get("params") != params:
+                continue
+            changed += 1
+            root = [key, i, *prefix, wrap]
+            target = step["params"][wrap]
+            if r["kind"] == "SUPPLY_INPUTS":
+                part = r["inputs"][0]
+                supplies.append({"path": [*root, "payload" if wrap == "problem" else "data", part], "from": part})
+            elif wrap == "problem":
+                target.setdefault("payload", {}).setdefault("declared", {})["epistemic_class"] = r["declare"]
+            else:
+                target.setdefault("geometry", {})["geometry"] = r["declare"]
+        return (body, supplies) if changed else None
+
     def _spend_ask(self, m: MissionState, s: dict, outcome, routing_decision: dict) -> dict:
         """Section 60 for money: an approval that spends is a resource ask with its own evidence."""
         cost = float(s["cost_usd"])
@@ -3115,6 +3229,13 @@ class MissionEngine:
             return self._settle_uncertain(m, s, manifest, record, now)
         if outcome.status == "DONE" and isinstance(outcome.output, dict) and outcome.output.get("access_gap"):
             self._access_ask(m, aid, manifest, outcome.output["access_gap"], now)
+        # An abstaining cognition receipt that names the one founder decision that would let it answer (its typed
+        # resolution): one ask of an existing kind with an unsigned prepared command, and the mission waits on it.
+        # A FORM resolution returns None here, so a real capability absence still reaches Genesis below.
+        if outcome.status == "DONE" and isinstance(outcome.output, dict):
+            asked = self._resolution_ask(m, s, aid, outcome.output, now)
+            if asked is not None:
+                return asked
         # A plain cognition receipt that abstained because built families are unattached (PR #155 lineage):
         # one informational attach ask. Compiler deficits naming a missing function go to Genesis below.
         if outcome.status == "DONE" and isinstance(outcome.output, dict) \

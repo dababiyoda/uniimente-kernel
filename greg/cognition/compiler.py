@@ -1625,6 +1625,11 @@ def run(params, *, registry, journal=None, model_config=None, caller_window=None
         receipt["requirements"] = list(dict.fromkeys(plan["requirements"]))
         receipt["dissent"] = list(dict.fromkeys(receipt["dissent"] + plan["dissent"]))
         receipt["latency_s"] = round(time.monotonic() - started, 4)
+        # the one founder decision that would let an abstention answer (a proposal, never authority)
+        from .resolution import from_compile
+        resolution = from_compile(receipt)
+        if resolution is not None:             # absent otherwise, so an answered receipt's identity is unchanged
+            receipt["resolution"] = resolution
         receipt["receipt_id"] = digest({k: v for k, v in receipt.items() if k != "receipt_id"})
         return receipt
 

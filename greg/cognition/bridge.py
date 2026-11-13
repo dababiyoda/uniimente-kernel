@@ -433,6 +433,12 @@ def reason_cortex(params, *, registry, journal=None, model_config=None, forced=N
         out["authority_refs"] = {"live_grant": caller_window is not None, "new_authority": False,
                                  "problem_id": pid, **plan["authority_refs"],
                                  "limits": "budget projection is not a grant"}
+        if out["abstention_state"] not in ("NONE", "REFUTED"):
+            # the one founder decision that would let this abstention answer (a proposal, never authority)
+            from .resolution import from_cortex
+            resolution = from_cortex(receipt, problem["payload"])
+            if resolution is not None:
+                out["resolution"] = resolution
         identity = dict(out)
         identity.pop("receipt_id")
         out["receipt_id"] = digest(identity)

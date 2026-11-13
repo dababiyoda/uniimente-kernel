@@ -427,6 +427,9 @@ class CognitiveReceipt:
     contribution_attribution: list = field(default_factory=list)
     # Additive (P4): fixed order, memory's order and the executed order of the formal engines.
     routing: dict | None = None
+    # Additive (abstention-to-resolution): the one founder decision that would let this abstention answer
+    # (greg/cognition/resolution.py). A proposal, never verified and never authority; absent when None.
+    resolution: dict | None = None
 
     def __post_init__(self):
         EpistemicClass(self.epistemic_class)
@@ -447,6 +450,11 @@ class CognitiveReceipt:
                 raise CognitionError("budget projection cannot create authority")
         from .learned_routing import check_summary
         check_summary(self.routing)
+        if self.resolution is not None:
+            from .resolution import check as check_resolution
+            if check_resolution(self.resolution) is None:
+                raise CognitionError("a resolution is a typed proposal: never verified, never authority")
+            strict_data(self.resolution)
         cortex_method = isinstance(self.method, str) and (self.method == "cognition.cortex"
                                                           or self.method.startswith("cognition.cortex."))
         if self.proof_type == "cortex_receipt" or (cortex_method and self.proof_type is not None):
@@ -508,7 +516,7 @@ class CognitiveReceipt:
 
     def to_dict(self):
         value = asdict(self)
-        for name in ("authority_refs", "reason_code", "stopping_reason"):
+        for name in ("authority_refs", "reason_code", "stopping_reason", "resolution"):
             if value[name] is None:
                 value.pop(name)
         value["receipt_id"] = digest(value)

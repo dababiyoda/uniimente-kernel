@@ -6,8 +6,8 @@
  "source": "Founder chat directive, session session_01KucyfnCuSTnjx5Fa6T4A3d, 2026-11-13 UTC: one request and three answers, verbatim in the source file with their SHA-256 digests",
  "source_refs": [
   "docs/intent/sources/ONE-ENTRANCE-DIRECTION-2026-11-13-source.md",
-  "docs/collaboration/CONTEXT-ROUTE-2026-11-12.md (draft #315: the same request as worded to another client)",
-  "docs/intent/sources/CONVERGENCE-CLARIFICATION-2026-11-12-source.md (draft #295: the engineering target the route must show)",
+  "docs/collaboration/CONTEXT-ROUTE-2026-11-12.md (from #315, adopted 2026-11-13: the same request as worded to another client)",
+  "docs/intent/sources/CONVERGENCE-CLARIFICATION-2026-11-12-source.md (INTENT-20261112-CONVERGENCE-USEFUL-PATH, taken in with #295: the engineering target the route must show)",
   "docs/collaboration/START_HERE.md",
   "docs/collaboration/ROLLOUT.md"
  ],
@@ -67,8 +67,8 @@
   "https://github.com/dababiyoda/uniimente-kernel/issues/96#issuecomment-6841838048"
  ],
  "dependencies": [
-  "Draft #315 (navigation prose and the route table) for the route this entrance points at",
-  "Draft #295 for the 2026-11-12 direction the route's engineering target comes from",
+  "#315 (navigation prose and the route table, adopted into the line 2026-11-13) for the route this entrance points at",
+  "INTENT-20261112-CONVERGENCE-USEFUL-PATH (taken in with #295) for the engineering target the work map shows",
   "The founder's ruleset and default-branch settings for adoption",
   "The integrator's intake for the Kernel draft"
  ],
@@ -89,10 +89,9 @@
  ],
  "unresolved_questions": [
   "Should the full Main Branch SOP Gate also apply to the integration branch once it is the default? It would end direct-push intake.",
-  "Should the eleven raw source attachments Codex holds privately be published to this public repository? (Raised on draft #315; founder decision.)",
   "Who owns the START_HERE claim template while draft #206 is unadopted?"
  ],
  "authority_delta": "none",
  "created_at": "2026-11-13T03:00:00Z",
- "updated_at": "2026-11-13T03:00:00Z"
+ "updated_at": "2026-11-13T10:20:00Z"
 }

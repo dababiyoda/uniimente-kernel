@@ -183,7 +183,7 @@ Current bottleneck until verified otherwise:
 
 > **Dated note, 2026-11-13 (the two lines above are kept as written).** Two later founder corrections change how to read them.
 > `INTENT-20261030-BUILD-BEFORE-DEVICE-RUN`: VEPMC 0 -> 1 is the founder-device acceptance; it does not gate building.
-> The founder's direction of 2026-11-12 (recorded in draft #295 until it is taken in) names the active engineering bottleneck:
+> The founder's direction of 2026-11-12 (`INTENT-20261112-CONVERGENCE-USEFUL-PATH`) names the active engineering bottleneck:
 > the weakest prerequisite preventing a useful mission on the composed candidate, then recovery, then transfer to a different mission.
 > For today's position, run `python scripts/work_map.py` and read the newest comments on work board #96.
 

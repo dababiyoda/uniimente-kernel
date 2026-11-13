@@ -63,7 +63,7 @@ CHECKIN_BLOCK = """\
 - Next action / blocker / handoff condition: <...>
 - Recheck (UTC): <YYYY-MM-DDTHH:MM:SSZ>"""
 
-# The engineering target the founder set on 2026-11-12 (verbatim source in draft #295 until it is taken in:
+# The engineering target the founder set on 2026-11-12 (INTENT-20261112-CONVERGENCE-USEFUL-PATH; verbatim source
 # docs/intent/sources/CONVERGENCE-CLARIFICATION-2026-11-12-source.md). One dated line; a later founder
 # direction replaces it here.
 ENGINEERING_TARGET = ("a useful mission on one exact composed revision; then recovery under interruption and "

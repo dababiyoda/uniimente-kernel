@@ -21,6 +21,8 @@ import os
 from pathlib import Path
 import subprocess
 
+import pytest
+
 ENV = {**os.environ, "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t", "GIT_COMMITTER_NAME": "t",
        "GIT_COMMITTER_EMAIL": "t@t"}
 PKG = "REGISTRY = ['base']\n\n\ndef price(n):\n    return n * 2\n\n\ndef label(n):\n    return f'item-{n}'\n"
@@ -78,6 +80,25 @@ def build_repo(repo: Path) -> dict[str, str]:
     shas["old"] = branch(repo, "old", {"tests/test_old.py": "def test_old():\n    assert True\n"}, start="trunk")
     git(repo, "checkout", "-q", "base")
     return shas
+
+
+def landlock() -> None:
+    """For a test that needs the kernel to confine the rehearsal's git: skip, saying why, on a host without Landlock
+    ABI >= 3; with GREG_REQUIRE_LANDLOCK=1 (CI) its absence is a failure instead."""
+    from greg.worker_isolation import WorkerIsolationError, _landlock_abi
+    try:
+        _landlock_abi()
+    except WorkerIsolationError as exc:
+        if os.environ.get("GREG_REQUIRE_LANDLOCK") == "1":
+            pytest.fail(f"GREG_REQUIRE_LANDLOCK=1 and this host cannot confine the rehearsal's git: {exc}")
+        pytest.skip(f"this host cannot confine the rehearsal's git ({exc})")
+
+
+def git_confinement(setting: str) -> None:
+    """For a test whose body takes ``setting``: under ``required`` the rehearsal's git needs Landlock (without it the
+    whole request is refused), so it is :func:`landlock`'s; ``supervised`` runs anywhere."""
+    if setting != "supervised":
+        landlock()
 
 
 def state(repo: Path):

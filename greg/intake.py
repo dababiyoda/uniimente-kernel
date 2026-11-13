@@ -16,10 +16,15 @@ recommendation ``brief.intake`` delivered under a receipt on the canonical ledge
       -> render               one Markdown file, a deterministic function of the inputs kept in the receipt
       -> deliver              that file and its JSON twin, as ``brief.engineering`` delivers: never overwriting
 
-What it touches: Git objects of exactly the named repository are read (``_pinned``: no upward search, nothing
-outside the read roots); the merge's new objects are written under the mission workspace, never into
-the repository (``intake_rehearsal.scratch_objects``); the trees are exported under the mission workspace and removed
-afterwards; two files are written under the delivery root. No ref, index or working tree changes. No network.
+What it touches: Git objects of exactly the named repository are read, and nothing outside the read roots. The
+kernel enforces that: every git and tar process of the rehearsal runs in the worker envelope's Landlock backend,
+reading only the read roots and the host runtime and writing only the mission's scratch, with the network denied
+(``_guard``); a host without Landlock is refused under the body's ``required`` setting, and under ``supervised`` runs
+them unconfined and says so in the recommendation. ``_pinned`` is the pre-check that says why a repository is refused
+(no upward search; links, listings and stores followed as git follows them). The merge's new objects are written
+under the mission workspace, never into the repository (``intake_rehearsal.scratch_objects``); the trees are exported
+under the mission workspace and removed afterwards; two files are written under the delivery root. No ref, index or
+working tree changes.
 
 Running the heads' tests runs code from those heads. It runs only through the envelope GREG already uses for a
 worker's acceptance tests (``greg.workers.run_tests``): private filesystem, PID and network namespaces where the host
@@ -38,6 +43,7 @@ tests again: that would run the heads' code in the appraiser.
 """
 from __future__ import annotations
 
+import errno
 import hashlib
 import json
 import os
@@ -57,7 +63,8 @@ from greg.capabilities import READ_ONLY_GIT_ENV, CapabilityError, InvocationCont
 # /4 (review of 387e8417): a failure in a test file the merged tree holds merged from several versions holds every
 # head whose edits it holds; a head the cause search could not measure is not checked; only a passed or failed result
 # makes a check name current; a failing check that names no head holds.
-RENDERER = "greg.intake.render/4"
+# /5 (re-check of c6e79087): the confinement the rehearsal's git and tar ran under is said.
+RENDERER = "greg.intake.render/5"
 KIND = "intake"
 SHA = re.compile(r"[0-9a-f]{40}")
 NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,40}")
@@ -204,161 +211,461 @@ def request_digest(params) -> str:
     return digest(request(params))
 
 
-# -- reading the repository ---------------------------------------------------------------------------------
+# -- reading the repository: the kernel confines git; the pin is the fast pre-check that says why -------------------
 
 ALTERNATE_DEPTH = 5        # git reads an alternate store's own listing this many levels deep, and ignores deeper ones.
                            # The rehearsal's git lists the repository's own store as an alternate (scratch objects),
                            # so its listing is read one level down: a chain one store shorter than plain git reads.
-MAX_LISTED_DIRECTORIES = 65536  # directory listings per git directory or store before the request is refused
+# Directory links the pin follows for one repository, each visit counted, a visit to a directory already listed too
+# (review of c6e79087, E9: revisits were not counted and grew quadratically). Real directories are not counted: they
+# cannot loop, and a large store git never reads (git-annex, git-lfs) is no reason to refuse.
+MAX_LISTED_DIRECTORIES = 65536
 MAX_STORES = 64            # distinct object stores followed for one repository (each is listed for links)
+MAX_LISTING_BYTES = 1024 * 1024   # a file git reads whole (alternates, commondir, .git): longer is refused, never cut
 # Repository configuration that names a file the rehearsal's git commands read (attributes for merge-tree and
-# archive, a mailmap for archive's substitutions, an order file for diff) or a working tree whose attributes
-# merge-tree reads: each must be inside the read roots. A configuration include is refused outright.
-CONFIG_FILES = ("core.attributesFile", "mailmap.file", "diff.orderFile", "core.worktree")
+# archive, a mailmap for archive's substitutions, an order file for diff): each must be inside the read roots. The
+# rehearsal's working tree is an empty scratch directory (``GIT_WORK_TREE``), so ``core.worktree`` is never read, nor
+# are the attributes of the repository's own checkout. A configuration include is refused outright.
+CONFIG_FILES = ("core.attributesFile", "mailmap.file", "diff.orderFile")
+GIT_TIMEOUT = 120          # seconds one of the rehearsal's git or tar processes may take before the request is refused
+WORK_TREE = "worktree"     # the rehearsal's working tree: an empty directory in its scratch, where its git runs
 
 
-def _pinned(repo: Path, roots) -> dict:
-    """``GIT_DIR`` for exactly the named repository, after checking that everything git would read for it is inside
-    the read roots: its git directory (a ``.git`` directory, or the one a ``.git`` file names), the repository a
-    linked worktree belongs to (``commondir``), and every alternate object store, followed as git follows them. Each
-    of those directories is listed first, and a link in it that leads outside the read roots is refused: git follows
-    a link there as it reads a file (a pack, a loose object directory, the configuration, ``info/attributes``, an
-    alternates listing; review of 387e8417, R6). git's search upward from a plain directory is never used, and a
-    configuration that includes another file is refused (git would read that file)."""
-    def inside(path: Path, what: str) -> Path:
+def _within(real: str, roots) -> bool:
+    return any(real == root or real.startswith(root.rstrip("/") + "/") for root in roots)
+
+
+def _would_be(path: str) -> str:
+    """Where ``path`` would be if it existed: its longest existing part resolved strictly, a link whose target is
+    missing followed to where it points, and the missing rest as written. A ``..`` after a missing part cannot be
+    placed and raises (``ENOENT``); so does anything the kernel would not resolve (``ENAMETOOLONG``, ``ELOOP``)."""
+    tail: list[str] = []
+    for _ in range(4096):
         try:
-            return _inside(path, roots)
-        except CapabilityError:
-            raise CapabilityError(f"{what} is outside the read roots ({str(path)[:200]}); git would read it there, so "
-                                  "the request is refused") from None
-
-    def text(path: Path) -> str:
-        try:
-            return path.read_text(encoding="utf-8", errors="replace")[:65536]
-        except OSError as exc:
-            raise CapabilityError(f"not a git repository: {path.name} cannot be read ({type(exc).__name__})") from None
-
-    listed: set[Path] = set()
-
-    def no_link_out(directory: Path, what: str) -> None:
-        """Refuse when a link inside ``directory`` leads outside the read roots. A link that leads to a directory
-        inside the roots is followed and that directory is listed too, since git reads through it (a directory link
-        to a place whose own entries link outside; re-check of b42d10f6, R6). Each real directory is listed once, so
-        a link back to an ancestor ends. A git directory's own ``hooks`` is not looked at: no hook runs here
-        (``core.hooksPath`` is /dev/null), so none is read."""
-        if any(done == directory or done in directory.parents for done in listed) or not directory.is_dir():
-            return
-        listed.add(directory)
-        walked: set[str] = set()
-        listings = 0
-
-        def unlistable(exc: OSError) -> None:
-            raise CapabilityError(f"{what} cannot be listed ({type(exc).__name__}); refused")
-        for top, dirs, names in os.walk(directory, onerror=unlistable, followlinks=True):
-            real = os.path.realpath(top)
-            if real in walked:
-                dirs[:] = []
-                continue
-            walked.add(real)
-            listings += 1                       # the listings made, so a walk that repeats itself is bounded too
-            if listings > MAX_LISTED_DIRECTORIES:
-                raise CapabilityError(f"{what} needs more than {MAX_LISTED_DIRECTORIES} directory listings; refused")
-            if top == str(directory) and "HEAD" in names and "hooks" in dirs:
-                dirs.remove("hooks")
-            for name in dirs + names:
-                if (Path(top) / name).is_symlink():
-                    inside(Path(top) / name, f"a link in {what}")
-    dot = repo / ".git"
-    if dot.is_symlink():
-        inside(dot, "its .git")
-    if dot.is_dir():
-        gitdir = dot
-    elif dot.is_file():
-        named = text(dot).strip()
-        if not named.startswith("gitdir:"):
-            raise CapabilityError("not a git repository: its .git file names no gitdir")
-        gitdir = Path(named[len("gitdir:"):].strip())
-        gitdir = gitdir if gitdir.is_absolute() else repo / gitdir
-    elif (repo / "HEAD").is_file() and (repo / "objects").is_dir():
-        gitdir = repo                                    # a bare repository
-    else:
-        raise CapabilityError(f"not a git repository: {str(repo)[:200]} holds no .git (git's search upward from a "
-                              "directory is not used)")
-    gitdir = inside(gitdir, "its git directory")
-    no_link_out(gitdir, "its git directory")
-    common = gitdir
-    if (gitdir / "commondir").is_file():
-        common = inside(gitdir / text(gitdir / "commondir").strip(), "the repository this worktree belongs to")
-        no_link_out(common, "the repository this worktree belongs to")
-    stores, seen = [(common / "objects", 0)], set()
-    while stores:
-        path, depth = stores.pop()
-        store = inside(path, "an alternate object store")
-        if store in seen:
+            return os.path.join(os.path.realpath(path, strict=True), *reversed(tail))
+        except FileNotFoundError:
+            pass
+        if os.path.islink(path):                     # its target is missing: go on from where it points
+            path = os.path.join(os.path.dirname(path), os.readlink(path))
             continue
-        seen.add(store)
-        if len(seen) > MAX_STORES:
-            raise CapabilityError(f"more than {MAX_STORES} object stores are listed as alternates; refused")
-        no_link_out(store, "an object store")
-        listing = store / "info" / "alternates"
-        if listing.is_file():
-            for line in text(listing).splitlines():
-                line = line.strip()
-                if not line or line.startswith("#"):
+        parent, name = os.path.split(path)
+        if name == ".." or parent == path:
+            raise FileNotFoundError(errno.ENOENT, "a '..' after a part that does not exist, or no part exists", path)
+        if name not in ("", "."):
+            tail.append(name)
+        path = parent
+    raise OSError(errno.ELOOP, "too many links or parts", path)
+
+
+def _name(data: bytes, what: str, where: str) -> str:
+    """A path git reads out of a file (an alternates line, ``commondir``, a ``.git`` file), refused unless git and this
+    check can only read it one way: no NUL (git stops reading the file there), no other control byte (git keeps a CR, a
+    tab, a vertical tab as part of the name), no leading or trailing space (git keeps those too), and UTF-8 (review of
+    c6e79087, E1, E2, E11: the pin stripped, split and decoded differently from git, and followed another path)."""
+    if not data:
+        raise CapabilityError(f"{what} names an empty path ({where[:200]}); refused")
+    if any(byte < 0x20 or byte == 0x7f for byte in data):
+        raise CapabilityError(f"{what} holds a NUL or a control byte ({where[:200]}): git could read another path "
+                              "there than this check does, so the request is refused")
+    if data[:1] == b" " or data[-1:] == b" ":
+        raise CapabilityError(f"{what} names a path that begins or ends with a space ({where[:200]}); refused")
+    try:
+        return data.decode("utf-8")
+    except UnicodeDecodeError:
+        raise CapabilityError(f"{what} names a path that is not UTF-8 ({where[:200]}); refused") from None
+
+
+def _alternates(data: bytes, where: str) -> list[str]:
+    """The stores an alternates listing names, read as git 2.43 reads it (object-file.c, ``link_alt_odb_entries``): the
+    whole file, lines split on LF only, nothing trimmed, a line a comment only when its first byte is ``#``, an empty
+    line skipped. A NUL anywhere is refused (git stops reading the whole file there), and so is a quoted line."""
+    if b"\x00" in data:
+        raise CapabilityError(f"an alternates listing holds a NUL byte ({where[:200]}); refused")
+    out = []
+    for line in data.split(b"\n"):
+        if not line or line[:1] == b"#":
+            continue
+        if line[:1] == b'"':
+            raise CapabilityError("an alternate object store is named in quotes; refused")
+        out.append(_name(line, "an alternates listing", where))
+    return out
+
+
+class _Pin:
+    """The pre-check of what git reads for one repository: see :func:`_pinned`."""
+
+    def __init__(self, roots):
+        self.roots = [os.path.realpath(root) for root in roots]
+        self.walked: set[str] = set()          # every real directory listed, so a revisit is never listed again
+        self.visits = 0                        # directory links followed, a revisit too
+
+    def inside(self, real: str, what: str, shown) -> str:
+        if not _within(real, self.roots):
+            raise CapabilityError(f"{what} is outside the read roots ({os.fsdecode(shown)[:200]}); git would read it "
+                                  "there, so the request is refused")
+        return real
+
+    def unresolvable(self, what: str, path: str, exc: OSError) -> CapabilityError:
+        return CapabilityError(f"{what} cannot be resolved here ({path[:200]}: {exc.strerror or type(exc).__name__}); "
+                               "git would resolve it in the kernel, so the request is refused")
+
+    def located(self, path: str, what: str) -> str | None:
+        """``path`` resolved strictly and checked inside the read roots, or None when it does not exist (where it would
+        be is checked too) or is a loop of links (the kernel resolves it to nothing either: git reads nothing through
+        it). Any other error refuses, naming the path: a path this process cannot resolve as the kernel does is not
+        one it can check (review of c6e79087, E5: a long resolved path read as a plain file)."""
+        try:
+            return self.inside(os.path.realpath(path, strict=True), what, path)
+        except FileNotFoundError:
+            pass
+        except OSError as exc:
+            if exc.errno == errno.ELOOP:      # realpath raises it only for a link it meets again unresolved: a loop
+                return None
+            raise self.unresolvable(what, path, exc) from None
+        try:
+            self.inside(_would_be(path), what, path)
+        except OSError as exc:
+            raise self.unresolvable(what, path, exc) from None
+        return None
+
+    def directory(self, path: str, what: str) -> str:
+        real = self.located(path, what)
+        if real is None or not os.path.isdir(real):
+            raise CapabilityError(f"not a git repository: {what} is not a directory ({path[:200]})")
+        return real
+
+    def special(self, path: str, mode: int, what: str) -> None:
+        if stat.S_ISFIFO(mode) or stat.S_ISCHR(mode) or stat.S_ISBLK(mode):
+            raise CapabilityError(f"{what} holds a FIFO or a device ({path[:200]}): git would block on it or read from "
+                                  "whoever writes it, so the request is refused")
+
+    def visit(self, path: str, what: str) -> None:
+        self.visits += 1
+        if self.visits > MAX_LISTED_DIRECTORIES:
+            raise CapabilityError(f"{what} leads through more than {MAX_LISTED_DIRECTORIES} directory links "
+                                  f"({path[:200]}); refused")
+
+    def listed(self, directory: str, what: str) -> None:
+        """Refuse when a link under ``directory`` (a real path) leads outside the read roots. git follows a link
+        there as it reads a file (a pack, a loose object directory, the configuration, ``info/attributes``, an
+        alternates listing; review of 387e8417, R6), so a link to a directory inside the roots is listed in turn
+        (re-check of b42d10f6, R6). Each real directory is listed once, so a link back to one ends. The ``hooks`` of
+        every git directory (one holding ``HEAD``: the repository's, ``modules/*``, ``worktrees/*/modules/*``) is not
+        looked at: no hook runs here (``core.hooksPath`` is /dev/null), so none is read (re-check of c6e79087: only
+        the top one was skipped, and a submodule's hooks linked from a template refused). A store or a common
+        directory named inside one is listed by itself, since nothing under a skipped directory counts as listed
+        (E4)."""
+        stack = [directory]
+        while stack:
+            top = stack.pop()
+            if top in self.walked:
+                continue
+            self.walked.add(top)
+            try:
+                with os.scandir(top) as listing:
+                    entries = list(listing)
+            except OSError as exc:
+                raise CapabilityError(f"{what} cannot be listed ({top[:200]}: {exc.strerror or type(exc).__name__}); "
+                                      "refused") from None
+            git_directory = any(entry.name == "HEAD" for entry in entries)
+            for entry in entries:
+                if git_directory and entry.name == "hooks":
                     continue
-                if line.startswith('"'):
-                    raise CapabilityError("an alternate object store is named in quotes; refused")
+                try:
+                    if entry.is_symlink():
+                        self.link(entry.path, what, stack)
+                    elif entry.is_dir(follow_symlinks=False):
+                        stack.append(entry.path)
+                    elif not entry.is_file(follow_symlinks=False):
+                        self.special(entry.path, entry.stat(follow_symlinks=False).st_mode, what)
+                except OSError as exc:
+                    raise self.unresolvable(f"an entry of {what}", entry.path, exc) from None
+
+    def link(self, path: str, what: str, stack: list) -> None:
+        real = self.located(path, f"a link in {what}")
+        if real is None:
+            return                             # nothing there now: git reads nothing through it
+        mode = os.stat(real).st_mode
+        if stat.S_ISDIR(mode):
+            self.visit(path, what)
+            stack.append(real)
+        elif not stat.S_ISREG(mode):
+            self.special(path, mode, what)
+
+    def regular(self, path: str, what: str) -> str | None:
+        """A file git opens by name: inside the read roots and a regular file, or absent (review of c6e79087, E3: a
+        FIFO was skipped here and read by git, from whoever wrote it, or blocked on with no writer)."""
+        real = self.located(path, what)
+        if real is not None and not stat.S_ISREG(os.stat(real).st_mode):
+            raise CapabilityError(f"{what} is not a regular file ({path[:200]}): git would read it as one, from "
+                                  "whoever writes it, so the request is refused")
+        return real
+
+    def whole(self, path: str, what: str) -> bytes | None:
+        """The bytes of a file git reads whole (an alternates listing, ``commondir``, a ``.git`` file), or None when
+        there is none. Refused, never skipped or cut: not a regular file, outside the read roots, or over MAX_LISTING_BYTES
+        (E1: the pin read 65536 characters of a listing, git all of it). It is opened only after that check, without
+        following a last link or blocking, and where the opened file is, is checked again before a byte is read: a
+        link swapped in on the way is never read in GREG's own process (E4, E5)."""
+        real = self.regular(path, what)
+        if real is None:
+            return None
+        fd = os.open(real, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | getattr(os, "O_CLOEXEC", 0))
+        try:
+            if not stat.S_ISREG(os.fstat(fd).st_mode):
+                raise CapabilityError(f"{what} is not a regular file ({path[:200]}); refused")
+            opened = f"/proc/self/fd/{fd}"
+            if os.path.islink(opened):
+                self.inside(os.readlink(opened), what, path)
+            data = b""
+            while len(data) <= MAX_LISTING_BYTES and (chunk := os.read(fd, MAX_LISTING_BYTES + 1 - len(data))):
+                data += chunk
+        finally:
+            os.close(fd)
+        if len(data) > MAX_LISTING_BYTES:
+            raise CapabilityError(f"{what} is longer than {MAX_LISTING_BYTES} bytes ({path[:200]}); refused")
+        return data
+
+    def pin(self, repo: str, checked: dict) -> dict:
+        repo = self.directory(repo, "the repository")
+        dot = os.path.join(repo, ".git")
+        try:
+            mode = os.lstat(dot).st_mode
+        except FileNotFoundError:
+            mode = None
+        if mode is not None and stat.S_ISLNK(mode):
+            real = self.located(dot, "its .git")
+            mode = None if real is None else os.stat(real).st_mode
+        if mode is not None and stat.S_ISDIR(mode):
+            gitdir = dot
+        elif mode is not None and stat.S_ISREG(mode):
+            data = (self.whole(dot, "its .git file") or b"").rstrip(b"\r\n")
+            if not data.startswith(b"gitdir:"):
+                raise CapabilityError("not a git repository: its .git file names no gitdir")
+            named = _name(data[len(b"gitdir:"):].strip(b" "), "its .git file", dot)
+            gitdir = os.path.join(repo, named)          # an absolute name stays itself
+        elif mode is None and os.path.isfile(os.path.join(repo, "HEAD")) \
+                and os.path.isdir(os.path.join(repo, "objects")):
+            gitdir = repo                                # a bare repository
+        else:
+            raise CapabilityError(f"not a git repository: {repo[:200]} holds no .git (git's search upward from a "
+                                  "directory is not used)")
+        gitdir = self.directory(gitdir, "its git directory")
+        self.listed(gitdir, "its git directory")
+        common = gitdir
+        data = self.whole(os.path.join(gitdir, "commondir"), "its commondir")
+        if data is not None:                             # git trims only trailing LFs and CRs (setup.c)
+            named = _name(data.rstrip(b"\r\n"), "its commondir", os.path.join(gitdir, "commondir"))
+            common = self.directory(os.path.join(gitdir, named), "the repository this worktree belongs to")
+            self.listed(common, "the repository this worktree belongs to")
+        stores, seen = [(os.path.join(common, "objects"), 0)], []
+        while stores:
+            path, depth = stores.pop()
+            store = self.located(path, "an alternate object store")
+            if store is None or not os.path.isdir(store) or store in seen:
+                continue                                 # git skips a store that is not a directory
+            seen.append(store)
+            if len(seen) > MAX_STORES:
+                raise CapabilityError(f"more than {MAX_STORES} object stores are listed as alternates; refused")
+            self.listed(store, "an object store")
+            listing = os.path.join(store, "info", "alternates")
+            for line in _alternates(self.whole(listing, "an alternates listing") or b"", listing):
                 if depth >= ALTERNATE_DEPTH:
                     raise CapabilityError("alternate object stores nest deeper than git follows them; refused")
-                stores.append((Path(line) if Path(line).is_absolute() else store / line, depth + 1))
-    return {"GIT_DIR": str(gitdir), "GIT_CEILING_DIRECTORIES": str(repo.parent)}
+                stores.append((os.path.join(store, line), depth + 1))     # git: realpath(the store) / line
+        checked.update(gitdir=gitdir, common=common, stores=seen)
+        return {"GIT_DIR": gitdir, "GIT_CEILING_DIRECTORIES": os.path.dirname(repo)}
+
+
+def _pinned(repo: Path, roots, checked: dict | None = None) -> dict:
+    """``GIT_DIR`` for exactly the named repository, after a pre-check that everything git would read for it is inside
+    the read roots: its git directory (a ``.git`` directory, or the one a ``.git`` file names), the repository a
+    linked worktree belongs to (``commondir``), and every alternate object store, followed as git follows them, each
+    listed for links that lead outside. git's search upward from a plain directory is never used.
+
+    It is a pre-check, which says why a repository is refused. The guarantee that git reads nothing outside the read
+    roots is the kernel's (:func:`_guard`): this check reads git's files and resolves paths as git does, and where the
+    two could differ it refuses (a byte that could be read two ways, a file that is not a regular file, a path this
+    process cannot resolve). ``checked``, when given, is filled with the git directory, the common directory and the
+    stores it followed, for git's own word to be compared against (:func:`_reads_what_was_checked`)."""
+    try:
+        return _Pin(roots).pin(os.fspath(repo), {} if checked is None else checked)
+    except OSError as exc:         # a step above names its own errors; anything else is still this repository's
+        raise CapabilityError(f"the repository cannot be checked here ({exc.strerror or type(exc).__name__}: "
+                              f"{os.fsdecode(exc.filename or repo)[:200]}); refused") from None
+
+
+def _unquoted(text: bytes) -> bytes:
+    """A path git printed in C-style quotes (quote.c, ``quote_c_style``), unquoted."""
+    simple = {ord("a"): 7, ord("b"): 8, ord("t"): 9, ord("n"): 10, ord("v"): 11, ord("f"): 12, ord("r"): 13,
+              ord('"'): 34, ord("\\"): 92}
+    body, out, at = text[1:-1], bytearray(), 0
+    while at < len(body):
+        if body[at] != ord("\\"):
+            out.append(body[at])
+            at += 1
+        elif body[at + 1:at + 2].isdigit():
+            out.append(int(body[at + 1:at + 4], 8))
+            at += 4
+        else:
+            out.append(simple[body[at + 1]])
+            at += 2
+    return bytes(out)
+
+
+def _reads_what_was_checked(repo: Path, checked: dict) -> None:
+    """git's own word, confined, for what it reads: its git directory and common directory (``rev-parse``) and every
+    object store it links (``count-objects -v``). Each must be one the pre-check followed; a difference is refused and
+    named, whatever its cause (re-check of c6e79087, E1, E2: listings the pin read differently from git)."""
+    said = rehearsal.git(repo, "rev-parse", "--path-format=absolute", "--git-dir", "--git-common-dir", check=False)
+    lines = said.stdout.split(b"\n")
+    if said.returncode or len(lines) < 2:
+        raise CapabilityError("not a git repository")
+    gitdir, common = (os.path.realpath(os.fsdecode(line)) for line in lines[:2])
+    for word, theirs, ours in (("git directory", gitdir, checked["gitdir"]), ("repository", common, checked["common"])):
+        if theirs != ours:
+            raise CapabilityError(f"git reads its {word} at {theirs[:200]}, not where this check followed it "
+                                  f"({ours[:200]}); refused")
+    counted = rehearsal.git(repo, "count-objects", "-v", check=False)
+    if counted.returncode:
+        raise CapabilityError("git could not list the object stores it reads; refused")
+    for line in counted.stdout.split(b"\n"):
+        if line.startswith(b"alternate: "):
+            named = line[len(b"alternate: "):]
+            store = os.path.realpath(os.fsdecode(_unquoted(named) if named[:1] == b'"' else named))
+            if store not in checked["stores"]:
+                raise CapabilityError(f"git reads an object store this check did not follow ({store[:200]}); refused")
 
 
 def _git_environment(repo: Path, scratch: Path, roots=None) -> dict:
-    """The environment the rehearsal's git runs in: scrubbed, with no system or user configuration, no lazy fetch,
-    new objects written under ``scratch``, and nothing the repository's own configuration names ever run. A filter
-    driver is blanked, as ``capabilities.read_only_git`` does (git skips an empty filter command, so ``git archive``
-    exports the stored bytes). A merge driver cannot be blanked without changing what the merge produces, so a
-    repository that configures one is refused."""
-    home = scratch / "home"
+    """The environment the rehearsal's git runs in: scrubbed, with no system or user configuration, no system
+    attributes, an empty working tree, no lazy fetch, new objects written under ``scratch``, and nothing the
+    repository's own configuration names ever run. A filter driver is blanked, as ``capabilities.read_only_git`` does
+    (git skips an empty filter command, so ``git archive`` exports the stored bytes). A merge driver cannot be blanked
+    without changing what the merge produces, so a repository that configures one is refused.
+
+    ``GIT_ATTR_NOSYSTEM`` (re-check of c6e79087, E7): ``/etc/gitattributes`` is host configuration, and
+    ``GIT_CONFIG_NOSYSTEM`` does not cover it. ``GIT_WORK_TREE`` is an empty scratch directory (E6): ``merge-tree``
+    read ``.gitattributes`` in the repository's checkout, through a directory a head can commit as a link."""
+    home, tree = scratch / "home", scratch / WORK_TREE
     home.mkdir(parents=True, exist_ok=True)
-    env = {**READ_ONLY_GIT_ENV, "HOME": str(home), **(_pinned(repo, roots) if roots is not None else {})}
-    config = [("core.fsmonitor", "false"), ("core.hooksPath", "/dev/null")]
+    tree.mkdir(parents=True, exist_ok=True)
+    checked: dict = {}
+    env = {**READ_ONLY_GIT_ENV, "HOME": str(home), "GIT_ATTR_NOSYSTEM": "1", "GIT_WORK_TREE": str(tree),
+           **(_pinned(repo, roots, checked) if roots is not None else {})}
+    # core.quotePath: the file names git prints are read as its default listing, quoted where a byte is unusual; a
+    # repository that turned quoting off made a name that is not UTF-8 crash the rehearsal (E11, the same class).
+    config = [("core.fsmonitor", "false"), ("core.hooksPath", "/dev/null"), ("core.quotePath", "true")]
     with rehearsal.git_environment(env):
-        listed = rehearsal.git(repo, "config", "-z", "--name-only", "--get-regexp",
-                               r"^(filter\..*\.(clean|process|smudge)|merge\..*\.driver)$", check=False)
-        if listed.returncode not in (0, 1):
-            raise CapabilityError("not a git repository")
+        # First, and opening no included file (E8: the first call read an include before this refused it, and an
+        # include that was a FIFO hung the request). Every call after it reads no include either.
         included = rehearsal.git(repo, "config", "--no-includes", "-z", "--name-only", "--get-regexp",
                                  r"^include(if\..*)?\.path$", check=False)
+        if included.returncode not in (0, 1):
+            raise CapabilityError("not a git repository")
         if included.returncode == 0 and included.stdout.strip(b"\x00"):
             raise CapabilityError("this repository's configuration includes another file; git would read that file "
                                   "wherever it is, so the request is refused")
+        listed = rehearsal.git(repo, "config", "--no-includes", "-z", "--name-only", "--get-regexp",
+                               r"^(filter\..*\.(clean|process|smudge)|merge\..*\.driver)$", check=False)
+        if listed.returncode not in (0, 1):
+            raise CapabilityError("not a git repository")
+        files = _Pin([*roots, scratch]) if roots is not None else None   # a "~/" path names the scratch home
         for key in CONFIG_FILES if roots is not None else ():
-            named = rehearsal.git(repo, "config", "--type=path", "-z", "--get-all", key, check=False)
+            named = rehearsal.git(repo, "config", "--no-includes", "--type=path", "-z", "--get-all", key, check=False)
             for value in (v for v in named.stdout.split(b"\x00") if v):
-                path = Path(value.decode("utf-8", "replace"))
-                within = Path(env["GIT_DIR"]) if key == "core.worktree" else repo
+                path = os.path.join(tree, os.fsdecode(value))       # git opens a relative one from where it runs
                 try:
-                    _inside(path if path.is_absolute() else within / path, roots)
-                except CapabilityError:
-                    raise CapabilityError(f"this repository's configuration names a file outside the read roots "
-                                          f"({key}); git would read it there, so the request is refused") from None
+                    files.regular(path, f"a file this repository's configuration names ({key})")
+                except OSError as exc:
+                    raise files.unresolvable(f"a file this repository's configuration names ({key})", path, exc) \
+                        from None
         for key in dict.fromkeys(k for k in listed.stdout.decode("utf-8", "replace").split("\x00") if k):
             if key.startswith("merge."):
                 raise CapabilityError(f"this repository configures a merge driver ({key[:80]}); the rehearsal runs no "
                                       "program a repository's configuration names, so it is refused")
             config.append((key, ""))
+        if roots is not None:
+            _reads_what_was_checked(repo, checked)
         env |= rehearsal.scratch_objects(repo, scratch / "objects")
     env["GIT_CONFIG_COUNT"] = str(len(config))
     for index, (key, value) in enumerate(config):
         env[f"GIT_CONFIG_KEY_{index}"], env[f"GIT_CONFIG_VALUE_{index}"] = key, value
     with rehearsal.git_environment(env):
         # A git too old to read configuration from its environment would ignore every line above and say nothing.
-        if rehearsal.git(repo, "config", "--get", "core.hooksPath", check=False).stdout.decode().strip() != "/dev/null":
+        if rehearsal.git(repo, "config", "--no-includes", "--get", "core.hooksPath",
+                         check=False).stdout.decode().strip() != "/dev/null":
             raise CapabilityError("this git does not take configuration from its environment, so the repository's "
                                   "own hooks and filters could not be switched off; refused")
     return env
+
+
+def _guard(repo: Path, scratch: Path, ctx: InvocationContext) -> tuple[rehearsal.Guard, str]:
+    """How every git and tar process of the rehearsal starts, and the sentence the recommendation says about it.
+
+    The kernel enforces that git reads nothing outside the read roots, whatever it finds in the repository (re-check
+    of c6e79087: parsing git's files again in Python differed from git twelve ways). Each process gets the worker
+    envelope's Landlock backend (``greg.worker_isolation``: ``_landlock_abi``, ``_runtime_paths``,
+    ``_install_landlock``), installed as ``prepare_worker``'s own preexec installs it, after the parent-death signal
+    and ``PR_SET_NO_NEW_PRIVS``: it reads only the read roots and what git and tar need to run (their install trees,
+    from ``_runtime_paths``, and git's helper directory, ``git --exec-path``), writes only the mission's scratch, and
+    opens only the device files the envelope grants. The network is denied with the reviewed seccomp filter the
+    supervised test floor loads (``capabilities._network_filter``), where the host can load it; it goes in first,
+    because it finds its library on paths Landlock then closes. ``prepare_worker`` itself is not called: it needs
+    bubblewrap, which this body may lack while it has Landlock, and builds a private home and runtime per call, for
+    one worker, not for each of a rehearsal's short git calls. ``run_isolated``'s ``confine`` is not used either: it
+    is the other Landlock module and classes its refusal as transient.
+
+    On a host without Landlock the body's worker confinement decides, as it does for the heads' tests: ``required``
+    refuses; ``supervised`` runs git and tar unconfined, under the time limit and the network filter where there is
+    one, and the recommendation says so. Never silently."""
+    import ctypes
+    import signal
+    import sys
+    from greg import worker_isolation as isolation
+    from greg.capabilities import _network_filter
+    from ctypes.util import find_library
+    # The filter loads libseccomp in the child; where the host has none it would refuse every git call, so it is used
+    # only where it can be installed, and the recommendation says which.
+    network = _network_filter() if sys.platform == "linux" and find_library("seccomp") else None
+    said_network = "network denied (seccomp)" if network else "network not denied (no seccomp filter on this host)"
+    try:
+        abi = isolation._landlock_abi()
+    except isolation.WorkerIsolationError as exc:
+        if _setting(ctx) != "supervised":
+            raise CapabilityError(f"the rehearsal's git cannot be confined on this host ({str(exc)[:200]}), and the "
+                                  "body's worker confinement is 'required': nothing reads the repository unconfined, "
+                                  "so the request is refused") from None
+        read = write = None
+        said = (f"supervised: NOT confined by the kernel ({str(exc)[:160]}); {said_network}; each process limited to "
+                f"{GIT_TIMEOUT}s")
+    else:
+        binaries = [Path(shutil.which(name, path=READ_ONLY_GIT_ENV["PATH"]) or f"/usr/bin/{name}")
+                    for name in ("git", "tar")]
+        with rehearsal.git_environment({**READ_ONLY_GIT_ENV, "HOME": str(scratch)}):    # git's own, reads no repository
+            helpers = os.fsdecode(rehearsal.git(scratch, "--exec-path", check=False).stdout.strip())
+        roots = [Path(os.path.realpath(root)) for root in ctx.read_roots]
+        read = list(dict.fromkeys(p for p in (*roots, *(p for b in binaries for p in isolation._runtime_paths(b)),
+                                              *([Path(helpers)] if helpers else [])) if p.exists()))
+        write = [scratch.resolve()]
+        said = (f"Landlock ABI {abi}: they read only the read roots and the host runtime and write only the mission's "
+                f"scratch; {said_network}; each process limited to {GIT_TIMEOUT}s")
+
+    def preexec() -> None:
+        libc = ctypes.CDLL(None, use_errno=True)
+        if libc.prctl(1, signal.SIGKILL, 0, 0, 0) != 0:      # PR_SET_PDEATHSIG: it dies with the body
+            raise OSError(ctypes.get_errno(), "parent-death signal failed")
+        if libc.prctl(38, 1, 0, 0, 0) != 0:                  # PR_SET_NO_NEW_PRIVS
+            raise OSError(ctypes.get_errno(), "no-new-privileges failed")
+        if network is not None:
+            network()
+        if read is not None:
+            isolation._install_landlock(read, write)
+
+    tree = scratch / WORK_TREE                   # git runs in it: a relative path it opens resolves there, never in
+    tree.mkdir(parents=True, exist_ok=True)      # the repository's own checkout (E6)
+    return rehearsal.Guard(preexec=preexec if sys.platform == "linux" else None, timeout=GIT_TIMEOUT,
+                           where=str(repo), confined=read is not None, cwd=str(tree)), said
 
 
 def _is_ancestor(repo: Path, older: str, newer: str) -> bool:
@@ -513,10 +820,16 @@ def intake_recommendation(params, ctx: InvocationContext) -> dict:
     scratch.mkdir(parents=True)
     runner = ConfinedRunner(ctx)
     try:
-        with rehearsal.git_environment(_git_environment(repo, scratch, ctx.read_roots)):
+        guard, git_confinement = _guard(repo, scratch, ctx)
+        with rehearsal.confined(guard), rehearsal.git_environment(_git_environment(repo, scratch, ctx.read_roots)):
             for label, sha in [("base", asked["base"])] + [(f"unit {u['name']}", u["sha"]) for u in asked["units"]]:
                 if rehearsal.git(repo, "cat-file", "-e", f"{sha}^{{commit}}", check=False).returncode:
-                    raise CapabilityError(f"{label}: revision {sha} is not in this repository (nothing is fetched)")
+                    # Confined, git skips a pack it was refused without a word: the revision may be in one.
+                    raise CapabilityError(f"{label}: revision {sha} is not in this repository ({str(repo)[:200]}; "
+                                          "nothing is fetched)"
+                                          + ("; or it is only in a pack, store or object outside the read roots, which "
+                                             "the kernel does not let the rehearsal's git read" if guard.confined
+                                             else ""))
             units, skipped = [], {}
             for unit in asked["units"]:
                 named = unit.get("tests")
@@ -535,6 +848,8 @@ def intake_recommendation(params, ctx: InvocationContext) -> dict:
             report = rehearsal.rehearse(repo, asked["base"], units, [], asked["timeout_seconds"], scratch / "trees",
                                         tuple(asked["union"]), run=runner, facts=facts)
             lineage = ancestry(repo, asked["base"], asked["units"])
+    except rehearsal.RehearsalRefused as exc:   # a refusal with its reason, which names the repository; never a fault
+        raise CapabilityError(f"refused: {str(exc)[:600]}") from None
     except rehearsal.RehearsalError as exc:
         raise CapabilityError(f"the rehearsal could not be carried out: {str(exc)[:300]}") from None
     except OSError as exc:      # scratch could not be written (a full disk, a path that is not a repository): nothing
@@ -548,7 +863,7 @@ def intake_recommendation(params, ctx: InvocationContext) -> dict:
               "request_digest": digest(asked), "ancestry": lineage, "rehearsal": report,
               "composed_tree": facts.get("composed_tree"), "skipped_tests": skipped,
               "confinement": {"body_setting": _setting(ctx), "modes": runner.modes,
-                              "filesystem": runner.filesystems, "runs": runner.runs}}
+                              "filesystem": runner.filesystems, "runs": runner.runs, "git": git_confinement}}
     from greg.authority import bounded
     if bounded(inputs) != inputs:        # a receipt would cut it, and the appraiser could then re-render nothing
         raise CapabilityError("the rehearsal's result is larger than a receipt keeps; name fewer units or tests")
@@ -1001,6 +1316,8 @@ def render(inputs: dict) -> str:
               "socket (even to localhost), reaches the network, reads a file outside its tree or expects its "
               "temporary directory outside its tree fails here on both trees alike, which is why a failure on a "
               "head's own tree is reported as not checked, not as a defect of the head",
+              f"- the rehearsal's git and tar ran under: {_shown(confinement['git'], 400)}; a file the repository "
+              "hard-links from outside the read roots is read like its own",
               "- a head's tests are that head's code: a head that forges its own test output is not detected here",
               "- all units' tests ran in one exported copy of the merged tree, one after another: a test that "
               "rewrites that copy can change a later result",

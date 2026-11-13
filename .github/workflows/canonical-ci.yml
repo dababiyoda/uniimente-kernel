@@ -66,7 +66,7 @@ jobs:
       - name: OS filesystem confinement and escape regression checks
         env:
           GREG_REQUIRE_LANDLOCK: "1"
-        run: python -m pytest -q tests/unit/test_greg_landlock.py tests/unit/test_greg_mcp_worker.py
+        run: python -m pytest -q tests/unit/test_greg_landlock.py tests/unit/test_greg_mcp_worker.py tests/unit/test_greg_intake_confinement.py
       - name: Native company runtime regression checks
         run: python -m pytest -q tests/unit/test_greg_owned_company.py
       - name: Provision worker namespace isolation (bubblewrap) and report whether this runner can use it
@@ -163,6 +163,8 @@ jobs:
       - name: Composition rehearsal mutations (a test that passes alone and fails merged is reported with its cause; nothing is merged)
         run: python scripts/ci/check_compose_rehearsal_mutants.py
       - name: Intake recommendation mutations (a check that did not run is never passed; a recommendation about other heads closes nothing)
+        env:
+          GREG_REQUIRE_LANDLOCK: "1"     # the kernel confines the rehearsal's git: its mutants need Landlock, never a skip
         run: python scripts/ci/check_intake_mutants.py
 
   verifier:

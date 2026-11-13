@@ -23,12 +23,13 @@ from greg.capabilities import BUILTINS, InvocationContext
 from greg.templates import intake_recommendation
 from greg.worker_isolation import WorkerIsolationError
 from tests.greg_fixtures import Clock, drop, host_worker_confinement, make_body, signed
-from tests.intake_fixtures import TOTAL, Script, breaks_with_steeper, build_repo, state
+from tests.intake_fixtures import TOTAL, Script, breaks_with_steeper, build_repo, git_confinement, state
 
 BROKEN, SLOW = "tests/test_broken.py", "tests/test_slow.py"
 
 
 def start(tmp_path, *, confinement="required"):
+    git_confinement(confinement)       # under required, a host without Landlock refuses the rehearsal's git outright
     home, key, body_id, data = make_body(tmp_path, worker_confinement=confinement)
     repo = data / "repo"
     shas = build_repo(repo)

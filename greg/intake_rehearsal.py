@@ -35,6 +35,13 @@ What differs between the two callers is how a test file is run and where git wri
 - :func:`git_environment`: the environment git runs in. By default the caller's own. A mission passes a scrubbed
   one, with :func:`scratch_objects` so that the merge's new objects are written under its scratch directory and the
   repository it reads gains nothing.
+- :func:`confined`: how each git and tar process starts. By default as the caller's own child, with no time limit.
+  A mission passes a :class:`Guard`: a ``preexec`` that confines the process before it runs (``greg.intake``
+  installs the worker envelope's Landlock backend: it reads only the read roots and the host runtime and writes
+  only the mission's scratch), a time limit, and the repository's path, which every refusal names. Under a guard,
+  a process the kernel refused a file (``Permission denied`` on its error output), one that ran out of time, and
+  one whose confinement could not be installed each end the rehearsal with :class:`RehearsalRefused`: never a
+  result read from a process that was refused part of what it read, and never a fault to retry.
 
 Limits, stated in every report: only the named tests are run, so a clean result does not prove the heads are
 compatible; a test that fails only with three or more heads together is reported without a single cause; nothing
@@ -42,6 +49,7 @@ here approves a merge.
 """
 from __future__ import annotations
 
+from collections.abc import Callable
 import contextlib
 import contextvars
 from dataclasses import dataclass, field
@@ -76,6 +84,64 @@ class RehearsalError(Exception):
     """The rehearsal could not be carried out as asked (an unknown ref, a tree that could not be exported)."""
 
 
+class RehearsalRefused(RehearsalError):
+    """A git or tar process under a :class:`Guard` was refused part of what it reads (by the kernel's confinement), ran
+    out of time, or could not be confined: the request is refused for that reason, never retried as a fault."""
+
+
+@dataclass(frozen=True)
+class Guard:
+    """How a mission's rehearsal starts each git and tar process (see :func:`confined`)."""
+    preexec: Callable[[], None] | None      # installs the confinement in the child before it runs; None: none
+    timeout: float                          # seconds one process may take
+    where: str                              # the repository, named in every refusal
+    confined: bool                          # whether ``preexec`` confines the file system (else it is said so)
+    cwd: str | None = None                  # where each process starts instead of the repository (the empty work tree)
+
+
+_GUARD: contextvars.ContextVar = contextvars.ContextVar("greg_intake_rehearsal_guard", default=None)
+
+
+@contextlib.contextmanager
+def confined(guard: Guard | None):
+    """Start every git and tar process of the rehearsal under ``guard`` while the block runs."""
+    token = _GUARD.set(guard)
+    try:
+        yield
+    finally:
+        _GUARD.reset(token)
+
+
+DENIED = b"Permission denied"            # strerror(EACCES) in the C locale the rehearsal's git runs in (LANG=C.UTF-8)
+
+
+def _run(argv: list[str], root: Path, *, stdin: bytes | None = None,
+         extra: dict | None = None) -> subprocess.CompletedProcess:
+    """One git or tar process of the rehearsal, in the rehearsal's environment, under the mission's guard if any."""
+    guard = _GUARD.get()
+    if guard is None:
+        return subprocess.run(argv, cwd=root, input=stdin, capture_output=True, env=_env(**(extra or {})))
+    what = " ".join(argv[:2])
+    try:
+        proc = subprocess.run(argv, cwd=guard.cwd or root, input=stdin, capture_output=True, env=_env(**(extra or {})),
+                              preexec_fn=guard.preexec, timeout=guard.timeout)
+    except subprocess.TimeoutExpired:
+        raise RehearsalRefused(f"{what} did not finish within {guard.timeout:g}s while reading {guard.where}: a file "
+                               "it reads there never ends (a FIFO) or the repository is too large for the "
+                               "rehearsal's time limit; refused") from None
+    except subprocess.SubprocessError:          # the guard's preexec raised in the child: nothing ran unconfined
+        raise RehearsalRefused(f"{what} could not be started inside the rehearsal's confinement while reading "
+                               f"{guard.where}; refused") from None
+    if DENIED in proc.stderr:
+        line = next((text for text in proc.stderr.decode("utf-8", "replace").splitlines() if "Permission denied" in text),
+                    "Permission denied")
+        why = ("the rehearsal's git reads only the read roots and the host runtime and writes only the mission's "
+               "scratch, so a repository that leads it elsewhere is refused" if guard.confined else
+               "the host refused it, and a result read without that file is not one to deliver")
+        raise RehearsalRefused(f"{what} was refused a file while reading {guard.where} ({line.strip()[-300:]}): {why}")
+    return proc
+
+
 @dataclass
 class Unit:
     name: str
@@ -101,7 +167,7 @@ def git_environment(env: dict):
 
 
 def git(root: Path, *args: str, stdin: bytes | None = None, check: bool = True) -> subprocess.CompletedProcess:
-    proc = subprocess.run(["git", *args], cwd=root, input=stdin, capture_output=True, env=_env())
+    proc = _run(["git", *args], root, stdin=stdin)
     if check and proc.returncode:
         raise RehearsalError(f"git {' '.join(args[:3])}: {proc.stderr.decode('utf-8', 'replace').strip()[-300:]}")
     return proc
@@ -110,12 +176,15 @@ def git(root: Path, *args: str, stdin: bytes | None = None, check: bool = True) 
 def scratch_objects(root: Path, objects: Path) -> dict:
     """Environment entries under which git writes every new object into ``objects`` and still reads the repository's
     own: the merge commits, trees and blobs of a rehearsal then live in scratch, and the repository gains nothing."""
-    listed = git(root, "rev-parse", "--git-path", "objects").stdout.decode().strip()
-    own = (Path(root) / listed).resolve()
+    listed = git(root, "rev-parse", "--path-format=absolute", "--git-path", "objects").stdout.rstrip(b"\n")
+    own = Path(os.fsdecode(listed)).resolve()
     if not own.is_dir():
         raise RehearsalError(f"{root} has no object store to read")
     objects.mkdir(parents=True, exist_ok=True)
-    return {"GIT_OBJECT_DIRECTORY": str(objects), "GIT_ALTERNATE_OBJECT_DIRECTORIES": str(own)}
+    named = str(own)
+    if ":" in named or named.startswith('"'):        # git splits this variable at ':' and unquotes a quoted entry
+        named = '"' + named.replace("\\", "\\\\").replace('"', '\\"') + '"'
+    return {"GIT_OBJECT_DIRECTORY": str(objects), "GIT_ALTERNATE_OBJECT_DIRECTORIES": named}
 
 
 def resolve(root: Path, ref: str) -> str:
@@ -134,7 +203,7 @@ def keep_both(root: Path, ours: str, theirs: str, tree: str, paths: list[str]) -
         index = {"GIT_INDEX_FILE": str(Path(work) / "index")}
 
         def scratch(*args: str, stdin: bytes | None = None) -> bytes:
-            proc = subprocess.run(["git", *args], cwd=root, input=stdin, capture_output=True, env=_env(**index))
+            proc = _run(["git", *args], root, stdin=stdin, extra=index)
             if proc.returncode:
                 raise RehearsalError(f"git {' '.join(args[:2])}: {proc.stderr.decode('utf-8', 'replace')[-200:]}")
             return proc.stdout
@@ -146,8 +215,7 @@ def keep_both(root: Path, ours: str, theirs: str, tree: str, paths: list[str]) -
                 side = Path(work) / name
                 side.write_bytes(shown.stdout if shown is not None and shown.returncode == 0 else b"")
                 sides.append(str(side))
-            merged = subprocess.run(["git", "merge-file", "--union", "-p", *sides], cwd=root, capture_output=True,
-                                    env=_env())
+            merged = _run(["git", "merge-file", "--union", "-p", *sides], root)
             if merged.returncode < 0 or merged.returncode > 127:
                 raise RehearsalError(f"could not merge {path}: {merged.stderr.decode('utf-8', 'replace')[-200:]}")
             blob = scratch("hash-object", "-w", "--stdin", stdin=merged.stdout).decode().strip()
@@ -198,7 +266,7 @@ def compose(root: Path, base: str, units: list[Unit], union: tuple[str, ...] = (
 def export(root: Path, treeish: str, dest: Path) -> Path:
     dest.mkdir(parents=True)
     archive = git(root, "archive", "--format=tar", treeish)
-    unpack = subprocess.run(["tar", "-x", "-C", str(dest)], input=archive.stdout, capture_output=True, env=_env())
+    unpack = _run(["tar", "-x", "-C", str(dest)], root, stdin=archive.stdout)
     if unpack.returncode:
         raise RehearsalError(f"could not export {treeish[:10]}: {unpack.stderr.decode('utf-8', 'replace')[-200:]}")
     return dest

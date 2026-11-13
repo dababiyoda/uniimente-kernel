@@ -13,6 +13,7 @@ mission through a real Body, the Gate and the independent appraiser, are in
 """
 from __future__ import annotations
 
+import dataclasses
 import hashlib
 import json
 import os
@@ -26,9 +27,37 @@ from greg import intake, intake_rehearsal, workers
 from greg.capabilities import BUILTINS, CapabilityError, InvocationContext
 from greg.templates import TEMPLATES, intake_recommendation
 from tests.intake_fixtures import (PKG, REFUSED, TOTAL, Script, branch, breaks_with_steeper, build_repo, git,
-                                   outcome, state)
+                                   git_confinement, outcome, state)
 
 BROKEN, SLOW = "tests/test_broken.py", "tests/test_slow.py"
+
+
+# Tests about how the repository is read: they run every git and tar process of the rehearsal as a mission runs it,
+# confined by the kernel (a host without Landlock runs them under the supervised setting they use).
+CONFINED = {"test_git_reads_only_the_named_repository_inside_the_read_roots",
+            "test_git_reads_nothing_a_link_in_the_repository_leads_outside_the_read_roots",
+            "test_a_directory_link_that_stays_inside_the_read_roots_is_followed_and_a_link_loop_ends",
+            "test_inside_the_read_roots_a_packed_repository_and_a_shared_clone_are_read",
+            "test_alternate_stores_are_counted_by_nesting_and_resolved_from_their_store",
+            "test_a_worktree_whose_repository_is_outside_the_read_roots_is_refused",
+            "test_with_the_envelope_unavailable_under_required_nothing_is_passed_and_no_unit_is_ready"}
+
+
+@pytest.fixture(autouse=True)
+def git_without_its_preexec(request, monkeypatch):
+    """What the recommendation says is decided here; the kernel's part is ``test_greg_intake_confinement.py``, the
+    integration tests and the tests named in ``CONFINED``, where every git and tar process of the rehearsal runs
+    confined. The rest start them with the mission's own guard minus its preexec (the same working tree and time
+    limit): a preexec costs a fork and a Landlock ruleset per process, and this file, which the mutation gate runs once
+    per mutant, would take two and a half times as long."""
+    if request.node.originalname in CONFINED:
+        return
+    real = intake._guard
+
+    def unconfined(*args, **kw):
+        guard, said = real(*args, **kw)
+        return dataclasses.replace(guard, preexec=None), said
+    monkeypatch.setattr(intake, "_guard", unconfined)
 
 
 @pytest.fixture(scope="module")
@@ -485,6 +514,7 @@ def test_a_cause_is_named_only_from_a_rerun_that_gave_a_result(repo, tmp_path, m
 
 def test_with_the_envelope_unavailable_under_required_nothing_is_passed_and_no_unit_is_ready(repo, tmp_path, monkeypatch):
     path, shas = repo
+    git_confinement("required")            # under required, the rehearsal's git itself needs Landlock
     monkeypatch.setattr("greg.worker_isolation.host_has_envelope", lambda: False)
     script = Script(default="refused")
     out = run(tmp_path, path, shas, ["label", "consumer", "silent"], script, monkeypatch, confinement="required")
@@ -500,8 +530,10 @@ def test_with_the_envelope_unavailable_under_required_nothing_is_passed_and_no_u
         in text
     assert "| passed |" not in text and "ready to take" not in section(text, "Recommendation")
     assert "None could be measured: no test ran." in text
-    assert out["inputs"]["confinement"] == {"body_setting": "required", "modes": ["refused"], "filesystem": [],
-                                            "runs": 4}                       # asked four times, refused four times
+    confinement = dict(out["inputs"]["confinement"])
+    assert confinement.pop("git").startswith("Landlock ABI ")                # the rehearsal's git: confined
+    assert confinement == {"body_setting": "required", "modes": ["refused"], "filesystem": [],
+                           "runs": 4}                                         # asked four times, refused four times
     assert intake.verify_delivery(out, tmp_path / "out")[0]
 
 
@@ -586,7 +618,7 @@ def test_a_git_that_ignores_configuration_from_its_environment_is_refused(repo, 
 
     def deaf(root, *args, **kw):
         result = real(root, *args, **kw)
-        if args[:2] == ("config", "--get"):
+        if args[:1] == ("config",) and "--get" in args and "core.hooksPath" in args:
             result.stdout = b""
         return result
     monkeypatch.setattr(intake_rehearsal, "git", deaf)
@@ -654,7 +686,7 @@ def test_a_file_from_another_renderer_is_not_judged_but_sent_back_for_a_fresh_re
     old["inputs"]["renderer"] = "greg.intake.render/1"
     old["inputs_digest"] = intake.digest(old["inputs"])
     ok, why = intake.verify_delivery(old, tmp_path / "out")
-    assert ok is False and why == ("rendered by greg.intake.render/1; this appraiser renders greg.intake.render/4: the "
+    assert ok is False and why == ("rendered by greg.intake.render/1; this appraiser renders greg.intake.render/5: the "
                                    "file is not re-derivable here, so a fresh recommendation is needed, not a verdict "
                                    "on it")
     assert intake.verify_delivery(out, tmp_path / "out")[0] is True
@@ -898,7 +930,7 @@ def test_git_reads_only_the_named_repository_inside_the_read_roots(tmp_path, mon
     cases["a configuration include"] = (included, included.parent)
     for why, (where, root) in cases.items():
         ctx = context(tmp_path / why.replace(" ", "-"), read_root=root)
-        with pytest.raises(CapabilityError, match="outside the read roots|not a git repository|includes"):
+        with pytest.raises(CapabilityError, match="is outside the read roots|not a git repository|includes"):
             intake.intake_recommendation(params(where, shas, ["label"]), ctx)
     linked = tmp_path / "e"
     shutil.copytree(outer, linked / "repo", symlinks=True)
@@ -1521,7 +1553,7 @@ def test_git_reads_nothing_a_link_in_the_repository_leads_outside_the_read_roots
     export-ignore emptied the exported tree). Each is refused now."""
     where, shas = linked_case(tmp_path, why)
     monkeypatch.setattr(workers, "run_tests", Script())
-    with pytest.raises(CapabilityError, match="outside the read roots"):
+    with pytest.raises(CapabilityError, match="is outside the read roots"):     # the pre-check says it, by name
         intake.intake_recommendation(params(where, shas, ["label"]), context(tmp_path / "ctx",
                                                                              read_root=tmp_path / "roots"))
     assert delivered(tmp_path / "ctx") == []
@@ -1539,6 +1571,7 @@ def test_a_directory_link_that_stays_inside_the_read_roots_is_followed_and_a_lin
     os.symlink(roots / "packs", objects / "pack")
     os.symlink(roots / "repo" / ".git", objects / "loop")             # git never reads objects/loop
     os.symlink(roots / "repo" / ".git", objects / "loop2")            # two loops: listed again, the walk doubles per level
+    monkeypatch.setattr(intake, "MAX_LISTED_DIRECTORIES", 1000)       # a walk that listed them again stops here, fast
     monkeypatch.setattr(workers, "run_tests", Script())
     out = intake.intake_recommendation(params(roots / "repo", shas, ["label"]), context(tmp_path / "ctx",
                                                                                         read_root=roots))

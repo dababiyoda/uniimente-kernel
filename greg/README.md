@@ -215,7 +215,8 @@ What it does, for one repository inside a read root, a base and an ordered list 
   rehearsal is `greg/intake_rehearsal.py`, the same code `scripts/compose_rehearsal.py` runs from the command line;
 - runs those tests only inside the envelope GREG uses for a worker's acceptance tests. On a host without
   bubblewrap they are refused under the body's `required` setting and run on the `supervised` floor (network
-  denied; Landlock where the kernel has it) when the founder chose that. There is no third posture;
+  denied; Landlock where the kernel has it) when the founder chose that. There is no third posture. The rehearsal's
+  own git and tar run in that envelope's Landlock backend, under the same setting;
 - matches the author's claims and check results, supplied in the mission as data, to what ran here;
 - delivers one Markdown file and its JSON twin under `briefs/` in the delivery root, never overwriting another.
   Its sections, in order: exact revisions, dependency order, textual conflicts, behavioural conflicts a clean merge
@@ -272,11 +273,38 @@ After the second independent review, of 387e8417 (2026-11-12; renderer `greg.int
   of the same name;
 - git reads nothing outside the read roots through a link in the repository (a pack, an object directory, the
   configuration, `info/attributes`, an alternates listing, `.git` itself) or through a file the configuration names
-  (`core.attributesFile`, `mailmap.file`, `diff.orderFile`, `core.worktree`): each is refused (a linked `hooks`
-  directory is not looked at: no hook runs).
+  (`core.attributesFile`, `mailmap.file`, `diff.orderFile`; `core.worktree` too until render/5): each is refused (a
+  linked `hooks` directory is not looked at: no hook runs).
   Alternate stores are counted by nesting, as git follows them (five levels), and a relative one is resolved from
   the store that lists it;
 - a recommendation's age, for the mission's check, comes from its receipt's time on the ledger, not from the file.
+
+After the re-check of c6e79087 (2026-11-12; renderer `greg.intake.render/5`), the pre-check that re-implemented in
+Python how git parses its files and resolves paths was found to differ from git in twelve ways (E1-E12). Now the
+kernel enforces "git reads nothing outside the read roots":
+
+- every git and tar process of the rehearsal runs in the worker envelope's Landlock backend
+  (`greg.worker_isolation`): it reads only the read roots and what git and tar need to run, writes only the
+  mission's scratch, and, where the host has the seccomp filter, opens no socket. A file the kernel refuses git is a
+  refusal that names the repository, never a transient fault and never a result read from what git could not read;
+  each process has a time limit, so a FIFO can no longer hang the request;
+- on a host without Landlock the body's worker confinement decides, as for the heads' tests: `required` refuses;
+  `supervised` runs git unconfined and the recommendation says so;
+- git runs in an empty scratch working tree with no system attributes, so neither the repository's checkout (a
+  directory a head can commit as a link) nor `/etc/gitattributes` changes what is merged or exported, and
+  `core.worktree` is never read;
+- the pre-check stays as the part that says why. It reads an alternates listing, `commondir` and a `.git` file as
+  git does (whole, split on LF only, nothing trimmed but what git trims) and refuses a name git and it could read two
+  ways (a NUL or control byte, a leading or trailing space, bytes that are not UTF-8), a FIFO or device git would read,
+  and a path it cannot resolve strictly (a loop of links resolves to nothing, as in the kernel, and refuses
+  nothing); it skips the hooks of every git directory and lists a store or common directory named inside one by
+  itself; it counts every visit through a directory link toward its cap, and no real directory. git's own word on
+  the repository and the stores it reads (`rev-parse`, `count-objects -v`) must match;
+- a process whose confinement cannot be installed never runs, and the request is refused; git's file listings are
+  read quoted (`core.quotePath` is set back on), so a name that is not UTF-8 is reported as not run, never a crash;
+- what nothing before git runs can close is closed by the kernel: a link turned outside after the check is refused.
+  A file hard-linked into the repository from outside the read roots is read like its own (as `git clone --local`
+  relies on); every recommendation says so.
 
 It approves nothing. Composing heads for development and approving a protected merge are separate boundaries: the
 mission composes in scratch and writes a file; protected integration needs the founder's and the integrator's
@@ -296,8 +324,8 @@ compatible; tests run with no network, so a test that needs it fails on both tre
 head's code, and a head that forges its own test output is not detected; the appraiser re-renders the file from
 its receipt and compares the bytes, and does not run the tests again; a repository whose configuration names a
 merge driver is refused; claims are whatever the mission's author supplied (nothing is read from a hosting
-service). Tests: `tests/unit/test_greg_intake.py`, `tests/integration/test_greg_intake_mission.py`; mutation gate
-`scripts/ci/check_intake_mutants.py`.
+service). Tests: `tests/unit/test_greg_intake.py`, `tests/unit/test_greg_intake_confinement.py`,
+`tests/integration/test_greg_intake_mission.py`; mutation gate `scripts/ci/check_intake_mutants.py`.
 
 ## Using it (developer mode today)
 

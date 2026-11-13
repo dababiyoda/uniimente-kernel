@@ -180,3 +180,42 @@ A push to the line then runs the checks once; #196's own pull-request run of the
 run's results still show on #196 because checks attach to the commit. `directive-completion.yml` can stay as it is while
 #196 is open: its pull-request run does more than a push run (the ratchet against a base). Until the change is made, the
 work map reports whether an open pull request still has the line as its head.
+
+### Adoption package (status on 2026-11-13; every row is pending the founder)
+
+One table for the Kernel and the 12 consumer drafts. "Before → after" is the draft's head before and after this
+session's single forward commit; the receipt in each pull request description declares the new head and keeps the
+old receipt verbatim under it. Every consumer pointer names the Kernel's one guide (`AGENTS.md` § Canonical reading
+order) on the integration branch, work board #96 and Discussion #89, and asks for the check-in. The route itself
+(`docs/BACKCAST_GPS.md`, `greg/path.json`) is reached through that guide, not copied.
+
+| # | Repository | Draft | Before → after | Repository-specific validation | Known blockers | Status |
+|---|---|---|---|---|---|---|
+| 1 | uniimente-kernel | #316 into the line | `91aaeca0` (base) → `da99b8b4` | Unit tests, `repo_review --check`, `governance.integrity --check`, receipt check green; Canonical CI on the PR | Integrator intake (#196 owner); then settings 1–3 above | pending |
+| 2 | DALEOBANKS | #76 | `f4e15b8f` → `f173ce05` | Pointer-only diff; whitespace clean; pins unchanged | Siblings #83–#85 untouched; adopt after the Kernel | pending |
+| 3 | WealthMachineIntelligence | #34 | `070b3355` → `02ddd784` | As above | Siblings #40–#42 untouched | pending |
+| 4 | PumpStation | #17 | `e91ccbb5` → `312515ae` | As above | None found | pending |
+| 5 | RAILSCOUT | #6 | `924f0bd0` → `646c7e9b` | As above | Organ code is in draft #9, not on `main` | pending |
+| 6 | RESEARCH-IN | #23 | `90ab4552` → `ba4ec858` | As above | `build` fails on the old head too (inherited) | pending |
+| 7 | build-your-own-x | #4 | `8a5a4bda` → `a391dbc6` | As above (base `master`) | None found | pending |
+| 8 | agent-skills | #1 | `38f84836` → `580855a0` | `node scripts/run-evals.js` passes | Fork: no Actions runs on this branch | pending |
+| 9 | knowledge-work-plugins | #1 | `0cf52de7` → `4ad77b49` | Nested plugin instructions untouched | Fork: no Actions runs | pending |
+| 10 | hyperframes | #1 | `4abe2f7c` → `cf98a638` | commitlint (conventional) and `oxfmt --check` pass; `_shared` templates untouched | Fork: no Actions runs | pending |
+| 11 | REA-Reverse-Engineering-Anything | #1 | `e8fd2701` → `65ca4722` | `oxfmt --check` passes; text below the pointer byte-identical to `main` | Fork: no Actions runs | pending |
+| 12 | VoiceStudio | #1 | `bf6286dc` → `5c6ab2a6` | `check_commit_identities.py` clean; no agent attribution in commit or description | Fork: no Actions runs | pending |
+| 13 | gods-eye-view-EGGREGORE-TOOL | #3 | `f43cfc97` → `d8052076` | As row 2 | Node jobs fail on the old head too (two files untouched here; patch proposed in the PR) | pending |
+
+**Rollback, every consumer row:** revert the one 2026-11-13 commit (named in its receipt); the earlier pointer and
+history remain. Closing an unadopted draft is also safe. **Kernel row:** revert the PR's commits; the settings have
+their own rollback above.
+
+**Recommended merge order.**
+
+1. Integrator intake of #316 into the line (#315 is already on it).
+2. Founder settings 1 and 2, then 3 (above).
+3. Verify by discovery: a fresh session with no hint lands on the line and posts a check-in.
+4. Rows 2–7 and 13 (organ and research drafts that carry the receipt check), in any order.
+5. Rows 8–12 (fork-only pointers), in any order.
+6. Optional: a short "development moved" banner on `main` (handed to #152 and #193).
+
+No row is adopted until its merge is observed. An updated draft is not an adopted repository.

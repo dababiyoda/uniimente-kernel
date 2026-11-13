@@ -719,10 +719,11 @@
     {
      "id": "G1",
      "gap": "G1. No executable test shows creation without a prewritten answer. The retained live Claude Code build (tests/evidence/greg-product/genesis-live-claude-code.json) is never re-verified.",
-     "state": "OPEN",
+     "state": "CLOSED",
      "buildable_now": true,
      "dependency": "none",
-     "next": "Add tests/unit/test_greg_genesis_live_evidence.py. Load the retained JSON and assert sha256(source[0]) == built[0].source_sha256 and source != test_greg_genesis_builder.GOOD. Recompute 'sha256:'+sha256(builders.build_prompt({function, description, returns, examples}, None)) from CONTRACT and assert it equals built[0].prompt_sha256, which proves the prompt was examples-only with no held-out vectors. Write the source to tmp_path and assert builders.screen(source)==[] and builders.verify(path, CONTRACT.examples+held_out) passes all 6 cases. Assert verified[0].verifier names the held-out oracle and resolved[0].resume=='original mission'. The scratchpad probe confirmed every one of these holds today. Honest tier: SANDBOX_VERIFIED re-verification of a retained artifact. It is not a new live build."
+     "next": "Add tests/unit/test_greg_genesis_live_evidence.py. Load the retained JSON and assert sha256(source[0]) == built[0].source_sha256 and source != test_greg_genesis_builder.GOOD. Recompute 'sha256:'+sha256(builders.build_prompt({function, description, returns, examples}, None)) from CONTRACT and assert it equals built[0].prompt_sha256, which proves the prompt was examples-only with no held-out vectors. Write the source to tmp_path and assert builders.screen(source)==[] and builders.verify(path, CONTRACT.examples+held_out) passes all 6 cases. Assert verified[0].verifier names the held-out oracle and resolved[0].resume=='original mission'. The scratchpad probe confirmed every one of these holds today. Honest tier: SANDBOX_VERIFIED re-verification of a retained artifact. It is not a new live build.",
+     "closed_by": "tests/unit/test_greg_genesis_live_evidence.py (SANDBOX re-verification of the retained 2026-09-26 live Claude Code build, not a new live build): source hash matches the ledger and appears in no prewritten candidate or code file; prompt digest recomputes from the public contract only and differs if any held-out vector or feedback is added; screen clean; frozen oracle passes 6 of 6 in the isolated interpreter and rejects WRONG; verifier names the held-out oracle; resume is the original mission"
     },
     {
      "id": "G2",

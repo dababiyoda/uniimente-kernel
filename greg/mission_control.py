@@ -201,8 +201,13 @@ def projection(console) -> dict:
                              "actions_done": m.actions_done, "next_observe_at": m.next_observe_at,
                              "cone": {"capabilities": cone.get("capabilities", []), "ceiling": cone.get("max_consequence_class"),
                                       "budget_usd": cone.get("budget_usd"), "horizon": cone.get("horizon")}})
-        appraisals = [{"mission_id": e.payload.get("mission_id"), "verdict": e.payload.get("verdict"), "at": e.occurred_at}
-                      for e in journal.replay("mission.appraised")][-20:]
+        # One row per appraisal. A mission can hold several (each hold or failure closure has its own, and a closure
+        # whose sensor was detached is appraised again after the re-attach), so each row says which closure it is
+        # for; an UNAVAILABLE row carries the appraiser's own reason, because the word alone does not say whether a
+        # run was killed, a capability was not attached, or the closure was appraised too late to refute.
+        closure_kinds = {e.event_id: label for kind, label in (("mission.held", "hold"), ("mission.unmet", "failure closure"))
+                         for e in journal.replay(kind)}
+        appraisals = [_appraisal_row(e, closure_kinds) for e in journal.replay("mission.appraised")][-20:]
         receipts = len(journal.ledger.by_type("receipt")) if hasattr(journal, "ledger") else None
         retained = journal.replay()
         events = len(retained)
@@ -299,6 +304,19 @@ nav.mc a.on{border-color:var(--accent);color:var(--accent);font-weight:600}
 .reality{font-size:12px;color:var(--muted)}.empty{color:var(--muted);font-style:italic}
 section{overflow-x:auto}
 """
+
+
+def _appraisal_row(event, closure_kinds: dict) -> dict:
+    data = event.payload
+    closure = data.get("closure_event")
+    row = {"mission_id": data.get("mission_id"), "verdict": data.get("verdict"), "at": event.occurred_at,
+           "closure": f"{closure_kinds.get(closure, 'closure')} {str(closure)[:8]}" if closure else "achievement"}
+    if data.get("verdict") == "UNAVAILABLE":
+        row["why"] = "; ".join(str(f) for f in (data.get("findings") or [])[:3])[:900]
+        fresh = (data.get("appraised_late") or {}).get("fresh_appraisal") or {}
+        if fresh.get("note"):       # a stale closure: where the mission's timely appraisal comes from, or that none will
+            row["fresh_appraisal"] = str(fresh["note"])[:300]
+    return row
 
 
 def _cls(name) -> str:
@@ -598,7 +616,11 @@ def _proof(console, p, form) -> str:
          _e(f"{(p.get('sandbox_integration') or {}).get('SANDBOX_WHOLE_MACHINE_CLOSURES', 0)} — "
             f"{(p.get('sandbox_integration') or {}).get('tier', '')}")]])
             + "</section><section><h2>Independent appraisals</h2>"
-            + _table(["Mission", "Verdict", "At"], [[_e(x["mission_id"]), _cls(x["verdict"]), _e(x["at"])] for x in p["appraisals"][::-1]])
+            + _table(["Mission", "Verdict", "Closure", "Why it was not appraised", "At"],
+                     [[_e(x["mission_id"]), _cls(x["verdict"]), _e(x.get("closure", "")),
+                       _e(x.get("why", "") + (". Fresh appraisal: " + x["fresh_appraisal"] if x.get("fresh_appraisal") else "")),
+                       _e(x["at"])]
+                      for x in p["appraisals"][::-1]])
             + "</section>" + _traces_section(p.get("traces") or {}) + _resilience_section(p["resilience"])
             + "<section><h2>Quarantine</h2>"
             + _table(["Capability", "Why"], [[_e(q.get("capability_id")), _e(q.get("reason") or q.get("why") or "")] for q in p["quarantined"]])

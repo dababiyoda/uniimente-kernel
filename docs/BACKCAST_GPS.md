@@ -1,5 +1,167 @@
 # Backcast GPS: UNIIMENTE Kernel
 
+## Current full-machine route
+
+This is a reading projection of the existing `greg/path.json`, not a second roadmap,
+priority registry, runtime or authority service. The July kernel-build instance below
+remains historical evidence. Follow [AGENTS.md's canonical reading order](../AGENTS.md#canonical-reading-order)
+and the newest [work-board comments](https://github.com/dababiyoda/uniimente-kernel/issues/96)
+before choosing work. Inspection baseline for this projection: #196 at
+`8d20532464b1533b28d71d8331ca3412a90dbb11`, November 12, 2026 (America/New_York).
+Refresh branches, source heads, claims and execution evidence on entry or resume.
+
+**Destination:** one persistent, founder-governed institution that converts Alfonso's
+direction into verified useful results, forms missing capabilities, connects its
+organs, learns from outcomes, and makes later missions easier. **Body + Organs + Mind**
+is the completion boundary. The Infinite Goal Chase continues beyond any one release:
+verified capability supports the next authorized goal. No model, organ or descendant
+may expand its own authority.
+
+**Current engineering target from the November 12 directive:** complete a useful
+mission on one exact composed revision, recover under interruption and changed
+evidence, then demonstrate useful transfer to a materially different case. This is a
+declared target, not a measured claim that the candidate already passes it. #196 is
+the integration destination at inspection; #299 is an evidence-only composed candidate,
+not another integration trunk. New work uses the live board's acknowledged owners.
+
+### Read build and acceptance separately
+
+- `python -m greg path --build` reports the structural build frontier and the
+  acceptance frontier side by side. Use the actual body/ledger intended for the
+  measurement; no ledger means no recorded mission evidence.
+- `python -m greg path` preserves the founder-tier acceptance node. N1/VEPMC=0
+  remains honest while independent achievable engineering continues. The founder's
+  October 30 correction changes sequencing, not VEPMC's evidence requirements.
+- `python -m acceptance directive --against <exact-base-sha>` checks the existing
+  directive map/ratchet. Without recorded outcomes it reports static evidence
+  ceilings, not executed acceptance results. Read the CLI's `--help` for outcomes.
+- `python -m foundry.completion --status` and `--audit` report the 55-system
+  obligations and check their supported claims. A catalog item is not a completed
+  capability; bounded local completion is not external or commercial validation.
+- `python scripts/mind_status.py` is the existing read-only Mind projection.
+  The October 21 coverage report is dated evidence, not current execution truth.
+
+Never infer achieved missions from `evidence_status` labels in `greg/path.json`:
+those describe available predicate/test support. Inspect the actual ledger, exact
+revision and executed outcome. Likewise distinguish implemented on a branch,
+verified with neighbors, composed, accepted into the integration line,
+founder-device demonstrated, externally verified, and production authorized.
+
+### Existing institution path, N0–N10
+
+The table names the existing nodes so a new worker sees the whole route. Their
+canonical details, evidence rules, pivot/kill conditions and horizon placements
+remain in [`greg/path.json`](../greg/path.json). This is an acceptance/dependency
+map, not an instruction to halt later reversible engineering while N1 awaits a device.
+
+| Node | What becomes possible | Evidence needed at its own boundary |
+|---|---|---|
+| N0 | One converged GREG base | Compatible behavior and appropriate checks on one exact candidate; protected intake remains separately authorized |
+| N1 | Founder-body persistent mission acceptance | A founder-signed mission, real capability, interruption/recovery, appraisal and acceptance on the designated body |
+| N2 | A missing capability is formed and the original mission resumes | Qualified acquisition/adaptation/composition/construction, preserved authority, accepted closure and a different-function comparison |
+| N3 | A complete bounded business workflow | Request/evidence/routing/delivery/proof/acceptance/reconciliation; actual buyer value and settlement remain distinct from rehearsal |
+| N4 | Procedures improve subsequent work | Repeated appraised use, a declared baseline and demonstrated later benefit |
+| N5 | Temporary specialist organizations earn their cost | Held-out comparison with a simpler worker/workflow under comparable resources |
+| N6 | Consented human assistance joins the workflow | Lawful consented relationship, explicit obligations, work evidence and reconciliation |
+| N7 | Multiple ventures and resources compound | Independently viable cells, measured costs/outcomes and justified allocation of real surplus |
+| N8 | Continuity spans compute and multiple bodies | Founder-authorized resources/migration, tested continuity, identity, revocation and recovery |
+| N9 | Governed physical-world capabilities | Suitable hardware, domain safety evidence, explicit authority and verified bounded effects |
+| N10 | Scientific and civilizational embodiments | Sustained capacity and domain evidence; preserve the horizon without claiming present feasibility or completion |
+
+### Existing Mind path, P0–P13
+
+These are the subordinate `cognition_cortex` nodes in `greg/path.json`, not another
+primary institution path. Read their full gates in
+[the full Mind backcast](cortex/BACKCAST_GPS_FULL_MIND_2026-10-01.md) and the current
+path data. Later founder corrections control vocabulary and sequencing.
+
+| Nodes | Existing capability progression |
+|---|---|
+| P0–P2 | Inspect/anchor, cognitive contracts, seed proof |
+| P3–P4 | Proof/outcome ledger, cognitive settlement and learned routing |
+| P5–P6 | Demand-led repertoire expansion, heterogeneous compositions and collective mechanisms |
+| P7–P9 | Cognitive Capability Genesis, evolutionary cognition, constraint-release discovery |
+| P10–P11 | Functional morphogenesis, open cognitive ecology |
+| P12–P13 | Substrate-plural execution, poly-embodied developmental institution |
+
+The five layers are **basal, collective, solver, developmental, and institutional
+meta-intelligence**. They describe functions, not five model personas. Exact A–Y
+method definitions live in the founder source linked below; do not invent an
+alphabet mapping. All 55 Foundry obligations remain active build obligations under
+their governing intent. Sequencing, access limitations and failed experiments do
+not silently retire a destination. The `horizons`, `frontier_backcasts` and
+`completion_boundary` in the existing path retain community, culture, economics,
+science, continuity and future technology, including explicitly unproven descendants.
+
+## Source route
+
+Read the source appropriate to the decision, then inspect its real consumer and
+tests. The whole route must be discoverable; rereading every historical byte is
+not a prerequisite for every small repair.
+
+| Question | Canonical destination / source |
+|---|---|
+| What is the complete intended machine? | [October 28 reissued intent](intent/INTENT-20261028-OPUS-MAXIMUS-REISSUE.json) and [verbatim 77-section directive](intent/sources/OPUS-MAXIMUS-MASTER-BUILD-DIRECTIVE-2026-10-28-source.md); [full-machine correction](intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json) |
+| What changed most recently outside this tree? | Pending [#295](https://github.com/dababiyoda/uniimente-kernel/pull/295): pinned [November 11 source](https://github.com/dababiyoda/uniimente-kernel/blob/d0bf3c744ee2d45b995a57c01672984a39f57d9e/docs/intent/sources/ABSOLUTE-OPUS-MAXIMUS-2026-11-11-source.md) and [November 12 clarification](https://github.com/dababiyoda/uniimente-kernel/blob/d0bf3c744ee2d45b995a57c01672984a39f57d9e/docs/intent/sources/CONVERGENCE-CLARIFICATION-2026-11-12-source.md). These are readable before intake; do not assume local files contain them. Refresh newer corrections and dispositions |
+| Where are the five layers and exact A–Y methods? | [Mind continuation](intent/sources/POLYINTELLIGENCE-MIND-CONTINUATION-DIRECTIVE-2026-10-07-source.md), then [the later explicit taxonomy and alphabet](https://github.com/dababiyoda/uniimente-kernel/blob/d0bf3c744ee2d45b995a57c01672984a39f57d9e/docs/intent/sources/ABSOLUTE-OPUS-MAXIMUS-2026-11-11-source.md#L1155). Preserve earlier vocabulary as lineage and use the later explicit correction |
+| Where are all 55 build obligations? | [Foundry delivery intent](intent/INTENT-2026-09-27-FOUNDRY-55.json), [`foundry/completion.yaml`](../foundry/completion.yaml), its [checker](../foundry/completion.py), and actual runtime consumers/evidence |
+| How does each master-directive ask reach code and evidence? | [`acceptance/directive-sections.json`](../acceptance/directive-sections.json), [`directive-asks.pin.json`](../acceptance/directive-asks.pin.json), [`missions.json`](../acceptance/missions.json), [`completion-contract.json`](../acceptance/completion-contract.json). These existing maps own coverage; this guide does not create another completion registry |
+| Which gate can be built while device acceptance waits? | [October 30 sequencing correction](intent/INTENT-20261030-BUILD-BEFORE-DEVICE-RUN.json), `greg path --build`, live #96/#196 handoffs and exact composed evidence |
+| Which sources can a repo-only worker actually read? | [The eleven original project texts with provenance/hash manifest](intent/sources/project-context-2026-11-12/README.md), existing files under `docs/intent/sources/`, the exact pending #295 links above and [source-access limits](collaboration/CONTEXT-ROUTE-2026-11-12.md#source-access). The [September census](PROJECT_SOURCE_CENSUS_2026-09-26.md) is historical metadata, not the complete raw-chat archive |
+| How are context and contradictions retained? | [Cognition SOP](PROJECT_COGNITION_SOP.md), [continuity addendum](PROJECT_COGNITION_CONTINUITY.md), [Founder Effect Compiler](FOUNDER_EFFECT_COMPILER.md), [intent ledger](FOUNDER_INTENT_LEDGER.md) and [collaboration protocol](RECURSIVE_COLLABORATION_PROTOCOL.md) |
+| Who owns a change and where should it go? | [Architecture current module map](ARCHITECTURE.md#current-module-map), [START_HERE](collaboration/START_HERE.md), live [#96](https://github.com/dababiyoda/uniimente-kernel/issues/96), relevant PRs and exact-head [receipt](collaboration/RECEIPT.md) |
+| What is actually adopted across clients and organs? | [ROLLOUT](collaboration/ROLLOUT.md), actual default-branch entry files and pinned consumer PRs, plus the [dated access/propagation receipt](collaboration/CONTEXT-ROUTE-2026-11-12.md). A plan or pointer is not observed client compliance |
+
+The eleven-source packet provides the original commercial doctrine, persistent
+embodiment, causal-memory and primitive-recombination proposals, multiscale cognition,
+DALEOBANKS' one creative identity and audience material. Its public export was explicitly
+approved by Alfonso in the linked source-access record. A title or upload ID in the
+older census does not make other raw material readable. Record remaining gaps and
+use exact sources; never claim that every project chat was inspected. Historical claims
+about perfect provenance, guaranteed improvement or indestructible operation remain
+claims requiring evidence, not established engineering facts. Retain useful mechanisms
+while following later founder corrections.
+
+## Parallel work and the active execution card
+
+Use the existing claim and receipt mechanism in START_HERE; no second board or
+scheduler is introduced here. Before editing, a worker records its actual session,
+intended effect and source revision, exact base/head, bounded files/interfaces,
+dependencies, acceptance evidence, recheck time and destination. Search relevant
+open work beyond `main`. If a live concern overlaps, obtain an acknowledged split
+or review the existing work instead. An expired claim is not permission to overwrite.
+
+For the current useful-mission gate, the primary measure is **remaining declared
+acceptance obligations for that mission on the exact composed candidate**. Establish
+its baseline from a real run; this context task has not run that mission and supplies
+no invented count. Track correctness, costs, founder burden and uncertainty beside it.
+
+1. **Select:** remove the smallest verified blocker or prepare an independent
+   prerequisite. State the owner, acceptance behavior and resource ceiling.
+2. **Execute:** implement within the existing authority on a separate branch/worktree;
+   exercise the affected behavior with neighboring changes on the declared revision.
+3. **Evidence:** preserve the result and first failure, release or renew the claim,
+   and hand the exact head to a named receiver. Resume the parent objective after
+   intake. A handoff is pending until the receiver acknowledges it.
+
+A worker without Project access receives a concise packet: intended effect,
+canonical owner, controlling source/pin, current evidence, boundaries, acceptance
+test and handoff destination. Record inaccessible sources precisely and continue
+independent permitted work; do not treat absent credentials or an absent founder
+device as a block on every local developmental test.
+
+**Fresh-reader acceptance:** enter through AGENTS/CLAUDE/Copilot; find this full
+route, the latest source, the two frontiers, the relevant live owner and handoff;
+explain one safe next action without founder reconstruction. Then observe a
+different worker resume a real handoff. Source visibility is measurable now;
+cross-client adoption and reduced rework require those later observations.
+
+No schedule, paid fallback, worker enrollment, protected merge, business launch,
+device acceptance or graduation is authorized by this document. Keep authority
+fixed while operational competence grows.
+
+## Preserved July kernel-build instance
+
 > **Executable since 2026-10-13.** The G/P/S control loop described here is no longer only a
 > founder-invoked planning method: `egregore/gps.py` (`BackcastGPSAdapter.fix`) computes
 > goal → active node → active gate → single bottleneck metric → exit evidence → next

@@ -76,6 +76,17 @@ def verified_appraisals(journal: Journal) -> dict[str, str]:
             and all(event.payload.get("checks", {}).get(check) is True for check in REQUIRED_CHECKS)}
 
 
+def awaiting_appraisal(journal: Journal) -> set[str]:
+    """Missions whose latest appraisal is the appraiser's answer that it ran nothing for a capability that is not
+    ATTACHED (greg/body.py ``not_run_by_appraiser``). Such a closure is not yet appraised: it is appraised again when
+    the founder attaches the capability. It is not a failed appraisal, and no reader should word or count it as one."""
+    from greg.body import not_run_by_appraiser      # body imports this module; the verdict vocabulary lives there
+    latest = {}
+    for event in journal.replay("mission.appraised"):
+        latest[event.payload["mission_id"]] = event.payload
+    return {mid for mid, appraisal in latest.items() if not_run_by_appraiser(appraisal)}
+
+
 def closed_procedures(journal: Journal) -> dict[str, list]:
     """mission_id -> ordered capabilities of receipted DONE actions for locally verified closures.
 
@@ -642,6 +653,8 @@ def trend(journal: Journal) -> dict:
     latest = {}
     for event in journal.replay("mission.appraised"):
         latest[event.payload["mission_id"]] = event.payload.get("verdict")
+    for mid in awaiting_appraisal(journal):    # not yet appraised: neither a run that held quality nor one that failed
+        del latest[mid]
     owners = {e.event_id: e.payload.get("mission_id") for e in journal.replay()}
     rejected = {owners.get(e.payload["target_event_id"]) for e in journal.replay("critique.recorded")
                 if e.payload["verdict"] == "reject"}

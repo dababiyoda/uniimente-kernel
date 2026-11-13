@@ -528,7 +528,8 @@ class Index:
                     for r in claim["receipts"]:
                         cause("APPRAISAL_REFUTED", self.by_receipt[r], self.by_receipt[r], "the closure's independent "
                               "appraisal is REFUTED", {"kind": "event", "event_id": e.event_id}, self._event_seq(e),
-                              True, {"failed_checks": sorted(k for k, v in (p.get("checks") or {}).items() if v is False),
+                              True, {"failed_checks": sorted(k for k, v in (p.get("checks") or {}).items() if v is False
+                                                             and k not in (p.get("not_established") or ())),
                                      "closure_event": p.get("closure_event")})
         for e in signed_rejections(self.journal):
             for reading in self.rejected_by(e.payload.get("target_event_id"))[1]:

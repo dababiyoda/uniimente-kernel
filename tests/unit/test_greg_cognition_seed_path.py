@@ -64,15 +64,64 @@ def causal():
 @pytest.mark.parametrize('kind,data,status', [
     ('optimization', allocation(), 'OPTIMAL'), ('optimization', allocation(False), 'INFEASIBLE'),
     ('formal', allocation(optimize=False), 'SAT'), ('formal', allocation(False, False), 'UNSAT'),
-    ('estimation', estimation(), None), ('causal', causal(), None), ('evidence', evidence(), None)])
+    ('estimation', estimation(), None), ('causal', causal(), None), ('evidence', evidence, None)])
 def test_real_heterogeneous_methods_and_separate_verifier(kind, data, status):
-    r = evaluate_problem(problem(kind, data))
+    # A source's freshness is measured at run time, so its data is built here, not at collection: a suite that runs
+    # past the source's max_age_seconds otherwise makes this case abstain as stale (seen on CI: this file when the
+    # suite took 115 minutes; tests/unit/test_greg_seed_compat.py, fixed the same way, at 78).
+    r = evaluate_problem(problem(kind, data() if callable(data) else data))
     assert r['answered'], r
     a = r['claims'][0]
     assert a['verification']['valid']
     if status:
         assert a['result']['native_status'] == status
     assert r['authority_created'] is False
+
+
+def clock_readings_taken_at_collection(tests: dict) -> list[str]:
+    """Parametrized cases that carry a time read from the clock when the module was collected.
+
+    Such a case is as old as the suite is long by the time it runs. A case given as a function is built when its test
+    runs and carries nothing yet; a fixed date far from today (a deliberately stale source) is not a clock reading."""
+    today = datetime.now(timezone.utc)
+
+    def readings(value):
+        if isinstance(value, dict):
+            return [r for v in value.values() for r in readings(v)]
+        if isinstance(value, (list, tuple)):
+            return [r for v in value for r in readings(v)]
+        if isinstance(value, str):
+            try:
+                at = datetime.fromisoformat(value.replace('Z', '+00:00'))
+            except ValueError:
+                return []
+            if at.tzinfo is not None and abs(today - at) < timedelta(days=1):
+                return [value]
+        return []
+    found = []
+    for name, test in tests.items():
+        for mark in getattr(test, 'pytestmark', []) if callable(test) else []:
+            if mark.name == 'parametrize':
+                found += [f'{name}: {r}' for case in mark.args[1] for r in readings(case)]
+    return found
+
+
+def test_no_parametrized_case_carries_a_clock_reading_taken_at_collection():
+    """Before: the evidence case of the test above was built at collection with a one-hour freshness limit, so it
+    passed or failed with the speed of the machine that ran the suite."""
+    assert clock_readings_taken_at_collection(globals()) == []
+
+
+def test_the_collection_clock_check_sees_a_reading_and_ignores_a_fixed_date_and_a_function():
+    @pytest.mark.parametrize('data', [{'sources': [source()]}, (1, [source()])])
+    def stamped(data):
+        pass
+
+    @pytest.mark.parametrize('data', [evidence, {'sources': [{**source(), 'observed_at': '2000-01-01T00:00:00Z'}]}])
+    def built_late_or_fixed(data):
+        pass
+    assert len(clock_readings_taken_at_collection({'stamped': stamped})) == 2
+    assert clock_readings_taken_at_collection({'built_late_or_fixed': built_late_or_fixed, 'not_a_test': 3}) == []
 
 
 def test_real_composition_preserves_epistemic_jurisdictions():

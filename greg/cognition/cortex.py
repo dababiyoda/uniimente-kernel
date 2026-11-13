@@ -37,12 +37,17 @@ def registry_view(journal=None):
     return registry
 
 
+# Numeric data (a dense QP, a large graph) reaches the solver on stdin, never argv: one argv string is capped by the
+# kernel at 128 KiB, which is what made 18 of convex_qp_dual's 30 held-out instances unroutable at the old 64 KiB.
+MAX_COGNITIVE_REQUEST_BYTES = 1024 * 1024
+
+
 def compile_problem(params):
     if not isinstance(params, dict) or set(params) - {"problem_id", "operation", "data", "geometry", "consequences", "evidence_refs", "evidence_expires_at", "assumptions", "excluded_variables"}:
         raise CognitionError("unknown cognitive request fields")
     strict_data(params)
-    if len(canonical(params).encode()) > 64 * 1024:
-        raise CognitionError("cognitive request exceeds 64 KiB")
+    if len(canonical(params).encode()) > MAX_COGNITIVE_REQUEST_BYTES:
+        raise CognitionError("cognitive request exceeds 1 MiB")
     operation, data = params["operation"], params["data"]
     if not isinstance(operation, str) or not isinstance(data, dict):
         raise CognitionError("operation and bounded data required")
@@ -105,8 +110,8 @@ def candidates(params, geometry, registry, journal=None):
 def _numeric(family, data, geometry):
     from greg.capabilities import run_isolated
     request = canonical({"data": data, "geometry": asdict(geometry)})
-    proc = run_isolated([sys.executable, "-I", str(Path(__file__).with_name("worker.py")), family, request],
-                        cwd=ROOT, timeout=geometry.latency_limit,
+    proc = run_isolated([sys.executable, "-I", str(Path(__file__).with_name("worker.py")), family],
+                        cwd=ROOT, timeout=geometry.latency_limit, input_bytes=request.encode(),
                         extra_env={"OPENBLAS_NUM_THREADS": "1", "OMP_NUM_THREADS": "1", "MKL_NUM_THREADS": "1"})
     if proc.returncode:
         raise CognitionError(f"worker stopped (exit {proc.returncode}); result unknown")
@@ -144,8 +149,8 @@ def independent_verify(family, data, answer, proof_class, geometry):
     # this budget after the worker's own start-up, which the worker cannot time
     payload = canonical({"family": family, "data": data, "answer": answer, "proof_class": proof_class,
                          "geometry": asdict(geometry), "deadline": time.time() + geometry.latency_limit})
-    proc = run_isolated([sys.executable, "-I", str(Path(__file__).with_name("worker.py")), "verify", payload],
-                        cwd=ROOT, timeout=geometry.latency_limit)
+    proc = run_isolated([sys.executable, "-I", str(Path(__file__).with_name("worker.py")), "verify"],
+                        cwd=ROOT, timeout=geometry.latency_limit, input_bytes=payload.encode())
     if proc.returncode or len(proc.stdout) > 256 * 1024:
         raise CognitionError("independent verifier unavailable")
     out = json.loads(proc.stdout)

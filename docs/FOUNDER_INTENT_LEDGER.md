@@ -56,6 +56,43 @@ Progress 2026-10-21 (measured; negative results kept):
     - not DEFAULT because it is about 92x slower than the replanner;
     - the stale-controller weakness replicates (3-7).
   - 45 of 59 genomes are admitted, every one with current-version evidence. None is attached.
+- **Genome admission v7** ([evidence](evidence/greg-genome-admission/2026-10-21-v7/README.md)): nine new genomes from three parallel lanes, each built for an ABSENT coverage item. Pre-registered at `b1ee3f97`, frozen at `568c4b7b`, run once on seeds 1600-1629.
+  - **DEFAULT (5):**
+    - IDA\* (under a declared memory budget);
+    - NEH-insertion beam search (beats warm-started CP-SAT 14-3; Iterated Greedy was not compared);
+    - MAP-Elites (against a competitor weak by construction);
+    - exact top-k betweenness (ties NetworkX, faster);
+    - local-rule CA regeneration (0-2 against Z3 entailment, not significant, at 1/40 the latency).
+  - **EXPERIMENTAL (2):**
+    - the GA: 19-10 against hill climbing, not significant. It wins rugged NK 15-0 and loses deceptive traps 0-15 against CP-SAT.
+    - MCTS: it ties flat Monte Carlo 28 of 30.
+  - **SUPERSEDED (2):**
+    - property-based search: Z3 finds every counterexample;
+    - Hopfield recall: exact nearest neighbour is the ceiling.
+  - 50 of 68 genomes are admitted. None is attached.
+- **Genome admission v8** ([evidence](evidence/greg-genome-admission/2026-10-22-v8/README.md)): fifteen genomes from five parallel lanes, built for the ABSENT coverage items left after v7. Pre-registered at `28e29538`, frozen at `bc966a18`, run once on seeds 1700-1729.
+  - **DEFAULT (8):**
+    - role differentiation (beats a centralised MIS on rounds, 20-8);
+    - novelty search (16-1 against MAP-Elites on deceptive mazes);
+    - scenario fans (29-1 against Monte Carlo);
+    - resolution proofs (Z3 decides as well, and the win is the declared value of a checkable proof);
+    - MDL (ties BIC);
+    - repeated games (ties simulation, faster);
+    - Stackelberg commitment (ties HiGHS multiple LPs);
+    - CUSUM (Shiryaev–Roberts is at least as good).
+  - **NICHE (4):**
+    - convex QP with a duality certificate: 30/30 and 20-0 against SciPy, but demoted because GREG's 64 KiB request limit refused a held-out instance (an integration defect, recorded);
+    - Hamming correction (the Bayes decoder is better on noisy blocks);
+    - the hyper-heuristic (no significant edge over random selection);
+    - isotonic recalibration (superseded in substance, 2-28 against Platt scaling; the rule calls any win NICHE, a policy question).
+  - **EXPERIMENTAL (2):** robust tube MPC; judgmental pooling (14-16 against the mean; dev did not replicate).
+  - **SUPERSEDED:** Nash bargaining (SLSQP ties and is faster).
+  - Merge review before the freeze: replaced a Stackelberg competitor weak by construction, and fixed a CUSUM benchmark that every detector failed.
+  - 62 of 83 genomes are admitted. None is attached.
+- **Request transport fix and genome admission v9** ([evidence](evidence/greg-genome-admission/2026-10-22-v9/README.md)).
+  - **Fix (`93bf43a3`):** cognitive requests reach the solver and verifier on stdin instead of one argv string, which Linux caps at 128 KiB. The request ceiling is now 1 MiB.
+  - **Admission v9:** pre-registered at `ce760f7a`, frozen at `11a8e318` and run once on seeds 1800-1829. It re-admits `convex_qp_dual` 1.0.0 as **DEFAULT** (13-1-16 against the baseline, 23-0-7 against trust-constr). The smoke passes on a 92.5 KB request, which the old limit refused.
+  - 62 of 83 are admitted: 45 DEFAULT and 17 NICHE. None is attached.
 
 ## Convergence of the two Mind lineages — 2026-10-14
 

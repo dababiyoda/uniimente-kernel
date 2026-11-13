@@ -8,7 +8,7 @@ import pytest
 
 from greg.capabilities import BUILTINS, CapabilityError, InvocationContext
 from greg.cognition.contracts import CognitionError, ConsequenceVector, ProblemGeometry
-from greg.cognition.cortex import compile_problem, reason, registry_view, solve, compose
+from greg.cognition.cortex import MAX_COGNITIVE_REQUEST_BYTES, compile_problem, reason, registry_view, solve, compose
 from greg.cognition.verification import verify
 
 
@@ -109,7 +109,7 @@ def test_data_never_becomes_executable_python(expression):
 def test_malformed_unknown_and_unbounded_inputs_fail_closed():
     for bad in [{"authority_created": True}, {"geometry": {"latency_limit": float("nan")}},
                 {"geometry": {"compute_limit": True}}, {"geometry": {"epistemic_class": "causal"}},
-                {"data": {"text": "x" * 66000}}]:
+                {"data": {"text": "x" * (MAX_COGNITIVE_REQUEST_BYTES + 1)}}]:
         with pytest.raises((CognitionError, ValueError, TypeError)):
             compile_problem({**request("calculate", {"expression": "1"}), **bad})
     with pytest.raises(CognitionError):

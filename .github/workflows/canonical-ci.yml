@@ -38,6 +38,9 @@ jobs:
     # 15 + 12 minutes at c360103, 28 of the 30 then allowed, so a few minutes of added tests cancelled the job.
     # At 0067be6 the full suite took 25 minutes and the V2 re-run was cancelled 20 minutes in at the 45-minute
     # limit (run 39614663399): growth from the review rounds' regression tests, not a hang. 75 leaves headroom.
+    # At 866d477 (run 39708475199) the full suite finished in about 42 minutes and the V2 re-run was cancelled at
+    # 75: the third time growth hit the cap. The verifier now runs as its own job ("verifier" below) in parallel,
+    # so each job runs the suite once; the verifier's checks are unchanged.
     timeout-minutes: 75
     steps:
       - uses: actions/checkout@v4
@@ -74,6 +77,20 @@ jobs:
           path: cognition-report.json
           if-no-files-found: error
           retention-days: 90
+
+  verifier:
+    name: "1b · Institutional verifier V1-V5"
+    runs-on: ubuntu-latest
+    # Runs tests/unit once (its V2 check) plus V1 and V3-V5; it needs only the checkout and the same dependencies.
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements-dev.txt -r requirements-cognition.txt
       - name: Institutional verifier V1-V5
         run: python verifier/v2/verify.py
 

@@ -94,11 +94,27 @@ def landlock() -> None:
         pytest.skip(f"this host cannot confine the rehearsal's git ({exc})")
 
 
+def network_filter() -> None:
+    """For a test whose rehearsal must deny git the network: skip, saying why, on a host that cannot load the seccomp
+    filter; with GREG_REQUIRE_LANDLOCK=1 (CI) its absence is a failure instead."""
+    import sys
+    from ctypes.util import find_library
+    from greg.capabilities import _network_filter
+    if sys.platform == "linux" and find_library("seccomp") and _network_filter() is not None:
+        return
+    if os.environ.get("GREG_REQUIRE_LANDLOCK") == "1":
+        pytest.fail("GREG_REQUIRE_LANDLOCK=1 and this host cannot load the seccomp filter that denies the rehearsal's "
+                    "git the network")
+    pytest.skip("this host cannot load the seccomp filter that denies the rehearsal's git the network")
+
+
 def git_confinement(setting: str) -> None:
-    """For a test whose body takes ``setting``: under ``required`` the rehearsal's git needs Landlock (without it the
-    whole request is refused), so it is :func:`landlock`'s; ``supervised`` runs anywhere."""
+    """For a test whose body takes ``setting``: under ``required`` the rehearsal's git needs Landlock and the seccomp
+    network filter (without either the whole request is refused), so it is :func:`landlock`'s and
+    :func:`network_filter`'s; ``supervised`` runs anywhere."""
     if setting != "supervised":
         landlock()
+        network_filter()
 
 
 def state(repo: Path):

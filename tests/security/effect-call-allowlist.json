@@ -53,6 +53,12 @@
    "qualname": "git_read",
    "exempt_when": {},
    "why": "runs git with whatever arguments and repository path it is handed, git taken from the body's ambient PATH and the repository's own config applied; it checks neither, so every caller passes that spawn on"
+  },
+  {
+   "module": "greg/intake_rehearsal.py",
+   "qualname": "_run",
+   "exempt_when": {},
+   "why": "starts whatever argv its caller hands it, with that caller's stdin and environment: under a mission's Guard confined by the guard's preexec, with no guard (scripts/compose_rehearsal.py) as the person's own unconfined child, found on their ambient PATH; it checks neither the program nor its arguments, so every caller passes that spawn on"
   }
  ],
  "allowed": [
@@ -980,7 +986,7 @@
    "serves": [
     "capability:brief.intake"
    ],
-   "justification": "asks whether this host has libseccomp (ctypes.util.find_library reads the loader cache, by running ldconfig -p) only to decide whether each of the rehearsal's git and tar processes gets the reviewed seccomp network filter; no repository input reaches it, and the recommendation says which was decided",
+   "justification": "asks whether this host has libseccomp (ctypes.util.find_library reads the loader cache, by running ldconfig -p) only to decide whether each of the rehearsal's git and tar processes gets the reviewed seccomp network filter (without it, under the body's required setting the request is refused); no repository input reaches it, and the recommendation says which was decided",
    "pin": "1a5897c55c857516e388ffd674356acd7ce1c35bb97a5903ff2ffe9d2ef0e033"
   },
   {
@@ -992,8 +998,56 @@
     "capability:brief.intake",
     "operator:python scripts/compose_rehearsal.py"
    ],
-   "justification": "the rehearsal's one process starter: git (rev-parse, cat-file, merge-base, rev-list, merge-tree, commit-tree, archive, diff, show, ls-tree, merge-file, config reads, and read-tree, hash-object, update-index and write-tree against a scratch index file), never a fetch, push, checkout or ref update, and `tar -x` into a new scratch directory. Under brief.intake (a Guard from greg.intake._guard) the program is found on READ_ONLY_GIT_ENV's PATH (/usr/bin:/bin), it starts in an empty scratch working tree, and each process runs under a Landlock ruleset (greg.worker_isolation._install_landlock) (it reads the read roots and the host runtime and writes only the mission's scratch), with the reviewed seccomp network filter where the host has libseccomp, a time limit, and a refusal when the kernel refused it a file; on a host without Landlock only under the body's supervised setting, unconfined, which the recommendation says. From scripts/compose_rehearsal.py it runs with the person's own PATH, environment and privileges, with no guard",
+   "justification": "the rehearsal's one process starter, a declared wrapper whose every caller is listed as a site of its own: git (rev-parse, count-objects, --exec-path, cat-file, merge-base, rev-list, merge-tree, commit-tree, archive, diff, show, ls-tree, merge-file, config reads, and read-tree, hash-object, update-index and write-tree against a scratch index file), never a fetch, push, checkout or ref update, and `tar -x` into a new scratch directory. Under brief.intake (a Guard from greg.intake._guard) the program is found on READ_ONLY_GIT_ENV's PATH (/usr/bin:/bin), it starts in an empty scratch working tree, and each process runs under a Landlock ruleset (greg.worker_isolation._install_landlock) (it reads the read roots and the host runtime and writes only the mission's scratch), with the reviewed seccomp network filter, a time limit, and a refusal when the kernel refused it a file; on a host without Landlock or without the seccomp filter only under the body's supervised setting (unconfined, or with the network not denied), which the recommendation says, and under required not at all. From scripts/compose_rehearsal.py it runs with the person's own PATH, environment and privileges, with no guard",
    "pin": "31384050d7d2d8e4677a59be52ad2a20a0fe0a59b004a5732c5d938ae9d92b0b"
+  },
+  {
+   "module": "greg/intake_rehearsal.py",
+   "qualname": "git",
+   "callee": "greg.intake_rehearsal._run",
+   "count": 1,
+   "serves": [
+    "capability:brief.intake",
+    "operator:python scripts/compose_rehearsal.py"
+   ],
+   "justification": "starts git with the arguments its callers pass, here and in greg/intake.py: rev-parse, count-objects, --exec-path, cat-file, merge-base, rev-list, merge-tree, commit-tree, archive, diff, show, ls-tree and config reads, never a fetch, push, checkout or ref update. Under brief.intake it runs in the environment greg.intake._git_environment sets (READ_ONLY_GIT_ENV's PATH, no lazy fetch, hooks and fsmonitor off, filter drivers blanked, new objects written to the mission's scratch store), each process under the mission's Guard (greg.intake._guard); from scripts/compose_rehearsal.py with the person's own environment and no guard",
+   "pin": "6d2ebbb75e5afe8099efbe509d6cafb8899d44374480b3c09cac4767e53873a9"
+  },
+  {
+   "module": "greg/intake_rehearsal.py",
+   "qualname": "keep_both.scratch",
+   "callee": "greg.intake_rehearsal._run",
+   "count": 1,
+   "serves": [
+    "capability:brief.intake",
+    "operator:python scripts/compose_rehearsal.py"
+   ],
+   "justification": "read-tree, hash-object, update-index and write-tree against a scratch index file in a temporary directory (GIT_INDEX_FILE), so the repository's own index is never touched; the same environment and guard as the rehearsal's other git calls",
+   "pin": "5337761a00f6a51ef3c955b3fd0305ba5eda736d33ada70ea4bfbe19e1cf4297"
+  },
+  {
+   "module": "greg/intake_rehearsal.py",
+   "qualname": "keep_both",
+   "callee": "greg.intake_rehearsal._run",
+   "count": 1,
+   "serves": [
+    "capability:brief.intake",
+    "operator:python scripts/compose_rehearsal.py"
+   ],
+   "justification": "`git merge-file --union -p` over three temporary files, only for a file the mission or the person named in union: it reads those files and prints the merged text, in the same environment and under the same guard as the rehearsal's other git calls",
+   "pin": "ad1502e6975789a6627f84c625d70c863e272c88e91356612013e01ce65a8d57"
+  },
+  {
+   "module": "greg/intake_rehearsal.py",
+   "qualname": "export",
+   "callee": "greg.intake_rehearsal._run",
+   "count": 1,
+   "serves": [
+    "capability:brief.intake",
+    "operator:python scripts/compose_rehearsal.py"
+   ],
+   "justification": "`tar -x` unpacks the stream `git archive` wrote for one commit into a new scratch directory (dest.mkdir fails if it exists); under brief.intake the directory is inside the mission workspace, the environment is the scrubbed one greg.intake._git_environment sets and the process runs under the mission's Guard; from scripts/compose_rehearsal.py the environment is the person's own",
+   "pin": "ff93a0268870d1036acc11e4aa5c48af6c65180d203e2f3b5c91dab34dbb5670"
   },
   {
    "module": "greg/mcp_login.py",
@@ -1523,6 +1577,38 @@
    "count": 1,
    "searches": "<computed>",
    "note": "shutil.which finds git and tar on READ_ONLY_GIT_ENV's PATH (/usr/bin:/bin) only to grant their install trees read access in the rehearsal's Landlock ruleset; it runs nothing. The processes greg.intake_rehearsal._run starts later find the same programs on the same PATH, confined as its allowed entry says"
+  },
+  {
+   "module": "greg/intake_rehearsal.py",
+   "qualname": "git",
+   "program": "git",
+   "count": 1,
+   "searches": "<computed>",
+   "note": "found on the PATH of the environment _run is handed: under brief.intake READ_ONLY_GIT_ENV's /usr/bin:/bin (greg.intake._git_environment), and what it finds runs under the mission's Guard (greg.intake._guard); from scripts/compose_rehearsal.py the person's ambient PATH, run with their own privileges and no guard"
+  },
+  {
+   "module": "greg/intake_rehearsal.py",
+   "qualname": "keep_both.scratch",
+   "program": "git",
+   "count": 1,
+   "searches": "<computed>",
+   "note": "found on the PATH of the environment _run is handed: under brief.intake READ_ONLY_GIT_ENV's /usr/bin:/bin (greg.intake._git_environment), and what it finds runs under the mission's Guard (greg.intake._guard); from scripts/compose_rehearsal.py the person's ambient PATH, run with their own privileges and no guard"
+  },
+  {
+   "module": "greg/intake_rehearsal.py",
+   "qualname": "keep_both",
+   "program": "git",
+   "count": 1,
+   "searches": "<computed>",
+   "note": "found on the PATH of the environment _run is handed: under brief.intake READ_ONLY_GIT_ENV's /usr/bin:/bin (greg.intake._git_environment), and what it finds runs under the mission's Guard (greg.intake._guard); from scripts/compose_rehearsal.py the person's ambient PATH, run with their own privileges and no guard"
+  },
+  {
+   "module": "greg/intake_rehearsal.py",
+   "qualname": "export",
+   "program": "tar",
+   "count": 1,
+   "searches": "<computed>",
+   "note": "found on the PATH of the environment _run is handed: under brief.intake READ_ONLY_GIT_ENV's /usr/bin:/bin (greg.intake._git_environment), and what it finds runs under the mission's Guard (greg.intake._guard); from scripts/compose_rehearsal.py the person's ambient PATH, run with their own privileges and no guard"
   },
   {
    "module": "greg/licensing.py",

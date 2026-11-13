@@ -306,6 +306,19 @@ kernel enforces "git reads nothing outside the read roots":
   A file hard-linked into the repository from outside the read roots is read like its own (as `git clone --local`
   relies on); every recommendation says so.
 
+After the re-check of da8ccb0d (2026-11-13; P1-P7, renderer unchanged):
+
+- `intake_rehearsal._run`, the one place the rehearsal starts git and tar, is a declared wrapper in the effect-call
+  allowlist: each of its callers is a listed site and each program it is handed a listed path lookup, so a new caller
+  that starts another program fails `tests/unit/test_effect_call_allowlist.py`;
+- under `required`, a host that cannot load the seccomp filter (no libseccomp) refuses: Landlock confines git's
+  files, the filter its network. `supervised` runs, and the recommendation says the network was not denied;
+- the pre-check lists at most 1,048,576 directories (real or reached through a link) in at most 60 s, and refuses
+  saying which bound it hit (one link to a large tree inside the read roots was walked without either);
+- a repository whose path holds a newline is read; one whose path is not UTF-8 is refused before anything is read,
+  never a crash; a file tracked through a filter driver the repository marks required (`git lfs install --local`)
+  is refused in one line saying so, and the driver is never run.
+
 It approves nothing. Composing heads for development and approving a protected merge are separate boundaries: the
 mission composes in scratch and writes a file; protected integration needs the founder's and the integrator's
 approval. By default the delivery itself stops at a founder approval; `--preauthorize-delivery` signs it into the

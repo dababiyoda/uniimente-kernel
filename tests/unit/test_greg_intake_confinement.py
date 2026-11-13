@@ -10,6 +10,11 @@ Each test names the finding it covers and fails on c6e79087. A test that needs t
 without Landlock, and fails there when GREG_REQUIRE_LANDLOCK=1 (CI). The pre-check tests come first: they start no git,
 so the mutation gate (``scripts/ci/check_intake_mutants.py``) catches their mutants quickly. A test that could block on
 a FIFO runs under a time guard, so a regression fails it instead of hanging the suite.
+
+The re-check of da8ccb0d (round 5, P1-P7) added: the effect-call allowlist lists every caller of the rehearsal's
+process starter; a repository path holding a newline is read; the pre-check's walk is bounded in directories and in
+time; five hand mutants of round 4 are caught; under ``required`` a host that cannot deny git the network refuses; a
+repository path that is not UTF-8 is refused, never a crash; a required filter driver is refused in one line.
 """
 from __future__ import annotations
 
@@ -155,6 +160,36 @@ def fifo(made: list, path: Path) -> Path:
     return path
 
 
+# -- P1: every process the rehearsal starts is a site the effect-call allowlist lists -------------------------------
+
+NEW_CALLER = '\n\ndef _probe_new_effect(root):\n    return _run(["curl", "-s", "https://example.invalid/"], root).stdout\n'
+
+
+def test_p1_a_new_caller_of_the_rehearsal_s_process_starter_is_a_site_the_allowlist_must_list():
+    """Re-check of da8ccb0d, P1. Round 4 moved every git and tar start into ``intake_rehearsal._run`` and listed only
+    ``_run`` itself, so a new caller of ``_run`` could start any program (curl here) and the effect-call allowlist
+    still passed; the same call written as ``subprocess.run`` failed it, and the git and tar lookups left the list.
+    ``_run`` is a declared wrapper now: each caller is a site of its own and each program it is handed a path lookup,
+    both listed and pinned, and a new one fails the allowlist test."""
+    from tests.unit import test_effect_call_allowlist as allowlist
+    module = "greg/intake_rehearsal.py"
+    document = allowlist.load_allowlist()
+    source = Path(intake_rehearsal.__file__).read_text(encoding="utf-8")
+
+    def problems(text: str) -> list[str]:
+        scan = allowlist.scan_all({module: text}, allowlist.wrapper_table(document))
+        found = (allowlist.compare(scan.found, document) + allowlist.lookup_problems(scan.lookups, document)
+                 + allowlist.pin_problems(document, {module: text}, scan))
+        return [p for p in found if f" {module} :: " in p]          # the scan reads this one module
+    assert problems(source) == []
+    for name in ("git", "keep_both.scratch", "keep_both", "export"):
+        assert (module, name, "greg.intake_rehearsal._run") in {allowlist.entry_key(e) for e in document["allowed"]}
+    added = problems(source + NEW_CALLER)
+    assert any(p.startswith(f"UNLISTED effect call site {module} :: _probe_new_effect :: greg.intake_rehearsal._run")
+               for p in added), added
+    assert any(p.startswith(f"UNLISTED path lookup {module} :: _probe_new_effect :: curl") for p in added), added
+
+
 # -- E1, E11: an alternates listing is read as git reads it, or refused --------------------------------------------
 
 LISTINGS = {        # the listing's bytes, and the directory inside the store that git follows for them
@@ -196,6 +231,17 @@ def test_e1_a_listing_is_read_whole_never_cut_and_one_over_the_limit_is_refused(
         pinned(tmp_path, repo)
     listing.write_bytes(b"#" + b"x" * (intake.MAX_LISTING_BYTES + 1) + b"\n")
     with pytest.raises(CapabilityError, match="longer than"):
+        pinned(tmp_path, repo)
+
+
+def test_a_quoted_alternates_line_is_refused_by_the_pre_check_itself(tmp_path):
+    """Re-check of da8ccb0d (a hand mutant no test caught): git unquotes an alternates line that begins with '"' and
+    reads the store it names. The pre-check refuses such a line rather than read it another way; without that, the
+    quoted name was no directory here, the line was skipped, and only git's own word refused the store later."""
+    store = outside_store(tmp_path)
+    repo = tiny(tmp_path / "roots" / "repo")
+    (repo / ".git" / "objects" / "info" / "alternates").write_text(f'"{store}"\n')
+    with pytest.raises(CapabilityError, match="named in quotes"):
         pinned(tmp_path, repo)
 
 
@@ -374,6 +420,24 @@ def test_a_listing_turned_outside_after_its_check_is_never_read_here(tmp_path, m
         pinned(tmp_path, repo)
 
 
+def test_a_listing_turned_into_a_fifo_after_its_check_is_never_waited_on(tmp_path, monkeypatch, fifos):
+    """Re-check of da8ccb0d (a hand mutant no test caught): a file read whole is opened without blocking, so a FIFO
+    swapped in after its check (here: the check is made to hand one back) is refused as not a regular file at once,
+    never waited on for a writer in GREG's own process."""
+    repo = tiny(tmp_path / "roots" / "repo")
+    listing = str(repo / ".git" / "objects" / "info" / "alternates")
+    (repo / ".git" / "objects" / "info" / "alternates").write_text("")
+    swapped_in = fifo(fifos, tmp_path / "roots" / "fifo")
+    real = intake._Pin.regular
+
+    def swapped(self, path, what):
+        found = real(self, path, what)
+        return str(swapped_in) if path == listing else found
+    monkeypatch.setattr(intake._Pin, "regular", swapped)
+    with pytest.raises(CapabilityError, match="not a regular file"):
+        within(10, lambda: pinned(tmp_path, repo))
+
+
 # -- the two false refusals of round 3, and one this round must not add ---------------------------------------------
 
 def test_the_hooks_of_every_git_directory_are_skipped_and_a_dangling_hooks_link_refuses_nothing(tmp_path):
@@ -434,6 +498,29 @@ def test_e9_every_visit_through_a_link_counts_toward_the_cap_a_revisit_too(tmp_p
         pinned(tmp_path, repo)
 
 
+def test_p3_the_pre_check_s_walk_is_bounded_in_directories_and_in_time(tmp_path, monkeypatch):
+    """Re-check of da8ccb0d, P3. One link in the git directory to a large tree inside the read roots was walked to its
+    end: no bound on the directories listed, no time limit in GREG's own process (300,000 directories passed in 1.2 s;
+    a link to a home directory walks all of it). Every directory the pre-check lists counts toward
+    MAX_WALKED_DIRECTORIES now, and the walk has PIN_SECONDS; each refuses saying which was hit. (Here 60 linked
+    directories against a bound of 50, then a clock that moves a second per look against a limit of 5 s.)"""
+    repo = tiny(tmp_path / "roots" / "repo")
+    big = tmp_path / "roots" / "big"
+    for index in range(60):
+        (big / f"d{index}").mkdir(parents=True)
+    os.symlink(big, repo / ".git" / "objects" / "zz")
+    pinned(tmp_path, repo)                         # inside the default bounds, like a git-annex or git-lfs store
+    monkeypatch.setattr(intake, "MAX_WALKED_DIRECTORIES", 50, raising=False)
+    with pytest.raises(CapabilityError, match="hold more than 50 directories"):
+        pinned(tmp_path, repo)
+    monkeypatch.setattr(intake, "MAX_WALKED_DIRECTORIES", 1 << 20, raising=False)
+    clock = iter(range(1 << 20))
+    monkeypatch.setattr(intake, "_monotonic", lambda: float(next(clock)))
+    monkeypatch.setattr(intake, "PIN_SECONDS", 5, raising=False)
+    with pytest.raises(CapabilityError, match="did not finish within 5s"):
+        pinned(tmp_path, repo)
+
+
 # -- E5: a path this process cannot resolve as the kernel does is refused --------------------------------------------
 
 @pytest.mark.parametrize("what", ["pack", "info"])
@@ -481,6 +568,19 @@ def test_e10_a_name_too_long_to_look_up_is_a_refusal_never_a_transient_fault(tmp
     assert "its git directory cannot be listed" in str(exc), exc      # what was being read when it failed, and where
 
 
+def test_p6_a_repository_path_that_is_not_utf8_is_refused_never_a_crash(tmp_path, monkeypatch):
+    """Re-check of da8ccb0d, P6 (E11's class). A repository whose path is not UTF-8 crashed the capability
+    (UnicodeEncodeError) after the whole rehearsal had run, when the recommendation naming it was written. The
+    request is refused now, saying why, before anything is read."""
+    where = Path(os.fsdecode(os.path.join(os.fsencode(tmp_path / "roots"), b"bad\xff", b"repo")))
+    shas = build_repo(where)
+    params = {"repository": str(where), "base": shas["base"], "units": [{"name": "label", "sha": shas["label"]}]}
+    with pytest.raises(CapabilityError, match="repository must be a path in UTF-8"):
+        intake.request(params)
+    exc = refused(tmp_path, where, shas, ["label"], monkeypatch)
+    assert "repository must be a path in UTF-8" in str(exc), exc
+
+
 # -- the guard: what every git and tar process of the rehearsal may do ---------------------------------------------
 
 PROBE = """
@@ -519,6 +619,41 @@ def test_the_guard_reads_the_roots_writes_only_scratch_and_opens_no_socket(tmp_p
     assert out.stdout.split() == ["allowed", "denied", "allowed", "denied", "denied"], out.stderr[-600:]
 
 
+PRIVILEGES = """
+import ctypes
+libc = ctypes.CDLL(None, use_errno=True)
+death = ctypes.c_int(-1)
+libc.prctl(2, ctypes.byref(death), 0, 0, 0)          # PR_GET_PDEATHSIG
+print(death.value, libc.prctl(39, 0, 0, 0, 0))        # PR_GET_NO_NEW_PRIVS
+"""
+
+
+def no_seccomp(monkeypatch) -> None:
+    """This host as one without libseccomp: the guard finds no library for the network filter."""
+    import ctypes.util
+    real = ctypes.util.find_library
+    monkeypatch.setattr(ctypes.util, "find_library", lambda name: None if name == "seccomp" else real(name))
+
+
+@pytest.mark.parametrize("seccomp", [True, False], ids=["with the network filter", "without it"])
+def test_each_process_dies_with_the_body_and_can_gain_no_privileges(seccomp, tmp_path, monkeypatch):
+    """Re-check of da8ccb0d (two hand mutants no test caught). Every git and tar process gets the parent-death signal,
+    so one blocked on a file never outlives a killed body (round 4 saw such orphans), and PR_SET_NO_NEW_PRIVS from the
+    guard itself: loading the seccomp filter sets it too, but a host without libseccomp (``supervised``) loads none."""
+    landlock()
+    if not seccomp:
+        no_seccomp(monkeypatch)
+    (tmp_path / "roots").mkdir()
+    scratch = tmp_path / "ctx" / "workspace" / "intake-scratch"
+    scratch.mkdir(parents=True)
+    guard, said = intake._guard(tmp_path / "roots", scratch, context(tmp_path))
+    assert ("network denied (seccomp)" if seccomp else "network not denied") in said, said
+    (scratch / "probe.py").write_text(PRIVILEGES)
+    out = subprocess.run([sys.executable, "-I", str(scratch / "probe.py")], capture_output=True, text=True,
+                         preexec_fn=guard.preexec, cwd=scratch)
+    assert out.stdout.split() == ["9", "1"], out.stderr[-600:]          # SIGKILL, and no new privileges
+
+
 def test_without_landlock_required_refuses_and_supervised_runs_git_unconfined_and_says_so(tmp_path, monkeypatch):
     """The posture is the body's worker confinement, as for the heads' tests: on a host without Landlock, ``required``
     refuses before anything reads the repository; ``supervised`` runs git unconfined and the recommendation says so
@@ -538,6 +673,31 @@ def test_without_landlock_required_refuses_and_supervised_runs_git_unconfined_an
     assert out["recommendations"] == {"label": "ready to take"}
     said = out["inputs"]["confinement"]["git"]
     assert said.startswith("supervised: NOT confined by the kernel (Landlock ABI >= 3 unavailable: (test))")
+    assert said in Path(out["path"]).read_text()
+
+
+def test_p5_without_the_network_filter_required_refuses_and_supervised_says_git_had_the_network(tmp_path, monkeypatch):
+    """Re-check of da8ccb0d, P5. On a host with Landlock and no libseccomp the rehearsal's git ran under ``required``
+    with the network not denied. The founder chose required confinement: it refuses now, before git reads the
+    repository; ``supervised`` runs, and the recommendation says the network was not denied."""
+    landlock()
+    no_seccomp(monkeypatch)
+    _, shas = world(tmp_path)
+    repo = tmp_path / "roots" / "repo"
+    shutil.copytree(tmp_path / "outside" / "repo", repo, symlinks=True)
+    reads = intake._git_environment
+
+    def never(*args, **kwargs):
+        raise AssertionError("the repository was read")
+    monkeypatch.setattr(intake, "_git_environment", never)
+    exc = refused(tmp_path, repo, shas, ["label"], monkeypatch, "required", setting="required")
+    assert "cannot be denied the network" in str(exc) and "'required'" in str(exc), exc
+    assert getattr(exc, "failure_class", None) != "transient"
+    monkeypatch.setattr(intake, "_git_environment", reads)
+    out = recommend(tmp_path, repo, shas, ["label"], monkeypatch, "supervised")
+    assert out["recommendations"] == {"label": "ready to take"}
+    said = out["inputs"]["confinement"]["git"]
+    assert said.startswith("Landlock ABI ") and "network not denied (no seccomp filter on this host)" in said, said
     assert said in Path(out["path"]).read_text()
 
 
@@ -652,11 +812,40 @@ def test_git_s_own_word_on_what_it_reads_must_match_what_was_checked(tmp_path, m
     assert str((roots / "packed" / ".git" / "objects").resolve()) in str(exc)
 
 
+@pytest.mark.parametrize("which", ["gitdir", "common"])
+def test_git_s_own_word_on_its_git_directory_and_repository_must_match_the_pre_check(which, tmp_path, monkeypatch):
+    """Re-check of da8ccb0d (a hand mutant no test caught): git's answer for its git directory and for the repository
+    a worktree belongs to (``rev-parse``) is compared with where the pre-check followed them, and a difference is
+    refused by name. Here the pre-check is made to report another git directory inside the read roots."""
+    shas = build_repo(tmp_path / "roots" / "repo")
+    elsewhere = tiny(tmp_path / "roots" / "elsewhere") / ".git"
+    real = intake._pinned
+
+    def misreported(repo, roots, checked=None):
+        env = real(repo, roots, checked)
+        checked[which] = str(elsewhere.resolve())
+        return env
+    monkeypatch.setattr(intake, "_pinned", misreported)
+    exc = refused(tmp_path, tmp_path / "roots" / "repo", shas, ["label"], monkeypatch)
+    word = "git directory" if which == "gitdir" else "repository"
+    assert f"git reads its {word} at {(tmp_path / 'roots' / 'repo' / '.git').resolve()}, not where" in str(exc), exc
+
+
 def test_a_repository_whose_path_holds_a_colon_is_read(tmp_path, monkeypatch):
     """git splits ``GIT_ALTERNATE_OBJECT_DIRECTORIES`` at ':': the repository's own store, listed there for the
     scratch objects, was cut in two, and every revision read as missing. It is quoted now."""
     shas = build_repo(tmp_path / "roots" / "a:b" / "repo")
     out = recommend(tmp_path, tmp_path / "roots" / "a:b" / "repo", shas, ["label"], monkeypatch)
+    assert out["recommendations"] == {"label": "ready to take"}
+
+
+def test_p2_a_repository_whose_path_holds_a_newline_is_read(tmp_path, monkeypatch):
+    """Re-check of da8ccb0d, P2. rev-parse prints the git directory and the common directory unquoted, one per line,
+    and the answer was split at the first newline: a repository whose path holds one was refused ('git reads its git
+    directory at .../n, not where this check followed it'). c6e79087 delivered it, and so does this round."""
+    where = tmp_path / "roots" / "n\nl" / "repo"
+    shas = build_repo(where)
+    out = recommend(tmp_path, where, shas, ["label"], monkeypatch)
     assert out["recommendations"] == {"label": "ready to take"}
 
 
@@ -802,3 +991,28 @@ def test_e8_an_include_is_never_read_and_one_that_blocks_never_hangs(tmp_path, m
     assert "include" in str(exc) and included.stat().st_atime == before, exc
     git(repo, "config", "include.path", str(fifo(fifos, tmp_path / "outside" / "included-fifo")))
     within(60, lambda: refused(tmp_path, repo, shas, ["label"], monkeypatch, "fifo"))
+
+
+# -- P7: a filter driver the repository marks required is refused in one line, and never run ----------------------
+
+def test_p7_a_filter_driver_marked_required_is_never_run_and_its_refusal_says_why(tmp_path, monkeypatch):
+    """Re-check of da8ccb0d, P7. ``git lfs install --local`` marks the lfs driver required. The rehearsal blanks every
+    filter driver, so git refuses to export a file the driver tracks, and the refusal said only 'git archive ...: smudge
+    filter lfs failed'. It says why now, in one line; the driver still never runs, and heads that track no file
+    through it are delivered as before."""
+    repo = tmp_path / "roots" / "repo"
+    shas = build_repo(repo)
+    pointer = "version https://git-lfs.github.com/spec/v1\noid sha256:" + "a" * 64 + "\nsize 3\n"
+    shas["lfs"] = branch(repo, "lfs", {".gitattributes": "*.bin filter=lfs -text\n", "data.bin": pointer})
+    git(repo, "checkout", "-q", "base")
+    ran = tmp_path / "roots" / "the-driver-ran"
+    for key in ("clean", "smudge", "process"):
+        git(repo, "config", f"filter.lfs.{key}", f"touch {ran}; cat")
+    git(repo, "config", "filter.lfs.required", "true")
+    exc = refused(tmp_path, repo, shas, ["label", "lfs"], monkeypatch)
+    assert str(exc) == ("refused: data.bin is tracked through the filter driver 'lfs', which this repository marks "
+                        "required (filter.lfs.required); the rehearsal blanks every filter driver and runs none, so git "
+                        "cannot export that file"), exc
+    out = recommend(tmp_path, repo, shas, ["label"], monkeypatch, "label-only")
+    assert out["recommendations"] == {"label": "ready to take"}
+    assert not ran.exists()

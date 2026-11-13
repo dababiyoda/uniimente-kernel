@@ -26,6 +26,7 @@ TESTS = "tests/unit/test_greg_intake.py"
 I = "greg/intake.py"                    # noqa: E741
 R = "greg/intake_rehearsal.py"
 T = "greg/templates.py"
+A = "tests/security/effect-call-allowlist.json"
 
 MUTANTS = [
     # -- the request -----------------------------------------------------------------------------------------
@@ -276,6 +277,34 @@ CONFINEMENT_MUTANTS = [
      "                              preexec_fn=guard.preexec, timeout=None)"),
     (R, "a store path holding ':' is quoted for git's alternates variable",
      "    if \":\" in named or named.startswith('\"'):", "    if False:"),
+    # -- the re-check of da8ccb0d (round 5): P1-P7, and the hand mutants of round 4 that no test caught --------------
+    (A, "P1: the rehearsal's process starter is a declared wrapper, so each of its callers is a site the allowlist lists",
+     '   "qualname": "_run",\n   "exempt_when": {},', '   "qualname": "_run_elsewhere",\n   "exempt_when": {},'),
+    (I, "P2: git's word on each directory loses only its last LF, so a path holding a newline is read",
+     "        theirs = os.path.realpath(os.fsdecode(said.stdout[:-1]))",
+     '        theirs = os.path.realpath(os.fsdecode(said.stdout.split(b"\\n")[0]))'),
+    (I, "P3: the pre-check lists a bounded number of directories",
+     "            if len(self.walked) > MAX_WALKED_DIRECTORIES:", "            if False:"),
+    (I, "P3: the pre-check has a time limit in GREG's own process",
+     "            if _monotonic() > self.deadline:", "            if False:"),
+    (I, "hand mutant: each git and tar process dies with the body (PR_SET_PDEATHSIG)",
+     "        if libc.prctl(1, signal.SIGKILL, 0, 0, 0) != 0:", "        if False:"),
+    (I, "hand mutant: each git and tar process gains no privileges (PR_SET_NO_NEW_PRIVS), with or without seccomp",
+     "        if libc.prctl(38, 1, 0, 0, 0) != 0:", "        if False:"),
+    (I, "hand mutant: a quoted alternates line is refused by the pre-check itself",
+     "        if line[:1] == b'\"':\n            raise CapabilityError(\"an alternate object store is named in quotes; "
+     "refused\")\n", ""),
+    (I, "hand mutant: a file read whole is opened without blocking",
+     '        fd = os.open(real, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | getattr(os, "O_CLOEXEC", 0))',
+     '        fd = os.open(real, os.O_RDONLY | os.O_NOFOLLOW | getattr(os, "O_CLOEXEC", 0))'),
+    (I, "hand mutant: git's word on its git directory and repository must match the pre-check",
+     "        if theirs != ours:", "        if False:"),
+    (I, "P5: under required, a host that cannot deny git the network refuses",
+     '    if network is None and _setting(ctx) != "supervised":', "    if False:"),
+    (I, "P6: a repository path that is not UTF-8 is refused, never a crash",
+     "    if not _utf8(repository):", "    if False:"),
+    (I, "P7: a required filter driver's failure is refused in one line saying why",
+     "        if match.group(2) in required:", "        if False:"),
 ]
 
 if __name__ == "__main__":

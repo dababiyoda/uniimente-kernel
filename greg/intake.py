@@ -19,8 +19,9 @@ recommendation ``brief.intake`` delivered under a receipt on the canonical ledge
 What it touches: Git objects of exactly the named repository are read, and nothing outside the read roots. The
 kernel enforces that: every git and tar process of the rehearsal runs in the worker envelope's Landlock backend,
 reading only the read roots and the host runtime and writing only the mission's scratch, with the network denied
-(``_guard``); a host without Landlock is refused under the body's ``required`` setting, and under ``supervised`` runs
-them unconfined and says so in the recommendation. ``_pinned`` is the pre-check that says why a repository is refused
+(``_guard``); a host without Landlock, or without the seccomp filter that denies the network, is refused under the
+body's ``required`` setting, and under ``supervised`` runs them unconfined (or with the network open) and says so in
+the recommendation. ``_pinned`` is the pre-check that says why a repository is refused
 (no upward search; links, listings and stores followed as git follows them). The merge's new objects are written
 under the mission workspace, never into the repository (``intake_rehearsal.scratch_objects``); the trees are exported
 under the mission workspace and removed afterwards; two files are written under the delivery root. No ref, index or
@@ -111,6 +112,14 @@ def _text(value, label: str, limit: int = TEXT) -> str:
     return text if len(text) <= limit else text[:limit - 1] + "…"
 
 
+def _utf8(text: str) -> bool:
+    try:
+        text.encode("utf-8")
+    except UnicodeEncodeError:              # a lone surrogate: os.fsdecode's stand-in for a byte that is not UTF-8
+        return False
+    return True
+
+
 def _sha(value, label: str) -> str:
     if not isinstance(value, str) or not SHA.fullmatch(value):
         raise CapabilityError(f"{label} must be a full 40-character commit SHA, not a branch name or a short SHA: "
@@ -170,6 +179,11 @@ def request(params) -> dict:
     repository = params.get("repository")
     if not isinstance(repository, str) or not repository.startswith("/") or "\x00" in repository:
         raise CapabilityError("repository must be an absolute path")
+    if not _utf8(repository):
+        # Re-check of da8ccb0d, P6 (E11's class): a path that is not UTF-8 crashed the capability after the whole
+        # rehearsal had run, when the recommendation that names it was written.
+        raise CapabilityError("repository must be a path in UTF-8: the recommendation names it, and a path that is "
+                              "not UTF-8 cannot be written there as text, so it is refused before anything is read")
     units = params.get("units")
     if not isinstance(units, list) or not 1 <= len(units) <= MAX_UNITS:
         raise CapabilityError(f"units must be an ordered list of 1 to {MAX_UNITS} entries {{name, sha}}")
@@ -220,6 +234,11 @@ ALTERNATE_DEPTH = 5        # git reads an alternate store's own listing this man
 # (review of c6e79087, E9: revisits were not counted and grew quadratically). Real directories are not counted: they
 # cannot loop, and a large store git never reads (git-annex, git-lfs) is no reason to refuse.
 MAX_LISTED_DIRECTORIES = 65536
+# Every directory the pre-check lists, real or reached through a link, and how long it may take in GREG's own process
+# (re-check of da8ccb0d, P3: one link into a large tree inside the read roots was walked without a bound or a time
+# limit). A git-annex or git-lfs store of a few hundred thousand directories is well inside both.
+MAX_WALKED_DIRECTORIES = 1 << 20
+PIN_SECONDS = 60
 MAX_STORES = 64            # distinct object stores followed for one repository (each is listed for links)
 MAX_LISTING_BYTES = 1024 * 1024   # a file git reads whole (alternates, commondir, .git): longer is refused, never cut
 # Repository configuration that names a file the rehearsal's git commands read (attributes for merge-tree and
@@ -298,6 +317,7 @@ class _Pin:
         self.roots = [os.path.realpath(root) for root in roots]
         self.walked: set[str] = set()          # every real directory listed, so a revisit is never listed again
         self.visits = 0                        # directory links followed, a revisit too
+        self.deadline = _monotonic() + PIN_SECONDS
 
     def inside(self, real: str, what: str, shown) -> str:
         if not _within(real, self.roots):
@@ -361,6 +381,14 @@ class _Pin:
             if top in self.walked:
                 continue
             self.walked.add(top)
+            if len(self.walked) > MAX_WALKED_DIRECTORIES:
+                raise CapabilityError(f"this repository's git directory, its object stores and the directories their "
+                                      f"links lead to hold more than {MAX_WALKED_DIRECTORIES} directories (the "
+                                      f"pre-check stopped at {top[:200]}); it lists no more than that, so the request "
+                                      "is refused")
+            if _monotonic() > self.deadline:
+                raise CapabilityError(f"the pre-check of what git reads did not finish within {PIN_SECONDS}s, listing "
+                                      f"{what} ({top[:200]}); refused")
             try:
                 with os.scandir(top) as listing:
                     entries = list(listing)
@@ -516,13 +544,17 @@ def _unquoted(text: bytes) -> bytes:
 def _reads_what_was_checked(repo: Path, checked: dict) -> None:
     """git's own word, confined, for what it reads: its git directory and common directory (``rev-parse``) and every
     object store it links (``count-objects -v``). Each must be one the pre-check followed; a difference is refused and
-    named, whatever its cause (re-check of c6e79087, E1, E2: listings the pin read differently from git)."""
-    said = rehearsal.git(repo, "rev-parse", "--path-format=absolute", "--git-dir", "--git-common-dir", check=False)
-    lines = said.stdout.split(b"\n")
-    if said.returncode or len(lines) < 2:
-        raise CapabilityError("not a git repository")
-    gitdir, common = (os.path.realpath(os.fsdecode(line)) for line in lines[:2])
-    for word, theirs, ours in (("git directory", gitdir, checked["gitdir"]), ("repository", common, checked["common"])):
+    named, whatever its cause (re-check of c6e79087, E1, E2: listings the pin read differently from git).
+
+    Each directory is asked for alone and loses only the one LF git ends it with: rev-parse prints a path unquoted, so
+    a path holding a newline split two answers in the wrong place (re-check of da8ccb0d, P2: a repository whose path
+    holds a newline was refused)."""
+    for word, flag, ours in (("git directory", "--git-dir", checked["gitdir"]),
+                             ("repository", "--git-common-dir", checked["common"])):
+        said = rehearsal.git(repo, "rev-parse", "--path-format=absolute", flag, check=False)
+        if said.returncode or not said.stdout.endswith(b"\n"):
+            raise CapabilityError("not a git repository")
+        theirs = os.path.realpath(os.fsdecode(said.stdout[:-1]))
         if theirs != ours:
             raise CapabilityError(f"git reads its {word} at {theirs[:200]}, not where this check followed it "
                                   f"({ours[:200]}); refused")
@@ -537,12 +569,15 @@ def _reads_what_was_checked(repo: Path, checked: dict) -> None:
                 raise CapabilityError(f"git reads an object store this check did not follow ({store[:200]}); refused")
 
 
-def _git_environment(repo: Path, scratch: Path, roots=None) -> dict:
+def _git_environment(repo: Path, scratch: Path, roots=None, facts: dict | None = None) -> dict:
     """The environment the rehearsal's git runs in: scrubbed, with no system or user configuration, no system
     attributes, an empty working tree, no lazy fetch, new objects written under ``scratch``, and nothing the
     repository's own configuration names ever run. A filter driver is blanked, as ``capabilities.read_only_git`` does
     (git skips an empty filter command, so ``git archive`` exports the stored bytes). A merge driver cannot be blanked
-    without changing what the merge produces, so a repository that configures one is refused.
+    without changing what the merge produces, so a repository that configures one is refused. A driver the repository
+    marks required (``filter.<name>.required``, as ``git lfs install --local`` sets) stays required, so git refuses to
+    export a file it tracks; ``facts``, when given, gets those drivers' names, for the refusal to say so (re-check of
+    da8ccb0d, P7).
 
     ``GIT_ATTR_NOSYSTEM`` (re-check of c6e79087, E7): ``/etc/gitattributes`` is host configuration, and
     ``GIT_CONFIG_NOSYSTEM`` does not cover it. ``GIT_WORK_TREE`` is an empty scratch directory (E6): ``merge-tree``
@@ -567,7 +602,7 @@ def _git_environment(repo: Path, scratch: Path, roots=None) -> dict:
             raise CapabilityError("this repository's configuration includes another file; git would read that file "
                                   "wherever it is, so the request is refused")
         listed = rehearsal.git(repo, "config", "--no-includes", "-z", "--name-only", "--get-regexp",
-                               r"^(filter\..*\.(clean|process|smudge)|merge\..*\.driver)$", check=False)
+                               r"^(filter\..*\.(clean|process|smudge|required)|merge\..*\.driver)$", check=False)
         if listed.returncode not in (0, 1):
             raise CapabilityError("not a git repository")
         files = _Pin([*roots, scratch]) if roots is not None else None   # a "~/" path names the scratch home
@@ -580,14 +615,20 @@ def _git_environment(repo: Path, scratch: Path, roots=None) -> dict:
                 except OSError as exc:
                     raise files.unresolvable(f"a file this repository's configuration names ({key})", path, exc) \
                         from None
+        required: list[str] = []
         for key in dict.fromkeys(k for k in listed.stdout.decode("utf-8", "replace").split("\x00") if k):
             if key.startswith("merge."):
                 raise CapabilityError(f"this repository configures a merge driver ({key[:80]}); the rehearsal runs no "
                                       "program a repository's configuration names, so it is refused")
+            if key.endswith(".required"):       # left as it is: a file a required driver tracks cannot be exported
+                required.append(key[len("filter."):-len(".required")])
+                continue
             config.append((key, ""))
         if roots is not None:
             _reads_what_was_checked(repo, checked)
         env |= rehearsal.scratch_objects(repo, scratch / "objects")
+    if facts is not None:
+        facts["required_filters"] = required
     env["GIT_CONFIG_COUNT"] = str(len(config))
     for index, (key, value) in enumerate(config):
         env[f"GIT_CONFIG_KEY_{index}"], env[f"GIT_CONFIG_VALUE_{index}"] = key, value
@@ -618,7 +659,9 @@ def _guard(repo: Path, scratch: Path, ctx: InvocationContext) -> tuple[rehearsal
 
     On a host without Landlock the body's worker confinement decides, as it does for the heads' tests: ``required``
     refuses; ``supervised`` runs git and tar unconfined, under the time limit and the network filter where there is
-    one, and the recommendation says so. Never silently."""
+    one, and the recommendation says so. Never silently. The same holds for the network filter alone: on a host that
+    cannot load it, ``required`` refuses (re-check of da8ccb0d, P5) and ``supervised`` says the network was not
+    denied."""
     import ctypes
     import signal
     import sys
@@ -650,6 +693,13 @@ def _guard(repo: Path, scratch: Path, ctx: InvocationContext) -> tuple[rehearsal
         write = [scratch.resolve()]
         said = (f"Landlock ABI {abi}: they read only the read roots and the host runtime and write only the mission's "
                 f"scratch; {said_network}; each process limited to {GIT_TIMEOUT}s")
+    if network is None and _setting(ctx) != "supervised":
+        # Re-check of da8ccb0d, P5: with Landlock but no libseccomp, 'required' ran git with the network not denied.
+        # The Landlock ruleset handles file access only (handled_access_fs); the seccomp filter denies the network.
+        raise CapabilityError("the rehearsal's git cannot be denied the network on this host (the seccomp network "
+                              "filter cannot be loaded here: no libseccomp, or the filter would not load), and the "
+                              "body's worker confinement is 'required': nothing reads the repository with the network "
+                              "open, so the request is refused")
 
     def preexec() -> None:
         libc = ctypes.CDLL(None, use_errno=True)
@@ -819,9 +869,11 @@ def intake_recommendation(params, ctx: InvocationContext) -> dict:
     shutil.rmtree(scratch, ignore_errors=True)        # an interrupted earlier attempt's exports; never a result
     scratch.mkdir(parents=True)
     runner = ConfinedRunner(ctx)
+    configured: dict = {}
     try:
         guard, git_confinement = _guard(repo, scratch, ctx)
-        with rehearsal.confined(guard), rehearsal.git_environment(_git_environment(repo, scratch, ctx.read_roots)):
+        with rehearsal.confined(guard), \
+                rehearsal.git_environment(_git_environment(repo, scratch, ctx.read_roots, configured)):
             for label, sha in [("base", asked["base"])] + [(f"unit {u['name']}", u["sha"]) for u in asked["units"]]:
                 if rehearsal.git(repo, "cat-file", "-e", f"{sha}^{{commit}}", check=False).returncode:
                     # Confined, git skips a pack it was refused without a word: the revision may be in one.
@@ -851,7 +903,8 @@ def intake_recommendation(params, ctx: InvocationContext) -> dict:
     except rehearsal.RehearsalRefused as exc:   # a refusal with its reason, which names the repository; never a fault
         raise CapabilityError(f"refused: {str(exc)[:600]}") from None
     except rehearsal.RehearsalError as exc:
-        raise CapabilityError(f"the rehearsal could not be carried out: {str(exc)[:300]}") from None
+        raise CapabilityError(_required_filter(str(exc), configured.get("required_filters", ()))
+                              or f"the rehearsal could not be carried out: {str(exc)[:300]}") from None
     except OSError as exc:      # scratch could not be written (a full disk, a path that is not a repository): nothing
         raise CapabilityError(  # was delivered and the repository is untouched, so this is a refusal, not an unknown
             f"the rehearsal could not be carried out: {type(exc).__name__}: {str(exc)[:200]}",
@@ -875,6 +928,22 @@ def intake_recommendation(params, ctx: InvocationContext) -> dict:
             "twin": str(twin), "inputs": inputs, "inputs_digest": digest(inputs),
             "request_digest": inputs["request_digest"], "checks": judged["checks"], "counts": judged["counts"],
             "recommendations": {u["name"]: u["recommendation"] for u in judged["units"]}}
+
+
+FILTER_FAILED = re.compile(r"fatal: (.+?): (?:smudge|clean) filter (\S+) failed")
+
+
+def _required_filter(error: str, required) -> str | None:
+    """The refusal, in one line, when git could not export a file because a filter driver the repository marks
+    required was not run (re-check of da8ccb0d, P7: ``git lfs install --local`` sets ``filter.lfs.required``, and the
+    rehearsal said only that git archive failed). None for any other failure, which is reported as it is."""
+    for match in FILTER_FAILED.finditer(error):
+        if match.group(2) in required:
+            return (f"refused: {_text(match.group(1), 'a file name', 200)} is tracked through the filter driver "
+                    f"'{_text(match.group(2), 'a driver name', 80)}', which this repository marks required "
+                    f"(filter.{_text(match.group(2), 'a driver name', 80)}.required); the rehearsal blanks every filter "
+                    "driver and runs none, so git cannot export that file")
+    return None
 
 
 def _setting(ctx: InvocationContext) -> str:

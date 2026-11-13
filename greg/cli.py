@@ -116,11 +116,15 @@ def _passphrase(args, *, confirm: bool = False) -> bytes | None:
 
 
 def _load_key(path, passphrase: bytes | None):
-    """The founder key, or one plain line (never a traceback) when the passphrase does not open it."""
+    """The founder key, or one plain line (never a traceback) when it cannot be opened: a wrong passphrase, a file
+    that is missing, unreadable or not a key, or a key in a form this library cannot read."""
     try:
         return load_founder_key(Path(path).expanduser(), passphrase)
     except FounderAuthError as exc:        # a key readable by others, or not Ed25519
         raise BodyError(str(exc)) from None
+    except OSError as exc:                 # missing, a directory, unreadable
+        raise BodyError(f"the founder key {path} cannot be read ({exc.strerror or type(exc).__name__}); "
+                        "nothing was signed") from None
     except TypeError:                      # cryptography: a password for a plain key, or none for an encrypted one
         if passphrase is None:
             raise BodyError(f"the founder key {path} is passphrase-protected; run without --no-passphrase and type "
@@ -128,10 +132,17 @@ def _load_key(path, passphrase: bytes | None):
         raise BodyError(f"the founder key {path} is not passphrase-protected; pass --no-passphrase to use it "
                         "(it never reaches the founder tier)") from None
     except ValueError as exc:
-        if "password" not in str(exc).lower() and "decrypt" not in str(exc).lower():
-            raise
-        raise BodyError(f"incorrect passphrase for the founder key {path}; nothing was signed "
-                        "(greg/CHROMEBOOK_FIRST_MISSION.md, \"A key you cannot open\")") from None
+        # Decided by what the file is and what was asked, never by the library's wording. A wrong passphrase on an
+        # encrypted key usually fails its padding check ("Incorrect password"), but about one wrong passphrase in 250
+        # leaves valid padding over garbage, and the library then says only "Could not deserialize key data": the same
+        # wrong passphrase, which a match on "password" let through as a traceback (#299 job 9; 4,288 of 1,080,000
+        # wrong passphrases over 9 keys, cryptography 50.0.2). A file that is not an encrypted key is never called a
+        # wrong passphrase: that would send the founder to the recovery steps that move a good key aside.
+        if passphrase is not None and _protected(str(path)):
+            raise BodyError(f"incorrect passphrase for the founder key {path} (or the key file is damaged); nothing "
+                            "was signed (greg/CHROMEBOOK_FIRST_MISSION.md, \"A key you cannot open\")") from None
+        raise BodyError(f"the founder key {path} could not be read as a PEM private key ({str(exc)[:160]}); nothing "
+                        "was signed") from None
 
 
 def _known_handles() -> set:

@@ -30,6 +30,7 @@ import shutil
 import signal
 import stat
 import sys
+import threading
 import time
 
 from cryptography.hazmat.primitives import serialization
@@ -44,6 +45,7 @@ from greg.founder import FounderAuthError, FounderVerifier, instant, key_id, spe
 from greg.genesis import Genesis
 from greg.journal import Journal, iso, utcnow
 from greg.missions import MissionEngine, MissionError
+from greg import revocation   # its own line: the D-LIC-1 draft patch is anchored on the import line above
 from greg.workers import WORKER_CONFINEMENT, confinement_mode
 from identity.machine_passport import PassportRegistry
 from provenance.commit_witness import WitnessSigner
@@ -94,6 +96,7 @@ RESTORE_LIFTS = "a BODY_RESUME signed by the founder key and issued after the re
 # one is final.
 APPRAISER_VERDICTS = ("VERIFIED", "VERIFIED_UNMET", "REFUTED")
 APPRAISAL_ATTEMPTS = 3
+STOP_JOIN_SECONDS = 60       # a stopped body waits this long for its interrupted workers to record their outcomes
 APPRAISAL_TIMEOUT_SECONDS = 120
 
 
@@ -437,6 +440,9 @@ class Body:
         self._builder_factory = builder if callable(builder) and not hasattr(builder, "build") else None
         self.builder = builder
         self.stop_requested = False
+        # The turn lock: held for a whole turn, and by a background dispatch everywhere but inside its adapter
+        # (greg.background). The ledger, the Gate and the MissionBook are entered by one thread at a time.
+        self._turn = threading.Lock()
         self.ledger = None
 
     # -- open / close ------------------------------------------------------------
@@ -466,9 +472,9 @@ class Body:
                                                "scratch home were removed before anything could read them"},
                 key=["leftovers", sha256_json(removed), len(self.journal.replay("mcp.leftovers_removed"))])
         signer = WitnessSigner(key=self.layout.witness_key.read_bytes(), env="production")
-        self.office = AuthorityOffice(compiled=self.compiled, passports=self.passports, signer=signer,
-                                      ledger=self.ledger)
         self.registry = CapabilityRegistry()
+        self.office = AuthorityOffice(compiled=self.compiled, passports=self.passports, signer=signer,
+                                      ledger=self.ledger, registry=self.registry)
         from greg.cognition.catalog import initial_state
         for manifest, adapter in BUILTINS.values():
             self.registry.register(manifest, adapter, state=initial_state(manifest.capability_id))
@@ -577,9 +583,17 @@ class Body:
             self.genesis.builder = self.builder
 
     def close(self):
-        if self.ledger is not None:
-            self.ledger.close()
-            self.ledger = None
+        # Every dispatch running off the turn stops and records its outcome before the ledger closes, whatever ended
+        # the body (an error included): the turn lock is not held while they finish, since they need it to record.
+        background = self.engine.background if getattr(self, "engine", None) is not None else None
+        if background is not None and background.running and not background.shut:
+            # Once shut down (Body.run did, before it recorded body.stopped and sealed the ledger), it is not waited
+            # for again: what is still running then writes nothing more and is reconciled on restart.
+            background.shutdown(STOP_JOIN_SECONDS)
+        with self._turn:     # a dispatch that outlived even that cannot be mid-write while the ledger closes
+            if self.ledger is not None:
+                self.ledger.close()
+                self.ledger = None
 
     def __enter__(self):
         return self.open()
@@ -684,7 +698,7 @@ class Body:
         if kind == "MISSION":
             return {"mission_id": self.engine.register(body, digest)}
         if kind == "DECISION":
-            self.engine.answer(body, digest)
+            self.engine.answer(body, digest, signer=principal)   # some asks only the founder key answers
             return {"request_id": body["request_id"]}
         if kind == "LIFECYCLE":
             self.engine.lifecycle(body, digest)
@@ -797,14 +811,36 @@ class Body:
                 raise MissionError("key already enrolled; revoke before re-delegating")
             self.journal.record("device.enrolled", {**grant, "command_digest": digest, "at": iso(self.clock())},
                                 key=[grant["device_key_id"], digest])
-            return {"device_key_id": grant["device_key_id"], "kinds": grant["kinds"], "expires_at": grant["expires_at"]}
+            # A key once revoked as a suspected compromise is delegated again on the founder's signature, like any
+            # other; the result says what that means and names its reviews (greg status shows it under the review).
+            suspected = revocation.suspected_reviews(self.journal, self.engine.book, grant["device_key_id"])
+            return {"device_key_id": grant["device_key_id"], "kinds": grant["kinds"], "expires_at": grant["expires_at"],
+                    **({"warning": revocation.SUSPECTED_AGAIN, "integrity_reviews": suspected} if suspected else {})}
         if kind == "DEVICE_REVOKE":
-            kid = body.get("device_key_id")
-            if set(body) != {"device_key_id"} or kid not in self.device_keys():
-                raise MissionError("revocation needs exactly one currently delegated device_key_id")
-            self.journal.record("device.revoked", {"device_key_id": kid, "command_digest": digest,
-                                                   "at": iso(self.clock())}, key=[kid, digest])
-            return {"device_key_id": kid, "revoked": True}
+            # Founder policy 2026-11-11: from this record on, nothing the key approved and that was not yet used
+            # authorizes a new effect (the mission fold derives that from the record, greg/missions.py); what
+            # already ran under it keeps its receipts. ``suspected_compromise`` also opens a retrospective review.
+            kid, suspected = revocation.revoke_fields(body)
+            revoked = self.journal.retained("device.revoked", [kid, digest])
+            if revoked is None:       # else: this very command revoked it before a stop; finish its acceptance
+                marks = None
+                if kid not in self.device_keys():
+                    # A suspicion that arises after the key was revoked: the same command with suspected_compromise
+                    # opens the review of that standing revocation, once. It revokes nothing more.
+                    marks = revocation.unreviewed_revocation(self.journal, kid) if suspected else None
+                    if marks is None:
+                        raise MissionError("revocation needs exactly one currently delegated device_key_id"
+                                           + (", or a revoked one whose revocation has no integrity review yet"
+                                              if suspected else ""))
+                revoked = self.journal.record("device.revoked", {
+                    "device_key_id": kid, "command_digest": digest, "at": iso(self.clock()),
+                    **({revocation.SUSPECTED: True} if suspected else {}),
+                    **({"marks_revocation": marks} if marks else {})}, key=[kid, digest])
+            revocation.settle(self.journal, self.engine.book)
+            voided = sorted(rid for rid, v in self.engine.book.voided.items()
+                            if v["voided_by"].get("revocation_command") == digest)
+            return {"device_key_id": kid, "revoked": True, **({"voided_requests": voided} if voided else {}),
+                    **({"integrity_review": revocation.review_id(revoked)} if suspected else {})}
         if kind == "ANCHOR_CONFIGURE":
             try:
                 return anchor.configure(self.journal, body, digest)
@@ -826,9 +862,12 @@ class Body:
 
     def _stop_now(self) -> bool:
         if not self.stop_requested and not self.layout.stop_file.exists() and self.ledger is not None:
-            # Extracted from #157: a paid worker can run for minutes. While it is supervised, only pending
-            # founder-signed STOP commands are authenticated; every other command waits for the next tick
-            # and cannot change in-flight strategy or approval state.
+            # Extracted from #157: the stop check of a turn that runs an adapter inline (a tick() caller outside the
+            # main loop, or any capability the main loop does not run off its turn). While that adapter runs, only
+            # pending founder-signed STOP commands are authenticated; every other command waits for the next tick.
+            # A worker the main loop runs off its turn polls Background.stop_for instead, and the following turns
+            # keep ingesting commands: a cancel of its mission or a detach of its capability interrupts it
+            # (MissionEngine.interrupt_withdrawn); nothing else changes an act the Gate already admitted.
             self.ingest_inbox(only_kind="BODY_STOP")
         return self.stop_requested or self.layout.stop_file.exists()
 
@@ -1028,10 +1067,25 @@ class Body:
         return record
 
     def tick(self) -> dict:
+        with self._turn:
+            return self._tick()
+
+    def _stop_flag(self) -> bool:
+        """STOP as read from inside a running adapter: no inbox read, so no ledger write off the turn. A founder's
+        signed BODY_STOP reaches it once a turn has ingested it (a new inbox file wakes the main loop)."""
+        return self.stop_requested or self.layout.stop_file.exists()
+
+    def _tick(self) -> dict:
+        if self.engine.background is not None:
+            self.engine.background.raise_failed()   # a background dispatch's error kills the turn, as it did inline
         now = self.clock()
         commands = self.ingest_inbox()
+        self.engine.interrupt_withdrawn(now)   # a cancel or detach that arrived while a worker ran stops it, paused too
         if self.stop_requested:
             return {"commands": commands, "stopped": True}
+        # The trail of a device revocation (what it voided, the review a suspected compromise opens), finished here
+        # if the body stopped between the revocation and its trail. Paused or not: it is a record, not an action.
+        revocation.settle(self.journal, self.engine.book)
         if self.paused():
             hold = crash_loop_hold(self.journal)
             self._heartbeat("HELD" if hold else "PAUSED", [])
@@ -1227,7 +1281,7 @@ class Body:
                 horizon = min(horizon, max(at, now))
         return max(0.05, (horizon - now).total_seconds())
 
-    def _contained(self, work, *args):
+    def _contained(self, work, *args, locked: bool = False):
         """One piece of the work a paused or held body still does each turn (read its inbox, note a gap).
 
         A failure there would otherwise kill every restart with no further signal (a held body exists because
@@ -1237,22 +1291,39 @@ class Body:
         try:
             return work(*args)
         except Exception as exc:
-            if not self.paused():
+            # A background dispatch's error is never contained: it kills the process, as an inline one did.
+            if getattr(exc, "greg_background_dispatch", False):
                 raise
-            import traceback
-            frames = traceback.extract_tb(exc.__traceback__)
-            site = f"{Path(frames[-1].filename).name}:{frames[-1].lineno} {frames[-1].name}" if frames else "unknown"
-            digest = sha256_json({"error": type(exc).__name__, "site": site})
-            if all(e.payload["boot_id"] != self.boot_id or e.payload["fault_digest"] != digest
-                   for e in self.journal.replay("body.fault_contained")):
-                self.journal.record("body.fault_contained", {
-                    "boot_id": self.boot_id, "fault_digest": digest, "error": f"{type(exc).__name__}: {exc}"[:500],
-                    "site": site, "state": "HELD" if crash_loop_hold(self.journal) else "PAUSED",
-                    "inbox_waiting": sorted(p.name for p in self.layout.inbox.glob("*.json")),
-                    "at": iso(self.clock()), "action": "contained: the paused body stays up, observable and "
-                                                       "reading its inbox; recorded once per boot and site"},
-                    key=[self.boot_id, digest])
-            return None
+            if locked:
+                return self._contain(exc)
+            with self._turn:   # paused() and the record below read and write the ledger: they take the turn
+                return self._contain(exc)
+
+    def _contain(self, exc):
+        if not self.paused():
+            raise exc
+        import traceback
+        frames = traceback.extract_tb(exc.__traceback__)
+        site = f"{Path(frames[-1].filename).name}:{frames[-1].lineno} {frames[-1].name}" if frames else "unknown"
+        digest = sha256_json({"error": type(exc).__name__, "site": site})
+        if all(e.payload["boot_id"] != self.boot_id or e.payload["fault_digest"] != digest
+               for e in self.journal.replay("body.fault_contained")):
+            self.journal.record("body.fault_contained", {
+                "boot_id": self.boot_id, "fault_digest": digest, "error": f"{type(exc).__name__}: {exc}"[:500],
+                "site": site, "state": "HELD" if crash_loop_hold(self.journal) else "PAUSED",
+                "inbox_waiting": sorted(p.name for p in self.layout.inbox.glob("*.json")),
+                "at": iso(self.clock()), "action": "contained: the paused body stays up, observable and "
+                                                   "reading its inbox; recorded once per boot and site"},
+                key=[self.boot_id, digest])
+        return None
+
+    def _working(self) -> list:
+        """The missions whose dispatch runs off the turn, for a turn that stepped none (paused or held)."""
+        background = self.engine.background if self.engine is not None else None
+        if background is None:
+            return []
+        return [{"mission_id": mid, "state": "WORKING", "action": entry["action_id"], "attempt": entry["attempt"],
+                 "since": iso(entry["since"])} for mid, entry in sorted(background.running.items())]
 
     def _heartbeat(self, state: str, summary: list):
         data = {"pid": os.getpid(), "boot_id": getattr(self, "boot_id", None), "at": iso(self.clock()),
@@ -1266,7 +1337,6 @@ class Body:
         """Main loop. Returns the process exit code for the supervisor."""
         def on_signal(signum, frame):
             self.stop_requested = True
-        import threading
         if threading.current_thread() is threading.main_thread():  # embedded hosts keep their own handlers
             signal.signal(signal.SIGTERM, on_signal)
             signal.signal(signal.SIGINT, on_signal)
@@ -1274,6 +1344,11 @@ class Body:
         self.open()
         try:
             self.boot(main_loop=True)
+            # The main loop runs a long adapter (a worker) off its turn: one worker no longer freezes every other
+            # mission, the inbox and the heartbeat (directive section 38, S38-A). tick() callers outside the main
+            # loop keep dispatching inline.
+            from greg.background import Background
+            self.engine.background = Background(self._turn, clock=self.clock, stop_check=self._stop_flag)
             ticks = active = 0
             last_seen = None
             while True:
@@ -1283,7 +1358,9 @@ class Body:
                 waiting = self._dropped()   # one still here after this turn wakes nothing
                 seen = (self.clock(), self.monotonic())
                 if last_seen is not None:
-                    self._contained(presence.note_gap, self.journal, self.boot_id, last_seen, seen)
+                    with self._turn:
+                        self._contained(presence.note_gap, self.journal, self.boot_id, last_seen, seen,
+                                        locked=True)
                 last_seen = seen
                 result = self._contained(self.tick)
                 if result is None:                # a paused body's turn failed, contained: it is still paused
@@ -1297,27 +1374,44 @@ class Body:
                 if not idle:
                     active += 1
                     if active % telemetry_every == 1:
-                        compute.record_telemetry(self.journal, self.layout.home)
-                        compute.recommend(self.journal)
-                        presence.recommend(self.journal, now=self.clock(),
-                                           platform_hint="chromeos" if doctor.is_crostini() else None)
-                self._heartbeat("HELD" if result.get("held") else "PAUSED" if result.get("paused") else "RUNNING",
-                                result.get("missions", []))
+                        with self._turn:
+                            compute.record_telemetry(self.journal, self.layout.home)
+                            compute.recommend(self.journal)
+                            presence.recommend(self.journal, now=self.clock(),
+                                               platform_hint="chromeos" if doctor.is_crostini() else None)
+                with self._turn:
+                    self._heartbeat("HELD" if result.get("held") else "PAUSED" if result.get("paused") else "RUNNING",
+                                    result.get("missions") or self._working())
                 if max_ticks is not None and ticks >= max_ticks:
                     reason = "max_ticks reached"
                     break
                 # A paused or held body, or a paused mission, serves no due observation, so it waits a full tick
                 # instead of spinning on one (next_wake); a new inbox file (a signed resume, say), a new intake
                 # item or a stop wakes the body sooner.
-                deadline = time.monotonic() + self.next_wake(tick_seconds)
+                with self._turn:        # next_wake reads the mission book and the journal
+                    wake = self.next_wake(tick_seconds)
+                deadline = time.monotonic() + wake
                 while time.monotonic() < deadline and not self.stop_requested:
                     if self.layout.stop_file.exists() or self._dropped() - waiting:
                         break
                     time.sleep(min(0.2, max(0.0, deadline - time.monotonic())))
-            self.journal.record("body.stopped", {"boot_id": self.boot_id, "reason": reason,
-                                                 "at": iso(self.clock()), "ledger_head": self.ledger.head},
-                                key=[self.boot_id, "stopped"])
-            self._heartbeat("STOPPED", [])
+            # Every running dispatch records its outcome before the body says it stopped. A STOP has reached each
+            # adapter through _stop_flag (the worker is terminated and recorded UNCERTAIN, as inline); a body that
+            # ends for another reason lets its workers finish, as an inline turn did.
+            unfinished = (self.engine.background.shutdown(STOP_JOIN_SECONDS) if self._stop_flag()
+                          else self.engine.background.join())
+            with self._turn:
+                self.engine.background.raise_failed()
+                self.journal.record("body.stopped", {"boot_id": self.boot_id, "reason": reason,
+                                                     "at": iso(self.clock()), "ledger_head": self.ledger.head,
+                                                     **({"dispatches_unfinished": unfinished} if unfinished else {})},
+                                    key=[self.boot_id, "stopped"])
+                self._heartbeat("STOPPED", [])
+                # Sealed in the same critical section. A dispatch named unfinished above may be waiting for the
+                # turn; it must not get it between this block and close() and write after body.stopped. Its writes
+                # now fail on the closed ledger, and the restart reconciles it from its write-ahead intent.
+                self.ledger.close()
+                self.ledger = None
             return 0
         finally:
             self.close()
@@ -1499,6 +1593,8 @@ def status(home: str | Path) -> dict:
             "security": {"founder_keys_enrolled": founder, "chain_verified": ok, "chain": chain,
                          "devices": [{k: d[k] for k in ("device_key_id", "label", "kinds", "expires_at")}
                                      for d in device_delegations(journal).values()],
+                         # what each revocation voided, and the review a suspected compromise opened
+                         "device_revocations": revocation.summary(journal, book),
                          "stop_file_present": layout.stop_file.exists(),
                          "pause_file_present": layout.pause_file.exists(),
                          "crash_loop_hold": (crash_loop_hold(journal) or {}).get("why"),

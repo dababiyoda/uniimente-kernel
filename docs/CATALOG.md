@@ -14,11 +14,11 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 | Area | Files | What it holds |
 |---|---:|---|
 | [`(top)`](#doctrine-orders-and-top-level-references) | 31 | Doctrine, orders and top-level references |
-| [`intent`](#founder-intent-records-and-their-verbatim-sources) | 68 | Founder intent records and their verbatim sources |
-| [`collaboration`](#collaboration-records-handoffs-deliberations-reviews-reconciliations) | 184 | Collaboration records: handoffs, deliberations, reviews, reconciliations |
-| [`decisions`](#architecture-decision-records) | 5 | Architecture decision records |
+| [`intent`](#founder-intent-records-and-their-verbatim-sources) | 87 | Founder intent records and their verbatim sources |
+| [`collaboration`](#collaboration-records-handoffs-deliberations-reviews-reconciliations) | 194 | Collaboration records: handoffs, deliberations, reviews, reconciliations |
+| [`decisions`](#architecture-decision-records) | 6 | Architecture decision records |
 | [`deliberations`](#founder-rulings) | 1 | Founder rulings |
-| [`evidence`](#measured-evidence-frozen-runs-admissions-proofs) | 510 | Measured evidence (frozen runs, admissions, proofs) |
+| [`evidence`](#measured-evidence-frozen-runs-admissions-proofs) | 511 | Measured evidence (frozen runs, admissions, proofs) |
 | [`cortex`](#cortex-and-seed-genome-specifications-and-evidence) | 79 | Cortex and Seed Genome specifications and evidence |
 | [`opus-maximus`](#opus-maximus-deliverables-al) | 13 | OPUS MAXIMUS deliverables A–L |
 | [`open-source`](#open-source-mechanism-harvest-records) | 23 | Open-source mechanism harvest records |
@@ -87,10 +87,13 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 
 ## Founder intent records and their verbatim sources
 
-### Intent record (34)
+### Intent record (37)
 
 | File | Date | Title |
 |---|---|---|
+| [`intent/INTENT-20261112-CONVERGENCE-USEFUL-PATH.json`](intent/INTENT-20261112-CONVERGENCE-USEFUL-PATH.json) | 2026-11-12 | Convergence is the next engineering outcome; then one useful operational path, a second case, and review findings turned |
+| [`intent/INTENT-20261111-REVOKED-DEVICE-AUTHORITY.json`](intent/INTENT-20261111-REVOKED-DEVICE-AUTHORITY.json) | 2026-11-11 | Revoking a device voids its unused authority; completed effects and history stay; a suspected compromise opens a review |
+| [`intent/INTENT-20261111-ABSOLUTE-OPUS-MAXIMUS.json`](intent/INTENT-20261111-ABSOLUTE-OPUS-MAXIMUS.json) | 2026-11-11 | Complete-machine execution on two tracks: engineering never waits for acceptance, and acceptance is never manufactured |
 | [`intent/INTENT-20261105-REGULAR-REVIEW.json`](intent/INTENT-20261105-REGULAR-REVIEW.json) | 2026-11-05 | Make the repository easy to enter for humans and agents, learn contributors' pain points, and review its structure on a  |
 | [`intent/INTENT-20261030-BUILD-BEFORE-DEVICE-RUN.json`](intent/INTENT-20261030-BUILD-BEFORE-DEVICE-RUN.json) | 2026-10-30 | Build the whole directive first; the founder-device run comes after, as its acceptance |
 | [`intent/INTENT-20261028-OPUS-MAXIMUS-REISSUE.json`](intent/INTENT-20261028-OPUS-MAXIMUS-REISSUE.json) | 2026-10-28 | The 77-section OPUS MAXIMUS master build directive, re-issued with a preamble: one persistent GREG over an ecology of in |
@@ -126,10 +129,26 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 | [`intent/INTENT-0027-organize-around-existing-work.md`](intent/INTENT-0027-organize-around-existing-work.md) |  | Intent Record INTENT-0027 |
 | [`intent/INTENT-0001-uniimente-as-legal-principal.md`](intent/INTENT-0001-uniimente-as-legal-principal.md) |  | Intent Record INTENT-0001 |
 
-### Verbatim founder source (34)
+### Verbatim founder source (50)
 
 | File | Date | Title |
 |---|---|---|
+| [`intent/sources/project-context-2026-11-12/manifest.json`](intent/sources/project-context-2026-11-12/manifest.json) | 2026-11-12 | passive_project_source_snapshot |
+| [`intent/sources/project-context-2026-11-12/README.md`](intent/sources/project-context-2026-11-12/README.md) | 2026-11-12 | Original project sources available to repository workers |
+| [`intent/sources/project-context-2026-11-12/11-DALEOBANKS-DALI-LEONARDO-DA-VINCI-BANKSY..txt`](intent/sources/project-context-2026-11-12/11-DALEOBANKS-DALI-LEONARDO-DA-VINCI-BANKSY..txt) | 2026-11-12 |  |
+| [`intent/sources/project-context-2026-11-12/10-For-daleobanks-helps-w-vitality.txt`](intent/sources/project-context-2026-11-12/10-For-daleobanks-helps-w-vitality.txt) | 2026-11-12 |  |
+| [`intent/sources/project-context-2026-11-12/09-Architectural-Blueprint-for-a-Multiscale-Continuously-Compounding-Autonomous-Ag.txt`](intent/sources/project-context-2026-11-12/09-Architectural-Blueprint-for-a-Multiscale-Continuously-Compounding-Autonomous-Ag.txt) | 2026-11-12 |  |
+| [`intent/sources/project-context-2026-11-12/08-continuously-operating-compounding-personal-egregore.txt`](intent/sources/project-context-2026-11-12/08-continuously-operating-compounding-personal-egregore.txt) | 2026-11-12 |  |
+| [`intent/sources/project-context-2026-11-12/07-build-a-real-continuously-operating-autonomous-entity-an-egregore-.txt`](intent/sources/project-context-2026-11-12/07-build-a-real-continuously-operating-autonomous-entity-an-egregore-.txt) | 2026-11-12 |  |
+| [`intent/sources/project-context-2026-11-12/06-By-reconstructing-the-foundational-primitives-found-in-the-codecrafters-io-build.txt`](intent/sources/project-context-2026-11-12/06-By-reconstructing-the-foundational-primitives-found-in-the-codecrafters-io-build.txt) | 2026-11-12 |  |
+| [`intent/sources/project-context-2026-11-12/05-Architecting-the-Artificial-Egregore-Native-Causal-Graph-Versioning-as-the-Auton.txt`](intent/sources/project-context-2026-11-12/05-Architecting-the-Artificial-Egregore-Native-Causal-Graph-Versioning-as-the-Auton.txt) | 2026-11-12 |  |
+| [`intent/sources/project-context-2026-11-12/04-The-execution-order-is-acknowledged.-The-architecture-for-the-Modular-Asymmetric.txt`](intent/sources/project-context-2026-11-12/04-The-execution-order-is-acknowledged.-The-architecture-for-the-Modular-Asymmetric.txt) | 2026-11-12 |  |
+| [`intent/sources/project-context-2026-11-12/03-What-gives-UNIIMENTE-the-science-fiction-advantage.txt`](intent/sources/project-context-2026-11-12/03-What-gives-UNIIMENTE-the-science-fiction-advantage.txt) | 2026-11-12 |  |
+| [`intent/sources/project-context-2026-11-12/02-Architecting-the-Artificial-Egregore.txt`](intent/sources/project-context-2026-11-12/02-Architecting-the-Artificial-Egregore.txt) | 2026-11-12 |  |
+| [`intent/sources/project-context-2026-11-12/01-DOCTRINE.txt`](intent/sources/project-context-2026-11-12/01-DOCTRINE.txt) | 2026-11-12 |  |
+| [`intent/sources/CONVERGENCE-CLARIFICATION-2026-11-12-source.md`](intent/sources/CONVERGENCE-CLARIFICATION-2026-11-12-source.md) | 2026-11-12 | Founder clarification of 2026-11-12: convergence, a useful operational path, and the five decisions (verbatim) |
+| [`intent/sources/REVOKED-DEVICE-AUTHORITY-2026-11-11-source.md`](intent/sources/REVOKED-DEVICE-AUTHORITY-2026-11-11-source.md) | 2026-11-11 | Founder policy, 2026-11-11: revoked-device approvals (verbatim) |
+| [`intent/sources/ABSOLUTE-OPUS-MAXIMUS-2026-11-11-source.md`](intent/sources/ABSOLUTE-OPUS-MAXIMUS-2026-11-11-source.md) | 2026-11-11 | Founder directives of 2026-11-11: complete-machine execution, the five-item continuation, the Fable 5.2 execution direct |
 | [`intent/sources/REGULAR-REVIEW-2026-11-05-source.md`](intent/sources/REGULAR-REVIEW-2026-11-05-source.md) | 2026-11-05 | Founder directive, 2026-11-05: structural self-improvement and regular review (verbatim) |
 | [`intent/sources/FOUNDER-CORRECTION-2026-10-30-source.md`](intent/sources/FOUNDER-CORRECTION-2026-10-30-source.md) | 2026-10-30 | Founder correction, 2026-10-30: build the prompt completely, then run the device (verbatim) |
 | [`intent/sources/OPUS-MAXIMUS-MASTER-BUILD-DIRECTIVE-2026-10-28-source.md`](intent/sources/OPUS-MAXIMUS-MASTER-BUILD-DIRECTIVE-2026-10-28-source.md) | 2026-10-28 | Founder "UNIIMENTE / GREG OPUS MAXIMUS MASTER BUILD DIRECTIVE", re-issued 2026-10-28 (verbatim) |
@@ -167,12 +186,16 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 
 ## Collaboration records: handoffs, deliberations, reviews, reconciliations
 
-### Deliberation (five lenses, two passes) (42)
+### Deliberation (five lenses, two passes) (46)
 
 | File | Date | Title |
 |---|---|---|
+| [`collaboration/deliberation-context-source-export-20261112.json`](collaboration/deliberation-context-source-export-20261112.json) | 2026-11-12 | Publish the eleven exact project source originals after explicit founder approval |
+| [`collaboration/deliberation-context-route-20261112.json`](collaboration/deliberation-context-route-20261112.json) | 2026-11-12 | Expose existing GitHub context while keeping unapproved attachment publication blocked |
+| [`collaboration/deliberation-revoked-device-authority-20261111.json`](collaboration/deliberation-revoked-device-authority-20261111.json) | 2026-11-11 | A revoked device's unused authority authorizes no new effect; completed effects and history stay; a suspected compromise |
 | [`collaboration/deliberation-worker-evidence-integrity-2026-11-05.json`](collaboration/deliberation-worker-evidence-integrity-2026-11-05.json) | 2026-11-05 | worker.appraise: refuse compiled modules; certify unreachable changes only by mutation fallback or a founder oracle |
 | [`collaboration/deliberation-regular-review-20261105.json`](collaboration/deliberation-regular-review-20261105.json) | 2026-11-05 | Contributor orientation, layering ratchets and a recurring read-only structural review |
+| [`collaboration/deliberation-background-dispatch-20261105.json`](collaboration/deliberation-background-dispatch-20261105.json) | 2026-11-05 | Run a long worker's adapter off the Body's turn so one worker no longer freezes every other mission (S38-A) |
 | [`collaboration/deliberation-typed-blockers-20261030.json`](collaboration/deliberation-typed-blockers-20261030.json) | 2026-10-30 | Type every open mission blocker from retained facts and the engine's own rule, on greg blockers, the morning report and  |
 | [`collaboration/deliberation-standing-approval-regression-20261030.json`](collaboration/deliberation-standing-approval-regression-20261030.json) | 2026-10-30 | Withdraw a standing founder approval when failure evidence names a run it allowed; report the level each tuple has earne |
 | [`collaboration/deliberation-path-build-frontier-20261030.json`](collaboration/deliberation-path-build-frontier-20261030.json) | 2026-10-30 | Read the build frontier beside the acceptance frontier on greg path, and place the 2026-10-30 correction on N1 |
@@ -262,10 +285,11 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 | [`collaboration/PR119-METABOLISM.md`](collaboration/PR119-METABOLISM.md) |  | PR #119 → one improvement substrate (mechanism-level disposition) |
 | [`collaboration/OPUS-RECONCILIATION.md`](collaboration/OPUS-RECONCILIATION.md) |  | OPUS-2026-09-11 — embodied GREG, one closure at a time |
 
-### Review and audit (7)
+### Review and audit (8)
 
 | File | Date | Title |
 |---|---|---|
+| [`collaboration/REVIEW-PROCESS-MEASURES-2026-11-12.md`](collaboration/REVIEW-PROCESS-MEASURES-2026-11-12.md) | 2026-11-12 | Review process measures, 2026-11-11 to 2026-11-12 (one session's units) |
 | [`collaboration/INTAKE-AUDIT-2026-10-22.md`](collaboration/INTAKE-AUDIT-2026-10-22.md) | 2026-10-22 | Intake audit of the open forest against #196, 2026-10-22 |
 | [`collaboration/reviews/PR179-INDEPENDENT-REVIEW-2026-10-15.md`](collaboration/reviews/PR179-INDEPENDENT-REVIEW-2026-10-15.md) | 2026-10-15 | Independent review of draft PR #179: convergence of the two GREG Mind lineages (Track B) |
 | [`collaboration/goal-gravity-completeness-critique-2026-10-13.md`](collaboration/goal-gravity-completeness-critique-2026-10-13.md) | 2026-10-13 | Completeness critique of the Goal Gravity synthesis (2026-10-13) |
@@ -356,10 +380,15 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 | [`collaboration/goal-chase-attention-evidence/approve.json`](collaboration/goal-chase-attention-evidence/approve.json) |  |  |
 | [`collaboration/GREG-ONE-MISSION-PROOF.md`](collaboration/GREG-ONE-MISSION-PROOF.md) |  | GREG-001: one persistent local mission |
 
-### Other (50)
+### Other (55)
 
 | File | Date | Title |
 |---|---|---|
+| [`collaboration/REPOSITORY-DISPOSITIONS-2026-11-12.md`](collaboration/REPOSITORY-DISPOSITIONS-2026-11-12.md) | 2026-11-12 | Dispositions and review-found defect classes, 2026-11-12 |
+| [`collaboration/CONTEXT-ROUTE-2026-11-12.md`](collaboration/CONTEXT-ROUTE-2026-11-12.md) | 2026-11-12 | Context route, source access and propagation receipt |
+| [`collaboration/ACCESS-BOUNDARY-2026-11-12.md`](collaboration/ACCESS-BOUNDARY-2026-11-12.md) | 2026-11-12 | Access boundary of this session, as inspected on 2026-11-12 (16:20-16:30 UTC) |
+| [`collaboration/REPOSITORY-DISPOSITIONS-2026-11-11.md`](collaboration/REPOSITORY-DISPOSITIONS-2026-11-11.md) | 2026-11-11 | Dispositions of what was inspected on 2026-11-11 |
+| [`collaboration/COMPOSE-REHEARSAL-2026-11-11.md`](collaboration/COMPOSE-REHEARSAL-2026-11-11.md) | 2026-11-11 | Composition rehearsal: first runs, 2026-11-11 |
 | [`collaboration/BRANCH-CATALOG-2026-11-06.md`](collaboration/BRANCH-CATALOG-2026-11-06.md) | 2026-11-06 | Branch catalog |
 | [`collaboration/DIGEST-RULE-CONSOLIDATION-2026-10-30.md`](collaboration/DIGEST-RULE-CONSOLIDATION-2026-10-30.md) | 2026-10-30 | Digest-rule consolidation — 2026-10-30 |
 | [`collaboration/FINDING-BODY-MEMORY-2026-10-28.md`](collaboration/FINDING-BODY-MEMORY-2026-10-28.md) | 2026-10-28 | A body's memory no longer holds every payload in its history (2026-10-28) |
@@ -413,10 +442,11 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 
 ## Architecture decision records
 
-### Decision record (4)
+### Decision record (5)
 
 | File | Date | Title |
 |---|---|---|
+| [`decisions/ADR-20261111-revoked-device-authority.md`](decisions/ADR-20261111-revoked-device-authority.md) | 2026-11-11 | ADR: a revoked device's unused authority authorizes nothing |
 | [`decisions/ADR-20261001-greg-seed-genome.md`](decisions/ADR-20261001-greg-seed-genome.md) | 2026-10-01 | ADR: Converge the cortex onto GREG's mission path as the seed Competency Compiler, as an experiment |
 | [`decisions/ADR-20260930-polyintelligence-cortex-seed.md`](decisions/ADR-20260930-polyintelligence-cortex-seed.md) | 2026-09-30 | ADR: Adopt the GREG Polyintelligence Cortex seed as a SANDBOXED, unpromoted experiment |
 | [`decisions/ADR-GOAL-GRAVITY-002-greg-binding.md`](decisions/ADR-GOAL-GRAVITY-002-greg-binding.md) |  | ADR: Bind Goal Gravity to the GREG body as one canonical persistent operating path |
@@ -440,6 +470,7 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 
 | Run or record | Files | Date | Title |
 |---|---:|---|---|
+| [`evidence/greg-browser-binary/2026-11-11`](evidence/greg-browser-binary/2026-11-11/README.md) | 1 | 2026-11-11 | browser.render: which installed browser, and what the check adds over a four-line change |
 | [`evidence/retained-capability-compounding/2026-11-05`](evidence/retained-capability-compounding/2026-11-05/README.md) | 2 | 2026-11-05 | Retained-capability compounding, 2026-11-05 |
 | [`evidence/greg-genome-admission/2026-11-05-v10`](evidence/greg-genome-admission/2026-11-05-v10/README.md) | 5 | 2026-11-05 | Genome admission v10: the meta wave (2026-11-05) |
 | [`evidence/live-pr-placement/2026-11-04`](evidence/live-pr-placement/2026-11-04/README.md) | 4 | 2026-11-04 | Section 53 placement from live state, 2026-11-04 |

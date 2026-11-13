@@ -1568,17 +1568,18 @@
       "greg/builders.py"
      ],
      "evidence": [
-      "tests/unit/test_greg_self_repair.py"
+      "tests/unit/test_greg_self_repair.py",
+      "tests/unit/test_greg_failure_corpus.py::test_the_breaking_input_is_kept_by_content_when_the_capability_is_quarantined",
+      "tests/unit/test_greg_failure_corpus.py::test_a_later_reformation_refuses_the_same_bug_after_the_file_changed_and_the_body_restarted",
+      "tests/unit/test_greg_failure_corpus.py::test_installed_software_candidates_are_judged_on_the_kept_inputs_too",
+      "tests/unit/test_greg_failure_corpus.py::test_a_kept_input_binds_only_its_own_function",
+      "tests/unit/test_greg_failure_corpus.py::test_an_input_that_cannot_be_kept_is_recorded_with_the_reason",
+      "tests/unit/test_greg_failure_corpus.py::test_a_kept_input_whose_bytes_were_damaged_is_reported_unavailable_not_silently_dropped"
      ],
      "tests_tier": "SANDBOX_VERIFIED",
      "required_tier": "SANDBOX_VERIFIED",
      "tier": "SANDBOX_VERIFIED",
-     "coverage": "partial",
-     "blocker": {
-      "class": "BUILDABLE_NOT_BUILT",
-      "reason": "Only the immediate rebuild after a self-repair replays the breaking input; no per-function corpus",
-      "unit": "WU-11"
-     }
+     "coverage": "covered"
     },
     {
      "id": "S17.A2",

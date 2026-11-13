@@ -1,0 +1,98 @@
+{
+ "intent_id": "INTENT-20261113-ONE-ENTRANCE",
+ "title": "One entrance for every agent in every repository: the same context, the whole route, and an observable check-in before parallel work",
+ "statement": "Every agent that enters any repository can find the necessary context, knows the route from beginning to completion, identifies itself, states its prompt and its plan, and works in parallel without stepping on others. Prepare (not perform) a switch of the Kernel's default branch to the integration branch; update the 12 existing consumer entry drafts in place; complement, not duplicate, the Codex session working the same request.",
+ "exact_source_excerpt": "Everyone that enters this project should know the /backcast-gps from beginning all the way to completion so everyone can work in parallel without stepping into each other's work. Each an all new conversatioms can identofy themselfs and explain their prompt and how they plan to achieve their prompt in prallwl w everyone working",
+ "source": "Founder chat directive, session session_01KucyfnCuSTnjx5Fa6T4A3d, 2026-11-13 UTC: one request and three answers, verbatim in the source file with their SHA-256 digests",
+ "source_refs": [
+  "docs/intent/sources/ONE-ENTRANCE-DIRECTION-2026-11-13-source.md",
+  "docs/collaboration/CONTEXT-ROUTE-2026-11-12.md (draft #315: the same request as worded to another client)",
+  "docs/intent/sources/CONVERGENCE-CLARIFICATION-2026-11-12-source.md (draft #295: the engineering target the route must show)",
+  "docs/collaboration/START_HERE.md",
+  "docs/collaboration/ROLLOUT.md"
+ ],
+ "source_location": "docs/intent/sources/ONE-ENTRANCE-DIRECTION-2026-11-13-source.md",
+ "source_date": "2026-11-13",
+ "source_date_or_version": "2026-11-13",
+ "changed_axis": "interface and process: where a newcomer lands (the default branch) and what a session declares before it edits. The final intended effect, the evidence ladder and the authority envelope are unchanged. Navigation moves from a pinned guide to the acknowledged integration branch; evidence stays pinned by commit.",
+ "intended_effect": "A fresh session in any of the 13 repositories, given only a task, reaches the current machine, the founder's instructions, the work board, the complete destination and the next eligible work, posts an identifiable check-in, sees who holds the files it needs, and starts useful work, with no founder reconstruction.",
+ "intended_outcome": "Correctly coordinated useful work, successful handoffs, less rework and fewer founder interventions (the founder's own measures). Until measured across later sessions these are NOT_MEASURED; this record claims only what its evidence shows.",
+ "executable_interpretation": "(1) A written, verified cutover preparation: side effects, exact settings in order, verification and rollback; the settings stay the founder's. (2) One read-only generated view, scripts/work_map.py, that joins the existing route, directive map, receipts and board into: position, buildable units in dependency order with owners, contended files, sessions, gaps. (3) The check-in block on the existing work board, with the five fields the existing claim lacked (prompt, plan, route node, guidance read, dependencies), and a receipt convention that needs no validator change. (4) One forward commit on each of the 12 existing consumer drafts: a short pointer that names the acknowledged integration branch. (5) Two fresh sessions tested against the prepared instructions. Not built: a second route document, a registry, a lock, a gate.",
+ "affected_systems": [
+  "README.md (entry block)",
+  "docs/collaboration/ROLLOUT.md",
+  "docs/collaboration/RECEIPT.md",
+  "docs/collaboration/VALIDATION.md",
+  "scripts/work_map.py",
+  "tests/unit/test_work_map.py",
+  ".github/workflows/repository-review.yml (artifact only)",
+  "docs/PROJECT_COGNITION_SOP.md (dated note)",
+  "the 12 consumer repositories' entry files, on their existing draft branches",
+  "repository settings (default branch, rulesets): founder-only, unchanged here"
+ ],
+ "rationale": "The default branch is the control point. The Kernel's default branch predates the whole entry system, and no consumer default branch routes to the live entry, so every improvement to guidance stays invisible to a newcomer until one setting changes. Guidance was not missing; the landing place was. Sessions also could not see each other: claims used five formats and almost none stated a prompt or plan, while the PR receipt, which is machine-checked, already carried identity and files. A generated view over receipts makes ownership visible without a new authority system.",
+ "owner": "Alfonso Lopez (founder authority; settings and protected merges). The #196 integration owner for intake. session_01KucyfnCuSTnjx5Fa6T4A3d for the reversible draft and the consumer commits. Navigation prose: the Codex task on draft #315. START_HERE and the enrollment gate: draft #206.",
+ "state": "active",
+ "status": "active",
+ "authority_level": "active_requirement",
+ "consequence_class": "material",
+ "binding_scope": "Contributor entry files, one read-only script, dated records and consumer entry pointers, all as reversible drafts. No merge, no settings change, no deployment, spending, publishing, credential, outside-contact or live-activation authority. The cutover itself is prepared only.",
+ "constitutional_constraints": [
+  "Chat text is intent evidence, not founder authentication",
+  "Delete nothing; additive or in-place edits with history preserved",
+  "No force push, no history rewrite, no new consumer branch or pull request",
+  "No sealed, frozen or integrity-protected file is edited; greg/path.json is read-only",
+  "A check-in is a notice, not a lock and not authority; an expired claim never permits overwriting",
+  "The work map is read-only and never gates a pull request",
+  "Default-branch adoption establishes the development entrance; protected merges, deployment, spending and live activation keep their separate founder authorization"
+ ],
+ "success_evidence": [
+  "tests/unit/test_work_map.py: fixtures are trimmed real board comments",
+  "Replay of the saved board (194 comments) and pull requests (201 open): every handoff heading that names a draft agrees with that draft's receipt; unresolved authors are listed",
+  "Ruleset, branch-rule and repository settings read from the public API on 2026-11-13",
+  "Each consumer repository's own checks on its updated draft (recorded per repository in ROLLOUT.md)",
+  "Two fresh sessions against the prepared instructions (VALIDATION.md, dated section)"
+ ],
+ "failure_evidence": [
+  "Entry by default-branch discovery is unobserved until the founder switches the default: pending",
+  "The work map resolves a board comment's author heuristically; the shared GitHub login means a comment can name another session",
+  "Whether sessions use the check-in is unmeasured; on the replayed board 4 of 17 recent sessions stated a prompt and none stated a plan or route",
+  "The CI filter change for the integration line is handed to the integrator and not applied"
+ ],
+ "evidence_refs": [
+  "docs/collaboration/ROLLOUT.md (2026-11-13 sections)",
+  "docs/collaboration/WORK-MAP-2026-11-13.md",
+  "docs/collaboration/VALIDATION.md",
+  "docs/collaboration/deliberation-one-entrance-20261113.json",
+  "https://github.com/dababiyoda/uniimente-kernel/issues/96#issuecomment-6841838048"
+ ],
+ "dependencies": [
+  "Draft #315 (navigation prose and the route table) for the route this entrance points at",
+  "Draft #295 for the 2026-11-12 direction the route's engineering target comes from",
+  "The founder's ruleset and default-branch settings for adoption",
+  "The integrator's intake for the Kernel draft"
+ ],
+ "conflicts": [
+  "ROLLOUT.md (2026-10-21) says consumers point to immutable source; the founder's 2026-11-13 answer keeps that for evidence and workflow pins and moves human navigation to the acknowledged branch. Recorded in ROLLOUT.md; the older text is kept.",
+  "Drafts #152 and #193 prepare default-branch entry by merging entry files into main; under the cutover design they become an optional banner on main. Their owners were told; nothing of theirs was edited.",
+  "VoiceStudio's repository rule forbids AI attribution in commits; the session's default attribution lines are omitted there."
+ ],
+ "next_review_trigger": "The founder's settings change; the first fresh session that enters by default-branch discovery; the first weekly work-map artifact; five coordinated pull requests after adoption (SOP-06 measures).",
+ "supersedes": [],
+ "superseded_by": [],
+ "implementation_refs": [
+  "scripts/work_map.py",
+  "tests/unit/test_work_map.py",
+  "docs/collaboration/ROLLOUT.md",
+  "docs/collaboration/RECEIPT.md",
+  "README.md"
+ ],
+ "unresolved_questions": [
+  "Should the full Main Branch SOP Gate also apply to the integration branch once it is the default? It would end direct-push intake.",
+  "Should the eleven raw source attachments Codex holds privately be published to this public repository? (Raised on draft #315; founder decision.)",
+  "Who owns the START_HERE claim template while draft #206 is unadopted?"
+ ],
+ "authority_delta": "none",
+ "created_at": "2026-11-13T03:00:00Z",
+ "updated_at": "2026-11-13T03:00:00Z"
+}

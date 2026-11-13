@@ -1,0 +1,428 @@
+{
+ "decision_id": "DELIB-20261113-ONE-ENTRANCE",
+ "title": "One entrance: default-branch cutover preparation, a generated work map, a check-in on the existing board, and the consumer entry refresh",
+ "problem": "A newcomer lands on a default branch that carries none of the entry system. The Kernel's default branch (main, d64a6c93, 2026-10-14) has no START_HERE, receipt check, document index or greg/path.json; the live work is on the integration branch behind draft #196. All 12 consumer entry drafts are unmerged and point at a stale pinned guide (2ccbbe2). Sessions cannot see each other: claims use five formats, almost none states a prompt or plan, and nothing shows which files several sessions hold. The founder asked that every entrant find the same context, know the whole route, identify itself with its prompt and plan, and work in parallel without collisions.",
+ "founder_intent_refs": [
+  "INTENT-20261113-ONE-ENTRANCE",
+  "INTENT-20261021-PROFESSIONAL-PARALLEL-TEAM",
+  "INTENT-20261021-COMPLETE-COLLABORATION",
+  "INTENT-20261105-REGULAR-REVIEW",
+  "INTENT-20261001-FULL-MACHINE-COMPLETION",
+  "INTENT-20261030-BUILD-BEFORE-DEVICE-RUN"
+ ],
+ "baseline": "2026-11-13 02:10Z. Default branch main at d64a6c93; integration line at 8d205324; ruleset 21875390 targets ~DEFAULT_BRANCH with no bypass; the line has no rule. 201 open pull requests, 51 headed for the line, 139 without a receipt (1 of those into the line). On the replayed board, 17 sessions were active in 7 days: 4 stated a prompt, 0 a plan, 0 a route node. 127 files are declared or changed by line-bound pull requests from two or more sessions. Draft #315 (Codex) adds the route table and source route to AGENTS.md, BACKCAST_GPS.md and INDEX.md.",
+ "alternatives": [
+  {
+   "name": "Merge the entry files into main (drafts #152/#193) and leave the default branch alone",
+   "description": "Keep main as the default and bring the entry system to it by a founder merge",
+   "advantages": [
+    "no settings change",
+    "main keeps its meaning as the founder-merged line"
+   ],
+   "disadvantages": [
+    "main then holds entry files that describe a tree main does not contain (no greg/path.json, no scripts)",
+    "every later improvement to guidance needs another founder merge into main",
+    "newcomers still clone a month-old machine"
+   ],
+   "revival_evidence": "The founder declines the default switch, or wants main to stay the entrance"
+  },
+  {
+   "name": "A second generated route document (docs/GPS_ROUTE.md)",
+   "description": "Render greg/path.json into a committed route card",
+   "advantages": [
+    "cannot drift from the data"
+   ],
+   "disadvantages": [
+    "draft #315 already carries the route table; two route texts would be a fourth dated copy",
+    "a committed generated file conflicts between parallel pull requests"
+   ],
+   "revival_evidence": "The hand-written table in BACKCAST_GPS.md drifts at two consecutive intakes (the work map reports drift)"
+  },
+  {
+   "name": "Enforced enrollment (draft #206's claims registry and gate)",
+   "description": "A shared claims.json and a pre-edit gate every client installs",
+   "advantages": [
+    "a claim becomes checkable before an edit",
+    "closer to a lock"
+   ],
+   "disadvantages": [
+    "unadopted since 2026-10-25; every live worker remains unenrolled",
+    "a second coordination store beside the board and the receipts",
+    "needs client-side installation the founder has not directed"
+   ],
+   "revival_evidence": "Collisions continue after the check-in and the work map are in use for five coordinated pull requests"
+  },
+  {
+   "name": "Update only the six consumer forks that need a merge",
+   "description": "Leave the six native repositories' drafts, since their default AGENTS.md already mentions the Kernel",
+   "advantages": [
+    "half the commits"
+   ],
+   "disadvantages": [
+    "the founder answered: update all 12 existing drafts in place",
+    "the native repositories' default pointers are unpinned prose with no board, no check-in and no branch name"
+   ],
+   "revival_evidence": "None needed; decided by the founder"
+  }
+ ],
+ "do_nothing_option": {
+  "expected_outcome": "Newcomers keep landing on a month-old tree; guidance improvements stay invisible; sessions keep discovering overlaps after the work is done; the founder keeps reconstructing context by hand",
+  "advantages": [
+   "no review burden",
+   "no new script"
+  ],
+  "disadvantages": [
+   "the stated founder outcome is not met",
+   "rework and founder interventions continue at the current, unmeasured rate"
+  ]
+ },
+ "roles": [
+  {
+   "role": "Founder-Intent Steward",
+   "position": "The founder's three answers are specific and are followed as written: complement Codex, prepare the cutover, update all 12 drafts in place. Nothing here narrows Body + Organs + Mind or any horizon; the work map shows the acceptance node and the engineering frontier separately, as the 2026-10-30 and 2026-11-12 corrections require.",
+   "material_concerns": [
+    "The 2026-11-12 direction is not on the integration tree yet (draft #295), so the map can only say that a newer record may be pending",
+    "A check-in asks sessions to publish their prompt on a public board"
+   ],
+   "evidence_refs": [
+    "docs/intent/sources/ONE-ENTRANCE-DIRECTION-2026-11-13-source.md",
+    "docs/intent/INTENT-20261113-ONE-ENTRANCE.json"
+   ],
+   "recommendation": "RETAIN"
+  },
+  {
+   "role": "Systems Architect",
+   "position": "The control point is the default branch, and the smallest sufficient mechanism is a setting plus a ruleset retarget. For visibility, reuse what is machine-checked already: the receipt. One read-only script joins existing sources; it owns no state. No registry, lock, gate or second route document is added.",
+   "material_concerns": [
+    "The ruleset follows the default branch: a bare switch blocks intake and unprotects main",
+    "canonical-ci.yml runs on push to main only; the line's checks depend on #196 staying open"
+   ],
+   "evidence_refs": [
+    "GET /repos/dababiyoda/uniimente-kernel/rulesets/21875390 (2026-11-13)",
+    "scripts/work_map.py",
+    "docs/collaboration/ROLLOUT.md"
+   ],
+   "recommendation": "RETAIN"
+  },
+  {
+   "role": "Adversarial Reviewer",
+   "position": "A view that names owners will be trusted more than it deserves. The board shares one GitHub login, so a comment can name another session; the parser is heuristic; a stale snapshot looks as authoritative as a fresh one. A pointer that names a branch goes stale when the line moves again. And a documented check-in is not a used one.",
+   "material_concerns": [
+    "Misattribution is worse than no attribution",
+    "The trial tests prepared instructions with sessions this session starts, not unprompted discovery",
+    "Twelve updated drafts are not twelve adopted repositories"
+   ],
+   "evidence_refs": [
+    "tests/unit/test_work_map.py",
+    "the three-lens review of scripts/work_map.py (recorded on the pull request)"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Operator and Maintainer",
+   "position": "Cost is low and reversible: one script (seconds to run, no dependency beyond the repository), one weekly artifact, short pointers. The risky operation is the settings change, which is why it is written as three ordered steps with verification and rollback, and left to the founder.",
+   "material_concerns": [
+    "The CI filter change touches the most contended file on the line and is handed over, not made",
+    "The weekly workflow's token may not read issue comments; the map degrades to a labelled note",
+    "Organ pointers must respect each repository's own rules (VoiceStudio attribution, hyperframes templates, REA docs-facts)"
+   ],
+   "evidence_refs": [
+    "docs/collaboration/ROLLOUT.md (2026-11-13)",
+    ".github/workflows/repository-review.yml"
+   ],
+   "recommendation": "RETAIN"
+  },
+  {
+   "role": "Evidence and Welfare Guardian",
+   "position": "Claims are kept at their tier. The API facts are primary-source reads on a stated date. The replay is a sandbox execution on saved data. The trial is two sessions, one data point. Reduced rework and fewer founder interventions are NOT_MEASURED and stay so until later sessions are observed. Contributors are protected by the rule that a check-in is a notice and an expired claim never permits overwriting.",
+   "material_concerns": [
+    "Publishing prompts: the block says 'no secrets'; private text stays out",
+    "Other sessions' draft branches receive a commit they did not author: forward-only, announced on the board, on branches idle since 2026-10-30"
+   ],
+   "evidence_refs": [
+    "docs/collaboration/VALIDATION.md",
+    "https://github.com/dababiyoda/uniimente-kernel/issues/96#issuecomment-6841838048"
+   ],
+   "recommendation": "RETAIN"
+  }
+ ],
+ "evidence": [
+  {
+   "claim": "The Main Branch SOP Gate follows the default branch and has no bypass",
+   "tier": "primary_source",
+   "reference": "GET /repos/dababiyoda/uniimente-kernel/rulesets/21875390, 2026-11-13: conditions.ref_name.include = ['~DEFAULT_BRANCH'], bypass_actors = []",
+   "finding": "confirmed"
+  },
+  {
+   "claim": "The integration branch has no rule",
+   "tier": "primary_source",
+   "reference": "GET /repos/.../rules/branches/claude%2Fgreg-full-machine-completion-whgiee returned []",
+   "finding": "confirmed"
+  },
+  {
+   "claim": "The work map resolves board authors without misattribution on the saved board",
+   "tier": "sandbox_execution",
+   "reference": "replay of 194 comments and 201 open pull requests: 6 of 6 handoff headings naming a draft agree with that draft's receipt; 4 of 38 posts in the last 7 days unresolved (two team relays, one evidence note, one founder broadcast) and listed",
+   "finding": "confirmed on this data; heuristic"
+  },
+  {
+   "claim": "The work map's safeguards are tested",
+   "tier": "unit_test",
+   "reference": "tests/unit/test_work_map.py; fixtures are trimmed real comments",
+   "finding": "confirmed"
+  },
+  {
+   "claim": "All 12 consumer drafts were idle",
+   "tier": "primary_source",
+   "reference": "GET /repos/dababiyoda/<repo>/pulls/<n>: updated_at 2026-10-30 for all 12",
+   "finding": "confirmed"
+  }
+ ],
+ "counterevidence": [
+  {
+   "claim": "Documenting a check-in makes sessions check in",
+   "tier": "sandbox_execution",
+   "reference": "the replayed board: the 11-field claim template has existed since 2026-10-21, yet 0 of 17 recent sessions stated a plan and 4 a prompt",
+   "finding": "a documented requirement is not demonstrated use; the map counts use"
+  },
+  {
+   "claim": "Board-wide requests get answered",
+   "tier": "historical_artifact",
+   "reference": "this session's survey (comment 6648797976) and its request about branches with no pull request (6677219616) received no reply",
+   "finding": "hand-overs by comment may also go unanswered; each is given a recheck time and a fallback"
+  },
+  {
+   "claim": "A pinned guide keeps consumers current",
+   "tier": "historical_artifact",
+   "reference": "all 12 consumer drafts pinned START_HERE at 2ccbbe2 and described draft #193 as pending adoption three weeks later",
+   "finding": "refuted for navigation; kept for evidence"
+  }
+ ],
+ "pass_1": {
+  "intended_outcome": "A fresh session in any repository reaches the current machine and the board, declares who it is and what it will do, sees who holds its files, and starts useful work with no founder reconstruction",
+  "advantages": [
+   {
+    "id": "A1",
+    "statement": "One setting makes every later guidance improvement visible to newcomers",
+    "amplified_value": "The entrance stops needing a founder merge per improvement: intake into the line updates what every clone, search and new pull request sees. Prepared with its ruleset step first, so the approval boundary on main is unchanged"
+   },
+   {
+    "id": "A2",
+    "statement": "Ownership comes from receipts, which CI already checks",
+    "amplified_value": "The same declaration that passes the receipt check now tells others which unit and files are held; adding a route node costs one string in an existing field"
+   },
+   {
+    "id": "A3",
+    "statement": "Navigation by branch, evidence by commit",
+    "amplified_value": "Consumer pointers stop going stale while receipts and workflow pins keep exact provenance"
+   },
+   {
+    "id": "A4",
+    "statement": "The map shows next eligible work in dependency order with owners",
+    "amplified_value": "A session can pick an unclaimed unit instead of discovering a collision at intake; the same table shows the founder where work is piling up"
+   }
+  ],
+  "disadvantages": [
+   {
+    "id": "D1",
+    "statement": "A bare default switch moves the SOP gate onto the integration branch and unprotects main",
+    "severity": "high",
+    "response_type": "protective",
+    "redesigned_response": "The runbook puts the ruleset retarget and a history rule on the line before the switch, with a verification list and a three-step rollback"
+   },
+   {
+    "id": "D2",
+    "statement": "The work map may attribute a comment to the wrong session",
+    "severity": "medium",
+    "response_type": "evidence",
+    "redesigned_response": "Authors come only from the heading or a labelled line; joins are labelled; unresolved posts are listed; receipts are preferred and marked exact; the output says it is a snapshot and no lock"
+   },
+   {
+    "id": "D3",
+    "statement": "A pointer naming a branch goes stale when the line moves",
+    "severity": "medium",
+    "response_type": "modularity",
+    "redesigned_response": "The pointer says the board names the branch and wins on disagreement; after the cutover the default branch and the named branch are the same"
+   },
+   {
+    "id": "D4",
+    "statement": "A check-in publishes a session's prompt on a public board",
+    "severity": "low",
+    "response_type": "governance",
+    "redesigned_response": "The block asks for one or two sentences and says 'no secrets'; raw source publication stays a separate founder decision"
+   },
+   {
+    "id": "D5",
+    "statement": "Commits land on draft branches other sessions created",
+    "severity": "medium",
+    "response_type": "governance",
+    "redesigned_response": "Forward-only, one commit each, announced on the board first, only on branches idle since 2026-10-30, each repository's own rules respected; an active owner stops the commit and receives text instead"
+   }
+  ],
+  "comparisons": {
+   "baseline": "default branch a month stale; 12 stale consumer drafts; no view of who holds what",
+   "do_nothing": "guidance keeps improving where newcomers do not look",
+   "simplest_viable_alternative": "switch the default branch and nothing else: fastest, but it blocks intake and unprotects main (D1) and leaves sessions unable to see each other",
+   "strongest_competing_architecture": "draft #206's enforced enrollment gate with a shared claims registry: stronger than a notice, but unadopted, client-installed and a second coordination store",
+   "reversible_experiment": "this package: every part is a draft or a prepared setting; rollback is closing drafts or three settings steps"
+  },
+  "rejected_alternatives": [
+   {
+    "name": "Second generated route document",
+    "rejection_reason": "draft #315 already carries the route; a duplicate would be the fourth dated copy",
+    "revival_evidence": "route drift reported at two consecutive intakes"
+   },
+   {
+    "name": "Entry files merged into main as the entrance",
+    "rejection_reason": "the founder chose the default-branch design; main would describe a tree it does not contain",
+    "revival_evidence": "the founder declines the switch"
+   },
+   {
+    "name": "Claims registry and pre-edit gate",
+    "rejection_reason": "a new authority-like store when the board and receipts exist; not directed",
+    "revival_evidence": "collisions persist across five coordinated pull requests after adoption"
+   }
+  ]
+ },
+ "pass_2": {
+  "attack_summary": "Attacked the strengthened package as if adopted: for false trust in the map, for a new chore nobody performs, for the cutover's second-order effects, and for whether the underlying effect (less rework, fewer founder interventions) is shown at all.",
+  "new_weaknesses": [
+   {
+    "id": "W1",
+    "category": "gaming",
+    "statement": "A session can name another session in a heading and the map will show that session as the author",
+    "strengthening_response": "Stated in the map's header and in section 6; receipts (bound to a pull request's exact head by CI) outrank comments; the map never marks a claim released on anything but an explicit release naming the claim id"
+   },
+   {
+    "id": "W2",
+    "category": "bureaucracy",
+    "statement": "Five more lines in a claim nobody already fills in",
+    "strengthening_response": "The block replaces, not adds to, free-form claims; three of the five lines are one short phrase; the map reports how many live sessions state them, so non-use is visible and the block can be cut"
+   },
+   {
+    "id": "W3",
+    "category": "dependency",
+    "statement": "After the switch, the line's checks still hang on #196 staying open",
+    "strengthening_response": "The exact filter change is written and handed to the integrator; the map reports whether an open pull request still has the line as its head"
+   },
+   {
+    "id": "W4",
+    "category": "reversibility",
+    "statement": "Merges into a default branch close issues named with a closing phrase; a first scan flagged five open pull requests",
+    "strengthening_response": "Checked against the open issues: one real case (#218 closes issue #217, as it intends); the other four were finding numbers or a pull request. Recorded in the runbook"
+   },
+   {
+    "id": "W5",
+    "category": "comprehensibility",
+    "statement": "Two documents now describe 'where things stand': the route in BACKCAST_GPS.md and the work map",
+    "strengthening_response": "They answer different questions and say so: the route is the destination and its nodes (hand-written, #315); the map is today's units, owners and files (generated). The map checks the route table for drift"
+   },
+   {
+    "id": "W6",
+    "category": "overfit",
+    "statement": "The trial uses sessions this session starts, on tasks it chose",
+    "strengthening_response": "Recorded as a test of the prepared instructions only; entry by default-branch discovery is labelled pending until observed after the founder's switch"
+   }
+  ],
+  "pass_1_disadvantage_dispositions": [
+   {
+    "disadvantage_id": "D1",
+    "outcome": "resolved",
+    "rationale": "Ordered steps with the ruleset first; verified facts recorded; rollback is three settings",
+    "owner": "Alfonso Lopez (settings)",
+    "review_trigger": "the switch"
+   },
+   {
+    "disadvantage_id": "D2",
+    "outcome": "accepted",
+    "rationale": "Bounded by conservative rules, labels and tests; cannot be removed while one GitHub login is shared",
+    "owner": "session_01KucyfnCuSTnjx5Fa6T4A3d until intake; then the maintaining reviewer (SOP-06)",
+    "review_trigger": "any misattribution reported, or more than a quarter of a week's posts unresolved: ship the map from receipts only"
+   },
+   {
+    "disadvantage_id": "D3",
+    "outcome": "resolved",
+    "rationale": "The board outranks the pointer in the pointer's own text; the cutover makes them equal",
+    "owner": "#196 integration owner",
+    "review_trigger": "the integration branch is renamed or replaced"
+   },
+   {
+    "disadvantage_id": "D4",
+    "outcome": "accepted",
+    "rationale": "The founder asked that sessions explain their prompt; the block bounds it",
+    "owner": "Alfonso Lopez",
+    "review_trigger": "a check-in that exposes private material"
+   },
+   {
+    "disadvantage_id": "D5",
+    "outcome": "accepted",
+    "rationale": "Directed by the founder; bounded by forward-only commits on idle branches and prior notice",
+    "owner": "session_01KucyfnCuSTnjx5Fa6T4A3d",
+    "review_trigger": "an owner of one of the 12 branches objects"
+   }
+  ],
+  "final_design": "Prepare the cutover as three ordered founder settings with verified side effects, verification and rollback. Add one read-only generated work map over existing sources, with pre-edit queries, uploaded weekly and never a gate. Put the check-in on the existing board and its fields in the existing receipt, with no validator change. Refresh the 12 consumer drafts with a short pointer that names the acknowledged branch and defers to the board. Test the prepared instructions with two fresh sessions and label default-branch discovery pending. Hand every line that belongs in someone else's file to its owner.",
+  "residual_risks": [
+   {
+    "risk": "The founder's intended effect (less rework, fewer interventions) is not shown by this package",
+    "mitigation": "Measure SOP-06's five-pull-request window after adoption; the map's section 6 gives the before numbers",
+    "owner": "maintaining reviewer (SOP-06)",
+    "review_trigger": "five coordinated pull requests after the switch"
+   },
+   {
+    "risk": "Hand-overs to #206, #315 and the integrator go unanswered, leaving START_HERE and canonical-ci.yml unchanged",
+    "mitigation": "Each hand-over has exact text and a recheck time; the receipt convention and the map work without them",
+    "owner": "session_01KucyfnCuSTnjx5Fa6T4A3d",
+    "review_trigger": "the recheck time on the check-in"
+   },
+   {
+    "risk": "The map is trusted as a lock",
+    "mitigation": "Header, section text and tests say snapshot; START_HERE's rule that an expired claim never permits overwriting is repeated",
+    "owner": "#196 integration owner",
+    "review_trigger": "a collision where a session cites the map as permission"
+   }
+  ],
+  "recommendation": "NEEDS_FOUNDER_DECISION"
+ },
+ "dissent": {
+  "present": true,
+  "handling": "Recorded; it blocks no draft",
+  "entries": [
+   {
+    "role": "Adversarial Reviewer",
+    "position": "A notice-based check-in and a heuristic map will not prevent a determined or careless collision; only an enforced pre-edit gate would, and this package deliberately does not build one.",
+    "rationale": "The replayed board shows an eleven-field template that sessions mostly ignored for three weeks.",
+    "evidence_threshold": "Two or more collisions on declared files among sessions that checked in, within five coordinated pull requests after adoption",
+    "owner": "maintaining reviewer (SOP-06)",
+    "review_trigger": "the five-pull-request measurement; revive draft #206's gate if the threshold is met"
+   }
+  ]
+ },
+ "authority_impact": {
+  "level": "constitutional",
+  "changes_authority": false,
+  "requires_authorized_human": true,
+  "approval_status": "pending",
+  "approver": "Alfonso Lopez: ruleset and default-branch settings, every protected merge and the 12 consumer merges. The #196 integration owner: intake of the Kernel draft. No setting is changed by this record."
+ },
+ "migration_plan": "None for data or contracts. Staged adoption: integrator intake of #315 and this draft; ruleset retarget; history rule on the line; default switch; verification by a fresh session with no hint; native consumers; forks; optional banner on main.",
+ "rollback_plan": {
+  "possible": true,
+  "steps": [
+   "Kernel draft: decline intake or revert its commits; the script owns no state",
+   "Settings: default back to main, ruleset 21875390 target back to Default, delete the line's history ruleset",
+   "Consumer drafts: revert the one forward commit on each branch; the earlier pointer and history remain",
+   "Delete nothing else: the intent record, source and this deliberation stay as history"
+  ]
+ },
+ "kill_criteria": [
+  "Any part gains a write permission, a gate on pull requests, or a lock",
+  "A misattributed owner in the map causes an overwrite",
+  "The check-in block is unused by every live session after two intakes (cut it; keep tolerant parsing)",
+  "The work map adds more review burden than the rework it prevents over five coordinated pull requests",
+  "A consumer pointer is sent to an upstream repository"
+ ],
+ "decision": "NEEDS_FOUNDER_DECISION",
+ "decision_owner": "Alfonso Lopez decides the settings and every protected merge. The #196 integration owner decides intake. session_01KucyfnCuSTnjx5Fa6T4A3d owns the reversible drafts. The instruments are offered as a reversible EXPERIMENT (pass 2). The five perspectives are one session's self-review; the independent reviews that exist are named on the pull request. Navigation prose is decided separately in deliberation-context-route-20261112.json (draft #315).",
+ "review_trigger": "Canonical CI on the draft's head; the founder's settings change; the first fresh session entering by default-branch discovery; the first weekly work-map artifact; five coordinated pull requests after adoption"
+}

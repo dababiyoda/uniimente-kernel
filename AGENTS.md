@@ -20,11 +20,15 @@ conflict-resolution hierarchy).
    `docs/collaboration/START_HERE.md`; the **newest** comments on work board #96 (the comment
    API pages oldest first); the open PRs for what you will touch. Work on the integration
    branch the board names, not `main`. Post a bounded claim before editing.
-2. **Latest founder corrections.** Read the top entries of `docs/FOUNDER_INTENT_LEDGER.md`
-   (newest first). Today these are `INTENT-20261030-BUILD-BEFORE-DEVICE-RUN`,
-   `INTENT-20261019-UPWARD-ASCENT`, `INTENT-20261001-FULL-MACHINE-COMPLETION` and
-   `INTENT-2026-09-26-REAL-PRODUCT-METABOLISM`, each with its verbatim source under
-   `docs/intent/sources/`.
+2. **Latest founder corrections and complete destination.** Read the top entries of
+   `docs/FOUNDER_INTENT_LEDGER.md` (newest first), then
+   [the current full-machine source route](docs/BACKCAST_GPS.md#source-route).
+   It links the whole Body + Organs + Mind destination, all 55 Foundry obligations,
+   the five-layer Mind and A–Y repertoire, and exact pending founder-source revisions.
+   Pending #295 holds the November 11–12 direction outside this integration tree;
+   read the pinned sources there rather than treating an older local ledger as complete.
+   Refresh its head and later corrections before a material decision. A pending source
+   is intent evidence, not proof of integration or runtime authorization.
 3. **Procedure.** `docs/PROJECT_COGNITION_SOP.md`, `docs/PROJECT_COGNITION_CONTINUITY.md`,
    `docs/PROJECT_SOURCE_CENSUS_2026-09-26.md`.
 4. **Doctrine.** `docs/FOUNDER_EFFECT_COMPILER.md`, the rest of
@@ -34,6 +38,9 @@ conflict-resolution hierarchy).
 
 | If you will… | Read first |
 |---|---|
+| reconstruct the beginning-to-completion route | [BACKCAST_GPS.md § Current full-machine route](docs/BACKCAST_GPS.md#current-full-machine-route); this projects existing `greg/path.json`, including N0–N10, P0–P13 and preserved horizons |
+| choose the next build or claim completion | `python -m greg path --build` beside `python -m greg path`; `acceptance/directive-sections.json`, `acceptance/directive-asks.pin.json`, and `foundry/completion.yaml`; recorded outcomes on the exact candidate, not static labels |
+| work without access to the ChatGPT Project | the exact existing GitHub sources in the source route above and [source-access limits](docs/collaboration/CONTEXT-ROUTE-2026-11-12.md#source-access); the historical census is metadata, not universal raw-chat access; unpublished attachments remain unavailable until an approved export |
 | change any code | `docs/ARCHITECTURE.md` § Current module map, then the package `README.md` |
 | touch the Constitution, authority, identity, the Gate or founder keys | `governance/integrity/README.md`; these need a founder signature |
 | touch a frozen evaluation or evidence bundle | its `freeze*.json` and README; new runs get new paths |

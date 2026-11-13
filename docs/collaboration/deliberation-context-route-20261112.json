@@ -1,0 +1,327 @@
+{
+  "decision_id": "CONTEXT-ROUTE-20261112-NAVIGATION-ONLY",
+  "title": "Expose existing GitHub context while keeping unapproved attachment publication blocked",
+  "problem": "After automatic approval rejected the proposed public attachment export, complete the independent navigation and coordination repair using existing GitHub sources only.",
+  "founder_intent_refs": [
+    "docs/collaboration/CONTEXT-ROUTE-2026-11-12.md#founder-intent-and-existing-owners",
+    "INTENT-20261001-FULL-MACHINE-COMPLETION",
+    "INTENT-20261030-BUILD-BEFORE-DEVICE-RUN"
+  ],
+  "baseline": "Supersedes the unadopted CONTEXT-ROUTE-20261112 proposal after rejected public upload. The initial proposal is preserved in a private review checkpoint. Existing greg/path.json, source records, claims and completion maps remain canonical; raw attachments are excluded.",
+  "alternatives": [
+    {
+      "name": "Existing GitHub links with explicit access limits",
+      "description": "Publish only navigation to already-readable canonical sources, existing roadmap and live ownership.",
+      "advantages": [
+        "Completes unaffected work",
+        "No private attached payload is published",
+        "One canonical roadmap"
+      ],
+      "disadvantages": [
+        "Raw attachment gap remains"
+      ],
+      "revival_evidence": "Retain this scoped route; raw export is a separate explicit public-publication decision."
+    },
+    {
+      "name": "Public attachment export",
+      "description": "Publish the eleven original texts and manifest in the public repo.",
+      "advantages": [
+        "Would supply raw access to repo-only workers"
+      ],
+      "disadvantages": [
+        "Automatic approval rejected this action without explicit approval for this payload and public audience"
+      ],
+      "revival_evidence": "Explicit founder approval naming the eleven texts and this public repository; no workaround or indirect upload."
+    },
+    {
+      "name": "Do nothing until raw export is approved",
+      "description": "Wait on all work.",
+      "advantages": [
+        "No new diff"
+      ],
+      "disadvantages": [
+        "Blocks independent safe navigation repair unnecessarily"
+      ],
+      "revival_evidence": "A genuine source dependency makes the independent navigation inaccurate."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Entrants continue reconstructing context from PR bodies and unavailable source titles.",
+    "advantages": [
+      "No change or coordination cost"
+    ],
+    "disadvantages": [
+      "Known discoverability gaps and missing raw access remain"
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Self-review perspective of the implementer: preserve the full destination and current corrections.",
+      "material_concerns": [
+        "Do not replace N0–N10/P0–P13 or retire any Foundry obligation"
+      ],
+      "evidence_refs": [
+        "greg/path.json",
+        "docs/intent/INTENT-20261028-OPUS-MAXIMUS-REISSUE.json"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Self-review perspective: project existing owners rather than create another roadmap or registry.",
+      "material_concerns": [
+        "Canonical contracts and current coverage remain untouched"
+      ],
+      "evidence_refs": [
+        "AGENTS.md",
+        "acceptance/directive-sections.json"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Self-review perspective: source export and a draft cannot establish all-agent compliance.",
+      "material_concerns": [
+        "Main and consumer adoption pending",
+        "Historical source instructions can be misread",
+        "Claims are not locks"
+      ],
+      "evidence_refs": [
+        "docs/collaboration/CONTEXT-ROUTE-2026-11-12.md"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Self-review perspective: preserve the shared board and use exact-head handoffs.",
+      "material_concerns": [
+        "Do not touch #206 START_HERE or duplicate #152/#193 entry work"
+      ],
+      "evidence_refs": [
+        "https://github.com/dababiyoda/uniimente-kernel/issues/96#issuecomment-6841273413"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Self-review perspective: preserve the public/private boundary, blocked export, unknown source dates and unrun checks.",
+      "material_concerns": [
+        "No false scientific, economic, device or runtime claim"
+      ],
+      "evidence_refs": [
+        "docs/collaboration/CONTEXT-ROUTE-2026-11-12.md#source-access"
+      ],
+      "recommendation": "RETAIN"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "The existing path already holds the broad destination",
+      "tier": "primary_source",
+      "reference": "greg/path.json at 8d20532464b1533b28d71d8331ca3412a90dbb11",
+      "finding": "N0–N10, P0–P13 and horizons exist; navigation can project them."
+    },
+    {
+      "claim": "Attached originals remain a precise access boundary",
+      "tier": "other",
+      "reference": "docs/collaboration/CONTEXT-ROUTE-2026-11-12.md#source-access",
+      "finding": "Private candidate verified 11/11 byte identity; public upload blocked and excluded. Existing GitHub sources are still readable."
+    },
+    {
+      "claim": "Existing source and receipt mechanisms are reusable",
+      "tier": "unit_test",
+      "reference": "python3 tests/unit/test_collaboration_receipt.py on 8d205324",
+      "finding": "49 tests passed; repository review separately found zero hard findings."
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "All entrants automatically receive the current route",
+      "tier": "primary_source",
+      "reference": "main d64a6c9; #152/#193; DALEOBANKS/main and WMI/main AGENTS reads",
+      "finding": "False at inspection. Default entry and consumer adoption remain pending."
+    },
+    {
+      "claim": "All requested test commands executed",
+      "tier": "other",
+      "reference": "python3 -m pytest -q tests/unit/test_repository_map.py tests/unit/test_repo_health_gates.py",
+      "finding": "Not executed: the provided Python has no pytest. Do not report a passing pytest result."
+    },
+    {
+      "claim": "Current request explicitly permits the complete raw attached payload in this public repo",
+      "tier": "other",
+      "reference": "Automatic approval rejection recorded in CONTEXT-ROUTE-2026-11-12.md#source-access",
+      "finding": "Not established; source upload was rejected and has not been retried. Explicit public-export approval is separate."
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "Complete useful navigation and ownership repair with already-public sources; keep blocked attachment publication out of scope.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "Expose existing complete source and roadmap paths without waiting for an unrelated publication decision",
+        "amplified_value": "Workers can select owned next steps while missing raw context remains explicit."
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "Readers could confuse navigation with completed raw-source ingestion",
+        "severity": "high",
+        "response_type": "evidence",
+        "redesigned_response": "Remove all attachment payload/manifest/index; state the access gap and rejected export in the public record."
+      },
+      {
+        "id": "D2",
+        "statement": "A dated route may become stale",
+        "severity": "medium",
+        "response_type": "modularity",
+        "redesigned_response": "Link canonical path and live board; retain exact pins as provenance and require refresh on resume."
+      },
+      {
+        "id": "D3",
+        "statement": "Entry edits collide with existing workers",
+        "severity": "high",
+        "response_type": "governance",
+        "redesigned_response": "Exclude START_HERE; do not edit #206/#152/#193 branches; give their owners a precise handoff."
+      },
+      {
+        "id": "D4",
+        "statement": "More documentation can add bureaucracy without benefit",
+        "severity": "medium",
+        "response_type": "learning",
+        "redesigned_response": "Extend existing navigation; add no runtime/checker; test a fresh reader and measure later rework before claiming benefit."
+      }
+    ],
+    "comparisons": {
+      "baseline": "Keep the current claims and roadmap owners.",
+      "do_nothing": "Leaves observed gaps.",
+      "simplest_viable_alternative": "Existing GitHub links plus explicit source-access boundaries is the smallest route that is currently authorized.",
+      "strongest_competing_architecture": "The raw source packet offers access but is blocked until explicit public-export approval.",
+      "reversible_experiment": "Publish a navigation-only child draft of #196, test newcomer discovery and hand exact pins to existing owners."
+    },
+    "rejected_alternatives": [
+      {
+        "name": "New default-entry bootstrap",
+        "rejection_reason": "#152/#193 already own it; another PR would duplicate their concern.",
+        "revival_evidence": "Existing owner explicitly hands over that concern or an authorized maintainer resolves the split."
+      },
+      {
+        "name": "Retry the rejected raw upload through another route",
+        "rejection_reason": "Would bypass the automatic approval rejection. No such retry is authorized.",
+        "revival_evidence": "Explicit approval of the original public payload and destination, followed by the ordinary reviewed action."
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Attack the navigation-only route for overstated source access, stale truth, owner collisions and unobserved adoption. Compare with stopping everything and with the separately blocked raw export.",
+    "new_weaknesses": [
+      {
+        "id": "W1",
+        "category": "gaming",
+        "statement": "A read receipt could be presented as proof of real comprehension or compliance",
+        "strengthening_response": "Require observed fresh-reader answers and receiver action; keep universal/client adoption unproven."
+      },
+      {
+        "id": "W2",
+        "category": "comprehensibility",
+        "statement": "A historical census plus a current source packet may look like conflicting complete inventories",
+        "strengthening_response": "Keep the 93-item census historical and label the packet as only the eleven attachments exposed to this task."
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "resolved",
+        "rationale": "Public diff excludes attached payload and explicitly preserves the source-access gap.",
+        "owner": "context-route implementer and reviewer",
+        "review_trigger": "A reader treats historical text as current authority."
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "accepted",
+        "rationale": "Pins preserve provenance; source/owner refresh remains necessary.",
+        "owner": "each entering worker",
+        "review_trigger": "Moved head, new correction or changed gate."
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "resolved",
+        "rationale": "Contested START_HERE removed from scope; no competing main bootstrap.",
+        "owner": "existing #206/#152/#193 owners",
+        "review_trigger": "A counterpart reports an overlapping live concern."
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "experiment",
+        "rationale": "Discoverability can be tested; rework savings remain NOT_MEASURED.",
+        "owner": "maintaining reviewer",
+        "review_trigger": "First real fresh-worker handoff or evidence of added burden."
+      }
+    ],
+    "final_design": "Extend AGENTS/BACKCAST/INDEX and a dated access/propagation record using existing GitHub sources only. Keep initial proposal and eleven-source archive private, no public upload retry. Use existing board/receipts/roadmap owners; protected adoption remains separate.",
+    "residual_risks": [
+      {
+        "risk": "Default clients and organs may not adopt",
+        "mitigation": "Give existing owners exact immutable handoffs and record pending acknowledgments.",
+        "owner": "#152/#193 and consumer rollout owners",
+        "review_trigger": "Authorized adoption and actual client entry."
+      },
+      {
+        "risk": "Historical chats outside this packet remain unavailable",
+        "mitigation": "State exact missing scope; use source provenance and request only decision-critical missing context.",
+        "owner": "worker making the material decision",
+        "review_trigger": "A decision depends on an unavailable source."
+      },
+      {
+        "risk": "Repo-only workers still lack the eleven raw attached texts",
+        "mitigation": "Use existing canonical sources and exact missing-access record; request explicit public-export approval only for that concrete payload.",
+        "owner": "Alfonso for public-export decision",
+        "review_trigger": "Explicit decision on the eleven-source public payload."
+      }
+    ],
+    "recommendation": "RETAIN"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Adversarial concern retained: only a bounded discoverability experiment is supported; no universal-compliance claim. Five roles above are implementer self-review perspectives, not five independent agents. Actual read-only child audits/reviews are identified separately in the PR.",
+    "entries": [
+      {
+        "role": "Adversarial Reviewer",
+        "position": "Do not call draft navigation project-wide installation",
+        "rationale": "Main and consumer entry remain unadopted",
+        "evidence_threshold": "Authorized merges plus observed normal entry and receiver handoff",
+        "owner": "existing entry/rollout maintainers",
+        "review_trigger": "Any claim that all workers now comply"
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": false,
+    "approval_status": "not_required",
+    "approver": null
+  },
+  "migration_plan": "Publish only navigation based on existing GitHub sources; append verified board navigation without reconstructing lost history; hand exact pins to existing #196/#206/#152/#193 owners. Do not retry raw attachment publication without explicit approval.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Close the unmerged navigation draft or revert only its scoped navigation changes; retain the private source and initial decision checkpoints.",
+      "If rejected, restore only the navigation append to the captured prior board heading",
+      "Preserve historical sources, loss report, comments and unrelated worker work"
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "Any authority or runtime change appears",
+    "An unresolved overlapping owner is overwritten",
+    "Source bytes fail their manifest",
+    "Navigation burdens exceed verified value",
+    "The rejected attached-source payload is included in a public retry without explicit approval"
+  ],
+  "decision": "RETAIN",
+  "decision_owner": "Context-route implementer under the current founder-authorized reversible preparation scope only; separate protected adoption remains pending with the existing integrator/founder",
+  "review_trigger": "Resume, moved head, failed link, owner objection, actual fresh-worker handoff, or a separate explicit decision on raw public export"
+}

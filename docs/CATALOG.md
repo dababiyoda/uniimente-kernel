@@ -15,7 +15,7 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 |---|---:|---|
 | [`(top)`](#doctrine-orders-and-top-level-references) | 31 | Doctrine, orders and top-level references |
 | [`intent`](#founder-intent-records-and-their-verbatim-sources) | 68 | Founder intent records and their verbatim sources |
-| [`collaboration`](#collaboration-records-handoffs-deliberations-reviews-reconciliations) | 184 | Collaboration records: handoffs, deliberations, reviews, reconciliations |
+| [`collaboration`](#collaboration-records-handoffs-deliberations-reviews-reconciliations) | 186 | Collaboration records: handoffs, deliberations, reviews, reconciliations |
 | [`decisions`](#architecture-decision-records) | 5 | Architecture decision records |
 | [`deliberations`](#founder-rulings) | 1 | Founder rulings |
 | [`evidence`](#measured-evidence-frozen-runs-admissions-proofs) | 510 | Measured evidence (frozen runs, admissions, proofs) |
@@ -167,10 +167,11 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 
 ## Collaboration records: handoffs, deliberations, reviews, reconciliations
 
-### Deliberation (five lenses, two passes) (42)
+### Deliberation (five lenses, two passes) (43)
 
 | File | Date | Title |
 |---|---|---|
+| [`collaboration/deliberation-context-route-20261112.json`](collaboration/deliberation-context-route-20261112.json) | 2026-11-12 | Expose existing GitHub context while keeping unapproved attachment publication blocked |
 | [`collaboration/deliberation-worker-evidence-integrity-2026-11-05.json`](collaboration/deliberation-worker-evidence-integrity-2026-11-05.json) | 2026-11-05 | worker.appraise: refuse compiled modules; certify unreachable changes only by mutation fallback or a founder oracle |
 | [`collaboration/deliberation-regular-review-20261105.json`](collaboration/deliberation-regular-review-20261105.json) | 2026-11-05 | Contributor orientation, layering ratchets and a recurring read-only structural review |
 | [`collaboration/deliberation-typed-blockers-20261030.json`](collaboration/deliberation-typed-blockers-20261030.json) | 2026-10-30 | Type every open mission blocker from retained facts and the engine's own rule, on greg blockers, the morning report and  |
@@ -356,10 +357,11 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 | [`collaboration/goal-chase-attention-evidence/approve.json`](collaboration/goal-chase-attention-evidence/approve.json) |  |  |
 | [`collaboration/GREG-ONE-MISSION-PROOF.md`](collaboration/GREG-ONE-MISSION-PROOF.md) |  | GREG-001: one persistent local mission |
 
-### Other (50)
+### Other (51)
 
 | File | Date | Title |
 |---|---|---|
+| [`collaboration/CONTEXT-ROUTE-2026-11-12.md`](collaboration/CONTEXT-ROUTE-2026-11-12.md) | 2026-11-12 | Context route, source access and propagation receipt |
 | [`collaboration/BRANCH-CATALOG-2026-11-06.md`](collaboration/BRANCH-CATALOG-2026-11-06.md) | 2026-11-06 | Branch catalog |
 | [`collaboration/DIGEST-RULE-CONSOLIDATION-2026-10-30.md`](collaboration/DIGEST-RULE-CONSOLIDATION-2026-10-30.md) | 2026-10-30 | Digest-rule consolidation — 2026-10-30 |
 | [`collaboration/FINDING-BODY-MEMORY-2026-10-28.md`](collaboration/FINDING-BODY-MEMORY-2026-10-28.md) | 2026-10-28 | A body's memory no longer holds every payload in its history (2026-10-28) |

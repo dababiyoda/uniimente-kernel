@@ -1213,6 +1213,9 @@ RESOLUTION_MUTANTS = [
      '                target.setdefault("payload" if wrap == "problem" else "data", {})[part] = {}'),
     ("an answer with a withheld second engine becomes an attach", "greg/cognition/resolution.py",
      '    if withheld and (out.get("answer") is None or receipt_unanswered(receipt)):', '    if withheld:'),
+    ("a re-declaration on a capability deficit displaces Genesis", "greg/missions.py",
+     '        if isinstance(receipt.get("capability_deficit"), dict) and receipt["capability_deficit"].get("function"):',
+     '        if False:'),
     ("the receipt accepts a forged resolution", "greg/cognition/contracts.py",
      '            if check_resolution(self.resolution) is None:', '            if False:'),
 ]

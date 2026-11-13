@@ -3743,6 +3743,11 @@ class MissionEngine:
                                           "abandon the mission"],
                             requested={"prepared_command": prepared["kind"], "spend": "none requested"},
                             now=now, evidence=evidence, prepared=prepared)
+        if isinstance(receipt.get("capability_deficit"), dict) and receipt["capability_deficit"].get("function"):
+            # A proposal never displaces formation: on a capability deficit the prepared command is offered beside
+            # Capability Genesis, which still runs on this tick (held-out run v1, floor F1: a re-declaration of
+            # 'gene regulation' as arithmetic had replaced Genesis on 3 of 30 FORM items).
+            return None
         self._block(m, {"type": "decision", "request_id": rid, "action_id": aid,
                         "reconsider": "the founder signs the prepared command or answers"})
         return {"state": "WAITING", "blocker": m.blocker}

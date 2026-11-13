@@ -186,3 +186,24 @@ class TestConsumer:
         out = _run({"estimation_model": FERMI, "victim_protection": protection})
         assert [a["kind"] for a in out["asks"]] == ["HUMAN_JUDGMENT"]
         assert out["status"]["m:resolution-engine"] != "ACHIEVED"
+
+
+def test_a_re_declaration_on_a_capability_deficit_never_displaces_genesis():
+    """Held-out run v1 (F1, post hoc): the compiler's derived geometry for a request no family serves can name an
+    unrelated class ("gene regulation" whose "expression" input fits "arithmetic"). The proposal is offered, and Genesis still opens."""
+    from greg.body import Body
+    from greg.templates import compiled_question
+    from tests.greg_fixtures import Clock, drop, make_body, signed
+    home, key, body_id, _ = make_body(Path(tempfile.mkdtemp(prefix="resolution-form-")))
+    spec = compiled_question(problem_id="t:form", data={"expression": [1.2, 0.4], "variant": 7},
+                             geometry={"geometry": "optimization", "subgeometry": "gene regulation"})
+    spec["mission_id"] = "m:resolution-form"
+    drop(home, signed(key, body_id, "MISSION", spec), name="z-mission.json")
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        for _ in range(3):
+            body.tick()
+            clock.advance(31)
+        opened = [e.payload for e in body.journal.replay("deficit.opened") if e.payload.get("mission_id") == spec["mission_id"]]
+        assert opened, "Capability Genesis must open for a function no catalogued family serves"

@@ -214,6 +214,8 @@ jobs:
         env:
           GREG_REQUIRE_LANDLOCK: "1"     # the kernel confines the rehearsal's git: its mutants need Landlock, never a skip
         run: python scripts/ci/check_intake_mutants.py
+      - name: Compile-unanswered mutations (a compile receipt that did not answer is no measured failure; a host stop is retried, not asked about at once)
+        run: python scripts/ci/check_compile_unanswered_mutants.py
 
   verifier:
     # Its V2 re-runs tests/unit, so inside job 1 it pushed that job past its 30 minutes once the

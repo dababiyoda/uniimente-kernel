@@ -8,6 +8,12 @@ import json
 import math
 
 
+# The exit status of a numeric or cortex worker whose memory ceiling (RLIMIT_AS) stopped it: the allocation raised
+# MemoryError and the worker exited with this status instead of a traceback's 1, which reads as a worker that died
+# on its own. ``budget.note_host_stop`` types it ``budget_exceeded``, as it types the CPU ceiling's signals.
+MEMORY_CEILING_EXIT = 3
+
+
 class CognitionError(ValueError):
     pass
 

@@ -1191,12 +1191,18 @@ METABOLISM_MUTANTS = [
 FOUNDER_KEY_TESTS = ["tests/unit/test_greg_founder_key_errors.py"]
 FOUNDER_KEY_MUTANTS = [
     ("a wrong passphrase in the library's other wording is a traceback", "greg/cli.py",
-     "    except ValueError:\n        # Decided by what was asked,",
+     "    except ValueError as exc:\n        # Decided by what the file is",
      "    except ValueError as exc:\n        if \"password\" not in str(exc).lower() and \"decrypt\" not in "
-     "str(exc).lower():\n            raise\n        # Decided by what was asked,"),
-    ("a damaged plain key is a traceback", "greg/cli.py",
-     "        raise BodyError(f\"the founder key {path} could not be read as a PEM private key; nothing was signed\") "
-     "from None\n", "        raise\n"),
+     "str(exc).lower():\n            raise\n        # Decided by what the file is"),
+    ("a file that is not an encrypted key is called a wrong passphrase", "greg/cli.py",
+     "        if passphrase is not None and _protected(str(path)):\n", "        if passphrase is not None:\n"),
+    ("a missing or unreadable key file is a traceback", "greg/cli.py",
+     "    except OSError as exc:                 # missing, a directory, unreadable\n",
+     "    except ZeroDivisionError as exc:\n"),
+    ("an unreadable key is a traceback", "greg/cli.py",
+     "        raise BodyError(f\"the founder key {path} could not be read as a PEM private key ({str(exc)[:160]}); "
+     "nothing \"\n", "        raise\n        raise BodyError(f\"the founder key {path} could not be read as a PEM "
+     "private key ({str(exc)[:160]}); nothing \"\n"),
 ]
 
 GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),

@@ -314,10 +314,10 @@
    },
    "#179": {
     "glob": "docs/evidence/.*/PREREGISTRATION\\.md",
-    "matched": 5,
+    "matched": 6,
     "missing": [],
     "no_declaration": [],
-    "parsed": 5
+    "parsed": 6
    }
   },
   "admission freezes (#158 form)": {
@@ -26691,6 +26691,14 @@
    "not_in_any_exposure": [],
    "path": "docs/evidence/greg-genome-admission/2026-11-05-v10/PREREGISTRATION.md",
    "sha256": "sha256:fb702a95a29fe615c5a3409cddada117db1bd8ac9a8b8e84db8ab4d99d00d25a"
+  },
+  {
+   "commit": "02b93989158c61360a899dcf182e9549dd318f8e",
+   "declared_ranges": [],
+   "lineage": "#179",
+   "not_in_any_exposure": [],
+   "path": "docs/evidence/operational-slice/2026-11-12/PREREGISTRATION.md",
+   "sha256": "sha256:2a01d3197231587c773d69494aab42494d26c44c4d8c6409e2fdbd26547c4199"
   }
  ],
  "reservations": {

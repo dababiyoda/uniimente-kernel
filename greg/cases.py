@@ -1029,8 +1029,8 @@ def render(content: dict) -> str:
 def _alive(pid: int) -> bool:
     try:
         os.kill(pid, 0)
-    except ProcessLookupError:
-        return False
+    except (ProcessLookupError, OverflowError, ValueError):
+        return False            # no such process; or a number no process can have (a stray folder's name)
     except OSError:
         return True             # it exists, under another user
     return True

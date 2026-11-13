@@ -183,6 +183,8 @@ MUTANTS = [
      '    return f"case-{_slug(reference)}-{sequence}-{basis[7:23]}"', '    return f"case-{_slug(reference)}-{basis[7:23]}"'),
     ("a mission's earlier packet on file is not its previous one", "greg/cases.py",
      '    latest = _latest_packet(folder, assessment["reference"], ctx.mission_id)\n', '    latest = None\n'),
+    ("a stray folder named with a pid no process can have stops every delivery", "greg/cases.py",
+     "    except (ProcessLookupError, OverflowError, ValueError):", "    except ProcessLookupError:"),
     ("a temporary folder a killed writer left stays", "greg/cases.py",
      '    target = folder / name\n    _sweep(folder)\n', '    target = folder / name\n'),
     ("a running writer's temporary folder is swept", "greg/cases.py",

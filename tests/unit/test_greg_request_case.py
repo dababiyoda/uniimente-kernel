@@ -1237,3 +1237,19 @@ def test_a_folder_already_at_the_next_packets_name_is_never_overwritten(tmp_path
         packet(params(rulebook, folder), ctx(tmp_path, "case.packet"))
     assert [p.name for p in squatter.iterdir()] == ["packet.md"]
     assert (squatter / "packet.md").read_text() == "someone else's file\n"
+
+
+def test_a_stray_temporary_folder_named_with_an_impossible_pid_never_blocks_a_delivery(tmp_path):
+    """Found by the second fix round's re-check: the sweep asked the kernel about the pid in a stray folder's name, and
+    a number too large for a C long raised OverflowError, so every mission's packet delivery failed (and the mission
+    recorded the unwritten packet as UNCERTAIN). No process can have that pid: the folder is a dead writer's."""
+    from greg import cases
+    folder = tmp_path / "cases"
+    folder.mkdir()
+    stray = folder / ".case-ld-240117-1-0000000000000000.99999999999999999999.tmp"
+    stray.mkdir()
+    (stray / "packet.md").write_text("half written\n")
+    written = cases._deliver(folder, "case-ld-240117-1-0000000000000000", {"packet.md": b"# packet\n",
+                                                                         "packet.json": b"{}\n"})
+    assert written.is_dir() and (written / "packet.json").read_bytes() == b"{}\n"
+    assert not stray.exists()

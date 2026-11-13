@@ -161,10 +161,18 @@
   interface: foundry.apply package; foundry.query inspect (system9); disposable hosted builder produces and runs OCI artifacts
   tests:
   - tests/unit/test_greg_oci.py
-  limitations: Digest-pinned restricted-rule capability context is packaged by the signed Body. Real paired OCI rebuild and
-    second-environment execution require the hosted evidence artifact; context creation alone is not completion. Full GREG
-    and organ dependency images and stronger general-code execution remain unfinished.
-  gap: 'Actual hosted OCI rebuild/run evidence pending for this delta; retain full-machine portability and general execution
+  evidence: foundry/evidence/system-09.json
+  hosted_evidence: foundry/evidence/hosted/system-09.json
+  evidence_tier: SANDBOX_VERIFIED
+  limitations: The local record re-derives only the signed Body's digest-pinned context (image_built false); the image
+    itself is built and run only on a disposable hosted CI runner (Canonical CI job 7, scripts/ci/prove_oci.py), never in
+    the development container or on a founder body. Hosted evidence (hosted/system-09.json, run 39736818025 on 55e6d74)
+    showed two no-cache builds with identical OCI layouts and the image answering 6 requests exactly as the host does; it
+    is re-observed on every CI run, not by the local audit. One restricted-rule capability is packaged; full GREG and organ
+    dependency images and stronger general-code execution (system 10) remain unfinished.
+  recovery: Stateless; the context is content-addressed and the hosted job fails closed (a differing rebuild, a loaded
+    image whose id differs from the retained config, or any container answer that differs from the host).
+  lineage: 'Actual hosted OCI rebuild/run evidence pending for this delta; retain full-machine portability and general execution
     obligations. Preserved foundry-55 lineage (#132, foundry/systems/containers.py): Implementation exists (pinned base by
     digest with mirror failover and digest verification, deterministic capability layer, OCI layout, securejoin unpacking,
     runc and gVisor runtime specs). In-session runs on 2026-09-30 before the pause: identical image digest across builds and
@@ -172,7 +180,7 @@
     OCI runtimes (runc/runsc as root) and sandbox escape probes in the development container was denied by the session''s
     safety classifier (containment escape). Resuming needs Alfonso''s explicit authorization for where these may run (e.g.
     CI only, or a dedicated VM). Non-privileged hardening 2026-10-14: containers.run refuses before building any command unless UNIIMENTE_PRIVILEGED_RUNTIME_HOST names this host (founder-approved dedicated host or CI only); root images are refused; extraction confinement is tested without privilege (tests/unit/test_foundry_containers_hardening.py). Dedicated-host specification: docs/collaboration/PRIVILEGED-RUNTIME-TEST-HOST-2026-10-14.md. Status 2026-10-16: location authorization received from the founder; earlier unvalidated groundwork preserved inactive in docs/evidence/validation-groundwork-2026-10-16/; validation not performed; further execution blocked by a safety restriction reported in this session.'
-  state: PARTIAL
+  state: COMPLETE
 10:
   acceptance:
   - Generated or third-party code runs under stronger-than-process isolation (microVM or gVisor-class)

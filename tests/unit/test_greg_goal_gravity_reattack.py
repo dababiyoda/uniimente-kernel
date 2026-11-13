@@ -384,7 +384,7 @@ def test_an_approve_is_a_standing_approval_and_every_goal_surface_says_so(world,
     rid, _ = expected_w2_request(world)
     request = next(r for r in world.events("decision.requested") if r["request_id"] == rid)
     assert request["evidence"]["approve_means"] == gg.APPROVE_MEANS            # the goal's ask states it
-    assert world.projection()["approve_means"] == gg.APPROVE_MEANS
+    assert world.projection()["approve_means"]["free"] == gg.APPROVE_MEANS
     world.submit("DECISION", {"request_id": rid, "answer": "approve", "reason": "ship d"})
     world.tick(6)
     (world.ws / "d.txt").unlink()                                              # the world regresses

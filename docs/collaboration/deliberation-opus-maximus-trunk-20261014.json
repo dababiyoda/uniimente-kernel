@@ -1,0 +1,369 @@
+{
+  "decision_id": "OPUS-MAXIMUS-TRUNK-20261014",
+  "title": "One canonical GREG development trunk: PR #175 as base, PR #169's whole-machine increments merged onto it",
+  "problem": "Three open draft lineages each claim to be the GREG machine: #169 (whole-machine: Mission Control truth, worker OS isolation, #26 relay egress, acceptance report, venture rehearsal, section 13 attacks, handoff), #173 (Mind-line convergence, v6 seed re-freeze) and #175 (= #173 plus governed half-open recovery). The 2026-10-13 OPUS MAXIMUS directive and the 2026-10-14 FABLE 5.1 execution command require one canonical trunk, with #173 'as one strong candidate, not as dogma'. Exact symmetric difference 94d4289...e34dfe0 is 20 commits only in #169 and 44 only in #175; the merge has two merge bases (d64a6c9, 53ef9d0) and seven content-conflicted files.",
+  "founder_intent_refs": [
+    "docs/intent/INTENT-2026-09-30-OPUS-MAXIMUS-CONVERGENCE.json",
+    "docs/intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json",
+    "docs/intent/INTENT-20261013-FRONTIER-LEAP-RECOMBINE.json",
+    "docs/intent/INTENT-2026-09-27-FOUNDRY-55.json",
+    "docs/intent/INTENT-0030-effect-not-metaphor.md",
+    "docs/intent/sources/OPUS-MAXIMUS-MASTER-EXECUTION-DIRECTIVE-2026-10-13-source.md",
+    "FABLE 5.1 OPUS MAXIMUS execution command, 2026-10-14, session_01TnTfFXr93jtNSzVD9SWeGx (chat text; founder authentication not claimed)"
+  ],
+  "baseline": "main d64a6c9. #173 b6d9f20: 3124 passed, 16 skipped, 0 failed with declared solver deps (164 failed without them). #175 e34dfe0: 3133/16/0. #169 94d4289: 3020/26/0. All three run in this container on 2026-10-14 (scratchpad convergence/SUITE_TRUTH.md). git rev-list --left-right --count 94d4289...e34dfe0 = 20 | 44. git merge-base --all = d64a6c9, 53ef9d0.",
+  "alternatives": [
+    {
+      "name": "proposed_design",
+      "description": "Trunk branch claude/opus-maximus-one-greg-20261014 starts at #175 e34dfe0 and merges #169 head 94d4289 with a real merge commit (both PR heads stay intact as lineage). Seven conflicts resolved by composition: appraisal re-observation binds sensor params through the #175 pipeline AND appends #169's capability-reported reasons; InvocationContext carries both cognition_budget and egress; console keeps #169's owner-scoped sends and serves #175's community reads as sandboxed public content through the same gate; missions keep the #175 fault-attribution and inconclusive-sensor arms and add #169's disagreement recording; workers dispatch through #169's prepare_worker envelope (isolation, stop, relay door) while #175's _worker_env scrub is retained as a documented superseded oracle; both test blocks kept; completion.yaml keeps #175's structured system-9 entry with #169's hardening note appended.",
+      "advantages": [
+        "One tree carries the Mind line (seed v6, recovery, constructions, pipeline bindings) and the whole-machine increments (isolation, relay, Mission Control truth, acceptance, venture rehearsal, attacks).",
+        "Lineage preserved: a merge commit, no rewrite of either PR's history.",
+        "Every conflict resolution is a union of behaviours; nothing either side built is dropped."
+      ],
+      "disadvantages": [
+        "Larger diff surface than either PR alone.",
+        "Three composition points (appraisal reasons on pipeline-bound output, community routes behind the #169 gate, dual worker-env code) were not reviewed by either PR's own review.",
+        "Criss-cross history: later merges from #169 or #173 need the same care."
+      ],
+      "revival_evidence": "n/a (selected)"
+    },
+    {
+      "name": "simplest_viable_alternative",
+      "description": "Use #175 alone as the trunk and record #169's 20 commits as preserved lineage to port later.",
+      "advantages": [
+        "No conflict resolution; the 3133/16/0 tree is untouched."
+      ],
+      "disadvantages": [
+        "The whole-machine proof would lack real worker isolation, the relay door, the acceptance report, Mission Control's cost columns and the venture rehearsal, all of which the directive's ten steps name.",
+        "Delays the port to a later session with less context."
+      ],
+      "revival_evidence": "If the merged tree's full suite cannot be made green within this session, reset the branch to e34dfe0 (rollback step 1) and this alternative becomes the trunk."
+    },
+    {
+      "name": "strongest_competing_architecture",
+      "description": "Use #169 as the trunk and merge #175's 44 commits onto it.",
+      "advantages": [
+        "#169 is the lineage whose handoff already recorded a whole-machine rehearsal and real organ runs."
+      ],
+      "disadvantages": [
+        "Symmetric conflicts (same seven files) with the larger side (44 commits, v6 seed re-freeze, frozen evaluation artifacts) moving; higher risk of disturbing frozen Mind-line evidence.",
+        "#169 lacks vpl_metrics, the v6 freeze and the fm-* deliberations; carrying them in is the same work in the harder direction."
+      ],
+      "revival_evidence": "A reviewer finding that the #175 base silently changed #169 security semantics would revive this direction."
+    },
+    {
+      "name": "reversible_experiment",
+      "description": "Run the ten-step proof on #175 and on #169 separately, compare, then choose.",
+      "advantages": [
+        "Decision grounded in two executed proofs."
+      ],
+      "disadvantages": [
+        "Doubles proof work; neither tree alone can pass all ten steps (see simplest alternative), so the comparison cannot pick a complete winner."
+      ],
+      "revival_evidence": "If the merged proof fails on a composition point, run the affected step on each parent to localise the fault."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Three drafts stay open; each later session re-derives which is canonical; the founder is asked to pick without an executed whole-machine proof on any single tree.",
+    "advantages": [
+      "No merge risk; no new code."
+    ],
+    "disadvantages": [
+      "Violates the directive's explicit requirement to select one trunk; context loss compounds (PROJECT_COGNITION_SOP section 0)."
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "The founder asked for one machine and named #173 as a strong candidate, not dogma. #175 carries #173 plus governed recovery; #169 carries the increments the ten-step proof names. Composition preserves both destinations. Five roles performed by one agent; not independent human reviewers.",
+      "material_concerns": [
+        "Selecting a development trunk must not read as adopting it into main; that remains the founder's decision."
+      ],
+      "evidence_refs": [
+        "docs/intent/sources/OPUS-MAXIMUS-MASTER-EXECUTION-DIRECTIVE-2026-10-13-source.md",
+        "scratchpad convergence/SUITE_TRUTH.md"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "The seven conflicts are additive on both sides (new fields, new arms, new tests) except the worker dispatch path, where #169's envelope strictly supersedes #175's env scrub and the scrub is kept only as a documented oracle. Union resolution is the correct composition.",
+      "material_concerns": [
+        "Two mechanisms for worker environment hygiene exist in one file; only one is on the dispatch path."
+      ],
+      "evidence_refs": [
+        "greg/workers.py",
+        "greg/worker_isolation.py",
+        "tests/unit/test_greg_workers.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "The composition points were not reviewed by either PR's review. Appraisal now evaluates pipeline-bound parameters and reports capability findings; the community routes pass the #169 gate as public loopback reads; the merged tree's bubblewrap tests skip on this host unless bubblewrap is installed. Re-review the merged tree before any founder-device run.",
+      "material_concerns": [
+        "Unreviewed composition points.",
+        "Skipped real-isolation tests mean the isolation claim is unproven on this host until bubblewrap is present."
+      ],
+      "evidence_refs": [
+        "scratchpad merge/pytest-merge-targeted.log",
+        "greg/appraisal.py",
+        "greg/console.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "A merge commit keeps both PR heads checkable and makes rollback one reset. The full suite on the merged tree (with solver deps) is the operating gate; targeted tests from both lineages pass first.",
+      "material_concerns": [
+        "Suite time (~15 min) and optional dependency drift (z3, ortools, scipy, networkx) remain environment-bound causes of false failures."
+      ],
+      "evidence_refs": [
+        "scratchpad convergence/pytest-175-full.log",
+        "scratchpad convergence/pytest-169-full.log"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Nothing here changes authority, spends, publishes or contacts anyone. Community pages remain receipt-bound reads served with a sandboxed CSP. The venture rehearsal stays a fixture: no payment rail, no person.",
+      "material_concerns": [
+        "Owned community history is readable by any loopback process, as before on #175; record as residual with an owner rather than silently accept."
+      ],
+      "evidence_refs": [
+        "tests/unit/test_greg_community_console.py",
+        "greg/venture_rehearsal.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "Each lineage is green in this container with declared solver deps",
+      "tier": "sandbox_execution",
+      "reference": "scratchpad convergence/SUITE_TRUTH.md; pytest-173-full.log; pytest-175-full.log; pytest-169-full.log",
+      "finding": "3124/16/0, 3133/16/0, 3020/26/0."
+    },
+    {
+      "claim": "Exact divergence and conflict set",
+      "tier": "sandbox_execution",
+      "reference": "git rev-list --left-right --count 94d4289...e34dfe0; git merge --no-commit 94d4289 on e34dfe0",
+      "finding": "20 | 44 commits; 7 files, 10 conflict hunks."
+    },
+    {
+      "claim": "Targeted tests from both lineages pass on the merged tree",
+      "tier": "sandbox_execution",
+      "reference": "scratchpad merge/pytest-merge-targeted.log",
+      "finding": "Recorded in the evidence README of the development branch once the run completes; bubblewrap-dependent tests skip unless bubblewrap is installed."
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "The merged tree is as reviewed as its parents",
+      "tier": "other",
+      "reference": "this record, Adversarial Reviewer",
+      "finding": "False: three composition points have no prior review."
+    },
+    {
+      "claim": "Trunk selection makes GREG a working machine",
+      "tier": "other",
+      "reference": "docs/collaboration/WHOLE-MACHINE-HANDOFF-2026-10-14.md",
+      "finding": "False: VEPMC is 0; no founder device, no external outcome; the merged tree is LABORATORY-VERIFIED at best."
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "One development trunk on which the ten-step whole-machine proof can be executed with real processes, real isolation, independent appraisal, two organ processes, Genesis, Mission Control and a learning effect, without dropping either lineage's mechanisms.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "One tree carries Mind line and whole-machine increments.",
+        "amplified_value": "The proof exercises the machine the founder means, not a subset; reverses into a liability if the composition hides a semantic conflict, so every composition point gets a test in the proof."
+      },
+      {
+        "id": "A2",
+        "statement": "Lineage preserved by a merge commit.",
+        "amplified_value": "Both PR heads remain inspectable and revertible; reverses if later work rebases over the merge, so the branch forbids history rewriting."
+      },
+      {
+        "id": "A3",
+        "statement": "Union resolutions drop nothing.",
+        "amplified_value": "Final Build Order preservation holds without dead forks; reverses if retained dead code is mistaken for the active path, so the superseded scrub is labelled in its docstring."
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "Larger diff surface.",
+        "severity": "low",
+        "response_type": "evidence",
+        "redesigned_response": "Bounded: the branch's own diff versus e34dfe0 is exactly #169's 20 commits plus resolutions; documented in the convergence map."
+      },
+      {
+        "id": "D2",
+        "statement": "Unreviewed composition points.",
+        "severity": "high",
+        "response_type": "evidence",
+        "redesigned_response": "Observable and testable: each point is asserted by an existing test from one lineage (appraisal binding test, community console test, worker env test) and by the merged targeted run; a re-review is a named next-wave item."
+      },
+      {
+        "id": "D3",
+        "statement": "Criss-cross history.",
+        "severity": "medium",
+        "response_type": "governance",
+        "redesigned_response": "Bounded: future ports from #169/#173 use the same documented resolution rules; the merge-geometry record is kept."
+      },
+      {
+        "id": "D4",
+        "statement": "Real-isolation tests skip without bubblewrap.",
+        "severity": "medium",
+        "response_type": "protective",
+        "redesigned_response": "Removable on this host by installing bubblewrap; recorded as a host requirement in the proof's environment report either way."
+      }
+    ],
+    "comparisons": {
+      "baseline": "Three separate drafts (#169 94d4289, #173 b6d9f20, #175 e34dfe0), each green alone with solver deps, none able to run all ten proof steps.",
+      "do_nothing": "Founder asked to pick a trunk without an executed whole-machine proof on any single tree; context loss compounds.",
+      "simplest_viable_alternative": "#175 alone: untouched 3133/16/0 tree, but no real worker isolation, relay door, acceptance report, cost columns or venture rehearsal for the proof.",
+      "strongest_competing_architecture": "#169 as base: the same seven conflicts in the harder direction, with frozen Mind-line evidence (v6 freeze, vpl metrics, fm-* deliberations) moving.",
+      "reversible_experiment": "Dual proofs on each parent: doubles the work and neither parent can complete all ten steps."
+    },
+    "rejected_alternatives": [
+      {
+        "name": "simplest_viable_alternative",
+        "revival_evidence": "merged tree cannot be made green this session",
+        "rejection_reason": "cannot pass the ten named steps"
+      },
+      {
+        "name": "strongest_competing_architecture",
+        "revival_evidence": "security semantics found changed by the #175 base",
+        "rejection_reason": "same conflicts, harder direction, frozen evidence at risk"
+      },
+      {
+        "name": "reversible_experiment",
+        "revival_evidence": "a composition fault needs localisation",
+        "rejection_reason": "neither parent can complete the proof alone"
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Attack the merged tree as if deployed: hidden semantic drift at the composition points, dead code mistaken for live protection, a wider public read surface, the trunk read as a merge decision, and evidence inflation from the word 'trunk'.",
+    "new_weaknesses": [
+      {
+        "id": "N1",
+        "category": "comprehensibility",
+        "statement": "_worker_env remains in greg/workers.py but is no longer on the dispatch path; a reader could believe it protects workers.",
+        "strengthening_response": "Docstring states it is superseded on dispatch by worker_isolation.prepare_worker and retained as a test oracle; the proof asserts the envelope mechanism from the worker report."
+      },
+      {
+        "id": "N2",
+        "category": "other",
+        "statement": "Community reads pass the #169 gate as public loopback content, widening the public surface relative to #169 alone.",
+        "strengthening_response": "Served with the sandboxed CSP and no owner cookie; identical exposure to #175 before the merge; recorded as a residual risk with an owner and a review trigger, not silently accepted."
+      },
+      {
+        "id": "N3",
+        "category": "other",
+        "statement": "Calling a branch the canonical trunk could be read as adopting it into main.",
+        "strengthening_response": "The branch is a draft PR; adoption into main is NEEDS_FOUNDER_DECISION and is listed under founder-only decisions in the handoff."
+      },
+      {
+        "id": "N4",
+        "category": "gaming",
+        "statement": "A green merged suite could be reported as a working machine.",
+        "strengthening_response": "Every report labels the tier (LABORATORY-VERIFIED), keeps VEPMC at 0, and separates sandbox success from founder-device acceptance."
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "accepted",
+        "rationale": "The branch diff versus e34dfe0 is exactly the ported commits plus seven resolutions; its size is inherent, not avoidable.",
+        "owner": "branch author (this session)",
+        "review_trigger": "diff versus e34dfe0 equals #169's 20 commits plus the seven resolutions"
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "experiment",
+        "rationale": "Each composition point is covered by one lineage's existing test and by the merged targeted run; independent re-review is scheduled as a next-wave item and gates any founder-device run.",
+        "owner": "next reviewing agent",
+        "review_trigger": "independent re-review of greg/appraisal.py, greg/console.py, greg/workers.py composition points before any founder-device run"
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "accepted",
+        "rationale": "Criss-cross history is a property of the two lineages' shared feature merges; documenting the resolution rules bounds future cost.",
+        "owner": "branch author",
+        "review_trigger": "resolution rules documented in REPOSITORY_CONVERGENCE_MAP"
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "resolved",
+        "rationale": "bubblewrap 0.9.0 was installed on this host so the real_isolation tests execute; where a host lacks it the skip is reported verbatim.",
+        "owner": "branch author",
+        "review_trigger": "bubblewrap installed on this host and real_isolation tests executed, else the skip is reported verbatim"
+      }
+    ],
+    "final_design": "Development trunk claude/opus-maximus-one-greg-20261014 = e34dfe0 + merge of 94d4289 with the seven documented resolutions; the whole-machine proof, invention ledger and coverage artifacts land on this branch as a draft PR; no merge to main, no activation, no spend.",
+    "residual_risks": [
+      {
+        "risk": "Composition points (appraisal reasons on pipeline-bound output; community reads behind the #169 gate; dual worker-env code) await independent review.",
+        "mitigation": "Named next-wave item; proof asserts the live mechanism from worker reports; dissent recorded.",
+        "owner": "next reviewing agent",
+        "review_trigger": "before any founder-device acceptance run on this tree"
+      },
+      {
+        "risk": "Owned community history is readable by any loopback process (unchanged from #175).",
+        "mitigation": "Sandboxed CSP, no owner cookie, receipt-bound reads only; founder may require owner session for community reads.",
+        "owner": "console maintainer",
+        "review_trigger": "founder review of the draft PR"
+      },
+      {
+        "risk": "Future ports across the criss-cross history repeat the same conflicts.",
+        "mitigation": "Resolution rules recorded in REPOSITORY_CONVERGENCE_MAP and this record.",
+        "owner": "branch author",
+        "review_trigger": "next port from #169 or #173"
+      }
+    ],
+    "recommendation": "EXPERIMENT"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Recorded with owner and trigger; the branch proceeds as a draft and the dissent gates any founder-device run.",
+    "entries": [
+      {
+        "role": "Adversarial Reviewer",
+        "position": "The merged tree must be re-reviewed at its composition points before it is offered for a founder-device run.",
+        "rationale": "Neither PR's review covered the composed code.",
+        "evidence_threshold": "An independent reading of the three composition points with a regression test per finding.",
+        "owner": "next reviewing agent",
+        "review_trigger": "before any founder-device acceptance run on this tree"
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": false,
+    "approval_status": "not_required",
+    "approver": null,
+    "note": "A development branch and draft PR only. Adoption into main, activation on a founder device, spending, publication and third-party contact are not decided here and remain NEEDS_FOUNDER_DECISION."
+  },
+  "migration_plan": "Create the branch at e34dfe0; merge 94d4289 with the seven resolutions; run targeted tests from both lineages, then the full suite with solver deps; commit the merge; land the whole-machine proof and artifacts as further commits; open a draft PR; both parent PRs stay open as preserved lineage until the founder decides.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "git checkout claude/opus-maximus-one-greg-20261014 && git reset --hard e34dfe0 (before push) or a revert of the merge commit (after push).",
+      "Both PR heads (94d4289, e34dfe0) and their branches are untouched by this work."
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "The merged tree's full suite cannot be made green without weakening a test from either lineage.",
+    "A composition point is found to change authority, evidence or isolation semantics of either parent.",
+    "The branch is used to claim founder-device, external or commercial evidence."
+  ],
+  "decision": "EXPERIMENT",
+  "decision_owner": "Alfonso Lopez (root authority) for adoption; this session's agent for the development branch",
+  "review_trigger": "Full suite result on the merged tree; execution of the ten-step whole-machine proof; founder review of the draft PR."
+}

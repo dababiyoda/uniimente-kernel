@@ -34,14 +34,42 @@ def free_port() -> int:
         return s.getsockname()[1]
 
 
+OWNER = {}             # port -> (owner path, opener holding the owner's session cookie)
+
+
 def http(port, path, fields=None):
+    """A request from the owner's browser session, once ``enter_console`` opened the printed private link."""
     headers = {"Host": f"127.0.0.1:{port}"}
     data = None
     if fields is not None:
         data = urlencode(fields).encode()
         headers["Content-Type"] = "application/x-www-form-urlencoded"
-    with urlopen(Request(f"http://127.0.0.1:{port}{path}", data=data, headers=headers), timeout=30) as r:
+    owner_path, opener = OWNER.get(port, ("/", None))
+    if path.startswith("/") and not path.startswith(owner_path):
+        path = owner_path + path.lstrip("/")
+    with (opener.open if opener else urlopen)(Request(f"http://127.0.0.1:{port}{path}", data=data, headers=headers),
+                                              timeout=30) as r:
         return r.geturl(), r.read().decode()
+
+
+def enter_console(proc, port, timeout=30):
+    """Read the single-use private link `greg console` prints and open it once, as the founder does."""
+    from http.cookiejar import CookieJar
+    from urllib.parse import urlsplit
+    from urllib.request import HTTPCookieProcessor, build_opener
+    deadline = time.time() + timeout
+    link = ""
+    while time.time() < deadline and not link:
+        line = proc.stdout.readline()
+        assert line or proc.poll() is None, "console exited before printing its private link"
+        if "?access=" in line:
+            link = line.strip()
+    assert link, "console did not print its private link"
+    opener = build_opener(HTTPCookieProcessor(CookieJar()))
+    with opener.open(Request(link, headers={"Host": f"127.0.0.1:{port}"}), timeout=30) as r:
+        assert r.status == 200
+    OWNER[port] = (urlsplit(link).path, opener)
+    return proc
 
 
 def console(home, key, port):
@@ -49,15 +77,7 @@ def console(home, key, port):
                              "--no-passphrase", "--no-model", "--port", str(port)], cwd=ROOT,
                             env={**os.environ, "PYTHONPATH": str(ROOT)}, stdout=subprocess.PIPE,
                             stderr=subprocess.STDOUT, text=True)
-    deadline = time.time() + 30
-    while time.time() < deadline:
-        try:
-            http(port, "/")
-            return proc
-        except OSError:
-            assert proc.poll() is None, proc.stdout.read()
-            time.sleep(0.2)
-    raise AssertionError("console did not start")
+    return enter_console(proc, port)
 
 
 def test_founder_product_path_survives_kill_and_torn_write_and_delivers_once(tmp_path):

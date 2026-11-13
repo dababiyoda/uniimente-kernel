@@ -1,0 +1,17 @@
+{
+  "verifier": "v2",
+  "ts_utc": "2026-10-14T17:19:37.344597+00:00",
+  "command": "python3 verifier/v2/verify.py",
+  "head_commit": "ccd38a26d03b1837d2d8fea0161db05092b14700",
+  "tracked_tree": "clean",
+  "exit_code": 0,
+  "passes": [
+    "V1: all v1 canonical artifacts present (45/45)",
+    "V2: pytest tests/unit: 3530 passed, 9 skipped in 1056.71s (0:17:36)",
+    "V3: all modules closed: advantage_foundry, autonomy, business, capabilities, compiler, consequence_gate, developmental_substrate, embassy, events, evidence_ledger, evolution, foundry, greg_body, identity, linker, loom, memory, omnimorph, proof, treasury, twins",
+    "V4: false closure -> FALSELY_CLOSED; gate loops -> CLOSED",
+    "V5: 19 module READMEs declare the buildability standard"
+  ],
+  "skips": [],
+  "failures": []
+}

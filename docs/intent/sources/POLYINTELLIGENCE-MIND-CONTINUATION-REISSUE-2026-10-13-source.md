@@ -47,3 +47,23 @@ words are its opening line.
   "systemic dominance" is superior lawful capability, never control over people.
 - **Unreached attachments:** the three attachments did not arrive, and their content is unknown.
   Nothing is inferred about them.
+
+## Second re-issuance — 2026-10-14
+
+Provenance: Alfonso's message in the same session, 2026-10-14 (about 11:14 UTC). It arrived after
+these had been pushed to PR #158:
+- the P6 v4 (F7) result;
+- the merged genome lanes;
+- the Layer 5 fixes.
+
+It has the same three parts as the 2026-10-13 message, in the same order and wording:
+- the opening line, with three object-replacement characters for attachments that again did not
+  reach the session;
+- the four founder quotations and the executable-interpretation paragraph;
+- "PROMPT:" followed by the full continuation directive, from its title to "But do not stop until
+  the currently achievable machine is complete."
+
+The interpretation above applies unchanged:
+- it reaffirms that the 2026-10-07 directive controls;
+- it adds no new requirement and supersedes nothing;
+- nothing is inferred about the missing attachments.

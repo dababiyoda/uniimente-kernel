@@ -33,6 +33,7 @@ import argparse
 from datetime import datetime, timedelta, timezone
 import getpass
 import json
+from urllib.parse import urlsplit
 import os
 from pathlib import Path
 import sys
@@ -63,6 +64,12 @@ def _known_handles() -> set:
                                                                                     "openai_api_key"}
 
 
+def mcp_handle(name: str) -> bool:
+    """A handle the founder names for an MCP server's credential; a mission's mcp.act releases it by this name."""
+    from greg.mcp_tools import HANDLE
+    return bool(HANDLE.fullmatch(name))
+
+
 def _secret_value(name: str) -> str:
     """From a hidden prompt, or piped stdin; never from the command line (shell history, ps)."""
     value = getpass.getpass(f"value for {name} (hidden): ") if sys.stdin.isatty() else sys.stdin.readline()
@@ -70,6 +77,21 @@ def _secret_value(name: str) -> str:
     if not value:
         raise BodyError("no value given; nothing stored")
     return value
+
+
+def _secret_file(path: str) -> str:
+    """A whole credential file (64 KiB at most, text); its contents never reach the command line or the output."""
+    try:
+        with Path(path).expanduser().open("rb") as fh:
+            data = fh.read(64 * 1024 + 1)       # never more than the ceiling plus one byte, whatever the source is
+    except OSError as exc:
+        raise BodyError(f"cannot read {path}: {exc.strerror}") from None
+    if not data.strip() or len(data) > 64 * 1024:
+        raise BodyError("a credential file is non-empty text of at most 64 KiB; nothing stored")
+    try:
+        return data.decode()
+    except UnicodeDecodeError:
+        raise BodyError("a credential file must be text (UTF-8); nothing stored") from None
 
 
 def _key_file(args, kind: str | None) -> str:
@@ -256,11 +278,12 @@ def _sop(home: str, args) -> dict:
     return {"dropped": str(_drop(home, "MISSION", spec, args)), "signing_lets_greg": summary}
 
 
-def _model_builder(secrets, config):
-    """Builder factory for ``run --builder models``: every reachable model route behind one router."""
+def _model_builder(secrets, config, egress=None):
+    """Builder factory for ``run --builder models``: every reachable model route behind one router (behind the body's
+    #26 relay when confined egress is on)."""
     from greg.builders import BuildError, ModelBuilder
     from greg.models import ModelRouter, available_routes
-    routes, unavailable = available_routes(secrets, config=config.get("models"))
+    routes, unavailable = available_routes(secrets, config=config.get("models"), egress=egress)
     if not routes:
         raise BuildError(f"no model route is available: {unavailable}")
     return ModelBuilder(ModelRouter(routes))
@@ -276,6 +299,9 @@ def main(argv=None) -> int:
     s.add_argument("--local-model", help="opt in to an already installed Ollama model for the one GREG router")
     s.add_argument("--confined-egress", action="store_true",
                    help="run network capabilities as confined components behind the #26 egress relay (Linux)")
+    s.add_argument("--worker-confinement", choices=("required", "supervised"), default="required",
+                   help="required (default): refuse a worker the bubblewrap envelope cannot confine. supervised: run "
+                        "it under process supervision instead; its filesystem and network are NOT confined")
     f = sub.add_parser("founder"); fs = f.add_subparsers(dest="founder_cmd", required=True)
     k = fs.add_parser("keygen"); k.add_argument("--key", required=True); k.add_argument("--no-passphrase", action="store_true")
     fp = fs.add_parser("public", help="read the public half of your founder key; writes no body state")
@@ -298,6 +324,12 @@ def main(argv=None) -> int:
     css = cs.add_subparsers(dest="cognition_cmd", required=True)
     css.add_parser("inventory")
     css.add_parser("knowledge")
+    css.add_parser("genomes", help="every intelligence GREG can or intends to recruit: layer, admission, evidence")
+    ca = css.add_parser("advantage", help="historical read-only view (#155): candidate interventions at a control map's bottlenecks; the canonical generator is the Foundry (greg gravity)")
+    ca.add_argument("--map", required=True, help="institutional-leverage map JSON (nodes, links)")
+    ca.add_argument("--outcome", required=True, help="outcome node id")
+    ca.add_argument("--objective", required=True)
+    css.add_parser("destinations", help="founder destinations compiled to effects, with buildability and backcast")
     pk = css.add_parser("package", help="read-only: selective-disclosure evidence package from retained receipts")
     pk.add_argument("--mission", help="package every cognitive receipt this mission retained")
     pk.add_argument("--receipt", action="append", default=[], help="a receipt's ledger hash (repeatable)")
@@ -311,6 +343,8 @@ def main(argv=None) -> int:
     pk.add_argument("--out", required=True, help="directory for holder.json (keep) and presentation.json (share)")
     vp = css.add_parser("verify-package", help="recipient side: check a presentation without any GREG state")
     vp.add_argument("presentation")
+    css.add_parser("calibration", help="read-only: forecast calibration from realized values bound to receipts, "
+                                       "and the forecast receipts still awaiting a realization")
     cm = css.add_parser("mission")
     cm.add_argument("--request", required=True, help="bounded cognition request JSON")
     cm.add_argument("--id", required=True, help="durable mission identity")
@@ -320,7 +354,7 @@ def main(argv=None) -> int:
     cm.add_argument("--print-only", action="store_true")
 
     for name in ("mission", "decide", "critique", "pause", "resume", "stop", "attach", "detach", "lifecycle",
-                 "accept"):
+                 "accept", "realize"):
         q = sub.add_parser(name)
         q.add_argument("--key")
         q.add_argument("--no-passphrase", action="store_true")
@@ -342,6 +376,8 @@ def main(argv=None) -> int:
             q.add_argument("--wmi", help="venture-assessment: WealthMachineIntelligence checkout")
             q.add_argument("--manifest", help="venture-assessment: RailScout signal manifest (JSON)")
             q.add_argument("--source-root", help="venture-assessment: directory holding the manifest's sources")
+            q.add_argument("--daleobanks", help="organ-exchange: DALEOBANKS checkout")
+            q.add_argument("--signal", help="organ-exchange: signal JSON file ({text, topic, ...}) inside a read root")
             q.add_argument("--standing", action="store_true",
                            help="venture-assessment: keep watching; re-assess whenever the evidence changes")
             q.add_argument("--file", help="verify-download: the file to verify (inside a read root)")
@@ -388,6 +424,13 @@ def main(argv=None) -> int:
             q.add_argument("capability_id")
         if name == "lifecycle":
             q.add_argument("mission_id"); q.add_argument("state"); q.add_argument("--reason", default="")
+        if name == "realize":
+            q.add_argument("receipt", help="ledger hash of the forecast receipt (greg cognition calibration lists them)")
+            q.add_argument("--value", type=float, action="append", required=True,
+                           help="one observed value per forecast horizon step, in order")
+            q.add_argument("--source", default="founder_reported",
+                           choices=["founder_reported", "external_record", "sensor_observation"])
+            q.add_argument("--note", default="")
 
     d = sub.add_parser("device", help="delegate a narrow, expiring key to a phone (founder-signed)")
     ds = d.add_subparsers(dest="device_cmd", required=True)
@@ -418,7 +461,10 @@ def main(argv=None) -> int:
     sv2.add_argument("--host", default="127.0.0.1"); sv2.add_argument("--port", type=int, default=8765)
     se = sub.add_parser("secret", help="store a credential for GREG on this body (local; never in the ledger)")
     ses = se.add_subparsers(dest="secret_cmd", required=True)
-    ses.add_parser("set", help="value from a hidden prompt or stdin, never from the command line").add_argument("name")
+    sset = ses.add_parser("set", help="value from a hidden prompt or stdin, never from the command line")
+    sset.add_argument("name")
+    sset.add_argument("--from-file", help="an mcp: credential kept as a whole file (a service-account key, a "
+                                          "kubeconfig); a mission hands it to a server as a file (secret_files)")
     ses.add_parser("remove").add_argument("name")
     ses.add_parser("list", help="handle names only; values are never printed")
     st = sub.add_parser("start", help="clear a persisted stop (local physical authority)")
@@ -477,6 +523,18 @@ def main(argv=None) -> int:
                                          "ledger as superseded")
     pr = sub.add_parser("presence", help="was the body actually running: measured availability, absences, late work")
     pr.add_argument("--hours", type=float, default=72.0)
+    mcp = sub.add_parser("mcp", help="MCP tool servers you installed under GREG's read roots (read-only)")
+    mcps = mcp.add_subparsers(dest="mcp_cmd", required=True)
+    mcl = mcps.add_parser("list", help="the servers found; with --tools, each one's tools (run confined, no network)")
+    mcl.add_argument("--tools", action="store_true")
+    mlo = mcps.add_parser("login", help="authorize GREG at a remote MCP server (OAuth; you approve in your browser); "
+                                        "the tokens stay in this body's secret broker under mcp:<name>")
+    mlo.add_argument("name")
+    mlo.add_argument("url")
+    mto = mcps.add_parser("token", help="keep a bearer token a hosted MCP server gave you, with its address and the "
+                                        "tools it lists (read from a hidden prompt or stdin, never the command line)")
+    mto.add_argument("name")
+    mto.add_argument("url")
     doc = sub.add_parser("doctor", help="read-only first-body prerequisites; creates no key, service or body")
     doc.add_argument("--chromebook", action="store_true", required=True)
     fd = sub.add_parser("foundry", help="the Foundry arsenal: completion status, systems, GREG's own graph and reputation")
@@ -492,6 +550,10 @@ def main(argv=None) -> int:
     fdc.add_argument("metric"); fdc.add_argument("--split", required=True, help="ISO time dividing before/after")
     fdb = fds.add_parser("seed", help="Institutional Seed: content-addressed backup of this body (private keys excluded)")
     fdb.add_argument("--out", required=True, help="seed store directory, outside the body home")
+    fdr2 = fds.add_parser("restore", help="restore --home (empty) from an Institutional Seed; the body comes back "
+                                          "held until a founder-key BODY_RESUME issued after the restore")
+    fdr2.add_argument("--store", required=True, help="the seed store directory")
+    fdr2.add_argument("--seed", required=True, help="the seed's sha256: address, as `greg foundry seed` printed it")
     sub.add_parser("learning", help="brief corrections per labelled brief, and every learned change kept, rejected or reverted")
     sub.add_parser("acceptance", help="read-only founder-device acceptance report from this body's own ledger")
     rh = sub.add_parser("rehearse", help="credential-free rehearsal: a throwaway body and REHEARSAL key run the "
@@ -524,7 +586,8 @@ def main(argv=None) -> int:
         if args.cmd == "init":
             print(json.dumps(init_body(home, read_roots=args.read_root or [str(Path.home())],
                                        deliver_root=args.deliver_root, local_model=args.local_model,
-                                       confined_egress=args.confined_egress), indent=1))
+                                       confined_egress=args.confined_egress,
+                                       worker_confinement=args.worker_confinement), indent=1))
         elif args.cmd == "founder" and args.founder_cmd == "keygen":
             print(generate_founder_key(args.key, _passphrase(args)))
         elif args.cmd == "founder" and args.founder_cmd == "public":
@@ -596,6 +659,12 @@ def main(argv=None) -> int:
                                                         preauthorize_delivery=args.preauthorize_delivery,
                                                         standing=args.standing,
                                                         cadence_seconds=args.cadence_seconds or 3600)
+                elif args.target == "organ-exchange":
+                    missing = [f for f in ("daleobanks", "wmi", "signal") if not getattr(args, f)]
+                    if missing:
+                        raise BodyError(f"organ-exchange needs --{', --'.join(missing)}")
+                    spec = templates.organ_exchange(daleobanks_root=args.daleobanks, wmi_root=args.wmi,
+                                                    signal=args.signal, preauthorize_delivery=args.preauthorize_delivery)
                 else:
                     raise BodyError(f"unknown template {args.target}; known: {sorted(templates.TEMPLATES)}")
             from greg.missions import validate_mission
@@ -633,6 +702,16 @@ def main(argv=None) -> int:
                     registry = registry_view()
                 data = [{**m.to_dict(), "attached": registry.usable(cid)[0]} for cid, m in registry.manifests.items()
                         if cid.startswith("cognition.")]
+            elif args.cognition_cmd == "genomes":
+                from greg.cognition.genome_library import export
+                data = export()
+            elif args.cognition_cmd == "advantage":
+                from greg.cognition.advantage import compile_map
+                data = compile_map(json.loads(Path(args.map).read_text()),
+                                   {"objective": args.objective, "outcome_node": args.outcome})
+            elif args.cognition_cmd == "destinations":
+                from greg.cognition.advantage import export as advantage_export
+                data = advantage_export()["destinations"]
             elif args.cognition_cmd in ("package", "verify-package"):
                 from greg.cognition import disclosure
                 from greg.cognition.contracts import CognitionError
@@ -662,6 +741,11 @@ def main(argv=None) -> int:
                         "holder": str(out / "holder.json"), "presentation": str(out / "presentation.json"),
                         "presentation_verifies": checked["valid"], "sent": False,
                         "note": "nothing was sent; share presentation.json yourself, keep holder.json private"}
+            elif args.cognition_cmd == "calibration":
+                from greg.cognition.settlement import awaiting_realization, outcome_calibration
+                with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                    data = {"calibration": outcome_calibration(journal),
+                            "awaiting_realization": awaiting_realization(journal), "authority_created": False}
             elif args.cognition_cmd == "knowledge":
                 from greg.cognition.settlement import competence
                 from greg.cognition.cells import cells
@@ -779,6 +863,10 @@ def main(argv=None) -> int:
                 print(json.dumps(completion.status(), indent=1))
             elif args.foundry_cmd == "run":
                 print(json.dumps(completion.run(args.system), indent=1, default=str))
+            elif args.foundry_cmd == "restore":
+                from greg.recovery import restore_body
+                print(json.dumps(restore_body(Path(args.store).expanduser().resolve(), args.seed, Path(home)),
+                                 indent=1))
             elif args.foundry_cmd == "seed":
                 from foundry.systems import seed
                 out = Path(args.out).expanduser().resolve()
@@ -834,6 +922,9 @@ def main(argv=None) -> int:
                 print(_drop(home, "BODY_STOP", {}, args))
         elif args.cmd in ("attach", "detach"):
             print(_drop(home, "CAPABILITY_" + args.cmd.upper(), {"capability_id": args.capability_id}, args))
+        elif args.cmd == "realize":
+            print(_drop(home, "REALIZATION", {"receipt": args.receipt, "realized": args.value, "source": args.source,
+                                              "note": args.note}, args))
         elif args.cmd == "lifecycle":
             print(_drop(home, "LIFECYCLE", {"mission_id": args.mission_id, "state": args.state,
                                             "reason": args.reason}, args))
@@ -849,18 +940,25 @@ def main(argv=None) -> int:
             from greg.console import Console, serve
             key = load_founder_key(args.key, _passphrase(args)) if args.key else None
             layout = Layout(home)
-            models_config = None
+            models_config, egress = None, None
             if layout.config.is_file():
+                body_config = json.loads(layout.config.read_text())
                 with observe(home, actor="spiffe://uniimente.internal/greg/model-reader") as journal:
                     from greg.models import effective_route_config
-                    models_config = effective_route_config(json.loads(layout.config.read_text()).get("models"), journal)
+                    models_config = effective_route_config(body_config.get("models"), journal)
+                from greg.body import egress_relay
+                egress = egress_relay(layout.home, body_config)       # #26: the console's model calls too
             transport = None if args.no_model else planner.default_transport(SecretBroker(layout.secrets),
-                                                                            config=models_config)
+                                                                            config=models_config, egress=egress)
             replacement = (None if args.no_model else
-                           lambda selection: planner.default_transport(SecretBroker(layout.secrets), config=selection))
-            server = serve(Console(home, key=key, transport=transport, transport_factory=replacement), port=args.port)
-            print(f"GREG console on http://127.0.0.1:{args.port}  (model route: "
+                           lambda selection: planner.default_transport(SecretBroker(layout.secrets), config=selection,
+                                                                       egress=egress))
+            console = Console(home, key=key, transport=transport, transport_factory=replacement)
+            server = serve(console, port=args.port)
+            print(f"GREG console: open this private link once, in this computer's browser:\n  "
+                  f"{console.owner_url(server.server_address[1])}\n(model route: "
                   f"{transport.name if transport else 'off'}; {'signing enabled' if key else 'read-only'}). "
+                  "The link works once; other local programs cannot use the console without it. "
                   "Ctrl-C closes the console; the body keeps running.", flush=True)
             try:
                 server.serve_forever()
@@ -921,8 +1019,17 @@ def main(argv=None) -> int:
             broker, known = SecretBroker(Layout(home).secrets), _known_handles()
             if args.secret_cmd == "list":
                 print(json.dumps({"stored": broker.names(), "known_handles": sorted(known)}, indent=1))
-            elif args.name not in known:
-                raise BodyError(f"unknown credential handle {args.name!r}; known: {', '.join(sorted(known))}")
+            elif args.name not in known and not mcp_handle(args.name):
+                raise BodyError(f"unknown credential handle {args.name!r}; known: {', '.join(sorted(known))}, "
+                                "or mcp:<name> for an MCP server you installed")
+            elif args.secret_cmd == "set" and getattr(args, "from_file", None):
+                if not mcp_handle(args.name):
+                    raise BodyError("--from-file is for mcp:<name> credentials a server reads as a file")
+                broker.put(args.name, _secret_file(args.from_file))
+                print(json.dumps({"stored": args.name, "where": "this body's secret broker (mode 0600); never the "
+                                  "ledger", "read_by": "only a mission that names it in secret_files or secrets, after "
+                                  "your approval", "original": f"{args.from_file} is unchanged; delete it if this "
+                                  "should be the only copy"}, indent=1))
             elif args.secret_cmd == "set":
                 broker.put(args.name, _secret_value(args.name))
                 print(json.dumps({"stored": args.name, "where": "this body's secret broker (mode 0600); "
@@ -942,6 +1049,50 @@ def main(argv=None) -> int:
                 print(json.dumps(improvement.report(journal, journal.ledger), indent=1, default=str))
         elif args.cmd == "status":
             print(json.dumps(status(home), indent=1, default=str))
+        elif args.cmd == "mcp" and args.mcp_cmd == "login":
+            import asyncio
+            import os
+            from greg import mcp_login
+            from greg.capabilities import SecretBroker
+
+            def show(link):
+                print(f"Open this link to authorize GREG at {args.url} (it waits up to 5 minutes):\n{link}",
+                      file=sys.stderr, flush=True)
+            from greg.capabilities import CapabilityError
+            try:
+                out = asyncio.run(mcp_login.login(args.name, args.url, SecretBroker(Layout(home).secrets),
+                                                  open_url=show, cafile=os.environ.get("GREG_EGRESS_CAFILE")))
+            except CapabilityError as exc:
+                raise BodyError(f"not logged in: {exc}") from None
+            print(json.dumps({**out, "next": f"a mission names bearer {out['handle']}; every call still waits for "
+                                             "your approval" + (f", and names {out['renews_at']} in hosts so an "
+                                             "expired login can renew" if out["renews_at"] != urlsplit(args.url).hostname
+                                             else "")}, indent=1))
+        elif args.cmd == "mcp" and args.mcp_cmd == "token":
+            import asyncio
+            import os
+            from greg import mcp_login
+            from greg.capabilities import CapabilityError, SecretBroker
+            try:
+                out = asyncio.run(mcp_login.register_token(args.name, args.url, _secret_value(f"mcp:{args.name}"),
+                                                           SecretBroker(Layout(home).secrets),
+                                                           cafile=os.environ.get("GREG_EGRESS_CAFILE")))
+            except CapabilityError as exc:
+                raise BodyError(f"not registered: {exc}") from None
+            print(json.dumps({**out, "next": f"a mission names bearer {out['handle']}; every call still waits for "
+                                             "your approval"}, indent=1))
+        elif args.cmd == "mcp":
+            from greg import mcp_tools
+            servers = mcp_tools.installed_servers(json.loads(Layout(home).config.read_text())["read_roots"])
+            if args.tools:
+                for server in servers.values():
+                    try:
+                        server["tools"] = [{k: t[k] for k in ("name", "description", "claims_read_only")} | {
+                            "needs": (t.get("input_schema") or {}).get("required", [])}
+                            for t in mcp_tools.server_tools(server, scratch_parent=Layout(home).workspace / "mcp-listing")]
+                    except Exception as exc:
+                        server["tools"] = f"not listed: {str(exc)[:200]}"
+            print(json.dumps(servers, indent=1))
         elif args.cmd == "doctor":
             from greg.doctor import chromebook
             report = chromebook()

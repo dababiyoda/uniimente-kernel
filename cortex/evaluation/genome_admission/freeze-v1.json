@@ -1,0 +1,38 @@
+{
+  "frozen_at": "2026-10-14T11:12:59.859016+00:00",
+  "inputs": {
+    "code": {
+      "cortex/evaluation/genome_admission/run.py": "sha256:1ddc445e357f21b34e8a660ea05089937a58f3ea07fc1e2b1ac4981f9a01a2f3",
+      "greg/cognition/solvers.py": "sha256:c670271c7c7c31af7f71541e785a0bb0924ab28de3cfdb1d85d5e59f0f2d04a8"
+    },
+    "seeds": [
+      1001,
+      1040
+    ],
+    "families": [
+      "collective",
+      "control",
+      "evolutionary",
+      "exact",
+      "game",
+      "graph",
+      "information",
+      "micro",
+      "pattern",
+      "probabilistic",
+      "sequential",
+      "simulation"
+    ],
+    "structural": {
+      "search": "ALIAS",
+      "estimation": "SUPERSEDED_BY_CANONICAL_ORGAN",
+      "formal": "SUPERSEDED_BY_CANONICAL_ORGAN",
+      "optimization": "SUPERSEDED_BY_CANONICAL_ORGAN",
+      "causal": "NOT_BENCHMARKED",
+      "semantic": "NOT_RUN",
+      "human": "ROUTE_ONLY",
+      "evidence": "NOT_BENCHMARKED",
+      "protection": "NOT_BENCHMARKED"
+    }
+  }
+}

@@ -16,12 +16,29 @@ from tests.greg_fixtures import drop, make_body, signed
 from tests.integration.test_greg_first_mission import kernel_copy
 
 
+SESSIONS = {}          # port -> (owner path, opener holding the owner's session cookie)
+
+
+def owner_session(console, port):
+    """Open the single-use private link once, as the founder's browser does; keep its session cookie."""
+    from http.cookiejar import CookieJar
+    from urllib.request import HTTPCookieProcessor, build_opener
+    opener = build_opener(HTTPCookieProcessor(CookieJar()))
+    with opener.open(Request(console.owner_url(port), headers={"Host": f"127.0.0.1:{port}"}), timeout=30) as r:
+        assert r.status == 200
+    SESSIONS[port] = (console.owner_path, opener)
+
+
 def http(port, path, fields=None):
+    """A request from the owner's browser session (private paths live under the owner path)."""
+    owner_path, opener = SESSIONS[port]
     data = urlencode(fields).encode() if fields is not None else None
     headers = {"Host": f"127.0.0.1:{port}"}
     if data:
         headers["Content-Type"] = "application/x-www-form-urlencoded"
-    with urlopen(Request(f"http://127.0.0.1:{port}{path}", data=data, headers=headers), timeout=30) as r:
+    if path.startswith("/") and not path.startswith(owner_path):
+        path = owner_path + path.lstrip("/")
+    with opener.open(Request(f"http://127.0.0.1:{port}{path}", data=data, headers=headers), timeout=30) as r:
         return r.geturl(), r.read().decode()
 
 
@@ -33,7 +50,9 @@ def running(tmp_path):
     server = serve(console, port=0)
     port = server.server_address[1]
     threading.Thread(target=server.serve_forever, daemon=True).start()
+    owner_session(console, port)
     yield home, key, body_id, console, port
+    SESSIONS.pop(port, None)
     server.shutdown()
     server.server_close()
 
@@ -155,3 +174,72 @@ def test_outcome_search_and_unplannable_requests_show_real_machinery(running):
     _, page = http(port, "/")
     url, review = http(port, "/ask", {"csrf": token(page), "text": "Compose a symphony about payment reconciliation"})
     assert "/proposal/" in url and "Machinery your words name" in review and "#38" in review
+
+
+def test_a_local_process_without_the_owner_session_cannot_use_the_founder_key(running):
+    """Any process that can reach loopback (a worker keeps host networking for its provider) must not be able to
+    read private state or get a command signed with the founder's unlocked key."""
+    import re as _re
+    from urllib.error import HTTPError
+    home, _, _, console, port = running
+    inbox_before = sorted(p.name for p in (home / "inbox").glob("*.json"))
+
+    def raw(path, fields=None):
+        data = urlencode(fields).encode() if fields is not None else None
+        headers = {"Host": f"127.0.0.1:{port}"}
+        if data:
+            headers["Content-Type"] = "application/x-www-form-urlencoded"
+        with urlopen(Request(f"http://127.0.0.1:{port}{path}", data=data, headers=headers), timeout=30) as r:
+            return r.geturl(), r.read().decode()
+    stolen = None
+    try:
+        _, page = raw("/")                                       # the private page, CSRF token included
+        stolen = _re.search(r"name=csrf value='([^']+)'", page)
+    except HTTPError as exc:
+        assert exc.code == 403
+    if stolen:                                                    # the hole: drive the key with the stolen token
+        url, _ = raw("/first-mission", {"csrf": stolen.group(1), "effort_budget": "8"})
+        raw("/sign", {"csrf": stolen.group(1), "proposal": url.rsplit("/", 1)[1]})
+    for path in ("/", "/mc/authority", "/api/mc", "/api/state", "/classic", "/morning"):
+        try:
+            raw(path)
+            raise AssertionError(f"{path} served without the owner session")
+        except HTTPError as exc:
+            assert exc.code == 403, path
+    try:
+        raw("/ask", {"csrf": console.csrf, "text": "anything"})      # even a correct CSRF token is not enough
+        raise AssertionError("POST accepted without the owner session")
+    except HTTPError as exc:
+        assert exc.code == 403
+    assert sorted(p.name for p in (home / "inbox").glob("*.json")) == inbox_before   # nothing was signed
+
+
+def test_the_private_link_works_once_and_the_session_cookie_is_narrow(tmp_path):
+    from http.client import HTTPConnection
+    home, key, body_id, data = make_body(tmp_path)
+    console = Console(home, key=key)
+    server = serve(console, port=0)
+    port = server.server_address[1]
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    try:
+        link = console.owner_url(port).split(f"127.0.0.1:{port}", 1)[1]
+
+        def get(path, cookie=None):
+            conn = HTTPConnection("127.0.0.1", port, timeout=10)
+            conn.request("GET", path, headers={"Host": f"127.0.0.1:{port}", **({"Cookie": cookie} if cookie else {})})
+            response = conn.getresponse()
+            response.read()
+            return response.status, dict(response.getheaders())
+        status, headers = get(link)
+        assert status == 303 and headers["Location"] == console.owner_path
+        cookie = headers["Set-Cookie"]
+        assert f"Path={console.owner_path}" in cookie and "HttpOnly" in cookie and "SameSite=Strict" in cookie
+        session = cookie.split(";", 1)[0]
+        assert get(console.owner_path, session)[0] == 200
+        assert get(link)[0] == 403                              # the link was spent; a second holder gets nothing
+        assert get(console.owner_path, "greg_console_owner=forged")[0] == 403
+        assert get("/owner/guessed-path/", session)[0] == 403   # the session only works under its own random path
+        assert get("/owned")[0] == 200                          # owned public pages stay public
+    finally:
+        server.shutdown()
+        server.server_close()

@@ -1,0 +1,53 @@
+{"family": "assignment_lsa", "status": "SUPERSEDED", "vs_baseline": {"wins": 30, "losses": 0, "ties": 0, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 0, "losses": 0, "ties": 30, "p_better": 1.0, "p_worse": 1.0}}
+{"family": "basal_bayes_filter", "status": "NICHE_CAPABILITY", "vs_baseline": {"wins": 11, "losses": 0, "ties": 19, "p_better": 0.000488, "p_worse": 1.0}, "vs_competitor": {"wins": 7, "losses": 3, "ties": 20, "p_better": 0.171875, "p_worse": 0.945312}}
+{"family": "bimatrix_nash", "status": "DEFAULT_FOR_GEOMETRY", "vs_baseline": {"wins": 10, "losses": 0, "ties": 20, "p_better": 0.000977, "p_worse": 1.0}, "vs_competitor": {"wins": 11, "losses": 0, "ties": 19, "p_better": 0.000488, "p_worse": 1.0}}
+{"family": "bootstrap_ci", "status": "REJECTED", "vs_baseline": {"wins": 18, "losses": 12, "ties": 0, "p_better": 0.180797, "p_worse": 0.899756}, "vs_competitor": {"wins": 5, "losses": 18, "ties": 7, "p_better": 0.9987, "p_worse": 0.005311}}
+{"family": "collective_flock", "status": "SUPERSEDED", "vs_baseline": {"wins": 30, "losses": 0, "ties": 0, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 0, "losses": 29, "ties": 1, "p_better": 1.0, "p_worse": 0.0}}
+{"family": "collective_immune", "status": "NICHE_CAPABILITY", "vs_baseline": {"wins": 28, "losses": 2, "ties": 0, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 13, "losses": 11, "ties": 6, "p_better": 0.41941, "p_worse": 0.729372}}
+{"family": "collective_physarum", "status": "NICHE_CAPABILITY", "vs_baseline": {"wins": 19, "losses": 9, "ties": 2, "p_better": 0.043579, "p_worse": 0.982151}, "vs_competitor": {"wins": 8, "losses": 16, "ties": 6, "p_better": 0.968043, "p_worse": 0.075795}}
+{"family": "collective_quorum", "status": "NICHE_CAPABILITY", "vs_baseline": {"wins": 17, "losses": 1, "ties": 12, "p_better": 7.2e-05, "p_worse": 0.999996}, "vs_competitor": {"wins": 4, "losses": 2, "ties": 24, "p_better": 0.34375, "p_worse": 0.890625}}
+{"family": "critical_path", "status": "DEFAULT_FOR_GEOMETRY", "vs_baseline": {"wins": 30, "losses": 0, "ties": 0, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 0, "losses": 0, "ties": 30, "p_better": 1.0, "p_worse": 1.0}}
+{"family": "develop_constraint_release", "status": "DEFAULT_FOR_GEOMETRY", "vs_baseline": {"wins": 24, "losses": 2, "ties": 4, "p_better": 5e-06, "p_worse": 1.0}, "vs_competitor": {"wins": 10, "losses": 13, "ties": 7, "p_better": 0.797564, "p_worse": 0.33882}}
+{"family": "flow_capacity_plan", "status": "COMPOSITION_ONLY", "vs_baseline": {"wins": 30, "losses": 0, "ties": 0, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 30, "losses": 0, "ties": 0, "p_better": 0.0, "p_worse": 1.0}}
+{"family": "flow_expansion_mcf", "status": "DEFAULT_FOR_GEOMETRY", "vs_baseline": {"wins": 11, "losses": 0, "ties": 19, "p_better": 0.000488, "p_worse": 1.0}, "vs_competitor": {"wins": 0, "losses": 0, "ties": 30, "p_better": 1.0, "p_worse": 1.0}}
+{"family": "flow_reinforce_greedy", "status": "SUPERSEDED", "vs_baseline": {"wins": 29, "losses": 0, "ties": 1, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 0, "losses": 11, "ties": 19, "p_better": 1.0, "p_worse": 0.000488}}
+{"family": "game_lp_dual", "status": "DEFAULT_FOR_GEOMETRY", "vs_baseline": {"wins": 0, "losses": 0, "ties": 30, "p_better": 1.0, "p_worse": 1.0}, "vs_competitor": {"wins": 0, "losses": 0, "ties": 30, "p_better": 1.0, "p_worse": 1.0}}
+{"family": "game_minimax", "status": "SUPERSEDED", "vs_baseline": {"wins": 18, "losses": 0, "ties": 12, "p_better": 4e-06, "p_worse": 1.0}, "vs_competitor": {"wins": 0, "losses": 0, "ties": 30, "p_better": 1.0, "p_worse": 1.0}}
+{"family": "graph_matching", "status": "DEFAULT_FOR_GEOMETRY", "vs_baseline": {"wins": 28, "losses": 0, "ties": 2, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 0, "losses": 0, "ties": 30, "p_better": 1.0, "p_worse": 1.0}}
+{"family": "grid_dijkstra", "status": "EXPERIMENTAL", "vs_baseline": {"wins": 0, "losses": 0, "ties": 30, "p_better": 1.0, "p_worse": 1.0}, "vs_competitor": {"wins": 0, "losses": 0, "ties": 30, "p_better": 1.0, "p_worse": 1.0}}
+{"family": "knapsack_bnb", "status": "DEFAULT_FOR_GEOMETRY", "vs_baseline": {"wins": 0, "losses": 0, "ties": 30, "p_better": 1.0, "p_worse": 1.0}, "vs_competitor": {"wins": 0, "losses": 0, "ties": 30, "p_better": 1.0, "p_worse": 1.0}}
+{"family": "mc_expectation", "status": "NICHE_CAPABILITY", "vs_baseline": {"wins": 22, "losses": 8, "ties": 0, "p_better": 0.008062, "p_worse": 0.997389}, "vs_competitor": {"wins": 5, "losses": 25, "ties": 0, "p_better": 0.99997, "p_worse": 0.000162}}
+{"family": "mechanism_check", "status": "DEFAULT_FOR_GEOMETRY", "vs_baseline": {"wins": 13, "losses": 0, "ties": 17, "p_better": 0.000122, "p_worse": 1.0}, "vs_competitor": {"wins": 0, "losses": 0, "ties": 30, "p_better": 1.0, "p_worse": 1.0}}
+HighsMipSolverData::transformNewIntegerFeasibleSolution tmpSolver.run();
+HighsMipSolverData::transformNewIntegerFeasibleSolution tmpSolver.run();
+{"family": "milp_optimize", "status": "SUPERSEDED", "vs_baseline": {"wins": 13, "losses": 0, "ties": 17, "p_better": 0.000122, "p_worse": 1.0}, "vs_competitor": {"wins": 0, "losses": 0, "ties": 30, "p_better": 1.0, "p_worse": 1.0}}
+{"family": "min_cost_flow", "status": "DEFAULT_FOR_GEOMETRY", "vs_baseline": {"wins": 30, "losses": 0, "ties": 0, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 0, "losses": 0, "ties": 30, "p_better": 1.0, "p_worse": 1.0}}
+{"family": "pid_simopt", "status": "DEFAULT_FOR_GEOMETRY", "vs_baseline": {"wins": 29, "losses": 1, "ties": 0, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 14, "losses": 15, "ties": 1, "p_better": 0.644464, "p_worse": 0.5}}
+{"family": "verify_liveness", "status": "DEFAULT_FOR_GEOMETRY", "vs_baseline": {"wins": 9, "losses": 0, "ties": 21, "p_better": 0.001953, "p_worse": 1.0}, "vs_competitor": {"wins": 0, "losses": 0, "ties": 30, "p_better": 1.0, "p_worse": 1.0}}
+{
+ "assignment_lsa": "SUPERSEDED",
+ "basal_bayes_filter": "NICHE_CAPABILITY",
+ "bimatrix_nash": "DEFAULT_FOR_GEOMETRY",
+ "bootstrap_ci": "REJECTED",
+ "collective_flock": "SUPERSEDED",
+ "collective_immune": "NICHE_CAPABILITY",
+ "collective_physarum": "NICHE_CAPABILITY",
+ "collective_quorum": "NICHE_CAPABILITY",
+ "critical_path": "DEFAULT_FOR_GEOMETRY",
+ "develop_constraint_release": "DEFAULT_FOR_GEOMETRY",
+ "flow_capacity_plan": "COMPOSITION_ONLY",
+ "flow_expansion_mcf": "DEFAULT_FOR_GEOMETRY",
+ "flow_reinforce_greedy": "SUPERSEDED",
+ "game_lp_dual": "DEFAULT_FOR_GEOMETRY",
+ "game_minimax": "SUPERSEDED",
+ "graph_matching": "DEFAULT_FOR_GEOMETRY",
+ "grid_dijkstra": "EXPERIMENTAL",
+ "knapsack_bnb": "DEFAULT_FOR_GEOMETRY",
+ "mc_expectation": "NICHE_CAPABILITY",
+ "mechanism_check": "DEFAULT_FOR_GEOMETRY",
+ "milp_optimize": "SUPERSEDED",
+ "min_cost_flow": "DEFAULT_FOR_GEOMETRY",
+ "pid_simopt": "DEFAULT_FOR_GEOMETRY",
+ "verify_liveness": "DEFAULT_FOR_GEOMETRY"
+}
+EXIT 0

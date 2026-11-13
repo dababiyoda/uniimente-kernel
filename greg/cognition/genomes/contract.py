@@ -131,7 +131,14 @@ class Executable:
     # it is reported as a reference gap and can neither supersede nor demote the candidate
     competitor_deployable: bool = True
     tolerance: float = 1e-9                             # quality differences at or below this are ties
+    # For a genome that samples a finite pool of real data: the identity of the data a seed draws. Freshness of
+    # held-out data is checked on these identities, never on seed integers (two seeds can draw one series).
+    instance_key: Callable[[int], str] | None = None
     notes: Mapping[str, str] = field(default_factory=dict)
+    # The library family whose deployable competitor this genome promotes into a genome of its own (directive
+    # section 15): it keeps that family's native geometry and needs no input that family did not, so the requests a
+    # SUPERSEDED family fitted fit this one. A link for routing and receipts; it carries no admission evidence.
+    promotes: str | None = None
 
 
 def answer(output, certificate, *, status="ANSWER", missing=()) -> dict:

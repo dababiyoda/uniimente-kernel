@@ -182,6 +182,35 @@ def test_secret_values_never_enter_the_ledger(tmp_path):
         body.close()
 
 
+def test_git_inspect_runs_nothing_the_inspected_repository_configures(tmp_path):
+    """git.inspect is a read-only sensor (and the appraiser re-observes with it): a repository's own config must not
+    make it execute anything. Measured before the fix: a planted core.fsmonitor ran on every inspection. A clean
+    filter is the other route git status takes into repository-chosen code. Dirtiness is still reported."""
+    import subprocess as sp
+    from greg.capabilities import BUILTINS, InvocationContext, SecretBroker, git_inspect
+    repo, marker = tmp_path / "repo", tmp_path / "ran"
+    repo.mkdir()
+    git = lambda *a: sp.run(["git", "-C", str(repo), "-c", "user.name=t", "-c", "user.email=t@t", *a],
+                            check=True, capture_output=True)
+    git("init", "-q")
+    (repo / ".gitattributes").write_text("*.txt filter=planted\n")
+    (repo / "a.txt").write_text("one\n")
+    git("add", "-A")
+    git("commit", "-q", "-m", "first")
+    script = tmp_path / "planted.sh"
+    script.write_text(f"#!/bin/sh\necho \"$0 $*\" >> {marker}\ncat\n")
+    script.chmod(0o755)
+    git("config", "core.fsmonitor", str(script))
+    git("config", "filter.planted.clean", f"{script} clean")
+    git("config", "filter.planted.process", f"{script} process")
+    (repo / "a.txt").write_text("two\n")                      # forces git status to look at the content
+    ctx = InvocationContext(workspace=tmp_path / "ws", read_roots=(tmp_path,), secrets=SecretBroker(tmp_path / "v"),
+                            manifest=BUILTINS["git.inspect"][0])
+    out = git_inspect({"path": str(repo)}, ctx)
+    assert not marker.exists(), marker.read_text()
+    assert out["dirty"] is True and len(out["head"]) == 40
+
+
 # -- #26 redirect hardening: a 3xx is a new request, re-checked or refused ---------
 # The transport below the redirect handler is replaced (tests/fake_web.py); urllib's
 # own redirect machinery runs, so the old default-follow behaviour is what is tested.

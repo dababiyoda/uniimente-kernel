@@ -187,6 +187,23 @@ def spent_seeds(exclude: Path | None = None) -> set[int]:
     return out
 
 
+def reused_instances(families, heldout, spent) -> dict:
+    """Per family that samples a finite real-data pool: held-out seeds whose data identity was already drawn by a
+    development seed, an earlier admission freeze or a completed P8 cycle (or twice within this held-out set)."""
+    from greg.cognition import evolution
+    out = {}
+    for family in families:
+        key = getattr(library.executables()[family], "instance_key", None)
+        if key is None:
+            continue
+        used = {key(s) for s in (*DEV_SEEDS, *sorted(spent))} | evolution.used_instance_keys(family)
+        keys = [key(s) for s in heldout]
+        clash = sorted({k for k in keys if k in used} | {k for k in keys if keys.count(k) > 1})
+        if clash:
+            out[family] = {"reused": len(clash), "of": len(keys)}
+    return out
+
+
 def _sha(path: Path) -> str:
     return "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -260,6 +277,10 @@ def main(argv=None):
         if set(heldout) & (spent_seeds(exclude=target) | set(DEV_SEEDS) | set(P8_RESERVED)):
             raise SystemExit("those held-out seeds are development, P8-reserved or spent by an earlier admission "
                              "run; choose fresh ones")
+        reused = reused_instances(chosen, heldout, spent_seeds(exclude=target))
+        if reused:
+            raise SystemExit(f"fresh seed numbers draw data already used: {reused}; a genome that samples a finite "
+                             f"pool needs unused data, not unused seed numbers")
         manifest.write_text(json.dumps({"frozen_at": datetime.now(timezone.utc).isoformat(),
                                         "inputs": inputs(chosen, heldout)}, indent=2) + "\n")
         print(manifest)

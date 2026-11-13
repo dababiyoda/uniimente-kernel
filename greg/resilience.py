@@ -38,6 +38,21 @@ def failed(payload: dict) -> bool:
     return status in FAILED_ACTIONS or (status == "REFUSED" and bool(payload.get("receipt")))
 
 
+def _acts(journal) -> list:
+    """Capability acts in time order, one record per dispatched attempt.
+
+    Resilience measures execution: an interrupted dispatch (UNCERTAIN) is a failure episode whatever the founder
+    later states about it. A reconciliation is a later statement about the same (mission, action, attempt), so
+    where that attempt's UNCERTAIN record is retained the statement is not counted again: "not executed" is not a
+    second failure and a receiptless "executed" is not a completion. A reconciliation whose UNCERTAIN record is
+    absent (older ledgers) is the only record of its attempt and is kept."""
+    from greg.routing import founder_reconciled
+    events = _events(journal, "mission.action")
+    key = lambda p: (p.get("mission_id"), p.get("action_id"), p.get("attempt"))
+    interrupted = {key(e.payload or {}) for e in events if (e.payload or {}).get("status") == "UNCERTAIN"}
+    return [e for e in events if not (founder_reconciled(e.payload or {}) and key(e.payload or {}) in interrupted)]
+
+
 def _lever_capability(lever) -> str | None:
     """Improvements and closed regressions name a lever, not a capability; every lever belongs to the
     improvement loop's one capability (greg.improvement.CAPABILITY)."""
@@ -78,7 +93,7 @@ def _founder_done(payload: dict) -> bool:
 
 def episodes(journal) -> list[dict]:
     """Failure -> recovery episodes per (mission, check), in time order."""
-    actions = _events(journal, "mission.action")
+    actions = _acts(journal)
     answers = _events(journal, "decision.answered")
     state, open_, recovered_before, out = {}, {}, defaultdict(int), []
     for event in _events(journal, "mission.observed"):

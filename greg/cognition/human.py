@@ -8,11 +8,16 @@ the competence domain, declared conflicts of interest, a verdict or an explicit 
 Rules this module enforces:
 
 * views are preserved, never aggregated: no count, vote or average of verdicts decides anything;
-* only the role the Constitution names decides, and only through its signed record: a founder judgment is
-  decisive when, and only when, it cites a ``decision.answered`` event in the canonical journal (signed
-  founder command, ``command_digest``) whose answer is the same verdict;
+* only the role the Constitution names decides, and only through its signed record bound to THIS question:
+  the compiler derives a request id and scope digest from the question (problem id, geometry, data,
+  consequence), records the ask through ``greg.asks``, and the decision is the ``answer`` of the founder's
+  signed ``decision.answered`` (``command_digest``) to that request, whose ``decision.requested`` carries the
+  same scope digest. A signed answer to any other request decides nothing here;
+* the verdict comes from the signed record, never from a judgment's text: a judgment cannot cancel, replace
+  or reword it, and a judgment that misreports it is recorded as a provenance conflict;
 * a refusal is recorded and never overridden by cognition;
-* a judgment whose provenance cannot be shown stays evidence, labelled UNVERIFIED_PROVENANCE;
+* every judgment carries a provenance label; only a founder-role judgment citing the signed answer to this
+  request can be SIGNED_FOUNDER_ANSWER, everything else is UNVERIFIED_PROVENANCE evidence;
 * nothing here acts: a recorded human decision still reaches the world only through the Gate.
 """
 from __future__ import annotations
@@ -22,6 +27,7 @@ from .contracts import CognitionError
 ROLES = ("founder", "operator", "domain_expert", "affected_participant", "auditor", "customer", "professional",
          "regulator")
 DECIDING_ROLE = "founder"                 # the root human authority (greg.authority.PRINCIPAL)
+DECIDING_ANSWERS = ("approve", "reject")  # the signed answers that decide (greg.missions.DECISION_ANSWERS)
 VERDICTS = ("approve", "reject", "abstain")
 FIELDS = {"participant_ref", "role", "competence_domain", "conflicts", "verdict", "rationale", "evidence_ref"}
 REQUIRED = {"participant_ref", "role", "competence_domain", "verdict", "rationale"}
@@ -33,9 +39,11 @@ def _text(value, name, limit=600) -> str:
     return value.strip()
 
 
-def validate(raw) -> list[dict]:
+def validate(raw, *, allow_empty: bool = False) -> list[dict]:
     """Typed judgments, or CognitionError naming the first malformed field. A refusal is a verdict, not an error."""
-    if not isinstance(raw, list) or not 1 <= len(raw) <= 64:
+    if allow_empty and raw is None:
+        return []
+    if not isinstance(raw, list) or not (0 if allow_empty else 1) <= len(raw) <= 64:
         raise CognitionError("human.judgments takes 1-64 typed judgments")
     out = []
     for i, j in enumerate(raw):
@@ -57,43 +65,71 @@ def validate(raw) -> list[dict]:
     return out
 
 
-def _signed_answers(journal) -> dict:
+def signed_answer(journal, request_id: str, scope_digest: str) -> dict | None:
+    """The founder's signed answer to this request, when the request on record is this question.
+
+    On a body journal (one with a ledger) it is the answer the mission fold counts, by the same predicate
+    (``greg.missions.signed_answer`` over ``greg.goal_gravity.verified_decisions``): the record
+    ``MissionEngine.answer`` wrote for a founder-signed DECISION verified at its own ledger position. A row any
+    other writer appended decides nothing. A replay-only stand-in (no ledger) reads the recorded row."""
     if journal is None:
-        return {}
-    return {e.payload["request_id"]: e.payload for e in journal.replay("decision.answered")
-            if e.payload.get("command_digest")}
+        return None
+    requested = [e.payload for e in journal.replay("decision.requested")
+                 if e.payload.get("request_id") == request_id]
+    if not requested or any(r.get("scope_digest") != scope_digest for r in requested):
+        return None                        # no request for this question, or a request under this id is another
+    if getattr(journal, "ledger", None) is not None:
+        from greg.missions import MissionBook
+        p = MissionBook(journal).answers.get(request_id)
+        return p if p is not None and p.get("answer") in DECIDING_ANSWERS else None
+    for e in journal.replay("decision.answered"):
+        p = e.payload
+        if p.get("request_id") == request_id and p.get("command_digest") and p.get("answer") in DECIDING_ANSWERS:
+            return p
+    return None
 
 
-def adjudicate(raw, journal=None) -> dict:
-    """Preserve every view; decide only through the deciding role's signed answer."""
-    judgments = validate(raw)
-    signed = _signed_answers(journal)
-    decision, conflicts = None, []
+def adjudicate(raw, journal=None, *, request_id: str, scope_digest: str) -> dict:
+    """Preserve every view; decide only through the founder's signed answer to this question's request."""
+    judgments = validate(raw, allow_empty=True)
+    signed = signed_answer(journal, request_id, scope_digest)
+    conflicts = []
     for j in judgments:
-        record = signed.get(j["evidence_ref"]) if j["evidence_ref"] else None
-        if record is None:
+        cites = j["evidence_ref"] == request_id and j["role"] == DECIDING_ROLE and signed is not None
+        if cites and j["verdict"] == signed["answer"]:
+            j["provenance"] = f"SIGNED_FOUNDER_ANSWER decision.answered {request_id}"
+        else:
             j["provenance"] = "UNVERIFIED_PROVENANCE"
-            continue
-        j["provenance"] = f"signed decision.answered {j['evidence_ref']}"
-        if j["role"] != DECIDING_ROLE:
-            continue                       # a signed record of someone else's answer still decides nothing here
-        if record.get("answer") != j["verdict"]:
-            conflicts.append(f"{j['participant_ref']}: judgment says {j['verdict']}, the signed answer says "
-                             f"{record.get('answer')}")
-            continue
-        if decision is not None and decision["verdict"] != j["verdict"]:
-            conflicts.append(f"two signed founder answers disagree ({decision['verdict']} vs {j['verdict']})")
-            decision = None
-            break
-        decision = {"verdict": j["verdict"], "decided_by": j["provenance"], "participant_ref": j["participant_ref"]}
+            if cites:
+                conflicts.append(f"{j['participant_ref']}: judgment says {j['verdict']}, the signed answer to "
+                                 f"{request_id} says {signed['answer']}; the signed answer stands")
+    decision = None if signed is None else {
+        "verdict": signed["answer"], "decided_by": f"signed decision.answered {request_id}",
+        "command_digest": signed["command_digest"], "scope_digest": scope_digest}
     views = {}
     for j in judgments:
         views.setdefault(j["verdict"], []).append(j["participant_ref"])
-    return {"judgments": judgments, "decision": None if conflicts else decision,
+    return {"judgments": judgments, "decision": decision, "request_id": request_id, "scope_digest": scope_digest,
             "provenance_conflicts": conflicts,
             "refusals": [{"participant_ref": j["participant_ref"], "role": j["role"], "rationale": j["rationale"]}
                          for j in judgments if j["verdict"] == "REFUSED"],
             "disagreement": len(views) > 1, "views_by_verdict": views,
             "aggregation": "none: views are preserved and attributed, never counted into a decision",
-            "decision_authority": "the founder's signed answer; no majority of opinions decides",
+            "decision_authority": "the founder's signed answer to this question's request; no majority of opinions "
+                                  "and no judgment's text decides",
             "authority_created": False}
+
+
+def judgment_ask(pid: str, request_id: str, scope_digest: str, packet: dict, created_at: str) -> dict:
+    """The decision request the founder answers with a signed command (``greg answer``); recorded through
+    greg.asks, the one path for ``decision.requested``. Answering decides this question only and acts on
+    nothing: a decision still reaches the world only through the Gate."""
+    return {"request_id": request_id, "kind": "HUMAN_JUDGMENT", "mission_id": None, "action_id": None,
+            "scope_digest": scope_digest, "problem_id": pid,
+            "why_now": f"request {pid} is a {packet['competence_domain']} question that cognition may not decide",
+            "recommendation": "decide approve or reject after reviewing the question and any recorded views",
+            "alternatives": ["approve", "reject", "leave it unanswered"],
+            "authority_requested": {"decide": f"this question only ({scope_digest[:23]})", "spend": "none",
+                                    "consequence_class": "read_only"},
+            "consequence_of_no_response": "the question stays HUMAN_JUDGMENT_REQUIRED; nothing acts",
+            "created_at": created_at, "reality_status": "RECORDED_LOCAL_MESSAGE"}

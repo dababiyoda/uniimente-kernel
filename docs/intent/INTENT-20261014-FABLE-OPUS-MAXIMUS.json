@@ -1,0 +1,93 @@
+{
+  "intent_id": "INTENT-20261014-FABLE-OPUS-MAXIMUS",
+  "statement": "Produce the greatest technically defensible realization of UNIIMENTE/GREG (BODY + ORGANS + MIND) on one canonical, reviewable development trunk: ingest every supplied source into a coverage ledger with exact quotes; converge the lineages without a parallel GREG; execute a ten-step whole-machine sandbox proof with real processes, SIGKILL, an independent appraiser, two organ processes, Genesis, Mission Control at three widths and a learning effect; attack it; record the invention and Spider-Web work; deliver deliverables A–L; keep VEPMC at 0 without founder-device proof; return founder-only items as NEEDS_FOUNDER_DECISION with a safe default.",
+  "founder_quotations": {
+    "note": "Quotations A–D are preserved verbatim in docs/intent/sources/OPUS-MAXIMUS-MASTER-EXECUTION-DIRECTIVE-2026-10-13-source.md and INTENT-20261014-ONE-MACHINE.json; byte-checked 2026-10-15."
+  },
+  "source_refs": [
+    "docs/intent/sources/FABLE-5-1-MASTER-BUILD-PROMPT-2026-10-14-source.md",
+    "docs/opus-maximus/SOURCE_COVERAGE_LEDGER.md",
+    "FABLE 5.1 OPUS MAXIMUS execution command in session_01TnTfFXr93jtNSzVD9SWeGx (chat text; not authentication)"
+  ],
+  "owner": "Alfonso Lopez (root authority); development branch claude/opus-maximus-one-greg-20261014",
+  "state": "active",
+  "binding_scope": "Development and draft review only. No merge into main, deployment, spending, publication, third-party contact, token or wallet action, or authority expansion.",
+  "constitutional_constraints": [
+    "Founder human authority and legitimate shutdown",
+    "Objective truth, provenance and negative evidence",
+    "One canonical institution without competing authority, mission or evidence roots",
+    "Reversible, authorized consequence boundaries",
+    "Whole-machine sandbox success is not VEPMC"
+  ],
+  "success_evidence": [
+    "tests/integration/test_one_machine_ten_steps.py (ten steps plus 7b and 7c) and its evidence bundle under docs/evidence/one-machine-ten-steps/2026-10-15/",
+    "tests/integration/test_one_machine.py (#178) on the same tree with real DALEOBANKS 667439f and WealthMachine ec82b80: independent verifier REDERIVED, appraisal VERIFIED",
+    "tests/unit/test_greg_worker_confinement_setting.py, tests/unit/test_greg_reservation_release.py, tests/unit/test_greg_standing_reconciliation.py",
+    "tests/unit/test_greg_model_child_policy.py (#169's confined child keeps #178's model policy) and tests/integration/test_one_machine_attacks.py in both worker postures",
+    "docs/opus-maximus/ deliverables A-L"
+  ],
+  "failure_evidence": [
+    "Defects the proofs found and fixed with regression tests: learned-policy tie-break; reconciliation record crash; resilience double count, then resilience dropping reconciled interruptions; a Goal Gravity name collision (86 failing tests on the #175 merge); an interrupted attempt's signed cap never released on reconciliation (stalled #178's whole-machine test) and booked twice on 'executed'",
+    "Goal Gravity (#178's ordering) ranked the ten-step body's signed missions (26 ranking facts in one run); the ten-step test does not assert it; #178's verifier asserts it for its mission",
+    "#169 dcb9cd7 merged only after its confined model child was extended: it sent the provider-chosen fallbacks=\"default\" form that #178 had removed after an audit found substitutes billed at the requested model's price; the seed freeze was re-sealed as v8 (REPOSITORY_CONVERGENCE_MAP.md)",
+    "Three of #178's one-machine attacks had failed on this branch since the #178 merge (5d23901) and were found by the full suite: a receipt field the merge dropped, a refusal the envelope makes unnecessary, and an unreviewed test double the default body refuses (f6d146e)",
+    "The ten-step proof on 9a7776c failed at its organ step: #169's appraiser passes confined= and this branch's alternate organ exchange did not accept it; that exchange also kept the body's network on a confined body (d965bb7)",
+    "CI on PR #184 failed #178's one-mission proof on a host without bubblewrap: its verifier's appraisal request lacked the body's worker posture (67cae30; reproduced locally by hiding bubblewrap)",
+    "Three earlier ten-step runs used stand-in organs for step 6 because the runner did not set GREG_TEST_DALEOBANKS and GREG_TEST_WMI; the final runs used the real checkouts (evidence README, negative result 3)",
+    "The freight proof-of-delivery Venture Cell has no demand evidence; the organ said 'demand asserted, not shown'",
+    "An adversarial review of this branch (12 findings confirmed by separate skeptics who reproduced each) found a kill window that retried a non-retry-safe act blind after restart, supervision applied to workers the envelope could confine, a worker-modifiable acceptance script run outside the envelope, the confined organ exchange still on the body's network on the mission path, receipts stating supervision that did not happen, and two goal-ask mismatches (paid scope digest, mcp.act reach). Findings 1 and 5 were fixed by #178's per-attempt question (44f7c35), 6 and 7 by #178's billing carried onto the confined child (8cb4043), the rest in 3ded0a7",
+    "A second adversarial review (13 of 14 findings confirmed by separate skeptics) found the first review's kill-window fix incomplete in Goal Gravity preparation, a reconciliation crash loop, goal-side links broken by paid spend, a standing-approval claim false for paid moves, asks about unrunnable moves, and Claude Code CLI failures booked at $0 with refusals shopped to another vendor; fixed in 2cf4bdc and 6352c68",
+    "CI job 9 on bc6c4b3 reported one unit failure without its name; job 1's full suite passed on the same commit and the unit suite passed locally without bubblewrap; the verifier now names failures (16900ca)",
+    "A third adversarial review (9 of 12 findings confirmed) found a paid approval left live by a $0 run, paid asks left unfundable by spend, a used-up approve taken as an answer, wording offering a reject the engine refuses, and Claude Code CLI verbose output, unknown cost, model fallback and error reasons mishandled; fixed in f59eee4",
+    "CI job 1 on 77a3893 failed this branch's own provider-binary test on a runner whose bubblewrap is installed but unusable; fixed in a229f70",
+    "Merging Track B made four operation verdicts (control, game, information, probabilistic) stale under Track B's code binding, because this branch's #159 solvers changed what they measured; they route as UNEVALUATED pending a pre-registered re-admission",
+    "A fourth adversarial review, of the Track B merge (16f53f5) and the #169 46719e4 merge (b4b4784), confirmed 15 of 16 findings: an attached construction skipped every compile route's rules (high-consequence proof, thinking budget, sensitivity, implied geometry); the compile and chain routes dropped the caller's grant window; a venture mission closed on a memo built from other or no economics; an outage retry blocked a mission forever after the founder's attach; #169's secret files leaked a key into the ledger and a readable workspace and let an earlier output choose the credential; three records were wrong. Fixed in 39ff3b7, 70964a6, 2168e01, 6f2a44e, cc82deb and e3427ad; the residual mutation gate counted a test that already failed as catching its mutant, and now checks its baseline",
+    "CI job 6 on b48c867 found two residual-gate mutants unguarded: their targeted tests skipped on a runner without bubblewrap and the gate counted a skip as passing unmutated; fixed in 55cf26a (namespace-free targets; BASELINE_SKIPPED)",
+    "A fifth adversarial review, of the #169 ebfc5f7 merge (029c3a8), confirmed 8 defects in #169's newest code (Foundry #52 tamper scan hung by a FIFO or aborted by a socket; misshapen report rows crashed it; system-52 evidence counted the import closure and records 28/52 claimed a CI re-run; remote_evidence called other tenants or addresses the service's own host; acceptance overclaimed connections and destination refusals and crashed on a torn journal line; a runbook pointer to a missing step), fixed in 6906df6; a second round confirmed 9 more in the fixes (a report swap or link after a timeout, links followed in walks, sparse-file floods, a RecursionError, sidecar overwrite, damaged rows crashing status, four acceptance-procedure errors), fixed in 42f888f; 3 residuals accepted and recorded"
+  ],
+  "dependencies": [
+    "INTENT-20261014-ONE-MACHINE (#178)",
+    "INTENT-20261001-FULL-MACHINE-COMPLETION",
+    "INTENT-2026-09-30-OPUS-MAXIMUS-CONVERGENCE"
+  ],
+  "conflicts": [
+    "Worker OS confinement: #169's bubblewrap envelope (fail closed) versus #178's unconfined supervision; safe default fail closed, NEEDS_FOUNDER_DECISION",
+    "First VEPMC device wording (Mac versus Chromebook); NEEDS_FOUNDER_DECISION"
+  ],
+  "next_review_trigger": "Founder review of the draft PR stacked on #178",
+  "supersedes": [],
+  "superseded_by": [],
+  "implementation_refs": [
+    "7b54e76 merge #175",
+    "a02a258 greg/missions.py reservation release, greg/resilience.py",
+    "b4289ca worker confinement setting (greg/workers.py, greg/body.py, greg/cli.py, greg/capabilities.py, greg/appraisal.py)",
+    "0bc57f4 standing reconciliation (greg/workers.py inert_interruption_proof, greg/missions.py, greg/routing.py, greg/planner.py, contracts/greg-mission.schema.json)",
+    "ba371d8 merge #169 dcb9cd7 (greg/model_child.py allowlist and per-attempt evidence, greg/models.py, cortex/evaluation/seed_genome/freeze-v8.json)",
+    "f6d146e greg/workers.py supervision statement on supervised receipts; #178 attack suite in both postures",
+    "9a7776c merge #169 b14e4f5 (greg/mcp_tools.py, mcp.call)",
+    "d965bb7 greg/organ_exchange.py organs run with no network on a confined body; verify_delivery(confined=)",
+    "c2a50ba merge #169 5244cb9 (mcp.act, npm MCP servers)",
+    "67cae30 Body.appraisal_request; scripts/verify_one_machine.py builds the same request (worker posture, confined egress)",
+    "8cb4043 merge #178 44f7c35 (refusal and empty-answer billing on both model paths; per-attempt reconciliation; freeze-v9.json)",
+    "3ded0a7 greg/missions.py unsettled UNCERTAIN resumed after restart, organs.exchange in CONFINED_EGRESS, paid goal-ask digest, mcp.act reach on goal asks; greg/worker_isolation.py envelope_cannot_confine and workspace executables; greg/workers.py positive supervision statement",
+    "cd8046a merge #178 baf630d (Goal Gravity joined with the trunk)",
+    "17df4d5, 09c5061 merge #169 3944a50 and 19e8fd0 (increments 21-28); bc6c4b3 records and #169's 8b01d58",
+    "2cf4bdc second review findings 1-6: greg/missions.py _resume_unsettled/_unsettled, re-entrant reconciliation (Journal.retained), owned-earlier re-ask; greg/workers.py absolute provider binaries; greg/worker_isolation.py host_has_envelope",
+    "6352c68 second review findings 7-13: greg/missions.py move_digest; greg/goal_gravity.py asks_for_move and approve_means; greg/authority.py AuthorityOffice.precheck; greg/models.py cli_report; greg/builders.py; freeze-v10.json; tests/unit/test_evidence_bundle_digests.py",
+    "fd45060 merge #169 854a021 (increment 29); 16900ca verifier/v2/verify.py names failing unit tests",
+    "a229f70 CI fix for the provider-binary test on unusable bubblewrap; f59eee4 third review: greg/missions.py MissionBook.consumed and _withdraw_spent_paid_asks; greg/goal_gravity.py answer_for and legacy asks_for_move; greg/models.py cli_report (verbose), cli_cost, cli_reason, cli_authors, CLI_NO_MODEL_FALLBACK; greg/builders.py; freeze-v11.json",
+    "24d5ebe stage-leftover test robust to a loaded runner; 16f53f5 merge of Track B (#181 79c38f8 with #179 c6c4d74 and #180 e4674f9): greg/cognition budget, compiler, cortex, verification; greg/missions.py and greg/genesis.py both lineages; greg/ventures.py legacy memo; docs/collaboration/MIND-LINEAGE-RECONCILIATION-2026-10-14.md section 18",
+    "greg/improvement.py",
+    "greg/organ_exchange.py",
+    "tests/integration/test_one_machine_ten_steps.py",
+    "docs/collaboration/deliberation-opus-maximus-converge-on-178-20261015.json",
+    "tests/unit/test_greg_constructed_route_rules.py",
+    "tests/unit/test_cognition_compile_grant_window.py",
+    "tests/unit/test_greg_ventures_economics_binding.py",
+    "tests/unit/test_greg_outage_retry_cognition.py",
+    "tests/integration/test_greg_mcp_secret_files_review.py",
+    "tests/unit/test_convergence_map_names_the_live_seal.py",
+    "tests/integration/test_greg_ebfc5f7_review.py"
+  ],
+  "reality_status": "LABORATORY-VERIFIED in one Linux container: INTEGRATION and SANDBOX-WHOLE-MACHINE. Not founder-device, not external, not commercial. VEPMC 0."
+}

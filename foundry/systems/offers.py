@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+import re
 import sqlite3
 
 from cryptography.exceptions import InvalidSignature
@@ -22,6 +23,31 @@ from greg.capabilities import CapabilityError
 
 VERSION = "owned-test-commerce/1"
 MAX_ORDERS = 128
+# A seller that declares it lacks the right to sell what it sells. A screen of the declaration, not proof of title.
+NO_RIGHT = re.compile(r"\b(?:no|without)\s+(?:a\s+|the\s+)?(?:licen[cs]e|permission|consent|rights?)\b"
+                      r"(?!\s+(?:is\s+|are\s+)?(?:reserved|required|needed))|"
+                      r"\bunlicen[cs]ed\b|\b(?:not|never)\s+(?:licen[cs]ed|permitted|authori[sz]ed|cleared)\b|"
+                      r"\b(?:scraped|pirated|stolen)\b", re.I)
+
+
+def participant_rights(description: str, declared_rights: str) -> list[str]:
+    """Participant rights are gates on every sellable offer, on both routes to the catalog (#49 company assembly and a
+    direct #54 publish) and again at sale: the buyer is not pressured, and the seller has not declared that it lacks
+    the right to sell. The copy is screened by GREG's own ask screen (``greg.asks.RULES``), never by a second list."""
+    from greg.asks import RULES, _normal
+    problems = []
+    for rule, pattern in RULES:
+        hit = pattern.search(_normal(description)) if rule != "denial_framed_as_harm_to_greg" else None
+        if hit:
+            problems.append(f"offer copy uses {rule.replace('_', ' ')} ({hit.group(0)!r})")
+    hit = NO_RIGHT.search(_normal(declared_rights))
+    if hit:
+        problems.append(f"the content's declared rights deny a right to sell it ({hit.group(0)!r})")
+    return problems
+
+
+def _declared_rights(root, manifest) -> str:
+    return json.loads(ArtifactStore(_media(root) / "artifacts").read(manifest))["provenance"]["rights"]
 
 
 def store(root):
@@ -67,6 +93,9 @@ def publish(root, value, reason, expected_parent="__head__"):
     if not isinstance(value["description"], str) or not 1 <= len(value["description"]) <= 1024:
         raise ValueError("bounded offer description required")
     media.inspect(_media(root), value["manifest"])
+    problems = participant_rights(value["description"], _declared_rights(root, value["manifest"]))
+    if problems:
+        raise ValueError("offer refused on participant rights: " + "; ".join(problems))
     record = versions.commit(store(root) / "catalog", value["id"],
                              {**value, "version": VERSION, "mode": "fixture", "capability": "canon_media_delivery"},
                              reason=reason, evidence=[value["manifest"]], expected_parent=expected_parent)
@@ -118,6 +147,9 @@ def _order(root, order):
     if (order["version_address"], order["price_cents"], order["currency"]) != (
             offer["version_address"], offer["price_cents"], offer["currency"]):
         raise ValueError("order diverges from pinned offer terms")
+    problems = participant_rights(offer["description"], _declared_rights(root, offer["manifest"]))
+    if problems:                         # an offer retained before the gate, or written around it, is never sold
+        raise ValueError("sale refused on participant rights: " + "; ".join(problems))
     source = ArtifactStore(_media(root) / "artifacts")
     manifest = json.loads(source.read(offer["manifest"]))
     receipt = {"version": VERSION, "mode": "fixture", "id": order["id"], "offer": order["offer"],

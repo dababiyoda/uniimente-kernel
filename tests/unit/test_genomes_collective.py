@@ -367,9 +367,11 @@ def test_immune_abstains_when_self_samples_cannot_calibrate_the_tolerance():
 
 
 def test_immune_competitor_is_the_exact_prediction_region():
-    """The old asymptotic chi-square competitor overshot the false-alarm limit on dev seed 2; the exact
-    Gaussian prediction region at the candidate's own 0.75 x tolerance target does not."""
-    data, truth = c.immune_instance(2)
+    """The old asymptotic chi-square competitor overshot the false-alarm limit on dev seed 2 of the Gaussian
+    generator; the exact Gaussian prediction region at the candidate's own 0.75 x tolerance target does not. (Since
+    the 2026-10-14 benchmark revision seed 2 of the admission mixture is a ring; the claim is about the Gaussian
+    generator, which is kept byte-identical.)"""
+    data, truth = c.immune_gaussian_instance(2)
     assert c.immune_score(data, truth, c.immune_mahalanobis(data))["category"] == "wrong"
     assert c.immune_score(data, truth, c.immune_prediction_region(data))["category"] == "correct"
 

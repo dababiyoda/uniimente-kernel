@@ -1,0 +1,22 @@
+{
+  "frozen_at": "2026-10-14T12:13:24.047791+00:00",
+  "inputs": {
+    "code": {
+      "cortex/evaluation/developmental_sweep/run.py": "sha256:f72997f05ecca72ca0b144b5864b778b75c4dbfb3d5c26ea005e718edacdd358",
+      "developmental/mica.py": "sha256:8599c8a34329d6806cb9a9b04d408282ea2a9b83ca5514b8c6034d72afec3ce1",
+      "developmental/cdpe.py": "sha256:f50fd8838eda0ed39df8f2c743f35499eade0de0773bc9ed8a3bad10c5711d9d",
+      "developmental/contracts.py": "sha256:e0e7fc787e13fc37c77962534d40935fcc784107503840b8b8f57f7582aa923c"
+    },
+    "seeds": [
+      1,
+      40
+    ],
+    "fractions": [
+      0.1,
+      0.2,
+      0.3,
+      0.4
+    ],
+    "ticks": 40
+  }
+}

@@ -420,3 +420,70 @@ def test_bayes_filter_verify_refutes_a_flipped_state_and_an_unselected_margin():
     assert item.verify(data, out["output"], {**out["certificate"], "margin": other})[
         "margin_is_the_tuning_selection"] is False
     assert item.solve({**data, "noise_sd": None}, {})["status"] == "ABSTAIN"
+
+
+def test_bayes_filter_verify_refutes_a_switch_against_the_posterior_at_the_opposite_margin():
+    """Review finding 3: the tie tolerance ignored the sign, so a 0 -> 1 switch where the posterior favoured
+    state 0 by exactly e^margin (log-odds = -margin) passed as a tie."""
+    import random
+    lo, hi, sigma, dwell = 0.0, 1.0, 0.3, 100.0
+    rnd = random.Random(3002)                                       # review seed range, never held out
+    prefix = [lo + rnd.gauss(0, sigma) for _ in range(10)]
+    tail = [lo + rnd.gauss(0, sigma) for _ in range(30)]
+    margin, _ = basal._hmm_tuning(lo, hi, sigma, dwell, lambda x, c: basal._hmm_states(x, lo, hi, sigma, dwell, 0, c))
+
+    def odds_at(x):
+        return basal._forward_log_odds(prefix + [x], lo, hi, sigma, dwell, 0)[-1]
+    x = 0.5
+    for _ in range(50):                                             # odds are linear in x: Newton converges
+        x -= (odds_at(x) + margin) / ((odds_at(x + 1e-6) - odds_at(x - 1e-6)) / 2e-6)
+    data = {"signal": prefix + [x] + tail, "levels": [lo, hi], "noise_sd": sigma, "mean_dwell": dwell,
+            "initial_state": 0}
+    out = basal.bayes_filter_solve(data, {})
+    states = out["output"]["states"]
+    assert abs(basal._forward_log_odds(data["signal"], lo, hi, sigma, dwell, 0)[10] + margin) < 1e-7
+    assert states[10] == "0"
+    forged = states[:10] + "1" + states[11:]
+    forged_out = {"states": forged, "switch_count": sum(1 for a, b in zip("0" + forged, forged) if a != b)}
+    assert basal.bayes_filter_verify(data, forged_out, out["certificate"])[
+        "switches_follow_posterior_crossings"] is False
+    assert all(basal.bayes_filter_verify(data, out["output"], out["certificate"]).values())
+
+
+def test_bayes_filter_margin_is_checked_with_the_verifiers_own_cost(monkeypatch):
+    """Review finding 13: a sign bug in the shared tuning objective moved the solver's margin and the verifier,
+    replaying the same objective, accepted it."""
+    item = next(x for x in basal.INTELLIGENCES if x.genome.family == "basal_bayes_filter")
+    data, _ = item.instance(3)                                      # development seed
+    real = basal._hy_cost
+    monkeypatch.setattr(basal, "_hy_cost", lambda s, t, c, s0: (-real(s, t, c, s0)[0],) + real(s, t, c, s0)[1:])
+    bad = basal.bayes_filter_solve(data, {})
+    monkeypatch.setattr(basal, "_hy_cost", real)
+    good = basal.bayes_filter_solve(data, {})
+    assert bad["certificate"]["margin"] != good["certificate"]["margin"]
+    assert basal.bayes_filter_verify(data, bad["output"], bad["certificate"])["margin_is_the_tuning_selection"] is False
+    with monkeypatch.context() as m:                                # and the check survives the bug while it is live
+        m.setattr(basal, "_hy_cost", lambda s, t, c, s0: (-real(s, t, c, s0)[0],) + real(s, t, c, s0)[1:])
+        assert basal.bayes_filter_verify(data, bad["output"], bad["certificate"])[
+            "margin_is_the_tuning_selection"] is False
+
+
+def test_bayes_filter_verifier_cost_matches_the_declared_cost_on_development_signals():
+    import random
+    rnd = random.Random(3010)
+    for _ in range(20):
+        lo, sigma, dwell = rnd.uniform(-1, 1), rnd.uniform(0.05, 0.6), rnd.randint(60, 200)
+        sig, truth = basal._hy_signal(rnd, lo, lo + 1.0, sigma, dwell, 600, 0)
+        ts = "".join(map(str, truth))
+        changes = [k for k in range(1, len(truth)) if truth[k] != truth[k - 1]]
+        for margin in (0.0, 2.5, 8.0):
+            states = basal._hmm_states(sig, lo, lo + 1.0, sigma, dwell, 0, margin)
+            assert abs(basal._verify_cost_per_change(states, ts, 0)
+                       - basal._hy_cost(states, ts, changes, 0)[0] / max(1, len(changes))) < 1e-9
+
+
+def test_bayes_filter_abstains_at_a_one_sample_dwell_instead_of_refuting_itself():
+    """Review finding 14: mean_dwell = 1 (accepted input) made the verifier refute the solver's own answer."""
+    data = {"signal": [0.0, 1.0] * 20, "levels": [0.0, 1.0], "noise_sd": 0.05, "mean_dwell": 1.0,
+            "initial_state": 0}
+    assert basal.bayes_filter_solve(data, {})["status"] == "ABSTAIN"

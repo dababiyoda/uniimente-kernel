@@ -48,6 +48,8 @@ from datetime import datetime, timedelta, timezone
 import http.client
 import json
 import math
+import os
+from pathlib import Path
 import re
 import shutil
 import subprocess
@@ -202,7 +204,40 @@ def _output_bound(price, system: str, user: str, budget_usd):
     return min(tokens, MAX_OUTPUT_TOKENS)
 
 
-class AnthropicRoute:
+class _APIRoute:
+    """A paid API route: the vendor SDK in the body process, or, on a body with confined egress (#26), in a confined
+    child behind the relay (``greg.model_child``). Either way one function calls the SDK and normalises its answer."""
+    provider = ""
+
+    def _setup(self, api_key: str, client, egress):
+        if egress is not None and client is not None:
+            raise ValueError("a confined route calls its SDK in a confined child; an in-process client contradicts it")
+        self.egress = egress
+        self._api_key = api_key if egress is not None else None   # held only to hand to the confined child
+        if client is None and egress is None:
+            from greg import model_child
+            client = model_child.client(self.provider, api_key)
+        self.client = client
+
+    def _answer(self, system: str, user: str, max_tokens: int, *, fallbacks=(), fallback_beta=None) -> dict:
+        """One call, in process or confined. ``fallbacks`` is only ever the founder's explicit allowlist."""
+        if self.egress is not None:
+            return confined_call(self.provider, self._api_key, self.model, system, user, max_tokens, self.egress,
+                                 fallbacks=fallbacks, fallback_beta=fallback_beta)
+        from greg import model_child
+        try:
+            return model_child.call(self.provider, self.client, self.model, system, user, max_tokens,
+                                    fallbacks=fallbacks, fallback_beta=fallback_beta)
+        except Exception as exc:   # SDK/network errors, classified: a policy verdict is not an outage
+            raise _route_failure(exc) from exc
+
+    def _cost(self, answer: dict):
+        if self.price and answer.get("input_tokens") is not None and answer.get("output_tokens") is not None:
+            return (answer["input_tokens"] * self.price[0] + answer["output_tokens"] * self.price[1]) / 1e6
+        return None
+
+
+class AnthropicRoute(_APIRoute):
     """Claude via the official Anthropic SDK (optional dependency ``anthropic``).
 
     Model identity is the founder's choice, not the provider's. The request names one model
@@ -215,13 +250,14 @@ class AnthropicRoute:
     records requested, served and substituted. An answer served by any model outside
     {requested} ∪ allowlist is withheld (``ModelSubstitution``), never returned as the
     requested model's work; a response that names no model is reported as unknown, never as
-    the requested one.
+    the requested one. On a body with confined egress (#26) the same request runs in a confined child
+    (``greg.model_child``) behind the relay; the policy and the accounting below are identical.
     """
     provider = "anthropic"
     FALLBACK_BETA = "server-side-fallback-2026-06-01"   # the array form; the "default" scalar form is never sent
 
     def __init__(self, api_key: str, *, model: str = "claude-opus-5", price=None, client=None,
-                 fallback_models=(), fallback_prices=None):
+                 fallback_models=(), fallback_prices=None, egress=None):
         self.model, self.name = model, f"anthropic:{model}"
         # Prices are operational evidence, not constants: a configured price supersedes the built-in
         # snapshot without a code change. A malformed configured price is not silently replaced by the
@@ -241,10 +277,7 @@ class AnthropicRoute:
         unpriced = [m for m, p in self.fallback_price.items() if p is None]
         if unpriced:   # an unpriced substitute could not be bounded or billed truthfully
             raise ValueError(f"fallback model(s) without a known price: {', '.join(unpriced)}")
-        if client is None:
-            import anthropic
-            client = anthropic.Anthropic(api_key=api_key, base_url="https://api.anthropic.com", max_retries=2)
-        self.client = client
+        self._setup(api_key, client, egress)
 
     def _price_of(self, model: str, prompt_tokens: int = 0):
         return _tiered(model, self.price if model == self.model else self.fallback_price[model], prompt_tokens)
@@ -260,14 +293,14 @@ class AnthropicRoute:
         return served == wanted or re.fullmatch(re.escape(wanted) + r"-\d{8}", served or "") is not None
 
     @staticmethod
-    def _cost(usage, price):
-        """Every attempt the provider may bill: ``usage.iterations`` is the per-attempt source of truth (top-level
-        usage covers only the attempt that produced the message, and a declined attempt can be billed);
-        top-level usage is used only when the response reports no iterations."""
-        if usage is None or not price:
+    def _attempts_cost(attempts, price):
+        """Every attempt the provider may bill: the per-attempt usage (``iterations``) is the source of truth (top-level
+        usage covers only the attempt that produced the message, and a declined attempt can be billed); top-level
+        usage is used only when the response reports no iterations. Unknown token counts make the cost unknown."""
+        if not price or not attempts or any(a.get("input_tokens") is None or a.get("output_tokens") is None
+                                            for a in attempts):
             return None
-        attempts = list(getattr(usage, "iterations", None) or []) or [usage]
-        return sum(a.input_tokens * price[0] + a.output_tokens * price[1] for a in attempts) / 1e6
+        return sum(a["input_tokens"] * price[0] + a["output_tokens"] * price[1] for a in attempts) / 1e6
 
     def complete(self, system: str, user: str, *, budget_usd=None) -> dict:
         prompt_tokens = _estimate_tokens(system + user)
@@ -276,26 +309,18 @@ class AnthropicRoute:
         attempts = 1 + len(self.fallback_models)
         max_tokens = _output_bound(self._bound_price(prompt_tokens), system, user,
                                    None if budget_usd is None else budget_usd / attempts)
-        request = dict(model=self.model, max_tokens=max_tokens, system=system,
-                       messages=[{"role": "user", "content": user}],
-                       thinking={"type": "adaptive"}, output_config={"effort": "high"})
-        if self.fallback_models:
-            request.update(betas=[self.FALLBACK_BETA], fallbacks=[{"model": m} for m in self.fallback_models])
-        try:
-            response = self.client.beta.messages.create(**request)
-        except Exception as exc:   # SDK/network errors, classified: a policy verdict is not an outage
-            raise _route_failure(exc) from exc
-        served = getattr(response, "model", None) or None   # the provider's report; never filled in by us
-        usage = getattr(response, "usage", None)
-        iterations = list(getattr(usage, "iterations", None) or [])
-        fell_back = any(getattr(i, "type", None) == "fallback_message" for i in iterations)
-        billed_prompt = max([a.input_tokens for a in (iterations or [usage]) if a is not None], default=0)
-        if response.stop_reason == "refusal":
-            # Declined, but every attempt was billed; which permitted model declined is not reliably
+        answer = self._answer(system, user, max_tokens, fallbacks=self.fallback_models,
+                              fallback_beta=self.FALLBACK_BETA)
+        served = answer.get("served_model") or None          # the provider's report; never filled in by us
+        iterations = list(answer.get("iterations") or [])
+        fell_back = any(i.get("type") == "fallback_message" for i in iterations)
+        usage = {"input_tokens": answer.get("input_tokens"), "output_tokens": answer.get("output_tokens")}
+        billed_prompt = max([a.get("input_tokens") or 0 for a in (iterations or [usage])], default=0)
+        if answer["refusal"]:
+            # Declined, but every attempt was billed (#178); which permitted model declined is not reliably
             # reported, so each attempt is booked at the dearest permitted price (never under-booked).
-            category = getattr(getattr(response, "stop_details", None), "category", None)
-            raise Refusal(f"model declined (refusal: {category})", kind=SAFETY_REFUSAL,
-                          cost_usd=self._cost(usage, self._bound_price(billed_prompt)))
+            raise Refusal(f"model declined (refusal: {answer['refusal_detail']})", kind=SAFETY_REFUSAL,
+                          cost_usd=self._attempts_cost(iterations or [usage], self._bound_price(billed_prompt)))
         withheld = False
         if served is None and (self.fallback_models or not fell_back):
             # No served model reported: unknown, not proof that the requested model answered. The request
@@ -319,51 +344,130 @@ class AnthropicRoute:
             # attempt is a plain "message"), so every attempt of a multi-attempt answer is priced at the
             # dearest of the answer's price and every permitted model's price: over-booked, never under.
             price = _dearest(price, self._bound_price(billed_prompt))
-        cost = self._cost(usage, price)
+        cost = self._attempts_cost(iterations or [usage], price)
         if withheld:
             raise ModelSubstitution(f"requested {self.model}, served {served}: outside the founder's model "
                                     f"policy; the answer is withheld", requested=self.model, served=served,
                                     cost_usd=cost)
-        text = "".join(block.text for block in response.content if block.type == "text")
         # the provider's own report of the model that answered, next to the one we asked for; unknown stays None
         substituted = (True if fell_back else None) if answered_by is None else answered_by != self.model
-        return {"text": text, "cost_usd": cost, "served_model": served, "requested_model": self.model,
+        return {"text": answer["text"], "cost_usd": cost, "served_model": served, "requested_model": self.model,
                 "substituted": substituted, "fallback_policy": list(self.fallback_models)}
 
 
-class OpenAIRoute:
+class OpenAIRoute(_APIRoute):
     """OpenAI models via the official ``openai`` SDK Responses API (optional dependency)."""
     provider = "openai"
 
-    def __init__(self, api_key: str, *, model: str = "gpt-5.5", price=None, client=None):
+    def __init__(self, api_key: str, *, model: str = "gpt-5.5", price=None, client=None, egress=None):
         self.model, self.name, self.price = model, f"openai:{model}", _price(price)
-        if client is None:
-            from openai import OpenAI
-            client = OpenAI(api_key=api_key, base_url="https://api.openai.com/v1", max_retries=2)
-        self.client = client
+        self._setup(api_key, client, egress)
 
     def complete(self, system: str, user: str, *, budget_usd=None) -> dict:
-        max_tokens = _output_bound(self.price, system, user, budget_usd)
-        try:
-            response = self.client.responses.create(model=self.model, instructions=system, input=user,
-                                                    max_output_tokens=max_tokens)
-        except Exception as exc:   # classified: HTTP 400 invalid_prompt is a policy verdict, not an outage
-            raise _route_failure(exc) from exc
-        usage = getattr(response, "usage", None)
-        cost = None
-        if usage is not None and self.price:
-            cost = (usage.input_tokens * self.price[0] + usage.output_tokens * self.price[1]) / 1e6
-        refusals = [part for item in (getattr(response, "output", None) or [])
-                    for part in (getattr(item, "content", None) or []) if getattr(part, "type", "") == "refusal"]
-        if refusals:
-            raise Refusal(f"model declined: {getattr(refusals[0], 'refusal', '')}"[:300], kind=SAFETY_REFUSAL,
+        # classified on failure: HTTP 400 invalid_prompt is a policy verdict, not an outage
+        answer = self._answer(system, user, _output_bound(self.price, system, user, budget_usd))
+        cost = self._cost(answer)   # a refusal or an empty answer was still billed (#178)
+        if answer["refusal"]:
+            raise Refusal(f"model declined: {answer['refusal_detail'] or ''}"[:300], kind=SAFETY_REFUSAL,
                           cost_usd=cost)
-        text = getattr(response, "output_text", "") or ""
-        if not text:     # e.g. status incomplete: reasoning used every output token, and it was billed
-            raise RouteError(f"empty response (status {getattr(response, 'status', 'unknown')})", kind=BAD_OUTPUT,
+        if not answer["text"]:     # e.g. status incomplete: reasoning used every output token, and it was billed
+            raise RouteError(f"empty response (status {answer.get('status', 'unknown')})", kind=BAD_OUTPUT,
                              cost_usd=cost)
         # the provider's report or None: a missing report is not filled in with the model we asked for
-        return {"text": text, "cost_usd": cost, "served_model": getattr(response, "model", None) or None}
+        return {"text": answer["text"], "cost_usd": cost, "served_model": answer.get("served_model") or None}
+
+
+CONFINED_CALL_SECONDS = 660   # the SDK's own 600 s timeout, plus its retries' backoff
+
+
+def _namespace(scratch: str, *, readonly=()) -> list:
+    """A bubblewrap network namespace (no privilege): read-only root with the founder's and the body's homes hidden,
+    private /tmp, and the call's scratch directory. ``readonly`` re-exposes what the call needs (a trust anchor, the
+    CLI itself). Refused (fail closed) without namespaces."""
+    from foundry.systems.relay_door import namespace_argv
+    from greg.worker_isolation import WorkerIsolationError, _backend
+    try:
+        _backend(require_bubblewrap=True)
+    except WorkerIsolationError as exc:
+        raise RouteError(f"confined egress needs bubblewrap network namespaces here: {exc}", kind=UNAVAILABLE) from None
+    return namespace_argv(writable=[scratch], readonly=readonly, chdir=scratch)
+
+
+def _scoped_relay(relay, identity: str, host: str):
+    """A per-call relay sharing the body relay's journal and mandated proxy, allowing exactly one provider host."""
+    from foundry.systems.segmentation import Relay
+    return Relay({identity: {"allow": [[host, 443]], "external": True}}, relay.journal,
+                 connect=relay.connect, proxy=relay.proxy)
+
+
+CLI_LOGIN = ".claude/.credentials.json"   # the one file of the founder's home the Claude Code CLI needs
+
+
+def cli_home(scratch: str) -> tuple[dict, list]:
+    """A private home for the Claude Code CLI inside the call's scratch directory, holding a copy of its login and
+    nothing else of the founder's home; returns the environment that points the CLI at it and the read-only paths
+    its installation needs (the CLI's own directory and, for an npm install, the Node runtime)."""
+    import os
+    home = Path(scratch) / "home"
+    source = Path.home() / CLI_LOGIN
+    (home / CLI_LOGIN).parent.mkdir(parents=True, exist_ok=True)
+    if source.is_file() and not source.is_symlink():
+        shutil.copyfile(source, home / CLI_LOGIN)
+        (home / CLI_LOGIN).chmod(0o600)
+    node = shutil.which("node")
+    return {**os.environ, "HOME": str(home)}, [str(Path(node).resolve().parent.parent)] if node else []
+
+
+class _ChildFailure(Exception):
+    """A confined child's failure, rebuilt with the fields ``classify`` reads (status, body, class name)."""
+
+
+def _rebuilt(error: dict) -> BaseException:
+    name = str(error.get("type") or "Exception")
+    base = (ConnectionError if name in ("ConnectionError", "ConnectionRefusedError", "ConnectionResetError",
+                                        "ConnectionAbortedError", "BrokenPipeError")
+            else TimeoutError if name == "TimeoutError" else _ChildFailure)
+    exc = type(name if name.isidentifier() else "ChildFailure", (base,), {})(str(error.get("message", ""))[:500])
+    exc.status_code, exc.body = error.get("status_code"), error.get("body")
+    return exc
+
+
+def confined_call(provider: str, api_key: str, model: str, system: str, user: str, max_tokens: int, relay, *,
+                  fallbacks=(), fallback_beta=None) -> dict:
+    """Run ``greg.model_child`` in a network namespace behind the relay door. The key crosses only stdin."""
+    import os
+    import sys
+    import tempfile
+    import urllib.parse
+    from pathlib import Path
+    from foundry.systems.relay_door import Door, door_argv
+    from greg import model_child
+    host = urllib.parse.urlsplit(model_child.BASE_URLS[provider]).hostname
+    identity = f"model.{provider}"
+    root = str(Path(__file__).resolve().parents[1])
+    child = [sys.executable, "-I", "-c", f"import sys; sys.path.insert(0, {root!r}); "
+                                         "from greg.model_child import main; main()"]
+    request = json.dumps({"provider": provider, "api_key": api_key, "model": model, "system": system, "user": user,
+                          "max_tokens": max_tokens, "fallbacks": list(fallbacks), "fallback_beta": fallback_beta})
+    trust = {k: os.environ[k] for k in ("SSL_CERT_FILE", "SSL_CERT_DIR") if os.environ.get(k)}
+    if os.environ.get("GREG_EGRESS_CAFILE"):          # the operator's trust anchor for a TLS-intercepting proxy
+        trust["SSL_CERT_FILE"] = os.environ["GREG_EGRESS_CAFILE"]
+    with tempfile.TemporaryDirectory(prefix="greg-model-") as scratch:
+        argv = _namespace(scratch, readonly=tuple(trust.values()))
+        with Door(_scoped_relay(relay, identity, host), identity) as door:
+            try:
+                proc = subprocess.run(argv + door_argv(sys.executable, door.fd, child), pass_fds=[door.fd],
+                                      input=request, capture_output=True, text=True, timeout=CONFINED_CALL_SECONDS,
+                                      env={"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "HOME": scratch, **trust})
+            except subprocess.TimeoutExpired as exc:
+                raise RouteError(f"confined {provider} call did not finish", kind=TRANSIENT) from exc
+    try:
+        answer = json.loads(proc.stdout)
+    except json.JSONDecodeError:
+        raise RouteError(f"confined {provider} call failed: {proc.stderr[-300:]}", kind=UNKNOWN) from None
+    if not answer.get("ok"):
+        raise _route_failure(_rebuilt(answer.get("error") or {}))
+    return answer["result"]
 
 
 class OllamaRoute:
@@ -456,16 +560,62 @@ class OllamaRoute:
         return {"text": content, "cost_usd": 0.0, "served_model": served, "model_digest": digest}
 
 
+# The CLI's own model swaps (a refused turn re-run on a fallback model, or any other substitution) are off: GREG
+# routes between models itself, never shops a refusal, and names the model that wrote each answer.
+CLI_NO_MODEL_FALLBACK = {"CLAUDE_CODE_NO_MODEL_FALLBACK": "1", "CLAUDE_CODE_DISABLE_REFUSAL_FALLBACK": "1"}
+
+
+def cli_report(proc) -> dict | None:
+    """The Claude Code CLI's JSON result on stdout, or None when there is none.
+
+    The CLI prints it, with what the run cost and why it stopped, whether or not it succeeded: it exits 1 on every
+    ``is_error`` result (a refusal, an API error, an exhausted ``--max-budget-usd``), so the exit status alone says
+    neither what was billed nor whether the model declined. With verbose output on in the founder's Claude Code
+    settings it prints every message as a JSON array, the result object last."""
+    try:
+        result = json.loads(proc.stdout)
+    except (json.JSONDecodeError, TypeError):
+        return None
+    if isinstance(result, list):
+        result = next((m for m in reversed(result) if isinstance(m, dict) and m.get("type") == "result"), None)
+    return result if isinstance(result, dict) else None
+
+
+def cli_cost(result: dict, cap: float) -> float:
+    """What a CLI run cost: its own finite, non-negative ``total_cost_usd``, else the cap it ran under. Missing
+    billing is never booked as zero (the CLI prints null when its session cost is not a number), as
+    ``workers.worker_spend`` reserves the whole cap for the same evidence."""
+    billed = result.get("total_cost_usd")
+    if isinstance(billed, bool) or not isinstance(billed, (int, float)) or not math.isfinite(billed) or billed < 0:
+        return float(cap)
+    return float(billed)
+
+
+def cli_reason(result: dict) -> str:
+    """Why the CLI says the run ended: ``result`` on success, ``errors`` on every ``error_*`` subtype."""
+    if result.get("result") is not None:
+        return str(result["result"])
+    errors = result.get("errors")
+    return "; ".join(map(str, errors)) if isinstance(errors, list) and errors else str(result.get("subtype") or "")
+
+
+def cli_authors(result: dict) -> list[str]:
+    """The models the CLI's report says wrote the turn (``modelUsage``), its auxiliary haiku calls left out."""
+    usage = result.get("modelUsage")
+    return sorted(k for k in usage if "haiku" not in k) if isinstance(usage, dict) else []
+
+
 class ClaudeCodeRoute:
     """The founder's installed Claude Code CLI, headless: no tools, no MCP, no disk, a spend cap."""
     provider = "claude-code"
 
     def __init__(self, binary: str | None = None, *, model: str | None = None, max_budget_usd: float = 0.50,
-                 timeout: int = 300, runner=subprocess.run):
+                 timeout: int = 300, runner=subprocess.run, egress=None):
         self.binary = binary or shutil.which("claude")
         if not self.binary:
             raise RouteError("Claude Code CLI is not installed", kind=UNAVAILABLE)
         self.model, self.max_budget_usd, self.timeout, self.runner = model, max_budget_usd, timeout, runner
+        self.egress = egress          # #26: on a confined body the CLI runs behind the relay door
         self.name = "claude-code" + (f":{model}" if model else "")
 
     def complete(self, system: str, user: str, *, budget_usd=None) -> dict:
@@ -479,28 +629,56 @@ class ClaudeCodeRoute:
             argv += ["--model", self.model]
         with tempfile.TemporaryDirectory(prefix="greg-model-") as empty:   # nothing to read or write
             try:
-                proc = self.runner(argv, input=user, capture_output=True, text=True, timeout=self.timeout, cwd=empty)
+                proc = (self.runner(argv, input=user, capture_output=True, text=True, timeout=self.timeout, cwd=empty,
+                                    env={**os.environ, **CLI_NO_MODEL_FALLBACK})
+                        if self.egress is None else self._behind_door(argv, user, empty))
             except (subprocess.TimeoutExpired, OSError) as exc:
-                raise RouteError(f"{type(exc).__name__}: {exc}"[:300], kind=TRANSIENT) from exc
-        if proc.returncode:
-            detail = (proc.stderr or proc.stdout)[-300:]
-            if is_policy_text(detail):
-                raise Refusal(f"Claude Code: provider policy rejected the request: {detail}"[:300],
-                              kind=PROVIDER_POLICY_REFUSAL)
-            raise RouteError(f"Claude Code exited {proc.returncode}: {detail}", kind=UNKNOWN)
-        try:
-            result = json.loads(proc.stdout)
-        except json.JSONDecodeError as exc:
-            raise RouteError("Claude Code produced unreadable output", kind=BAD_OUTPUT) from exc
-        if result.get("is_error"):
-            detail = str(result.get("result"))[:300]
-            billed = result.get("total_cost_usd")      # the CLI's own report of what the failed run cost
+                # A CLI killed at the timeout may have spent up to its cap: booked, never as zero.
+                raise RouteError(f"{type(exc).__name__}: {exc}"[:300], kind=TRANSIENT,
+                                 cost_usd=cap if isinstance(exc, subprocess.TimeoutExpired) else None) from exc
+        result = cli_report(proc)
+        if result is None:
+            if proc.returncode:
+                detail = (proc.stderr or proc.stdout)[-300:]
+                if is_policy_text(detail):
+                    raise Refusal(f"Claude Code: provider policy rejected the request: {detail}"[:300],
+                                  kind=PROVIDER_POLICY_REFUSAL)
+                raise RouteError(f"Claude Code exited {proc.returncode}: {detail}", kind=UNKNOWN)
+            raise RouteError("Claude Code produced unreadable output", kind=BAD_OUTPUT)
+        billed = cli_cost(result, cap)                 # what the run cost, failed or not; unknown books the cap
+        detail = cli_reason(result)[:300]
+        if result.get("stop_reason") == "refusal":
+            # The model declined, as AnthropicRoute reads the same stop reason: an answer, never shopped elsewhere.
+            raise Refusal(f"Claude Code: the model declined: {detail}"[:300], kind=SAFETY_REFUSAL, cost_usd=billed)
+        if result.get("is_error") or proc.returncode:
             if is_policy_text(detail):
                 raise Refusal(f"Claude Code: provider policy rejected the request: {detail}"[:300],
                               kind=PROVIDER_POLICY_REFUSAL, cost_usd=billed)
-            raise RouteError(f"Claude Code reported an error: {detail}", kind=UNKNOWN, cost_usd=billed)
-        return {"text": str(result.get("result", "")), "cost_usd": result.get("total_cost_usd"),
-                "served_model": self.model or "claude-code default"}
+            exited = f" (exit {proc.returncode})" if proc.returncode else ""
+            raise RouteError(f"Claude Code reported an error{exited}: {detail}", kind=UNKNOWN, cost_usd=billed)
+        authors = cli_authors(result)
+        if self.model and any(self.model not in a for a in authors):
+            # Another model wrote the answer (a CLI swap the variables above did not stop): withheld, billed.
+            raise ModelSubstitution(f"Claude Code: requested {self.model}, the report names {authors}"[:300],
+                                    requested=self.model, served=authors, cost_usd=billed)
+        return {"text": str(result.get("result", "")), "cost_usd": billed,
+                "served_model": self.model or (", ".join(authors) or "claude-code default")}
+
+    def _behind_door(self, argv: list, user: str, scratch: str):
+        """The CLI in a network namespace whose only way out is the relay, allowlisted for the Anthropic API host. Its
+        home is a private one holding a copy of its login; the founder's home and the body's are hidden."""
+        import sys
+        import urllib.parse
+        from pathlib import Path
+        from foundry.systems.relay_door import Door, door_argv
+        from greg import model_child
+        env, runtime = cli_home(scratch)
+        namespace = _namespace(scratch, readonly=(str(Path(self.binary).resolve().parent), *runtime))
+        host = urllib.parse.urlsplit(model_child.BASE_URLS["anthropic"]).hostname
+        with Door(_scoped_relay(self.egress, "model.claude-code", host), "model.claude-code") as door:
+            return self.runner(namespace + door_argv(sys.executable, door.fd, argv), input=user, capture_output=True,
+                               text=True, timeout=self.timeout, cwd=scratch, pass_fds=[door.fd],
+                               env={**env, **CLI_NO_MODEL_FALLBACK})
 
 
 class ModelRouter:
@@ -597,21 +775,23 @@ DEFAULT_ROUTE_ORDER: tuple = ()
 PAID_ROUTE_NAMES = frozenset(("anthropic", "openai", "claude-code"))
 
 
-def available_routes(secrets=None, *, config: dict | None = None, claude_budget_usd: float = 0.50) -> tuple:
+def available_routes(secrets=None, *, config: dict | None = None, claude_budget_usd: float = 0.50,
+                     egress=None) -> tuple:
     """Every model route this body can reach, in the founder's preference order.
 
-    Returns (routes, unavailable) where unavailable names each missing route and why."""
+    ``egress`` is the body's #26 relay when the founder enabled confined egress: every paid route then reaches its
+    provider only through it. Returns (routes, unavailable) where unavailable names each missing route and why."""
     config = config or {}
     builders = {
         "anthropic": lambda: AnthropicRoute(secrets.resolve("anthropic_api_key", declared=("anthropic_api_key",)),
                                             model=config.get("anthropic_model", "claude-opus-5"),
                                             price=config.get("anthropic_price_per_mtok"),
                                             fallback_models=config.get("anthropic_fallback_models", ()),
-                                            fallback_prices=config.get("anthropic_fallback_prices_per_mtok")),
+                                            fallback_prices=config.get("anthropic_fallback_prices_per_mtok"), egress=egress),
         "openai": lambda: OpenAIRoute(secrets.resolve("openai_api_key", declared=("openai_api_key",)),
                                       model=config.get("openai_model", "gpt-5.5"),
-                                      price=config.get("openai_price_per_mtok")),
-        "claude-code": lambda: ClaudeCodeRoute(max_budget_usd=claude_budget_usd),
+                                      price=config.get("openai_price_per_mtok"), egress=egress),
+        "claude-code": lambda: ClaudeCodeRoute(max_budget_usd=claude_budget_usd, egress=egress),
         "ollama": lambda: OllamaRoute(config.get("ollama_model")),
     }
     routes, unavailable = [], {}

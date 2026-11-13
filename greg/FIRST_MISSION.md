@@ -69,7 +69,7 @@ runs, without a builder, and records why.
 ## 3. Ask GREG, sign, close the window
 
 ```bash
-greg console --key ~/.greg-founder.pem --no-model     # http://127.0.0.1:8766
+greg console --key ~/.greg-founder.pem --no-model     # open the private link it prints (127.0.0.1:8766)
 ```
 
 In the browser, type: *"Brief me on the state of my repositories."* Review the proposal:

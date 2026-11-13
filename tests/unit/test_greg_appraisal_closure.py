@@ -549,11 +549,14 @@ def test_a_second_dispatch_claim_for_a_completed_action_is_reported_as_a_duplica
 # greg.body.device_delegations gives a key delegated again after a revocation ``signed_not_before``. The separate
 # appraiser re-derives device delegations itself; before it applied the same rule it accepted an approval that a
 # re-delegated phone signed under its revoked delegation, so a body that wrongly accepted the old token was VERIFIED.
+# The mission fold (goal_gravity.founder_facts) applies the rule too, so the defective body below lacks it in both.
 
 @pytest.mark.parametrize("signed_when", ["before_its_revocation", "while_it_stood_revoked"])
-def test_the_appraiser_refuses_an_approval_a_re_delegated_device_signed_before_its_re_delegation(tmp_path, signed_when):
+def test_the_appraiser_refuses_an_approval_a_re_delegated_device_signed_before_its_re_delegation(tmp_path, monkeypatch,
+                                                                                               signed_when):
     from datetime import timedelta
     import greg.body as body_module
+    from greg import goal_gravity as gg
     from greg.founder import generate_founder_key, instant, key_id, load_founder_key, stamp
     from tests.greg_fixtures import Clock
     home, key, body_id, _ = make_body(tmp_path)
@@ -585,9 +588,14 @@ def test_the_appraiser_refuses_an_approval_a_re_delegated_device_signed_before_i
         body.apply(signed(key, body_id, "DEVICE_ENROLL", grant, now=clock.now), channel="inbox")
         [device] = body.device_keys().values()
         assert instant(device["signed_not_before"]) > instant(old["issued_at"])   # the body's own verifier refuses it
-        # A body with the defect round 1 fixed (no signed_not_before) accepts the old token and acts on it.
-        body.device_keys = lambda: {k: {f: v for f, v in d.items() if f != "signed_not_before"}
-                                    for k, d in body_module.device_delegations(body.journal).items()}
+        # A body with the defect round 1 fixed (no signed_not_before, in its verifier and in its fold) accepts the
+        # old token and acts on it.
+        strip = lambda devices: {k: {f: v for f, v in d.items() if f != "signed_not_before"}  # noqa: E731
+                                 for k, d in devices.items()}
+        body.device_keys = lambda: strip(body_module.device_delegations(body.journal))
+        real = gg._verify_envelope
+        monkeypatch.setattr(gg, "_verify_envelope", lambda payload, founders, devices, body_id_, at=None:
+                            real(payload, founders, strip(devices), body_id_, at))
         body.apply(old, channel="inbox")
         assert _run(body, clock)[-1] == "ACHIEVED"
         verdict = body.journal.replay("mission.appraised")[-1].payload

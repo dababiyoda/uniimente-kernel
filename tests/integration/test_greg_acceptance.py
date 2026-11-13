@@ -26,3 +26,36 @@ def test_report_tracks_founder_acts_and_never_claims_a_device_it_cannot_show(tmp
         assert after[prop] == "PASS", (prop, result)
     assert after["first_body_designated"] == "NOT_YET" and after["interruption_survived"] == "NOT_YET"
     assert result["reality"].startswith("LOCAL") and result["vepmc"] == 0 and result["authority_created"] is False
+
+
+def test_confinement_passes_only_on_a_confined_body_whose_relay_journal_verifies(tmp_path):
+    """#26 on the device report: PASS needs a confined body, an intact relay chain, and decisions actually made."""
+    import json
+    from foundry.systems.segmentation import Journal
+    from tests.integration.test_greg_confined_egress import body_with_confined_egress
+    home, _, _ = body_with_confined_egress(tmp_path)
+    assert {status_of(report(home))[p] for p in ("network_confined", "undeclared_destination_denied")} == {"NOT_YET"}
+    journal = Journal(home / "egress-journal.jsonl")
+    journal.append({"identity": "http.get", "host": "service.test", "port": 443, "verdict": "ALLOWED"})
+    assert status_of(report(home))["network_confined"] == "PASS"
+    assert status_of(report(home))["undeclared_destination_denied"] == "NOT_YET"
+    journal.append({"identity": "browser.render", "host": "beacon.example.com", "port": 443, "verdict": "DENIED",
+                    "why": "host and port are not on this identity's allowlist"})   # as the relay writes it
+    result = report(home)
+    assert status_of(result)["undeclared_destination_denied"] == "PASS"
+    assert result["egress"]["identities"] == ["browser.render", "http.get"]
+    rows = (home / "egress-journal.jsonl").read_text().splitlines()       # an edited record breaks the chain
+    first = json.loads(rows[0])
+    first["port"] = 8443                                                    # same verdicts, edited record
+    (home / "egress-journal.jsonl").write_text("\n".join([json.dumps(first)] + rows[1:]) + "\n")
+    tampered = status_of(report(home))
+    assert tampered["network_confined"] == "NOT_YET" and tampered["undeclared_destination_denied"] == "NOT_YET"
+
+
+def test_an_unconfined_body_never_reports_confinement(tmp_path):
+    from foundry.systems.segmentation import Journal
+    home, *_ = setup(tmp_path)
+    Journal(home / "egress-journal.jsonl").append({"identity": "http.get", "host": "x", "port": 443,
+                                                   "verdict": "ALLOWED"})    # a stray file is not a confined body
+    after = status_of(report(home))
+    assert after["network_confined"] == "NOT_YET" and after["undeclared_destination_denied"] == "NOT_YET"

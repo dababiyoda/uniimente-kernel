@@ -151,23 +151,45 @@ def running(tmp_path):
     server = serve(console, port=0)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
+    _enter(console, server.server_address[1])
     yield home, key, console, server.server_address[1]
+    _OWNER.pop(server.server_address[1], None)
     server.shutdown()
     server.server_close()
 
 
+_OWNER = {}            # port -> (owner path, opener holding the owner's session cookie)
+
+
+def _enter(console, port):
+    """Open the console's single-use private link once, as the founder's browser does."""
+    from http.cookiejar import CookieJar
+    from urllib.request import HTTPCookieProcessor, build_opener
+    opener = build_opener(HTTPCookieProcessor(CookieJar()))
+    with opener.open(Request(console.owner_url(port), headers={"Host": f"127.0.0.1:{port}"}), timeout=10):
+        pass
+    _OWNER[port] = (console.owner_path, opener)
+
+
+def _owned(port, path):
+    owner_path, opener = _OWNER[port]
+    return (owner_path + path.lstrip("/") if path.startswith("/") and not path.startswith(owner_path) else path), opener
+
+
 def _get(port, path, host=None):
+    path, opener = _owned(port, path)
     request = Request(f"http://127.0.0.1:{port}{path}", headers={"Host": host or f"127.0.0.1:{port}"})
-    with urlopen(request, timeout=10) as response:
+    with opener.open(request, timeout=10) as response:
         return response.read().decode()
 
 
-def _post(port, path, fields, *, host=None, origin=None):
+def _post(port, path, fields, *, host=None, origin=None, session=True):
     headers = {"Host": host or f"127.0.0.1:{port}", "Content-Type": "application/x-www-form-urlencoded"}
     if origin:
         headers["Origin"] = origin
+    path, opener = _owned(port, path)
     request = Request(f"http://127.0.0.1:{port}{path}", data=urlencode(fields).encode(), headers=headers)
-    with urlopen(request, timeout=30) as response:
+    with (opener.open if session else urlopen)(request, timeout=30) as response:
         return response.geturl(), response.read().decode()
 
 
@@ -201,7 +223,8 @@ def test_console_refuses_foreign_hosts_origins_and_missing_tokens(running):
     for call in (lambda: _get(port, "/", host="evil.example"),
                  lambda: _post(port, "/stop", {"csrf": console.csrf, "mode": "local"}, host="evil.example"),
                  lambda: _post(port, "/stop", {"csrf": console.csrf, "mode": "local"}, origin="https://evil.example"),
-                 lambda: _post(port, "/stop", {"csrf": "forged", "mode": "local"})):
+                 lambda: _post(port, "/stop", {"csrf": "forged", "mode": "local"}),
+                 lambda: _post(port, "/stop", {"csrf": console.csrf, "mode": "local"}, session=False)):
         with pytest.raises(HTTPError) as err:
             call()
         assert err.value.code == 403
@@ -216,6 +239,7 @@ def test_console_without_a_key_is_read_only(tmp_path):
     server = serve(console, port=0)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     port = server.server_address[1]
+    _enter(console, port)
     try:
         assert "read-only (start with --key to sign)" in _get(port, "/")
         with pytest.raises(HTTPError) as err:

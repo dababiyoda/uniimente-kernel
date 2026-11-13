@@ -402,6 +402,19 @@
         }
       }
     },
+    "standing_reconciliation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "consequence_inert"
+      ],
+      "properties": {
+        "consequence_inert": {
+          "const": true
+        }
+      },
+      "description": "Founder-signed standing mandate: an interrupted dispatch that the retained facts prove consequence-inert (greg.workers.inert_interruption_proof) is settled with its proof and retried once, at most twice per action. Anything else still asks the founder."
+    },
     "value_per_check_usd": {
       "type": "number",
       "minimum": 0,

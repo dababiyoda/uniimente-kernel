@@ -553,3 +553,7 @@ def _genome_solver(family):
 
 from .genomes.library import catalog_families as _genome_families  # noqa: E402
 SOLVERS.update({family: _genome_solver(family) for family in _genome_families()})
+# PR #155 lineage repertoire (robust_pattern, crowd, swarm, blackbox); names are disjoint from the genome
+# library's families (checked in tests/unit/test_greg_mind_convergence.py).
+from .repertoire import REPERTOIRE
+SOLVERS.update(REPERTOIRE)

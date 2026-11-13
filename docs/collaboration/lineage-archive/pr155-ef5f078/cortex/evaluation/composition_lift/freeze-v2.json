@@ -1,0 +1,45 @@
+{
+  "frozen_at": "2026-10-14T11:09:57.583992+00:00",
+  "inputs": {
+    "code": {
+      "cortex/evaluation/composition_lift/run_v2.py": "sha256:d9278939e9097aaf01b9c0b9fa451905472ec82046eb4fb11196b579a5338d4d",
+      "cortex/evaluation/composition_lift/run.py": "sha256:e64f2d1ce25e36d7343a0343dc6cb3d92b227cebf05bbb546f58b8eb09dfa633",
+      "greg/cognition/composition.py": "sha256:380ed3777868f8b899da928cbe4d014472a6521acd5ca0acf4219a25ef5ce62e",
+      "greg/cognition/cortex.py": "sha256:18f3451c146b3a27ceb1f2f24aa2a0676f785be3290a28add4d60792e8558a36",
+      "greg/cognition/bridge.py": "sha256:6307ec2e41193ec7692042df2353c583903d3c308f47f0d61d4fe338772b941c",
+      "cortex/routing.py": "sha256:68538e463bba2c3f34c6d812ebea94e2d5aab65ff3281924ab6e31dfd1c00271",
+      "cortex/genome.py": "sha256:e6aa73cd9e20bb3e8d7d8fef2ce15ba5e26a7ea902d0dc0f8dbda815a4d701c0",
+      "cortex/organs/estimation.py": "sha256:a7eb0c2709c54aedc0f9df23428a12b5274110ee6564ebcd061ced8eba6a9d8e",
+      "cortex/organs/formal.py": "sha256:b0a1f64e6fa9c24c4cef7594d042ae4038e58421b6e078e79bca6fadc0fb92cd",
+      "cortex/organs/cpsat.py": "sha256:192d2508f1e464cbfb4c5192df8207f17c6cb543e7282ef34a1059ab2b735162",
+      "cortex/organs/schedule_extraction.py": "sha256:bb440433915e003344ed2c82f8c0c87d40ee11cdeb8f766f254e74ac6718b047",
+      "cortex/organs/evidence_causal.py": "sha256:7569d74b10ffafed3b51aacbb854ff41d76d398cdd6f0b48e465e9cf9b66456e",
+      "cortex/evaluation/crossgeo_loss.py": "sha256:c36be46479a16d29a9cc929d2d07a687e9d43db93ff8c8625026e1e94c9d0457",
+      "cortex/evaluation/suites/crossgeo-heldout-v0.3.json": "sha256:f4ad12b7dccf02d2494eb233f9611ef0ab61b2e598762f1b8fed85eb176deefd",
+      "cortex/evaluation/freeze-crossgeo-v0.3.json": "sha256:75ca409e9f3aca775e4423d8625c10d0e6bdd24d70d06758711b99fb40ea611d"
+    },
+    "f2b_seeds": [
+      25,
+      72
+    ],
+    "crossgeo_families": [
+      "composition",
+      "schedule_words"
+    ],
+    "verdict_rule": "family lift: routed correct > best constituent correct, routed wrong <= best constituent wrong, one-sided exact sign test p < 0.05, routed median latency <= 60 s; VPL = families with lift",
+    "constituents": {
+      "F2b": [
+        "identify_alone",
+        "optimize_on_association"
+      ],
+      "X1": [
+        "estimate_only",
+        "formal_only"
+      ],
+      "X2": [
+        "extraction_only",
+        "formal_only"
+      ]
+    }
+  }
+}

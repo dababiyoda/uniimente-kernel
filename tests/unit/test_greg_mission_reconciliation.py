@@ -14,9 +14,11 @@ In-process Body with a test clock and a per-test Ed25519 key (not Alfonso's): SA
 """
 from __future__ import annotations
 
+import pytest
+
 from greg.body import Body
 from greg.capabilities import CapabilityManifest
-from tests.greg_fixtures import Clock, drop, make_body, mission, signed, workspace
+from tests.greg_fixtures import Clock, acceptance_confinement, drop, make_body, mission, signed, workspace
 
 
 def _capability(body, effects: list, *, retry_safe: bool):
@@ -157,9 +159,11 @@ class _InterruptedOnceWorker:
     edit and with its spend unreported; a later run finishes the edit. With ``interrupt=False`` every run finishes."""
     name = "interrupted-once-test-double"
 
-    def __init__(self, *, interrupt: bool = True):
+    def __init__(self, *, interrupt: bool = True, interrupt_runs: tuple = (1,), reported_usd: float | None = None):
         self.runs = []
         self.interrupt = interrupt
+        self.interrupt_runs = set(interrupt_runs)      # which runs stop mid-work (the first, by default)
+        self.reported_usd = reported_usd               # what an interrupted run reports it spent (None: unreported)
 
     def available(self):
         return True, ""
@@ -168,8 +172,11 @@ class _InterruptedOnceWorker:
         from greg import workers
         self.runs.append(order.grant_id)
         (cwd / "pkg" / "calc.py").write_text("def add(a, b):\n    return a + b\n\n\ndef sub(a, b):\n    return a - b\n")
-        if self.interrupt and len(self.runs) == 1:
-            raise RuntimeError("worker process lost mid-run")
+        if self.interrupt and len(self.runs) in self.interrupt_runs:
+            # Merged with PR #184 (#157): a provider that raises inside GREG is a receipted FAILED run with its cap
+            # charged, so an interruption is reported as one, as the cancellable runner reports a stopped worker.
+            return workers.WorkerReport(self.name, self.name, -1, 0.1, self.reported_usd,
+                                        error="worker process lost mid-run", interrupted=True)
         return workers.WorkerReport(self.name, self.name, 0, 0.1, None)
 
 
@@ -215,7 +222,7 @@ def test_an_interrupted_paid_worker_reconciled_not_executed_books_its_cap_and_th
     data, repo = _work_repo(tmp_path)
     worker = _InterruptedOnceWorker()
     monkeypatch.setitem(workers.PROVIDERS, "interrupted-once", worker)
-    home, key, body_id, _ = make_body(tmp_path, read_roots=[data])
+    home, key, body_id, _ = make_body(tmp_path, read_roots=[data], worker_confinement=acceptance_confinement())
     drop(home, signed(key, body_id, "MISSION", _paid_mission(repo, "interrupted-once", budget=0.5)))
     clock = Clock()
     body = Body(home, clock=clock).open()
@@ -272,7 +279,7 @@ def _lost_after_evidence(tmp_path, monkeypatch):
             raise RuntimeError("body lost after the work order evidence, before the receipt")
         return collected[-1]
     monkeypatch.setattr(workers, "commission", stops_after_evidence)
-    home, key, body_id, _ = make_body(tmp_path, read_roots=[data])
+    home, key, body_id, _ = make_body(tmp_path, read_roots=[data], worker_confinement=acceptance_confinement())
     drop(home, signed(key, body_id, "MISSION", _paid_mission(repo, "finishing", budget=1.0)))
     evidence_path = workspace(home, "m:paid") / "work-orders" / "add-sub" / "evidence.json"
     clock = Clock()
@@ -340,5 +347,253 @@ def test_unreceipted_work_order_evidence_never_closes_the_mission_even_when_reco
                                                                                          "NO_STRATEGY"]
         m = body.engine.book.missions["m:paid"]
         assert (m.spent_usd, m.reserved_usd) == (0.5, 0.0) and m.blocker["type"] == "decision"
+    finally:
+        body.close()
+
+
+# -- the port branch's review (2026-10-21), carried onto #173's mechanism ------------------------------------------
+
+def _paid_body(tmp_path, monkeypatch, worker, *, budget, function_named=False):
+    from greg import workers
+    data, repo = _work_repo(tmp_path)
+    monkeypatch.setitem(workers.PROVIDERS, "interrupted", worker)
+    home, key, body_id, _ = make_body(tmp_path, read_roots=[data], worker_confinement=acceptance_confinement())
+    spec = _paid_mission(repo, "interrupted", budget=budget)
+    if function_named:                  # validate_mission allows a strategy that names only its function
+        del spec["strategies"][0]["capability"]
+        spec["strategies"][0]["function"] = "work.commission"
+    drop(home, signed(key, body_id, "MISSION", spec))
+    clock = Clock()
+    body = Body(home, clock=clock).open()
+    body.boot()
+    answer = lambda request, value: drop(home, signed(key, body_id, "DECISION", {   # noqa: E731
+        "request_id": request["request_id"], "answer": value, "reason": "test"}))
+    return body, clock, answer
+
+
+def test_a_function_named_paid_strategy_is_disclosed_and_booked_from_the_dispatched_capability(tmp_path, monkeypatch):
+    """The strategy names only ``work.commission``: only the dispatch's recorded capability says the run was metered.
+    The ask and the settlement both read it (a rule read from the strategy would book $0 and disclose nothing), and
+    each attempt's ask names its own attempt."""
+    worker = _InterruptedOnceWorker(interrupt_runs=(1, 2))
+    body, clock, answer = _paid_body(tmp_path, monkeypatch, worker, budget=1.0, function_named=True)
+    try:
+        _ticks(body, clock, 3)
+        [first] = _requests(body)
+        assert first["evidence"]["dispatch"]["attempt"] == 0 and first["authority_requested"]["attempt"] == 0
+        assert first["evidence"]["booked_usd_by_answer"] == {"reconcile_executed": 0.5, "reconcile_not_executed": 0.5}
+        assert "worker.commission is metered" in first["recommendation"]
+        answer(first, "reconcile_not_executed")
+        _ticks(body, clock, 3)
+        settled = [e.payload for e in body.journal.replay("mission.action")][1]
+        assert (settled["status"], settled["capability"], settled["cost_usd"]) == \
+            ("RECONCILED_NOT_EXECUTED", "worker.commission", 0.5)
+        # The rerun (room for it in the $1.00 budget) is interrupted too: its own question names attempt 1.
+        assert len(worker.runs) == 2 and _actions(body)[-1] == ("UNCERTAIN", 1)
+        second = _requests(body)[-1]
+        assert second["request_id"] != first["request_id"]
+        assert second["evidence"]["dispatch"]["attempt"] == 1 and second["authority_requested"]["attempt"] == 1
+        assert second["evidence"]["booked_usd_by_answer"]["reconcile_not_executed"] == 0.5
+    finally:
+        body.close()
+
+
+def _legacy_asks(monkeypatch):
+    """RECONCILIATION asks recorded by code from before the disclosure (#173 H.G4): the old recommendation, and no
+    statement of what each answer books."""
+    from greg.missions import MissionEngine
+    real = MissionEngine._request
+
+    def legacy(self, m, **kw):
+        if kw.get("kind") == "RECONCILIATION":
+            kw["recommendation"] = "inspect the retained evidence, then state whether it executed"
+            kw["evidence"] = {k: v for k, v in (kw.get("evidence") or {}).items() if k != "booked_usd_by_answer"}
+        return real(self, m, **kw)
+    monkeypatch.setattr(MissionEngine, "_request", legacy)
+
+
+def test_a_legacy_ask_answered_not_executed_is_asked_again_with_the_booking_before_anything_is_booked(
+        tmp_path, monkeypatch):
+    """An open RECONCILIATION asked before the disclosure never said that "not executed" keeps a metered cap booked.
+    Its "not executed" answer books nothing on its own: the founder is asked once more, with the terms, and the
+    booking follows only the disclosed answer. The cap stays reserved as unknown spend meanwhile (fail closed)."""
+    worker = _InterruptedOnceWorker()
+    with monkeypatch.context() as before_upgrade:
+        _legacy_asks(before_upgrade)
+        body, clock, answer = _paid_body(tmp_path, monkeypatch, worker, budget=0.5)
+        _ticks(body, clock, 3)
+    try:
+        [legacy] = _requests(body)
+        assert "booked_usd_by_answer" not in legacy["evidence"]
+        answer(legacy, "reconcile_not_executed")                                    # answered after the upgrade
+        _ticks(body, clock, 3)
+        assert _actions(body) == [("UNCERTAIN", 0)] and len(worker.runs) == 1     # nothing booked, nothing re-run
+        m = body.engine.book.missions["m:paid"]
+        assert (m.spent_usd, m.reserved) == (0.0, {("commission", 0): 0.5})       # still held as unknown spend
+        [_, disclosed] = _requests(body)
+        assert disclosed["request_id"] != legacy["request_id"] and m.blocker["request_id"] == disclosed["request_id"]
+        assert disclosed["authority_requested"]["attempt"] == 0
+        assert disclosed["evidence"]["booked_usd_by_answer"]["reconcile_not_executed"] == 0.5
+        assert "either answer books $0.50" in disclosed["recommendation"]
+        answer(disclosed, "reconcile_not_executed")
+        _ticks(body, clock, 3)
+        settled = [e.payload for e in body.journal.replay("mission.action")][1]
+        assert settled["status"] == "RECONCILED_NOT_EXECUTED" and settled["cost_usd"] == 0.5
+        assert settled["reconciles"]["request_id"] == disclosed["request_id"]
+        m = body.engine.book.missions["m:paid"]
+        assert (m.spent_usd, m.reserved, len(worker.runs)) == (0.5, {}, 1)
+    finally:
+        body.close()
+
+
+def test_a_legacy_ask_answered_executed_is_recorded_without_a_second_ask(tmp_path, monkeypatch):
+    """The legacy rule already booked the signed cap for "executed": that answer was given on the terms it
+    settles at, so it is recorded as before, with no second question."""
+    worker = _InterruptedOnceWorker()
+    with monkeypatch.context() as before_upgrade:
+        _legacy_asks(before_upgrade)
+        body, clock, answer = _paid_body(tmp_path, monkeypatch, worker, budget=0.5)
+        _ticks(body, clock, 3)
+    try:
+        [legacy] = _requests(body)
+        answer(legacy, "reconcile_executed")
+        _ticks(body, clock, 2)
+        assert _actions(body)[:2] == [("UNCERTAIN", 0), ("DONE", 0)] and len(_requests(body)) == 1
+        assert body.engine.book.missions["m:paid"].spent_usd == 0.5
+    finally:
+        body.close()
+
+
+@pytest.mark.parametrize("answer_value", ["reconcile_not_executed", "reconcile_executed"])
+def test_a_receipted_interrupt_carries_its_provider_report_into_the_settlement(tmp_path, monkeypatch, answer_value):
+    """A cancellable worker stopped itself and reported a measured $0.12: the Gate receipted it, and the mission
+    recorded it UNCERTAIN with that receipt. The settlement keeps the disclosed booking (the signed cap: an
+    interrupted run's report does not bound what it spent) and states the report it was given, never that the
+    dispatch went unreceipted or its spend unmeasured."""
+    worker = _InterruptedOnceWorker(reported_usd=0.12)
+    body, clock, answer = _paid_body(tmp_path, monkeypatch, worker, budget=1.0)
+    try:
+        _ticks(body, clock, 3)
+        uncertain = [e.payload for e in body.journal.replay("mission.action")][0]
+        assert uncertain["status"] == "UNCERTAIN" and uncertain["receipt"]
+        [request] = _requests(body)
+        answer(request, answer_value)
+        _ticks(body, clock, 2)
+        settled = [e.payload for e in body.journal.replay("mission.action")][1]
+        assert settled["cost_usd"] == settled["cost_cap_usd"] == 0.5
+        assert settled["provider_reported_usd"] == 0.12
+        assert "never" not in settled["spend_basis"] and "unknown" not in settled["spend_basis"]
+        assert "reported $0.12" in settled["spend_basis"] and settled["spend_basis"].startswith("signed_cap")
+        # Mission Control still books it at the cap, in the unknown-at-cap column, not as measured spend.
+        from greg.mission_control import cost_rows
+        [row] = cost_rows([settled], [{"mission_id": "m:paid", "cone": {"budget_usd": 1.0}}], [])
+        assert (row["booked_usd"], row["unknown_at_cap_usd"], row["measured_usd"]) == (0.5, 0.5, 0.0)
+    finally:
+        body.close()
+
+
+def test_the_engine_sensor_reads_receipts_through_a_reader_that_cannot_write(tmp_path, monkeypatch):
+    """worker.appraise is read_only: the engine hands it the ledger reader venture.assess gets (no record, no
+    ledger object to append through), which is all its receipt binding reads."""
+    from greg import workers
+    data, repo = _work_repo(tmp_path)
+    monkeypatch.setitem(workers.PROVIDERS, "ok", _InterruptedOnceWorker(interrupt=False))
+    seen, real = [], workers.appraise
+
+    def spy(params, ctx):
+        seen.append((hasattr(ctx.journal, "record"), hasattr(ctx.journal.ledger, "append"),
+                     hasattr(ctx.journal.ledger, "by_type")))
+        return real(params, ctx)
+    monkeypatch.setattr(workers, "appraise", spy)
+    home, key, body_id, _ = make_body(tmp_path, read_roots=[data], worker_confinement=acceptance_confinement())
+    drop(home, signed(key, body_id, "MISSION", _paid_mission(repo, "ok", budget=1.0)))
+    clock = Clock()
+    body = Body(home, clock=clock).open()
+    body.boot()
+    try:
+        _ticks(body, clock, 4)
+        assert seen and set(seen) == {(False, False, True)}
+        assert body.engine.book.missions["m:paid"].status == "ACHIEVED"
+    finally:
+        body.close()
+
+
+# -- merge review of e410977 into PR #184: money across a receipted interrupt -------------------------------------
+
+@pytest.mark.parametrize("answer_value", ["reconcile_not_executed", "reconcile_executed"])
+def test_a_receipted_interrupt_that_reported_spending_over_its_cap_books_what_it_reported(tmp_path, monkeypatch,
+                                                                                           answer_value):
+    """Cap $0.50, budget $1.00, the interrupted run reported $0.80. Either answer books at least the $0.80 it reported
+    (with the $0.30 overspend), never the cap in its place; and the budget bounds the retry: $0.80 booked leaves no
+    room for another $0.50 run without the founder's approval (before the fix it booked $0.50, reran, and real spend
+    reached $1.30)."""
+    worker = _InterruptedOnceWorker(reported_usd=0.80)
+    body, clock, answer = _paid_body(tmp_path, monkeypatch, worker, budget=1.0)
+    try:
+        _ticks(body, clock, 3)
+        [request] = _requests(body)
+        answer(request, answer_value)
+        _ticks(body, clock, 4)
+        settled = [e.payload for e in body.journal.replay("mission.action")][1]
+        assert settled["route"] == "founder_reconciliation"
+        assert settled["cost_usd"] == 0.8 and settled["overspend_usd"] == 0.3, settled
+        assert settled["provider_reported_usd"] == 0.8 and settled["cost_cap_usd"] == 0.5
+        assert settled["spend_basis"].startswith("provider_reported: over the signed cap"), settled["spend_basis"]
+        m = body.engine.book.missions["m:paid"]
+        assert m.spent_usd >= 0.8 - 1e-9
+        if answer_value == "reconcile_not_executed":
+            assert len(worker.runs) == 1, "a retry ran past the signed budget"
+            assert len(_requests(body, "APPROVAL")) == 1
+    finally:
+        body.close()
+
+
+def test_the_appraiser_refutes_a_closure_that_released_a_metered_not_executed_cap_and_retried(tmp_path, monkeypatch):
+    """Budget $0.50, the first $0.50 run interrupted, the ask disclosed that "not executed" books $0.50. An engine
+    that settles it at $0.00 (the pre-H.G4 rule) retries inside the cone with no approval and claims ACHIEVED; the
+    separate appraiser re-derives the booking and refutes that closure (before the fix it recorded VERIFIED)."""
+    import greg.missions as gm
+    real = gm.MissionEngine._record_reconciliation
+
+    def defective(self, m, now):          # forgets H.G4 for the settlement only (the ask still disclosed it)
+        saved = gm.METERED_SPEND
+        gm.METERED_SPEND = {}
+        try:
+            return real(self, m, now)
+        finally:
+            gm.METERED_SPEND = saved
+    monkeypatch.setattr(gm.MissionEngine, "_record_reconciliation", defective)
+    worker = _InterruptedOnceWorker()
+    body, clock, answer = _paid_body(tmp_path, monkeypatch, worker, budget=0.5)
+    try:
+        _ticks(body, clock, 3)
+        [request] = _requests(body)
+        assert request["evidence"]["booked_usd_by_answer"]["reconcile_not_executed"] == 0.5
+        answer(request, "reconcile_not_executed")
+        _ticks(body, clock, 8)
+        assert [s for s, _ in _actions(body)] == ["UNCERTAIN", "RECONCILED_NOT_EXECUTED", "DONE"]
+        assert _requests(body, "APPROVAL") == []
+        [appraised] = [e.payload for e in body.journal.replay("mission.appraised")]
+        assert appraised["verdict"] == "REFUTED", appraised
+        assert any("H.G4" in f for f in appraised.get("findings") or []), appraised
+    finally:
+        body.close()
+
+
+def test_the_appraiser_verifies_a_closure_that_kept_the_metered_cap_booked(tmp_path, monkeypatch):
+    """The control: the correct engine books the cap, so the $0.50 retry in a $0.50 budget waits for an approval;
+    approved, the closure re-derives cleanly."""
+    worker = _InterruptedOnceWorker()
+    body, clock, answer = _paid_body(tmp_path, monkeypatch, worker, budget=0.5)
+    try:
+        _ticks(body, clock, 3)
+        [request] = _requests(body)
+        answer(request, "reconcile_not_executed")
+        _ticks(body, clock, 3)
+        [approval] = _requests(body, "APPROVAL")
+        answer(approval, "approve")
+        _ticks(body, clock, 8)
+        [appraised] = [e.payload for e in body.journal.replay("mission.appraised")]
+        assert appraised["verdict"] == "VERIFIED", appraised
     finally:
         body.close()

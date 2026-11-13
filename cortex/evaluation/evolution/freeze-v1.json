@@ -1,0 +1,19 @@
+{
+  "frozen_at": "2026-10-14T12:13:24.162040+00:00",
+  "inputs": {
+    "evaluator": "sha256:c59c32e7b0d0ed8162fbf07e896dbd55346626d47d25ac40d809fa75458768f0",
+    "data": {
+      "docs/evidence/greg-learned-routing/2026-10-07/results-v2.json": "sha256:e8cced6452c1418a6e4051a40c068e7d24ee517a5b812a304086fd043f5f4608",
+      "docs/evidence/greg-learned-routing/2026-10-07/results-v3.json": "sha256:8ac5589f9ba80bdb36092495fb0f45694e442b970ddae49d71ee41156725516a",
+      "cortex/evaluation/learned_routing/suite-v3.json": "sha256:9dd97ac31dd3eab7a05d343a7cf5115c7301f1494af8b56b50e50c72f60a49ff",
+      "greg/cognition/conditional_competence.py": "sha256:08489a996b6f39ca8ca1ae8939a57117c2abb622d321a1209fe0ce62ff0f55ba",
+      "greg/cognition/evolution.py": "sha256:54096c1a518e12563e8ea583eae2c011b6c30242a5e14c00770c8e7520d6e509"
+    },
+    "settings": {
+      "generations": 12,
+      "population": 8,
+      "seed": 20261007
+    },
+    "rule": "RETAIN if held-out correct > baseline, no added wrong, one-sided sign test p < 0.05; else REJECT"
+  }
+}

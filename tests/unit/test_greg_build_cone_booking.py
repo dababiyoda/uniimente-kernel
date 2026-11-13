@@ -92,10 +92,11 @@ def test_a_build_is_carved_only_from_what_the_open_reservations_leave(tmp_path):
     try:
         body.boot()
         body.ingest_inbox()
-        # A paid dispatch of unknown outcome (e.g. a retry-safe one the body stopped inside): its cap stays reserved.
+        # A paid dispatch of unknown outcome, a retry-safe one the body stopped inside: its cap stays reserved.
+        # (Merged with PR #184: a non-retry-safe one is reconciled before anything else runs, builds included.)
         body.journal.record("mission.action", {"mission_id": "m:held", "action_id": "w", "attempt": 0,
                                                "status": "UNCERTAIN", "reasons": ["stopped inside"], "receipt": None,
-                                               "capability": "fs.write", "route": "internal", "cost_usd": 0.0,
+                                               "capability": "http.get", "route": "internal", "cost_usd": 0.0,
                                                "reserved_usd": 0.6, "at": "2026-10-21T00:00:00Z",
                                                "input_bindings": []}, key=["m:held", "w", 0])
         body.engine.book.rebuild()
@@ -106,5 +107,30 @@ def test_a_build_is_carved_only_from_what_the_open_reservations_leave(tmp_path):
         started = [e.payload["reserved_usd"] for e in body.journal.replay("genesis.build_started")]
         assert started and max(started) <= 0.4 + 1e-9, "a build never takes the money held for the open dispatch"
         assert m.committed_usd <= m.cone.budget_usd + 1e-9
+    finally:
+        body.close()
+
+
+def test_a_non_retry_safe_interruption_is_reconciled_before_any_build_runs(tmp_path):
+    """PR #184's rule, kept through the merge with #178 e410977: nothing is dispatched or built past an UNCERTAIN
+    dispatch that is not retry-safe; the founder is asked about exactly that dispatch first."""
+    home, clock = setup(tmp_path, "m:held"), Clock()
+    body = Body(home, clock=clock, builder=Bills(GOOD, identity="paid")).open()
+    try:
+        body.boot()
+        body.ingest_inbox()
+        body.journal.record("mission.action", {"mission_id": "m:held", "action_id": "w", "attempt": 0,
+                                               "status": "UNCERTAIN", "reasons": ["stopped inside"], "receipt": None,
+                                               "capability": "fs.write", "route": "internal", "cost_usd": 0.0,
+                                               "reserved_usd": 0.6, "at": "2026-10-21T00:00:00Z",
+                                               "input_bindings": []}, key=["m:held", "w", 0])
+        body.engine.book.rebuild()
+        for _ in range(3):
+            clock.advance(30)
+            body.tick()
+        m = body.engine.book.missions["m:held"]
+        assert m.blocker["type"] == "reconciliation" and m.blocker["action_id"] == "w"
+        assert not body.journal.replay("genesis.build_started")
+        assert m.committed_usd == pytest.approx(0.6)
     finally:
         body.close()

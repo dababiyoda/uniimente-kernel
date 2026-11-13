@@ -38,7 +38,7 @@ def ticks(body, clock, n):
 def compile_receipts(body):
     return [r.payload["result"]["output"] for r in body.ledger.by_type("receipt")
             if isinstance(r.payload["result"].get("output"), dict)
-            and r.payload["result"]["output"].get("schema") == "greg-competency-compilation/0.1"]
+            and str(r.payload["result"]["output"].get("schema", "")).startswith("greg-competency-compilation/")]
 
 
 def test_the_mind_names_a_constructible_deficit_and_answers_with_what_genesis_built(tmp_path):
@@ -102,6 +102,8 @@ def test_without_a_signed_construction_scope_the_founder_attaches_engine_then_co
                   if e.payload["mission_id"] == m.mission_id][-1]
         waiting = {c["capability_id"]: c["state"] for c in latest["evidence"]["registered"]}
         assert waiting[cid] == "VERIFIED"                                 # a new ask names what to attach next
+        from provenance.ledger import sha256_json
+        assert latest["scope_digest"] == sha256_json({"function": "assignment.staffing", "awaiting": cid})
     drop(home, signed(key, body_id, "CAPABILITY_ATTACH", {"capability_id": cid}))
     with Body(home, clock=clock) as body:
         body.boot()

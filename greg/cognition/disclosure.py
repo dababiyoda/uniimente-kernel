@@ -2,8 +2,9 @@
 
 A package lets GREG show an outside actor (a regulator, a counterparty, a court clerk, a customer) what
 its receipts say, revealing only the fields the founder chooses, while the recipient can still check that
-every revealed value is the one GREG committed to. It answers "is this what your record says?". It does
-not answer "is this true?", "was this lawful?" or "must we accept it?".
+every revealed value matches a commitment in the package. It answers "is this what the package committed
+to?". It does not answer "did GREG issue this?" (it is unsigned), "is this in GREG's ledger?", "is this
+true?", "was this lawful?" or "must we accept it?".
 
 Mechanism: the salted-hash disclosures of RFC 9901 (Selective Disclosure for JSON Web Tokens, IETF
 Proposed Standard, November 2025), used without the JWT envelope because GREG holds no issuer signing key
@@ -18,15 +19,19 @@ What a package commits to, and how it can be checked:
   answer cannot be presented while a disagreeing one is hidden. Disagreements are flagged without
   revealing their values.
 * Custody: each item's ledger record hash and sequence number, the ledger head, the chain verification
-  result at packaging time, and the RFC 3161 anchoring state. A recipient can verify inclusion only
-  with the ledger or a witness bundle (``greg anchor export``); the package says so.
+  result at packaging time, and the RFC 3161 anchoring state. Inclusion is not checkable from the package:
+  GREG's ledger is a linear hash chain whose record hashes cover whole payloads, so showing that a record
+  is in it takes the ledger records themselves, which is full disclosure. A witness bundle
+  (``greg anchor export``) adds only that a presented ledger was not rewritten after anchoring.
 * A requested remedy, labelled as a request. An authorized-action reference must resolve to a retained
   ledger record; nothing else is accepted.
 * An institution's response (accepted, disputed, declined) is appended to the journal as its own record.
   The package is never edited, and the response creates no authority.
 
-The holder file keeps every disclosure, salts included, and stays with the body like a witness bundle.
-Only a presentation built from it is shared.
+The package is unsigned: GREG holds no issuer key of its own. A recipient can therefore check that the
+revealed values match the package's commitments, but not, cryptographically, that GREG issued it; that rests
+on the channel the presentation arrived through. The holder file keeps every disclosure, salts included, and
+stays with the body. Only a presentation built from it is shared.
 """
 from __future__ import annotations
 
@@ -53,10 +58,12 @@ RESPONSES = ("accepted", "partially_accepted", "disputed", "declined", "no_respo
 GROUNDS = ("data", "model", "jurisdiction", "completeness", "relevance", "other")
 ACTION_RECORD_TYPES = ("decision", "witness", "event")
 LIMITATIONS = (
-    "Integrity and attribution of GREG's own records only: a revealed value matches what GREG committed to.",
+    "Integrity only: each revealed value matches a commitment in this package. The package is unsigned (GREG "
+    "holds no issuer key), so that GREG issued it rests on the channel it arrived through.",
     "Not factual truth: computation and formal validity hold within the encoded model and stated assumptions.",
     "Not legitimacy: no law, consent, rights or authority question is settled by this package.",
-    "Not inclusion proof by itself: ledger membership needs the ledger or an exported witness bundle.",
+    "Not inclusion proof: showing a record is in GREG's ledger takes the ledger records themselves; a witness "
+    "bundle only shows that a presented ledger was not rewritten after anchoring.",
     "Not acceptance: the recipient may dispute the data, model, jurisdiction, completeness or relevance, "
     "or decline; its response is recorded, never presumed.")
 
@@ -157,7 +164,10 @@ def build_package(journal, receipt_refs, *, recipient: str, purpose: str, reques
         "custody": {"ledger_head": journal.ledger.head, "records": len(journal.ledger.records),
                     "chain_verified_at_packaging": chain_message,
                     "anchoring": {k: anchoring[k] for k in ("configured", "anchors", "verified", "latest_gen_time")},
-                    "inclusion": "checkable with GREG's ledger or a witness bundle from `greg anchor export`"},
+                    "inclusion": "not checkable from this package: the ledger is a linear hash chain whose record "
+                                 "hashes cover whole payloads, so membership is shown only with the ledger records "
+                                 "themselves; a witness bundle from `greg anchor export` then shows that ledger was "
+                                 "not rewritten after anchoring"},
         "requested_remedy": None if requested_remedy is None else
             {"text": str(requested_remedy), "status": "requested by the issuer; not a finding"},
         "authorized_action_record": action or
@@ -182,7 +192,7 @@ def verify_presentation(presentation: dict) -> dict:
     problems, revealed = [], []
     if not isinstance(presentation, dict):
         return {"valid": False, "problems": ["a presentation is a JSON object"], "items": [], "contradictions": [],
-                "proves": "nothing", "does_not_prove": list(LIMITATIONS[1:])}
+                "proves": "nothing", "does_not_prove": list(LIMITATIONS)}
     package = presentation.get("package")
     if not isinstance(package, dict) or sha256_json(package) != presentation.get("package_digest"):
         problems.append("package digest does not match the package")
@@ -215,8 +225,8 @@ def verify_presentation(presentation: dict) -> dict:
         revealed.append({"revealed": values, "withheld_or_decoy": len(item.get("digests", [])) - len(values)})
     return {"valid": not problems, "problems": problems, "items": revealed,
             "contradictions": package.get("contradictions", []),
-            "proves": "the revealed values are the ones GREG committed to in this package",
-            "does_not_prove": list(package.get("limitations", LIMITATIONS)[1:])}
+            "proves": "the revealed values match the commitments in this package",
+            "does_not_prove": list(LIMITATIONS)}
 
 
 def record_response(journal, package_digest: str, *, actor: str, response: str, scope: str, reported_by: str,

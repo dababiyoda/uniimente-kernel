@@ -174,3 +174,17 @@ def test_records_are_typed_and_context_never_settles_a_gate():
     for bad in ({**LAW, "state": "unresolved"}, {**LAW, "origin": "rumour"}, {**LAW, "gate": "vibes"}):
         with pytest.raises(CognitionError):
             LegitimacyRecord.from_dict(bad)
+
+
+def test_strict_inequalities_are_rechecked_not_crashed(registry):
+    # The frontier's formal models accept strict < and > (real-valued). The core re-check must pose them too;
+    # before this, an honest UNSAT over strict constraints crashed the verifier worker and abstained.
+    model = {"variables": {"x": [0, 10]},
+             "constraints": [{"coefficients": {"x": 1}, "op": ">", "rhs": 5},
+                             {"coefficients": {"x": 1}, "op": "<", "rhs": 3}]}
+    r = reason(req("constraints", model), registry=registry)
+    assert r["output"]["solver_status"] == "UNSAT" and r["evaluator_result"]["verdict"] == "STRUCTURALLY_VERIFIED"
+    assert r["evaluator_result"]["cross_checks"]["unsat_core"]["core_unsat"] is True
+    from greg.cognition.verification import _z3_core_check
+    assert _z3_core_check({"variables": {"x": [0, 1]}, "constraints": [{"coefficients": {"x": 1}, "op": "~", "rhs": 0}]},
+                          ["constraint_0"])["core_unsat"] is None   # an unknown operator is undecided, not a crash

@@ -106,6 +106,24 @@ def run(cmd, **kw):
     return subprocess.run(cmd, capture_output=True, text=True, timeout=300, **kw)
 
 
+def appraisal_request(config: dict, layout: Layout, home: Path, mission: str, head: str) -> dict:
+    """GREG's own appraiser request, built from the body's recorded configuration as ``Body.appraisal_request``
+    builds it (tests/unit/test_verify_one_machine_request.py holds the two equal).
+
+    The re-observation of a worker's acceptance runs in the posture the founder set for this body
+    (``worker_confinement``); left out, the appraiser assumes the fail-closed default, and on a host without
+    the OS envelope it refuses to re-run a supervised body's acceptance, so a VERIFIED mission would read as
+    NOT_REDERIVED (found by CI on the stacked branch, which has no bubblewrap)."""
+    from greg.workers import confinement_mode
+    return {"ledger": str(layout.ledger), "constitution": config["constitution_hash"], "head": head,
+            "mission_id": mission, "read_roots": config.get("read_roots", []),
+            "deliver_root": str(config.get("deliver_root") or home / "deliveries"),
+            "artifact_root": str(layout.artifacts),
+            "workspace": str(layout.workspace / mission.replace(":", "_")),
+            "worker_confinement": confinement_mode(config.get("worker_confinement")),
+            "confined_egress": bool(config.get("confined_egress"))}
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--home", required=True)
@@ -201,11 +219,7 @@ def main(argv=None) -> int:
             findings.append("organ re-derivation not run (no WealthMachine checkout given or bodies not retained)")
 
         # 1. GREG's own appraiser, as a separate process over the same head
-        request = {"ledger": str(layout.ledger), "constitution": config["constitution_hash"], "head": head,
-                   "mission_id": a.mission, "read_roots": config.get("read_roots", []),
-                   "deliver_root": str(config.get("deliver_root") or home / "deliveries"),
-                   "artifact_root": str(layout.artifacts),
-                   "workspace": str(layout.workspace / a.mission.replace(":", "_"))}
+        request = appraisal_request(config, layout, home, a.mission, head)
         sandbox = metrics.sandbox_whole_machine(journal)
         report["vepmc"] = metrics.vepmc(journal)["VEPMC"]
         report["sandbox_whole_machine"] = [r for r in sandbox["missions"] if r["mission_id"] == a.mission]

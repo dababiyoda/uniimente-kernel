@@ -137,6 +137,9 @@ class Mechanism:
     trigger_probability: float = 1.0
     consented: bool = False
     effect_multiplier: float = 1.0   # reduced scope (staged pilot, consenting parties only) scales the sampled effect
+    consent_gate: bool = True        # False: the parties' consent is not this mechanism's basis (a lawful report)
+    legal_channel: str | None = None  # an accountability channel: needs a human-established lawful basis
+    recombinable: bool = True        # False: never combined with another lever
 
     def harm_vector(self) -> dict:
         base = dict.fromkeys(HARM, 0.0)
@@ -152,8 +155,8 @@ def _m(mid, surface, mech, title, action, consequence, effect, persistence, cost
                      reuse, option, protective, benefit, falsifier, rollback, counter)
 
 
-# The reviewed library: one lawful mechanism per control surface. Every number is a weak prior for a
-# template, not market data; problem evidence and mechanism_overrides replace them where known.
+# The reviewed library: one primary lawful mechanism per control surface, then the ported templates below. Every
+# number is a weak prior for a template, not market data; problem evidence and mechanism_overrides replace them.
 LIBRARY = (
     _m("proof.verifiable_receipts", "proof", "rule", "issue verifiable outcome receipts counterparties can check",
        "artifact.prepare", "external_contact", 0.35, 0.95, 400, 24, 1, 7, 2, "reversible",
@@ -250,9 +253,133 @@ LIBRARY = (
        ("sop", "workflow", "recovery_procedure", "knowledge"), 0.7, 0.9, 0.2, 0.4, 0.3,
        "error and rework rates at the bottleneck fall", "retire the SOP",
        "an SOP no one follows changes nothing"),
+    # Ported from PR #155's typed operator library (greg/cognition/advantage.py OPERATORS; Track B convergence,
+    # 2026-10-15): the seven operator classes no mechanism above covered. Their numbers are weak template priors
+    # like every number here, held to the same evidentiary standard: selection prefers observed evidence over
+    # priors for every template alike, and a prior-only selection is labelled as such.
+    _m("defaults.incumbent_integration", "defaults", "coordination",
+       "integrate with a tool the workflow already uses, with export always available", "build.prepare",
+       "external_contact", 0.25, 0.9, 200, 30, 2, 21, 2, "reversible", {"dependency_capture": 0.15}, False,
+       ("software", "distribution", "workflow"), 0.7, 0.7, 0.3, 0.2, 0.4,
+       "share of the bottleneck's flow passing through the integration rises without a sales call",
+       "remove the integration; the incumbent flow is unchanged",
+       "platform terms may forbid the integration or change under it"),
+    _m("incentives.counter_position", "incentives", "incentive",
+       "offer a model the incumbent cannot copy without cannibalising its own revenue", "offer.prepare",
+       "financial", 0.2, 0.85, 150, 16, 1, 30, 4, "partially_reversible", {"tail": 0.1, "third_party": 0.05},
+       False, ("customer_trust", "knowledge", "optionality"), 0.6, 0.5, 0.5, 0.1, 0.5,
+       "customers at the bottleneck switch while the incumbent does not match within the horizon",
+       "withdraw the offer for new customers; honour signed ones",
+       "the incumbent may cross-subsidise to match; compete on value, never on disparagement"),
+    _m("standards.verified_compliance", "standards", "rule",
+       "verify compliance with the binding rule and publish the record as a qualification", "artifact.prepare",
+       "external_contact", 0.25, 0.9, 300, 24, 1, 21, 3, "reversible", {"participant_burden": 0.05}, False,
+       ("evidence", "permission", "reputation", "verified_precedent"), 0.7, 0.7, 0.3, 0.4, 0.4,
+       "buyers or gatekeepers at the bottleneck select on the published compliance record",
+       "stop publishing the compliance record",
+       "the rule may change or be weakly enforced; compliance help is offered, never weaponised as complaints"),
+    _m("coordination.consented_pool", "coordination", "coordination",
+       "pool consenting fragmented participants into one coordinated transaction rail (supply, never prices)",
+       "contract.prepare", "financial", 0.3, 0.85, 300, 24, 2, 30, 4, "partially_reversible",
+       {"dependency_capture": 0.1, "participant_burden": 0.1, "tail": 0.1}, True,
+       ("relationship", "contract", "workflow", "customer_trust"), 0.8, 0.7, 0.4, 0.3, 0.7,
+       "matched volume rises and unit cost falls for the pooled participants at the bottleneck",
+       "dissolve the pool; participants keep their own relationships and records",
+       "antitrust: coordinate supply and logistics, never prices or output among competitors"),
+    # accountable_transparency, split by channel (founder review 2026-10-15): preservation, confidential review,
+    # submission to an appropriate authority, and publication differ in lawful basis, access, evidence quality
+    # and authorization. Only publication is gated on the affected parties' consent; none is ever recombined with
+    # a commercial lever, and every channel needs a lawful basis established by people (LEGAL_CHANNELS).
+    replace(_m("proof.evidence_preservation", "proof", "rule",
+               "preserve evidence of suspected misconduct the institution lawfully holds, access restricted to the "
+               "institution and its counsel", "artifact.prepare", "internal_write", 0.05, 0.95, 0, 6, 0.5, 1, 1,
+               "reversible", {"privacy": 0.02}, False, ("evidence", "recovery_procedure"), 0.3, 0.3, 0.6, 0.6,
+               0.2, "the preserved record still verifies (hashes, chain of custody) when it is needed",
+               "release the hold under the retention policy; nothing was disclosed",
+               "preservation alone changes nothing at the bottleneck"),
+            consent_gate=False, legal_channel="preservation", recombinable=False),
+    replace(_m("proof.confidential_review", "proof", "rule",
+               "put the preserved evidence before qualified counsel for confidential review", "request.prepare",
+               "external_contact", 0.1, 0.9, 500, 4, 0, 14, 2, "reversible", {"privacy": 0.03}, False,
+               ("evidence", "knowledge"), 0.3, 0.3, 0.7, 0.5, 0.2,
+               "counsel states in writing which channels have a lawful basis and what evidence each needs",
+               "end the engagement; the review stays confidential", "review costs money and may find no basis"),
+            consent_gate=False, legal_channel="confidential_review", recombinable=False),
+    replace(_m("proof.authority_submission", "proof", "rule",
+               "submit the evidence to the appropriate authority through that authority's own channel",
+               "artifact.prepare", "external_contact", 0.2, 0.8, 100, 20, 1, 30, 4, "partially_reversible",
+               {"third_party": 0.1, "privacy": 0.05, "tail": 0.05}, True,
+               ("evidence", "verified_precedent", "recovery_procedure"), 0.5, 0.5, 0.3, 0.8, 0.6,
+               "the authority acknowledges the submission and the documented conduct at the bottleneck falls",
+               "a filed submission follows the authority's own process; withdraw only through that process",
+               "the authority may not act; the subject keeps the authority's own process and any right of reply"),
+            consent_gate=False, legal_channel="authority_submission", recombinable=False),
+    replace(_m("proof.public_publication", "proof", "rule",
+               "publish a verified account of the misconduct with the consenting affected parties and a right of "
+               "reply", "artifact.prepare", "external_contact", 0.2, 0.8, 200, 30, 1, 30, 5, "partially_reversible",
+               {"third_party": 0.18, "privacy": 0.08, "tail": 0.15}, True,
+               ("evidence", "verified_precedent", "reputation"), 0.5, 0.5, 0.2, 0.7, 0.5,
+               "incidence of the documented conduct at the bottleneck falls after publication",
+               "withdraw the publication; copies made by others cannot be recalled",
+               "naming before adjudication risks defamation; victims first (consent, safety, anonymity)"),
+            legal_channel="publication", recombinable=False),
+    _m("incentives.regenerative_benefit", "incentives", "incentive",
+       "tie a capability-building benefit to verified completion so each transaction raises the participant's own "
+       "eligibility", "offer.prepare", "financial", 0.25, 0.9, 200, 16, 1, 30, 3, "partially_reversible",
+       {"dependency_capture": 0.05, "tail": 0.05}, True,
+       ("customer_trust", "relationship", "verified_precedent", "capability"), 0.8, 0.7, 0.3, 0.2, 0.9,
+       "participants' eligibility and retention at the bottleneck rise over three cycles",
+       "end the benefit with notice; participants keep their portable records",
+       "benefits may attract opportunists rather than builders"),
+    _m("workflow.remove_step", "workflow", "direct",
+       "delete a recurring step once a formal check shows no obligation depends on it", "workflow.prepare",
+       "internal_write", 0.3, 0.95, 0, 8, 0, 7, 1, "reversible", {"tail": 0.05}, False,
+       ("workflow", "knowledge", "sop"), 0.6, 0.6, 0.2, 0.1, 0.3,
+       "cycle time at the bottleneck falls while every obligation the step served is still met",
+       "restore the step", "the step may encode a hidden obligation the check missed"),
 )
 BY_ID = {m.mechanism_id: m for m in LIBRARY}
-assert len(BY_ID) == len(LIBRARY) and {m.surface for m in LIBRARY} == set(SURFACES)
+# The first mechanism on each surface is its primary: recombination pairs primaries only, and evidence keyed by a
+# surface (recorded when each surface had one mechanism) informs only its primary. A ported template uses evidence
+# keyed by its own id, so a surface's track record never transfers to a different mechanism on it.
+PRIMARY = {}
+for _mech in LIBRARY:
+    PRIMARY.setdefault(_mech.surface, _mech.mechanism_id)
+PORTED_FROM = {"defaults.incumbent_integration": "default_pathway",
+               "incentives.counter_position": "counter_position",
+               "standards.verified_compliance": "constraint_to_advantage",
+               "coordination.consented_pool": "aggregate_fragmented",
+               "proof.evidence_preservation": "accountable_transparency",
+               "proof.confidential_review": "accountable_transparency",
+               "proof.authority_submission": "accountable_transparency",
+               "proof.public_publication": "accountable_transparency",
+               "incentives.regenerative_benefit": "regenerative_incentive",
+               "workflow.remove_step": "remove_step"}
+assert len(BY_ID) == len(LIBRARY) and {m.surface for m in LIBRARY} == set(SURFACES) == set(PRIMARY)
+assert set(PORTED_FROM) <= set(BY_ID) and not set(PORTED_FROM) & set(PRIMARY.values())
+# What each accountability channel must have before GREG acts through it. The Foundry establishes none of it: a
+# lawful basis written into a problem is carried as an unverified claim, and only people (counsel, then the
+# founder's signed decision, then the Gate) can establish it. Nothing here limits anyone's own right to report.
+LEGAL_CHANNELS = {
+    "preservation": {"access": "the institution and its counsel only",
+                     "evidence_standard": "original records, hashed, with chain of custody", "discloses_to": "no one"},
+    "confidential_review": {"access": "named counsel under confidentiality or privilege",
+                            "evidence_standard": "the preserved record as it is", "discloses_to": "counsel"},
+    "authority_submission": {"access": "the appropriate authority through its own channel",
+                             "evidence_standard": "documented and sourced facts, no speculation or characterisation",
+                             "discloses_to": "that authority"},
+    "publication": {"access": "the public", "evidence_standard":
+                    "independently verifiable or adjudicated facts, with the subject's right of reply",
+                    "discloses_to": "everyone"},
+}
+assert {m.legal_channel for m in LIBRARY} - {None} == set(LEGAL_CHANNELS)
+
+
+def _evidence_keys(mechanism_id: str) -> tuple[str, ...]:
+    """Evidence keys that inform a candidate: its own id, plus its surface only if it is that surface's primary."""
+    base = mechanism_id.split(":")[0]
+    m = BY_ID.get(base)
+    return (base,) + ((m.surface,) if m is not None and PRIMARY[m.surface] == base else ())
 
 
 # ------------------------------------------------------------------ input
@@ -286,6 +413,9 @@ def validate(problem: dict) -> dict:
         if s["surface"] in seen:
             raise LeverageRefused(f"surface {s['surface']} declared twice")
         seen.add(s["surface"])
+        for mid in (s.get("consent") or {}).get("for_mechanisms", []):
+            if mid not in BY_ID or BY_ID[mid].surface != s["surface"]:
+                raise LeverageRefused(f"surface {s['surface']} consent names {mid}, not a mechanism on that surface")
     for key in problem.get("mechanism_overrides", {}):
         if key not in BY_ID:
             raise LeverageRefused(f"override for unknown mechanism {key}")
@@ -307,7 +437,8 @@ def _instantiate(problem: dict) -> list[tuple[Mechanism, dict]]:
             if m.surface != s["surface"]:
                 continue
             o = {k: v for k, v in overrides.get(m.mechanism_id, {}).items() if k != "target"}
-            out.append((replace(m, **o, lineage=("library",)), s))
+            ported = (f"ported:pr155:{PORTED_FROM[m.mechanism_id]}",) if m.mechanism_id in PORTED_FROM else ()
+            out.append((replace(m, **o, lineage=("library",) + ported), s))
     return out
 
 
@@ -328,7 +459,8 @@ def _mutate(base: list[tuple[Mechanism, dict]], trigger_p: float) -> list[tuple[
                                 option_value=min(1.0, m.option_value + 0.3),
                                 lineage=m.lineage + ("mutate:defer_to_trigger",)), s))
         # Restricting scope to the parties the surface's consent record covers; never self-asserted consent.
-        if (m.third_parties_affected or s.get("third_parties")) and s.get("consent") and not m.consented:
+        if (m.third_parties_affected or s.get("third_parties")) and s.get("consent") and not m.consented \
+                and m.consent_gate:
             out.append((replace(m, mechanism_id=m.mechanism_id + ":consented", effect_multiplier=m.effect_multiplier * 0.7,
                                 harm=tuple((k, 0.0 if k == "third_party" else v) for k, v in m.harm), consented=True,
                                 lineage=m.lineage + ("mutate:consented_scope",)), s))
@@ -336,8 +468,16 @@ def _mutate(base: list[tuple[Mechanism, dict]], trigger_p: float) -> list[tuple[
 
 
 def _recombine(base: list[tuple[Mechanism, dict]]) -> list[tuple[Mechanism, dict, Mechanism, dict]]:
-    by_surface = {m.surface: (m, s) for m, s in base}
-    return [(*by_surface[a], *by_surface[b]) for a, b in COMPLEMENTS if a in by_surface and b in by_surface]
+    """Every mechanism pair across complementary surfaces; each keeps its own identity, surface record, evidence
+    keys and consent check. Primary pairs come first, in COMPLEMENTS order, so a mechanism added to a surface
+    never replaces or reorders an existing combination; pairs with another mechanism follow."""
+    by_surface: dict[str, list[tuple[Mechanism, dict]]] = {}
+    for m, s in base:
+        if m.recombinable:
+            by_surface.setdefault(m.surface, []).append((m, s))
+    pairs = [(*x, *y) for a, b in COMPLEMENTS for x in by_surface.get(a, []) for y in by_surface.get(b, [])]
+    primary = lambda t: t[0].mechanism_id == PRIMARY[t[0].surface] and t[2].mechanism_id == PRIMARY[t[2].surface]  # noqa: E731
+    return [t for t in pairs if primary(t)] + [t for t in pairs if not primary(t)]
 
 
 # ------------------------------------------------------------------ hard filter (eligibility before optimisation)
@@ -350,6 +490,10 @@ def ceilings(problem: dict) -> dict:
 def consent_reasons(m: Mechanism, surface: dict | None) -> list[str]:
     """A surface that declares third parties, or a mechanism that affects them, needs a consent record that
     covers every declared party. Text alone never satisfies the gate: the record names who and the evidence."""
+    if not m.consent_gate:
+        # Consent is not this mechanism's basis (a lawful report): a refusal cannot erase it and a consent record
+        # cannot authorize it. Its basis is the human legal review in legal_review_packets.
+        return []
     surface = surface or {}
     parties = set(surface.get("third_parties", []))
     if not (m.third_parties_affected or parties):
@@ -361,8 +505,18 @@ def consent_reasons(m: Mechanism, surface: dict | None) -> list[str]:
     consent = surface.get("consent")
     if not consent:
         return ["REJECTED_NO_CONSENT_PATH"]
+    if consent.get("revoked_at"):
+        return ["REJECTED_CONSENT_REVOKED"]
     uncovered = sorted(parties - set(consent["covers"]))
-    return [f"REJECTED_CONSENT_DOES_NOT_COVER:{','.join(uncovered)}"] if uncovered else []
+    if uncovered:
+        return [f"REJECTED_CONSENT_DOES_NOT_COVER:{','.join(uncovered)}"]
+    # Consent is bound to its purpose. With one mechanism per surface, surface consent was that mechanism's
+    # consent; a second mechanism on the surface must be named by the record, or it would ride on consent the
+    # parties gave for something else (e.g. an accountability record on a receipts pilot's agreement).
+    base = m.mechanism_id.split(":")[0]
+    if base in BY_ID and PRIMARY[BY_ID[base].surface] != base and base not in consent.get("for_mechanisms", []):
+        return [f"REJECTED_CONSENT_NOT_GIVEN_FOR:{base}"]
+    return []
 
 
 def eligibility(m: Mechanism, surface: dict | None, problem: dict, reach: dict) -> list[str]:
@@ -400,7 +554,7 @@ def eligibility(m: Mechanism, surface: dict | None, problem: dict, reach: dict) 
 # ------------------------------------------------------------------ estimate and falsify
 def _posterior(m: Mechanism, problem: dict) -> tuple[float, float, int]:
     ev = problem.get("evidence", {})
-    record = ev.get(m.mechanism_id.split(":")[0]) or ev.get(m.surface) or {"successes": 0, "trials": 0}
+    record = next((ev[k] for k in _evidence_keys(m.mechanism_id) if ev.get(k)), None) or {"successes": 0, "trials": 0}
     mean = min(0.99, max(0.01, m.effect_prior))
     a = mean * m.prior_strength + record["successes"]
     b = (1 - mean) * m.prior_strength + record["trials"] - record["successes"]
@@ -483,6 +637,11 @@ def _costs(m: Mechanism, horizon: int) -> dict:
 
 
 def _authority(m: Mechanism, held: set) -> dict:
+    if m.legal_channel:
+        # A lawful basis is never established here, whatever the problem asserts: people establish it first.
+        return {"state": "LEGAL_BASIS_REVIEW_REQUIRED", "consequence_class": m.consequence_class,
+                "deferred_consequence_class": m.deferred_consequence_class, "authority_burden": 1.0,
+                "legal_channel": m.legal_channel}
     now_ok = m.consequence_class in held and m.consequence_class != "irreversible"
     later = m.deferred_consequence_class
     state = ("WITHIN_HELD_AUTHORITY_GATE_REQUIRED" if now_ok and (later is None or later in held)
@@ -604,15 +763,37 @@ def compile(problem: dict) -> dict:  # noqa: A001 - the Foundry's public verb
                            "per-cycle gap at the bottleneck falls while the labour is paid",
                            "stop the labour; the gap returns", "repeated labour does not compound",
                            lineage=("problem.direct_labor",), kind="direct_labor")
-    # Priority when the contract ceiling binds: library, direct labour, recombinations, then mutations.
-    # Nothing is dropped silently: the report lists every candidate not evaluated.
+    # Priority when the contract ceiling binds, one rule for every template whatever its lineage:
+    #   1. direct labour (the baseline) and every candidate whose every channel has observed evidence;
+    #   2. the rest, reviewed templates before the ones added later (regression protection for unevidenced slots):
+    #      library, recombinations, mutations.
+    # Nothing is dropped silently: each deferred candidate carries its reason and a bounded sandbox route
+    # (evaluate_deferred) that compiles it on its own surfaces.
     labour_surface = None
     if direct:
         labour_surface = {"node": bottleneck, "third_parties": p["direct_labor"]["third_parties"]}
         if p["direct_labor"].get("consent"):
             labour_surface["consent"] = p["direct_labor"]["consent"]
-    pool = base + ([(direct, labour_surface)] if direct else []) + combos + mutated
-    dropped = [m.mechanism_id for m, _ in pool[MAX_CANDIDATES:]]
+
+    def added(m):
+        return any(c.split(":")[0] in PORTED_FROM for c in m.mechanism_id.split("+"))
+
+    def observed(m):
+        return all(_posterior(c["mechanism"], p)[2] > 0 for c in m.components) if m.components \
+            else _posterior(m, p)[2] > 0
+
+    rest = ([x for x in base if not added(x[0])] + [x for x in combos if not added(x[0])]
+            + [x for x in mutated if not added(x[0])] + [x for x in base if added(x[0])]
+            + [x for x in combos if added(x[0])] + [x for x in mutated if added(x[0])])
+    pool = ([(direct, labour_surface)] if direct else []) + [x for x in rest if observed(x[0])] \
+        + [x for x in rest if not observed(x[0])]
+    deferred = [{"candidate_id": m.mechanism_id,
+                 "reason": "OVER_CEILING" if observed(m) else "OVER_CEILING_PRIOR_ONLY",
+                 "evaluate_with": {"function": "foundry.lawful_leverage.evaluate_deferred",
+                                   "surfaces": sorted(str(m.surface).split("+")),
+                                   "note": "pure compile on the candidate's own surfaces; executes nothing"}}
+                for m, _ in pool[MAX_CANDIDATES:]]
+    dropped = [d["candidate_id"] for d in deferred]
     pool = pool[:MAX_CANDIDATES]
     # 3. hard filter, then estimate only what is eligible
     held = set(p["constraints"]["held_authority"])
@@ -735,10 +916,16 @@ def compile(problem: dict) -> dict:  # noqa: A001 - the Foundry's public verb
 
     pool_ok = [r for r in estimated if r["defensible"] and r["pareto_frontier"]]
     bar = drow if drow is not None and drow["defensible"] else None
-    best = lambda rs: sorted(rs, key=lambda r: (-efficiency(r), r["candidate_id"]))  # noqa: E731
+    # One evidentiary standard for every template: a route resting on priors alone is chosen only when no defensible
+    # route with observed (or declared direct-labour) evidence exists, and the report labels it.
+    best = lambda rs: sorted(rs, key=lambda r: (r["estimate"]["evidence_basis"] == "PRIOR_ONLY",  # noqa: E731
+                                                -efficiency(r), r["candidate_id"]))
     controls = [r for r in pool_ok if r["kind"] != "direct_labor"]
     if bar is not None:
-        dominating = best([r for r in controls if r["vs_direct_labor"]["verdict"] == "DOMINATES"])
+        # dominance over the labour baseline must rest on observed evidence: joint samples drawn from priors alone
+        # show what the template assumed, not what the route does (one standard for every template)
+        dominating = best([r for r in controls if r["vs_direct_labor"]["verdict"] == "DOMINATES"
+                           and r["estimate"]["evidence_basis"] != "PRIOR_ONLY"])
         if dominating:
             chosen, rule = dominating[0], "control point dominates repeated direct labour on joint samples"
         elif bar["pareto_frontier"]:
@@ -776,8 +963,12 @@ def compile(problem: dict) -> dict:  # noqa: A001 - the Foundry's public verb
                        "rule": "egregore.leverage path math: gap x strongest evidenced path weight to the outcome"},
         "generated": {"library": len(base), "mutated": len(mutated), "recombined": len(combos),
                       "supplied_direct_labor": bool(direct), "ceiling": MAX_CANDIDATES,
-                      "not_evaluated_over_ceiling": dropped},
+                      "not_evaluated_over_ceiling": dropped, "deferred": deferred},
         "candidates": rows, "selected": chosen["candidate_id"], "selection_rule": rule,
+        "selection_basis": chosen["estimate"]["evidence_basis"],
+        "selection_basis_note": ("the selected route rests on uncalibrated template priors alone; its staged pilot or "
+                                 "evidence keyed to it is the next step, not execution"
+                                 if chosen["estimate"]["evidence_basis"] == "PRIOR_ONLY" else None),
         "runner_up": runner["candidate_id"] if runner else None,
         "value_tradeoffs_for_founder": [r["candidate_id"] for r in tradeoffs],
         "value_of_information": voi,
@@ -793,8 +984,25 @@ def compile(problem: dict) -> dict:  # noqa: A001 - the Foundry's public verb
     report["asset_line"] = asset_line(chosen)
     report["preparable"] = preparable(report)
     report["decision_brief"] = decision_brief(report)
+    report["legal_review_packets"] = legal_review_packets(report)
     report["receipt_id"] = digest({k: v for k, v in report.items() if k != "receipt_id"})
     return report
+
+
+def evaluate_deferred(problem: dict, candidate_id: str) -> dict:
+    """The bounded sandbox route for a candidate deferred over the contract ceiling: compile the same problem on
+    that candidate's own surfaces only (same seed, same gates, same estimator) and return its row. Pure: it
+    executes, records and authorizes nothing."""
+    surfaces = {BY_ID[c.split(":")[0]].surface for c in candidate_id.split("+") if c.split(":")[0] in BY_ID}
+    if not surfaces:
+        raise LeverageRefused(f"{candidate_id} names no library mechanism")
+    narrowed = {**problem, "surfaces": [s for s in problem["surfaces"] if s["surface"] in surfaces]}
+    report = compile(narrowed)
+    row = next((r for r in report["candidates"] if r["candidate_id"] == candidate_id), None)
+    if row is None:
+        raise LeverageRefused(f"{candidate_id} is not generated on its own surfaces")
+    return {"candidate": row, "sandbox_report_receipt": report["receipt_id"], "executes": False,
+            "authority_created": False}
 
 
 def _voi(chosen: dict, runner: dict | None, sims: dict, p: dict, rows: list[dict]) -> dict:
@@ -878,8 +1086,9 @@ def interventions(report: dict, p: dict) -> list[dict]:
                           "target": " + ".join(c["target"] for c in components),
                           "consequence_class": r["authority"]["consequence_class"]}
             mech = "coordination" if r["kind"] == "recombined" else BY_ID[base_id].leverage_mechanism
+        applicable = {k for part in parts for k in _evidence_keys(part)}   # the keys _posterior read
         for key, ev in p.get("evidence", {}).items():
-            if key in parts or key in str(r["surface"]).split("+") or (key == "direct_labor" and r["kind"] == "direct_labor"):
+            if key in applicable:
                 refs |= set(ev["refs"])
         record = {
             "id": r["candidate_id"], "node": r["node"], "mechanism": mech,
@@ -1008,6 +1217,47 @@ def decision_brief(report: dict) -> dict | None:
         consequence_of_no_response="nothing executes; preparable steps stay prepared and unsent; the question "
                                    "returns only if the bottleneck or the evidence changes",
         created_at=report["as_of"], falsifier=chosen["falsifier"], rollback=chosen["rollback"])
+
+
+def legal_review_packets(report: dict) -> list[dict]:
+    """One review request per eligible accountability channel, as ``greg.asks.resource_request`` keyword arguments
+    for a licensed professional: what basis, access, evidence quality and authorization the channel needs. The
+    Foundry establishes none of them, and no packet asserts legality. Refusing costs nothing; it never limits any
+    person's own right to report to an authority."""
+    packets = []
+    for r in report["candidates"]:
+        if r["authority"]["state"] != "LEGAL_BASIS_REVIEW_REQUIRED" or r["eligibility"] != "ELIGIBLE" \
+                or ":" in r["candidate_id"]:
+            continue
+        channel = r["authority"]["legal_channel"]
+        needs = LEGAL_CHANNELS[channel]
+        packets.append(dict(
+            request_id=f"legal-{report['problem_id']}-{r['candidate_id']}"[:96], kind="legal_basis_review",
+            resource="professional",
+            why_now=f"the {channel.replace('_', ' ')} channel was generated at the evidenced bottleneck and has no "
+                    "lawful basis established by a person",
+            recommendation="have counsel establish, or rule out, a lawful basis for this channel before anything "
+                           "beyond preparation",
+            evidence={"candidate": r["candidate_id"], "channel": channel, "requirements": needs,
+                      "bottleneck": report["bottleneck"], "harm_vector": r["harm_vector"],
+                      "evidence_basis": r["estimate"]["evidence_basis"], "problem_receipt": report.get("receipt_id")},
+            options=[{"option": f"{r['candidate_id']}: ask counsel to review this channel",
+                      "cost": "counsel's fee, set by counsel; founder attention to read the opinion",
+                      "expected_effect": "a written statement of whether, and under what conditions, the channel "
+                                         "has a lawful basis"},
+                     {"option": "no review now",
+                      "cost": "none; the channel stays prepared and unused",
+                      "expected_effect": "nothing is sent through this channel; anyone's own reporting rights "
+                                         "are unchanged"}],
+            expected_effect="a human-established lawful basis, or a recorded finding that none exists",
+            uncertainty="the Foundry has not assessed legality; its estimate for this channel is "
+                        f"{r['estimate']['evidence_basis']}",
+            authority_requested={"consequence_class": "external_contact", "spend": "counsel's fee only, if approved",
+                                 "scope": "legal review of one channel; no submission or publication",
+                                 "execution": "none: after review, a founder-signed decision and the Gate"},
+            consequence_of_no_response="nothing is sent through this channel; the preserved record is unchanged",
+            created_at=report["as_of"]))
+    return packets
 
 
 def mechanism_card() -> list[dict]:

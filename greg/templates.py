@@ -147,9 +147,31 @@ def engineering_brief(*, local: dict[str, str], github: list[str], daily: bool =
     }
 
 
+def read_economics(manifest: str, economics=None) -> dict | None:
+    """The signal's stated economics: an explicit dict or file, else ``economics.json`` beside the manifest.
+
+    ``revenue`` is a bounded estimate request (named factors with low/central/high and units, optional
+    expected_units, assumptions, next_measurement); ``causal_support`` is a causal request (design,
+    treated, control, dag). Absent economics means the memo states no revenue figure."""
+    if economics is None:
+        sibling = Path(manifest).expanduser().resolve().with_name("economics.json")
+        if not sibling.is_file():
+            return None
+        economics = str(sibling)
+    if isinstance(economics, (str, Path)):
+        economics = json.loads(Path(economics).expanduser().read_text(encoding="utf-8"))
+    if not isinstance(economics, dict) or not isinstance(economics.get("revenue"), dict) \
+            or not isinstance(economics["revenue"].get("factors"), list):
+        raise ValueError("economics needs a revenue block with named factors (low, central, high, units)")
+    causal = economics.get("causal_support") or {"design": "unstated"}
+    if not isinstance(causal, dict):
+        raise ValueError("causal_support must be an object (design, treated, control, dag)")
+    return {"revenue": economics["revenue"], "causal_support": causal}
+
+
 def venture_assessment(*, railscout_root: str, wmi_root: str, manifest: str, source_root: str,
                        preauthorize_delivery: bool = False, standing: bool = False, cadence_seconds: int = 3600,
-                       horizon_days: float = 2) -> dict:
+                       horizon_days: float = 2, economics=None) -> dict:
     """Signal -> venture decision memo through the real organs (Bridge A).
 
     RailScout appraises the signal's real source bytes; WealthMachine's venture engine
@@ -157,6 +179,11 @@ def venture_assessment(*, railscout_root: str, wmi_root: str, manifest: str, sou
     engine's verdict capped by the evidence status. Delivery is one founder-visible
     file and, like every internal_write, stops at a founder approval unless signed
     into the cone. Nothing is sent, published, bought or contacted.
+
+    When the signal carries economics (``economics.json`` beside the manifest, or passed here),
+    the mission first asks GREG's own cognition, read-only, for a certified revenue range and for
+    causal support. The memo's revenue section is rendered from those receipts only: a revenue
+    figure may not outrun its causal support (directive section 16, the venture case).
 
     ``standing``: an infinite mission on this signal. Whenever the evidence file changes
     (Alfonso adds a buyer interview, a quote, a counterexample), the check fails, both
@@ -169,13 +196,40 @@ def venture_assessment(*, railscout_root: str, wmi_root: str, manifest: str, sou
                  "source_root": source_root}.items()}
     digest = hashlib.sha256(Path(resolved["manifest"]).read_bytes()).hexdigest()
     thread = hashlib.sha256(resolved["manifest"].encode()).hexdigest()[:12]
+    stated = read_economics(resolved["manifest"], economics)
+    # The memo's revenue section is computed from these economics: the memo, its cognition questions, the mission
+    # and the check that it was delivered are all bound to them, so a memo built from other (or no) economics on
+    # the same signal never closes this mission.
+    basis = "sha256:" + hashlib.sha256(json.dumps(stated, sort_keys=True, separators=(",", ":")).encode()
+                                       ).hexdigest() if stated else None
+    suffix = f"-{basis[7:15]}" if basis else ""
+    resolved = {**resolved, "economics_sha256": basis}
+    cognition, checks = [], []
+    if stated:
+        ids = {"revenue": f"venture-revenue-{thread}{suffix}", "causal": f"venture-causal-{thread}{suffix}"}
+        asks = {"revenue": ("estimate", stated["revenue"], "revenue_estimated",
+                            {"op": "equals", "field": "abstention_state", "value": "NONE"},
+                            "GREG's own revenue range from the stated factors, with units and the dominant uncertainty"),
+                "causal": ("treatment_effect", stated["causal_support"], "causal_checked",
+                           {"op": "equals", "field": "authority_created", "value": False},
+                           "whether any identified causal support exists for the offer producing that revenue; "
+                           "an unidentified design is a truthful abstention, not a failure")}
+        for role, (operation, data, check_id, predicate, rationale) in asks.items():
+            step = {"capability": "cognition.solve", "target": f"cognition:{ids[role]}",
+                    "params": {"problem_id": ids[role], "operation": operation, "data": data}}
+            checks.append({"check_id": check_id, "description": f"a cognition receipt for the {role} question",
+                           "sensor": step, "predicate": predicate})
+            cognition.append({"action_id": f"{role}-receipt", **step, "advances": [check_id], "rationale": rationale})
+        resolved = {**resolved, "cognition": ids}
     delivery = {"action_id": "assess-venture", "capability": "venture.assess", "params": resolved,
                 "target": "deliver:ventures", "advances": ["assessed"],
+                **({"requires": [c["check_id"] for c in checks]} if checks else {}),
                 "expected_outcome": "one decision memo in the delivery root; no external act",
                 "rationale": "run both organs read-only on source bytes; deliver one memo for Alfonso"}
-    capabilities = ["venture.status", "fs.read"] + (["venture.assess"] if preauthorize_delivery else [])
+    capabilities = ["venture.status", "fs.read"] + (["venture.assess"] if preauthorize_delivery else []) \
+        + (["cognition.solve"] if cognition else [])
     return {
-        "mission_id": f"m:venture-watch-{thread}" if standing else f"m:venture-{digest[:12]}",
+        "mission_id": f"m:venture-watch-{thread}{suffix}" if standing else f"m:venture-{digest[:12]}{suffix}",
         "founder_expression": "Take this signal, find out whether it is a real business, and tell me what to do "
                               "next. Do not act on it; do not let a score outrun the evidence.",
         "intended_effect": "a source-bound venture decision memo for this signal is waiting for Alfonso, with "
@@ -185,14 +239,56 @@ def venture_assessment(*, railscout_root: str, wmi_root: str, manifest: str, sou
                                   "a go verdict on NEEDS_EVIDENCE"],
         "priority": 65,
         "closure": {"kind": "infinite", "cadence_seconds": cadence_seconds} if standing else {"kind": "bounded"},
-        "success_checks": [{"check_id": "assessed", "description": "a memo exists for the current evidence",
-                            "sensor": {"capability": "venture.status", "params": {"manifest": resolved["manifest"]},
-                                       "target": "deliver:ventures"},
-                            "predicate": {"op": "equals", "field": "assessed", "value": True}}],
+        "success_checks": checks + [{"check_id": "assessed", "description": "a memo exists for the current evidence",
+                                     "sensor": {"capability": "venture.status",
+                                                "params": {"manifest": resolved["manifest"],
+                                                           "economics_sha256": basis},
+                                                "target": "deliver:ventures"},
+                                     "predicate": {"op": "equals", "field": "assessed", "value": True}}],
+        "strategies": cognition + [delivery],
+        "light_cone": {"capabilities": capabilities, "targets": ["deliver:*", "fs:*"] + (["cognition:*"] if cognition else []),
+                       "max_consequence_class": "internal_write" if preauthorize_delivery else "read_only",
+                       "budget_usd": 0, "horizon": _horizon(30 if standing else horizon_days)},
+    }
+
+
+def organ_exchange(*, daleobanks_root: str, wmi_root: str, signal: str, preauthorize_delivery: bool = False,
+                   legal_principal: str = "alfonso_lopez", horizon_days: float = 2) -> dict:
+    """One signal through two organs with authenticated messages, led by GREG (Bridge A, both organs real).
+
+    DALEOBANKS senses and signs; WealthMachine verifies, assesses and signs back; DALEOBANKS verifies and
+    records. GREG carries each leg, checks each signature, adapts both messages to the canonical contracts
+    and delivers one memo whose verdict may not outrun the evidence. Nothing is sent, published, bought or
+    contacted; the memo stops at your approval unless delivery is signed into the cone.
+    """
+    import hashlib
+    resolved = {k: str(Path(v).expanduser().resolve()) for k, v in
+                {"daleobanks_root": daleobanks_root, "wmi_root": wmi_root, "signal": signal}.items()}
+    digest = hashlib.sha256(Path(resolved["signal"]).read_bytes()).hexdigest()
+    params = {**resolved, "legal_principal": legal_principal}
+    delivery = {"action_id": "exchange", "capability": "organs.exchange", "params": params,
+                "target": "deliver:organs", "advances": ["exchanged"],
+                "expected_outcome": "one memo in the delivery root; no external act",
+                "rationale": "run both organs on the signal with signed messages; deliver one memo for Alfonso"}
+    capabilities = ["organs.exchange_status", "fs.read"] + (["organs.exchange"] if preauthorize_delivery else [])
+    return {
+        "mission_id": f"m:organs-{digest[:12]}",
+        "founder_expression": "Run this signal through DALEOBANKS and WealthMachine as two organs that must "
+                              "authenticate to each other, and tell me what they conclude. Do not act on it.",
+        "intended_effect": "a memo for Alfonso carrying both organs' verified messages, the canonical "
+                           "fields they could not evidence, and a verdict capped by that evidence",
+        "beneficiaries": ["Alfonso"],
+        "unacceptable_outcomes": ["contacting anyone", "spending", "publishing", "an unverified organ message",
+                                  "a go verdict on unevidenced fields"],
+        "priority": 65, "closure": {"kind": "bounded"},
+        "success_checks": [{"check_id": "exchanged", "description": "a memo exists for this signal",
+                            "sensor": {"capability": "organs.exchange_status", "params": {"signal": resolved["signal"]},
+                                       "target": "deliver:organs"},
+                            "predicate": {"op": "equals", "field": "exchanged", "value": True}}],
         "strategies": [delivery],
         "light_cone": {"capabilities": capabilities, "targets": ["deliver:*", "fs:*"],
                        "max_consequence_class": "internal_write" if preauthorize_delivery else "read_only",
-                       "budget_usd": 0, "horizon": _horizon(30 if standing else horizon_days)},
+                       "budget_usd": 0, "horizon": _horizon(horizon_days)},
     }
 
 
@@ -556,7 +652,7 @@ def _slug(text: str, limit: int = 40) -> str:
 def code_change(*, repo: str, objective: str, order: str | None = None, allowed_paths: list[str] | None = None,
                 tests: list[list[str]] | None = None, budget_usd: float = 3.0, provider: str = "claude-code",
                 timeout_seconds: int = 1200, horizon_days: float = 2, founder_expression: str | None = None,
-                workspace_root: Path | None = None) -> dict:
+                workspace_root: Path | None = None, script: str | None = None) -> dict:
     """Software work through a temporary coding worker; GREG appraises it independently, then hands off.
 
     1. ``worker.commission`` (internal_write, spends at most ``budget_usd``): a real worker edits a private
@@ -564,6 +660,8 @@ def code_change(*, repo: str, objective: str, order: str | None = None, allowed_
     2. ``worker.appraise`` (read-only sensor): fresh clone, patch re-applied, scope and protected-surface
        checks, acceptance re-run. Only ``ACCEPTED`` closes the check; a protected surface yields a
        founder decision, never acceptance.
+    ``script`` (with ``provider="script"``): the founder-signed program that does the work instead of a
+    model-backed worker; it runs in the same confined envelope with no network (``greg.workers.ScriptWorker``).
     3. The handoff note is written only after acceptance (``requires``): the parent mission continues on
        the appraised result. Push, PR and merge stay with the existing authorized path.
     """
@@ -595,7 +693,8 @@ def code_change(*, repo: str, objective: str, order: str | None = None, allowed_
             {"action_id": "commission-worker", "capability": "worker.commission", "target": f"work:{order}",
              "params": {"order": order, "mode": "repository", "repo": repo_path, "objective": objective,
                         "acceptance": acceptance, "allowed_paths": allowed_paths, "provider": provider,
-                        "max_budget_usd": budget_usd, "timeout_seconds": timeout_seconds},
+                        "max_budget_usd": budget_usd, "timeout_seconds": timeout_seconds,
+                        **({"context": script} if script else {})},
              "cost_usd": budget_usd, "advances": ["work_accepted"],
              "rationale": "software-development work: commission a temporary coding worker under a bounded lease",
              "expected_outcome": "a committed change on a greg/ branch in a private clone, with evidence"},
@@ -642,51 +741,133 @@ def browser_task(*, url: str, steps: list[dict], session: str, expect: dict, hor
 
 
 def daleobanks_post(*, daleobanks_root: str, source: str, brief: str, order: str, budget_usd: float = 2.0,
-                    max_chars: int = 280, horizon_days: float = 2, founder_expression: str | None = None) -> dict:
+                    max_chars: int = 280, horizon_days: float = 2, founder_expression: str | None = None,
+                    bound_claims: bool = True, quality: str = "unverified", python: str | None = None) -> dict:
     """GREG -> research/content worker -> DALEOBANKS verification -> publish request through both gates.
 
     The draft is written by a temporary worker from a read-only source; DALEOBANKS's own checks plus
     figure-to-source binding must pass before the publish request may run (``requires``). Publishing is
     external_contact: outside this cone, so it stops for a founder decision; even when approved,
     DALEOBANKS's LIVE kill switch and credentials decide, and a dry-run is reported as a block.
+
+    With ``bound_claims`` (the default), the worker also lists each sentence with the source spans that support
+    it, and the Task Fabric's evaluator (``worker.appraise``) asks the Mind about every sentence against GREG's
+    own copy of the source: the publish request also requires that appraisal. ``quality`` is the signer's
+    declaration about the source. ``bound_claims=False`` keeps the figure-only floor.
     """
     source = str(Path(source).expanduser().resolve())
     root = str(Path(daleobanks_root).expanduser().resolve())
-    draft_name = "post.txt"
+    draft_name, claims_name = "post.txt", "post.claims.json"
+    contract = {"claims": claims_name, "quality": quality, "expires_at": _horizon(horizon_days)}
+    acceptance = {"output": draft_name,
+                  "criteria": f"<= {max_chars} characters; no figures absent from the source; no "
+                              "hype, no calls to buy; not a proposal (no pilot/KPI language)"}
+    objective = (f"{brief} Write the post as plain text, at most {max_chars} characters, "
+                 "stating only facts present in the input; every number must appear in the input.")
+    checks = [{"check_id": "draft_verified", "description": "DALEOBANKS checks and source binding pass",
+               "sensor": {"capability": "daleobanks.verify",
+                          "params": {"daleobanks_root": root, "source": source, "max_chars": max_chars,
+                                     "draft": f"work-orders/{order}/work/{draft_name}",
+                                     **({"python": python} if python else {})},
+                          "target": "daleobanks:verify"},
+               "predicate": {"op": "equals", "field": "verdict", "value": "VERIFIED"}}]
+    if bound_claims:
+        acceptance["bound_claims"] = contract
+        objective += (" Keep the source's hedges, negations, scope, direction and names; list each sentence's "
+                      f"supporting spans in {claims_name}.")
+        checks.append({"check_id": "draft_appraised",
+                       "description": "the Task Fabric's evaluator: every sentence is a claim the Mind answered "
+                                      "as written against GREG's copy of the source",
+                       "sensor": {"capability": "worker.appraise",
+                                  "params": {"order": order, "bound_claims": contract}, "target": f"work:{order}"},
+                       "predicate": {"op": "equals", "field": "verdict", "value": "ACCEPTED"}})
+    gates = [c["check_id"] for c in checks]
+    publish = {"daleobanks_root": root, "draft": f"work-orders/{order}/work/{draft_name}",
+               **({"python": python} if python else {})}
     return {
         "mission_id": f"m:media-{_slug(order)}",
         "founder_expression": founder_expression or f"DALEOBANKS: {brief}",
         "intended_effect": "a source-bound post is drafted, verified by DALEOBANKS and submitted to its publishing "
                            "gate; the truthful outcome (posted or blocked) returns to GREG",
         "priority": 50, "closure": {"kind": "bounded"},
-        "success_checks": [
-            {"check_id": "draft_verified", "description": "DALEOBANKS checks and source binding pass",
-             "sensor": {"capability": "daleobanks.verify",
-                        "params": {"daleobanks_root": root, "source": source, "max_chars": max_chars,
-                                   "draft": f"work-orders/{order}/work/{draft_name}"},
-                        "target": "daleobanks:verify"},
-             "predicate": {"op": "equals", "field": "verdict", "value": "VERIFIED"}},
+        "success_checks": checks + [
             {"check_id": "publish_outcome_known", "description": "DALEOBANKS's ledger holds the request's outcome",
              "sensor": {"capability": "daleobanks.outcome", "params": {}, "target": "daleobanks:outcome"},
              "predicate": {"op": "equals", "field": "requested", "value": True}}],
         "strategies": [
             {"action_id": "draft-post", "capability": "worker.commission", "target": f"work:{order}",
-             "params": {"order": order, "mode": "document", "inputs": [source],
-                        "objective": f"{brief} Write the post as plain text, at most {max_chars} characters, "
-                                     "stating only facts present in the input; every number must appear in the input.",
-                        "acceptance": {"output": draft_name,
-                                       "criteria": f"<= {max_chars} characters; no figures absent from the source; no "
-                                                   "hype, no calls to buy; not a proposal (no pilot/KPI language)"},
-                        "allowed_paths": [draft_name], "max_budget_usd": budget_usd, "timeout_seconds": 600},
-             "cost_usd": budget_usd, "advances": ["draft_verified"],
-             "rationale": "research/content work by a temporary worker; DALEOBANKS verifies it"},
+             "params": {"order": order, "mode": "document", "inputs": [source], "objective": objective,
+                        "acceptance": acceptance,
+                        "allowed_paths": [draft_name] + ([claims_name] if bound_claims else []),
+                        "max_budget_usd": budget_usd, "timeout_seconds": 600},
+             "cost_usd": budget_usd, "advances": gates,
+             "rationale": "research/content work by a temporary worker; DALEOBANKS verifies it"
+                          + ("; the Mind appraises every sentence" if bound_claims else "")},
             {"action_id": "request-publish", "capability": "daleobanks.publish", "target": "daleobanks:publish",
-             "params": {"daleobanks_root": root, "draft": f"work-orders/{order}/work/{draft_name}"},
-             "advances": ["publish_outcome_known"], "requires": ["draft_verified"],
+             "params": publish, "advances": ["publish_outcome_known"], "requires": gates,
              "rationale": "publishing is external contact: founder decision, then DALEOBANKS's own LIVE gate"}],
-        "light_cone": {"capabilities": ["worker.commission", "daleobanks.verify", "daleobanks.outcome"],
+        "light_cone": {"capabilities": ["worker.commission", "daleobanks.verify", "daleobanks.outcome"]
+                                       + (["worker.appraise"] if bound_claims else []),
                        "targets": [f"work:{order}", "daleobanks:*"], "max_consequence_class": "internal_write",
                        "budget_usd": budget_usd, "horizon": _horizon(horizon_days)},
+    }
+
+
+def daleobanks_paraphrase(*, daleobanks_root: str, source: str, draft: str, claims: list,
+                          quality: str = "unverified", python: str | None = None, content_type: str = "reply",
+                          max_chars: int = 600, horizon_days: float = 2, founder_expression: str | None = None) -> dict:
+    """Media case (directive section 16): a DALEOBANKS draft that restates a source, checked claim by claim.
+
+    ``claims`` lists each sentence of the draft with the exact source spans that support it:
+    ``[{"text": sentence, "quotes": [span, ...]}]``. GREG's evidence family answers each claim first
+    (``cognition.solve``, read-only): bound to its spans and showing none of the six detected kinds of change
+    (figures, negation, certainty, scope, direction, named terms). DALEOBANKS's verify then runs its own content
+    checks and requires every sentence of the draft to be a claim the Mind answered as written. Consequence-inert:
+    the light cone holds no publish capability, so nothing can be posted from this mission.
+    """
+    import hashlib
+    from greg.cognition.contracts import digest
+    source_path = Path(source).expanduser().resolve()
+    root = str(Path(daleobanks_root).expanduser().resolve())
+    text = source_path.read_text(encoding="utf-8")
+    thread = hashlib.sha256(Path(draft).expanduser().resolve().read_bytes()).hexdigest()[:12]
+    src = {"id": "source", "text": text, "digest": digest(text), "quality": quality, "expires_at": _horizon(horizon_days),
+           "provenance": f"{source_path} sha256:{hashlib.sha256(text.encode()).hexdigest()}"}
+    ids, checks, strategies = {}, [], []
+    for i, claim in enumerate(claims, 1):
+        if not claim.get("quotes"):
+            raise ValueError(f"claim {i} has no supporting span; every sentence must cite the source")
+        ids[f"c{i}"] = f"media-claim-{thread}-{i}"
+        step = {"capability": "cognition.solve", "target": f"cognition:{ids[f'c{i}']}",
+                "params": {"problem_id": ids[f"c{i}"], "operation": "bind_evidence",
+                           "data": {"claim": claim["text"], "sources": [src],
+                                    "bindings": [{"source_id": "source", "quote": q, "relationship": "supports"}
+                                                 for q in claim["quotes"]]}}}
+        checks.append({"check_id": f"claim_{i}_checked", "description": f"GREG's evidence receipt for claim {i}",
+                       "sensor": step, "predicate": {"op": "equals", "field": "authority_created", "value": False}})
+        strategies.append({"action_id": f"claim-{i}-receipt", **step, "advances": [f"claim_{i}_checked"],
+                           "rationale": "bind the claim to its spans and check what it changes; an abstention is a "
+                                        "truthful answer, not a failure"})
+    verify = {"capability": "daleobanks.verify", "target": "daleobanks:verify",
+              "params": {"daleobanks_root": root, "draft": str(Path(draft).expanduser().resolve()),
+                         "source": str(source_path), "max_chars": max_chars, "content_type": content_type,
+                         "cognition": ids, **({"python": python} if python else {})}}
+    checks.append({"check_id": "paraphrase_verified",
+                   "description": "DALEOBANKS's checks pass and every sentence is a claim answered as written",
+                   "sensor": verify, "predicate": {"op": "equals", "field": "verdict", "value": "VERIFIED"}})
+    strategies.append({"action_id": "verify-paraphrase", **verify, "advances": ["paraphrase_verified"],
+                       "requires": [c["check_id"] for c in checks[:-1]],
+                       "rationale": "DALEOBANKS's own content checks over a draft whose claims GREG has answered"})
+    return {
+        "mission_id": f"m:paraphrase-{thread}",
+        "founder_expression": founder_expression or "DALEOBANKS restates a source without changing what it says",
+        "intended_effect": "a draft that restates its source is checked claim by claim against it; a sentence that "
+                           "changes a figure, a negation, a hedge, a scope, a direction or a name is held back",
+        "priority": 50, "closure": {"kind": "bounded"},
+        "success_checks": checks, "strategies": strategies,
+        "light_cone": {"capabilities": ["cognition.solve", "daleobanks.verify", "fs.read"],
+                       "targets": ["cognition:*", "daleobanks:verify"], "max_consequence_class": "read_only",
+                       "budget_usd": 0, "horizon": _horizon(horizon_days)},
     }
 
 
@@ -783,6 +964,137 @@ def schedule_in_words(*, text: str, horizon_days: float = 2) -> dict:
 
 
 TEMPLATES["schedule-in-words"] = schedule_in_words
+
+
+def mcp_tool(*, server: str, root: str, command: list[str], tool: str, arguments: dict, readable=(),
+             expect: dict | None = None, founder_expression: str | None = None, horizon_days: float = 1) -> dict:
+    """Ask one tool of an MCP server the founder installed (``mcp.call``), read-only by construction.
+
+    The server runs confined with no network and a read-only filesystem, so whatever the tool does, nothing changes.
+    The check passes when the server answers (or, with ``expect``, when its answer meets that predicate); the answer
+    itself is kept with the observation's receipt, as untrusted external data."""
+    digest = hashlib.sha256(json.dumps([tool, arguments], sort_keys=True).encode()).hexdigest()[:8]
+    params = {"server": server, "root": str(root), "command": [str(c) for c in command], "tool": tool,
+              "arguments": dict(arguments)}
+    if readable:
+        params["readable"] = [str(r) for r in readable]
+    return {
+        "mission_id": f"m:mcp-{_slug(server, 20)}-{_slug(tool, 30)}-{digest}",
+        "founder_expression": founder_expression or f"Ask the {server} server: {tool}",
+        "intended_effect": f"the {server} server's {tool} tool answers, and the answer is kept with its receipt",
+        "priority": 50, "closure": {"kind": "bounded"},
+        "success_checks": [{
+            "check_id": "answered", "description": f"the {server} server's {tool} answered",
+            "sensor": {"capability": "mcp.call", "params": params, "target": f"mcp:{server}"},
+            "predicate": expect or {"op": "exists", "field": "text"}}],
+        "strategies": [],
+        "light_cone": {"capabilities": ["mcp.call"], "targets": [f"mcp:{server}"],
+                       "max_consequence_class": "read_only", "budget_usd": 0.0, "horizon": _horizon(horizon_days)}}
+
+
+TEMPLATES["mcp-tool"] = mcp_tool
+
+
+def mcp_act(*, server: str, root: str, command: list[str], tool: str, arguments: dict, writable: list,
+            check_path: str, expect: dict, readable=(), founder_expression: str | None = None,
+            horizon_days: float = 1) -> dict:
+    """One change by a tool of an MCP server the founder installed (``mcp.act``), inside the scope they approve.
+
+    The light cone stops at read-only, so the act always waits for the founder's decision on its exact scope: the
+    paths it may write (everything else stays read-only), no network, no credentials. GREG checks the effect itself
+    by reading ``check_path``; the server's own answer is untrusted data. If the effect is already there, nothing
+    runs."""
+    digest = hashlib.sha256(json.dumps([tool, arguments, writable], sort_keys=True).encode()).hexdigest()[:8]
+    params = {"server": server, "root": str(root), "command": [str(c) for c in command], "tool": tool,
+              "arguments": dict(arguments), "writable": [str(w) for w in writable]}
+    if readable:
+        params["readable"] = [str(r) for r in readable]
+    name = Path(check_path).name
+    return {
+        "mission_id": f"m:mcp-act-{_slug(server, 20)}-{_slug(tool, 30)}-{digest}",
+        "founder_expression": founder_expression or f"Use the {server} server's {tool}",
+        "intended_effect": f"{check_path} shows the change made by the {server} server's {tool}; nothing outside "
+                           f"{', '.join(params['writable'])} changes",
+        "priority": 50, "closure": {"kind": "bounded"},
+        "success_checks": [{
+            "check_id": "changed", "description": f"GREG reads {name} and finds the change",
+            "sensor": {"capability": "fs.read", "params": {"path": str(check_path)}, "target": f"fs:{name}"},
+            "predicate": expect}],
+        "strategies": [{"action_id": "act", "capability": "mcp.act", "params": params, "target": f"mcp:{server}",
+                        "advances": ["changed"],
+                        "rationale": f"the {server} server's {tool}, inside the scope the founder approves"}],
+        "light_cone": {"capabilities": ["mcp.act", "fs.read"], "targets": [f"mcp:{server}", f"fs:{name}"],
+                       "max_consequence_class": "read_only", "budget_usd": 0.0, "horizon": _horizon(horizon_days)}}
+
+
+TEMPLATES["mcp-act"] = mcp_act
+
+
+REMOTE_EVIDENCE = {
+    "same_service": "a read-after-write through the service's own host: it shows the service's state, not an "
+                    "independent corroboration of it",
+    "separate_host": "a read through a different host than the service's; GREG cannot show that host is independent "
+                     "of the service, so this is not proven independent corroboration",
+}
+
+
+def remote_evidence(url: str, check_url: str) -> str:
+    """Which evidence a page check is: a read-after-write through the same service, or a read through another host.
+
+    Same service only when the page is on the service's own host or a name under it. Without a public-suffix list,
+    sharing the last two labels proves nothing (``alice.github.io`` and ``mallory.github.io``, ``evil.co.uk``), and
+    neither does a parent name, so every other case gets the cautious label, which claims no independence either."""
+    import ipaddress
+    from urllib.parse import urlsplit
+    service = (urlsplit(url).hostname or "").rstrip(".")
+    page = (urlsplit(check_url).hostname or "").rstrip(".")
+    if not service or not page:
+        return "separate_host"
+    if page == service:
+        return "same_service"
+    for host in (service, page):
+        try:
+            ipaddress.ip_address(host)
+            return "separate_host"      # an address is the same service only when it is the same address
+        except ValueError:
+            pass
+    return "same_service" if service.count(".") >= 1 and page.endswith("." + service) else "separate_host"
+
+
+def mcp_remote_act(*, server: str, url: str, tool: str, arguments: dict, bearer: str | None, check_url: str,
+                   expect_text: str, hosts=(), founder_expression: str | None = None, horizon_days: float = 1) -> dict:
+    """One call to a tool of a hosted MCP server (``mcp.act`` by URL), inside the scope the founder approves.
+
+    A call on someone else's machine cannot be made read-only, so it always waits for the founder's decision, which
+    shows the server, the hosts it may reach and the credential handle. GREG checks the effect itself by rendering a
+    page the founder named (``browser.render``, which reaches only that page's host) and finding the text there; the
+    server's own answer is untrusted data. If the page already shows it, nothing runs."""
+    from urllib.parse import urlsplit
+    digest = hashlib.sha256(json.dumps([url, tool, arguments], sort_keys=True).encode()).hexdigest()[:8]
+    params = {"server": server, "url": url, "tool": tool, "arguments": dict(arguments)}
+    if bearer:
+        params["bearer"] = bearer
+    if hosts:
+        params["hosts"] = [str(h) for h in hosts]
+    page = urlsplit(check_url).hostname
+    return {
+        "mission_id": f"m:mcp-remote-{_slug(server, 20)}-{_slug(tool, 30)}-{digest}",
+        "founder_expression": founder_expression or f"Use the {server} service's {tool}",
+        "intended_effect": f"{check_url} shows {expect_text!r} after the {server} service's {tool}",
+        "priority": 50, "closure": {"kind": "bounded"},
+        "success_checks": [{
+            "check_id": "shown", "description": f"GREG renders {check_url} and finds the text "
+                                                f"({REMOTE_EVIDENCE[remote_evidence(url, check_url)]})",
+            "sensor": {"capability": "browser.render", "params": {"url": check_url}, "target": f"web:{page}"},
+            "predicate": {"op": "contains", "field": "text", "value": expect_text}}],
+        "strategies": [{"action_id": "act", "capability": "mcp.act", "params": params, "target": f"mcp:{server}",
+                        "advances": ["shown"],
+                        "rationale": f"the {server} service's {tool}, inside the scope the founder approves"}],
+        "light_cone": {"capabilities": ["mcp.act", "browser.render"], "targets": [f"mcp:{server}", f"web:{page}"],
+                       "max_consequence_class": "read_only", "budget_usd": 0.0, "horizon": _horizon(horizon_days)}}
+
+
+TEMPLATES["mcp-remote-act"] = mcp_remote_act
 
 
 NETWORK_NAME = r"[A-Za-z][A-Za-z0-9_-]{0,31}"
@@ -1150,6 +1462,7 @@ def compiled_question(*, problem_id: str, data: dict, geometry: dict | None = No
 
 
 TEMPLATES["compiled-question"] = compiled_question
+TEMPLATES["organ-exchange"] = organ_exchange
 
 
 def one_machine(*, problem_id: str, data: dict, sandbox_repo: str, organs: dict, seed: str,

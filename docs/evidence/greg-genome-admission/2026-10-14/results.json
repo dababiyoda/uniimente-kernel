@@ -1,0 +1,308 @@
+{
+ "schema": "greg-genome-admission/1",
+ "manifest_sha256": "sha256:a1138bd672fa37feb0cd2e667a3b216828e648e86adf8d818d99a2c6567f43d0",
+ "finished_at": "2026-10-14T11:13:08.179793+00:00",
+ "source_commit": "6e3f35db180d95ea156c04a1cea056e8e070fefb",
+ "families": {
+  "probabilistic": {
+   "candidate": "Beta(1,1) posterior mean",
+   "baseline": "clipped MLE",
+   "competitor": "Jeffreys posterior mean",
+   "n": 40,
+   "vs_baseline": {
+    "wins": 29,
+    "losses": 10,
+    "p_better": 0.001689,
+    "p_worse": 0.999467
+   },
+   "vs_competitor": {
+    "wins": 26,
+    "losses": 13,
+    "p_better": 0.026626,
+    "p_worse": 0.988149
+   },
+   "status": "DEFAULT_FOR_GEOMETRY",
+   "mean_metric": {
+    "candidate": 0.621747,
+    "baseline": 0.864618,
+    "competitor": 0.648864
+   },
+   "median_seconds": 0.0
+  },
+  "control": {
+   "candidate": "PID kp=2 ki=1",
+   "baseline": "bang-bang",
+   "competitor": "P-only kp=2",
+   "n": 40,
+   "vs_baseline": {
+    "wins": 40,
+    "losses": 0,
+    "p_better": 0.0,
+    "p_worse": 1.0
+   },
+   "vs_competitor": {
+    "wins": 40,
+    "losses": 0,
+    "p_better": 0.0,
+    "p_worse": 1.0
+   },
+   "status": "DEFAULT_FOR_GEOMETRY",
+   "mean_metric": {
+    "candidate": 1.730831,
+    "baseline": 8.083017,
+    "competitor": 7.1004
+   },
+   "median_seconds": 0.00067
+  },
+  "micro": {
+   "candidate": "set-point band (micro)",
+   "baseline": "single-threshold reflex",
+   "competitor": null,
+   "n": 40,
+   "vs_baseline": {
+    "wins": 38,
+    "losses": 2,
+    "p_better": 0.0,
+    "p_worse": 1.0
+   },
+   "status": "DEFAULT_FOR_GEOMETRY",
+   "mean_metric": {
+    "candidate": 103.7,
+    "baseline": 139.0,
+    "competitor": null
+   },
+   "median_seconds": 0.00071
+  },
+  "pattern": {
+   "candidate": "z-score threshold 3",
+   "baseline": "Tukey IQR fences",
+   "competitor": "median/MAD robust z 3.5",
+   "n": 40,
+   "vs_baseline": {
+    "wins": 6,
+    "losses": 23,
+    "p_better": 0.999727,
+    "p_worse": 0.001158
+   },
+   "vs_competitor": {
+    "wins": 1,
+    "losses": 24,
+    "p_better": 1.0,
+    "p_worse": 1e-06
+   },
+   "status": "REJECTED",
+   "mean_metric": {
+    "candidate": 0.439866,
+    "baseline": 0.060054,
+    "competitor": 0.015264
+   },
+   "median_seconds": 3e-05
+  },
+  "collective": {
+   "candidate": "quorum (threshold .7, abstains below)",
+   "baseline": "most accurate single observer",
+   "competitor": "simple majority",
+   "n": 40,
+   "vs_baseline": {
+    "wins": 5,
+    "losses": 16,
+    "p_better": 0.996401,
+    "p_worse": 0.013302
+   },
+   "vs_competitor": {
+    "wins": 7,
+    "losses": 11,
+    "p_better": 0.881058,
+    "p_worse": 0.240341
+   },
+   "status": "REJECTED",
+   "mean_metric": {
+    "candidate": -0.4,
+    "baseline": -0.65,
+    "competitor": -0.5
+   },
+   "median_seconds": 1e-05
+  },
+  "evolutionary": {
+   "candidate": "differential evolution",
+   "baseline": "analytic minimum (the declared centre)",
+   "competitor": null,
+   "n": 40,
+   "vs_baseline": {
+    "wins": 0,
+    "losses": 40,
+    "p_better": 1.0,
+    "p_worse": 0.0
+   },
+   "status": "REJECTED",
+   "mean_metric": {
+    "candidate": 0.647645,
+    "baseline": 0.0,
+    "competitor": null
+   },
+   "median_seconds": 0.02488
+  },
+  "simulation": {
+   "candidate": "Monte Carlo (200 samples)",
+   "baseline": "analytic steps x p",
+   "competitor": null,
+   "n": 40,
+   "vs_baseline": {
+    "wins": 0,
+    "losses": 40,
+    "p_better": 1.0,
+    "p_worse": 0.0
+   },
+   "status": "REJECTED",
+   "mean_metric": {
+    "candidate": 0.114206,
+    "baseline": 0.0,
+    "competitor": null
+   },
+   "median_seconds": 0.00063
+  },
+  "sequential": {
+   "candidate": "backward induction",
+   "baseline": "greedy one-step policy",
+   "competitor": null,
+   "n": 40,
+   "vs_baseline": {
+    "wins": 14,
+    "losses": 0,
+    "p_better": 6.1e-05,
+    "p_worse": 1.0
+   },
+   "status": "DEFAULT_FOR_GEOMETRY",
+   "mean_metric": {
+    "candidate": -4.7746,
+    "baseline": -4.653659,
+    "competitor": null
+   },
+   "median_seconds": 0.0005
+  },
+  "information": {
+   "candidate": "value-of-information rule",
+   "baseline": "never acquire",
+   "competitor": "always acquire",
+   "n": 40,
+   "vs_baseline": {
+    "wins": 26,
+    "losses": 0,
+    "p_better": 0.0,
+    "p_worse": 1.0
+   },
+   "vs_competitor": {
+    "wins": 14,
+    "losses": 0,
+    "p_better": 6.1e-05,
+    "p_worse": 1.0
+   },
+   "status": "DEFAULT_FOR_GEOMETRY",
+   "mean_metric": {
+    "candidate": -41.090237,
+    "baseline": -34.24525,
+    "competitor": -38.171134
+   },
+   "median_seconds": 0.0
+  },
+  "game": {
+   "candidate": "minimax LP",
+   "baseline": "uniform mix",
+   "competitor": "pure maximin",
+   "n": 40,
+   "vs_baseline": {
+    "wins": 40,
+    "losses": 0,
+    "p_better": 0.0,
+    "p_worse": 1.0
+   },
+   "vs_competitor": {
+    "wins": 33,
+    "losses": 0,
+    "p_better": 0.0,
+    "p_worse": 1.0
+   },
+   "status": "DEFAULT_FOR_GEOMETRY",
+   "mean_metric": {
+    "candidate": 0.293509,
+    "baseline": 1.653775,
+    "competitor": 1.3985
+   },
+   "median_seconds": 0.00249
+  },
+  "graph": {
+   "candidate": "Dijkstra (networkx)",
+   "baseline": "fewest-hops BFS path",
+   "competitor": null,
+   "n": 40,
+   "vs_baseline": {
+    "wins": 8,
+    "losses": 0,
+    "p_better": 0.003906,
+    "p_worse": 1.0
+   },
+   "status": "DEFAULT_FOR_GEOMETRY",
+   "mean_metric": {
+    "candidate": 21.765455,
+    "baseline": 24.295455,
+    "competitor": null
+   },
+   "median_seconds": 9e-05
+  },
+  "exact": {
+   "candidate": "exact rational arithmetic",
+   "baseline": "binary floating point",
+   "competitor": null,
+   "n": 40,
+   "vs_baseline": {
+    "wins": 40,
+    "losses": 0,
+    "p_better": 0.0,
+    "p_worse": 1.0
+   },
+   "status": "DEFAULT_FOR_GEOMETRY",
+   "mean_metric": {
+    "candidate": 0.0,
+    "baseline": 1.0,
+    "competitor": null
+   },
+   "median_seconds": 9e-05
+  },
+  "search": {
+   "status": "ALIAS",
+   "reason": "same solver as graph (SOLVERS['search'] is graph)"
+  },
+  "estimation": {
+   "status": "SUPERSEDED_BY_CANONICAL_ORGAN",
+   "reason": "cortex.estimation.fermi (P6 F1 evidence) is canonical"
+  },
+  "formal": {
+   "status": "SUPERSEDED_BY_CANONICAL_ORGAN",
+   "reason": "cortex.formal.z3 behind the 0.2.1 route policy (P4 evidence)"
+  },
+  "optimization": {
+   "status": "SUPERSEDED_BY_CANONICAL_ORGAN",
+   "reason": "cortex.optimization.cpsat behind the 0.2.1 route policy"
+  },
+  "causal": {
+   "status": "NOT_BENCHMARKED",
+   "reason": "randomized two-arm estimate equals the naive difference by construction; the observational case belongs to cortex.evidence_causal (P6 F2 evidence)"
+  },
+  "semantic": {
+   "status": "NOT_RUN",
+   "reason": "no founder-selected local model in this container"
+  },
+  "human": {
+   "status": "ROUTE_ONLY",
+   "reason": "records a panel and returns HUMAN_REVIEW_REQUIRED; not machine-benchmarkable"
+  },
+  "evidence": {
+   "status": "NOT_BENCHMARKED",
+   "reason": "evidence binding; no native ground-truth suite yet"
+  },
+  "protection": {
+   "status": "NOT_BENCHMARKED",
+   "reason": "victim-protection review; no native ground-truth suite yet"
+  }
+ }
+}

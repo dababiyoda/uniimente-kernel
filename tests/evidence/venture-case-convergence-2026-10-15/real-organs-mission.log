@@ -1,0 +1,39 @@
+kernel head: 567245a53491927f29fcc0f4a1bfd6ec61b574ec
+railscout head: 232f72421e5dbbf4ded6cc58ce5b4fd61cfbbf50 (/home/user/dababiyoda/railscout)
+wealthmachine head: ec82b8027d987c865dc123215afb53d20916908f (/home/user/WealthMachineIntelligence)
+
+== observational causal support (observational)
+mission states: ['ACTED', 'ACHIEVED']
+appraisal: VERIFIED; findings: []
+cognition receipt revenue: cognition.estimation 0.2.0, abstention_state NONE, authority_created False
+cognition receipt causal: cognition.causal 0.2.0, abstention_state UNIDENTIFIED, authority_created False
+cognition receipt revenue: cognition.estimation 0.2.0, abstention_state NONE, authority_created False
+cognition receipt causal: cognition.causal 0.2.0, abstention_state UNIDENTIFIED, authority_created False
+memo revenue section:
+  (GREG's own cognition; read-only)
+
+  **conditional** — an estimate is shown; no causal support for the offer producing it is identified, so no revenue conclusion is drawn.
+
+  - Estimate: 24000 to 720000 USD year^-1 (central 144000); an interval enclosure of the stated factors, not a probability
+  - Dominant uncertainty: brokers; cheapest evidence: price three brokers
+  - Receipt `sha256:01a22c12e3eaac190a3844f2066fbf42db41537f3ae18059f47d43ac35ff05db` (cognition.estimation 0.2.0)
+  - Causal support: not identified (UNIDENTIFIED); missing: NON_IDENTIFIABLE: verified randomized design, complete observations and two units per arm required
+  - Receipt `sha256:36f185b5b8445923d56fac36e16a754b699a9343920cb8dd9f7653d48d2a187c`
+
+== randomized causal support (randomized)
+mission states: ['ACTED', 'ACHIEVED']
+appraisal: VERIFIED; findings: []
+cognition receipt revenue: cognition.estimation 0.2.0, abstention_state NONE, authority_created False
+cognition receipt causal: cognition.causal 0.2.0, abstention_state NONE, authority_created False
+cognition receipt revenue: cognition.estimation 0.2.0, abstention_state NONE, authority_created False
+cognition receipt causal: cognition.causal 0.2.0, abstention_state NONE, authority_created False
+memo revenue section:
+  (GREG's own cognition; read-only)
+
+  **stated** — the estimate is supported by an identified (randomized) effect; it remains conditional on the stated identification assumptions.
+
+  - Estimate: 24000 to 720000 USD year^-1 (central 144000); an interval enclosure of the stated factors, not a probability
+  - Dominant uncertainty: brokers; cheapest evidence: price three brokers
+  - Receipt `sha256:217b239f7895cd7c511a291845b6aa212c608beb59b5d6a11fdae6640534b0cc` (cognition.estimation 0.2.0)
+  - Causal support: randomized difference in means 5, identified conditionally on random assignment, consistency, no interference, complete observations, independent units
+  - Receipt `sha256:54967b4bec7cb13cd6198165f719017822ded139b8ab0225679179e9fa3b9183` (cognition.causal 0.2.0)

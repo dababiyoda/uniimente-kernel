@@ -90,7 +90,7 @@
         "greg/cognition/disclosure.py",
         "tests/unit/test_cognition_disclosure.py"
       ],
-      "unresolved": "Rich typed computation receipts carry evidence, geometry, assumptions, uncertainty, calibration limits and contribution. Selective-disclosure evidence packages (RFC 9901 salted-hash disclosures, same-input completeness, custody statement, real action references, appended institutional responses) are built from retained receipts and exported read-only by `greg cognition package`; none was sent and no external acceptance is claimed. Unimplemented proof jurisdictions remain partial."
+      "unresolved": "Rich typed computation receipts carry evidence, geometry, assumptions, uncertainty, calibration limits and contribution. Selective-disclosure evidence packages (RFC 9901 salted-hash disclosures, same-input completeness, custody statement, real action references, appended institutional responses) are built from retained receipts and exported read-only by `greg cognition package`; none was sent and no external acceptance is claimed. Packages are unsigned (no issuer key; attribution rests on the channel) and do not prove ledger inclusion: record hashes in the linear chain cover whole payloads, so membership needs the records themselves. Recipient-checkable inclusion without disclosure needs write-time field commitments plus an anchored Merkle accumulator. Unimplemented proof jurisdictions remain partial."
     },
     {
       "section": 10,
@@ -114,9 +114,14 @@
       "section": 12,
       "status": "active",
       "implementation_refs": [
-        "greg/cognition/seed_path.py"
+        "greg/cognition/seed_path.py",
+        "greg/cognition/budget.py",
+        "greg/cognition/compiler.py",
+        "greg/cognition/cortex.py",
+        "tests/unit/test_cognition_thinking_budget.py",
+        "tests/unit/test_cognition_runtime_budget.py"
       ],
-      "unresolved": "Wall deadline and mandatory verifier reserve implemented. budget.optional_step (range-based, verifier reserve kept) exists but no runtime path calls it: wiring a deeper optional step means changing cortex.py, which the frozen evaluations pin, so it waits for the next freeze. Value of information exists as the information-family method and a Competency Compiler operator. Measured energy is not implemented."
+      "unresolved": "Two budget controls share one rule (required verification is never priced away). budget.ThinkingBudget encloses every single cognition invocation (cortex.reason, bridge.reason_cortex, seed_path): a wall deadline and a mandatory verifier reserve inside the caller's canonical grant window, compute and money ceilings, and advisory optional proposals priced with budget.optional_step as recommendations only (nothing extra executes). A thinking-budget controller (budget.Controller) governs the compile path. One declared latency_budget, or a labelled 20 s default, covers every inner run: the answer, the premises check and each sensitivity re-run, and on the convergence branch each call of a founder-attached Capability Genesis mechanism and of an attached construction. Inside a canonical dispatch the caller's grant window (latency ceiling, horizon, grant expiry, shared deadline) bounds the whole compiled decision and reaches every inner run, on the compile and chain routes alike (fourth review, COG-5: before, both routes dropped the window, so an expired grant still ran and a live one was labelled an inert standalone evaluation). Each inner run keeps its own mandatory verification reserve. Required steps are never value-gated; below the minimum step a required step is refused with BUDGET_EXHAUSTED, and the result narrows (ABSTAIN, or premises UNDECIDED). An optional re-run starts only when the slowest measured step fits in what remains, and an input it cannot afford is reported as untested. Every run and stop, with its reason, remaining budget and measured cost range, is kept in resource_use.budget. Cortex receipts record measured CPU seconds (the calling thread plus the solver and verifier processes). Open: peak memory per run and energy stay unmeasured; budget.optional_step, the value-priced variant, executes no step: ThinkingBudget calls it only to label advisory proposals, because no optional step yet states its decision value in the unit of its cost and no execution edge or grant is supplied; the cortex-problem and composition routes take the declared budget as their own ceiling but are not split into steps; a formed Genesis engine's wall limit is set by its runner (CPU limit plus 20 s per call), not by the remaining budget, so its overrun is measured and disclosed, not prevented; founder-attention escalation keeps the existing ask contract. Value of information also exists as the information-family method and a Competency Compiler operator. The frozen evaluations run at their freeze commits, so this change alters no recorded result."
     },
     {
       "section": 13,
@@ -131,9 +136,11 @@
       "section": 14,
       "status": "active",
       "implementation_refs": [
-        "tests/integration/test_greg_cognition_process.py"
+        "tests/integration/test_greg_cognition_process.py",
+        "greg/recovery.py",
+        "tests/unit/test_greg_restore.py"
       ],
-      "unresolved": "Linux SIGKILL/restart/STOP and replay tested. No multi-body convergence, backup restore, physical disturbance or antifragility improvement proof."
+      "unresolved": "Linux SIGKILL/restart/STOP and replay tested. Restoration from a tested backup: with thresholds declared before the drill (tests/evidence/restore-drill-2026-10-15/THRESHOLDS.md), greg foundry restore brings a body back from its Institutional Seed with a fresh witness key, its ledger verified against the head the seed recorded, and held: no action until a founder-key command issued after the restore; commands issued before the restore are refused, every earlier device delegation is void and every approval a live mission held is asked again, so a stale backup cannot resurrect a revoked device, replay a consumed command or repeat an approved action. Before it, a restored body could not boot, and with its key copied by hand it did all three. Antifragility, pre-registered (tests/evidence/antifragility-2026-10-15): a burst of real signed missions in a stratum where the default black-box minimiser is weak, a frozen disjoint holdout, the pre-stress system and a no-learning control. Verdict NO_GAIN twice. Run 1 found that settled competence heard successes only (7 of 7 correct while 5 of 12 missions failed), because a failed mission was never appraised; the fix adds an independently appraised failure closure (VERIFIED_UNMET, refuted if forged or if the world no longer shows it) and a stable claim identity, so run 2 settled 12 with the 5 failures. No gain remained because the demotion rule needs most outcomes to fail and the frozen admission index leaves the alternative SUPERSEDED; neither was weakened to manufacture one. Open: competence conditioned on scale or conditions rather than summed per method, a second living copy is not detectable without an external anchor (the founder's resume declares the original gone), a founder-key rotation after the recovery point is unknown to the restored body, external consequences after the recovery point are re-asked rather than reconciled with the external system, and no multi-body convergence, physical disturbance or antifragility improvement proof."
     },
     {
       "section": 15,
@@ -152,9 +159,11 @@
         "greg/cli.py",
         "greg/templates.py",
         "greg/phone/app.js",
-        "greg/console.py"
+        "greg/console.py",
+        "greg/workers.py",
+        "greg/cognition/restatement.py"
       ],
-      "unresolved": "CLI, mission, Gate, journal, appraisal and surface projection wired. Task Fabric/leases and downstream organ consumers not exercised."
+      "unresolved": "CLI, mission, Gate, journal, appraisal and surface projection wired. Downstream organ consumption: the venture case (carried from #143 a3c5e2dd onto the converged Mind) runs one signed body mission on real RailScout and WealthMachine checkouts; GREG's own estimation and causal receipts gate the memo, so an unidentified causal design yields an estimate and no revenue conclusion while the WealthMachine engine says go (tests/evidence/venture-case-convergence-2026-10-15). The organ bridge reads the ledger through a handle with no write method. Media case: GREG's evidence family now refutes six kinds of change between a claim and its supporting spans (figures, negation, certainty, scope, direction, named terms; finding none is not entailment), the verifier rechecks figures and polarity with separate code, and daleobanks.verify requires every sentence of a draft to be a claim the Mind answered as written, reading receipts through the same no-write ledger handle; one signed, consequence-inert mission ran on the real DALEOBANKS checkout (tests/evidence/media-case-convergence-2026-10-15). Task Fabric and worker lease: a document work order may carry a bound-claims acceptance contract, which its lease records together with its evaluator; the independent evaluator (worker.appraise) asks the Mind about every sentence against GREG's own copy of the inputs at the base commit, honours the body's capability states, and applies the contract signed into the mission over any recorded one. daleobanks_post (and so research_post) signs that contract by default, and its publish request requires the appraisal; on the real DALEOBANKS checkout its own checks passed all eight scripted-worker drafts and the Mind held back the seven that change what the source says, add a sentence no binding covers, or come without bindings (tests/evidence/task-fabric-convergence-2026-10-15). Open: multilingual explanation and audience feedback (need a permitted local model), entailment itself, a real frontier worker on the bound-claims contract (paid; not authorized), the Mind as evaluator of repository work orders, and any live consumer."
     },
     {
       "section": 17,

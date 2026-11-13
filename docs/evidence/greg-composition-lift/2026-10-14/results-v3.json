@@ -1,0 +1,3459 @@
+{
+ "schema": "greg-composition-lift-results/3",
+ "manifest_sha256": "sha256:8da4ca74bc6905ae0946f2a00111ff26fb6db09396c18a79dca360a7892b9633",
+ "finished_at": "2026-10-14T12:28:11.292620+00:00",
+ "source_commit": "6d5dadedf0d0ca8fb75a87622d6875c00dff91b4",
+ "platform": "Linux-6.18.44-fc-v114-x86_64-with-glibc2.39",
+ "python": "3.11.15",
+ "heldout": [
+  {
+   "item_id": "F3-101",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.68,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.562,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 0.834,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 5,
+      "b": 0
+     }
+    },
+    "recipe_estimate": {
+     "result": "correct",
+     "seconds": 1.533,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 3,
+      "b": 0
+     }
+    },
+    "recipe_identify": {
+     "result": "wrong",
+     "seconds": 1.492,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 5,
+      "b": 0
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.988,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 3,
+      "b": 0
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-102",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.499,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.573,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 0.864,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 3,
+      "b": 0
+     }
+    },
+    "recipe_estimate": {
+     "result": "correct",
+     "seconds": 1.269,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 2,
+      "b": 0
+     }
+    },
+    "recipe_identify": {
+     "result": "wrong",
+     "seconds": 1.482,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 3,
+      "b": 0
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.676,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 2,
+      "b": 0
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-103",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.493,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.684,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 0.833,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 9,
+      "b": 0
+     }
+    },
+    "recipe_estimate": {
+     "result": "correct",
+     "seconds": 1.299,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 7,
+      "b": 0
+     }
+    },
+    "recipe_identify": {
+     "result": "wrong",
+     "seconds": 1.593,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 9,
+      "b": 0
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 2.084,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 7,
+      "b": 0
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-104",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.659,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.717,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 0.937,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 10,
+      "b": 0
+     }
+    },
+    "recipe_estimate": {
+     "result": "correct",
+     "seconds": 1.267,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 8,
+      "b": 0
+     }
+    },
+    "recipe_identify": {
+     "result": "wrong",
+     "seconds": 1.404,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 10,
+      "b": 0
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.849,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 8,
+      "b": 0
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-105",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.519,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.583,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 0.94,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 6,
+      "b": 3
+     }
+    },
+    "recipe_estimate": {
+     "result": "correct",
+     "seconds": 1.238,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 8,
+      "b": 0
+     }
+    },
+    "recipe_identify": {
+     "result": "wrong",
+     "seconds": 1.52,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 6,
+      "b": 3
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.893,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 8,
+      "b": 0
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-106",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.464,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.578,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "correct",
+     "seconds": 0.801,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 6,
+      "b": 0
+     }
+    },
+    "recipe_estimate": {
+     "result": "correct",
+     "seconds": 1.277,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 6,
+      "b": 0
+     }
+    },
+    "recipe_identify": {
+     "result": "correct",
+     "seconds": 1.407,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 6,
+      "b": 0
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.807,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 6,
+      "b": 0
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-107",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.46,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.513,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 0.86,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 0,
+      "b": 7
+     }
+    },
+    "recipe_estimate": {
+     "result": "correct",
+     "seconds": 1.155,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 4
+     }
+    },
+    "recipe_identify": {
+     "result": "wrong",
+     "seconds": 1.348,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 7
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 2.008,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 4
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-108",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.593,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.553,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 0.842,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 1,
+      "b": 8
+     }
+    },
+    "recipe_estimate": {
+     "result": "correct",
+     "seconds": 1.388,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 7
+     }
+    },
+    "recipe_identify": {
+     "result": "wrong",
+     "seconds": 1.506,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 1,
+      "b": 8
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 2.038,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 7
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-109",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.464,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.56,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 0.808,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 9,
+      "b": 0
+     }
+    },
+    "recipe_estimate": {
+     "result": "correct",
+     "seconds": 1.295,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 6,
+      "b": 0
+     }
+    },
+    "recipe_identify": {
+     "result": "wrong",
+     "seconds": 1.352,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 9,
+      "b": 0
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.903,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 6,
+      "b": 0
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-110",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.539,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.537,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 0.845,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 3,
+      "b": 0
+     }
+    },
+    "recipe_estimate": {
+     "result": "correct",
+     "seconds": 1.3,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 2,
+      "b": 0
+     }
+    },
+    "recipe_identify": {
+     "result": "wrong",
+     "seconds": 1.457,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 3,
+      "b": 0
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 2.02,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 2,
+      "b": 0
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-111",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.453,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.512,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 0.917,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 0,
+      "b": 4
+     }
+    },
+    "recipe_estimate": {
+     "result": "correct",
+     "seconds": 1.522,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 3
+     }
+    },
+    "recipe_identify": {
+     "result": "wrong",
+     "seconds": 1.35,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 4
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.857,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 3
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-112",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.542,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.596,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 0.875,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 5,
+      "b": 10
+     }
+    },
+    "recipe_estimate": {
+     "result": "correct",
+     "seconds": 1.365,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 3,
+      "b": 10
+     }
+    },
+    "recipe_identify": {
+     "result": "wrong",
+     "seconds": 1.474,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 5,
+      "b": 10
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 2.025,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 3,
+      "b": 10
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-113",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.509,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.664,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 0.879,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 0,
+      "b": 4
+     }
+    },
+    "recipe_estimate": {
+     "result": "suboptimal",
+     "seconds": 1.413,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 2
+     }
+    },
+    "recipe_identify": {
+     "result": "no_decision",
+     "seconds": 0.259,
+     "state": "STAGE_ABSTAINED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": null
+    },
+    "routed": {
+     "result": "no_decision",
+     "seconds": 0.732,
+     "state": "STAGE_ABSTAINED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": null
+    }
+   }
+  },
+  {
+   "item_id": "F3-114",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.533,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.552,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 0.82,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 0,
+      "b": 8
+     }
+    },
+    "recipe_estimate": {
+     "result": "suboptimal",
+     "seconds": 1.419,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 2,
+      "b": 2
+     }
+    },
+    "recipe_identify": {
+     "result": "wrong",
+     "seconds": 1.387,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 8
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.997,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 4
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-115",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.507,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.587,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "correct",
+     "seconds": 0.893,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 10,
+      "b": 2
+     }
+    },
+    "recipe_estimate": {
+     "result": "correct",
+     "seconds": 1.386,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 10,
+      "b": 2
+     }
+    },
+    "recipe_identify": {
+     "result": "correct",
+     "seconds": 1.478,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 10,
+      "b": 2
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.91,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 10,
+      "b": 2
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-116",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.462,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.561,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 0.749,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 0,
+      "b": 5
+     }
+    },
+    "recipe_estimate": {
+     "result": "correct",
+     "seconds": 1.244,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 3
+     }
+    },
+    "recipe_identify": {
+     "result": "wrong",
+     "seconds": 1.388,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 5
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.806,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 3
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-117",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.44,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.577,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 0.8,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 0,
+      "b": 5
+     }
+    },
+    "recipe_estimate": {
+     "result": "correct",
+     "seconds": 1.235,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 3
+     }
+    },
+    "recipe_identify": {
+     "result": "wrong",
+     "seconds": 1.289,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 2,
+      "b": 3
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 2.044,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 1,
+      "b": 2
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-118",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.53,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.56,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 0.811,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 1,
+      "b": 2
+     }
+    },
+    "recipe_estimate": {
+     "result": "suboptimal",
+     "seconds": 1.189,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 2
+     }
+    },
+    "recipe_identify": {
+     "result": "wrong",
+     "seconds": 1.344,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 2,
+      "b": 0
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.869,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 1,
+      "b": 0
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-119",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.452,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.53,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 0.871,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 10,
+      "b": 1
+     }
+    },
+    "recipe_estimate": {
+     "result": "correct",
+     "seconds": 1.323,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 8,
+      "b": 0
+     }
+    },
+    "recipe_identify": {
+     "result": "wrong",
+     "seconds": 1.32,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 10,
+      "b": 1
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.935,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 8,
+      "b": 0
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-120",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.423,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.479,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 0.771,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 9,
+      "b": 2
+     }
+    },
+    "recipe_estimate": {
+     "result": "correct",
+     "seconds": 1.425,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 8,
+      "b": 0
+     }
+    },
+    "recipe_identify": {
+     "result": "wrong",
+     "seconds": 1.27,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 10,
+      "b": 1
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.868,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 8,
+      "b": 0
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-121",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.472,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.495,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 0.729,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 5,
+      "b": 4
+     }
+    },
+    "recipe_estimate": {
+     "result": "correct",
+     "seconds": 1.285,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 8,
+      "b": 0
+     }
+    },
+    "recipe_identify": {
+     "result": "correct",
+     "seconds": 1.32,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 8,
+      "b": 0
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.896,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 8,
+      "b": 0
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-122",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.51,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.58,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 0.837,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 9,
+      "b": 0
+     }
+    },
+    "recipe_estimate": {
+     "result": "correct",
+     "seconds": 1.681,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 6,
+      "b": 0
+     }
+    },
+    "recipe_identify": {
+     "result": "wrong",
+     "seconds": 1.775,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 9,
+      "b": 0
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 2.069,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 6,
+      "b": 0
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-123",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.53,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.522,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 0.803,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 4,
+      "b": 0
+     }
+    },
+    "recipe_estimate": {
+     "result": "correct",
+     "seconds": 1.273,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 3,
+      "b": 0
+     }
+    },
+    "recipe_identify": {
+     "result": "wrong",
+     "seconds": 1.431,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 4,
+      "b": 0
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.817,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 3,
+      "b": 0
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-124",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.519,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.666,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 0.784,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 9,
+      "b": 1
+     }
+    },
+    "recipe_estimate": {
+     "result": "suboptimal",
+     "seconds": 1.363,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 4,
+      "b": 4
+     }
+    },
+    "recipe_identify": {
+     "result": "wrong",
+     "seconds": 1.324,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 1,
+      "b": 10
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 2.029,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 9
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-125",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.499,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.609,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 1.024,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 0,
+      "b": 9
+     }
+    },
+    "recipe_estimate": {
+     "result": "correct",
+     "seconds": 1.531,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 6
+     }
+    },
+    "recipe_identify": {
+     "result": "wrong",
+     "seconds": 1.791,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 9
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 2.271,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 6
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-126",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.51,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.61,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 0.961,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 1,
+      "b": 7
+     }
+    },
+    "recipe_estimate": {
+     "result": "correct",
+     "seconds": 1.684,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 6
+     }
+    },
+    "recipe_identify": {
+     "result": "wrong",
+     "seconds": 1.789,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 1,
+      "b": 7
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 2.58,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 6
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-127",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.669,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.744,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 0.922,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 9,
+      "b": 0
+     }
+    },
+    "recipe_estimate": {
+     "result": "correct",
+     "seconds": 1.579,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 6,
+      "b": 0
+     }
+    },
+    "recipe_identify": {
+     "result": "wrong",
+     "seconds": 1.509,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 9,
+      "b": 0
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.834,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 6,
+      "b": 0
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-128",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.564,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.538,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 0.972,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 0,
+      "b": 6
+     }
+    },
+    "recipe_estimate": {
+     "result": "correct",
+     "seconds": 1.511,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 1,
+      "b": 3
+     }
+    },
+    "recipe_identify": {
+     "result": "no_decision",
+     "seconds": 0.275,
+     "state": "STAGE_ABSTAINED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": null
+    },
+    "routed": {
+     "result": "no_decision",
+     "seconds": 0.788,
+     "state": "STAGE_ABSTAINED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": null
+    }
+   }
+  },
+  {
+   "item_id": "F3-129",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.538,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.526,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 0.817,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 0,
+      "b": 7
+     }
+    },
+    "recipe_estimate": {
+     "result": "correct",
+     "seconds": 1.198,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 4
+     }
+    },
+    "recipe_identify": {
+     "result": "wrong",
+     "seconds": 1.311,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 7
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.948,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 4
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-130",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.509,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.615,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 0.848,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 6,
+      "b": 0
+     }
+    },
+    "recipe_estimate": {
+     "result": "correct",
+     "seconds": 1.333,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 5,
+      "b": 0
+     }
+    },
+    "recipe_identify": {
+     "result": "wrong",
+     "seconds": 1.42,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 4,
+      "b": 3
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 2.049,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 5,
+      "b": 0
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-131",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.533,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.57,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 0.908,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 7,
+      "b": 0
+     }
+    },
+    "recipe_estimate": {
+     "result": "correct",
+     "seconds": 1.589,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 5,
+      "b": 0
+     }
+    },
+    "recipe_identify": {
+     "result": "no_decision",
+     "seconds": 0.682,
+     "state": "STAGE_ABSTAINED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": null
+    },
+    "routed": {
+     "result": "no_decision",
+     "seconds": 1.126,
+     "state": "STAGE_ABSTAINED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": null
+    }
+   }
+  },
+  {
+   "item_id": "F3-132",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.604,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.521,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 0.766,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 2,
+      "b": 6
+     }
+    },
+    "recipe_estimate": {
+     "result": "correct",
+     "seconds": 1.512,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 6
+     }
+    },
+    "recipe_identify": {
+     "result": "wrong",
+     "seconds": 1.558,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 2,
+      "b": 6
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 2.101,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 6
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-133",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.575,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.594,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 1.043,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 0,
+      "b": 4
+     }
+    },
+    "recipe_estimate": {
+     "result": "correct",
+     "seconds": 1.495,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 2
+     }
+    },
+    "recipe_identify": {
+     "result": "wrong",
+     "seconds": 1.612,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 4
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.921,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 2
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-134",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.435,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.561,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 0.958,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 7,
+      "b": 0
+     }
+    },
+    "recipe_estimate": {
+     "result": "correct",
+     "seconds": 1.413,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 5,
+      "b": 0
+     }
+    },
+    "recipe_identify": {
+     "result": "wrong",
+     "seconds": 1.569,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 7,
+      "b": 0
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 2.103,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 5,
+      "b": 0
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-135",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.466,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.619,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 0.822,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 1,
+      "b": 2
+     }
+    },
+    "recipe_estimate": {
+     "result": "correct",
+     "seconds": 1.346,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 2
+     }
+    },
+    "recipe_identify": {
+     "result": "wrong",
+     "seconds": 1.379,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 1,
+      "b": 2
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 2.148,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 2
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-136",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.52,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.716,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 1.055,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 0,
+      "b": 5
+     }
+    },
+    "recipe_estimate": {
+     "result": "correct",
+     "seconds": 1.415,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 3
+     }
+    },
+    "recipe_identify": {
+     "result": "wrong",
+     "seconds": 1.648,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 5
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 2.445,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 3
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-137",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.56,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.599,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 0.951,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 9,
+      "b": 0
+     }
+    },
+    "recipe_estimate": {
+     "result": "correct",
+     "seconds": 1.577,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 6,
+      "b": 0
+     }
+    },
+    "recipe_identify": {
+     "result": "wrong",
+     "seconds": 1.469,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 9,
+      "b": 0
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 2.019,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 6,
+      "b": 0
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-138",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.522,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.699,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 0.766,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 6,
+      "b": 1
+     }
+    },
+    "recipe_estimate": {
+     "result": "correct",
+     "seconds": 1.431,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 5,
+      "b": 0
+     }
+    },
+    "recipe_identify": {
+     "result": "wrong",
+     "seconds": 1.499,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 7,
+      "b": 0
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.969,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 5,
+      "b": 0
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-139",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.497,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.541,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 0.823,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 0,
+      "b": 5
+     }
+    },
+    "recipe_estimate": {
+     "result": "correct",
+     "seconds": 1.435,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 4
+     }
+    },
+    "recipe_identify": {
+     "result": "wrong",
+     "seconds": 1.296,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 5
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.997,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 4
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-140",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.557,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.65,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "correct",
+     "seconds": 0.955,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 0,
+      "b": 7
+     }
+    },
+    "recipe_estimate": {
+     "result": "correct",
+     "seconds": 1.405,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 7
+     }
+    },
+    "recipe_identify": {
+     "result": "correct",
+     "seconds": 1.456,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 7
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.789,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 7
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-141",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.445,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.541,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 0.793,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 0,
+      "b": 5
+     }
+    },
+    "recipe_estimate": {
+     "result": "correct",
+     "seconds": 1.27,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 1,
+      "b": 3
+     }
+    },
+    "recipe_identify": {
+     "result": "wrong",
+     "seconds": 1.316,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 7,
+      "b": 1
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.888,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 6,
+      "b": 0
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-142",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.597,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.533,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 0.829,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 4,
+      "b": 10
+     }
+    },
+    "recipe_estimate": {
+     "result": "correct",
+     "seconds": 1.534,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 1,
+      "b": 10
+     }
+    },
+    "recipe_identify": {
+     "result": "wrong",
+     "seconds": 1.489,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 4,
+      "b": 10
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.967,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 2,
+      "b": 9
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-143",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.477,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.568,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 0.865,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 0,
+      "b": 8
+     }
+    },
+    "recipe_estimate": {
+     "result": "correct",
+     "seconds": 1.355,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 2,
+      "b": 4
+     }
+    },
+    "recipe_identify": {
+     "result": "wrong",
+     "seconds": 1.393,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 8
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 2.016,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 5
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-144",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.56,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.615,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 0.81,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 3,
+      "b": 1
+     }
+    },
+    "recipe_estimate": {
+     "result": "correct",
+     "seconds": 1.334,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 1,
+      "b": 2
+     }
+    },
+    "recipe_identify": {
+     "result": "wrong",
+     "seconds": 1.349,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 3,
+      "b": 1
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 2.086,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 1,
+      "b": 2
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-145",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.466,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.597,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "correct",
+     "seconds": 0.88,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 0,
+      "b": 10
+     }
+    },
+    "recipe_estimate": {
+     "result": "correct",
+     "seconds": 1.591,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 10
+     }
+    },
+    "recipe_identify": {
+     "result": "correct",
+     "seconds": 1.466,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 10
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 2.022,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 10
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-146",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.838,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.644,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 1.072,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 1,
+      "b": 2
+     }
+    },
+    "recipe_estimate": {
+     "result": "suboptimal",
+     "seconds": 1.628,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 2,
+      "b": 0
+     }
+    },
+    "recipe_identify": {
+     "result": "wrong",
+     "seconds": 1.537,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 1,
+      "b": 2
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 2.23,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 0,
+      "b": 1
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-147",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.582,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.662,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 0.92,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 5,
+      "b": 0
+     }
+    },
+    "recipe_estimate": {
+     "result": "correct",
+     "seconds": 1.346,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 3,
+      "b": 0
+     }
+    },
+    "recipe_identify": {
+     "result": "wrong",
+     "seconds": 1.533,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 5,
+      "b": 0
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.94,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 3,
+      "b": 0
+     }
+    }
+   }
+  },
+  {
+   "item_id": "F3-148",
+   "family": "F3",
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.545,
+     "state": "no plan from an estimate",
+     "chain": null,
+     "plan": null
+    },
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.593,
+     "state": "no plan from effects alone",
+     "chain": null,
+     "plan": null
+    },
+    "optimize_naive_point": {
+     "result": "wrong",
+     "seconds": 0.792,
+     "state": "single optimiser",
+     "chain": null,
+     "plan": {
+      "a": 3,
+      "b": 7
+     }
+    },
+    "recipe_estimate": {
+     "result": "correct",
+     "seconds": 1.271,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "optimize"
+     ],
+     "plan": {
+      "a": 4,
+      "b": 3
+     }
+    },
+    "recipe_identify": {
+     "result": "wrong",
+     "seconds": 1.459,
+     "state": "ANSWERED",
+     "chain": [
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 3,
+      "b": 7
+     }
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 2.103,
+     "state": "ANSWERED",
+     "chain": [
+      "estimate",
+      "identify",
+      "optimize"
+     ],
+     "plan": {
+      "a": 4,
+      "b": 3
+     }
+    }
+   }
+  }
+ ],
+ "summary": {
+  "vs_best_single": {
+   "best": "optimize_naive_point",
+   "wins": 41,
+   "losses": 0,
+   "sign_test_p_one_sided": 0.0,
+   "lift": true,
+   "counts": {
+    "estimate_alone": {
+     "correct": 0,
+     "wrong": 0,
+     "suboptimal": 0,
+     "no_decision": 48
+    },
+    "identify_alone": {
+     "correct": 0,
+     "wrong": 0,
+     "suboptimal": 0,
+     "no_decision": 48
+    },
+    "optimize_naive_point": {
+     "correct": 4,
+     "wrong": 44,
+     "suboptimal": 0,
+     "no_decision": 0
+    },
+    "recipe_estimate": {
+     "correct": 43,
+     "wrong": 0,
+     "suboptimal": 5,
+     "no_decision": 0
+    },
+    "recipe_identify": {
+     "correct": 5,
+     "wrong": 40,
+     "suboptimal": 0,
+     "no_decision": 3
+    },
+    "routed": {
+     "correct": 45,
+     "wrong": 0,
+     "suboptimal": 0,
+     "no_decision": 3
+    }
+   }
+  },
+  "vs_best_fixed_recipe": {
+   "best": "recipe_estimate",
+   "wins": 4,
+   "losses": 2,
+   "sign_test_p_one_sided": 0.34375,
+   "lift": false,
+   "counts": {
+    "estimate_alone": {
+     "correct": 0,
+     "wrong": 0,
+     "suboptimal": 0,
+     "no_decision": 48
+    },
+    "identify_alone": {
+     "correct": 0,
+     "wrong": 0,
+     "suboptimal": 0,
+     "no_decision": 48
+    },
+    "optimize_naive_point": {
+     "correct": 4,
+     "wrong": 44,
+     "suboptimal": 0,
+     "no_decision": 0
+    },
+    "recipe_estimate": {
+     "correct": 43,
+     "wrong": 0,
+     "suboptimal": 5,
+     "no_decision": 0
+    },
+    "recipe_identify": {
+     "correct": 5,
+     "wrong": 40,
+     "suboptimal": 0,
+     "no_decision": 3
+    },
+    "routed": {
+     "correct": 45,
+     "wrong": 0,
+     "suboptimal": 0,
+     "no_decision": 3
+    }
+   }
+  },
+  "median_seconds": {
+   "estimate_alone": 0.519,
+   "identify_alone": 0.577,
+   "optimize_naive_point": 0.847,
+   "recipe_estimate": 1.375,
+   "recipe_identify": 1.444,
+   "routed": 1.978
+  },
+  "routed_chains": [
+   "estimate+identify+optimize"
+  ]
+ },
+ "limits": [
+  "F3 is constructed to need both stages; not a natural task distribution",
+  "capacity truth assumes the generator's lognormal semantics, which the estimation organ shares"
+ ]
+}

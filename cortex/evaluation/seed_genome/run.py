@@ -112,15 +112,24 @@ def main():
     ap.add_argument('--freeze', action='store_true')
     ap.add_argument('--out', type=Path)
     args = ap.parse_args()
-    # v8 = the 2026-10-15 second review of that trunk: greg/models.py books what billed failed attempts
-    # cost (a refusal, an empty answer, a reported CLI error) - the only frozen input that changed;
-    # scoring, labels and solvers unchanged. v7 = the 2026-10-14 one-machine trunk: greg/models.py gained
-    # the founder's model-identity policy (no silent provider-side substitution; every attempt of a
-    # fallback chain bounded and booked). v6 = the convergence tree:
-    # greg/cognition/seed_path.py gained the #159 ThinkingBudget enclosure when the Codex and Mind lines
-    # were merged; v5 = the committed converged Mind tree (v4 was written before the final
-    # greg/models.py merge and the protobuf pin in the same commit, so CI refused it); v1-v7 kept.
-    manifest = HERE / 'freeze-v8.json'
+    # v11 = PR #184's third review: greg/models.py reads the CLI's verbose JSON array, books the cap when the CLI's
+    # cost is unknown (never $0), turns the CLI's own model and refusal fallback off, and withholds an answer its
+    # report says another model wrote; the seed path, its static rules and scoring are untouched.
+    # v10 = PR #184's second review: greg/models.py reads the Claude Code CLI's JSON report before its exit status (the
+    # CLI exits 1 on every is_error result), so a billed CLI failure is booked and a CLI refusal is final; the seed
+    # path, its static rules and scoring are untouched and its model baselines stay NOT_RUN.
+    # v9 = the tree that joined #178's 2026-10-15 second review (44f7c35) into PR #184: greg/models.py books what billed
+    # failed attempts cost (a refusal, an empty answer, a reported CLI error) on both the in-process and the confined
+    # child path; the seed path, its static rules and scoring are untouched and its model baselines stay NOT_RUN.
+    # Two v8s are kept byte for byte: freeze-v8.json is #178's (that review on the one-machine trunk) and
+    # freeze-v8-pr184.json is PR #184's (#169 joined into the #178 trunk: the model-identity policy carried into
+    # #169's confined child behind the relay). #178 lineage: v7 = greg/models.py gained the model-identity policy (no
+    # silent provider-side substitution; every attempt of a fallback chain bounded and booked); v6 =
+    # greg/cognition/seed_path.py gained the #159 ThinkingBudget enclosure. #169 lineage, kept as freeze-v6-pr169.json
+    # and freeze-v7-pr169.json: v7 = the door namespace stopped showing the founder's home to the Claude Code CLI;
+    # v6 = #26 confined the paid model routes. v5 = the committed converged tree (v4 was written before the final
+    # greg/models.py merge and the protobuf pin); v1-v8 kept.
+    manifest = HERE / 'freeze-v11.json'
     frozen = inputs()
     if args.freeze:
         if manifest.exists():

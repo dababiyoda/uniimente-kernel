@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 from pathlib import Path
 import resource
 import sys
@@ -14,12 +15,29 @@ from greg.cognition.contracts import CognitionError, canonical  # noqa: E402
 from greg.cognition.solvers import SOLVERS  # noqa: E402
 
 
-def cortex_main(request):
+def _result_channel():
+    """The worker's one JSON result is the only thing its stdout may carry. Native code inside a solver or verifier
+    (a HiGHS debug line, a BLAS warning, C stdio flushed at exit) writes to file descriptor 1 directly, below Python's
+    ``sys.stdout``; one such line made the caller read 'Extra data' and abstain on a valid model. From here on
+    descriptor 1 is stderr, for Python and native writes alike, and the result goes to a private duplicate of the
+    original stdout that nothing else holds."""
+    sys.stdout.flush()
+    result = os.dup(1)
+    os.dup2(2, 1)
+    channel = os.fdopen(result, "w", encoding="utf-8")
+
+    def emit(text):
+        channel.write(text + "\n")
+        channel.flush()
+    return emit
+
+
+def cortex_main(request, emit):
     """Run the Polyintelligence Cortex inside this bounded, network-isolated process.
 
     The body supplies which organs GREG's registry withholds (founder detach) and,
     only when the founder selected a local model, the loopback model to use. The
-    receipt is printed; the body re-validates it before anything is retained."""
+    receipt is emitted; the body re-validates it before anything is retained."""
     from cortex.genome import seed_registry
     from cortex.organs.schedule_extraction import ScheduleExtractionOrgan
     from cortex.organs.semantic import SemanticOrgan
@@ -53,7 +71,7 @@ def cortex_main(request):
     text = canonical(receipt)
     if len(text.encode()) > 512 * 1024:
         raise CognitionError("cortex receipt exceeds 512 KiB")
-    print(text)
+    emit(text)
 
 
 class _NoSelectedModel:
@@ -63,15 +81,16 @@ class _NoSelectedModel:
 
 
 def main():
+    emit = _result_channel()
     family, request_json = sys.argv[1:]
     request = json.loads(request_json)
     if family == "__cortex__":
         try:
-            cortex_main(request)
+            cortex_main(request, emit)
         except (CognitionError, ValueError, TypeError, KeyError) as exc:
-            print(canonical({"error": "MODEL_INVALID", "detail": str(exc)[:300]}))
+            emit(canonical({"error": "MODEL_INVALID", "detail": str(exc)[:300]}))
         except ImportError as exc:
-            print(canonical({"error": "DEPENDENCY_UNAVAILABLE", "detail": str(exc)[:300]}))
+            emit(canonical({"error": "DEPENDENCY_UNAVAILABLE", "detail": str(exc)[:300]}))
         return
     seconds = max(1, math.ceil(request["geometry"]["latency_limit"]))
     resource.setrlimit(resource.RLIMIT_CPU, (seconds, seconds + 1))
@@ -87,11 +106,11 @@ def main():
         text = canonical(answer)
         if len(text.encode()) > 256 * 1024:
             raise CognitionError("solver output exceeds 256 KiB")
-        print(text)
+        emit(text)
     except (CognitionError, ValueError, TypeError, KeyError, ZeroDivisionError, SyntaxError) as exc:
-        print(canonical({"error": "MODEL_INVALID", "detail": str(exc)[:300]}))
+        emit(canonical({"error": "MODEL_INVALID", "detail": str(exc)[:300]}))
     except ImportError as exc:
-        print(canonical({"error": "DEPENDENCY_UNAVAILABLE", "detail": str(exc)[:300]}))
+        emit(canonical({"error": "DEPENDENCY_UNAVAILABLE", "detail": str(exc)[:300]}))
 
 
 if __name__ == "__main__":

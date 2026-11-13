@@ -1,6 +1,6 @@
 """Routing integrity through the real ``openai`` and ``anthropic`` SDK clients.
 
-The SDKs are optional dependencies (not installed in CI); these tests run wherever they are.
+The SDKs are optional product dependencies; requirements-dev.txt installs them so CI runs these tests.
 Each client talks to an in-process HTTP stub (httpx MockTransport), so the error objects,
 request shapes and response parsing are the SDKs' own. No network, no key, no spend.
 """
@@ -8,7 +8,7 @@ import json
 
 import pytest
 
-httpx2 = pytest.importorskip("httpx2")
+httpx = pytest.importorskip("httpx")
 openai = pytest.importorskip("openai")
 anthropic = pytest.importorskip("anthropic")
 
@@ -20,14 +20,14 @@ FLAGGED = {"error": {"message": "Invalid prompt: your prompt was flagged as pote
 
 
 def openai_client(status, body):
-    transport = httpx2.MockTransport(lambda request: httpx2.Response(status, json=body))
+    transport = httpx.MockTransport(lambda request: httpx.Response(status, json=body))
     return openai.OpenAI(api_key="sk-test", base_url="https://api.openai.com/v1", max_retries=0,
-                         http_client=httpx2.Client(transport=transport))
+                         http_client=httpx.Client(transport=transport))
 
 
 def anthropic_client(handler):
     return anthropic.Anthropic(api_key="sk-ant-test", base_url="https://api.anthropic.com", max_retries=0,
-                               http_client=httpx2.Client(transport=httpx2.MockTransport(handler)))
+                               http_client=httpx.Client(transport=httpx.MockTransport(handler)))
 
 
 class Witness:
@@ -62,12 +62,12 @@ def test_anthropic_errors_are_classified_through_the_real_sdk():
     def handler(request):
         text = json.loads(request.content)["messages"][0]["content"]
         if text == "overloaded":
-            return httpx2.Response(529, json={"type": "error", "error": {"type": "overloaded_error",
+            return httpx.Response(529, json={"type": "error", "error": {"type": "overloaded_error",
                                                                           "message": "Overloaded"}})
         if text == "policy":   # illustrative wording: Anthropic normally declines via stop_reason "refusal"
-            return httpx2.Response(400, json={"type": "error", "error": {
+            return httpx.Response(400, json={"type": "error", "error": {
                 "type": "invalid_request_error", "message": "Output blocked by content filtering policy"}})
-        return httpx2.Response(200, json={
+        return httpx.Response(200, json={
             "id": "msg_1", "type": "message", "role": "assistant", "model": "claude-sonnet-5-20260801",
             "content": [{"type": "text", "text": "ok"}], "stop_reason": "end_turn", "stop_sequence": None,
             "usage": {"input_tokens": 10, "output_tokens": 5}})

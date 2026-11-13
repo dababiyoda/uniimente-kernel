@@ -1,6 +1,6 @@
 $ greg cognition package --mission m:evidence-package --recipient 'Example Operations Desk' --purpose '...' --remedy '...' --reveal output --out <dir>
 {
-  "package_digest": "sha256:e09aa6c2a9cad43beea8062443e804ab2d69882c9c3d95966096702469f83bef",
+  "package_digest": "sha256:dbc7096d77376a5fef3f6055ee151358a6eb2762d0fa20b25d832ff6dd3f6b44",
   "items": 1,
   "contradictions": [],
   "revealed": [
@@ -106,11 +106,12 @@ $ greg cognition verify-package presentation.json
     }
   ],
   "contradictions": [],
-  "proves": "the revealed values are the ones GREG committed to in this package",
+  "proves": "the revealed values match the commitments in this package",
   "does_not_prove": [
+    "Integrity only: each revealed value matches a commitment in this package. The package is unsigned (GREG holds no issuer key), so that GREG issued it rests on the channel it arrived through.",
     "Not factual truth: computation and formal validity hold within the encoded model and stated assumptions.",
     "Not legitimacy: no law, consent, rights or authority question is settled by this package.",
-    "Not inclusion proof by itself: ledger membership needs the ledger or an exported witness bundle.",
+    "Not inclusion proof: showing a record is in GREG's ledger takes the ledger records themselves; a witness bundle only shows that a presented ledger was not rewritten after anchoring.",
     "Not acceptance: the recipient may dispute the data, model, jurisdiction, completeness or relevance, or decline; its response is recorded, never presumed."
   ]
 }
@@ -118,14 +119,7 @@ $ greg cognition verify-package presentation.json
 exit=0
 
 $ greg cognition verify-package tampered.json  (remedy text edited after packaging)
-pt",
-        "formal_validity": "VALID_CONDITIONAL_ON_MODEL",
-        "method": "cognition.optimization",
-        "method_version": "0.2.0",
-        "missing_information": [],
-        "outcome_state": "ANSWERED_WITHIN_SCOPE",
-        "output": {
-          "objective_value": 12.0,
+: 12.0,
           "solution": {
             "crew_a": 0,
             "crew_b": 6
@@ -146,11 +140,12 @@ pt",
     }
   ],
   "contradictions": [],
-  "proves": "the revealed values are the ones GREG committed to in this package",
+  "proves": "the revealed values match the commitments in this package",
   "does_not_prove": [
+    "Integrity only: each revealed value matches a commitment in this package. The package is unsigned (GREG holds no issuer key), so that GREG issued it rests on the channel it arrived through.",
     "Not factual truth: computation and formal validity hold within the encoded model and stated assumptions.",
     "Not legitimacy: no law, consent, rights or authority question is settled by this package.",
-    "Not inclusion proof by itself: ledger membership needs the ledger or an exported witness bundle.",
+    "Not inclusion proof: showing a record is in GREG's ledger takes the ledger records themselves; a witness bundle only shows that a presented ledger was not rewritten after anchoring.",
     "Not acceptance: the recipient may dispute the data, model, jurisdiction, completeness or relevance, or decline; its response is recorded, never presumed."
   ]
 }

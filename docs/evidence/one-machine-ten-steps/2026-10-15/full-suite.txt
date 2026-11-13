@@ -1,0 +1,24 @@
+== tree d965bb7 2026-10-15T13:51:09Z
+FAILED tests/unit/test_foundry_namespace_privacy.py::test_greg_python_still_runs_inside_when_its_runtime_lives_under_the_hidden_home[virtualenv]
+SKIPPED [1] tests/integration/test_greg_vendor_loss.py:24: could not import 'anthropic': No module named 'anthropic'
+SKIPPED [1] tests/unit/test_greg_routing_integrity_sdk.py:11: could not import 'httpx': No module named 'httpx'
+SKIPPED [1] tests/integration/test_greg_confined_egress.py:697: could not import 'anthropic': No module named 'anthropic'
+SKIPPED [1] tests/integration/test_greg_confined_egress.py:724: could not import 'openai': No module named 'openai'
+SKIPPED [1] tests/integration/test_greg_mcp_mission.py:95: set GREG_TEST_MCP_SERVERS to a directory with time/ and git/ venvs
+SKIPPED [1] tests/integration/test_greg_mcp_mission.py:110: set GREG_TEST_MCP_SERVERS to a directory with time/ and git/ venvs
+SKIPPED [1] tests/unit/test_cross_organ_mission.py:65: sibling organ checkouts not configured
+SKIPPED [1] tests/unit/test_greg_cognition.py:128: Preserved P6 research qualification; collective default intentionally unavailable in seed
+SKIPPED [1] tests/unit/test_greg_cognition.py:175: Preserved P5/P8 qualification; optional dependencies not acquired in seed
+SKIPPED [1] tests/unit/test_greg_cognition.py:210: Preserved research adapter; protection professional workflow remains outside active seed
+SKIPPED [1] tests/unit/test_greg_daleobanks_bridge.py:33: DALEOBANKS checkout with .venv not present beside the Kernel
+SKIPPED [1] tests/unit/test_greg_daleobanks_bridge.py:45: DALEOBANKS checkout with .venv not present beside the Kernel
+SKIPPED [1] tests/unit/test_greg_daleobanks_bridge.py:51: DALEOBANKS checkout with .venv not present beside the Kernel
+SKIPPED [1] tests/unit/test_greg_daleobanks_bridge.py:58: DALEOBANKS checkout with .venv not present beside the Kernel
+SKIPPED [1] tests/unit/test_greg_organ_exchange.py:378: set GREG_TEST_DALEOBANKS and GREG_TEST_WMI to real organ checkouts
+SKIPPED [3] tests/unit/test_greg_organs.py:36: organ checkouts not configured (UNIIMENTE_DALEOBANKS_ROOT, UNIIMENTE_DALEOBANKS_PYTHON, UNIIMENTE_WEALTHMACHINE_ROOT, UNIIMENTE_WEALTHMACHINE_PYTHON)
+SKIPPED [1] tests/unit/test_greg_ventures.py:218: set GREG_TEST_RAILSCOUT and GREG_TEST_WMI to real organ checkouts
+SKIPPED [1] tests/unit/test_greg_ventures.py:384: set GREG_TEST_RAILSCOUT and GREG_TEST_WMI to real organ checkouts
+SKIPPED [1] tests/unit/test_research_line.py:294: could not import 'duckdb': No module named 'duckdb'
+SKIPPED [3] tests/unit/test_research_line.py:307: Real composition requires clean pinned consumer checkouts
+1 failed, 3646 passed, 24 skipped, 34 warnings in 2075.83s (0:34:35)
+exit=1

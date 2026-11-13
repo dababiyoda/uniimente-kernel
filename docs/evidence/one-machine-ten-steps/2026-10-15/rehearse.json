@@ -1,0 +1,70 @@
+{
+ "label": "REHEARSAL",
+ "directory": "/tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/rehearse-d965/work",
+ "home": "/tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/rehearse-d965/work/body",
+ "throwaway_key": "/tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/rehearse-d965/work/REHEARSAL-throwaway-founder-key.pem",
+ "kernel_root": "/home/user/uk-conv3",
+ "mission_id": "m:first-mission-1e05b4db0c",
+ "state": "ACHIEVED",
+ "steps_done": [
+  "survey",
+  "compose",
+  "select",
+  "dossier",
+  "retain",
+  "owned-page"
+ ],
+ "steps_repeated": [],
+ "appraisal": "VERIFIED",
+ "dossier": "/tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/rehearse-d965/work/body/deliveries/first-mission/m_first-mission-1e05b4db0c.md",
+ "ledger_chain_verified": true,
+ "venture_rehearsal": {
+  "mission_id": "m:venture-rehearsal-07df97d0e4",
+  "state": "ACHIEVED",
+  "books": {
+   "mission_id": "m:venture-rehearsal-07df97d0e4",
+   "mode": "FIXTURE",
+   "money_moved": false,
+   "currency": "USD",
+   "balances": {
+    "fixture_consideration": 1200,
+    "fixture_receipts": 1200
+   },
+   "totals": {
+    "asset": 1200,
+    "liability": 0,
+    "equity": 0,
+    "revenue": 1200,
+    "expense": 0
+   },
+   "equation_holds": true
+  }
+ },
+ "second_first_mission": {
+  "mission_id": "m:first-mission-fe6c79653d",
+  "state": "ACHIEVED",
+  "since_last": {
+   "newly_selected": [],
+   "no_longer_selected": [],
+   "previous_lesson": "With 10 candidates and an effort budget of 8, the greedy baseline matched the exact optimum (99); the simpler method suffices at this scale.",
+   "previous_mission": "m:first-mission-1e05b4db0c",
+   "previous_receipt": "sha256:75f112902782c4aae29d1dc7fa8431e4092d2184c98a459ba98ee7413e887fac",
+   "still_selected": [
+    "horizon:competency_compiler",
+    "horizon:founder_interface",
+    "horizon:persistent_goal_pursuit",
+    "horizon:capability_genesis"
+   ]
+  },
+  "lesson": "With 10 candidates and an effort budget of 8, the greedy baseline matched the exact optimum (99); the simpler method suffices at this scale."
+ },
+ "elapsed_seconds": 75.11,
+ "counts_toward_vepmc": false,
+ "authenticates_founder": false,
+ "used": {
+  "network": false,
+  "models": false,
+  "money": false,
+  "messages": false
+ }
+}

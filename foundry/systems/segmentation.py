@@ -18,8 +18,10 @@ founder has not granted. This mechanism needs none:
 
 Inter-organ traffic is the same thing: an organ's allowlist names the loopback endpoints of the organs it may call.
 
-Limits, stated: only components launched through ``run_confined`` are covered; capabilities that run inside the body
-process itself (``github.pulls``, ``http.get``, the browser) are not yet routed through the relay. External upstream
+Limits, stated: only components launched through ``run_confined``, or behind ``relay_door`` in a network namespace,
+are covered. On a body with confined egress that is ``http.get``, ``github.pulls`` and ``brief.engineering`` (here) and
+``browser.render`` and coding workers (the door). Still outside: ``browser.session`` (Playwright), the paid model
+routes called from the body process, anchoring, and the DALEOBANKS bridge. External upstream
 connections are refused unless the policy marks the identity ``external: true``: the relay opens them from the body
 process, and in an environment whose egress must traverse a mandated proxy the relay must chain to it first (the
 2026-09-30 negative evidence: a direct connection bypassed the configured proxy). The filter needs Linux and
@@ -33,6 +35,7 @@ import hashlib
 import ipaddress
 import json
 import os
+import re
 from pathlib import Path
 import socket
 import subprocess
@@ -94,6 +97,15 @@ def _loopback(host: str) -> bool:
 
 # -- evidence ----------------------------------------------------------------------------------------------------
 
+# The relay's refusals of a destination, as journaled. Its other DENIED rows (a request limit, an oversized or
+# malformed request) refuse a request without consulting any allowlist, so they are not destination decisions.
+NO_POLICY = "identity has no egress policy"
+NOT_ALLOWED = "host and port are not on this identity's allowlist"
+NOT_EXTERNAL = "external upstream not declared for this identity"
+DESTINATION_REFUSALS = frozenset({NO_POLICY, NOT_ALLOWED, NOT_EXTERNAL})
+QUARANTINED = "TORN_TAIL_QUARANTINED"   # a chained record that a torn final line was moved to a sidecar
+
+
 class Journal:
     """Append-only, hash-chained relay decisions in one JSONL file."""
 
@@ -102,30 +114,117 @@ class Journal:
         self.lock = threading.Lock()
 
     def append(self, entry: dict) -> dict:
+        # One chain, possibly several writers (the body and its console both decide egress): the read of the head and
+        # the append are one step under an exclusive file lock, not only a thread lock.
+        import fcntl
         with self.lock:
-            rows = self.read()
-            prev = rows[-1]["hash"] if rows else GENESIS
-            body = {**entry, "seq": len(rows), "prev": prev}
-            body["hash"] = "sha256:" + hashlib.sha256(json.dumps(body, sort_keys=True).encode()).hexdigest()
             self.path.parent.mkdir(parents=True, exist_ok=True)
-            with open(self.path, "a") as fh:
-                fh.write(json.dumps(body, sort_keys=True) + "\n")
-            return body
+            with open(self.path.with_name(self.path.name + ".lock"), "a") as guard:
+                fcntl.flock(guard, fcntl.LOCK_EX)
+                try:
+                    moved = self._repair_tail()
+                    rows = self.read()                     # damage in a committed row raises: never append onto it
+                    if moved:
+                        rows.append(self._chain(rows, {"verdict": QUARANTINED, **moved}))
+                    return self._chain(rows, entry)
+                finally:
+                    fcntl.flock(guard, fcntl.LOCK_UN)
+
+    def _chain(self, rows: list[dict], entry: dict) -> dict:
+        prev = rows[-1]["hash"] if rows else GENESIS
+        body = {**entry, "seq": len(rows), "prev": prev}
+        body["hash"] = "sha256:" + hashlib.sha256(json.dumps(body, sort_keys=True).encode()).hexdigest()
+        with open(self.path, "a") as fh:
+            fh.write(json.dumps(body, sort_keys=True) + "\n")
+        return body
+
+    def _rows(self) -> tuple[list[dict], bytes, int | None]:
+        """The complete rows; a final line cut short by a crash mid-append (no newline, not JSON); and the index of
+        the first committed row that does not parse, if any (damage, not an interrupted append)."""
+        if not self.path.is_file():
+            return [], b"", None
+        *lines, tail = self.path.read_bytes().split(b"\n")
+        rows = []
+        for line in lines:
+            if not line.strip():
+                continue
+            try:
+                rows.append(json.loads(line))
+            except ValueError:
+                return rows, b"", len(rows)
+        if tail.strip():
+            try:
+                rows.append(json.loads(tail))
+            except ValueError:
+                return rows, tail, None
+        return rows, b"", None
+
+    def _repair_tail(self) -> dict | None:
+        """Before an append (under the file lock): a torn final line moves to a sidecar named by its digest, created
+        exclusively and synced before the journal is cut back, so a later crash never overwrites an earlier one; the
+        move is then chained as its own row. A complete final row that lost its newline gets one, so the next row is
+        never glued onto it."""
+        if not self.path.is_file():
+            return None
+        raw = self.path.read_bytes()
+        if not raw or raw.endswith(b"\n"):
+            return None
+        cut = raw.rfind(b"\n") + 1
+        tail = raw[cut:]
+        try:
+            json.loads(tail)
+        except ValueError:
+            digest = hashlib.sha256(tail).hexdigest()
+            side = self.path.with_name(f"{self.path.name}.torn-{cut}-{digest[:16]}")
+            try:
+                fd = os.open(side, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+            except FileExistsError:
+                if hashlib.sha256(side.read_bytes()).hexdigest() != digest:
+                    raise SegmentationError(f"{side.name} exists with other bytes") from None
+            else:
+                with os.fdopen(fd, "wb") as fh:
+                    fh.write(tail)
+                    fh.flush()
+                    os.fsync(fh.fileno())
+            folder = os.open(self.path.parent, os.O_RDONLY | os.O_DIRECTORY)
+            try:
+                os.fsync(folder)
+            finally:
+                os.close(folder)
+            os.truncate(self.path, cut)
+            return {"offset": cut, "bytes": len(tail), "sha256": "sha256:" + digest, "sidecar": side.name}
+        with open(self.path, "ab") as fh:
+            fh.write(b"\n")
+        return None
 
     def read(self) -> list[dict]:
-        if not self.path.is_file():
-            return []
-        return [json.loads(line) for line in self.path.read_text().splitlines() if line.strip()]
+        rows, _, damaged = self._rows()
+        if damaged is not None:
+            raise ValueError(f"the relay journal does not parse at entry {damaged}")
+        return rows
 
     def verify(self) -> dict:
+        """The chain's state, as a result, never an exception: damage that does not parse is reported where it is."""
         prev = GENESIS
-        for i, row in enumerate(self.read()):
+        rows, torn, damaged = self._rows()
+        for i, row in enumerate(rows):
             body = {k: v for k, v in row.items() if k != "hash"}
             digest = "sha256:" + hashlib.sha256(json.dumps(body, sort_keys=True).encode()).hexdigest()
             if row.get("seq") != i or row.get("prev") != prev or row.get("hash") != digest:
                 return {"intact": False, "broken_at": i}
             prev = row["hash"]
-        return {"intact": True, "entries": len(self.read()), "head": prev}
+        if damaged is not None:
+            return {"intact": False, "broken_at": damaged, "malformed": True}
+        out = {"intact": True, "entries": len(rows), "head": prev}
+        if torn:
+            # An append a crash cut short. A torn ALLOWED row can be the record of a connection that already ran (the
+            # relay journals it when the connection ends), so it counts as no verdict and is shown, never dropped:
+            # the next append moves it to a sidecar and chains the move.
+            out["torn_tail_bytes"] = len(torn)
+        quarantined = sum(1 for r in rows if r.get("verdict") == QUARANTINED)
+        if quarantined:
+            out["quarantined_tails"] = quarantined
+        return out
 
 
 # -- relay -------------------------------------------------------------------------------------------------------
@@ -187,17 +286,21 @@ class Relay:
     def decide(self, identity: str, host: str, port: int) -> str | None:
         spec = self.policy.get(identity)
         if spec is None:
-            return "identity has no egress policy"
+            return NO_POLICY
         if [host.lower(), port] not in spec["allow"]:
-            return "host and port are not on this identity's allowlist"
+            return NOT_ALLOWED
         if not _loopback(host) and not spec["external"]:
-            return "external upstream not declared for this identity"
+            return NOT_EXTERNAL
         return None
 
     MAX_REQUESTS = 64          # per control channel: a compromised component cannot exhaust the relay
 
-    def serve(self, identity: str, control: socket.socket):
-        """One component's control channel, until it closes."""
+    def serve(self, identity: str, control: socket.socket, *, max_requests: int | None = None):
+        """One component's control channel, until it closes. A browser or provider client opens many connections, so
+        its door may raise the per-channel limit; it stays a bound."""
+        limit = self.MAX_REQUESTS if max_requests is None else max_requests
+        if type(limit) is not int or not 1 <= limit <= 4096:
+            raise SegmentationError("max_requests is an integer from 1 to 4096")
         with control:
             buf, requests = b"", 0
             while True:
@@ -211,7 +314,7 @@ class Relay:
                 while b"\n" in buf:
                     line, buf = buf.split(b"\n", 1)
                     requests += 1
-                    if requests > self.MAX_REQUESTS:
+                    if requests > limit:
                         self.journal.append({"identity": identity, "verdict": "DENIED", "why": "request limit"})
                         return
                     self._request(identity, control, line)
@@ -309,7 +412,7 @@ def _confiner(refused_fd: int):
 
 
 def run_confined(argv: list, *, identity: str, relay: Relay, cwd: Path, timeout: int = 30,
-                 env: dict | None = None) -> subprocess.CompletedProcess:
+                 env: dict | None = None, input_bytes: bytes | None = None) -> subprocess.CompletedProcess:
     """Run one component with no socket of its own and one governed door, the relay."""
     if sys.platform != "linux":
         raise SegmentationError("kernel socket confinement requires Linux; launch refused")
@@ -318,7 +421,9 @@ def run_confined(argv: list, *, identity: str, relay: Relay, cwd: Path, timeout:
     worker.start()
     refused_r, refused_w = os.pipe()
     try:
+        stdin = {"stdin": subprocess.DEVNULL} if input_bytes is None else {"input": input_bytes}
         proc = subprocess.run(argv, cwd=cwd, capture_output=True, timeout=timeout, preexec_fn=_confiner(refused_w),
+                              **stdin,
                               pass_fds=(child.fileno(),), close_fds=True,
                               env={"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "PYTHONPATH": str(ROOT),
                                    "PYTHONDONTWRITEBYTECODE": "1", "GREG_EGRESS_FD": str(child.fileno()),
@@ -361,51 +466,105 @@ FETCH = r'''
 import base64, json, os, ssl, sys
 from foundry.systems.segmentation import egress_connect
 host, port, path, limit = sys.argv[1], int(sys.argv[2]), sys.argv[3], int(sys.argv[4])
-context = ssl.create_default_context(cafile=os.environ.get("GREG_EGRESS_CAFILE") or None)
+flags = sys.argv[5:]
+# Extra request headers (e.g. a credential) and a request body arrive on stdin, never in argv or the environment.
+method, extra, payload = "GET", {}, b""
+if "--headers-stdin" in flags:
+    extra = json.loads(sys.stdin.read() or "{}")
+elif "--request-stdin" in flags:
+    spec = json.loads(sys.stdin.read())
+    method, extra, payload = spec["method"], spec.get("headers", {}), base64.b64decode(spec.get("body_b64", ""))
 try:
     raw = egress_connect(host, port)
 except PermissionError as exc:
     print(json.dumps({"denied": str(exc)}))
     sys.exit(0)
-with context.wrap_socket(raw, server_hostname=host) as tls:
-    tls.sendall(f"GET {path} HTTP/1.1\r\nHost: {host}\r\nUser-Agent: uniimente-greg/0.1\r\nConnection: close\r\n\r\n".encode())
+headers = {"Host": host, "User-Agent": "uniimente-greg/0.1", **extra,
+           **({"Content-Length": str(len(payload))} if payload or method != "GET" else {}), "Connection": "close"}
+request = (f"{method} {path} HTTP/1.1\r\n" + "".join(f"{k}: {v}\r\n" for k, v in headers.items()) + "\r\n").encode()
+if "--plain" in flags:                      # loopback only; the parent refuses plain http anywhere else
+    stream = raw
+else:
+    context = ssl.create_default_context(cafile=os.environ.get("GREG_EGRESS_CAFILE") or None)
+    stream = context.wrap_socket(raw, server_hostname=host)
+with stream:
+    stream.sendall(request + payload)
     data = b""
     while len(data) <= limit + 65536:
-        chunk = tls.recv(65536)
+        chunk = stream.recv(65536)
         if not chunk:
             break
         data += chunk
 head, _, body = data.partition(b"\r\n\r\n")
-status = int(head.split(b"\r\n", 1)[0].split()[1])
-print(json.dumps({"status": status, "body": base64.b64encode(body[:limit + 1]).decode(), "peer_verified": True}))
+lines = head.split(b"\r\n")
+status = int(lines[0].split()[1])
+if any(l.lower().replace(b" ", b"") == b"transfer-encoding:chunked" for l in lines[1:]):
+    decoded, rest = b"", body
+    while rest:
+        size_line, _, rest = rest.partition(b"\r\n")
+        size = int(size_line.split(b";")[0] or b"0", 16)
+        if size == 0:
+            break
+        decoded, rest = decoded + rest[:size], rest[size + 2:]
+    body = decoded
+print(json.dumps({"status": status, "body": base64.b64encode(body[:limit + 1]).decode(),
+                  "peer_verified": "--plain" not in flags}))
 '''
 
 
-def confined_fetch(url: str, *, identity: str, relay: Relay, cwd: Path, max_bytes: int, timeout: int = 30) -> dict:
+HEADER_NAME = re.compile(r"^[A-Za-z0-9-]{1,64}$")
+
+
+def confined_fetch(url: str, *, identity: str, relay: Relay, cwd: Path, max_bytes: int, timeout: int = 30,
+                   headers: dict | None = None) -> dict:
     """HTTPS GET performed by a component that holds no socket of its own: TLS (and certificate verification)
-    happens inside the confined child, the bytes cross only the relay, and the relay journals the decision."""
+    happens inside the confined child, the bytes cross only the relay, and the relay journals the decision.
+    ``headers`` reach the child on stdin only, so a credential never appears in argv, the environment or the
+    egress journal."""
+    return confined_request(url, identity=identity, relay=relay, cwd=cwd, max_bytes=max_bytes, timeout=timeout,
+                            headers=headers)
+
+
+def confined_request(url: str, *, identity: str, relay: Relay, cwd: Path, max_bytes: int, timeout: int = 30,
+                     headers: dict | None = None, method: str = "GET", body: bytes | None = None) -> dict:
+    """``confined_fetch`` for any of GET or POST with a body (an RFC 3161 query, say). HTTPS; plain http only to a
+    loopback host. Headers and body reach the child on stdin only."""
     from urllib.parse import urlsplit
     parts = urlsplit(url)
-    if parts.scheme != "https" or not parts.hostname:
-        raise SegmentationError("confined fetch is HTTPS only")
+    plain = parts.scheme == "http" and _loopback(parts.hostname or "")
+    if not parts.hostname or not (parts.scheme == "https" or plain):
+        raise SegmentationError("confined fetch is HTTPS only (plain http only to loopback)")
+    if method not in ("GET", "POST") or (body is not None and method != "POST"):
+        raise SegmentationError("confined requests are GET, or POST with a body")
     path = (parts.path or "/") + (("?" + parts.query) if parts.query else "")
+    for name, value in (headers or {}).items():
+        if not HEADER_NAME.match(str(name)) or any(c in str(value) for c in "\r\n\x00") or \
+                name.lower() in ("host", "connection", "transfer-encoding", "content-length"):
+            raise SegmentationError(f"request header {name!r} refused")
     env = {}
     if os.environ.get("GREG_EGRESS_CAFILE"):
         env["GREG_EGRESS_CAFILE"] = os.environ["GREG_EGRESS_CAFILE"]
     # -P: neither the working directory nor the script's is put on sys.path, so nothing written into a mission
     # workspace can be imported ahead of the standard library; the component also runs from an empty
     # directory of its own. Only PYTHONPATH (the Kernel) and the interpreter's own paths are searched.
+    argv = [sys.executable, "-P", "-s", "-c", FETCH, parts.hostname, str(parts.port or (80 if plain else 443)), path,
+            str(max_bytes)]
+    import base64
+    if method == "GET":
+        flags, stdin = (["--headers-stdin"] if headers else []), (json.dumps(headers).encode() if headers else None)
+    else:
+        flags = ["--request-stdin"]
+        stdin = json.dumps({"method": method, "headers": headers or {},
+                            "body_b64": base64.b64encode(body or b"").decode()}).encode()
     with tempfile.TemporaryDirectory(prefix="greg-fetch-") as empty:
-        proc = run_confined([sys.executable, "-P", "-s", "-c", FETCH, parts.hostname, str(parts.port or 443), path,
-                             str(max_bytes)], identity=identity, relay=relay, cwd=Path(empty), timeout=timeout,
-                            env=env)
+        proc = run_confined(argv + flags + (["--plain"] if plain else []), identity=identity, relay=relay,
+                            cwd=Path(empty), timeout=timeout, env=env, input_bytes=stdin)
     relay.drain()
     if proc.returncode != 0:
         raise SegmentationError("confined fetch failed: " + proc.stderr.decode("utf-8", "replace")[-300:])
     out = json.loads(proc.stdout)
     if "denied" in out:
         raise PermissionError(out["denied"])
-    import base64
     return {"status": out["status"], "body": base64.b64decode(out["body"])}
 
 

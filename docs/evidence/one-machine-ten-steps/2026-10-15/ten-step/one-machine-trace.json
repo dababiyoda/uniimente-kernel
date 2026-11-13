@@ -1,0 +1,330 @@
+{
+ "steps": {
+  "1_authenticated_mission_via_real_interface": {
+   "interface": "greg console subprocess over HTTP (ask -> review -> sign)",
+   "mission_id": "m:engineering-brief-2026-10-15"
+  },
+  "2_mission_survives_interface_close": {
+   "console_terminated": true,
+   "body_reached_approval_boundary_alone": true
+  },
+  "7_sigkill_restart_no_duplicate": {
+   "killed_pid": 31594,
+   "restarted_pid": 31616,
+   "decision_requests_after_restart": 1
+  },
+  "8_independent_appraiser_process": {
+   "mechanism": "python -m greg.appraisal in a separate process over a head-pinned read-only ledger",
+   "first_verdict": "VERIFIED",
+   "checks": {
+    "achieved_claimed": true,
+    "approval_boundaries_honored": true,
+    "approval_boundary_encountered": true,
+    "arrived_via_inbox": true,
+    "chain_intact": true,
+    "checks_rederived_from_receipts": true,
+    "deliveries_bound_to_evidence": true,
+    "exactly_once": true,
+    "founder_signature_verified": true,
+    "preconditions_honored": true,
+    "registered_once": true,
+    "world_reobserved": true
+   }
+  },
+  "3_competency_compiler_non_llm_solver_independent_verifier": {
+   "mission_id": "m:one-cortex",
+   "method": "cognition.cortex.optimization.cpsat",
+   "certificate_status": "CERTIFIED",
+   "certificate_checker": {
+    "claim": "no feasible assignment has objective < 7",
+    "engine": "z3",
+    "version": "5.1.0"
+   },
+   "outcome": "ANSWERED_WITHIN_SCOPE",
+   "objective": 7,
+   "appraisal": "VERIFIED"
+  },
+  "5_genesis_constructs_missing_function": {
+   "mission_id": "m:compiled-one-staff",
+   "deficits_opened": [
+    "assignment.staffing",
+    "graph.max_flow"
+   ],
+   "constructed": "composed.assignment.staffing.networkx.5670bf4c5c",
+   "attached_by": [
+    "founder-signed mission auto_attach (read_only)"
+   ],
+   "appraisal": "VERIFIED"
+  },
+  "4_hands_confined_worker_changes_repo_and_tests_rerun": {
+   "mission_id": "m:work-one-sub",
+   "provider": "script",
+   "isolation": "bubblewrap",
+   "network": "isolated-network-namespace",
+   "greg_tests_passed": true,
+   "commit": "b6820fc32a3a0fb5f6947c6ea0b1be2ef39e03b4",
+   "appraisal": "VERIFIED"
+  },
+  "7b_sigkill_in_flight_worker_reconciled_not_rerun": {
+   "mission_id": "m:work-slow-sub",
+   "killed_pid": 31616,
+   "restarted_pid": 31805,
+   "commission_statuses": [
+    "UNCERTAIN",
+    "RECONCILED_NOT_EXECUTED",
+    "DONE"
+   ],
+   "reconciliation_request": "req-567dfc58cff46d99592a3696",
+   "founder_answer": "reconcile_not_executed",
+   "completed_runs": 1,
+   "commit": "a9f129aaf45961c1390e0ddb31ab7ddc12031e1f",
+   "appraisal": "VERIFIED"
+  },
+  "7c_sigkill_in_flight_worker_settled_under_standing_mandate": {
+   "mission_id": "m:work-slow-standing",
+   "killed_pid": 31805,
+   "commission_statuses": [
+    "UNCERTAIN",
+    "RECONCILED_NOT_EXECUTED",
+    "DONE"
+   ],
+   "founder_questions": 0,
+   "completed_runs": 1,
+   "proof_predicates": {
+    "founder_mandate": true,
+    "worker_commission": true,
+    "internal_consequence_only": true,
+    "provider_consequence_inert": true,
+    "no_completed_evidence": true,
+    "within_limit": true
+   },
+   "comparison": {
+    "7b_founder_questions": 1,
+    "7c_founder_questions": 0,
+    "duplicate_consequences": 0
+   },
+   "appraisal": "VERIFIED"
+  },
+  "6_two_organs_authenticated_exchange_kernel_led": {
+   "mission_id": "m:organs-d868e8c7afca",
+   "organs": "real checkouts",
+   "packet_id": "2bdad261-2193-4e62-9d5d-5b640b4f18b0",
+   "legs_verified": {
+    "wealthmachine_verified_request": true,
+    "daleobanks_verified_response": true
+   },
+   "relay_checks": {
+    "request": true,
+    "response": true
+   },
+   "engine_verdict": "go",
+   "binding_verdict": "needs_more_evidence",
+   "appraisal": "VERIFIED"
+  },
+  "10_verified_correction_changes_later_decision": {
+   "lever": "brief.attention",
+   "candidate_policy": {
+    "flag_behind_commits": null,
+    "flag_pending_after_days": null,
+    "idle_includes_drafts": true,
+    "uncommitted_min": 5
+   },
+   "held_out_briefs": [
+    "m:engineering-brief-one-machine-0",
+    "m:engineering-brief-one-machine-1",
+    "m:engineering-brief-one-machine-2"
+   ],
+   "retained_errors": {
+    "current": 3,
+    "candidate": 0
+   },
+   "learned_policy_in_next_brief": {
+    "flag_behind_commits": null,
+    "flag_pending_after_days": null,
+    "idle_includes_drafts": true,
+    "uncommitted_min": 5
+   },
+   "noise_key_flagged_before": true,
+   "noise_key_flagged_after": false
+  },
+  "9_mission_control_three_widths": {
+   "status": "RENDERED",
+   "viewports": {
+    "desktop": {
+     "width": 1920,
+     "height": 1080
+    },
+    "chromebook": {
+     "width": 1366,
+     "height": 768
+    },
+    "phone": {
+     "width": 390,
+     "height": 844
+    }
+   },
+   "rendered": {
+    "desktop": {
+     "five_questions": true,
+     "fits_viewport": true,
+     "verified_closures_shown": true,
+     "missions_shown": [
+      "m:compiled-one-staff",
+      "m:engineering-brief-2026-10-15",
+      "m:engineering-brief-one-machine-learned",
+      "m:one-cortex",
+      "m:organs-d868e8c7afca",
+      "m:work-one-sub"
+     ],
+     "vepmc_zero": true
+    },
+    "chromebook": {
+     "five_questions": true,
+     "fits_viewport": true,
+     "verified_closures_shown": true,
+     "missions_shown": [
+      "m:compiled-one-staff",
+      "m:engineering-brief-2026-10-15",
+      "m:engineering-brief-one-machine-learned",
+      "m:one-cortex",
+      "m:organs-d868e8c7afca",
+      "m:work-one-sub"
+     ],
+     "vepmc_zero": true
+    },
+    "phone": {
+     "five_questions": true,
+     "fits_viewport": true,
+     "verified_closures_shown": true,
+     "missions_shown": [
+      "m:compiled-one-staff",
+      "m:engineering-brief-2026-10-15",
+      "m:engineering-brief-one-machine-learned",
+      "m:one-cortex",
+      "m:organs-d868e8c7afca",
+      "m:work-one-sub"
+     ],
+     "vepmc_zero": true
+    }
+   }
+  }
+ },
+ "adversarial": {
+  "forged_key_envelope_refused": "FounderAuthError: founder key not enrolled or revoked",
+  "byte_identical_replay_no_second_effect": {
+   "body_paused_events": 1
+  },
+  "reused_nonce_refused": "FounderAuthError: replayed command nonce",
+  "duplicate_approval_no_duplicate_action": true,
+  "tampered_deliverable_refuted": {
+   "tampered": "REFUTED",
+   "findings": [
+    "exchange: delivered memo differs from the render of the receipted inputs"
+   ],
+   "restored": "VERIFIED"
+  }
+ },
+ "missions": {
+  "m:engineering-brief-2026-10-15": {
+   "appraisal": "VERIFIED",
+   "approvals": [
+    "req-02b7d7bdf512850dfb059cc2"
+   ],
+   "done_actions": [
+    "deliver-engineering-brief"
+   ]
+  },
+  "m:one-cortex": {
+   "appraisal": "VERIFIED",
+   "approvals": [],
+   "done_actions": []
+  },
+  "m:compiled-one-staff": {
+   "appraisal": "VERIFIED",
+   "approvals": [],
+   "done_actions": [
+    "compile"
+   ]
+  },
+  "m:work-one-sub": {
+   "appraisal": "VERIFIED",
+   "approvals": [],
+   "done_actions": [
+    "commission-worker",
+    "write-handoff"
+   ]
+  },
+  "m:work-slow-sub": {
+   "appraisal": "VERIFIED",
+   "approvals": [
+    "req-567dfc58cff46d99592a3696"
+   ],
+   "done_actions": [
+    "commission-worker",
+    "write-handoff"
+   ]
+  },
+  "m:work-slow-standing": {
+   "appraisal": "VERIFIED",
+   "approvals": [],
+   "done_actions": [
+    "commission-worker",
+    "write-handoff"
+   ]
+  },
+  "m:organs-d868e8c7afca": {
+   "appraisal": "VERIFIED",
+   "approvals": [
+    "req-6a3b162abab334b06a4d1d26"
+   ],
+   "done_actions": [
+    "exchange"
+   ]
+  },
+  "m:engineering-brief-one-machine-0": {
+   "appraisal": "VERIFIED",
+   "approvals": [],
+   "done_actions": [
+    "deliver-engineering-brief"
+   ]
+  },
+  "m:engineering-brief-one-machine-1": {
+   "appraisal": "VERIFIED",
+   "approvals": [],
+   "done_actions": [
+    "deliver-engineering-brief"
+   ]
+  },
+  "m:engineering-brief-one-machine-2": {
+   "appraisal": "VERIFIED",
+   "approvals": [],
+   "done_actions": [
+    "deliver-engineering-brief"
+   ]
+  },
+  "m:engineering-brief-one-machine-learned": {
+   "appraisal": "VERIFIED",
+   "approvals": [],
+   "done_actions": [
+    "deliver-engineering-brief"
+   ]
+  }
+ },
+ "organs": "real checkouts",
+ "body": {
+  "pid_at_start": 31594,
+  "boot_id": "boot-8ef408d106d25890",
+  "boots": 4,
+  "receipts": 56,
+  "chain_verified": true
+ },
+ "summary": {
+  "missions_closed": 11,
+  "vepmc": 0,
+  "external_confirmation_required": "ledger checks cannot prove physical ownership or personal presence",
+  "acceptance_reality": "LOCAL (not a founder-designated body run; not founder-device evidence)",
+  "seconds": 287.2,
+  "founder_key": "per-test Ed25519 key; NOT Alfonso",
+  "counts_toward_vepmc": false
+ }
+}

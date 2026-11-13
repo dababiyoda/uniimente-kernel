@@ -80,7 +80,7 @@ class CapabilityManifest:
     inputs: dict
     outputs: dict
     target_prefix: str                 # every target this capability touches starts with this
-    network: str = "none"              # none | egress-allowlist
+    network: str = "none"              # none | egress-allowlist | target-host-only | signed-hosts (named per mission)
     egress_allowlist: tuple = ()
     filesystem: str = "none"           # none | read-scoped | workspace-write | artifact-write | deliver-write
     credentials: tuple = ()            # secret handle names; values never enter manifests or ledger
@@ -105,13 +105,14 @@ class CapabilityManifest:
             problems.append(f"unknown route {self.route!r}")
         if self.consequence_class not in CONSEQUENCE_CLASSES:
             problems.append(f"unknown consequence class {self.consequence_class!r}")
-        if self.network not in ("none", "egress-allowlist", "target-host-only"):
-            problems.append("network must be none, egress-allowlist or target-host-only")
+        if self.network not in ("none", "egress-allowlist", "target-host-only", "signed-hosts"):
+            problems.append("network must be none, egress-allowlist, target-host-only or signed-hosts")
         if (self.network == "target-host-only") != bool(self.target_from):
             problems.append("target-host-only network requires target_from (and only it may use target_from)")
         if self.network == "egress-allowlist" and not self.egress_allowlist:
             problems.append("egress allowlist required")
-        if self.filesystem not in ("none", "read-scoped", "workspace-write", "artifact-write", "deliver-write"):
+        if self.filesystem not in ("none", "read-scoped", "workspace-write", "artifact-write", "deliver-write",
+                                   "named-write"):
             problems.append("unknown filesystem class")
         if self.route == "cli" and not self.binaries:
             problems.append("cli capability must name exact binaries")
@@ -273,6 +274,7 @@ class InvocationContext:
     cognition_model: dict | None = None       # effective founder-selected local model; never a paid fallback
     cognition_budget: InvocationBudgetWindow | None = None
     egress: object | None = None              # #26 relay when the body confines egress; never a grant of hosts
+    worker_confinement: str = "required"      # founder's body setting for unconfinable workers; never widened here
 
     def secret(self, name: str) -> str:
         return self.secrets.resolve(name, declared=self.manifest.credentials)
@@ -363,7 +365,8 @@ REFUSALS = {b"F": "filesystem confinement unavailable; command refused",
             b"N": "network isolation unavailable; command refused"}
 
 
-def _isolating_preexec(install_filter, confine: dict | None, refused_fd: int, *, grants=None, libc=None):
+def _isolating_preexec(install_filter, confine: dict | None, refused_fd: int, *, grants=None, libc=None,
+                       scope: int = 0):
     """Fail closed without an exit status: a command's own exit 97 or 98 must never read as a refusal
     (nor a refusal as a command that ran). The child writes why to a close-on-exec pipe only the body
     holds, then raises, so the command never executes and Popen reports the failure to the parent."""
@@ -377,7 +380,7 @@ def _isolating_preexec(install_filter, confine: dict | None, refused_fd: int, *,
                 if confine is not None:
                     confine_paths(**confine)
                 if grants is not None:
-                    restrict(grants, libc)         # precomputed in the body: the child only makes syscalls
+                    restrict(grants, libc, scope=scope)   # precomputed in the body: the child only makes syscalls
             except Exception:
                 os.write(refused_fd, b"F")         # never run a confined command unconfined
                 raise
@@ -413,7 +416,7 @@ def run_isolated(argv: list, *, cwd: Path, isolate_network: bool = True, timeout
     it runs as before. The returned process carries ``confinement`` either way.
     """
     env = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "HOME": str(cwd), **(extra_env or {})}
-    confinement, grants, libc = None, None, None
+    confinement, grants, libc, scope = None, None, None, 0
     if confine_to is not None:
         # Code GREG runs on a worker's behalf (its patch's tests): confined like the worker itself.
         status = isolation.available()
@@ -426,13 +429,31 @@ def run_isolated(argv: list, *, cwd: Path, isolate_network: bool = True, timeout
             # GREG's own acceptance run fail before the command starts.
             scratch = Path(tempfile.mkdtemp(prefix=".greg-tmp-", dir=confine_to))
             env["TMPDIR"] = str(scratch)
+            scope = isolation.signal_scope(status["abi"])   # the patch's code never signals the body (ABI >= 6)
             confinement = {"filesystem": "landlock", "abi": status["abi"],
-                           "writable": [str(Path(confine_to).resolve())]}
+                           "writable": [str(Path(confine_to).resolve())], "signals": isolation.signals_record(scope)}
         else:
             confinement = {"filesystem": "none",
                            "reason": status.get("reason") or f"Landlock ABI {status.get('abi')} below 3"}
     if confine is not None and sys.platform == "darwin":
         raise CapabilityError("filesystem confinement unavailable on this host; command refused")
+    proc = None
+    try:
+        proc = _run_isolated_spawn(argv, cwd=cwd, env=env, timeout=timeout, input_bytes=input_bytes,
+                                   stop_check=stop_check, isolate_network=isolate_network, confine=confine,
+                                   grants=grants, libc=libc, scope=scope)
+    except subprocess.TimeoutExpired as exc:
+        exc.confinement = confinement      # a timed-out run still says how it was confined (merge review e410977)
+        raise
+    finally:
+        if confinement and confinement.get("filesystem") == "landlock":
+            shutil.rmtree(env["TMPDIR"], ignore_errors=True)
+    proc.confinement = confinement
+    return proc
+
+
+def _run_isolated_spawn(argv, *, cwd, env, timeout, input_bytes, stop_check, isolate_network, confine, grants, libc,
+                        scope):
     proc = None
     if isolate_network and sys.platform == "darwin":
         if not Path("/usr/bin/sandbox-exec").exists():
@@ -445,7 +466,8 @@ def run_isolated(argv: list, *, cwd: Path, isolate_network: bool = True, timeout
         refused_r, refused_w = os.pipe()          # close-on-exec: the command itself never holds it
         try:
             proc = _spawn(argv, cwd=cwd, env=env, timeout=timeout, input_bytes=input_bytes, stop_check=stop_check,
-                          preexec=_isolating_preexec(install_filter, confine, refused_w, grants=grants, libc=libc),
+                          preexec=_isolating_preexec(install_filter, confine, refused_w, grants=grants, libc=libc,
+                                                     scope=scope),
                           refused=refused_r)
         finally:
             os.close(refused_r)
@@ -453,9 +475,6 @@ def run_isolated(argv: list, *, cwd: Path, isolate_network: bool = True, timeout
     if proc is None:
         proc = _spawn(argv, cwd=cwd, env=env, timeout=timeout, input_bytes=input_bytes, stop_check=stop_check,
                       preexec=None, refused=None)
-    proc.confinement = confinement
-    if confinement and confinement.get("filesystem") == "landlock":
-        shutil.rmtree(env["TMPDIR"], ignore_errors=True)
     return proc
 
 
@@ -512,12 +531,30 @@ def run_cli(params, ctx: InvocationContext, *, isolate_network: bool = True, tim
             "stderr": proc.stderr[-4000:].decode("utf-8", errors="replace")}
 
 
+READ_ONLY_GIT_ENV = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "GIT_CONFIG_NOSYSTEM": "1",
+                     "GIT_CONFIG_GLOBAL": "/dev/null", "GIT_TERMINAL_PROMPT": "0", "GIT_OPTIONAL_LOCKS": "0",
+                     "GIT_NO_LAZY_FETCH": "1"}
+
+
+def read_only_git(repo: Path, *args, home: Path, timeout: int = 20) -> subprocess.CompletedProcess:
+    """git for a read-only sensor: nothing a repository's own config names is executed. A planted fsmonitor or hook
+    is switched off, and every clean/process filter driver the config defines is blanked (git skips an empty filter
+    command), so ``git status`` cannot run code from the repository it reads. Measured 2026-10-15: before this,
+    git.inspect on a repository whose local config set core.fsmonitor ran that command."""
+    base = ["git", "--no-pager", "-c", "core.fsmonitor=false", "-c", "core.hooksPath=/dev/null"]
+    env = {**READ_ONLY_GIT_ENV, "HOME": str(home)}
+    drivers = subprocess.run(base + ["-C", str(repo), "config", "--get-regexp", r"^filter\..*\.(clean|process|smudge)$"],
+                             capture_output=True, text=True, timeout=timeout, env=env)
+    blanks = [a for line in drivers.stdout.splitlines() if line.split(" ", 1)[0]
+              for a in ("-c", line.split(" ", 1)[0] + "=")]
+    return subprocess.run(base + blanks + ["-C", str(repo), *args], capture_output=True, text=True, timeout=timeout,
+                          env=env)
+
+
 def git_inspect(params, ctx: InvocationContext) -> dict:
     repo = _inside(Path(params["path"]), ctx.read_roots)
     def git(*args):
-        return subprocess.run(["git", "-C", str(repo), *args], capture_output=True, text=True,
-                              timeout=20, env={"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8",
-                                               "GIT_CONFIG_NOSYSTEM": "1", "HOME": str(ctx.workspace)})
+        return read_only_git(repo, *args, home=ctx.workspace)
     head, status, log = git("rev-parse", "HEAD"), git("status", "--porcelain"), git("log", "--oneline", "-10")
     if head.returncode:
         raise CapabilityError("not a git repository")
@@ -613,20 +650,35 @@ def browser_render(params, ctx: InvocationContext) -> dict:
         raise CapabilityError("browser.render loads https pages (http only on this machine's loopback)")
     binary = chrome_binary()
     with tempfile.TemporaryDirectory(prefix="greg-browser-") as profile:
-        argv = [binary, "--headless=new", "--disable-gpu", "--no-first-run", "--no-default-browser-check",
-                "--disable-extensions", "--disable-background-networking", "--disable-sync",
-                "--disable-component-update", "--disable-default-apps", "--mute-audio", "--hide-scrollbars",
-                f"--user-data-dir={profile}", f"--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE {host}",
-                # Every request goes to a dead proxy except the exact target origin, so page scripts
-                # cannot reach third parties even by IP literal (implicit loopback bypass removed).
-                "--proxy-server=http://127.0.0.1:9", f"--proxy-bypass-list=<-loopback>;{authority}",
-                "--virtual-time-budget=5000", "--dump-dom", url]
-        sandboxed = not (sys.platform.startswith("linux") and os.geteuid() == 0)
+        common = [binary, "--headless=new", "--disable-gpu", "--no-first-run", "--no-default-browser-check",
+                  "--disable-extensions", "--disable-background-networking", "--disable-sync",
+                  "--disable-component-update", "--disable-default-apps", "--mute-audio", "--hide-scrollbars",
+                  f"--user-data-dir={profile}"]
+        if ctx.egress is None:
+            argv = [*common, f"--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE {host}",
+                    # Every request goes to a dead proxy except the exact target origin, so page scripts
+                    # cannot reach third parties even by IP literal (implicit loopback bypass removed).
+                    "--proxy-server=http://127.0.0.1:9", f"--proxy-bypass-list=<-loopback>;{authority}",
+                    "--virtual-time-budget=5000", "--dump-dom", url]
+        else:
+            # #26: the browser runs in a network namespace whose only way out is the body relay, allowlisted for the
+            # signed target alone; every request, the target's included, is decided there and journaled.
+            # The door is the namespace's own loopback; nothing else exists there to resolve or reach.
+            argv = [*common, "--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1", "--proxy-server={door}",
+                    "--proxy-bypass-list=<-loopback>", "--virtual-time-budget=5000", "--dump-dom", url]
+        sandboxed = not (sys.platform.startswith("linux") and os.geteuid() == 0) and ctx.egress is None
         if not sandboxed:
-            argv.insert(1, "--no-sandbox")  # Chromium cannot sandbox itself as root on Linux; reported below
+            argv.insert(1, "--no-sandbox")  # Chromium cannot sandbox itself as root on Linux, nor nest its own
+            #                                  user namespace inside GREG's; reported below
         env = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "HOME": profile}
         try:
-            proc = subprocess.run(argv, capture_output=True, timeout=45, env=env, cwd=profile)
+            if ctx.egress is None:
+                proc = subprocess.run(argv, capture_output=True, timeout=45, env=env, cwd=profile)
+                route = f"only {authority} reachable"
+            else:
+                proc = _render_behind_relay(argv, ctx.egress, host, int(authority.rsplit(":", 1)[1]), loopback,
+                                            Path(profile), env)
+                route = f"relay: only {authority}, every request journaled"
         except subprocess.TimeoutExpired as exc:
             raise CapabilityError("browser did not finish rendering within 45 seconds") from exc
     dom = proc.stdout[:MAX_READ_BYTES * 4]
@@ -637,7 +689,25 @@ def browser_render(params, ctx: InvocationContext) -> dict:
     text = "\n".join(parser.parts)[:MAX_READ_BYTES]
     return {"url": url, "title": parser.title.strip()[:300], "text": text, "dom_sha256": hashlib.sha256(dom).hexdigest(),
             "dom_bytes": len(dom), "browser": Path(binary).name, "os_sandboxed": sandboxed,
-            "egress": f"only {authority} reachable", "trust": "untrusted-external-data"}
+            "egress": route, "trust": "untrusted-external-data"}
+
+
+def _render_behind_relay(argv, relay, host: str, port: int, loopback: bool, profile: Path, env: dict):
+    """Run the browser in a bubblewrap network namespace behind a door to a relay allowlisted for the target alone.
+    The per-call relay shares the body relay's journal and mandated proxy; without namespaces nothing runs."""
+    from foundry.systems.relay_door import Door, door_argv, namespace_argv
+    from foundry.systems.segmentation import Relay
+    from greg.worker_isolation import WorkerIsolationError, _backend
+    try:
+        _backend(require_bubblewrap=True)
+    except WorkerIsolationError as exc:
+        raise CapabilityError(f"confined egress needs bubblewrap network namespaces here: {exc}") from None
+    scoped = Relay({"browser.render": {"allow": [[host, port]], "external": not loopback}}, relay.journal,
+                   connect=relay.connect, proxy=relay.proxy)
+    with Door(scoped, "browser.render") as door:
+        namespace = namespace_argv(writable=[profile], readonly=[str(Path(argv[0]).resolve().parent)], chdir=profile)
+        return subprocess.run(namespace + door_argv(sys.executable, door.fd, argv), pass_fds=[door.fd],
+                              capture_output=True, timeout=45, env=env)
 
 
 def mac_notify(params, ctx: InvocationContext) -> dict:
@@ -726,6 +796,8 @@ STRENGTHENS = {
     "artifact.materialize": ("proof", "reliability", "compounding"),
     "venture.assess": ("proof", "routing", "settlement", "compounding"),
     "venture.status": ("proof",),
+    "organs.exchange": ("routing", "proof", "eligibility", "settlement"),
+    "organs.exchange_status": ("proof",),
     "business.reconcile": ("proof", "settlement"),
     "worker.commission": ("capability_formation", "routing", "settlement", "compounding"),
     "worker.appraise": ("proof", "eligibility", "reliability"),
@@ -740,6 +812,8 @@ STRENGTHENS = {
     "institution.appraise": ("proof", "reliability"),
     "organ.exchange": ("proof", "routing", "eligibility"),
     "organ.status": ("proof", "reliability"),
+    "mcp.call": ("capability_formation", "routing", "proof"),
+    "mcp.act": ("capability_formation", "routing", "settlement"),
 }
 
 
@@ -893,7 +967,7 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                                 "signal manifest; deliver one decision memo whose verdict may not outrun the "
                                 "evidence", "cli", "internal_write", "deliver:",
                                 {"railscout_root": "path", "wmi_root": "path", "manifest": "path",
-                                 "source_root": "path"},
+                                 "source_root": "path", "cognition": "dict?"},
                                 {"path": "str", "sha256": "str", "verdict": "str", "railscout_status": "str",
                                  "engine_verdict": "str", "inputs": "dict", "inputs_digest": "str"},
                                 filesystem="deliver-write", binaries=(sys.executable,),
@@ -925,6 +999,29 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                                 {"assessed": "bool", "verdict": "str|null", "path": "str|null",
                                  "manifest_sha256": "str"}, filesystem="read-scoped", retry_safe=True),
                        _lazy("greg.ventures", "status")),
+    "organs.exchange": (_builtin("organs.exchange", "organs.authenticated_exchange",
+                                 "DALEOBANKS turns one signal into a signed wire OpportunityPacket; GREG carries it to "
+                                 "WealthMachine, which verifies, assesses and signs back; DALEOBANKS verifies and "
+                                 "records; one memo whose verdict may not outrun the evidence", "cli",
+                                 "internal_write", "deliver:",
+                                 {"daleobanks_root": "path", "wmi_root": "path", "signal": "path",
+                                  "legal_principal": "str?"},
+                                 {"path": "str", "sha256": "str", "verdict": "str", "engine_verdict": "str",
+                                  "packet_id": "str", "inputs": "dict", "inputs_digest": "str", "legs_verified": "dict"},
+                                 filesystem="deliver-write", binaries=(sys.executable,),
+                                 data_classes=("project_sources",),
+                                 provenance={"source": "uniimente-kernel/greg/organ_exchange.py",
+                                             "mechanism_from": "DALEOBANKS services/context_packet + venture_protocol + "
+                                                               "bridge_security; WMI src/services/opportunity_intake; "
+                                                               "kernel adapters/bridge_transport (HMAC v2) and "
+                                                               "events/bridge_state (Bridge A, two organ processes)"}),
+                        _lazy("greg.organ_exchange", "exchange")),
+    "organs.exchange_status": (_builtin("organs.exchange_status", "organs.exchange_status",
+                                        "Has a memo been delivered for this signal, and with what binding verdict",
+                                        "api", "read_only", "deliver:", {"signal": "path"},
+                                        {"exchanged": "bool", "verdict": "str|null", "path": "str|null",
+                                         "signal_sha256": "str"}, filesystem="read-scoped", retry_safe=True),
+                               _lazy("greg.organ_exchange", "status")),
     "foundry.query": (_builtin("foundry.query", "foundry.system_query",
                                "Read-only operation of an implemented Foundry system (search, graph, reputation, "
                                "model check, verify, history, trial balance)", "internal", "read_only", "foundry:",
@@ -994,11 +1091,44 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                                tests=("tests/unit/test_greg_computer.py",),
                                provenance={"source": "uniimente-kernel/greg/computer.py"}),
                       _lazy("greg.computer", "session_status")),
+    "mcp.call": (_builtin("mcp.call", "tool.mcp_call",
+                          "Call one tool on a founder-installed MCP server, confined with no network and a read-only "
+                          "filesystem; the server's own read-only claim is recorded, never trusted",
+                          "app_integration", "read_only", "mcp:",
+                          {"server": "str", "root": "path", "command": "list", "tool": "str", "arguments": "dict?",
+                           "readable": "list[path]?"},
+                          {"server": "str", "tool": "str", "result": "str|dict", "text": "str",
+                           "result_sha256": "str", "trust": "str", "confinement": "dict"},
+                          filesystem="read-scoped", retry_safe=True, data_classes=("project_sources",),
+                          tests=("tests/unit/test_greg_mcp_tools.py", "tests/integration/test_greg_mcp_mission.py"),
+                          provenance={"source": "uniimente-kernel/greg/mcp_tools.py",
+                                      "mechanism_from": "Model Context Protocol (official Python SDK, MIT); "
+                                                        "foundry/systems/mcp_gateway.py; relay_door namespace"}),
+                 _lazy("greg.mcp_tools", "call")),
+    "mcp.act": (_builtin("mcp.act", "tool.mcp_act",
+                         "Call one tool on a founder-installed MCP server, or a remote one by URL, that may write "
+                         "only the paths and reach only the hosts (through the relay) the founder approved for this "
+                         "call; credentials by handle",
+                         "app_integration", "external_contact", "mcp:",
+                         {"server": "str", "root": "path?", "command": "list?", "url": "str?", "tool": "str",
+                          "arguments": "dict?", "readable": "list[path]?", "writable": "list[path]?", "hosts": "list?",
+                          "secrets": "dict?", "secret_files": "dict?", "bearer": "str?"},
+                         {"server": "str", "tool": "str", "result": "str|dict", "text": "str",
+                          "result_sha256": "str", "trust": "str", "confinement": "dict"},
+                         network="signed-hosts", filesystem="named-write", data_classes=("project_sources",),
+                         tests=("tests/unit/test_greg_mcp_act.py", "tests/integration/test_greg_mcp_act_mission.py"),
+                         provenance={"source": "uniimente-kernel/greg/mcp_tools.py",
+                                     "mechanism_from": "Model Context Protocol (official Python SDK, MIT); relay_door "
+                                                       "namespace and door; the authority office's exact-scope decisions"}),
+                _lazy("greg.mcp_tools", "act")),
     "daleobanks.verify": (_builtin("daleobanks.verify", "media.verify_draft",
                                    "DALEOBANKS EthicsGuard/Critic/PromptFirewall on a draft plus figure-to-source "
-                                   "binding (DALEOBANKS code, DALEOBANKS interpreter)", "cli", "read_only",
+                                   "binding (DALEOBANKS code, DALEOBANKS interpreter); with ``cognition``, every "
+                                   "sentence must be a claim GREG's evidence family answered as written",
+                                   "cli", "read_only",
                                    "daleobanks:", {"daleobanks_root": "path", "draft": "path", "source": "path",
-                                                   "python": "path?", "max_chars": "int?"},
+                                                   "python": "path?", "max_chars": "int?", "cognition": "dict?",
+                                                   "content_type": "str?"},
                                    {"verdict": "str", "findings": "list", "draft_sha256": "str"},
                                    filesystem="read-scoped", binaries=(sys.executable,), retry_safe=True,
                                    data_classes=("project_sources",), tests=("tests/unit/test_greg_daleobanks_bridge.py",),
@@ -1013,6 +1143,10 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                                     {"daleobanks_root": "path", "draft": "path", "python": "path?"},
                                     {"status": "str", "why": "str", "published": "dict", "daleobanks_ledger": "dict"},
                                     filesystem="workspace-write", binaries=(sys.executable,),
+                                    # DALEOBANKS's X client (tweepy): the API and media-upload hosts. A confined
+                                    # body's relay allows exactly these; nothing is reachable unless LIVE is armed.
+                                    network="egress-allowlist", egress_allowlist=("api.twitter.com",
+                                                                                  "upload.twitter.com"),
                                     data_classes=("public_web",), tests=("tests/unit/test_greg_daleobanks_bridge.py",),
                                     provenance={"source": "uniimente-kernel/greg/daleobanks_bridge.py",
                                                 "mechanism_from": "DALEOBANKS services/multiplexer.py, "

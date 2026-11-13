@@ -52,6 +52,7 @@ COMMAND_KINDS = (
     "ANCHOR_CONFIGURE",   # enable/disable RFC 3161 anchoring of the ledger head at a pinned TSA
     "GOAL",               # authorize (or supersede) a persistent Goal Gravity goal bound to signed missions
     "GOAL_CONTROL",       # stop/resume/lower/never/mute/ask-before/forget/revoke one admitted goal
+    "REALIZATION",        # bind observed values to one retained forecast receipt: evidence only, no consequence
     "TREASURY_REQUIREMENTS",  # per-tier obligation and reserve amounts for one venture's books; moves no money
     "FOUNDER_TIER",       # the signing key attests passphrase custody; grants nothing (greg/metrics.py founder_tier)
 )
@@ -214,6 +215,19 @@ def sign_read(key: Ed25519PrivateKey, *, body_id: str, method: str, path: str,
             "X-Greg-Signature": key.sign(_read_bytes(body_id, method, path, at)).hex()}
 
 
+def signed_before_delegation(device: dict, issued: datetime) -> bool:
+    """True when ``device`` is a key delegated again after a revocation (it carries ``signed_not_before``) and a
+    command issued at ``issued`` predates that re-delegation, or the anchor is unreadable or absent (fail closed):
+    an old token never reactivates. One rule for the command path (FounderVerifier) and its re-derivation from the
+    ledger (greg.goal_gravity.founder_facts); greg.body.device_delegations says where the anchor comes from."""
+    if "signed_not_before" not in device:
+        return False
+    try:
+        return issued < instant(device["signed_not_before"])
+    except (TypeError, ValueError):
+        return True
+
+
 class FounderVerifier:
     """Verifies signed founder commands against the body's enrolled keys.
 
@@ -286,7 +300,7 @@ class FounderVerifier:
             raise FounderAuthError("command expired or issued in the future")
         device = self.devices.get(envelope["founder_key_id"]) if envelope["founder_key_id"] not in self.enrolled \
             else None
-        if device and device.get("signed_not_before") and issued < instant(device["signed_not_before"]):
+        if device is not None and signed_before_delegation(device, issued):
             # An old token never reactivates: a key delegated again after a revocation verifies only what it
             # signed after the body recorded the new delegation (greg.body.device_delegations).
             raise FounderAuthError("signed before this device key's current delegation: nothing the key signed "

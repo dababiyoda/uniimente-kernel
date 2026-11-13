@@ -48,10 +48,16 @@ def actions(home):
 
 class Site:
     def __init__(self, console):
+        self.console = console
         self.server = serve(console, port=0)
         self.port = self.server.server_address[1]
         threading.Thread(target=self.server.serve_forever, daemon=True).start()
-        self.url = f"http://127.0.0.1:{self.port}"
+        self.base = f"http://127.0.0.1:{self.port}"
+        self.url = self.base + console.owner_path.rstrip("/")     # private pages live under the owner path
+
+    def enter(self, page):
+        """Open the single-use private link, as the founder does with the one `greg console` prints."""
+        page.goto(self.console.owner_url(self.port))
 
     def close(self):
         self.server.shutdown()
@@ -74,6 +80,7 @@ def test_fourteen_properties_through_the_founder_interface(browser, tmp_path, de
     console = Console(home, key=key)
     site = Site(console)
     page = browser.new_page(viewport=VIEWPORTS[device], is_mobile=device == "phone")
+    site.enter(page)
     page.on("dialog", lambda d: d.accept())
     clicks = 0
 
@@ -93,7 +100,7 @@ def test_fourteen_properties_through_the_founder_interface(browser, tmp_path, de
         # P3 every view is a working projection
         views = {}
         for href in page.eval_on_selector_all("nav.mc a", "els => els.map(e => e.getAttribute('href'))"):
-            response = page.goto(site.url + href)
+            response = page.goto(site.base + href)
             views[href] = response.status == 200 and "Traceback" not in page.content()
         results["P03_every_view_renders"] = len(views) == 10 and all(views.values())
         # P4 capability truth: the page's numbers are the body's own classification
@@ -104,18 +111,18 @@ def test_fourteen_properties_through_the_founder_interface(browser, tmp_path, de
         results["P04_capability_truth"] = all(shown[c] == classes.get(c, 0) for c in shown)
         # P5 command: one click drafts the First Mission; the review shows the envelope before signing
         page.fill("input[name=effort_budget]", "8")
-        click("form[action='/first-mission'] button")
+        click("form[action$='/first-mission'] button")
         review = page.inner_text("main")
         results["P05_review_before_sign"] = (page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1")
                                              and "What signing lets GREG do" in review and "Never" in review
                                              and "institution.survey" in review and not actions(home))
         # P6 sign; GREG stops for the founder's attach of the exact selection engine; attach from the page
-        click("form[action='/sign'] button")
+        click("form[action$='/sign'] button")
         tick(home, 3)
         page.goto(site.url + "/")
-        attach = page.locator("form[action='/attach'] button")
+        attach = page.locator("form[action$='/attach'] button")
         results["P06_attach_is_founder_decision"] = attach.count() == 1 and "cognition.dp_knapsack" in attach.inner_text()
-        click("form[action='/attach'] button")
+        click("form[action$='/attach'] button")
         # P7 crash after one more step, resume in a new process, no step repeated
         tick(home, 1)
         done_before = [a["action_id"] for a in actions(home) if a["status"] == "DONE"]
@@ -130,7 +137,7 @@ def test_fourteen_properties_through_the_founder_interface(browser, tmp_path, de
         page.goto(site.url + "/mc/proof")
         proof = page.inner_text("main")
         page.goto(site.url + "/")
-        click("a[href^='/first-mission/']")
+        click("a[href*='/first-mission/']")
         dossier = page.inner_text("main")
         results["P09_verified_and_readable"] = ("VERIFIED" in proof and "Where you are trying to go" in dossier
                                                 and "Next authorized step" in dossier)
@@ -143,25 +150,25 @@ def test_fourteen_properties_through_the_founder_interface(browser, tmp_path, de
                                          and all(not a.get("spend_usd") and not a.get("cost_usd") for a in actions(home)))
         # P11 pause holds every mission; resume continues
         page.goto(site.url + "/")
-        click("form[action='/body'] button")
+        click("form[action$='/body'] button")
         paused_tick = tick(home, 1)[0]
         page.goto(site.url + "/")
         held = paused_tick.get("paused") is True and "Resume GREG (signed)" in page.inner_text("main")
-        click("form[action='/body'] button")
+        click("form[action$='/body'] button")
         resumed_tick = tick(home, 1)[0]
         results["P11_pause_resume"] = held and not resumed_tick.get("paused")
         # P12 revoke: a second mission revoked before it acts never acts
         page.goto(site.url + "/")
         page.fill("input[name=effort_budget]", "3")
-        click("form[action='/first-mission'] button")
-        click("form[action='/sign'] button")
+        click("form[action$='/first-mission'] button")
+        click("form[action$='/sign'] button")
         tick(home, 1)
         second = [m for m in projection(console)["missions"] if m["status"] not in ("ACHIEVED",)]
         before = len(actions(home))
         page.goto(site.url + "/")
         revoked_id = second[0]["mission_id"] if second else None
         if revoked_id:
-            page.locator(f"form[action='/lifecycle']:has(input[value='{revoked_id}']):has(input[value='revoke']) button").click()
+            page.locator(f"form[action$='/lifecycle']:has(input[value='{revoked_id}']):has(input[value='revoke']) button").click()
             page.wait_for_load_state()
             clicks += 1
         tick(home, 3)
@@ -172,6 +179,7 @@ def test_fourteen_properties_through_the_founder_interface(browser, tmp_path, de
         site.close()
         console2 = Console(home, key=key)
         site = Site(console2)
+        site.enter(page)
         page.goto(site.url + "/")
         again = page.inner_text("main")
         results["P13_memory_after_restart"] = "First Mission dossiers" in again and "ACHIEVED" in again
@@ -185,14 +193,15 @@ def test_fourteen_properties_through_the_founder_interface(browser, tmp_path, de
         contract = yaml.safe_load((Path(__file__).resolve().parents[2] / "foundry/completion.yaml").read_text())
         complete = sum(1 for r in contract.values() if isinstance(r, dict) and r.get("state") == "COMPLETE")
         readonly = Site(Console(home))
+        readonly.enter(page)
         page.goto(readonly.url + "/")
-        disabled = page.locator("form[action='/body'] button").get_attribute("disabled") is not None
+        disabled = page.locator("form[action$='/body'] button").get_attribute("disabled") is not None
         readonly.close()
         page.goto(site.url + "/")
         if EVIDENCE:
             Path(EVIDENCE).mkdir(parents=True, exist_ok=True)
             page.screenshot(path=str(Path(EVIDENCE) / f"mission-control-{device}.png"), full_page=False)
-        click("form[action='/stop'] button.danger >> nth=1")
+        click("form[action$='/stop'] button.danger >> nth=1")
         results["P14_truth_and_refusals"] = ("VEPMC" in proof and "\n0" in proof.replace("VEPMC\t", "\n") or "0 —" in proof) \
             and f"{complete}" in organs and disabled and (home / "STOP").exists() \
             and status(home)["single_bottleneck_metric"].get("VEPMC", 0) == 0
@@ -214,6 +223,7 @@ def test_baseline_classic_page_on_the_same_task(browser, tmp_path):
     kernel_copy(tmp_path)
     site = Site(Console(home, key=key))
     page = browser.new_page(viewport=VIEWPORTS["chromebook"])
+    site.enter(page)
     try:
         page.goto(site.url + "/classic")
         text = page.inner_text("main")
@@ -222,7 +232,7 @@ def test_baseline_classic_page_on_the_same_task(browser, tmp_path):
                    "What needs my authority?": "decisions waiting"}
         answered = {q: m.lower() in text.lower() for q, m in markers.items()}
         page.fill("textarea[name=text]", "Run my first mission")       # the planner still routes plain words
-        page.locator("form[action='/ask'] button").click()
+        page.locator("form[action$='/ask'] button").click()
         page.wait_for_load_state()
         routed = "template:first-mission" in page.inner_text("main")
         page.goto(site.url + "/")

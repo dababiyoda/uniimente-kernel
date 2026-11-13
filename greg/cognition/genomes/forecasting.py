@@ -289,6 +289,12 @@ def admission_series():
     return [s for s in m4_weekly()["series"] if s["category"] not in RESERVED]
 
 
+def instance_key(seed) -> str:
+    """The M4 series a seed draws (the pool is finite: seeds wrap around it)."""
+    pool = admission_series()
+    return pool[(seed * 7919) % len(pool)]["id"]
+
+
 def instance(seed):
     pool = admission_series()
     s = pool[(seed * 7919) % len(pool)]
@@ -480,7 +486,8 @@ INTELLIGENCES = [
             benchmark_suite="M4 Weekly non-Micro/Industry series; dev seeds 0-9, held-out 1000-1029",
             baseline="naive last value with Gaussian random-walk quantiles",
             competitor="Theta method with the same empirical error quantiles"),
-        solve=solve, verify=verify, instance=instance, score=score, baseline=naive_gaussian,
+        solve=solve, verify=verify, instance=instance, instance_key=instance_key, score=score,
+        baseline=naive_gaussian,
         competitor=theta_empirical, tolerance=1e-9),
     Executable(
         genome=_genome(

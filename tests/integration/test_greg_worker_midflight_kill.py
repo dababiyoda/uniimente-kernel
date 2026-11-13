@@ -19,6 +19,8 @@ closure. The interrupted run's spend was never measured, so its signed cap is bo
 total is at most twice the cap. Every grant is dispatched once and receipted at most once.
 
 Every key is a per-test Ed25519 key, not Alfonso's; the worker is a scripted test double, not a frontier worker.
+It is an unreviewed provider, so the body carries the founder's ``worker_confinement: supervised`` setting (merge
+of #178 e410977 into PR #184): the bubblewrap envelope refuses it, and #173's Landlock grants confine it.
 """
 from __future__ import annotations
 
@@ -68,12 +70,12 @@ home, calls, program, mode = Path(sys.argv[2]), Path(sys.argv[3]), Path(sys.argv
 class ScriptedWorker(workers.CliAgentWorker):
     """The real provider path (scrubbed env, confinement, parent-death signal, timeout) around a scripted program."""
 
-    def run(self, order, cwd):
+    def run(self, order, cwd, **kwargs):
         with calls.open("a") as f:
             f.write(order.grant_id + "\\n")
             f.flush()
             os.fsync(f.fileno())
-        return super().run(order, cwd)
+        return super().run(order, cwd, **kwargs)
 
 
 workers.PROVIDERS["scripted"] = ScriptedWorker("scripted", [sys.executable, "-c", program, mode])
@@ -221,7 +223,7 @@ def test_a_worker_killed_with_its_body_is_reconciled_then_recommissioned_exactly
     data = tmp_path / "data"
     data.mkdir()
     repo = make_repo(data)
-    home, key, body_id, _ = make_body(tmp_path, read_roots=[data])
+    home, key, body_id, _ = make_body(tmp_path, read_roots=[data], worker_confinement="supervised")
     drop(home, signed(key, body_id, "MISSION", spec(repo)))
     calls = tmp_path / "calls"
     order_dir = workspace(home, MID) / "work-orders" / ORDER
@@ -339,7 +341,7 @@ def test_a_body_killed_after_the_work_order_evidence_and_before_its_receipt_is_r
     data = tmp_path / "data"
     data.mkdir()
     repo = make_repo(data)
-    home, key, body_id, _ = make_body(tmp_path, read_roots=[data])
+    home, key, body_id, _ = make_body(tmp_path, read_roots=[data], worker_confinement="supervised")
     drop(home, signed(key, body_id, "MISSION", spec(repo)))
     calls = tmp_path / "calls"
     order_dir = workspace(home, MID) / "work-orders" / ORDER

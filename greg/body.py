@@ -37,10 +37,11 @@ from events.spine import EventSpine
 from greg import anchor, asks, compute, dataplane, doctor, gravity, improvement, metrics, models, presence, sop, tribunal
 from greg.authority import AuthorityOffice
 from greg.capabilities import BUILTINS, CapabilityRegistry, SecretBroker
-from greg.founder import FounderAuthError, FounderVerifier, key_id, spent_nonce, validate_device_grant
+from greg.founder import FounderAuthError, FounderVerifier, instant, key_id, spent_nonce, validate_device_grant
 from greg.genesis import Genesis
 from greg.journal import Journal, iso, utcnow
 from greg.missions import MissionEngine, MissionError
+from greg.workers import WORKER_CONFINEMENT, confinement_mode
 from identity.machine_passport import PassportRegistry
 from provenance.commit_witness import WitnessSigner
 from provenance.ledger import EvidenceLedger, sha256_json
@@ -81,7 +82,7 @@ HOLD_ASK = "CRASH_LOOP_HOLD"  # no DECISION answers it (greg/missions.py NOT_ANS
 # The separate-process appraiser (greg/appraisal.py) judges a closure VERIFIED or REFUTED. A run killed, timed out
 # or without a readable verdict judged nothing (acceptance H.G7): it is one unavailable attempt, retried on a later
 # tick, and after APPRAISAL_ATTEMPTS of them the closure is recorded appraised UNAVAILABLE (final, never VERIFIED).
-APPRAISER_VERDICTS = ("VERIFIED", "REFUTED")
+APPRAISER_VERDICTS = ("VERIFIED", "VERIFIED_UNMET", "REFUTED")   # VERIFIED_UNMET: a verified failure closure (#189)
 APPRAISAL_ATTEMPTS = 3
 APPRAISAL_TIMEOUT_SECONDS = 120
 
@@ -214,12 +215,15 @@ def device_delegations(journal: Journal) -> dict[str, dict]:
     re-delegation but before this body recorded it, or by a device whose clock runs behind this body's, is
     refused and must be signed again. A token whoever held the key forward-dated is not one this rule can tell
     from a new one: re-delegate only a key that was not compromised; a compromised device gets a new key.
-    greg.appraisal._devices_before re-derives the same rule."""
+    A re-delegation record with no readable ``at`` (a legacy or foreign record) refuses everything the key signs
+    (greg.founder.signed_before_delegation). greg.appraisal._devices_before re-derives the same rule, and
+    greg.goal_gravity.founder_facts from the signed commands, anchored at the re-delegation's ``accepted_at`` (the
+    same clock reading as ``at``); the mission fold reads it there."""
     devices, revoked = {}, set()
     for event in journal.replay("device."):
         if event.type == "greg.device.enrolled":
             kid = event.payload["device_key_id"]
-            devices[kid] = ({**event.payload, "signed_not_before": event.payload["at"]} if kid in revoked
+            devices[kid] = ({**event.payload, "signed_not_before": event.payload.get("at")} if kid in revoked
                             else event.payload)
         elif event.type == "greg.device.revoked":
             revoked.add(event.payload["device_key_id"])
@@ -272,7 +276,8 @@ def _private_write(path: Path, data: bytes):
 
 
 def init_body(home: str | Path, *, read_roots: list[str], deliver_root: str | Path | None = None,
-              local_model: str | None = None, confined_egress: bool = False) -> dict:
+              local_model: str | None = None, confined_egress: bool = False,
+              worker_confinement: str = "required") -> dict:
     """Create a new body directory. Refuses to overwrite an existing body.
 
     ``deliver_root`` is the founder-visible folder where deliverables (briefs,
@@ -304,8 +309,30 @@ def init_body(home: str | Path, *, read_roots: list[str], deliver_root: str | Pa
         config["models"] = {"order": ["ollama"], "ollama_model": local_model}
     if confined_egress:
         config["confined_egress"] = True
+    if worker_confinement not in WORKER_CONFINEMENT:
+        raise ValueError(f"worker_confinement must be one of {', '.join(WORKER_CONFINEMENT)}")
+    if worker_confinement == "supervised":
+        # The founder's choice, made once at init: a worker the #157 envelope cannot confine runs under process
+        # supervision instead of being refused. Every such run's report says what was not confined.
+        config["worker_confinement"] = "supervised"
     _private_write(layout.config, json.dumps(config, indent=2).encode())
     return config
+
+
+def egress_relay(home: Path, config: dict):
+    """#26: the body's one relay when the founder enabled confined egress, else None. Chained through a mandated proxy
+    when the environment declares one. The console process builds the same relay over the same hash-chained journal
+    (appends are locked across processes) so its model calls are decided and journaled alike.
+
+    Every namespace this process builds from now on hides this body's home (its secrets, keys and ledger)."""
+    from foundry.systems.relay_door import hide_from_namespaces
+    hide_from_namespaces(home)
+    if not config.get("confined_egress"):
+        return None
+    from foundry.systems.segmentation import Journal as EgressJournal, Relay, policy_from_manifests, \
+        proxy_from_environment
+    return Relay(policy_from_manifests(), EgressJournal(Path(home) / "egress-journal.jsonl"),
+                 proxy=proxy_from_environment())
 
 
 class Body:
@@ -339,6 +366,15 @@ class Body:
                                              legal_principal="alfonso_lopez", declared_capabilities=[],
                                              budget_ceiling_usd=0.0, consequence_class="read_only")
         self.journal = Journal(self.spine, actor=self.identity.passport_id)
+        # As the one writer, before any capability can read a workspace: remove the credential files and scratch
+        # homes a call left when the process running it was killed mid-call.
+        from greg.mcp_tools import sweep_leftovers
+        removed = sweep_leftovers(self.layout.workspace)
+        if removed:
+            self.journal.record("mcp.leftovers_removed", {
+                "directories": removed, "why": "a call ended with its process killed; its credential files and "
+                                               "scratch home were removed before anything could read them"},
+                key=["leftovers", sha256_json(removed), len(self.journal.replay("mcp.leftovers_removed"))])
         signer = WitnessSigner(key=self.layout.witness_key.read_bytes(), env="production")
         self.office = AuthorityOffice(compiled=self.compiled, passports=self.passports, signer=signer,
                                       ledger=self.ledger)
@@ -348,6 +384,9 @@ class Body:
             self.registry.register(manifest, adapter, state=initial_state(manifest.capability_id))
         self._apply_capability_states()
         self.secrets = SecretBroker(self.layout.secrets)
+        self.egress = self._egress_relay()      # before the builder: paid model routes reach providers through it
+        if self._builder_factory is None and self.egress is not None and hasattr(self.builder, "egress"):
+            self.builder.egress = self.egress   # a ready builder that reaches a provider (Claude Code) gets it too
         self._refresh_builder()
         self.genesis = Genesis(journal=self.journal, registry=self.registry, workspace_root=self.layout.workspace,
                                builder=self.builder, read_roots=self.config["read_roots"])
@@ -357,13 +396,18 @@ class Body:
                                     read_roots=tuple(self.config["read_roots"]), genesis=self.genesis,
                                     deliver_root=self.deliver_root, artifact_root=self.layout.artifacts)
         self.engine.cognition_model = models.effective_route_config(self.config.get("models"), self.journal)
-        self.engine.egress = self._egress_relay()
+        self.engine.egress = self.egress
+        self.engine.worker_confinement = confinement_mode(self.config.get("worker_confinement"))
         self.engine.selector = self._gravity_order
         return self
 
     def _gravity_order(self, missions) -> list[str]:
         """Goal Gravity orders this tick's signed missions; each change of the ranking (order, learned
         reliability or exclusions) is a ledger fact a verifier can re-derive from the ledger before it.
+
+        This is #178's ordering (``greg.gravity.select``). #175's persistent-goal binding
+        (``greg/goal_gravity.py``) is a separate mechanism that caches itself on ``body._goal_gravity``;
+        both run, and neither adds, drops or widens a mission.
 
         A failure here never stops the missions: the engine keeps its static order and every
         unselected tick is recorded, so it is visible rather than silent."""
@@ -382,14 +426,7 @@ class Body:
         return [row["mission_id"] for row in selection["ranking"]]
 
     def _egress_relay(self):
-        """#26: one relay per body when the founder enabled confined egress; refused (fail closed) where the kernel
-        filter is unavailable, and chained through a mandated proxy when the environment declares one."""
-        if not self.config.get("confined_egress"):
-            return None
-        from foundry.systems.segmentation import Journal as EgressJournal, Relay, policy_from_manifests, \
-            proxy_from_environment
-        return Relay(policy_from_manifests(), EgressJournal(self.layout.home / "egress-journal.jsonl"),
-                     proxy=proxy_from_environment())
+        return egress_relay(self.layout.home, self.config)
 
     def _require_published_head(self):
         """Refuse history rolled back behind the ledger head this body last published (heartbeat.json).
@@ -433,7 +470,9 @@ class Body:
         if self._builder_factory is not None:
             try:
                 config = {**self.config, "models": models.effective_route_config(self.config.get("models"), self.journal)}
-                self.builder = self._builder_factory(self.secrets, config)
+                # A confined body hands its relay to the factory; one that cannot take it builds nothing (fail closed).
+                extra = {"egress": self.egress} if getattr(self, "egress", None) is not None else {}
+                self.builder = self._builder_factory(self.secrets, config, **extra)
             except Exception as exc:
                 why = f"{type(exc).__name__}: {exc}"[:300]
                 self.builder = None
@@ -442,7 +481,8 @@ class Body:
         if router is not None and hasattr(router, "observe"):
             for event in self.journal.replay("model.route"):
                 router.observe(event.payload)
-            router.record = lambda e: self.journal.record("model.route", e, key=[e["route"], e["at"], e["outcome"]])
+            from greg import model_keys        # a refused key is benched until a new one is stored, and recorded
+            model_keys.attach(router, self.journal)
         if hasattr(self, "genesis"):
             self.genesis.builder = self.builder
 
@@ -491,17 +531,31 @@ class Body:
     def apply(self, envelope: dict, *, channel: str = "direct") -> dict:
         """Verify one signed founder command and apply it (idempotent on replay of the same file)."""
         digest = sha256_json(envelope)
-        prior = [e.payload for e in self.journal.replay("command.accepted") if e.payload["digest"] == digest]
+        # Only a record carrying this very envelope and its nonce, as this method writes one, makes a replay of the
+        # file a no-op: a bare record naming the digest cannot silently drop the founder's command.
+        prior = [e.payload for e in self.journal.replay("command.accepted") if e.payload.get("digest") == digest
+                 and isinstance(e.payload.get("envelope"), dict) and sha256_json(e.payload["envelope"]) == digest
+                 and e.payload.get("nonce") == envelope.get("nonce")]
         if prior:
+            if envelope.get("kind") == "DECISION":
+                self.engine.book.rebuild()
+                if not any(a.get("command_digest") == digest for a in self.engine.book.answers.values()):
+                    # an acceptance someone else wrote for this very envelope, with no answer the book counts: its
+                    # nonce is spent there, so re-applying cannot help; say so instead of dropping it silently
+                    raise MissionError("this signed decision is already recorded as accepted, but no answer counts "
+                                       "for it; sign your answer again")
             return {"status": "ALREADY_APPLIED", "digest": digest}
         now = self.clock()
         verifier = self.verifier()
         env = verifier.verify(envelope, now=now)
         principal = verifier.principal(env, now=now)
         kind, body = env["kind"], env["body"]
+        self._after_restore(env, kind, principal)
         # Commands are applied before the next tick's rebuild; a request raised during the
         # previous tick must already be visible, or a fast approval is refused as "unknown".
-        self.engine.book.rebuild()
+        # A STOP authenticated mid-tick (while a worker runs) must not rebuild in-flight state.
+        if kind != "BODY_STOP":
+            self.engine.book.rebuild()
         try:
             result = self._dispatch(kind, body, digest, principal=principal, envelope=env, now=now)
         except (MissionError, ValueError, KeyError, TypeError) as exc:
@@ -513,7 +567,27 @@ class Body:
                                                   "issued_at": env["issued_at"], "accepted_at": iso(now),
                                                   "body": body, "envelope": env, "channel": channel,
                                                   "result": result}, key=digest)
+        if kind == "DECISION":   # the answer counts from its acceptance (MissionBook): Goal Gravity reads it this tick
+            self.engine.book.rebuild()
         return {"status": "APPLIED", "digest": digest, "result": result}
+
+    def _after_restore(self, env: dict, kind: str, principal: str) -> None:
+        """A body restored from a backup (greg/recovery.py) knows nothing after its recovery point: it refuses any
+        command issued before the restore, which the original may already have applied, and only the founder key
+        releases the restore hold."""
+        restores = self.journal.replay("body.restored")
+        if not restores:
+            return
+        restore = restores[-1].payload
+        if instant(env["issued_at"]) < instant(restore["restored_at"]):
+            raise FounderAuthError(f"issued before this body was restored from a backup at {restore['restored_at']}: "
+                                   "the original may already have applied it; sign it again if it is still wanted")
+        if kind == "BODY_RESUME" and principal != "founder" and self._restore_hold():
+            raise FounderAuthError("only the founder key releases a restore hold")
+
+    def _restore_hold(self) -> bool:
+        state = [e for e in self.journal.replay("body.") if e.type in ("greg.body.paused", "greg.body.resumed")]
+        return bool(state) and state[-1].type == "greg.body.paused" and "restore_id" in state[-1].payload
 
     def _dispatch(self, kind: str, body: dict, digest: str, *, principal: str = "founder",
                   envelope: dict | None = None, now: datetime | None = None):
@@ -525,6 +599,17 @@ class Body:
         if kind == "LIFECYCLE":
             self.engine.lifecycle(body, digest)
             return {"mission_id": body["mission_id"], "state": body["state"]}
+        if kind == "REALIZATION":
+            # evidence only: the observed values of one retained forecast, labelled by source; it scores the
+            # forecaster's calibration and changes no mission, capability or authority
+            from greg.cognition.settlement import record_realization
+            if set(body) - {"receipt", "realized", "source", "note"}:
+                raise MissionError("a realization takes receipt, realized, source and note")
+            payload = record_realization(self.journal, receipt=body.get("receipt"), realized=body.get("realized"),
+                                         source=body.get("source", "founder_reported"), note=body.get("note", ""),
+                                         command_digest=digest)
+            return {"receipt": payload["receipt"], "cognitive_receipt": payload["cognitive_receipt"],
+                    **({"compile_receipt": payload["compile_receipt"]} if "compile_receipt" in payload else {})}
         if kind == "CRITIQUE":
             record = tribunal.critique(self.journal, self.engine, body, digest)
             if record.get("epistemic"):   # founder evidence advances the held-out learning loop now
@@ -607,7 +692,10 @@ class Body:
             grant = validate_device_grant(body, now=self.clock())
             if grant["device_key_id"] in self.enrolled_keys() or grant["device_key_id"] in self.device_keys():
                 raise MissionError("key already enrolled; revoke before re-delegating")
-            self.journal.record("device.enrolled", {**grant, "command_digest": digest, "at": iso(self.clock())},
+            # ``at`` is the instant this command is accepted at (``accepted_at``): a re-delegation's signed_not_before
+            # (device_delegations), and founder_facts reads the same instant from the acceptance record.
+            self.journal.record("device.enrolled", {**grant, "command_digest": digest,
+                                                    "at": iso(now if now is not None else self.clock())},
                                 key=[grant["device_key_id"], digest])
             return {"device_key_id": grant["device_key_id"], "kinds": grant["kinds"], "expires_at": grant["expires_at"]}
         if kind == "DEVICE_REVOKE":
@@ -624,6 +712,10 @@ class Body:
                 raise MissionError(str(exc)) from None
         if kind == "ROTATE_FOUNDER_KEY":
             new_hex = body["new_public_key"]
+            # signed_not_before guards a key only while it is a device key: rotated in, a key that is or was a
+            # delegated device would make its unexpired device tokens verify again, as founder commands.
+            if key_id(new_hex) in {e.payload["device_key_id"] for e in self.journal.replay("device.enrolled")}:
+                raise MissionError("this key is or was a delegated device key: rotate the founder key to a new key")
             old = next(iter(self.enrolled_keys()))
             self.journal.record("founder.key_rotated", {"old_key_id": old, "new_key_id": key_id(new_hex),
                                                         "new_public_key": new_hex, "command_digest": digest},
@@ -637,6 +729,11 @@ class Body:
         raise MissionError(f"unsupported command kind {kind}")
 
     def _stop_now(self) -> bool:
+        if not self.stop_requested and not self.layout.stop_file.exists() and self.ledger is not None:
+            # Extracted from #157: a paid worker can run for minutes. While it is supervised, only pending
+            # founder-signed STOP commands are authenticated; every other command waits for the next tick
+            # and cannot change in-flight strategy or approval state.
+            self.ingest_inbox(only_kind="BODY_STOP")
         return self.stop_requested or self.layout.stop_file.exists()
 
     def paused(self) -> bool:
@@ -645,14 +742,16 @@ class Body:
         state = [e.type for e in self.journal.replay("body.") if e.type in ("greg.body.paused", "greg.body.resumed")]
         return bool(state) and state[-1] == "greg.body.paused"
 
-    def ingest_inbox(self) -> list[dict]:
+    def ingest_inbox(self, *, only_kind: str | None = None) -> list[dict]:
         results = []
         stuck = self.__dict__.setdefault("_stuck", set())   # files this process could neither ingest nor set aside
         for path in sorted(self.layout.inbox.glob("*.json")):
             if path.name in stuck:
                 continue
             try:
-                outcome = self._ingest_one(path)
+                outcome = self._ingest_one(path, only_kind=only_kind)
+                if outcome is None:       # another kind while only ``only_kind`` is read: left for the next turn
+                    continue
             except Exception as exc:   # anywhere in the file's handling, its rejection path included
                 if not self.paused():
                     raise     # a running body exits on it: its supervisor restarts it and the breaker counts the boot
@@ -682,22 +781,32 @@ class Body:
             pass   # the skip stands even when the ledger cannot take the record; the heartbeat still shows HELD
         return {"status": "SKIPPED", "file": path.name, "reason": error}
 
-    def _ingest_one(self, path: Path) -> dict:
+    def _ingest_one(self, path: Path, *, only_kind: str | None = None) -> dict | None:
+        """Apply one inbox file, or reject it as data. None: it is not ``only_kind`` and stays for a later turn."""
+        envelope = None
         try:
             envelope = json.loads(path.read_text())
+            if only_kind is not None and (not isinstance(envelope, dict) or envelope.get("kind") != only_kind):
+                return None
             outcome = self.apply(envelope, channel="inbox")
         except (FounderAuthError, MissionError, ValueError, KeyError, TypeError,
                 tribunal.CritiqueError) as exc:
             raw = path.read_bytes()
             consumed = getattr(exc, "consumed", None)
-            self.journal.record("command.rejected", {"file": path.name, "sha256": sha256_json(raw.hex()),
-                                                      "reason": f"{type(exc).__name__}: {exc}"[:500],
-                                                      "instruction_status": "data_only",
-                                                      **({"consumed": consumed} if consumed else {})},
-                                # the reason is part of the fact: the same file rejected again for another reason
-                                # (re-dropped after the state that refused it changed) is a second rejection, not a
-                                # reused fact identity the ledger refuses (which crashed the body)
-                                key=[path.name, sha256_json(raw.hex()), sha256_json(f"{type(exc).__name__}: {exc}")])
+            # the reason is part of the fact: the same file rejected again for another reason (re-dropped after the
+            # state that refused it changed) is a second rejection, not a reused fact identity the ledger refuses
+            # (which crashed the body)
+            key = [path.name, sha256_json(raw.hex()), sha256_json(f"{type(exc).__name__}: {exc}")]
+            # When and which command it refused, by the body's clock: an acceptance of the same command claiming an
+            # earlier time is a backdated record (greg.goal_gravity.founder_facts). Recorded once, so a retry after a
+            # crash finds the retained refusal instead of a different time.
+            if self.journal.retained("command.rejected", key) is None:
+                self.journal.record("command.rejected", {
+                    "file": path.name, "sha256": sha256_json(raw.hex()),
+                    "reason": f"{type(exc).__name__}: {exc}"[:500], "instruction_status": "data_only",
+                    "at": iso(self.clock()),
+                    **({"digest": sha256_json(envelope)} if isinstance(envelope, dict) else {}),
+                    **({"consumed": consumed} if consumed else {})}, key=key)
             shutil.move(str(path), self.layout.rejected / path.name)
             return {"status": "REJECTED", "file": path.name, "reason": str(exc)[:300]}
         try:
@@ -802,12 +911,16 @@ class Body:
         self.engine.cognition_model = models.effective_route_config(self.config.get("models"), self.journal)
         recovered = self.genesis.recover(now)     # quarantined capabilities may earn back eligibility (sandbox)
         summary = self.engine.tick(now, should_stop=self._stop_now)
+        if self._stop_now():
+            return {"commands": commands, "missions": summary, "stopped": True}
         self._close_out(now)
         from greg.cognition.settlement import reconcile as settle_cognition
         settle_cognition(self.journal)
         improvement.learn(self.journal, self.ledger, now)   # held-out evidence from this tick's briefs
         sop.propose(self.journal)
-        anchored = anchor.anchor_once(self.journal, now) if anchor.due(self.journal, now) else None
+        transport = (anchor.relay_transport(self.egress, self.layout.workspace / ".anchor")
+                     if getattr(self, "egress", None) is not None else None)
+        anchored = anchor.anchor_once(self.journal, now, transport=transport) if anchor.due(self.journal, now) else None
         result = {"commands": commands, "missions": summary, "anchor": anchored, "recovery": recovered}
         if gravity is not None:
             result["gravity"] = gravity
@@ -816,7 +929,10 @@ class Body:
     def _close_out(self, now):
         """Record where each closure happened and have it appraised by a separate process."""
         contexts = {e.payload["mission_id"] for e in self.journal.replay("mission.closure_context")}
-        appraised = {e.payload["mission_id"] for e in self.journal.replay("mission.appraised")}
+        # An achievement's appraisal names no closure event; a hold's or a failure closure's names its own. A mission
+        # whose failure closure was appraised and that later achieves still has its success appraised.
+        appraised = {e.payload["mission_id"] for e in self.journal.replay("mission.appraised")
+                     if not e.payload.get("closure_event")}
         for event in self.journal.replay("mission.achieved"):
             mid = event.payload["mission_id"]
             if mid not in contexts:
@@ -829,7 +945,7 @@ class Body:
             if mid not in appraised:
                 self._appraise_closure(mid, None, now)
         judged = {e.payload.get("closure_event") for e in self.journal.replay("mission.appraised")}
-        for event in self.journal.replay("mission.held"):
+        for event in self.journal.replay("mission.held") + self.journal.replay("mission.unmet"):
             if event.event_id not in judged:
                 self._appraise_closure(event.payload["mission_id"], event.event_id, now)
 
@@ -866,16 +982,24 @@ class Body:
             self.journal.record("mission.appraised", {**verdict, "attempts": attempt, "findings": prior + [why]},
                                 key=key)
 
-    def appraise(self, mission_id: str, *, closure_event: str | None = None) -> dict:
-        import subprocess
-        import sys
+    def appraisal_request(self, mission_id: str, *, closure_event: str | None = None) -> dict:
+        """What the separate appraiser re-derives from: the head, the scope, and the postures the original ran in
+        (worker confinement, confined egress), so a re-run is exactly as confined as the original."""
         request = {"ledger": str(self.layout.ledger), "constitution": self.compiled.constitution_hash,
                    "head": self.ledger.head, "mission_id": mission_id, "read_roots": self.config["read_roots"],
                    "deliver_root": str(self.deliver_root),
                    "artifact_root": str(self.layout.artifacts),
-                   "workspace": str(self.layout.workspace / mission_id.replace(":", "_"))}
+                   "workspace": str(self.layout.workspace / mission_id.replace(":", "_")),
+                   "worker_confinement": confinement_mode(self.config.get("worker_confinement")),
+                   "confined_egress": bool(self.config.get("confined_egress"))}
         if closure_event:
             request["closure_event"] = closure_event
+        return request
+
+    def appraise(self, mission_id: str, *, closure_event: str | None = None) -> dict:
+        import subprocess
+        import sys
+        request = self.appraisal_request(mission_id, closure_event=closure_event)
         env = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "PYTHONDONTWRITEBYTECODE": "1",
                "PYTHONPATH": os.pathsep.join([str(KERNEL_ROOT)] + [p for p in sys.path if "-packages" in p])}
         def unavailable(why: str) -> dict:   # the appraiser judged nothing: not a verdict (see _appraise_closure)
@@ -1041,6 +1165,18 @@ def send_signed(home: str | Path, key, kind: str, body: dict, *, ttl: timedelta 
     return target
 
 
+def inbox_digests(layout: "Layout") -> set[str]:
+    """Digests of the signed commands still waiting in the inbox: an answer row citing one is the founder's own
+    answer being applied, not an unsigned one."""
+    out = set()
+    for path in layout.inbox.glob("*.json"):
+        try:
+            out.add(sha256_json(json.loads(path.read_text())))
+        except (OSError, ValueError):
+            continue
+    return out
+
+
 def morning_projection(home: str | Path) -> dict:
     """The morning report from a read-only view; works while the body runs."""
     from types import SimpleNamespace
@@ -1051,7 +1187,32 @@ def morning_projection(home: str | Path) -> dict:
     except (OSError, ValueError):
         heartbeat = None
     with observe(home, actor="spiffe://uniimente.internal/greg/morning-reader") as journal:
-        return tribunal.morning_report(journal, SimpleNamespace(book=MissionBook(journal)), heartbeat=heartbeat)
+        return tribunal.morning_report(journal, SimpleNamespace(book=MissionBook(journal)), heartbeat=heartbeat,
+                                       pending=inbox_digests(layout))
+
+
+def _attach_waiting(journal, achieved: set) -> list[dict]:
+    """Verified capabilities Genesis is waiting for the founder to attach, whatever the ask's answer.
+
+    Ported from #168 (``8531595``). An Approve on a capability ask only records an answer (greg/asks.py);
+    attaching is its own signed command. Derived from the ledger, so a mission stays unblockable from the console
+    after an answer given there or on the phone (which can never attach)."""
+    mission_of = {e.payload["deficit_id"]: e.payload.get("mission_id") for e in journal.replay("deficit.opened")}
+    resolved = {e.payload["deficit_id"] for e in journal.replay("deficit.resolved")}
+    latest = {}
+    for e in journal.replay("capability.state"):
+        latest[e.payload["capability_id"]] = e.payload["state"]
+    waiting = {}
+    for e in journal.replay("deficit.awaiting_attach"):
+        p = e.payload
+        mission_id = mission_of.get(p["deficit_id"])
+        if p["deficit_id"] in resolved or mission_id in achieved or latest.get(p["capability_id"]) in (
+                "ATTACHED", "QUARANTINED", "DETACHED"):
+            continue
+        waiting[(p["deficit_id"], p["capability_id"])] = {"deficit_id": p["deficit_id"],
+                                                          "capability_id": p["capability_id"],
+                                                          "mission_id": mission_id, "why": p.get("why")}
+    return list(waiting.values())
 
 
 def _attach_waiting(journal, achieved: set) -> list[dict]:
@@ -1092,9 +1253,11 @@ def status(home: str | Path) -> dict:
         journal = Journal(spine, actor="spiffe://uniimente.internal/greg/status-reader")
         registered = {e.payload["mission_id"]: e.payload["spec"] for e in journal.replay("mission.registered")}
         achieved = {e.payload["mission_id"] for e in journal.replay("mission.achieved")}
-        answered = {e.payload["request_id"] for e in journal.replay("decision.answered")}
-        answered |= {e.payload["request_id"] for e in journal.replay("decision.withdrawn")}
-        requests = [e.payload for e in journal.replay("decision.requested") if e.payload["request_id"] not in answered]
+        from greg.missions import MissionBook
+        book = MissionBook(journal)
+        requests = asks.open_requests(journal.replay("decision.") + journal.replay("mission.achieved")
+                                      + journal.replay("mission.lifecycle"), counted=book.answers,
+                                      uncounted=book.unverified, pending=inbox_digests(layout))
         founder = list(founder_keys(journal))     # rotation honored: only the currently enrolled keys
         boots = journal.replay("body.booted")
         # The same states the body uses: catalog initial state, then every recorded transition.
@@ -1140,11 +1303,14 @@ def status(home: str | Path) -> dict:
             "capabilities": registry.inventory(), "permissions": {"read_roots": config["read_roots"]},
             "compute": compute.sample(layout.home),
             "secret_handles": SecretBroker(layout.secrets).names(),
+            "refused_model_keys": __import__("greg.model_keys", fromlist=["summary"]).summary(
+                journal, SecretBroker(layout.secrets)),
             "external_items_quarantined": sum(1 for e in journal.replay("external.ingested")
                                               if e.payload["quarantined"]),
             "single_bottleneck_metric": metrics.vepmc(journal),
             "founder_tier": metrics.tier_status(journal, founder),
             "external_anchor": anchor.summary(journal),
+            "egress": _egress_summary(layout.home, config),
             "presence": presence.summary(journal, now=utcnow(), since=utcnow() - presence.REVIEW_WINDOW,
                                          heartbeat=heartbeat),
             "designation": [e.payload for e in journal.replay("body.designated")],
@@ -1159,6 +1325,19 @@ def status(home: str | Path) -> dict:
         }
     finally:
         ledger.close()
+
+
+def _egress_summary(home: Path, config: dict) -> dict:
+    """#26 as the founder sees it: is the network confined, and what has the relay decided (read-only)."""
+    if not config.get("confined_egress"):
+        return {"confined": False, "why": "this body was created without confined egress (greg init --confined-egress)"}
+    from foundry.systems.segmentation import Journal as EgressJournal
+    journal = EgressJournal(Path(home) / "egress-journal.jsonl")
+    check = journal.verify()                     # a damaged row is reported as a broken chain, never a crash
+    rows = [] if check.get("malformed") else journal.read()
+    return {"confined": True, "decisions": len(rows), "denied": sum(1 for r in rows if r.get("verdict") == "DENIED"),
+            "chain_intact": check["intact"], **({"broken_at": check["broken_at"]} if "broken_at" in check else {}),
+            "scope": "every mission-path connection crosses the relay or has no network"}
 
 
 def _path_summary(journal: Journal) -> dict:

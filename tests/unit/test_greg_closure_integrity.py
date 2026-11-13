@@ -78,7 +78,16 @@ def test_appraiser_refutes_an_out_of_cone_write_the_engine_never_asked_for(tmp_p
     assert row["approval_boundary"] is False and row["appraised_verified"] is False
 
 
-def test_appraiser_refutes_an_approval_no_founder_command_carries(tmp_path):
+def test_appraiser_refutes_an_approval_no_founder_command_carries(tmp_path, monkeypatch):
+    """Merged with PR #184's item 7: the body itself no longer counts an answer no signed DECISION carries
+    (MissionBook re-verifies it), so the engine-side ask-path defect is simulated by turning that check off in
+    this process only. The separate appraiser, in its own process, still refutes the closure."""
+    from greg import missions
+    honest = missions.MissionBook.__init__
+
+    def defective(self, journal, *, verify_answers=None):
+        honest(self, journal, verify_answers=False)
+    monkeypatch.setattr(missions.MissionBook, "__init__", defective)
     home, key, body_id, _ = make_body(tmp_path)
     clock = Clock()
     mid = "m:one-note"
@@ -99,6 +108,60 @@ def test_appraiser_refutes_an_approval_no_founder_command_carries(tmp_path):
         assert [e.payload["kind"] for e in body.journal.replay("command.accepted")] == ["MISSION"]
         result = appraisal(body, mid)
     assert done_actions(body, mid) == ["w"]
+    assert result["verdict"] == "REFUTED" and result["checks"]["approval_boundaries_honored"] is False
+
+
+def _forged_approval_closure(tmp_path, monkeypatch):
+    """A body whose engine counts an answer no founder command carries (MissionBook's check off in this process)."""
+    from greg import missions
+    honest = missions.MissionBook.__init__
+
+    def defective(self, journal, *, verify_answers=None):
+        honest(self, journal, verify_answers=False)
+    monkeypatch.setattr(missions.MissionBook, "__init__", defective)
+    home, key, body_id, _ = make_body(tmp_path)
+    clock = Clock()
+    mid = "m:one-note"
+    spec = mission(mid, checks=[note_check("n", workspace(home, mid) / "n.txt", "x")],
+                   strategies=[write_strategy("w", "n.txt", "x", ["n"])], capabilities=["fs.read"], ceiling="read_only")
+    body = Body(home, clock=clock).open()
+    body.boot()
+    drop(home, signed(key, body_id, "MISSION", spec, now=clock.now))
+    for _ in range(8):
+        tick(body, clock, 1)
+        for ask in open_asks(body, mid):
+            body.journal.record("decision.answered", {"request_id": ask["request_id"], "mission_id": mid,
+                                                      "answer": "approve", "reason": "",
+                                                      "command_digest": "sha256:" + "0" * 64}, key=ask["request_id"])
+            body.engine.book.rebuild()
+    assert done_actions(body, mid) == ["w"]
+    return body, mid, monkeypatch, honest
+
+
+def test_the_appraisers_envelope_check_refutes_a_forged_approval_its_founder_fold_would_count(tmp_path, monkeypatch):
+    """Defense in depth (merge of #178 e410977 with PR #184 item 7): the appraiser counts an approval only when the
+    founder fold counts it AND its DECISION envelope re-verifies (_decision_signed). With the fold defective too
+    (in-process appraisal under the same patch), the envelope check alone still refutes the closure."""
+    from greg import appraisal as appraiser
+    body, mid, _, _ = _forged_approval_closure(tmp_path, monkeypatch)
+    try:
+        result = appraiser.appraise(body.appraisal_request(mid))
+    finally:
+        body.close()
+    assert result["verdict"] == "REFUTED" and result["checks"]["approval_boundaries_honored"] is False
+
+
+def test_the_appraisers_founder_fold_refutes_a_forged_approval_its_envelope_check_would_pass(tmp_path, monkeypatch):
+    """The other layer: with _decision_signed defective, the founder fold (re-verified at its own ledger position)
+    still refuses to count the forged answer, so the closure is refuted."""
+    from greg import appraisal as appraiser, missions
+    body, mid, patch, honest = _forged_approval_closure(tmp_path, monkeypatch)
+    patch.setattr(missions.MissionBook, "__init__", honest)               # the fold is honest again
+    patch.setattr(appraiser, "_decision_signed", lambda *args, **kwargs: True)
+    try:
+        result = appraiser.appraise(body.appraisal_request(mid))
+    finally:
+        body.close()
     assert result["verdict"] == "REFUTED" and result["checks"]["approval_boundaries_honored"] is False
 
 
@@ -368,7 +431,9 @@ def test_a_scope_renewal_ask_refuses_a_decision_and_stays_open(tmp_path):
 
 
 def test_a_legacy_answered_scope_renewal_reopens_one_ask(tmp_path):
-    """A ledger written before the refusal may hold an answered renewal: the mission gets one new ask."""
+    """A ledger written before the refusal may hold an answered renewal. Merged with PR #184's item 7: a row no
+    founder-signed DECISION carries is not counted, so it reopens nothing and the mission keeps exactly its one
+    renewal ask; it never closes it either. (A counted legacy answer re-asks once under a new epoch.)"""
     home, key, body_id, _ = make_body(tmp_path)
     clock = Clock()
     mid = "m:short"
@@ -390,7 +455,8 @@ def test_a_legacy_answered_scope_renewal_reopens_one_ask(tmp_path):
             clock.advance(60)
         renewals = [r.payload["request_id"] for r in body.journal.replay("decision.requested")
                     if r.payload["kind"] == "SCOPE_RENEWAL"]
-        assert len(renewals) == 2 and body.engine.book.missions[mid].blocker["request_id"] == renewals[1]
+        assert old["request_id"] in body.engine.book.unverified and old["request_id"] not in body.engine.book.answers
+        assert len(renewals) == 1 and body.engine.book.missions[mid].blocker["request_id"] == renewals[0]
 
 
 # -- findings 3 and 10: the founder tier is a claim, and every surface says so ----------------------

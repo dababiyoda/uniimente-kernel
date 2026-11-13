@@ -27,6 +27,7 @@ BUDGET = [{"coefficients": {"x": 1, "y": 1}, "op": "<=", "rhs": 10}]
 def test_a_true_claim_holds_within_the_model():
     r = check({"variables": BOX, "constraints": BUDGET, "property": {"coefficients": {"x": 1}, "op": "<=", "rhs": 10}})
     assert r["state"] == "ANSWERED" and r["result"]["claim"] == "HOLDS_WITHIN_MODEL"
+    assert r["result"]["premises"] == "SATISFIABLE" and len(r["intermediate_receipts"]) == 2
     assert r["method_or_composition_selected"] == "cognition.formal"
     step = next(t for t in r["transformations"] if t["operator_id"] == "inversion")
     assert step["effect_kind"] == "representation" and step["input_digest"] != step["output_digest"]
@@ -55,6 +56,11 @@ def test_the_negation_is_exact_at_a_strict_boundary():
     {"variables": BOX, "constraints": BUDGET, "property": {"coefficients": {"x": 1}, "op": "~", "rhs": 1}},
     {"variables": BOX, "constraints": BUDGET, "property": {"coefficients": {"x": 1}, "op": "<=", "rhs": 1},
      "extra": True},
+    # review finding 9: these raised TypeError out of reason() instead of being refused
+    {"variables": BOX, "constraints": BUDGET, "property": {"coefficients": {"x": 1}, "op": [], "rhs": 1}},
+    {"variables": BOX, "constraints": BUDGET, "property": {"coefficients": {"x": 1}, "op": {}, "rhs": 1}},
+    {"variables": BOX, "constraints": BUDGET, "property": {"coefficients": [1], "op": "<=", "rhs": 1}},
+    {"variables": BOX, "constraints": ["x <= 1"], "property": {"coefficients": {"x": 1}, "op": "<=", "rhs": 1}},
 ])
 def test_malformed_claims_are_refused(bad):
     with pytest.raises(CognitionError):
@@ -71,3 +77,18 @@ def test_the_independent_core_recheck_accepts_the_exact_strict_negation():
     assert verification._z3_core_check(negated, ["constraint_0"])["core_unsat"] is True
     assert all(verification._holds(op, 10, 10) is want for op, want in
                {"<=": True, ">=": True, "==": True, "!=": False, "<": False, ">": False}.items())
+
+
+def test_inconsistent_premises_never_make_a_claim_hold():
+    """Review finding 8: x <= 1 and x >= 2 make 'constraints AND NOT property' unsatisfiable for every property,
+    so 'x == 100' held 'within the model'. The premises are checked on their own first."""
+    r = check({"variables": {"x": [0, 200]},
+               "constraints": [{"coefficients": {"x": 1}, "op": "<=", "rhs": 1},
+                               {"coefficients": {"x": 1}, "op": ">=", "rhs": 2}],
+               "property": {"coefficients": {"x": 1}, "op": "==", "rhs": 100}})
+    assert r["state"] == "ANSWERED" and r["result"]["claim"] == "PREMISES_INCONSISTENT"
+
+
+def test_a_malformed_claim_is_refused_through_the_canonical_path_not_raised_as_a_crash():
+    with pytest.raises(CognitionError):
+        check({"variables": BOX, "constraints": BUDGET, "property": {"coefficients": {"x": 1}, "op": [], "rhs": 1}})

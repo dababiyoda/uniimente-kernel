@@ -1,0 +1,52 @@
+{
+ "failure": {
+  "metric": "normalised tardiness gap to the exact optimum on held-out cases vs random-restart search with the same budget and retain rule",
+  "rate": 0.5333,
+  "trigger": 0.25,
+  "incumbent_mean_train_loss": 0.007975
+ },
+ "candidate": {
+  "id": "cfg-afdb92cb42e7",
+  "config": {
+   "mu": 4,
+   "offspring": 2,
+   "p_extra_mutation": 0.3,
+   "p_extra_mutation_recombined": 0.756,
+   "p_recombine": 0.3,
+   "p_restart": 0.0,
+   "tournament": 2
+  },
+  "train_mean_loss": 0.006082
+ },
+ "adversarial": {
+  "fewval": {
+   "incumbent": 0.014268,
+   "candidate": 0.011466
+  },
+  "lean": {
+   "incumbent": 0.010061,
+   "candidate": 0.008762
+  },
+  "all_outputs_verified": true
+ },
+ "heldout": {
+  "n": 90,
+  "candidate_wins": 26,
+  "candidate_losses": 37,
+  "sign_test_p_one_sided": 0.935041,
+  "incumbent_mean_loss": 0.006233,
+  "candidate_mean_loss": 0.009114,
+  "relative_improvement": -0.4622,
+  "candidate_vs_baseline": {
+   "baseline": "normalised tardiness gap to the exact optimum on held-out cases vs random-restart search with the same budget and retain rule",
+   "wins": 22,
+   "losses": 46,
+   "sign_test_p_one_sided": 0.998907,
+   "baseline_mean_loss": 0.00449,
+   "role": "reported; not in the rule"
+  }
+ },
+ "decision": "REJECT",
+ "reason": null
+}
+exit=0

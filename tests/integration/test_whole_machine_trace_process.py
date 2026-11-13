@@ -91,6 +91,10 @@ def test_one_mission_runs_all_nine_links_on_a_real_body_process(tmp_path, organs
         wait_for(lambda: {"think", "assess", "w"} <= set(done(home)), what="Mind, Organs and the in-cone repair")
         wait_for(lambda: [r for r in events(home, "decision.requested") if r["request_id"] == rid],
                  what="the founder ask for the out-of-cone move")
+        # Goal Gravity may record the same ask before the mission reaches the move; deciding then
+        # runs w2 without a block, and the trace below asserts the mission's own block.
+        wait_for(lambda: [b for b in events(home, "mission.blocked") if b["mission_id"] == MID
+                          and b["blocker"].get("request_id") == rid], what="the mission's block on the move")
         greg(home, "decide", rid, "approve", "--reason", "ship it", "--key", str(tmp_path / "founder.pem"),
              "--no-passphrase")
         wait_for(lambda: "w2" in done(home), what="the approved move")

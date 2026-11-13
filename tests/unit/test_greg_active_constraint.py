@@ -199,7 +199,15 @@ def test_a_legacy_answer_to_an_unanswerable_ask_does_not_change_its_lifter(tmp_p
     renewal = constraint(home, mid)["blocker"]
     assert renewal["request_id"] == rid and renewal["kind"] == "SCOPE_RENEWAL"
     assert renewal["lifted_by"] == CONSTRAINT_LIFTED_BY["SCOPE_RENEWAL"] and "answered" not in renewal
-    with Body(home, clock=clock) as b:                     # the next tick re-asks for the renewal, as before
+    with Body(home, clock=clock) as b:
         b.tick()
+        # Merge of #178 e410977 into PR #184 (item 7): a row no founder-signed DECISION stands behind is not an
+        # answer at all, so it neither closes the ask nor opens a new one; the mission keeps waiting on the same
+        # renewal, with the same lifter. (An answer that does count re-asks under a new epoch: greg/missions.py.)
+        b.engine.book.rebuild()
+        assert rid not in b.engine.book.answers and rid in b.engine.book.unverified
+        renewals = [e.payload["request_id"] for e in b.journal.replay("decision.requested")
+                    if e.payload["kind"] == "SCOPE_RENEWAL"]
+        assert renewals == [rid]
     again = constraint(home, mid)["blocker"]
-    assert again["kind"] == "SCOPE_RENEWAL" and again["request_id"] != rid and again["lifted_by"] == renewal["lifted_by"]
+    assert again["kind"] == "SCOPE_RENEWAL" and again["request_id"] == rid and again["lifted_by"] == renewal["lifted_by"]

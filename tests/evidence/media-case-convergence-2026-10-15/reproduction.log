@@ -1,0 +1,13 @@
+== before: base 1530d24 (#181 head), clean git worktree
+faithful             | evidence family: NONE     {'bound': True, 'claim': 'A two-depot pilot found the routing method may cut delays by 12%.', 'contested': False} | daleobanks.verify: REJECTED ['DALEOBANKS Critic blocking: missing_too_many_elements: problem, kpis, risks, cta']
+hedge dropped        | evidence family: NONE     {'bound': True, 'claim': 'The routing method cuts delays by 12%.', 'contested': False} | daleobanks.verify: VERIFIED []
+negation removed     | evidence family: NONE     {'bound': True, 'claim': 'It lowered fuel costs.', 'contested': False} | daleobanks.verify: VERIFIED []
+scope widened        | evidence family: NONE     {'bound': True, 'claim': 'All depots saw delays fall by 12%.', 'contested': False} | daleobanks.verify: VERIFIED []
+direction reversed   | evidence family: NONE     {'bound': True, 'claim': 'The method increased delays by 12%.', 'contested': False} | daleobanks.verify: VERIFIED []
+
+== after: 9f7dac8
+faithful             | evidence family: NONE     {'bound': True, 'claim': 'A two-depot pilot found the routing method may cut delays by 12%.', 'contested': False, 'distortions': []} | daleobanks.verify: REJECTED ['DALEOBANKS Critic blocking: missing_too_many_elements: problem, kpis, risks, cta']
+hedge dropped        | evidence family: ABSTAIN  {'bound': True, 'claim': 'The routing method cuts delays by 12%.', 'contested': False, 'distortions': [{'class': 'certainty', 'detail': 'the spans are hedged; the claim is not'}]} | daleobanks.verify: VERIFIED []
+negation removed     | evidence family: ABSTAIN  {'bound': True, 'claim': 'It lowered fuel costs.', 'contested': False, 'distortions': [{'class': 'negation', 'detail': 'negation removed'}]} | daleobanks.verify: VERIFIED []
+scope widened        | evidence family: ABSTAIN  {'bound': True, 'claim': 'All depots saw delays fall by 12%.', 'contested': False, 'distortions': [{'class': 'certainty', 'detail': 'the spans are hedged; the claim is not'}, {'class': 'scope', 'detail': "universal scope the spans do not state: ['all']"}]} | daleobanks.verify: VERIFIED []
+direction reversed   | evidence family: ABSTAIN  {'bound': True, 'claim': 'The method increased delays by 12%.', 'contested': False, 'distortions': [{'class': 'certainty', 'detail': 'the spans are hedged; the claim is not'}, {'class': 'direction', 'detail': "direction ['up'] against the spans' ['down']"}]} | daleobanks.verify: VERIFIED []

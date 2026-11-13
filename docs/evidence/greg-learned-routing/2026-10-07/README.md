@@ -77,3 +77,44 @@ neither fixed order nor the class ledger does. The held-out margin is too small 
 - The 384- and 600-variable bin-packing cells (where the probe showed opposite winners) share the
   `<=1000` size bucket; the frozen log-scale buckets did not separate them.
 - 2 development bin-packing items had no 20 s reference label and were excluded.
+
+## P4 v3: the one pre-registered decisive retest (2026-10-14)
+
+Runner `cortex/evaluation/learned_routing/run_v3.py`; suite `suite-v3.json` (130 fresh held-out items, seeds
+7-12, every v2 family; 2 bin-packing items had no 20 s reference label and are excluded and listed); freeze
+`freeze-v3.json` committed before the run (`e2ea4c1`). Memory, features, buckets, thresholds and training
+data are v2's, unchanged. The timing-sensitive arms ran 3 times per item in rotated order (majority decides);
+every run's latency is kept. Results: `results-v3.json`. The run started at `e2ea4c1`; it records
+`bfb9c04` because two unrelated commits landed while it ran; every pinned input is byte-identical there
+(re-checked against the manifest after the run).
+
+| Arm (130 held-out items) | correct | wrong | no decision | median s | p90 s |
+|---|---:|---:|---:|---:|---:|
+| static (cortex 0.2.1 policy) | 111 | 0 | 19 | 0.916 | 3.014 |
+| class_learned (v1 ledger) | 109 | 0 | 21 | 0.927 | 3.018 |
+| conditional_learned | 111 | 0 | 19 | 0.923 | 3.020 |
+| z3_first (reference) | 96 | 0 | 34 | 0.984 | 3.015 |
+| cpsat_first (reference) | 84 | 0 | 46 | 1.006 | 3.022 |
+| oracle: correct under either fixed order | 115 | | | | |
+
+**Verdict (frozen rule): conditional vs static NO_GAIN** (111 = 111; 3 wins, 3 losses, p = 0.66). Class vs
+static: **REGRESSION** (109 vs 111). Conditional vs class: INCONCLUSIVE (5/3, p = 0.36).
+
+Every one of the 6 discordant items between conditional and static had split repeat runs (for example
+`binpack_tight_1s-48x8-9`: static correct/correct/none, conditional none/correct/none): the difference is
+1-second timing noise, not routing. On tight bin packing the learned CP-SAT preference reached 14 of 22, the
+same as static, while the fixed CP-SAT-first order reached 15; the headroom over static on the whole suite is
+4 items (oracle 115).
+
+**Decision, as the founder instructed: conditional solver learning is not currently worth its complexity
+for this two-engine repertoire.** P4's exit is not met after three frozen comparisons (v1 INCONCLUSIVE,
+v2 INCONCLUSIVE, v3 NO_GAIN). Dispositions:
+
+- `learned` routing mode: not recommended; it stays available behind the explicit mode switch and never
+  becomes a default from this evidence.
+- `shadow` (the default) is retained: it changes no execution and records, on every real mission, whether
+  the memory would have chosen differently. That is the only route by which this mechanism could earn its
+  place again (the P4 review trigger is 20 settled real-mission outcomes in one geometry); synthetic suites
+  have now been exhausted three times.
+- Nothing is deleted: the memory, the suites and all three verdicts remain as institutional evidence and as
+  the substrate P8 searches over.

@@ -636,7 +636,7 @@ def test_teams_intersect_authority_spend_nothing_extra_and_dissolve(tmp_path):
 
 
 def test_repair_writes_a_failing_test_finds_the_minimal_patch_and_records_the_procedure(tmp_path):
-    result = repair.exercise(tmp_path)
+    result = repair.exercise_fixture(tmp_path)
     assert result["regression_before"] == "1 failed" and result["after_passed"]
     assert result["chosen"] == "line 7: drop '- 1'" and "range(remainder)" in result["diff"]
     assert result["tied"], "localization could not separate the lines; the tie was searched, not truncated"

@@ -1,0 +1,31 @@
+# Organ Map — claimed role versus evidenced role
+
+Part of deliverable C. Ten organ and research repositories were inspected read-only on 2026-10-14 and 2026-10-15 by reader agents of this session. A role counts as evidenced only where code and a test show it. README, AGENTS.md and PR text count as claims.
+
+| Repository | HEAD inspected | Role claimed | Role evidenced | Connection to GREG on this branch | Tier |
+|---|---|---|---|---|---|
+| DALEOBANKS | `667439f` (main) | 24/7 autonomous media agent; Kernel manifest: perception, media intelligence, audience distribution | A governed drafting, human-approval, narrow-grant and gated-publish machine with a tamper-evident ledger, running in dry-run and shadow mode. "Executed: 0 of 5"; the X account does not exist yet | Real organ code in both organ exchanges: `organ.exchange` (#178, IdeaRefinery seed) and `organs.exchange` (this branch, `build_packet` with replay-protected bridge state and DALEOBANKS ledger acceptance). Both ran against `667439f` | Sandbox, real code |
+| WealthMachineIntelligence | `ec82b80` (main) | Opportunity evaluation, Venture Cells, portfolio intelligence, commercial execution | A deterministic, model-free venture-assessment engine with an adversarial committee and hard-coded guardrails; a replay-protected HTTP intake on synthetic localhost; rehearsal libraries for a business loop and treasury waterfall | Receiver in both organ exchanges and in `venture.assess`; reproduced by a second process in #178's exchange | Sandbox, real code |
+| RAILSCOUT | `017d9f3` (main, empty); `232f724` (PR #9 branch) | Autonomous research refinery and founder-intelligence operating system | On the PR #9 branch only: a deterministic, source-bound claim verifier with abstention and a write-once receipt (7 tests) | `greg/ventures.py` Bridge A leg RailScout appraise → WMI, verified on the real branch | Sandbox; integration target sits on a draft branch |
+| PumpStation | `db6758d` (main) | Memecoin coordination platform; later a participation-economy rail | A 56-line wallet-signature login with a replayable signature and no tests. A non-replayable SIWE fix (PR #16, 55 tests) awaits a founder decision | None. Any value movement is founder-only and testnet-first | Identity stub, not an organ |
+| RESEARCH-IN | `15ceb62` (main) | Research collaboration platform; research-intake organ | A schema, an ORCID checksum validator, and a URL guard that reports "ingested" without ingesting. CI cannot run as written | None. Candidate adapter: research rows → EvidencePacket | Specified, not tested |
+| REA-Reverse-Engineering-Anything | `0c6852b` (mirror) | Local reverse-engineering CLI and MCP | One lawful static investigation (opossum circuit breaker) that fed mechanism card MC-0002 and governed recovery | Tool source for Capability Genesis, not an organ | Used once |
+| build-your-own-x | fork | Mechanism atlas | Tutorial index; mechanism source per INTENT-0030 | Mechanism mine for the invention ledger | Reference |
+| gods-eye-view-EGGREGORE-TOOL | main | Geospatial and public-signal situational awareness | Inspected; card retained in the session scratchpad. Consent-based public signals only; no named-person surveillance | None yet | Reference |
+| agent-skills | `1401c8b` (fork, 0 ahead) | Engineering skills pack for coding agents | 25 Markdown workflows and validators; no runtime | Candidate rubric for commissioned coding workers; register as a Capability Genome, attach nothing | Reference |
+| knowledge-work-plugins | `ae1513e` (fork, 0 ahead) | Role-specialist plugin marketplace | 123 SHA-pinned tool bundles; money-moving and customer-contacting connectors gated only by prose | Capability discovery source; any write connector needs a Consequence Gate shim first | Reference |
+
+## Defects and drift the organ cards found
+
+1. **DALEOBANKS control routes are unauthenticated.** Arming, crisis and mode routes have no dependency check. Publication is still bounded by grants, but anyone who can reach the port can arm or disarm.
+2. **The Kernel's DALEOBANKS publish bridge cannot publish against current DALEOBANKS.** DALEOBANKS now demands its own capability grant and draft id, which GREG never sends. A live-armed request would be dry-run and logged with a false reason ("rate governor or credentials").
+3. **Organ manifests are stale.** The DALEOBANKS manifest lags 32 commits and the WMI manifest 13. RailScout has no manifest at all, so the linker never sees it.
+4. **The shared HMAC key authenticates a key holder, not an organ.** Any holder can sign as DALEOBANKS, WealthMachine or the Kernel. #174 (per-organ keys, merged into #178) is the upgrade path; the organs still pin a boundary package with one key.
+5. **WMI and DALEOBANKS pin the boundary package by an unhashed archive URL** (`4999acff`), and the Kernel already differs from it in three of 28 files.
+6. **RESEARCH-IN and WMI ship insecure default secrets** (`development-secret`, `change-me-please`) used whenever the environment is unset.
+
+## Which organ work is next
+
+- **DALEOBANKS publish bridge.** Forward a DALEOBANKS capability grant and draft id from a founder-signed GREG grant, and report `publish_gated` truthfully. Founder authorization is needed before any live post.
+- **Organ pins.** Upgrade both organs to a boundary package with per-organ keys. This is a founder decision, listed by #178.
+- **RailScout.** Land PR #9 on RailScout main so the venture leg does not depend on a draft branch.

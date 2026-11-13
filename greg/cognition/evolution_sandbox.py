@@ -9,6 +9,8 @@ recorded so the parent can refuse unconfined runs where confinement is required.
 """
 from __future__ import annotations
 
+import hashlib
+import inspect
 import json
 from pathlib import Path
 import resource
@@ -27,7 +29,8 @@ from greg import isolation  # noqa: E402
 # map (numpy's libstdc++ on hosts whose Python lives outside /usr) are granted as already-loaded files.
 TARGETS = {"forecast_quantile": ("greg.cognition.genomes.forecasting", "solve_with", ()),
            "immune_detect": ("greg.cognition.genomes.collective", "immune_solve_with",
-                             ("numpy", "numpy.linalg", "numpy.random"))}
+                             ("numpy", "numpy.linalg", "numpy.random")),
+           "constraint_release": ("greg.cognition.genomes.developmental", "constraint_release_solve_with", ())}
 
 
 def main():
@@ -39,12 +42,17 @@ def main():
     method = getattr(importlib.import_module(module), function)      # imported BEFORE confinement
     for name in runtime:
         importlib.import_module(name)                                 # lazily used, so preloaded here too
+    # The bytes of the module this process actually imported, read before confinement: the parent compares
+    # them with its pre-registered closure, so an on-disk edit of the method cannot run unnoticed.
+    source = Path(inspect.getsourcefile(sys.modules[module])).resolve()
+    imported = {"module": module, "sha256": "sha256:" + hashlib.sha256(source.read_bytes()).hexdigest()}
     resource.setrlimit(resource.RLIMIT_CPU, (120, 121))
     scratch = tempfile.mkdtemp(prefix="greg-p8-")
     confined = None
     if request.get("confine", True):
         try:
-            confined = isolation.confine(scratch, [])
+            # everything this process runs is already imported: not even the repository's listing is granted
+            confined = isolation.confine(scratch, [], list_code=False)
         except isolation.IsolationError as exc:
             print(json.dumps({"confined": None, "error": f"CONFINEMENT_UNAVAILABLE: {exc}"}))
             return
@@ -62,9 +70,10 @@ def main():
         try:
             out = method(request["config"], problem["data"])
             outputs[problem["id"]] = {"output": out["output"], "certificate": out["certificate"]}
-        except (GenomeError, ValueError, ZeroDivisionError, OverflowError) as exc:
-            outputs[problem["id"]] = {"error": f"{type(exc).__name__}: {str(exc)[:160]}"}
-    print(json.dumps({"confined": confined, "probe": probe_result, "outputs": outputs}))
+        except Exception as exc:             # recorded per problem (a TypeError once aborted a whole cycle)
+            kind = "GenomeError" if isinstance(exc, GenomeError) else type(exc).__name__
+            outputs[problem["id"]] = {"error": f"{kind}: {str(exc)[:160]}"}
+    print(json.dumps({"confined": confined, "probe": probe_result, "imported": imported, "outputs": outputs}))
 
 
 if __name__ == "__main__":

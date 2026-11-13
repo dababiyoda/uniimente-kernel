@@ -1,7 +1,7 @@
 {
  "command": "python -m foundry.completion --run 28",
  "name": "MCP integration",
- "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "note": "not re-run by the CI audit while the row is PARTIAL (it re-runs only COMPLETE rows); re-derive with `python -m foundry.completion --run 28`",
  "result": {
   "chain_ok": true,
   "cross_checked_with": "uniimente-foundry",

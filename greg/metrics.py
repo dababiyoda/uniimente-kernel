@@ -157,6 +157,10 @@ def sandbox_whole_machine(journal: Journal) -> dict:
                        if e.payload.get("kind") == "RECONCILIATION"}
     answered = {e.payload["request_id"] for e in journal.replay("decision.answered")
                 if e.payload.get("answer", "").startswith("reconcile_")}
+    if answered:   # only answers the mission fold counts: a founder-signed DECISION behind each
+        from greg.missions import MissionBook
+        answered = {rid for rid, a in MissionBook(journal).answers.items()
+                    if str(a.get("answer", "")).startswith("reconcile_")}
     requested_for = {e.payload["request_id"]: e.payload.get("mission_id") for e in journal.replay("decision.requested")}
     rows = []
     sensors = {}
@@ -183,7 +187,7 @@ def sandbox_whole_machine(journal: Journal) -> dict:
             "founder_signed_via_inbox": bool(checks.get("founder_signature_verified")) and bool(checks.get("arrived_via_inbox")),
             "mind_certified_without_model": any(
                 o.get("passed") and sensor.startswith("cognition.") and isinstance(out, dict)
-                and out.get("schema") == "greg-competency-compilation/0.1"
+                and str(out.get("schema", "")).startswith("greg-competency-compilation/")
                 and out.get("state") == "ANSWERED" and str(out.get("confidence_type", "")).startswith("certified")
                 and (out.get("cost") or {}).get("model_calls") == 0 for o, sensor, out in outputs),
             "capability_formed": bool(deficits & resolved & verified),

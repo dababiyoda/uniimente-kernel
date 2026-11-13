@@ -1280,8 +1280,8 @@
     "body-loop:Body._appraise_closure (each mission closure)",
     "operator:greg rehearse"
    ],
-   "reason": "runs `python -m greg.appraisal` on the body's own schedule when a mission closes (Body._appraise_closure); no capability manifest, Gate or worker envelope stands behind the spawn, and the child, though it runs reviewed GREG code with a scrubbed env and a timeout, is not network- or filesystem-confined (it re-runs only the read-only REOBSERVABLE sensors)",
-   "pin": "d09210ae760141103bc4cb83916aae506fd37fd9fe2e83fb715d6fe430c23041"
+   "reason": "runs `python -m greg.appraisal` on the body's own schedule when a mission closes, and once more after the founder attaches a capability an earlier appraisal did not run (Body._appraise_closure, Body._reattached_closures); no capability manifest, Gate or worker envelope stands behind the spawn, and the child, though it runs reviewed GREG code with a scrubbed env and a timeout, is not network- or filesystem-confined (it re-runs only read-only REOBSERVABLE sensors the ledger shows ATTACHED, and re-derives a delivery only for an ATTACHED capability: greg.appraisal._withheld)",
+   "pin": "56cd1d63d8a221f8b49a885cf9476c5e7cb43acb1e8f02f73d16e7592e615b70"
   },
   {
    "module": "greg/compute.py",

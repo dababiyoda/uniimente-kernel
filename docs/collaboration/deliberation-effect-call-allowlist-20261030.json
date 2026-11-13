@@ -1,0 +1,563 @@
+{
+  "decision_id": "EFFECT-CALL-ALLOWLIST-20261030",
+  "title": "List every place GREG's code starts a process, opens a connection or listens, and fail CI on any new or rewritten one until a person files it",
+  "problem": "Directive section 37 says: \"If consequential workers can bypass the evidence plane, treat it as a security defect.\" Section 67 kills architecture that \"permits consequence-gate bypass\". Before this unit nothing in the tree listed where greg/ and foundry/systems/ start processes, open connections or listen, so a new spawn or connection around the capability manifests, the Gate, the worker envelope or the #26 relay could be noticed only by a reviewer reading the diff. Measured at the unit's base b1950be2: a subprocess.run appended to greg/compute.py passed the existing suites (69 passed). Later the base itself added two spawns, which this branch found only when its scan ran on the merged tree: greg/licensing.py :: system_binary (bd7e3f9e, a dpkg-query run from the body's own tick) and greg/compute.py :: benchmark (#238).",
+  "founder_intent_refs": [
+    "INTENT-20261028-OPUS-MAXIMUS-REISSUE (sections 37 governed observability and 67 kill criteria; also 34-36, 56 and 64)",
+    "INTENT-20261030-BUILD-BEFORE-DEVICE-RUN",
+    "INTENT-20261001-FULL-MACHINE-COMPLETION",
+    "INTENT-20261019-UPWARD-ASCENT"
+  ],
+  "baseline": "b1950be2 (#196's head when the unit began): no inventory of effect sites; only a reviewer reading the diff could notice a new spawn, connection or listener. The PR base is now #196 at d35d92a5, which still has none.",
+  "alternatives": [
+    {
+      "name": "Proposed: AST inventory with pins, wrappers, path lookups and a fixed list of findings, guarded by a 117-mutant gate",
+      "description": "tests/unit/test_effect_call_allowlist.py parses greg/, foundry/systems/ and every repository module they import (328 modules on the merged tree) and finds each child process, stdlib call that starts one, outbound connection, name lookup, listener and exec/eval/runpy. tests/security/effect-call-allowlist.json lists each site by (module, qualname, callee) with a count, what serves it and a pin of the code it describes. Declared wrappers make each caller a site. path_lookups records where each program is chosen by name. FINDINGS in the test fixes which entries are body-loop findings. scripts/ci/check_effect_call_allowlist_mutants.py holds 117 mutants. No source module changes.",
+      "advantages": [
+        "A new effect site fails CI with a ready-to-paste entry; it caught the base's dpkg-query spawn at merge 275e9d86 and #238's compute.benchmark spawn at merge 7f179554",
+        "15 of 15 evasion forms in the third review's probe are sites (the round-3 scanner found 0)",
+        "Re-filing a finding as allowed fails (FINDING RE-FILED); before round 4 it passed",
+        "A rewritten pinned spawn fails (PIN MISMATCH); before round 4 it passed",
+        "A new direct caller of system_binary or git_read fails (UNLISTED); before round 4 it passed",
+        "The inventory surfaced real defects for their owners: dpkg-query, bwrap and git taken from the body's ambient PATH, git_read running a repository's core.fsmonitor, the system-52 string check passed by \"052\", run_worker's cortex child with full network, and install_filter's find_library spawn",
+        "No source module, authority or capability changes; reverting four files removes it"
+      ],
+      "disadvantages": [
+        "Static: effects inside third-party libraries, python -c children, non-literal importlib or getattr, ctypes other than find_library, socket.fromfd and stdlib functions not in the table are unseen",
+        "A pin binds what runs at a site, not who reaches it: a986fc74 added a route to system_binary and the scan stayed green",
+        "Size: a 1685-line test and a 1598-line JSON; every PR that adds an effect must add and pin an entry",
+        "The mutant gate took 27m14s as one process on a shared 4-core container and is not in canonical-ci.yml",
+        "The envelope rule matches words; a justification that relies on the sandbox in other words is not held to it"
+      ],
+      "revival_evidence": "Retained as proposed. Revisit if CI cost or false positives block unrelated PRs, or if runtime enforcement (below) lands."
+    },
+    {
+      "name": "Simplest viable: round 1's scanner (callee and count only, greg/ and foundry/systems/ only)",
+      "description": "The first version at f4028f3d: an AST scan of a fixed callee table keyed by (module, qualname, callee) and a count, 67 keys, 20 mutants, no wrappers, no pins, no import following.",
+      "advantages": [
+        "About 8 s per scan and 2m18s for its mutant gate",
+        "Much smaller to read and maintain"
+      ],
+      "disadvantages": [
+        "Round 2's 14 new source mutants all survived it: rebinding, re-export, star import, sys.modules, asyncio.subprocess, urlretrieve, open_connection, httpx2, a listener, an evaluated annotation, an opener's .open held as a value, getattr(opener, \"open\"), a new egress.send caller and run_isolated(isolate_network=False)",
+        "It missed 12 real sites: 4 httpx2 clients and 8 listeners",
+        "It filed memory_bytes as operator-only although the body loop reaches it, and carried a false justification for _launch"
+      ],
+      "revival_evidence": "Only if the full scanner's maintenance cost is shown to exceed what it catches; the measured misses above argue against it."
+    },
+    {
+      "name": "Strongest competing: enforce at runtime instead of listing at review time",
+      "description": "Install a CPython audit hook (sys.addaudithook) or OS confinement on the body process so that a subprocess, socket or exec event not issued through a governed path is refused.",
+      "advantages": [
+        "Sees effects inside third-party libraries and dynamic forms that a static scan cannot",
+        "Blocks an effect instead of recording it",
+        "The audit hook is stdlib and already worked here as a probe: it observed find_library spawning /sbin/ldconfig -p"
+      ],
+      "disadvantages": [
+        "Changes the body's runtime behaviour: a source change, outside this no-source unit",
+        "Six body-loop spawns and the path lookups have no governed path yet, so enforcing today would stop the body or need exemptions that recreate the list",
+        "In-process code can still reach the OS through ctypes; an audit hook is a tripwire, not a boundary",
+        "Needs the founder's decision on what the running body may refuse"
+      ],
+      "revival_evidence": "A source unit that puts the six findings and the ambient-PATH lookups behind confinement or a governed path; this inventory is the list such a unit starts from."
+    },
+    {
+      "name": "Staged or reversible experiment: report the inventory as a warning for a period before it fails CI",
+      "description": "Run the same scan but only print new or changed sites, and measure how many real sites and false positives appear before making it blocking.",
+      "advantages": [
+        "No CI friction while its noise is measured",
+        "Same reversibility as the proposal"
+      ],
+      "disadvantages": [
+        "A warning does not stop a bypass; the two base spawns above reached #196 with no such check in place",
+        "The measurement it would produce already exists: across four base merges and 20 clean sibling merges the scan flagged exactly two new sites, both real, and no false positive"
+      ],
+      "revival_evidence": "False positives that block unrelated PRs in CI."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "New spawns, connections and listeners keep landing seen only by whoever reads the diff. The two base spawns this scan caught at merge time (licensing.system_binary, compute.benchmark) reached the integration line that way.",
+    "advantages": [
+      "No new test, data file or mutant gate to maintain",
+      "No CI time added"
+    ],
+    "disadvantages": [
+      "Section 37's \"treat it as a security defect\" has no detector",
+      "Six body-loop spawns with nothing governing them, and the ambient-PATH choice of dpkg-query, bwrap and git, stay unrecorded",
+      "The git_read fsmonitor exposure and the system-52 string check stay undiscovered"
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Advances section 37 and the section 67 kill criterion with an executable check, inside the build-first sequencing of INTENT-20261030-BUILD-BEFORE-DEVICE-RUN. It adds no authority and changes no runtime behaviour.",
+      "material_concerns": [
+        "The product delta is a review-time gate, not runtime mediation; it must not be presented as closing the bypass class",
+        "The six findings are recorded, not fixed; listing authorizes nothing",
+        "VEPMC is unchanged at 0"
+      ],
+      "evidence_refs": [
+        "docs/evidence/effect-call-allowlist-2026-10-30/README.md",
+        "docs/intent/sources/OPUS-MAXIMUS-MASTER-BUILD-DIRECTIVE-2026-10-28-source.md (sections 37 and 67)"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Commodity mechanisms only: the stdlib ast module, a JSON file, pytest and the existing CI job. One file holds the list; it reads the code and changes none. It is placed under tests/security/ because governance/integrity/ holds founder-signed records, where an unsigned list would read as an authorization.",
+      "material_concerns": [
+        "Name binding is flow-insensitive, so a reused local name may over-report",
+        "The scanner re-implements import resolution, including sys.path roots; test_sys_path_roots_are_module_roots keeps that list complete",
+        "The test and the JSON are large; their own self-tests and mutants are what keep them honest"
+      ],
+      "evidence_refs": [
+        "tests/unit/test_effect_call_allowlist.py",
+        "tests/security/effect-call-allowlist.json"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Two review rounds, each by two separate agents of this session (attack and fidelity), made 30 findings: 17 on round 1 (f4028f3d) and 13 on round 3 (9b4bf062). The rounds that answered them reproduced each one they fixed. The final scan catches each evasion form they found, but it is static and does not bind routes.",
+      "material_concerns": [
+        "A new route to an existing finding passes green (MUD-R4-1 is the measured case)",
+        "Fourteen allowed entries rest on a bwrap taken from the body's ambient PATH; the LIC-PIN pin that would fix that (db09035e) is not merged and has its own gaps (MUD-ATK-9)",
+        "Six body-loop spawns stay unconfined, and the \"052\" string check passed the bridge",
+        "Listing must never be cited as mitigation"
+      ],
+      "evidence_refs": [
+        "docs/evidence/effect-call-allowlist-2026-10-30/README.md (Findings; Round 4 dispositions)",
+        "scripts/ci/check_effect_call_allowlist_mutants.py"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "The test already runs in Canonical CI job 1's full pytest suite (about 20 s per scan here). It merged four times with the moving base. At two of those merges it flagged one new site each; both were real, and each was filed from the code.",
+      "material_concerns": [
+        "The mutant gate is not a step in canonical-ci.yml; it took 27m14s as one process here",
+        "Every PR that adds an effect must add and pin an entry, and whichever of two such PRs merges second must re-list",
+        "When LIC-PIN merges, the bwrap and dpkg-query lookups change and the 'ambient PATH' texts must be re-read by hand"
+      ],
+      "evidence_refs": [
+        "docs/evidence/effect-call-allowlist-2026-10-30/README.md (Merges of the PR base)",
+        ".github/workflows/canonical-ci.yml"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "No evidence is deleted. Each overclaim found in review (round 1's browser.session claim, the a986fc74 paragraph, 'cannot grow unseen') was withdrawn or corrected in the README with the reason. Negative results are kept.",
+      "material_concerns": [
+        "Claims stay at UNIT-TESTED with runtime probes in a Linux container; nothing ran on a founder device or a Mac",
+        "The reviews were by separate agents of this same session, not independent sessions or humans",
+        "Six commits carry the placeholder author 'combined-check <combined-check@local>'; history is not rewritten because their shas are cited as evidence"
+      ],
+      "evidence_refs": [
+        "docs/evidence/effect-call-allowlist-2026-10-30/README.md (Limitations; Reality level; Commit identity)"
+      ],
+      "recommendation": "RETAIN"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "Without the inventory, an added spawn passes the existing suites; with it, the scan names the site",
+      "tier": "unit_test",
+      "reference": "README 'Commands and results', R1 rows: b1950be2 plus subprocess.run in greg/compute.py",
+      "finding": "Existing suites 69 passed; the new test 1 failed: UNLISTED greg/compute.py :: _unreviewed_probe :: subprocess.run"
+    },
+    {
+      "claim": "Round 2 closed the forms round 1 missed",
+      "tier": "unit_test",
+      "reference": "README R2 rows; scripts/ci/check_effect_call_allowlist_mutants.py at 5c6116a2",
+      "finding": "All 14 new source mutants survived round 1's test; 51/51 caught at 5c6116a2"
+    },
+    {
+      "claim": "Round 4 closed the third review's evasions, re-filings and rewrites",
+      "tier": "unit_test",
+      "reference": "README 'Round 4: Commands and results'; mud_attack/scan_probe.py and the round-4 probes in the session scratchpad",
+      "finding": "Round 3: 15 of 15 forms NO SITE, re-filing, rewriting and new wrapper callers unflagged. Round 4: 15 of 15 found, 6 FINDING RE-FILED, 2 PIN MISMATCH, new callers UNLISTED"
+    },
+    {
+      "claim": "Fail-before at a986fc74 with round 4's test and round 3's allowlist",
+      "tier": "unit_test",
+      "reference": "README Round 4 fail-before row, re-run by the final verification",
+      "finding": "2 failed, 16 passed: 93 malformed, 10 unlisted, 93 pin mismatches, 3 finding problems, 33 unlisted path lookups, 14 envelope claims"
+    },
+    {
+      "claim": "The test passes on the merged tree and every mutant is caught",
+      "tier": "unit_test",
+      "reference": "tests/unit/test_effect_call_allowlist.py at 7f179554 and 1bd9d707; mutant gate at 7f179554",
+      "finding": "18 passed; 117/117 caught as one process, 0 survived, 0 stale, 27m14s"
+    },
+    {
+      "claim": "The scan caught the base's own unreviewed spawns at merge time",
+      "tier": "unit_test",
+      "reference": "merges 275e9d86 (greg/licensing.py :: system_binary) and 7f179554 (greg/compute.py :: benchmark)",
+      "finding": "Each merged tree failed on exactly that one UNLISTED site; each was classified from the code"
+    },
+    {
+      "claim": "The body reaches the dpkg-query spawn from its own tick, and a planted dpkg-query earlier on PATH is the one that runs",
+      "tier": "sandbox_execution",
+      "reference": "README '4dc0d581: the licensing site' (runtime trace and probe on 10d8fafa and 640e6eb9)",
+      "finding": "One spawn traced from Body.tick to licensing.py system_binary; the planted script ran as root in this container"
+    },
+    {
+      "claim": "a986fc74 opened a new body-loop route to system_binary that the scan did not see",
+      "tier": "sandbox_execution",
+      "reference": "README 'Correction (round 4, MUD-R4-1)'",
+      "finding": "While sensing-blocked after a detach: _deficit, Genesis.resolve('hash.sha256'), system_binary twice; at 638457a4 the same scenario recorded none"
+    },
+    {
+      "claim": "git_read applies a repository's own config",
+      "tier": "sandbox_execution",
+      "reference": "README Findings, git on the ambient PATH",
+      "finding": "briefs._git on a scratch repository ran its core.fsmonitor command"
+    },
+    {
+      "claim": "System 52's refusal compares strings",
+      "tier": "sandbox_execution",
+      "reference": "README Findings, System 52's string check",
+      "finding": "\"052\" passed the bridge; GREG's foundry worker guard refused the exec; mcp_gateway._query outside GREG ran the caller's source"
+    },
+    {
+      "claim": "find_library starts a process in the confined child before the filter",
+      "tier": "sandbox_execution",
+      "reference": "README Findings, install_filter",
+      "finding": "Audit hook: subprocess.Popen /sbin/ldconfig -p"
+    },
+    {
+      "claim": "Clean sibling merges keep the inventory green",
+      "tier": "unit_test",
+      "reference": "final verification's semantic.sh on the 10 checked siblings not yet in the base; the same script on 2026-11-04 on 10 open PRs it had not covered (#203, #206, #213, #220, #226, #253, #254, #255, #256, #257)",
+      "finding": "Every one merges cleanly with this branch and with the base; 18 passed on each of the 20 merged trees"
+    },
+    {
+      "claim": "No second authority source and no broken schema reference",
+      "tier": "unit_test",
+      "reference": "scripts/ci/check_authority_singleton.py; scripts/ci/check_schema_refs.py at 7f179554",
+      "finding": "rc 0 each; 27 schemas, 130 local refs resolve"
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "Round 1 said the check would catch a bypass like the earlier browser.session one",
+      "tier": "unit_test",
+      "reference": "README R2 row: 8bdca11f fix reverted on a scratch copy",
+      "finding": "9 passed: not caught. The claim is withdrawn; that class lives in Playwright, Chromium and policy sets"
+    },
+    {
+      "claim": "Round 1's _launch justification said every in-tree caller keeps isolate_network=True",
+      "tier": "sandbox_execution",
+      "reference": "review finding MUD-4 / MUD-F3",
+      "finding": "False: cognition/bridge.py run_worker passes isolate_network=False with a semantic model; the child opened a socket"
+    },
+    {
+      "claim": "Round 1 filed memory_bytes as reached only by person-run commands",
+      "tier": "sandbox_execution",
+      "reference": "review finding MUD-5 / MUD-F4",
+      "finding": "Body.run spawned /usr/sbin/sysctl on its own with the platform set to darwin; moved to known_unmediated"
+    },
+    {
+      "claim": "Round 3's allowed entries said the probes run inside the bubblewrap envelope",
+      "tier": "unit_test",
+      "reference": "third review finding MUD-ATK-1",
+      "finding": "bwrap itself comes from the body's ambient PATH and runs unconfined; 14 texts rewritten"
+    },
+    {
+      "claim": "Round 3's README said a986fc74 opened no new path to system_binary",
+      "tier": "sandbox_execution",
+      "reference": "third review finding MUD-R4-1",
+      "finding": "False; the route exists and the scan stayed green, because pins and keys do not bind routes"
+    },
+    {
+      "claim": "The first full round-4 mutant run was not clean",
+      "tier": "unit_test",
+      "reference": "README Round 4 'Mutant gate'",
+      "finding": "114/117: two tests failed without naming the site, one mutant was equivalent; fixed and each caught singly before the clean run"
+    },
+    {
+      "claim": "The inventory is incomplete on macOS for one finding",
+      "tier": "other",
+      "reference": "README fourth merge: 'Not in the inventory'",
+      "finding": "greg compute benchmark and greg compute status reach memory_bytes's sysctl spawn; its operator serves names only greg.body.status (read from code)"
+    },
+    {
+      "claim": "Six commits carry a placeholder author",
+      "tier": "historical_artifact",
+      "reference": "78e986bb, f4028f3d, f0b5d1a2, 5c6116a2, eca2f86a, 275e9d86",
+      "finding": "'combined-check <combined-check@local>' from a shared git config set by another workflow of this session; not rewritten"
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "Every place GREG's own Python code, and the repository modules it imports, starts a process, opens a connection, looks up a name, listens or runs code from a string is listed with what governs it. A new or rewritten one fails CI until a person reads the code and files it. A body-loop spawn that nothing governs is filed as a finding that cannot be relabelled an approval.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "A new effect site fails CI with a ready-to-paste entry",
+        "amplified_value": "Section 37 gets a detector on every PR into #196; it already caught two spawns the base added without review"
+      },
+      {
+        "id": "A2",
+        "statement": "Findings stay findings",
+        "amplified_value": "FINDINGS and the body-loop rule make the list of unmediated body-loop spawns a work queue for source owners, not a set of approvals"
+      },
+      {
+        "id": "A3",
+        "statement": "Pins tie each text to the code it describes",
+        "amplified_value": "A changed argv, timeout or constant cannot leave a stale justification standing"
+      },
+      {
+        "id": "A4",
+        "statement": "The inventory surfaces real defects",
+        "amplified_value": "Ambient-PATH dpkg-query, bwrap and git, git_read's fsmonitor, the system-52 string check and run_worker's network were found and handed to owners"
+      },
+      {
+        "id": "A5",
+        "statement": "No source module, authority or capability changes",
+        "amplified_value": "It can be adopted or reverted without touching the body"
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "The scan is static: third-party library effects, python -c children and dynamic names are unseen, so a browser.session-class bypass is not caught",
+        "severity": "medium",
+        "response_type": "evidence",
+        "redesigned_response": "Stated as a limitation, with the browser.session revert measured; round 1's contrary claim withdrawn"
+      },
+      {
+        "id": "D2",
+        "statement": "A pin binds what runs at a site, not who reaches it",
+        "severity": "medium",
+        "response_type": "protective",
+        "redesigned_response": "system_binary and git_read are declared wrappers, so each direct caller is a site; routes in serves are read by hand and the README says so"
+      },
+      {
+        "id": "D3",
+        "statement": "Maintenance cost: every PR that adds an effect adds and pins an entry; the files are large and the mutant gate is slow",
+        "severity": "medium",
+        "response_type": "modularity",
+        "redesigned_response": "The failure message prints the entry and pin to paste; the gate is a separate script the integrator can place"
+      },
+      {
+        "id": "D4",
+        "statement": "Listing an unmediated spawn could read as approving it",
+        "severity": "high",
+        "response_type": "governance",
+        "redesigned_response": "known_unmediated with body-loop serves, refused under allowed; FINDINGS in the test; README and JSON say 'a recorded finding, not an approval'"
+      },
+      {
+        "id": "D5",
+        "statement": "The findings are recorded, not fixed",
+        "severity": "high",
+        "response_type": "learning",
+        "redesigned_response": "Each finding names its fix and owner: LIC-PIN for dpkg-query and bwrap; source units for install_filter, ventures._git_head, git_read and foundry_bridge"
+      },
+      {
+        "id": "D6",
+        "statement": "The envelope rule matches words, so a text that relies on the sandbox in other words escapes it",
+        "severity": "low",
+        "response_type": "evidence",
+        "redesigned_response": "Stated as a limitation; a mutant holds the rule for the words it does match"
+      }
+    ],
+    "comparisons": {
+      "baseline": "No inventory; review reads diffs. Two base spawns reached #196 that way.",
+      "do_nothing": "Section 37 keeps no detector; the six findings and the ambient-PATH lookups stay unrecorded",
+      "simplest_viable_alternative": "Round 1's callee-and-count scanner: measured to miss 14 source mutants and 12 real sites; superseded by this design",
+      "strongest_competing_architecture": "Runtime enforcement (audit hook or OS confinement of the body): sees more and blocks, but needs source changes and governed paths for the six findings first",
+      "reversible_experiment": "This change: four files, no source module, one revert; a warning-only mode was considered and its measurement (two real sites, no false positive) already exists"
+    },
+    "rejected_alternatives": [
+      {
+        "name": "Round 1's narrow scanner",
+        "rejection_reason": "14 source mutants survived it and it missed 4 httpx2 clients and 8 listeners",
+        "revival_evidence": "The full scanner's cost shown to exceed what it catches"
+      },
+      {
+        "name": "Runtime enforcement in this unit",
+        "rejection_reason": "It changes source, which this unit does not, and would stop the body until the six findings have governed paths",
+        "revival_evidence": "A source unit that confines the findings and pins the lookups"
+      },
+      {
+        "name": "Keeping the list under governance/integrity/",
+        "rejection_reason": "That directory holds founder-signed records changed only by an Ed25519 INTEGRITY_AUTHORIZE envelope; an unsigned list there would read as an authorization",
+        "revival_evidence": "A founder decision to sign the inventory"
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Re-attacked after round 2 by a third review (attack and fidelity lenses, separate agents of this session) on 9b4bf062, then re-checked against the base's move to d35d92a5 and 20 clean sibling merges. Attacked for evasion forms, relabelled findings, stale texts, scope gaps, false confinement claims and overclaims.",
+    "new_weaknesses": [
+      {
+        "id": "W1",
+        "category": "fragility",
+        "statement": "Allowed entries claimed bwrap confinement while bwrap itself comes from the body's ambient PATH (MUD-ATK-1)",
+        "strengthening_response": "14 texts rewritten; path_lookups lists both bwrap lookups; the test requires 'ambient PATH' in such texts while the lookup is ambient"
+      },
+      {
+        "id": "W2",
+        "category": "gaming",
+        "statement": "A finding could be re-filed as allowed with any serves (MUD-ATK-5)",
+        "strengthening_response": "FINDINGS frozenset in the test; re-filing fails as FINDING RE-FILED; a new finding needs a test edit"
+      },
+      {
+        "id": "W3",
+        "category": "fragility",
+        "statement": "A rewritten spawn or changed constant left its text standing (MUD-ATK-4)",
+        "strengthening_response": "A pin on every entry: whole parsed definition plus constants for findings, the recorded calls plus constants for allowed"
+      },
+      {
+        "id": "W4",
+        "category": "fragility",
+        "statement": "The scope missed imported modules; egregore git_read is reached from the body loop (MUD-ATK-6)",
+        "strengthening_response": "read_tree follows imports into every repository module (325 at round 4, 328 merged); git_read is a declared wrapper with its 3 callers listed"
+      },
+      {
+        "id": "W5",
+        "category": "gaming",
+        "statement": "Fifteen evasion forms and platform.platform's uname spawn were unseen (MUD-ATK-2, MUD-ATK-3)",
+        "strengthening_response": "Effect table extended; an effect module used as a value is a site; loop methods count on any receiver"
+      },
+      {
+        "id": "W6",
+        "category": "comprehensibility",
+        "statement": "The README overclaimed: the a986fc74 paragraph, 'cannot grow unseen', a stale line number (MUD-R4-1..3)",
+        "strengthening_response": "Corrected with the reason; the route is now a serve and was re-run at runtime"
+      },
+      {
+        "id": "W7",
+        "category": "dependency",
+        "statement": "The base moved 72 commits and added a new spawn (#238 compute.benchmark); the merge needed an allowlist entry",
+        "strengthening_response": "One allowed entry added inside the merge commit, its serves and text read from the code and a caller search; no runtime trace; recorded"
+      },
+      {
+        "id": "W8",
+        "category": "expense",
+        "statement": "The mutant gate grew to 117 mutants and 27m14s as one process",
+        "strengthening_response": "Not wired into CI by this unit; placement left to the #196 integrator with the measured runtime"
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "accepted",
+        "rationale": "A static scan cannot see inside third-party code; the limit is stated and measured, and runtime enforcement is the named route past it",
+        "owner": "#196 integrator and the Kernel security reviewers",
+        "review_trigger": "A bypass found in a third-party library or a python -c child"
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "accepted",
+        "rationale": "Wrappers cover direct callers; deeper routes are traced by hand, as MUD-R4-1 was",
+        "owner": "#196 integrator",
+        "review_trigger": "Any new route into a finding found by a reviewer or a runtime trace"
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "accepted",
+        "rationale": "The two real catches show the cost buys detection; the failure message limits the edit to a paste",
+        "owner": "#196 integrator (CI placement); each PR author (entries)",
+        "review_trigger": "CI time or allowlist churn blocking unrelated PRs"
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "resolved",
+        "rationale": "FINDINGS and the body-loop rule are enforced by the test and held by mutants",
+        "owner": "#196 integrator",
+        "review_trigger": "Any proposal to move a finding to allowed"
+      },
+      {
+        "disadvantage_id": "D5",
+        "outcome": "deferred",
+        "rationale": "The fixes change source this unit does not touch; each needs its owner's or the founder's decision",
+        "owner": "LIC-PIN (claude/licensing-binary-pin-20261030) for dpkg-query and bwrap; owners of greg/ventures.py, the Kernel seccomp loader, egregore/repository_audit.py and greg/foundry_bridge.py; the founder",
+        "review_trigger": "Each source fix landing, which then re-classifies its entry"
+      },
+      {
+        "disadvantage_id": "D6",
+        "outcome": "accepted",
+        "rationale": "Word matching catches the texts written so far; a semantic check would need a model or a taxonomy this unit does not have",
+        "owner": "#196 integrator",
+        "review_trigger": "A justification found that relies on the sandbox without saying 'ambient PATH'"
+      }
+    ],
+    "final_design": "AST inventory of greg/, foundry/systems/ and every repository module they import (328 modules); 103 allowed and 6 known_unmediated entries (109 keys, 125 occurrences), each pinned; 8 declared wrappers; 33 path lookups (40 occurrences; 25 ambient); FINDINGS fixed in the test; envelope wording required while bwrap is ambient; 117 mutants, all caught. No source module changed.",
+    "residual_risks": [
+      {
+        "risk": "Six body-loop spawns stay unconfined and nothing governs them",
+        "mitigation": "Recorded as findings with their routes; source fixes named",
+        "owner": "Source owners and the founder",
+        "review_trigger": "A source unit for any finding"
+      },
+      {
+        "risk": "dpkg-query, bwrap and git are chosen from the body's ambient PATH; a planted file runs with the body's privileges",
+        "mitigation": "LIC-PIN's pin (db09035e) on claude/licensing-binary-pin-20261030, not merged here; its directory, symlink and check-then-exec gaps are recorded (MUD-ATK-9)",
+        "owner": "LIC-PIN's PR",
+        "review_trigger": "LIC-PIN merging into #196"
+      },
+      {
+        "risk": "A nested \"052\" passes the system-52 refusal; outside GREG, mcp_gateway._query ran the caller's source",
+        "mitigation": "Recorded; proposed fix: compare int() at every depth",
+        "owner": "greg/foundry_bridge.py owner",
+        "review_trigger": "A source unit on foundry_bridge or mcp_gateway"
+      },
+      {
+        "risk": "A new route to an existing finding passes with the scan green",
+        "mitigation": "Wrappers make direct callers sites; routes are read by hand",
+        "owner": "#196 integrator",
+        "review_trigger": "Any reviewer or trace finding such a route"
+      }
+    ],
+    "recommendation": "NEEDS_FOUNDER_DECISION"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Recorded with thresholds; does not block a draft, informs adoption.",
+    "entries": [
+      {
+        "role": "Adversarial Reviewer",
+        "position": "Listing is not mitigation. Section 37 is not met while six body-loop spawns are unconfined and the envelope's own bwrap comes from the ambient PATH. Adopt only together with LIC-PIN's pin and a scheduled source unit for the findings.",
+        "rationale": "The inventory makes the gap visible; it does not close it.",
+        "evidence_threshold": "Any record that cites this inventory as closing section 37 or as authorizing a listed spawn, or a planted file shown to run through one of the ambient lookups on a founder device",
+        "owner": "Founder (adoption); LIC-PIN's PR and the source owners (fixes)",
+        "review_trigger": "LIC-PIN merging, or the first source unit for a finding"
+      },
+      {
+        "role": "Operator and Maintainer",
+        "position": "The 117-mutant gate should run in CI, but its 27m14s single-process runtime should not silently lengthen Canonical CI job 1; it needs its own job or shards.",
+        "rationale": "A gate that is not in CI protects only the session that runs it.",
+        "evidence_threshold": "Job 1's measured duration with the gate added on GitHub runners",
+        "owner": "#196 integrator",
+        "review_trigger": "Wiring the gate into canonical-ci.yml"
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": true,
+    "approval_status": "pending",
+    "approver": "Alfonso Lopez (adoption into #196 and any merge); #196 integrator for intake"
+  },
+  "migration_plan": "None for data: the unit adds a test, a JSON file it reads, a mutant script and a README, and changes no source module. Each PR that later adds an effect adds one pinned entry; when LIC-PIN merges, the bwrap and dpkg-query lookups are re-listed and the 'ambient PATH' texts re-read; when a finding is fixed in source, its entry is re-classified and FINDINGS edited.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Revert this branch's commits, or decline intake into #196",
+      "Nothing depends on the four files; no runtime behaviour or stored data changes"
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "A form in the effect table can be added to a scanned module without failing the test (a mutant survives)",
+    "An allowed entry is shown to be reached by the body loop with nothing governing it, and the test still passes",
+    "The inventory is cited as authorizing a spawn or as closing section 37",
+    "False positives or allowlist churn block unrelated PRs and the integrator cannot bound them",
+    "Runtime enforcement lands and covers every listed site, making the static list redundant"
+  ],
+  "decision": "NEEDS_FOUNDER_DECISION",
+  "decision_owner": "Alfonso Lopez decides adoption into #196 and any merge; the #196 integrator decides intake and where the mutant gate runs; the owners named in pass 2 decide the source fixes; session_01Kucyfm6YBHMTjaiC1M9hqD owns the reversible draft. All five roles recommend RETAIN.",
+  "review_trigger": "Canonical CI's first run on this PR; LIC-PIN merging into #196; any source fix to a finding; a sibling PR that adds an effect site; the founder's adoption decision."
+}

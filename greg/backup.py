@@ -60,20 +60,17 @@ Limits:
 """
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 import json
 import os
 from pathlib import Path
 import stat
+from provenance.digests import utc_now as _now
 
 PREFIX = "backup:"
 ACCEPT = "accept_same_filesystem"               # the one signed parameter of body.backup
 OBJECTS = "objects"                             # where foundry.systems.cas writes every object, under the store
 VOLATILE = ("tmpfs", "ramfs")                   # filesystems held in memory: the next reboot empties them
-
-
-def _now() -> datetime:
-    return datetime.now(timezone.utc)
 
 
 def _refused(message: str):

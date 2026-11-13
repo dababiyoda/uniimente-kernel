@@ -1,0 +1,307 @@
+{
+ "decision_id": "GREG-TRANSFER-EVAL-2026-10-28",
+ "title": "Pre-registered transfer test: does competence formed by one mission make a later, different mission cheaper, on GREG's canonical path?",
+ "problem": "The founder's learning test (directive 2026-10-28, sections 9C and 11) asks that a later, appropriately different mission perform better because earlier work left valid competence behind, with authority, evaluation integrity and prior capabilities intact. Only step 15 of the fifteen-step mission showed reuse, on one second same-family request. No measurement covered replay against same family against cross family, or had a negative control, a contamination check or pre-registration.",
+ "founder_intent_refs": [
+  "INTENT-20261001-FULL-MACHINE-COMPLETION",
+  "INTENT-20261019-UPWARD-ASCENT",
+  "founder directive 2026-10-28 (TRUE ABSOLUTE OPUS MAXIMUS, sections 9C and 11, this session)"
+ ],
+ "baseline": "Kernel #196 at e6c5058c: Capability Genesis forms and qualifies constructions, the founder attaches them, and the Competency Compiler routes to attached capabilities. Step 15 of the fifteen-step mission shows one same-family reuse.",
+ "alternatives": [
+  {
+   "name": "Extend step 15 of the fifteen-step mission",
+   "description": "Add more same-family requests to the existing integration test.",
+   "advantages": [
+    "No new harness",
+    "Runs in CI job 8 already"
+   ],
+   "disadvantages": [
+    "No cross-family tier or negative control",
+    "Not pre-registered: the instances are hand-chosen",
+    "Would lengthen an already long real-organ test"
+   ],
+   "revival_evidence": "If the harness proves too slow for CI, a single extra request in step 15 is the fallback."
+  },
+  {
+   "name": "Measure transfer inside one long-lived body",
+   "description": "Run several missions in sequence on one body and count asks over time.",
+   "advantages": [
+    "Closer to the founder's real usage",
+    "Shows the marginal-cost curve directly"
+   ],
+   "disadvantages": [
+    "No matched control: ordering, clock and registry growth confound the comparison",
+    "One body's failure contaminates every later task"
+   ],
+   "revival_evidence": "A founder-device run, where the real body is the only body."
+  },
+  {
+   "name": "Paired fresh bodies with a pre-registered declaration (selected)",
+   "description": "For each hidden task, run one experienced body (construction mission, then the task) and one control body (the task only). Use mechanical verdicts, a contamination check and an unrelated negative control.",
+   "advantages": [
+    "The only manipulation is the earlier mission",
+    "Verdict rules and predictions are frozen before any instance exists",
+    "The committed results re-derive in CI"
+   ],
+   "disadvantages": [
+    "Each pair re-pays the construction, so the per-pair total cost is not lower",
+    "Synthetic, small problems"
+   ],
+   "revival_evidence": "n/a"
+  }
+ ],
+ "do_nothing_option": {
+  "expected_outcome": "The learning requirement keeps a single anecdotal reuse and no measurement of cross-family transfer or of what earlier competence costs.",
+  "advantages": [
+   "No new code"
+  ],
+  "disadvantages": [
+   "The founder's section 11 test stays unmeasured",
+   "A silent regression in reuse (re-asking, re-qualifying) would go unnoticed"
+  ]
+ },
+ "roles": [
+  {
+   "role": "Founder-Intent Steward",
+   "position": "Self-review. Section 11 asks for a later, different mission that performs better because of valid earlier competence, with authority and evaluation intact. The harness measures exactly that on the canonical path, and its control arm is the subtraction test.",
+   "material_concerns": [
+    "Do not present capability reuse as statistical learning.",
+    "Resume the remaining requirements afterwards: founder device, combined machine."
+   ],
+   "evidence_refs": [
+    "DECLARATION.md",
+    "results.json",
+    "README.md"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Systems Architect",
+   "position": "No runtime code changes. The harness drives real bodies through the existing mission, Genesis, compiler and appraisal path, and reads only their journals.",
+   "material_concerns": [
+    "The harness imports test fixtures (make_body, signed, drop); a fixture change could alter the measurement."
+   ],
+   "evidence_refs": [
+    "scripts/greg_transfer_eval.py"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Adversarial Reviewer",
+   "position": "The result is predictable from the mechanism, so its value is in the checks that could falsify it: a correct control on every task, no transfer on the negative control, no hidden instance equal to a qualification instance, no authority and no self-attach.",
+   "material_concerns": [
+    "The first dev run's contamination check was vacuous (empty seeds); fixed before the declaration.",
+    "The negative-control rule allowed 1 in 12 better; tightened before the declaration.",
+    "Wall time on the unrelated tier is 3.7% worse for experienced bodies (not judged)."
+   ],
+   "evidence_refs": [
+    "DECLARATION.md section 6",
+    "README.md"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Operator and Maintainer",
+   "position": "One run took about 12 minutes on 4 shared CPUs. The CI test re-derives the committed results and runs one live cross-family pair (about 25 s).",
+   "material_concerns": [
+    "The hidden namespace is spent; a re-run needs a new namespace and declaration.",
+    "The exposure ledger does not index string-seeded namespaces."
+   ],
+   "evidence_refs": [
+    "tests/integration/test_greg_transfer_eval.py"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Evidence and Welfare Guardian",
+   "position": "Laboratory tier only: synthetic problems and a test founder key. The founder-burden saving (0 asks instead of 2 per later same-family mission) is the decision-relevant figure, and it is local.",
+   "material_concerns": [
+    "Do not report the per-pair total as a cost saving; it is not one.",
+    "A real founder may decline an attach, which the scripted founder never does."
+   ],
+   "evidence_refs": [
+    "README.md, 'What this shows, and what it does not'"
+   ],
+   "recommendation": "EXPERIMENT"
+  }
+ ],
+ "evidence": [
+  {
+   "claim": "Same-family later missions on an experienced body open no deficit, ask nothing and re-qualify nothing; the control asks twice.",
+   "tier": "sandbox_execution",
+   "reference": "results.json; README table",
+   "finding": "12 of 12 better: work 0 against 72, asks 0 against 24."
+  },
+  {
+   "claim": "Cross-family reuse composes: the experienced body forms only the matching construction over the engine it already holds.",
+   "tier": "sandbox_execution",
+   "reference": "results.json",
+   "finding": "12 of 12 better: work 36 against 72, asks 12 against 24."
+  },
+  {
+   "claim": "The negative control shows no transfer.",
+   "tier": "sandbox_execution",
+   "reference": "results.json",
+   "finding": "12 of 12 the same: work 72 against 72."
+  },
+  {
+   "claim": "No hidden instance equals a qualification instance.",
+   "tier": "sandbox_execution",
+   "reference": "summary.contaminated, summary.qualification_instances_checked",
+   "finding": "628 instances rebuilt; 0 contaminated."
+  }
+ ],
+ "counterevidence": [
+  {
+   "claim": "Per pair, the experienced arm's total work is not lower.",
+   "tier": "sandbox_execution",
+   "reference": "README 'Not shown' item 2",
+   "finding": "6 against 6 on the same family; 9 against 6 across families. The gain is marginal per later mission."
+  },
+  {
+   "claim": "Carrying competence may cost time on unrelated work.",
+   "tier": "sandbox_execution",
+   "reference": "summary.tiers.unrelated",
+   "finding": "Median 8.12 s against 7.84 s; reported, not judged; cause untested."
+  }
+ ],
+ "pass_1": {
+  "intended_outcome": "A pre-registered, re-derivable measurement of whether competence formed by an earlier mission makes later, different missions cheaper on GREG's canonical path, with integrity checks able to fail.",
+  "advantages": [
+   {
+    "id": "A1",
+    "statement": "The founder's section 11 test is measured, not asserted.",
+    "amplified_value": "The committed results re-derive in CI, and the live cross-family pair fails CI if reuse breaks (re-asking or re-qualifying)."
+   },
+   {
+    "id": "A2",
+    "statement": "The cross-family tier shows that reuse composes.",
+    "amplified_value": "It is evidence that constructions are building blocks: a new function costs only its residual."
+   }
+  ],
+  "disadvantages": [
+   {
+    "id": "D1",
+    "statement": "The direction of the result is predictable from the mechanism.",
+    "severity": "medium",
+    "response_type": "evidence",
+    "redesigned_response": "The information lies in the checks that could fail (control correctness, negative control, contamination, authority). Each is mechanical and declared."
+   },
+   {
+    "id": "D2",
+    "statement": "Paired fresh bodies re-pay the construction, so the total per pair is not lower.",
+    "severity": "low",
+    "response_type": "learning",
+    "redesigned_response": "State the marginal-cost framing explicitly; the long-lived-body alternative is kept for a founder-device run."
+   }
+  ],
+  "comparisons": {
+   "baseline": "Step 15's single anecdotal reuse.",
+   "do_nothing": "Leaves section 11 unmeasured.",
+   "simplest_viable_alternative": "Extend step 15: rejected, no cross-family tier, no control, not pre-registered.",
+   "strongest_competing_architecture": "A long-lived body with a curve over many missions: rejected for now because it has no matched control; kept for the founder device.",
+   "reversible_experiment": "Selected: one harness, one test and one evidence directory. No runtime change, so deleting the files reverts it."
+  },
+  "rejected_alternatives": [
+   {
+    "name": "Extend step 15",
+    "rejection_reason": "No cross-family tier, negative control or pre-registration.",
+    "revival_evidence": "The harness proves too slow for CI."
+   }
+  ]
+ },
+ "pass_2": {
+  "attack_summary": "Re-attack: could the verdicts have been edited, the instances chosen after the fact, the contamination check made vacuous, or the measurement biased by the scripted founder?",
+  "new_weaknesses": [
+   {
+    "id": "W1",
+    "category": "gaming",
+    "statement": "A hand-edited results.json would pass review.",
+    "strengthening_response": "The CI test asserts that summarise(raw) equals the committed summary, that every problem equals the declared generator's output, and that every expected answer equals the oracle's."
+   },
+   {
+    "id": "W2",
+    "category": "fragility",
+    "statement": "The contamination check could pass vacuously.",
+    "strengthening_response": "summarise requires qualification_instances_checked > 0 for VALID, and a unit test proves an empty check is INVALID; this run checked 628."
+   },
+   {
+    "id": "W3",
+    "category": "gaming",
+    "statement": "The scripted founder attaches everything verified, which a real founder may not.",
+    "strengthening_response": "Recorded as a limitation; a founder-device run with the real founder is the next tier."
+   }
+  ],
+  "pass_1_disadvantage_dispositions": [
+   {
+    "disadvantage_id": "D1",
+    "outcome": "accepted",
+    "rationale": "A predictable direction is acceptable when the falsifying checks are real and declared; all four held.",
+    "owner": "session_01Kucyfoabgsg6W8H8xj4qea",
+    "review_trigger": "Any change to Genesis, the compiler or the registry's attach rules."
+   },
+   {
+    "disadvantage_id": "D2",
+    "outcome": "accepted",
+    "rationale": "The marginal-cost framing is stated in the README and the counterevidence.",
+    "owner": "session_01Kucyfoabgsg6W8H8xj4qea",
+    "review_trigger": "A founder-device run measuring a curve over many missions."
+   }
+  ],
+  "final_design": "Paired fresh bodies per hidden task (experienced: one construction mission, then the task; control: the task only) over replay, same family, cross family and an unrelated negative control. Verdicts follow mechanical, pre-registered rules. A contamination check rebuilds qualification instances from recorded seeds. The CI test re-derives the committed run and runs one live cross-family pair.",
+  "residual_risks": [
+   {
+    "risk": "Synthetic, small problems; the result may not hold at real problem sizes or with real founder decisions.",
+    "mitigation": "Laboratory tier stated; VEPMC 0.",
+    "owner": "session_01Kucyfoabgsg6W8H8xj4qea",
+    "review_trigger": "A founder-device mission."
+   },
+   {
+    "risk": "The exposure ledger does not index string-seeded namespaces.",
+    "mitigation": "The spent namespace is recorded in the README; a re-run needs a new namespace.",
+    "owner": "Kernel evidence owner",
+    "review_trigger": "Any further transfer run."
+   }
+  ],
+  "recommendation": "EXPERIMENT"
+ },
+ "dissent": {
+  "present": true,
+  "handling": "Self-review. An independent review was requested from session_01KucyfnwWG7Lgp8QvCTKeHg.",
+  "entries": [
+   {
+    "role": "Evidence and Welfare Guardian",
+    "position": "Do not let TRANSFER read as learning in the statistical sense or as a total-cost saving.",
+    "rationale": "No parameter changed, and per pair the experienced arm also paid for the construction.",
+    "evidence_threshold": "A long-lived-body curve over many missions on the founder's device.",
+    "owner": "session_01Kucyfoabgsg6W8H8xj4qea",
+    "review_trigger": "Any summary that cites this run."
+   }
+  ]
+ },
+ "authority_impact": {
+  "level": "standard",
+  "changes_authority": false,
+  "requires_authorized_human": false,
+  "approval_status": "not_required",
+  "approver": null
+ },
+ "migration_plan": "Draft child PR into claude/greg-full-machine-completion-whgiee at e6c5058c, adding one script, one test and one evidence directory. The integrator decides intake; merges are the founder's.",
+ "rollback_plan": {
+  "possible": true,
+  "steps": [
+   "Close the PR or revert its commits.",
+   "Keep the declaration and results in history; the spent namespace stays spent."
+  ],
+  "reason_impossible": null
+ },
+ "kill_criteria": [
+  "Any arm's receipt creates authority or a capability attaches itself.",
+  "The committed results stop re-deriving from their own rows.",
+  "A later run on a new namespace contradicts this one under the same rules."
+ ],
+ "decision": "EXPERIMENT",
+ "decision_owner": "session_01Kucyfoabgsg6W8H8xj4qea (implementation, self-review); integrator session_01FBS4KNJR59nSbdGbxo8Mbx (intake); Alfonso (merge)",
+ "review_trigger": "Independent review of the declaration against the results; intake into #196; the first founder-device mission."
+}

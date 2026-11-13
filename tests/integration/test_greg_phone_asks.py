@@ -13,11 +13,16 @@ import pytest
 
 from greg import asks, compute
 from greg.body import Body, status
+from tests.browser_requirement import require_browser
 from tests.greg_fixtures import make_body
-from tests.integration.test_greg_phone_e2e import CHROMIUM
+from tests.integration.test_greg_phone_e2e import CHROMIUM, playwright
 
-playwright = pytest.importorskip("playwright.sync_api")
-pytestmark = pytest.mark.skipif(CHROMIUM is None, reason="needs a Chromium binary")
+
+@pytest.fixture(autouse=True)
+def _a_real_browser():
+    """A skip without Playwright or Chromium, a failure under GREG_REQUIRE_BROWSER=1 (tests/browser_requirement.py)."""
+    require_browser(playwright, CHROMIUM, "the phone page runs in Chromium")
+
 PHONE = Path(__file__).resolve().parents[2] / "greg/phone"
 TYPES = {".html": "text/html", ".js": "text/javascript"}
 

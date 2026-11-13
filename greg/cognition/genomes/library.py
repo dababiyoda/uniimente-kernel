@@ -52,7 +52,10 @@ MODULES = (
     "greg.cognition.genomes.formal_b",      # L3 batch B: resolution proofs, MDL model selection, convex QP duality
     "greg.cognition.genomes.control_b",     # L3 robust tube MPC; L1 CUSUM signal sensing, Hamming/SECDED correction
     "greg.cognition.genomes.forecasting_b",  # L5 judgmental forecast pooling; L3 scenario fans by scenario reduction
+    "greg.cognition.genomes.active_inference",  # L5 active inference: expected-free-energy sequential fault diagnosis
     "greg.cognition.genomes.search_b",      # L3 novelty search, L3 selection hyper-heuristic, L4 role differentiation
+    "greg.cognition.genomes.ecology",       # L2 ecology bidding: compute budget among solver species by reputation
+    "greg.cognition.genomes.workspace",     # L5 global workspace: salience-gated selective broadcast on a narrow bus
 )
 PROOF_CLASS = "genome_certificate"
 PROOF_FIELDS = ("intelligence_id", "version", "evidence_type", "inputs_digest", "certificate", "limits")

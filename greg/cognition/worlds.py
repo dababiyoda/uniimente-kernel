@@ -69,6 +69,9 @@ GENOMES = {
     "collective_market": (SIMULATED, "synthetic lognormal private values"),
     "collective_quorum": (SIMULATED, "seeded observer panels with shared noise; truth is the hidden state"),
     "control_mpc": (SIMULATED, "simulated double-integrator plant"),
+    "collective_ecology_bidding": (SIMULATED, "seeded Bernoulli solver-run processes over a hidden species x context "
+                                              "competence table, with seeded outcome tapes; truth is that hidden table "
+                                              "and the exact static oracle value under it"),
     "crowd_weighted_vote": (SIMULATED, "simulated crowds of seeded worker types; truth is the hidden item labels"),
     "develop_repair": (SIMULATED, "simulated TARGET_FORM_001 lattices with seeded damage and controller failures"),
     "develop_repair_hybrid": (SIMULATED, "develop_repair's simulated TARGET_FORM_001 lattices (same generator) with "
@@ -107,6 +110,8 @@ GENOMES = {
     "maxsat_cpsat": (MATHEMATICAL, "generated weighted MaxSAT instances; exact optimum by an independent MILP"),
     "mc_importance": (MATHEMATICAL, "Gamma upper tails; truth from the closed-form survival function"),
     "mechanism_check": (MATHEMATICAL, "declared direct mechanisms; exhaustive check"),
+    "meta_active_inference": (MATHEMATICAL, "generated fault-diagnosis models (declared prior, test likelihoods, "
+                                            "losses); truth is the exact Bayes-optimal expected loss by DP"),
     "milp_optimize": (MATHEMATICAL, "generated integer programmes; exact optimum"),
     "min_cost_flow": (MATHEMATICAL, "generated flow networks; exact optimum"),
     "newsvendor_compile": (MATHEMATICAL, "structural translation checks on generated scenario sets"),
@@ -143,6 +148,8 @@ GENOMES = {
     "develop_differentiate": (MATHEMATICAL, "generated graphs (geometric, small-world, holed grids, random); exact "
                                             "pattern check, CP-SAT reference leader optimum and exact component "
                                             "radii"),
+    "meta_global_workspace": (MATHEMATICAL, "generated block-partitioned spin glasses with a declared bus budget; "
+                                            "exact minimum energy by enumerating all 2^n assignments"),
 }
 
 # P6 composition-lift families, as each frozen run's own ``limits`` describes them.

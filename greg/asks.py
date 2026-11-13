@@ -307,8 +307,25 @@ ANSWER_ONLY_RECORDS = {
                     "yourself if it should not stand.",
     "HUMAN_JUDGMENT": "Your answer is recorded as the decision on this one question; it acts on nothing by itself. "
                       "Any consequence still crosses the Gate under its own authority.",
+    "EVIDENCE_CORRECTION": "Your answer is only recorded; GREG undoes, re-runs and withdraws nothing. The claims stay "
+                           "delivered and marked NEEDS_REVIEW until a later reading requalifies them; a new mission "
+                           "you sign answers again.",
     "CAPABILITY_ATTACH": "Approve or Reject only records your answer. Attaching is its own signed command: the "
                          "Attach button beside a verified candidate, or `greg attach <capability_id>`.",
+    "CAPABILITY_DISPOSITION": "Your answer is only recorded; GREG applies no disposition. Detaching or re-attaching "
+                              "is its own signed command: `greg detach <capability_id>`, `greg attach "
+                              "<capability_id>`.",
+    "DEVICE_INTEGRITY_REVIEW": "Your answer is only recorded, and only your own key gives it. GREG undoes, re-runs and "
+                               "revokes nothing: each listed effect keeps its receipt, and what the revocation voided "
+                               "stays void whatever you answer.",
+}
+
+
+# Asks only the founder key answers: a delegated device's DECISION is refused (greg/missions.py MissionEngine.answer
+# and the fold's mirror of it). A review of what a suspected device signed is not closed by another device.
+FOUNDER_KEY_ANSWERS = {
+    "DEVICE_INTEGRITY_REVIEW": "only the founder key answers a device integrity review; a device key cannot close "
+                               "the review of what a suspected device signed",
 }
 
 
@@ -379,11 +396,13 @@ NOT_ANSWERABLE = {
 
 
 def surface(request: dict) -> dict:
-    """The fields every founder surface (console, phone, status, morning report) shows."""
-    keys = ("request_id", "kind", "mission_id", "resource", "why_now", "recommendation", "expected_effect",
-            "options", "alternatives", "uncertainty", "authority_requested", "evidence",
-            "consequence_of_no_response", "deadline", "deadline_evidence", "wording_withheld", "answered",
-            "unsigned_answer_recorded", "unsigned_answer_cause", "unsigned_answer_why")
+    """The fields every founder surface (console, phone, status, morning report) shows. ``action_id``, an
+    APPROVAL's ``bound_params`` view and its ``compensation`` marker are display data: an answer binds the scope
+    digest, never these."""
+    keys = ("request_id", "kind", "mission_id", "action_id", "resource", "why_now", "recommendation",
+            "expected_effect", "options", "alternatives", "uncertainty", "authority_requested", "bound_params",
+            "compensation", "evidence", "consequence_of_no_response", "deadline", "deadline_evidence",
+            "wording_withheld", "answered", "unsigned_answer_recorded", "unsigned_answer_cause", "unsigned_answer_why")
     shown = {k: request[k] for k in keys if k in request}
     if request.get("kind") in ANSWER_ONLY_RECORDS:
         shown["answer_effect"] = ANSWER_ONLY_RECORDS[request["kind"]]
@@ -391,3 +410,12 @@ def surface(request: dict) -> dict:
         shown["answerable"] = False
         shown["answer_effect"] = NOT_ANSWERABLE[request["kind"]]
     return shown
+
+
+def for_signer(shown: list[dict], principal: str) -> list[dict]:
+    """The asks as a reader signing with ``principal`` may answer them: a delegated device is offered no answer to
+    an ask only the founder key answers (FOUNDER_KEY_ANSWERS), because the body would refuse it."""
+    if principal == "founder":
+        return shown
+    return [{**r, "answerable": False, "answer_effect": FOUNDER_KEY_ANSWERS[r["kind"]]}
+            if r.get("kind") in FOUNDER_KEY_ANSWERS else r for r in shown]

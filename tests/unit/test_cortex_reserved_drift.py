@@ -170,7 +170,8 @@ CODE_FACTS = (
 
 @pytest.mark.parametrize("name, fact, must, must_not", CODE_FACTS)
 def test_a_no_executor_reason_agrees_with_the_code_it_describes(name, fact, must, must_not):
-    reason = RESERVED_WITHOUT_EXECUTOR[name]
+    # a mechanism that gained an executor keeps the fact in its coverage note
+    reason = RESERVED_WITHOUT_EXECUTOR[name] if name in RESERVED_WITHOUT_EXECUTOR else EXECUTED_ON_GREG[name][1]
     assert fact(), f"{name}: the code fact changed; revisit the reason"
     assert all(word in reason for word in must), (name, must)
     assert not any(word in reason for word in must_not), (name, must_not)

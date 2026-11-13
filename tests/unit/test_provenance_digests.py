@@ -57,6 +57,12 @@ MIGRATED = {
     "foundry.completion": ("_hash", lambda v: _sha(json.dumps(v, sort_keys=True, default=str).encode())),
     "greg.institution": ("_canon", lambda v: json.dumps(
         v, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()),
+    "greg.licensing": ("_digest", lambda v: _sha(json.dumps(
+        v, sort_keys=True, separators=(",", ":"), default=str).encode())),
+    "capabilities.router": ("_digest", lambda v: _sha(json.dumps(
+        v, sort_keys=True, separators=(",", ":"), default=str).encode())),
+    "provenance.ledger": ("sha256_json", lambda v: _sha(json.dumps(
+        v, sort_keys=True, separators=(",", ":"), default=str).encode("utf-8"))),
 }
 
 
@@ -104,12 +110,84 @@ def test_file_and_time_helpers(tmp_path):
     assert abs(datetime.fromisoformat(stamp.replace("Z", "+00:00")) - digests.utc_now()).total_seconds() < 5
 
 
-def test_foundry_systems_grow_no_new_private_digest_rules():
-    """A new system imports provenance.digests instead of defining its own look-alike rule."""
-    forked = []
-    for path in sorted((ROOT / "foundry" / "systems").glob("*.py")):
-        tree = ast.parse(path.read_text(encoding="utf-8"))
+@pytest.mark.parametrize("module, name, shared", [
+    ("greg.backup", "_now", digests.utc_now),
+    ("provenance.ledger", "_now", digests.utc_now_z),
+])
+def test_timestamp_helpers_are_the_shared_one(module, name, shared):
+    assert getattr(importlib.import_module(module), name) is shared
+
+
+def test_default_str_rule_still_stringifies_unknown_objects():
+    from provenance.ledger import sha256_json
+    assert sha256_json({"at": {1}}) == _sha(b'{"at":"{1}"}')
+
+
+HELPER_NAMES = {"_canon", "_canonical_json", "_digest", "_hash", "_json_digest", "_now", "_sha", "_sha256"}
+HELPER_BODY = re.compile(r"hashlib|json\.dumps|datetime\.now")
+# Frozen evaluation runners are pinned by their freezes and are out of scope; tests may hash as they like.
+SKIP = ("tests/", "cortex/evaluation/", "docs/collaboration/lineage-archive/")
+
+PINNED = "source hash pinned by a freeze, spec or evidence record; adopt at its next deliberate re-freeze"
+SEALED = "runs or is loaded inside a sealed evolution sandbox that may import no other kernel package"
+SCRIPT = "standalone script run without the repository on sys.path"
+# Every private digest or timestamp helper still defined outside provenance.digests, and why it stays.
+# The list may only shrink: a new copy fails, and so does an entry whose copy is gone.
+KEPT = {
+    "adapters/daleobanks_opportunity.py::_sha256": PINNED,
+    "business/commercial_loop.py::_now": PINNED,
+    "business/genome.py::_now": PINNED,
+    "compiler/ucl_compiler.py::_canon": PINNED + " (and a doctrine-block rule, not JSON)",
+    "events/spine.py::_now": PINNED,
+    "evolution/capsule.py::_now": SEALED,
+    "evolution/migration/engines.py::_now": SEALED,
+    "evolution/repair/detector.py::_now": SEALED,
+    "evolution/repair/disable.py::_now": SEALED,
+    "foundry/systems/federation.py::_digest": "a different format: the HTTP Digest header, base64 'SHA-256='",
+    "foundry/territory.py::_now": PINNED,
+    "greg/cognition/evolution.py::_sha": PINNED,
+    "greg/cognition/evolution_room.py::_sha": PINNED,
+    "greg/cognition/genomes/admission.py::_sha": PINNED,
+    "greg/cognition/genomes/search.py::_digest": PINNED,
+    "greg/cognition/genomes/solvers_d.py::_digest": PINNED,
+    "greg/workers.py::_sha": "protected surface: changes need founder or authorized review",
+    "identity/machine_passport.py::_now": PINNED,
+    "loom/ratify.py::_now": PINNED,
+    "memory/affect.py::_now": SEALED,
+    "policy/consequence_gate.py::_now": "integrity-protected artifact: changes need INTEGRITY_AUTHORIZE",
+    "provenance/commit_witness.py::_now": PINNED,
+    "provenance/commit_witness.py::_canon": PINNED,
+    "scripts/build_mind_evidence_index.py::_sha": SCRIPT,
+    "scripts/check_release_exclusions.py::_digest": SCRIPT,
+    "scripts/data_exposure_ledger.py::_canon": SCRIPT,
+    "scripts/mind_status.py::_sha": SCRIPT,
+    "twins/tribunal.py::_now": SEALED,
+}
+
+
+def _private_helpers():
+    found = set()
+    for path in sorted(ROOT.rglob("*.py")):
+        rel = path.relative_to(ROOT).as_posix()
+        if rel.startswith(SKIP) or "/." in "/" + rel:
+            continue
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+        except (SyntaxError, UnicodeDecodeError):
+            continue
         for node in tree.body:
-            if isinstance(node, ast.FunctionDef) and node.name in {"_canon", "_sha", "_sha256", "_now"}:
-                forked.append(f"{path.relative_to(ROOT)}::{node.name}")
-    assert not forked, "use provenance.digests: " + ", ".join(forked)
+            if (isinstance(node, ast.FunctionDef) and node.name in HELPER_NAMES
+                    and HELPER_BODY.search(ast.unparse(node))):
+                found.add(f"{rel}::{node.name}")
+    return found
+
+
+def test_no_new_private_digest_or_timestamp_rules():
+    """A new module imports provenance.digests instead of defining its own look-alike rule."""
+    new = sorted(_private_helpers() - set(KEPT))
+    assert not new, "use provenance.digests (or record why not in KEPT): " + ", ".join(new)
+
+
+def test_kept_list_only_shrinks():
+    gone = sorted(set(KEPT) - _private_helpers())
+    assert not gone, "these copies are gone; delete them from KEPT: " + ", ".join(gone)

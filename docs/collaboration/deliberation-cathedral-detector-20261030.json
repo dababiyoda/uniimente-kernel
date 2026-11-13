@@ -1,0 +1,545 @@
+{
+  "decision_id": "CATHEDRAL-DETECTOR-20261030",
+  "title": "Compute the constitution's cathedral kill condition from git and the ledger, and fail any machine-readable reality claim above what its evidence kind can establish",
+  "problem": "Two gaps at the unit's base 44b3df96 (#236's head), still present at #196's head d35d92a5. (1) constitution/constitution.ucl declares kill_condition 'cathedral' ('activity rises while external outcomes remain unchanged, or the Kernel adds more cost than control'; then 'suspend_expansion_and_escalate(alfonso)'), and compiler/ucl_compiler.py parses it, but nothing evaluated it. Directive section 55 asks to 'Continuously test for' that shape and 'STOP HORIZONTAL EXPANSION'. `greg cathedral` exited 2 ('invalid choice'). (2) Directive section 56 says 'Do not collapse these' levels, and INTENT-20261030-BUILD-BEFORE-DEVICE-RUN names as failure 'a container run reported as founder-used'. Nothing read the repository's machine-readable claims against their evidence. Measured on a git archive of d35d92a5 for this record: with a planted record {\"reality\": \"FOUNDER-USED (Linux container rehearsal, test key)\", \"run\": \"docker container\"}, `python -m acceptance check` printed 'sound' and exited 0, and `python -m acceptance.claims` did not exist.",
+  "founder_intent_refs": [
+    "INTENT-20261030-BUILD-BEFORE-DEVICE-RUN (constraint: 'Nothing built in a container is labelled founder-used, live or externally verified'; failure_evidence: 'a container run reported as founder-used')",
+    "INTENT-20261028-OPUS-MAXIMUS-REISSUE (sections 10 inspection truth, 55 cathedral detector, 56 reality ladder, 67 kill criteria, 70 and 73)",
+    "INTENT-20261001-FULL-MACHINE-COMPLETION",
+    "INTENT-20261019-UPWARD-ASCENT"
+  ],
+  "baseline": "44b3df96 (unit base) and d35d92a5 (current #196 head): no greg/cathedral.py, no acceptance/claims.py, no 'cathedral' subcommand in greg/cli.py. The kill condition is parsed into UCLDocument.kill_conditions and never evaluated. The acceptance harness has one ordered LADDER (acceptance/__init__.py, shared with foundry.completion.EVIDENCE_TIERS) and TEST_TIERS ending at BODY_VERIFIED, but no reader holds evidence records to it. greg.metrics already separates the founder tier from test-key closures, and greg.path already separates the build frontier from achieved nodes.",
+  "alternatives": [
+    {
+      "name": "Proposed: a read-only cathedral detector and a reality-claim guard on the existing ladder, each pinned by a mutant gate",
+      "description": "greg/cathedral.py evaluates the kill condition's first clause over a window: activity from git objects on HEAD (commits, PR-like merges, new .md, .py and evidence READMEs) against founder-tier outcomes on the founder's designated body (closures as VEPMC's own row reads them, VEPMC founder_tier_count, achieved path nodes), with build-frontier progress reported beside them and never counted. Verdicts CATHEDRAL, NOT_CATHEDRAL or INSUFFICIENT_HISTORY; all thresholds in one THRESHOLDS table. `greg cathedral` prints the module's JSON. acceptance/claims.py (`python -m acceptance.claims`) reads 13 claim fields in JSON, JSON Lines and YAML under docs/, acceptance/ and every evidence directory, maps five vocabularies onto acceptance.LADDER through checked crosswalks, and fails a claim above the CEILINGS row of its declared or implied evidence kind. scripts/ci/check_cathedral_detector_mutants.py holds 160 mutants (107 on the guard, 53 on the detector).",
+      "advantages": [
+        "The constitution's kill condition is computed for the first time, from git objects and the ledger, never from what markdown says",
+        "On d35d92a5 the planted inflated record passes every check; on this head `python -m acceptance.claims` fails it (1 violation, exit 1, ceiling BODY_VERIFIED)",
+        "No parallel ladder: one CEILINGS table on acceptance.LADDER, with five crosswalks tested total and monotone",
+        "Read-only: writes nothing, raises no founder ask, pauses and grants nothing",
+        "160/160 mutants caught on the merged head 1cc6645d, exit 0"
+      ],
+      "disadvantages": [
+        "In the build phase every real run is INSUFFICIENT_HISTORY, so the detector cannot yet stop horizontal expansion by itself",
+        "The guard reads words, not meaning; known shapes still pass and are listed",
+        "A declared evidence_kind is the record's own word; the guard cannot verify that its reference proves the kind",
+        "Not wired into canonical-ci.yml; the mutant gate takes 24-39 minutes on this machine"
+      ],
+      "revival_evidence": "Retained as proposed. Revisit when a founder-designated body exists, when the integrator wires CI, or when a real founder-device record meets the guard."
+    },
+    {
+      "name": "Simplest viable: a written rule plus manual counts and a grep",
+      "description": "State the kill condition and the reality ladder in a README; count commits with `git log --since` and grep evidence JSON for FOUNDER-USED by hand when asked.",
+      "advantages": [
+        "No new code and no new surface",
+        "Anyone can run it"
+      ],
+      "disadvantages": [
+        "A grep reads no negation, no ceiling and no evidence kind, so it flags honest records and misses inflated ones",
+        "Nothing fails; a sentence is a claim, not a check (directive section 56)",
+        "Commit counts alone ignore whether founder-tier outcomes moved, which is the other half of the condition"
+      ],
+      "revival_evidence": "Only if the checks were already enforced elsewhere."
+    },
+    {
+      "name": "Strongest competing: typed evidence records by schema, and activity from the GitHub API",
+      "description": "Require evidence_kind and evidence_ref on every evidence record through a JSON Schema and migrate the existing records; count PRs, reviews and agents from the GitHub API instead of merge shapes.",
+      "advantages": [
+        "A typed field removes most lexical reading",
+        "Real PR counts instead of merge-shape inference"
+      ],
+      "disadvantages": [
+        "Migrating about 580 scanned files edits records that other open PRs own",
+        "The API needs network and a credential at every run; this checkout is a shallow clone and the container's network is policy-limited",
+        "The outcome side still needs the founder's ledger; a schema does not make a container run founder-used or not"
+      ],
+      "revival_evidence": "If the founder or the integrator adopts an evidence-record schema for new records; the guard's evidence_kind and evidence_ref fields are already its seed."
+    },
+    {
+      "name": "Staged: the claim guard now, the detector later",
+      "description": "Ship acceptance/claims.py alone and hold greg/cathedral.py until a founder-designated body exists, since every build-phase run is INSUFFICIENT_HISTORY.",
+      "advantages": [
+        "Less code to review now",
+        "No command whose only real verdict today is INSUFFICIENT_HISTORY"
+      ],
+      "disadvantages": [
+        "The kill condition stays unevaluated, and the conditional CATHEDRAL (activity rose, no founder-designated body) stays invisible",
+        "The detector's git safeguards (shallow, graft, partial clone, GIT_DIR) would wait for a body they do not depend on"
+      ],
+      "revival_evidence": "If the integrator wants to take the guard and hold the detector; the two modules share no code and can be split by file."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "The kill condition stays parsed and unevaluated. A container or rehearsal record labelled FOUNDER-USED, LIVE or EXTERNALLY-VERIFIED passes every check, which is the failure INTENT-20261030-BUILD-BEFORE-DEVICE-RUN names, while containers keep building the directive's later nodes.",
+    "advantages": [
+      "No new code, tests or CI minutes",
+      "No risk of a false positive on an honest record"
+    ],
+    "disadvantages": [
+      "Measured at d35d92a5: the planted inflated record passes `python -m acceptance check` (sound, exit 0) and nothing else reads it",
+      "Section 55's test is never run, so activity and outcomes are never compared"
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "The 2026-10-30 correction lets containers keep building on the condition that nothing built there is labelled founder-used, live or externally verified. The guard turns that condition into a failing check over 5805 claims in 580 files, and the detector makes section 55's test executable. It grants nothing and leaves the constitution's response, suspend_expansion_and_escalate(alfonso), with the founder.",
+      "material_concerns": [
+        "In the build phase every real run is INSUFFICIENT_HISTORY; the conditional CATHEDRAL is shown but changes no verdict, so section 55's STOP is not delivered yet",
+        "Section-55 outcomes are only partly measured: venture revenue, external effect and founder usability beyond path nodes are not read",
+        "VEPMC stays 0; nothing here is founder-used"
+      ],
+      "evidence_refs": [
+        "docs/intent/INTENT-20261030-BUILD-BEFORE-DEVICE-RUN.json",
+        "docs/evidence/cathedral-detector-2026-10-30/README.md",
+        "tests/unit/test_cathedral_detector.py::test_the_build_phase_keeps_the_kill_condition_visible_beside_insufficient_history"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Existing owners only. Founder tier from greg.metrics.founder_tier, VEPMC rows from greg.metrics.vepmc, achieved nodes and the build frontier from greg.path, the ladder from acceptance.LADDER (shared with foundry.completion.EVIDENCE_TIERS), the directive's 17 section-56 levels parsed from its source, the Outcome contract's validation_status from contracts/outcome.schema.json. Git and a read-only journal are the only inputs. No new ladder, store or authority.",
+      "material_concerns": [
+        "greg/cathedral.py reads VEPMC's own row for each closure, so a change to greg.metrics.vepmc changes what counts; a test and mutants pin the dependency",
+        "greg/cli.py is shared with #221, #237 and #247; all three merge clean with this head",
+        "Two modules in one PR; they share no code and could be split by file if the integrator prefers"
+      ],
+      "evidence_refs": [
+        "greg/cathedral.py",
+        "acceptance/claims.py",
+        "greg/cli.py",
+        "acceptance/__init__.py"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Two review rounds were done by separate agents of this same session, each with one attack and one fidelity review. Round 1 at 65f91d2f: 16 findings, all reproduced, 15 fixed in code and tests and one by disclosure. Round 2 at 71342170: 20 findings (19 confirmed, 1 plausible), all reproduced and fixed. A verification at 954c6846 found five guard safeguards no test pinned (gate 155/160, exit 1); tests were added and the gate reached 160/160. The final verification on the merged head found no blocking item.",
+      "material_concerns": [
+        "The guard is lexical. Known passing shapes: a negator and a labelling verb with nothing between them; a comma list after a prohibited labelling verb; other key names; boolean label keys; lowercase founder-device inside a longer value and lowercase live mid-sentence; 'verified externally'; an undeclared record whose evidence names no kind; what a json-schema.org file puts under enum, const, default or examples",
+        "A declared evidence_kind is self-declared",
+        "Side observation, not addressed: 'not UNIT-TESTED FOUNDER-USED or LIVE-BOUNDED' reads both LIVE and LIVE-BOUNDED; both map to AUTHORIZED_LIVE, so no rung changes",
+        "The detector inherits the founder tier's custody-claim residual (greg.metrics.CUSTODY_CLAIM)"
+      ],
+      "evidence_refs": [
+        "docs/evidence/cathedral-detector-2026-10-30/README.md (review rounds 1 and 2, mutant history)",
+        "tests/unit/test_reality_claims.py",
+        "scripts/ci/check_cathedral_detector_mutants.py"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Two read-only commands and one unit test that scans the repository, which already runs in Canonical CI job 1's full suite. Nothing to deploy and nothing to migrate. The mutant gate is the slow part: 24 minutes on 631b40ec and 39 minutes on 1cc6645d on a machine with load around 10.",
+      "material_concerns": [
+        "Neither scripts/ci/check_cathedral_detector_mutants.py nor `python -m acceptance.claims` is wired into canonical-ci.yml, which #214, #258 and #260 edit",
+        "This checkout is a shallow clone, so `greg cathedral` gives no verdict on it (depth 358, 1688 reachable commits)",
+        "The base moved three times during the unit; each move needed a merge and a re-verification"
+      ],
+      "evidence_refs": [
+        ".github/workflows/canonical-ci.yml",
+        "tests/unit/test_reality_claims.py::test_the_repository_claims_stay_within_their_evidence"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "The guard protects the founder from reading a container run as his own use, and it reports violations in files other PRs own through an allowlist with a reason and an owner, never by editing them. The one allowlisted entry (a generated cortex example) is still reported. Negative results are kept: a first kind inference flagged 47 honest records and was narrowed.",
+      "material_concerns": [
+        "'Container' also names the Chromebook's own Linux container (Crostini); a real founder-device record that describes itself that way will be flagged until it is reworded or allowlisted",
+        "No existing record declares evidence_kind, so the declared-kind rules are exercised only by fixtures",
+        "Prose (.md) is not scanned"
+      ],
+      "evidence_refs": [
+        "acceptance/claims.py (ALLOWLIST, CEILINGS)",
+        "docs/evidence/cathedral-detector-2026-10-30/README.md (limitations)"
+      ],
+      "recommendation": "RETAIN"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "Before: the base has neither command and lets an inflated record through",
+      "tier": "sandbox_execution",
+      "reference": "git archive of d35d92a5 with docs/evidence/zz-inflated/run.json planted, run for this record",
+      "finding": "`greg cathedral` exits 2 with invalid choice 'cathedral'; `python -m acceptance check` prints sound (12 missions, 85 requirements) and exits 0; `python -m acceptance.claims` gives 'No module named acceptance.claims'"
+    },
+    {
+      "claim": "After: the guard fails the same record and passes the real tree",
+      "tier": "sandbox_execution",
+      "reference": "git archive of d46c2bdd with the same planted record (this record's run); `python -m acceptance.claims` on 1cc6645d (final verification)",
+      "finding": "Planted: FAIL, 1 violation at /reality, claimed FOUNDER-USED (rung FOUNDER_ACCEPTED), ceiling BODY_VERIFIED, exit 1. Real tree: PASS, 5805 claims in 580 files, 0 violations, 1 allowlisted, 0 stale, 0 unreadable"
+    },
+    {
+      "claim": "The detector gives each verdict on synthetic repositories and the CLI matches the module",
+      "tier": "unit_test",
+      "reference": "tests/unit/test_cathedral_detector.py (45 tests), among them test_activity_rising_while_outcomes_stay_flat_is_cathedral_and_the_detector_writes_nothing, test_a_founder_tier_closure_in_the_window_moves_the_outcome, test_a_shallow_clone_is_insufficient_history_with_its_depth_and_no_counts and test_the_cli_prints_what_the_module_computes",
+      "finding": "45 passed on 1cc6645d; test-key closures stay CATHEDRAL and show only as vertical progress"
+    },
+    {
+      "claim": "The tests fail before each round's fixes",
+      "tier": "unit_test",
+      "reference": "unit base 44b3df96; review rounds at 65f91d2f and 71342170; verification at 938f6523 (README 'Fail-before')",
+      "finding": "44b3df96: 2 collection errors and `greg cathedral` exits 2. 65f91d2f with the round-1 tests: 106 failed, 29 passed. 71342170 with the round-2 tests: 78 failed, 117 passed. 938f6523: each of the five former survivors alone left 150/150 passing. Some failures come from helpers that did not exist yet, not only from the defects"
+    },
+    {
+      "claim": "Every safeguard has a caught mutant on the merged head",
+      "tier": "unit_test",
+      "reference": "python -B scripts/ci/check_cathedral_detector_mutants.py on 1cc6645d (final verification)",
+      "finding": "160/160 caught, unmutated PASS, 0 stale, 0 invalid, exit 0 (39 minutes under load). 160/160 also on 631b40ec. History: 155/160 on 954c6846 and c5ee7f8a; 108/108 after round 1; 47/47 for the original unit"
+    },
+    {
+      "claim": "Related suites pass on the merged head",
+      "tier": "unit_test",
+      "reference": "final verification on 1cc6645d",
+      "finding": "The unit's two files 202 passed (45 + 157). 43 unit files that drive greg/cli.py: 1008 passed, 15 skipped (12 for missing bubblewrap, 3 seed qualifications). The README's ten suites: 210 passed. test_greg_packaging, test_greg_platform, test_developmental_inheritance: 45 passed. Directive, founder-correction, doctrine, evidence-digest and UCL suites: 64 passed"
+    },
+    {
+      "claim": "Authority and schema checks pass",
+      "tier": "sandbox_execution",
+      "reference": "scripts/ci/check_authority_singleton.py, scripts/ci/check_schema_refs.py and `python -m acceptance check` on 1cc6645d",
+      "finding": "exactly one source of authority for each governed artifact; 27 schemas, 130 local refs, all resolve; acceptance sound (12 missions, 85 requirements, 374 test nodes)"
+    },
+    {
+      "claim": "On this repository the detector refuses to judge a shallow clone",
+      "tier": "sandbox_execution",
+      "reference": "python -B -m greg --home <empty> cathedral on 1cc6645d",
+      "finding": "INSUFFICIENT_HISTORY, shallow True, first-parent depth 358, 1688 reachable commits, counts None; git rev-list confirms both figures"
+    },
+    {
+      "claim": "The branch merges with the base and every open PR except where those PRs already conflict with the base",
+      "tier": "sandbox_execution",
+      "reference": "git merge-tree --write-tree of d46c2bdd against d35d92a5 and 24 open PR heads (this record's run); the final verification's run of 1cc6645d against 22 branches",
+      "finding": "Base clean. 22 of 24 open heads clean. #243 conflicts in greg/appraisal.py and #244 in foundry/owned-source.json, greg/appraisal.py and greg/missions.py, and each conflicts in the same files with d35d92a5 alone"
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "In the build phase the detector never returns CATHEDRAL",
+      "tier": "sandbox_execution",
+      "reference": "WU13-R2-1, the fidelity reviewer's p_build_phase.py; test_the_build_phase_keeps_the_kill_condition_visible_beside_insufficient_history",
+      "finding": "Every body that exists is undesignated, so a run with --body gives INSUFFICIENT_HISTORY with a conditional CATHEDRAL beside it. The verdict is unchanged and nothing pauses"
+    },
+    {
+      "claim": "Round 1 found 16 holes in the first version",
+      "tier": "sandbox_execution",
+      "reference": "README 'Review round 1'; probes p03_guard_bypass.py, p04_cathedral_edges.py, p05, floors.py at 65f91d2f",
+      "finding": "Every guard bypass in p03 exited 0; p04 crashed with UnicodeDecodeError and OverflowError, and a graft cut 30 commits to 3; any non-empty evidence_ref passed; validation_status was unread; founder-tier closures counted on any body"
+    },
+    {
+      "claim": "Round 2 found 20 more",
+      "tier": "sandbox_execution",
+      "reference": "WU13-A1..A13 and WU13-R2-1..7 at 71342170",
+      "finding": "Among them: a negator reached across a comma; MAC-VERIFIED was unread; a clock that ran ahead gave a false CATHEDRAL; GIT_DIR pointed the read at another repository; a blobless clone fetched blobs; 5000-deep JSON crashed the guard; a merge's own files were never counted"
+    },
+    {
+      "claim": "Five guard safeguards were live but unpinned",
+      "tier": "unit_test",
+      "reference": "verification of 954c6846; acceptance/claims.py lines 323, 390, 397, 456, 654",
+      "finding": "155/160, exit 1. Pinned in 631b40ec by six inflated fixtures, one correct record, one direct test and a schema fixture; no assertion was weakened"
+    },
+    {
+      "claim": "Reading the kind from the whole record over-reported",
+      "tier": "sandbox_execution",
+      "reference": "README 'Inferring a kind from the whole record over-reports'",
+      "finding": "A first attempt flagged 47 honest records; inference is now scoped to the claim and six evidence fields"
+    },
+    {
+      "claim": "Some README figures could not be re-verified",
+      "tier": "readme_claim",
+      "reference": "final verification limitations",
+      "finding": "'60 existing tests', the 43/45, 47/47, 105/107 and 108/108 histories, '47 honest records' and 'three test-body summaries' need code or runs no longer present"
+    },
+    {
+      "claim": "The detector and the guard are not in CI as gates",
+      "tier": "other",
+      "reference": ".github/workflows/canonical-ci.yml at d35d92a5",
+      "finding": "Only test_the_repository_claims_stay_within_their_evidence runs, inside job 1's full suite; the mutant gate and `python -m acceptance.claims` are not steps"
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "The constitution's cathedral kill condition is computed from git and the founder's ledger, never from prose, and says plainly when history cannot decide. No machine-readable claim in the repository sits above what its evidence kind can establish, so no container or rehearsal run reads as founder-used, live or externally verified. No authority moves.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "The kill condition is evaluated for the first time",
+        "amplified_value": "Once a founder-designated body exists, `greg cathedral --body` on a full clone can tell the founder when activity rose while founder-tier outcomes stayed flat, the cue for his suspend-and-converge decision"
+      },
+      {
+        "id": "A2",
+        "statement": "Inflated reality claims fail a check instead of reading as true",
+        "amplified_value": "Containers can keep building later directive nodes, as the 2026-10-30 correction directs, without any record overstating them; directive sections 70 and 73 reports can read these ceilings"
+      },
+      {
+        "id": "A3",
+        "statement": "One ladder, with every vocabulary crosswalked and checked",
+        "amplified_value": "A new vocabulary that breaks totality or monotonicity fails the guard instead of creating a second ladder"
+      },
+      {
+        "id": "A4",
+        "statement": "Every safeguard is pinned by a caught mutant (160/160)",
+        "amplified_value": "Once wired into CI, weakening any rule fails a pull request"
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "Every build-phase run is INSUFFICIENT_HISTORY, so the detector does not stop horizontal expansion by itself",
+        "severity": "medium",
+        "response_type": "evidence",
+        "redesigned_response": "A conditional CATHEDRAL is reported beside the verdict when the only gap is the designation, keeping the condition visible without inventing outcomes; the README and the PR say plainly that the verdict does not change"
+      },
+      {
+        "id": "D2",
+        "statement": "The guard is lexical and can be phrased around",
+        "severity": "medium",
+        "response_type": "learning",
+        "redesigned_response": "Each known passing shape is listed in the README; each reading rule has fixtures and a caught mutant; shapes left unread are those that would flag existing honest records"
+      },
+      {
+        "id": "D3",
+        "statement": "A declared evidence_kind is self-declared and its reference is not proven",
+        "severity": "medium",
+        "response_type": "governance",
+        "redesigned_response": "A kind beyond tests needs a ledger digest or an existing repository file as evidence_ref, and no string of its record may describe a container, rehearsal, test key, fixture or test run; whether the reference proves the kind stays a reviewer's question, stated in the module"
+      },
+      {
+        "id": "D4",
+        "statement": "A real founder-device record that calls Crostini a 'container' will be flagged",
+        "severity": "low",
+        "response_type": "protective",
+        "redesigned_response": "The allowlist takes an entry with a reason and an owner and still reports it; a stale entry fails"
+      },
+      {
+        "id": "D5",
+        "statement": "Activity and outcomes are proxies: floors are priors, PRs come from merge shapes, only HEAD is read, section 55's architecture, agent, framework and subsystem counts are not computed, and venture revenue, external effect and usability beyond path nodes are not read",
+        "severity": "medium",
+        "response_type": "learning",
+        "redesigned_response": "All thresholds sit in one THRESHOLDS table scaled by window length; every unmeasured part is named in the module docstring and the README"
+      },
+      {
+        "id": "D6",
+        "statement": "Neither the mutant gate nor the guard command is a CI step, and the gate takes 24-39 minutes",
+        "severity": "medium",
+        "response_type": "modularity",
+        "redesigned_response": "The repository-scan test already runs in Canonical CI job 1; wiring the gate is named for the #196 integrator because #214, #258 and #260 edit canonical-ci.yml"
+      },
+      {
+        "id": "D7",
+        "statement": "The founder tier the detector counts is the key holder's claim of custody",
+        "severity": "low",
+        "response_type": "evidence",
+        "redesigned_response": "Inherited from greg.metrics.CUSTODY_CLAIM and stated in OUTCOME_RULE and the README; test-key, fixture, rehearsal, unappraised, refuted and off-body closures never count"
+      }
+    ],
+    "comparisons": {
+      "baseline": "d35d92a5: the kill condition is parsed and never evaluated; an inflated container record passes `python -m acceptance check` and nothing else reads it",
+      "do_nothing": "The 2026-10-30 correction's named failure stays one record away, and section 55's test never runs",
+      "simplest_viable_alternative": "A README rule plus manual git counts and a grep: no negation, no ceiling, nothing fails",
+      "strongest_competing_architecture": "Typed evidence records by schema and GitHub API activity: cleaner reading, but migrates about 580 files owned by other PRs and needs network and a credential",
+      "reversible_experiment": "This change: two read-only modules, one CLI subcommand and two lines in owned-source.json; reverting removes them with no data migration, and the two modules can be taken separately"
+    },
+    "rejected_alternatives": [
+      {
+        "name": "Infer the evidence kind from every string of a record",
+        "rejection_reason": "Flagged 47 honest records, for example acceptance requirements whose notes name in-process tests beside the process test that verifies them",
+        "revival_evidence": "Records that declare evidence_kind, so inference is no longer needed"
+      },
+      {
+        "name": "Read lowercase 'live' anywhere in a claim value",
+        "rejection_reason": "Over-reports honest records (the fidelity reviewer counted 4, 2 even when gated on run markers)",
+        "revival_evidence": "Those records reworded, or a scoped rule that flags none of them"
+      },
+      {
+        "name": "Count PRs from the GitHub API",
+        "rejection_reason": "Needs network and a credential at every run; merge shapes are read from git alone",
+        "revival_evidence": "An authorized, offline-cached PR index the body can read"
+      },
+      {
+        "name": "Scan prose (.md)",
+        "rejection_reason": "Prose negations and quotations would flag honest text far more than JSON claim fields do",
+        "revival_evidence": "A prose reader with a measured false-positive rate on this repository"
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Two review rounds by separate agents of this same session, each with an attack and a fidelity lens, attacked the guard's reading rules, the detector's git and ledger reads, the evidence README's numbers and the gap between the scope and what a real run produces. A verification then ran the mutant gate and found five unpinned safeguards, and a final verification re-ran everything on the head merged with d35d92a5. The work was interrupted by a spending stop on 2026-10-30 and resumed on 2026-11-04.",
+    "new_weaknesses": [
+      {
+        "id": "W1",
+        "category": "gaming",
+        "statement": "Round 1: comma, dash, 'as required' and 'open' after a label hid the claim; any non-empty evidence_ref passed; lists, records, look-alike characters and key case were unread",
+        "strengthening_response": "Only a status saying the label is unmet negates it, and not on a record describing a container, rehearsal or test run; ref_problem; NFKC normalisation, key-case and nested reading; 17 fixtures and mutants"
+      },
+      {
+        "id": "W2",
+        "category": "fragility",
+        "statement": "Round 1 and 2 on the detector: a graft cut history, a ledger that did not cover the window read as flat, a clock that ran ahead gave a false CATHEDRAL, GIT_DIR read another repository, a subdirectory or a partial clone read as complete, a U+001E path hid files, a merge's own files went uncounted",
+        "strengthening_response": "Replace refs ignored and grafts refused; ledger and designation coverage checked; inversion refuses a cut where times run backwards; GIT_* dropped; --show-toplevel must equal the path; partial clones refused before any read; NUL-only parsing; -m with new-against-every-parent counting. Each has a test that failed before"
+      },
+      {
+        "id": "W3",
+        "category": "gaming",
+        "statement": "Round 2 on the guard: a negator reached across a comma or another label; 'above' and 'beyond' negated; MAC-VERIFIED, CHROMEBOOK-VERIFIED, suffixed labels and opening 'live' were unread; a unit test could claim INTEGRATION-TESTED; .jsonl, .JSON and acceptance YAML were unscanned; deep JSON crashed the guard",
+        "strengthening_response": "_reaches ends a negation at a comma, a conjunction or an unjoined label; NEGATORS narrowed; SOP and device crosswalks; section-56 ceiling per kind; extensions in any case and schemas by content; RecursionError and MemoryError make a file unreadable"
+      },
+      {
+        "id": "W4",
+        "category": "overfit",
+        "statement": "Five safeguards were behaviourally live but no test failed when they were removed (gate 155/160 at 954c6846)",
+        "strengthening_response": "Pinned in 631b40ec by fixtures x1-x6, a correct record, test_each_reading_rule_holds_on_its_own and a schema fixture; gate 160/160 on 631b40ec and on 1cc6645d"
+      },
+      {
+        "id": "W5",
+        "category": "dependency",
+        "statement": "The base moved three times during the unit (849c7973, fbce94e5, d35d92a5); the first two merges conflicted in greg/cli.py with the blockers and compute commands",
+        "strengthening_response": "The cathedral dispatch moved beside its parser (ac78206b); both sides kept at each conflict; the third merge was clean; merge checks re-run at every head"
+      },
+      {
+        "id": "W6",
+        "category": "comprehensibility",
+        "statement": "Four of the unit's commits carry the placeholder author 'combined-check <combined-check@local>' (3a0ebc73, dad4dc81, 780bacbf, 65f91d2f), and the round-2 fixes sat uncommitted across the 2026-10-30 spending stop",
+        "strengthening_response": "History is not rewritten because those shas are cited as evidence; the uncommitted work was reviewed on resumption and committed as 9dfa3dac with its tests"
+      },
+      {
+        "id": "W7",
+        "category": "other",
+        "statement": "The longer-label rule still reads 'not UNIT-TESTED FOUNDER-USED or LIVE-BOUNDED' as both LIVE and LIVE-BOUNDED",
+        "strengthening_response": "Not addressed: both map to AUTHORIZED_LIVE, so no rung changes; recorded as an optional follow-up"
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "deferred",
+        "rationale": "No founder-designated body exists yet, so no ledger can show the founder's outcomes; the conditional CATHEDRAL keeps the condition visible without inventing outcomes",
+        "owner": "Alfonso Lopez (what a conditional CATHEDRAL should do); greg/cathedral.py maintainers",
+        "review_trigger": "The first founder-signed first_founder_body designation, or a founder decision on surfacing the conditional verdict"
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "accepted",
+        "rationale": "Every remaining shape is listed, and closing them would flag existing honest records; the guard is a floor, not a proof",
+        "owner": "acceptance/claims.py maintainers",
+        "review_trigger": "A real record found inflated through a listed shape, or a new shape found by review"
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "accepted",
+        "rationale": "The guard checks what a machine can: ceiling, resolvable reference and no excluded run; proof of the kind stays with reviewers",
+        "owner": "Reviewers of any record that declares founder_device_run or external_verification",
+        "review_trigger": "The first record in the repository that declares evidence_kind"
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "deferred",
+        "rationale": "No real founder-device record exists yet; the allowlist route is tested",
+        "owner": "The founder-device acceptance owner; acceptance/claims.py maintainers",
+        "review_trigger": "The first real founder-device record"
+      },
+      {
+        "disadvantage_id": "D5",
+        "outcome": "accepted",
+        "rationale": "The binding scope chose these activity measures, and the unmeasured outcomes need sources that do not exist at the founder tier yet; all are disclosed",
+        "owner": "greg/cathedral.py maintainers",
+        "review_trigger": "A founder-tier source for venture revenue or external effect lands"
+      },
+      {
+        "disadvantage_id": "D6",
+        "outcome": "deferred",
+        "rationale": "Open PRs #214, #258 and #260 edit canonical-ci.yml; this PR does not",
+        "owner": "#196 integrator",
+        "review_trigger": "The CI wiring decision at intake"
+      },
+      {
+        "disadvantage_id": "D7",
+        "outcome": "accepted",
+        "rationale": "Verified custody is outside this unit; the detector never counts more than greg.metrics grants",
+        "owner": "greg/metrics.py founder-tier maintainers",
+        "review_trigger": "A proposal to treat the founder tier as verified custody"
+      }
+    ],
+    "final_design": "greg/cathedral.py with THRESHOLDS, ACTIVITY_RULE and OUTCOME_RULE; `greg cathedral [--repo R] [--days N | --since T] [--until T] [--body [HOME]]`; acceptance/claims.py with CEILINGS on acceptance.LADDER, five checked crosswalks, 13 claim fields, 6 evidence fields and an allowlist with reason and owner; scripts/ci/check_cathedral_detector_mutants.py with 160 mutants; 45 + 157 tests; foundry/owned-source.json lists both modules.",
+    "residual_risks": [
+      {
+        "risk": "The detector never gives a real CATHEDRAL verdict before a founder-designated body exists",
+        "mitigation": "Conditional CATHEDRAL reported; disclosed in the README and PR",
+        "owner": "Alfonso Lopez; greg/cathedral.py maintainers",
+        "review_trigger": "First founder-designated body"
+      },
+      {
+        "risk": "A record phrased around the guard reads as more than it is",
+        "mitigation": "Known shapes listed; the guard runs on every pull request through the repository-scan test",
+        "owner": "acceptance/claims.py maintainers",
+        "review_trigger": "Any inflated record found by review"
+      },
+      {
+        "risk": "The mutant gate is not run in CI, so a later change could weaken a rule unnoticed",
+        "mitigation": "Named for the #196 integrator to wire",
+        "owner": "#196 integrator",
+        "review_trigger": "Intake into #196"
+      }
+    ],
+    "recommendation": "NEEDS_FOUNDER_DECISION"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Recorded with thresholds; none blocks the draft. The first decides what the conditional verdict does, the second when the guard must be tightened, the third the CI wiring.",
+    "entries": [
+      {
+        "role": "Founder-Intent Steward",
+        "position": "Section 55 says STOP HORIZONTAL EXPANSION; a detector whose only real verdict is INSUFFICIENT_HISTORY does not do that yet.",
+        "rationale": "The conditional CATHEDRAL is visible but changes no verdict, raises no ask and pauses nothing; the constitution names suspend_expansion_and_escalate(alfonso), which is the founder's to take.",
+        "evidence_threshold": "The founder asks for the conditional verdict to be surfaced (for example in the morning report or as an ask), or a founder-designated body exists",
+        "owner": "Alfonso Lopez",
+        "review_trigger": "Founder review of this draft"
+      },
+      {
+        "role": "Adversarial Reviewer",
+        "position": "A lexical guard will be phrased around; it should not be read as proof that no claim is inflated.",
+        "rationale": "Eight listed shapes still pass, and a declared kind is the record's own word.",
+        "evidence_threshold": "Any real record in the repository found inflated through a listed shape",
+        "owner": "acceptance/claims.py maintainers",
+        "review_trigger": "Each review of a record that claims a level above BODY_VERIFIED"
+      },
+      {
+        "role": "Operator and Maintainer",
+        "position": "The mutant gate takes 24-39 minutes on this machine; adding it to job 1 lengthens every run.",
+        "rationale": "At d35d92a5, job 1 already runs the full unit and integration suite and several mutation gates under a 120-minute limit.",
+        "evidence_threshold": "The integrator can add a separate job, or job 1's measured time leaves room",
+        "owner": "#196 integrator",
+        "review_trigger": "The CI wiring decision at intake"
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": true,
+    "approval_status": "pending",
+    "approver": "Alfonso Lopez (adoption and any merge); #196 integrator for intake"
+  },
+  "migration_plan": "None required. Additive: two new read-only modules, one CLI subcommand, a mutant script, two test files and two lines in foundry/owned-source.json. No record, ledger or file format changes, and no existing record declares evidence_kind. The integrator chooses whether to add the mutant gate and `python -m acceptance.claims` as steps in canonical-ci.yml.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Revert the commits on claude/cathedral-detector-20261030, or decline intake into #196",
+      "Neither tool writes anything, so no data needs restoring",
+      "To keep one tool, revert only the other module, its tests and its mutants"
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "`greg cathedral` or `python -m acceptance.claims` writes a file or ledger record, raises a founder ask, pauses or grants anything",
+    "The detector reports counts or a CATHEDRAL or NOT_CATHEDRAL verdict on a shallow clone, a grafted or partial clone, or a ledger that does not cover the window",
+    "A test-key, fixture, rehearsal, unappraised, refuted or off-body closure moves an outcome",
+    "The guard passes a container or rehearsal record labelled FOUNDER-USED, LIVE or EXTERNALLY-VERIFIED in a shape the README does not list",
+    "The guard defines a rung that is not on acceptance.LADDER",
+    "An honest record can only be passed by weakening a rule, not by rewording or an allowlist entry with reason and owner",
+    "The mutant gate counts a survivor, an import error or a syntax error as caught"
+  ],
+  "decision": "NEEDS_FOUNDER_DECISION",
+  "decision_owner": "Alfonso Lopez decides adoption, any merge, and what a conditional CATHEDRAL should do (the constitution names suspend_expansion_and_escalate(alfonso) as his response). The #196 integrator decides intake and the CI wiring. session_01Kucyfm6YBHMTjaiC1M9hqD owns the reversible draft. The five role positions are recorded by the implementing session; the adversarial reviews were done by separate agents of this same session, not by independent sessions or humans. All five roles recommend RETAIN; three dissents are recorded.",
+  "review_trigger": "The first founder-signed first_founder_body designation (then run `greg cathedral --body` on a full clone); the integrator's CI-wiring decision; the first real founder-device record; any record found inflated through a listed shape; or the base moving again"
+}

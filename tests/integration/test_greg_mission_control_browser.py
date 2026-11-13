@@ -5,29 +5,27 @@ in-process between founder actions (no supervisor, no network, no model, no mone
 Ed25519 key stands in for the founder. The same task is then attempted on the classic page as the
 baseline. Set ``GREG_ACCEPTANCE_EVIDENCE=<dir>`` to write the measured results and screenshots.
 
-Skipped where Playwright or a Chromium binary is absent (CI installs neither); the recorded run is
-in docs/evidence/mission-control-acceptance/.
+Skipped where Playwright or a Chromium binary is absent, and failed there under GREG_REQUIRE_BROWSER=1, which
+Canonical CI job 11 sets after installing both (tests/browser_requirement.py); the recorded run is in
+docs/evidence/mission-control-acceptance/.
 """
 import json
 import os
 from pathlib import Path
-import shutil
 import threading
 import time
 
 import pytest
 
-sync_api = pytest.importorskip("playwright.sync_api")
-CHROMIUM = next((p for p in (os.environ.get("GREG_CHROMIUM"), "/opt/pw-browsers/chromium", shutil.which("chromium"),
-                             shutil.which("chromium-browser"), shutil.which("google-chrome")) if p and Path(p).exists()), None)
-if CHROMIUM is None:
-    pytest.skip("no Chromium binary for the interface acceptance suite", allow_module_level=True)
+from greg.body import Body, status
+from greg.console import Console, serve
+from greg.mission_control import projection
+from tests.browser_requirement import chromium_path, playwright_api, require_browser
+from tests.greg_fixtures import make_body
+from tests.integration.test_greg_first_mission import kernel_copy, requires_selection_engine
 
-from greg.body import Body, status                                              # noqa: E402
-from greg.console import Console, serve                                         # noqa: E402
-from greg.mission_control import projection                                     # noqa: E402
-from tests.greg_fixtures import make_body                                       # noqa: E402
-from tests.integration.test_greg_first_mission import kernel_copy               # noqa: E402
+sync_api = playwright_api()
+CHROMIUM = chromium_path()
 
 VIEWPORTS = {"chromebook": {"width": 1366, "height": 768}, "phone": {"width": 390, "height": 844}}
 QUESTIONS = ("What is GREG?", "What can it actually do right now?", "What is it doing?",
@@ -66,6 +64,7 @@ class Site:
 
 @pytest.fixture(scope="module")
 def browser():
+    require_browser(sync_api, CHROMIUM, "the interface acceptance suite drives Mission Control in Chromium")
     with sync_api.sync_playwright() as p:
         b = p.chromium.launch(executable_path=CHROMIUM, args=["--no-sandbox"])
         yield b
@@ -74,6 +73,7 @@ def browser():
 
 @pytest.mark.parametrize("device", sorted(VIEWPORTS))
 def test_fourteen_properties_through_the_founder_interface(browser, tmp_path, device):
+    requires_selection_engine()
     results, started = {}, time.monotonic()
     home, key, body_id, _ = make_body(tmp_path)
     kernel_copy(tmp_path)

@@ -15,8 +15,9 @@ report pass in the cloud container on this tree (24 tests). That container is no
 3. Sign the designation the installer asks for. Then run `greg status`.
 4. Section 2: ask the console "Brief me on the state of my repositories", sign it, close the tab, `kill -9` the body
    PID, approve the one waiting delivery, then accept or reject the brief truthfully.
-5. Run `greg vepmc`, `greg morning`, `greg presence --hours 2` and `greg acceptance > ~/GREG/acceptance.json`. Send
-   back the brief and `acceptance.json`. They contain no secret. `acceptance.json` names the commit you ran.
+5. Run `greg morning`, `greg presence --hours 2` and `greg vepmc > ~/GREG/vepmc.json`. Send back the brief and
+   `vepmc.json`. They contain no secret. After the Founder's First Mission (runbook step 4), `greg acceptance` judges
+   that mission and names the commit you ran (its `n1` field repeats the vepmc result).
 
 What it settles: whether VEPMC moves from 0, and what ChromeOS actually does on sleep, reboot and Terminal close.
 

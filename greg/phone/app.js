@@ -1,7 +1,7 @@
 // GREG phone client UI. Holds one non-extractable device key in IndexedDB and talks to
 // `greg serve` over the same origin. Every read and every command is signed on the phone;
 // the body re-verifies everything and remains the only writer of its history.
-import { newDeviceKey, signCommand, signRead } from "./core.js";
+import { askAnswers, askTerms, newDeviceKey, signCommand, signRead } from "./core.js";
 
 const $ = (id) => document.getElementById(id);
 let device = null;
@@ -62,13 +62,16 @@ function renderDecisions(list) {
     if (r.expected_effect) card.append(el("p", "Expected effect: " + r.expected_effect));
     for (const o of r.options || []) card.append(el("p", `• ${o.option} — ${o.cost} — ${o.expected_effect}`, "muted"));
     if (r.uncertainty) card.append(el("p", "Uncertainty: " + r.uncertainty, "muted"));
+    for (const line of askTerms(r)) card.append(el("p", line));   // the authority asked for, what approving covers, what silence does
     if (r.answerable === false) { box.append(card); continue; }   // e.g. SCOPE_RENEWAL: a new signed MISSION renews it
     const reason = el("input"); reason.placeholder = "reason (optional)"; reason.setAttribute("aria-label", "reason");
-    const approve = el("button", "Approve"); approve.className = "approve";
-    const reject = el("button", "Reject"); reject.className = "reject";
-    approve.onclick = () => send("DECISION", { request_id: r.request_id, answer: "approve", reason: reason.value });
-    reject.onclick = () => send("DECISION", { request_id: r.request_id, answer: "reject", reason: reason.value });
-    card.append(reason, el("div", null, "row")); card.lastChild.append(approve, reject);
+    // Only answers the body accepts: a RECONCILIATION takes reconcile_* answers, never approve/reject.
+    const buttons = askAnswers(r).map(([label, answer], i) => {
+      const b = el("button", label); b.className = i === 0 ? "approve" : "reject";
+      b.onclick = () => send("DECISION", { request_id: r.request_id, answer, reason: reason.value });
+      return b;
+    });
+    card.append(reason, el("div", null, "row")); card.lastChild.append(...buttons);
     box.append(card);
   }
 }

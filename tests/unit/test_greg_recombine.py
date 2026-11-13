@@ -338,8 +338,8 @@ def test_qualification_runs_every_oracle_case_in_one_isolated_engine_run(monkeyp
     real = mechanisms.run
     monkeypatch.setattr(mechanisms, "run", lambda *a, **k: runs.append(len(a[2])) or real(*a, **k))
     ok, report = recombine.qualify(path, recombine.composed_adapter(path, registry), composed, 3)
-    assert ok and report["engine_calls"] == report["cases"] == 10
-    assert runs == [10]                                       # one isolated run, not one per case
+    assert ok and report["engine_calls"] == report["cases"] == 11 and report["traps"] == 1   # 10 oracle cases + a trap
+    assert runs == [11]                                       # one isolated run, not one per case
 
 
 def test_a_malformed_request_in_a_batch_is_refused_alone(tmp_path):

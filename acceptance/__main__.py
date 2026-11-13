@@ -129,8 +129,14 @@ def main(argv=None) -> int:
                 print(f"no pin at {args.against}: nothing to ratchet against")
             else:
                 found = directive.pin_ratchet_problems(base, directive.load_map(directive.PIN))
+                prior = directive.map_at(args.against)
+                if prior is not None:
+                    found += directive.evidence_ratchet_problems(prior, (sections, manifest, contract),
+                                                                 directive.read_at(args.against),
+                                                                 directive.read_tree())
                 if not found:
-                    print(f"the pinned asks hold against {args.against}")
+                    print(f"the pinned asks hold against {args.against}, and every ask closed since cites new "
+                          "or changed evidence")
         if args.cmd == "directive" and args.collect and not found:
             nodes = directive.cited_nodes(sections)
             found = directive.collect_problems(nodes)

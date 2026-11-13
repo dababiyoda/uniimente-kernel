@@ -54,6 +54,7 @@ pytest.importorskip("scipy")
 from greg import service, templates, workers                                              # noqa: E402
 from greg import worker_isolation as isolation                                           # noqa: E402
 from greg.templates import compiled_question, engineering_brief, organ_exchange          # noqa: E402
+from tests.browser_requirement import browser_required, chromium_path, no_browser, playwright_api  # noqa: E402
 from tests.greg_fixtures import signed as sign_envelope                                  # noqa: E402
 from tests.integration.test_greg_body_supervised import (ROOT, SUPERVISORD, events, greg, heartbeat, history,  # noqa: E402
                                                          supervisor_endpoint, wait_for)
@@ -89,15 +90,8 @@ def _need_envelope():
 
 
 def _chromium():
-    try:
-        import playwright.sync_api  # noqa: F401
-    except ImportError:
-        return None
-    for candidate in (os.environ.get("GREG_CHROMIUM"), "/opt/pw-browsers/chromium", shutil.which("chromium"),
-                      shutil.which("chromium-browser"), shutil.which("google-chrome")):
-        if candidate and Path(candidate).exists():
-            return candidate
-    return None
+    """The Chromium step 9 drives, or None without Playwright or a Chromium (tests/browser_requirement.py)."""
+    return chromium_path() if playwright_api() is not None else None
 
 
 class Episode:
@@ -503,6 +497,8 @@ def test_one_machine_ten_steps_on_one_body_with_real_processes(tmp_path):
 
         # ---- 9. Mission Control renders the body's own truth at three widths ---------------------------------
         chromium = _chromium()
+        if chromium is None and browser_required():     # GREG_REQUIRE_BROWSER=1: step 9 may not read NOT_RUN
+            no_browser("step 9 renders Mission Control in Chromium through Playwright")
         if chromium is None:
             ep.trace["steps"]["9_mission_control_three_widths"] = {"status": "NOT_RUN", "why": "no Playwright/Chromium on this host"}
         else:

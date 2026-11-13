@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import os
 
+import dataclasses
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 import hashlib
@@ -34,6 +35,7 @@ from typing import Any
 from jsonschema import Draft202012Validator, FormatChecker
 
 from greg.authority import RECEIPT_LIST_LIMIT, ActionOutcome, AuthorityOffice, text_bytes
+from greg.background import BACKGROUND_CAPABILITIES
 from greg.capabilities import CapabilityError, InvocationContext, ROUTES
 from greg.genesis import is_capability_fault
 from greg import asks, improvement, routing
@@ -1676,6 +1678,9 @@ class MissionEngine:
         self.book = MissionBook(journal)
         self._stop_check = None
         self.selector = None          # the Body installs Goal Gravity here; None keeps the static order
+        # greg.background.Background when the Body's main loop runs a long adapter off its turn; None runs every
+        # dispatch inline (the Body's own tick() callers, the tests that drive a Body turn by turn)
+        self.background = None
 
     # -- founder inputs (already signature-verified by the body) ---------------
     def register(self, spec: dict, command_digest: str) -> str:
@@ -1905,12 +1910,54 @@ class MissionEngine:
             # Goal Gravity orders the signed missions (greg.gravity.select); it never adds or drops one.
             ranked = list(dict.fromkeys(mid for mid in self.selector(order) if mid in self.book.missions))
             order = [self.book.missions[mid] for mid in ranked] + [m for m in order if m.mission_id not in ranked]
+        seen = self.background.recorded if self.background is not None else 0
         for m in order:
+            if self.background is not None and self.background.recorded != seen:
+                # A dispatch handed off earlier recorded its outcome while this turn handed off another one: the
+                # copies sorted above predate that record, so every mission is stepped from the book as it is now
+                # (integrator intake review of #273, item 1).
+                seen = self.background.recorded
+                self.book.rebuild()
+            m = self.book.missions.get(m.mission_id, m)
+            running = self.background.busy(m.mission_id) if self.background is not None else None
+            if running is not None:
+                # Its adapter is still running off the turn: the mission is not stepped (its write-ahead intent is
+                # in flight, not the trace of a body killed inside a dispatch) until the outcome is recorded.
+                summary.append({"mission_id": m.mission_id, "state": "WORKING", "action": running["action_id"],
+                                "attempt": running["attempt"], "since": iso(running["since"])})
+                continue
             if should_stop is not None and should_stop():
                 summary.append({"mission_id": m.mission_id, "state": "NOT_STEPPED", "why": "stop requested"})
                 continue
             summary.append({"mission_id": m.mission_id, **self._step(m, now)})
         return summary
+
+    def interrupt_withdrawn(self, now: datetime) -> list[dict]:
+        """Interrupt the running dispatches whose authority the founder withdrew while they ran (caller holds the turn).
+
+        A founder cancel of the mission (LIFECYCLE ABANDONED or SUPERSEDED) and the dispatched capability leaving the
+        ATTACHED state (a founder detach, or a quarantine: either makes it unusable for a new dispatch) stop its
+        adapter: the worker is terminated and its outcome recorded UNCERTAIN, then reconciled. A pause does not
+        interrupt an act the Gate already admitted (greg.background). Each interruption is recorded once."""
+        if self.background is None or not self.background.running:
+            return []
+        self.book.rebuild()
+        done = []
+        for mid, entry in sorted(self.background.running.items()):
+            m = self.book.missions.get(mid)
+            cid = entry.get("capability")
+            why = (f"the founder ended the mission ({m.status}) while its worker ran" if m is not None and m.status
+                   in ("ABANDONED", "SUPERSEDED") else
+                   f"{cid} became {self.registry.state.get(cid)} (no longer attached) while it ran"
+                   if cid is not None and cid in self.registry.manifests
+                   and self.registry.state.get(cid) != "ATTACHED" else None)
+            if why is not None and self.background.interrupt(mid, why):
+                record = {"mission_id": mid, "action_id": entry["action_id"], "attempt": entry["attempt"],
+                          "capability": cid, "why": why, "at": iso(now)}
+                self.journal.record("mission.dispatch_interrupted", record,
+                                    key=[mid, entry["action_id"], entry["attempt"], "interrupted"])
+                done.append(record)
+        return done
 
     def _ledger_reader(self):
         from greg.ventures import LedgerReader
@@ -3807,23 +3854,53 @@ class MissionEngine:
         # A founder-signed SOP pre-approval covers exactly this step's final scope: the one dispatched,
         # after any budget cap, so a pre-approval never covers a scope it did not name.
         signed = frozenset({scope}) if pre_approved(m.spec, s, manifest) else frozenset()
-        outcome = self.office.act(
-            mission_id=m.mission_id, cone=m.cone, command_digest=m.command_digest, manifest=manifest,
-            adapter=adapter, ctx=self._context(m, manifest), params=bound_params, target=s["target"],
-            cost_usd=float(s.get("cost_usd", 0.0)), expected_outcome=s.get("expected_outcome", "strategy executed"),
-            evidence_refs=evidence + [r for r in sources if r not in evidence], attempt=attempt,
-            spent_usd=m.committed_usd, approved_scopes=m.approved_scopes,
-            evidence_confidence=float(s.get("evidence_confidence", 1.0)), signed_scopes=signed)
-        if (manifest.capability_id == "worker.commission" and outcome.status == "DONE"
-                and isinstance(outcome.output, dict) and outcome.output.get("status") == "UNCERTAIN"):
-            # Extracted from #157 (#184): the Gate completed collection, but the cancellable worker stopped after
-            # possible partial effects and spend. Keep its receipt and route it through the same no-blind-retry
-            # reconciliation as any uncertain act, with the signed cap reserved.
-            outcome.status = "UNCERTAIN"
-            outcome.reasons = ["worker execution interrupted; partial outcome and spend require reconciliation"]
-        return self._record_outcome(m, s, manifest, outcome, attempt=attempt, routing_decision=routing_decision,
-                                    input_bindings=input_bindings, bindings=bindings, budget_capped=budget_capped,
-                                    prepare_for=prepare_for, now=now, bound_params=bound_params)
+        background = self.background if manifest.capability_id in BACKGROUND_CAPABILITIES else None
+        ctx = self._context(m, manifest)
+        if background is not None:
+            # Read from inside the adapter while the turn goes on: a lock-free predicate (the turn's stop check
+            # can read the inbox, which writes the ledger).
+            ctx = dataclasses.replace(ctx, stop_check=background.stop_for(m.mission_id))
+
+        def act(wrap):
+            return self.office.act(
+                mission_id=m.mission_id, cone=m.cone, command_digest=m.command_digest, manifest=manifest,
+                adapter=wrap(adapter), ctx=ctx, params=bound_params, target=s["target"],
+                cost_usd=float(s.get("cost_usd", 0.0)),
+                expected_outcome=s.get("expected_outcome", "strategy executed"),
+                evidence_refs=evidence + [r for r in sources if r not in evidence], attempt=attempt,
+                spent_usd=m.committed_usd, approved_scopes=m.approved_scopes,
+                evidence_confidence=float(s.get("evidence_confidence", 1.0)), signed_scopes=signed)
+
+        def finish(outcome, off_turn: bool):
+            mission, when = m, now
+            if off_turn:   # recorded after other turns ran: the mission as the ledger holds it now, at this time
+                self.book.rebuild()
+                mission, when = self.book.missions[m.mission_id], background.clock()
+            if off_turn and outcome.status == "DONE" and background.interrupted.get(m.mission_id):
+                # The founder withdrew this dispatch's authority while it ran (mission.dispatch_interrupted) and the
+                # adapter finished before it saw the stop: it is reconciled like any interrupted worker, never
+                # recorded as an ordinary success after its interruption (#273 re-review A).
+                outcome.status = "UNCERTAIN"
+                outcome.reasons = ["interrupted by the founder while it ran; it finished before it saw the stop, "
+                                   "so its outcome and spend require reconciliation"]
+            if (manifest.capability_id == "worker.commission" and outcome.status == "DONE"
+                    and isinstance(outcome.output, dict) and outcome.output.get("status") == "UNCERTAIN"):
+                # Extracted from #157 (#184): the Gate completed collection, but the cancellable worker stopped
+                # after possible partial effects and spend. Keep its receipt and route it through the same
+                # no-blind-retry reconciliation as any uncertain act, with the signed cap reserved.
+                outcome.status = "UNCERTAIN"
+                outcome.reasons = ["worker execution interrupted; partial outcome and spend require reconciliation"]
+            return self._record_outcome(mission, s, manifest, outcome, attempt=attempt,
+                                        routing_decision=routing_decision, input_bindings=input_bindings,
+                                        bindings=bindings, budget_capped=budget_capped, prepare_for=prepare_for,
+                                        now=when, bound_params=bound_params)
+
+        if background is None:
+            return finish(act(lambda a: a), False)
+        result = background.dispatch(m.mission_id, aid, attempt, act, finish, capability=manifest.capability_id)
+        if result is None:   # the adapter runs off the turn; the mission is WORKING until its outcome is recorded
+            return {"state": "WORKING", "action": aid, "attempt": attempt}
+        return result
 
     def _recover_dispatch(self, m: MissionState, now: datetime) -> dict | None:
         """Settle a dispatch this body began but never recorded, before anything else is decided.

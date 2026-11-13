@@ -130,7 +130,12 @@ def test_one_mission_runs_all_nine_links_on_a_real_body_process(tmp_path, organs
     spans = trace["missions"][MID]["spans"]
     acted = {s["capability"] for s in spans if s["kind"] == "mission.action" and s["status"] == "DONE"}
     assert {"cognition.seed.solve", "venture.assess", "fs.write"} <= acted, acted
-    founder_trace(spans, rid, actions["w2"]["receipt"])
+    if not founder_trace(spans, rid, actions["w2"]["receipt"], blocked=None):
+        assert not blocked, blocked                                       # the trace and the ledger agree
+        # The founder answered before the loop reached the move: no block is right only if the goal asked ahead of
+        # the loop, so the mission never had to wait on its own ask.
+        [ask] = [r for r in events(home, "decision.requested") if r["request_id"] == rid]
+        assert (ask.get("evidence") or {}).get("goal_id"), ask
     # costs: every action the ledger booked, at the cost the Gate booked (a free mission inside its $0 signed budget)
     assert {s["event_id"]: s["cost_usd"] for s in spans if s["kind"] == "mission.action"} == booked
     assert trace["metrics"]["cost_usd"] == round(sum(booked.values()), 4)
@@ -145,11 +150,14 @@ def test_one_mission_runs_all_nine_links_on_a_real_body_process(tmp_path, organs
                if s["kind"] == "mission.action" and s["status"] == "DONE"}
     assert "receipt:" + actions["w2"]["receipt"] in covered and len(covered) >= 4, covered
     assert {node for node, kind in why.items() if kind == "Receipt"} == covered, why
-    # why a metric moved: blocks fell when the founder answered, and the block was the write awaiting approval
+    # why a metric moved: blocks fell when the founder answered, and the block was the write awaiting approval. When
+    # the answer came before the loop reached the write (see founder_trace), nothing blocked and nothing moved.
     answered = next(s for s in spans if s["kind"] == "decision.answered" and s["request_id"] == rid)
     moved = json.loads(greg(home, "foundry", "changed", "blocks", "--split", answered["at"]).stdout)
-    assert (moved["before"], moved["after"], moved["direction"]) == (len(blocked), 0, "down"), moved
-    assert [(d["mission_id"], d["capability"], d["events"]) for d in moved["drivers"]] == [(MID, "fs.write", blocked)]
+    assert (moved["before"], moved["after"], moved["direction"]) == (len(blocked), 0,
+                                                                     "down" if blocked else "flat"), moved
+    assert [(d["mission_id"], d["capability"], d["events"]) for d in moved["drivers"]] == (
+        [(MID, "fs.write", blocked)] if blocked else [])
 
 
 def _records(home: Path, record_type: str) -> list[dict]:

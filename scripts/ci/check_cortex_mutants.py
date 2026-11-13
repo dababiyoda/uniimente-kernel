@@ -1187,6 +1187,36 @@ METABOLISM_MUTANTS = [
      'and e.payload.get("installed") == fingerprint for e in', "and False for e in"),
 ]
 
+RESOLUTION_TESTS = ["tests/unit/test_greg_resolution.py"]
+RESOLUTION_MUTANTS = [
+    ("a resolution claiming verification is read", "greg/cognition/resolution.py",
+     '    if resolution.get("verified") is not False or resolution.get("authority") != AUTHORITY:',
+     '    if resolution.get("authority") != AUTHORITY:'),
+    ("a missing input is not named", "greg/cognition/resolution.py",
+     '    if state == "INSUFFICIENT_EVIDENCE":', '    if state == "INSUFFICIENT_EVIDENCE_":'),
+    ("a protection question is not handed to a person", "greg/cognition/resolution.py",
+     '    if disposition.get("kind") == "handoff" or state in _HANDOFF_STATES:',
+     '    if state in _HANDOFF_STATES:'),
+    ("a founder-detached compile family is re-proposed over Genesis", "greg/cognition/resolution.py",
+     '            return None\n        fits = derived.get("fits_by_inputs") or []',
+     '            pass\n        fits = derived.get("fits_by_inputs") or []'),
+    ("the engine ignores the resolution", "greg/missions.py",
+     '        if r is None or r["kind"] == "FORM" or s.get("capability") != "cognition.solve":',
+     '        if True:'),
+    ("an attach ask does not block on the capability", "greg/missions.py",
+     '            self._block(m, {"type": "capability", "capability_id": cid, "request_id": rid, "action_id": aid,',
+     '            self._block(m, {"type": "no_strategy", "capability_id": cid, "request_id": rid, "action_id": aid,'),
+    ("the prepared command never reaches the ask", "greg/missions.py",
+     '            message["prepared_command"] = prepared', '            pass'),
+    ("a successor fills the founder's value itself", "greg/missions.py",
+     '                supplies.append({"path": [*root, "payload" if wrap == "problem" else "data", part], "from": part})',
+     '                target.setdefault("payload" if wrap == "problem" else "data", {})[part] = {}'),
+    ("an answer with a withheld second engine becomes an attach", "greg/cognition/resolution.py",
+     '    if withheld and (out.get("answer") is None or receipt_unanswered(receipt)):', '    if withheld:'),
+    ("the receipt accepts a forged resolution", "greg/cognition/contracts.py",
+     '            if check_resolution(self.resolution) is None:', '            if False:'),
+]
+
 GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),
           ("open-source genesis", OSS_TESTS, OSS_MUTANTS),
           ("open-source metabolism", METABOLISM_TESTS, METABOLISM_MUTANTS), ("recombine", RECOMBINE_TESTS, RECOMBINE_MUTANTS),
@@ -1202,7 +1232,8 @@ GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),
           ("goal-requested formation", GOAL_FORMATION_TESTS, GOAL_FORMATION_MUTANTS),
           ("portfolio words", PORTFOLIO_WORDS_TESTS, PORTFOLIO_WORDS_MUTANTS),
           ("budgeted selection", BUDGETED_TESTS, BUDGETED_MUTANTS),
-          ("seed ports", PORT_TESTS, PORT_MUTANTS)]
+          ("seed ports", PORT_TESTS, PORT_MUTANTS),
+          ("abstention resolution", RESOLUTION_TESTS, RESOLUTION_MUTANTS)]
 
 
 def _run_one(work: Path, group: str, tests: list, name: str, rel: str, old: str, new: str) -> tuple[bool, str]:

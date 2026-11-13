@@ -43,7 +43,10 @@ class TestProducer:
         assert res["verified"] is False and res["authority"] == resolution.AUTHORITY
         from greg.cognition.settlement import _valid_receipt
         assert _valid_receipt(r)                     # a typed, digest-bound receipt field
-        forged = {**r, "resolution": {**res, "verified": True}}
+        from greg.cognition.contracts import digest
+        forged = {k: v for k, v in r.items() if k != "receipt_id"}
+        forged["resolution"] = {**res, "verified": True}
+        forged["receipt_id"] = digest(forged)          # a well-bound identity: only the field check can refuse it
         assert not _valid_receipt(forged)
 
     def test_detached_organ_is_attach_naming_its_greg_id(self):
@@ -62,6 +65,17 @@ class TestProducer:
     def test_an_answered_receipt_carries_no_resolution(self):
         r = reason(request({"estimation_model": FERMI}), registry=registry_view())
         assert r["abstention_state"] == "NONE" and "resolution" not in r
+
+    def test_a_withheld_second_engine_does_not_turn_an_answer_into_an_attach(self):
+        from cortex.evaluation.build_suites import schedule
+        model, _, _ = schedule([("A", 3), ("B", 4)], 10,
+                               query={"kind": "optimize", "sense": "minimize", "objective": ["+", "s_A", "s_B"]})
+        registry = registry_view()
+        registry.set_state("cognition.cortex.optimization.cpsat", "DETACHED")
+        payload = {"formal_model": model, "declared": DECL}
+        r = reason(request(payload), registry=registry)
+        assert r["abstention_state"] == "NONE"
+        assert resolution.from_cortex(r["proof_artifact"], payload) is None
 
     def test_compile_receipts(self):
         detached = {"state": "CAPABILITY_DEFICIT", "geometry": {"geometry": "estimate"},

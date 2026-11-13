@@ -8,11 +8,8 @@ tests/unit/test_greg_emergence_gate.py reports a FAILED test (an import or colle
 1 if any mutant survives or no longer applies.
 """
 from pathlib import Path
-import os
-import shutil
-import subprocess
-import sys
-import tempfile
+
+from mutation_harness import run  # scripts/ci/mutation_harness.py: the shared loop
 
 ROOT = Path(__file__).resolve().parents[2]
 RECOMBINE = "greg/recombine.py"
@@ -59,37 +56,8 @@ MUTANTS = [
 ]
 
 
-def purge(repo: Path) -> None:
-    for top in ("greg", "tests"):
-        for cache in (repo / top).rglob("__pycache__"):
-            shutil.rmtree(cache, ignore_errors=True)
-
-
 def main() -> int:
-    invalid = 0
-    with tempfile.TemporaryDirectory(prefix="emergence-gate-mutants-") as temp:
-        repo = Path(temp) / "repo"
-        shutil.copytree(ROOT, repo, ignore=shutil.ignore_patterns(".git", "__pycache__", ".pytest_cache"))
-        env = {**os.environ, "PYTHONPATH": str(repo), "PYTHONDONTWRITEBYTECODE": "1"}
-        for target, name, old, new in MUTANTS:
-            path = repo / target
-            original = path.read_text()
-            if original.count(old) != 1:
-                print("STALE", name)
-                invalid += 1
-                continue
-            path.write_text(original.replace(old, new))
-            purge(repo)
-            try:
-                run = subprocess.run([sys.executable, "-B", "-m", "pytest", "-q", "-x", "-p", "no:cacheprovider", TESTS],
-                                     cwd=repo, env=env, capture_output=True, text=True, timeout=900)
-            finally:
-                path.write_text(original)
-            caught = (run.returncode == 1 and f"FAILED {TESTS}::" in run.stdout and "ERROR collecting" not in run.stdout)
-            print("CAUGHT" if caught else "SURVIVED_OR_INVALID", name, flush=True)
-            invalid += not caught
-    print(f"{len(MUTANTS) - invalid}/{len(MUTANTS)} caught")
-    return int(bool(invalid))
+    return run(MUTANTS, TESTS, prefix="emergence-gate-mutants-", root=ROOT)
 
 
 if __name__ == "__main__":

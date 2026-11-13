@@ -510,6 +510,12 @@ MUTANTS = [
      IMPORTS, "helpers"),
     ("tools/ dropped from the module roots", one(TEST,
      replace(('MODULE_ROOTS = ("", "tools")', 'MODULE_ROOTS = ("",)'))), ROOTS, "MODULE_ROOTS"),
+    ("_tracked_run hands the caller's env, PATH included, to its child (#273 re-review 2, E)", one("greg/workers.py",
+     replace(('env={**env, "PATH": "/usr/bin:/bin"}, start_new_session=True)', 'env=env, start_new_session=True)'))),
+     TREE, "PIN MISMATCH allowed greg/workers.py :: _tracked_run :: subprocess.Popen"),
+    ("_tracked_run widens the PATH its git calls search (#273 re-review 2, E)", one("greg/workers.py",
+     replace(('env={**env, "PATH": "/usr/bin:/bin"}', 'env={**env, "PATH": os.environ.get("PATH", "")}'))),
+     TREE, "PIN MISMATCH allowed greg/workers.py :: _tracked_run :: subprocess.Popen"),
 ]
 
 

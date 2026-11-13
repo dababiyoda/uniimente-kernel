@@ -122,11 +122,15 @@ def _load_key(path, passphrase: bytes | None):
                             "its passphrase") from None
         raise BodyError(f"the founder key {path} is not passphrase-protected; pass --no-passphrase to use it "
                         "(it never reaches the founder tier)") from None
-    except ValueError as exc:
-        if "password" not in str(exc).lower() and "decrypt" not in str(exc).lower():
-            raise
-        raise BodyError(f"incorrect passphrase for the founder key {path}; nothing was signed "
-                        "(greg/CHROMEBOOK_FIRST_MISSION.md, \"A key you cannot open\")") from None
+    except ValueError:
+        # Decided by what was asked, never by the library's wording. A wrong passphrase on an encrypted key usually
+        # fails its padding check ("Incorrect password"), but about one wrong passphrase in 290 leaves valid padding
+        # over garbage, and the library then says only "Could not deserialize key data": the same wrong passphrase,
+        # which a match on "password" let through as a traceback (#299 job 9, measured on cryptography 50.0.2).
+        if passphrase is not None:
+            raise BodyError(f"incorrect passphrase for the founder key {path} (or the key file is damaged); nothing "
+                            "was signed (greg/CHROMEBOOK_FIRST_MISSION.md, \"A key you cannot open\")") from None
+        raise BodyError(f"the founder key {path} could not be read as a PEM private key; nothing was signed") from None
 
 
 def _known_handles() -> set:

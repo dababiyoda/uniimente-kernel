@@ -191,3 +191,72 @@ def test_a_torn_ledger_tail_refuses_to_open_a_known_liveness_gap_recorded_as_neg
             fh.write('{"seq": 2, "partial')   # a crash mid-append
         with pytest.raises(Exception):
             EvidenceLedger(compiled.constitution_hash, path=path)
+
+
+# A real process killed in the middle of writing the Gate's dispatch claim: the last ledger line is torn.
+CHILD_TORN_CLAIM = CHILD.replace(
+    "def die(_proposal):\n    os.kill(os.getpid(), signal.SIGKILL)   # the effect may have happened; nothing after this is written\n",
+    "def die(_proposal):\n    raise AssertionError('the executor must never be reached: its dispatch claim never returned')\n"
+    "import builtins, provenance.ledger as _ledger_module\n"
+    "class _TearingFile:\n"
+    "    def __init__(self, fh):\n        self._fh = fh\n"
+    "    def __enter__(self):\n        return self\n"
+    "    def __exit__(self, *exc):\n        return self._fh.__exit__(*exc)\n"
+    "    def __getattr__(self, name):\n        return getattr(self._fh, name)\n"
+    "    def write(self, text):\n"
+    "        if '\"record_type\": \"grant_dispatch\"' in text:\n"
+    "            self._fh.write(text[:len(text) // 2]); self._fh.flush(); os.fsync(self._fh.fileno())\n"
+    "            os.kill(os.getpid(), signal.SIGKILL)   # dies inside the append: half a record on disk\n"
+    "        return self._fh.write(text)\n"
+    "def _tearing_open(file, mode='r', *args, **kwargs):\n"
+    "    fh = builtins.open(file, mode, *args, **kwargs)\n"
+    "    return _TearingFile(fh) if mode == 'a' and str(file).endswith('ledger.jsonl') else fh\n"
+    "_ledger_module.open = _tearing_open\n")
+
+
+@pytest.mark.skipif(not hasattr(signal, "SIGKILL"), reason="needs POSIX SIGKILL")
+def test_sigkill_inside_the_dispatch_claim_append_is_recovered_without_loss_or_redispatch():
+    from provenance.recovery import EVENT_TYPE, recover_torn_tail
+    from tests.unit.test_goal_gravity import GOOD, brief_move
+    assert CHILD_TORN_CLAIM != CHILD
+    compiled = compile_constitution(ROOT)
+    with tempfile.TemporaryDirectory() as d:
+        path = os.path.join(d, "ledger.jsonl")
+        child = subprocess.run([sys.executable, "-c", CHILD_TORN_CLAIM.format(root=ROOT, path=path)], cwd=ROOT,
+                               capture_output=True, text=True, timeout=120)
+        assert child.returncode == -signal.SIGKILL, (child.returncode, child.stderr[-2000:])
+        goal_id = child.stdout.split("GOAL", 1)[1].split()[0]
+        with open(path, "rb") as fh:
+            raw = fh.read()
+        assert not raw.endswith(b"\n") and b'"record_type": "grant_dispatch"' in raw.rsplit(b"\n", 1)[1]
+        with pytest.raises(ValueError):
+            EvidenceLedger(compiled.constitution_hash, path=path)   # the body cannot restart on its own
+
+        out = recover_torn_tail(path, compiled.constitution_hash, recovered_by="supervisor:test-harness",
+                                reason="child SIGKILLed inside the dispatch-claim append")
+        torn = raw.rsplit(b"\n", 1)[1]
+        with open(os.path.join(d, out["quarantined"]["quarantine_file"]), "rb") as fh:
+            assert fh.read() == torn   # the torn bytes are preserved, not deleted
+
+        ledger, gate, loop = _parent_stack(path)
+        ok, msg = ledger.verify_chain()
+        assert ok, msg
+        assert [r.payload["type"] for r in ledger.by_type("event") if r.payload.get("type") == EVENT_TYPE] == [EVENT_TYPE]
+        assert ledger.by_type("grant_dispatch") == []   # the claim never returned, so it never entered the chain
+        route = brief_move().route_hash
+        spec = loop.registry.get(goal_id)
+        states = [r.payload["evidence_state"] for r in ledger.by_type(loop.INTERVENTION_RECORD)
+                  if r.payload["goal_id"] == goal_id and r.payload["intervention"]["route_hash"] == route]
+        assert states[-1] == "attempted"
+
+        calls = []
+        fresh = gate.grants.issue_single_action(
+            proposal=loop.classifier.proposal_for(spec, brief_move(), evidence_refs=["x"], evidence_confidence=0.9),
+            policy_version="1.0.0")
+        loop.registry.wake(goal_id, reason="restart after recovery", now="2026-10-14T13:00:00Z")
+        loop.turn(trigger_id="parent-1", now="2026-10-14T13:00:00Z",
+                  resources=ResourceGovernor(max_model_calls=10, max_estimated_cost_usd=1.0), gate=gate,
+                  executor=lambda p: calls.append(p) or GOOD(p), grants={"research.brief": fresh}, evidence_confidence=0.9)
+        assert calls == []   # uncertainty is preserved: no blind re-dispatch
+        assert loop.reconcile(goal_id, now="2026-10-14T14:00:00Z")["unresolved"] == [route]
+        ledger.close()

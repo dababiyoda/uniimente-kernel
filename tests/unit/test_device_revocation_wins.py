@@ -1,7 +1,8 @@
 """Revocation wins: a device being revoked acts in no way, whatever order its command and the revocation arrive in.
 
-The body applies its inbox in file-name order, and a file's name starts with its signer's own ``issued_at`` (greg
-serve and ``greg``'s CLI both name files that way). A device sets its own clock, and the verifier accepts a command
+The body applies its inbox in file-name order, and until 2026-11-13 a file's name started with its signer's own
+``issued_at`` (greg serve and ``greg``'s CLI both named files that way; they now name them by arrival, and ``_drop``
+below still places a file under the old name, as anything that writes the inbox can). A device sets its own clock, and the verifier accepts a command
 signed up to seven days back (its longest lifetime). The independent review of 7474e937 reproduced it (B2, present on
 8d205324 already): the founder drops DEVICE_REVOKE for a phone; before the body's next tick the phone posts BODY_PAUSE
 signed 120 s back; greg serve answers 202; the body applies the phone's pause first, then the revocation.
@@ -54,7 +55,8 @@ def _delegated(tmp_path, *labels, kinds=("DECISION", "BODY_PAUSE", "BODY_RESUME"
 
 
 def _drop(home, envelope, tag):
-    """Into the inbox under the name greg serve gives it: the signer's issued_at first."""
+    """Into the inbox under a name that starts with the signer's issued_at: how greg serve named files before
+    2026-11-13, and a name anyone who can write the inbox can still give a file."""
     path = Path(home) / "inbox" / f"{envelope['issued_at'].replace(':', '')}-{tag}-{envelope['nonce'][:8]}.json"
     path.write_text(json.dumps(envelope))
     return path
@@ -302,3 +304,118 @@ def test_the_phone_page_says_the_last_record_is_incomplete(tmp_path):
         pytest.skip(NEEDS_NODE.kwargs["reason"])
     home, *_ = _crash_torn_inside_the_revocation(tmp_path)
     assert "last record INCOMPLETE (device keys refused" in _phone(home, tmp_path)["state"]
+
+
+# ------------------------------------------- N1 (re-check of 8f72ceff): a revocation signed by a waiting rotation's key
+def _rotate_then_revoke(home, key, kid):
+    """``greg founder rotate --key OLD --new-key NEW`` then ``greg device revoke ... --key NEW``: both wait in the
+    inbox, the revocation signed by the key the rotation will enroll."""
+    new = Ed25519PrivateKey.generate()
+    send_signed(home, key, "ROTATE_FOUNDER_KEY", {"new_public_key": public_bytes(new.public_key()).hex()})
+    send_signed(home, new, "DEVICE_REVOKE", {"device_key_id": kid})
+    return new
+
+
+def test_a_revocation_signed_by_the_key_a_waiting_rotation_enrolls_wins_over_the_devices_command(tmp_path):
+    """Before: the revocation was verified with the founder key enrolled now, failed, and counted for nothing; the
+    phone's backdated BODY_RESUME was applied first and undid the founder's pause (paused False)."""
+    home, key, body_id, devices = _delegated(tmp_path, "phone", kinds=("DECISION", "BODY_PAUSE", "BODY_RESUME"))
+    phone, kid = devices["phone"]
+    with Body(home) as body:
+        body.apply(sign_command(key, "BODY_PAUSE", {}, body_id=body_id))
+    assert _post(home, sign_command(phone, "BODY_RESUME", {}, body_id=body_id, now=_now() - BACK))[0] == 202
+    _rotate_then_revoke(home, key, kid)
+    with Body(home) as body:
+        body.tick()
+        assert ("BODY_RESUME", "device:phone") not in _accepted(body)
+        assert {("ROTATE_FOUNDER_KEY", "founder"), ("DEVICE_REVOKE", "founder")} <= set(_accepted(body))
+        assert body.paused() and kid not in body.device_keys()
+
+
+def test_greg_serve_refuses_a_device_whose_revocation_by_the_rotated_key_waits(tmp_path):
+    home, key, body_id, devices = _delegated(tmp_path, "phone")
+    phone, kid = devices["phone"]
+    _rotate_then_revoke(home, key, kid)
+    code, data = _post(home, sign_command(phone, "BODY_PAUSE", {}, body_id=body_id, now=_now() - BACK))
+    assert code == 403 and "revocation is waiting" in data["error"]             # was: 202
+    assert _read(home, phone, body_id)[0] == 401
+
+
+def test_a_rotation_the_founder_did_not_sign_changes_no_key(tmp_path):
+    """A ROTATE_FOUNDER_KEY signed by a stranger, then a DEVICE_REVOKE signed by the key it names: neither verifies,
+    so the phone is not held (the body refuses both when it applies them)."""
+    home, key, body_id, devices = _delegated(tmp_path, "phone")
+    phone, kid = devices["phone"]
+    stranger, planted = Ed25519PrivateKey.generate(), Ed25519PrivateKey.generate()
+    for signer, kind, body in ((stranger, "ROTATE_FOUNDER_KEY",
+                                {"new_public_key": public_bytes(planted.public_key()).hex()}),
+                               (planted, "DEVICE_REVOKE", {"device_key_id": kid})):
+        _drop(home, sign_command(signer, kind, body, body_id=body_id), kind.lower())
+    assert _post(home, sign_command(phone, "BODY_PAUSE", {}, body_id=body_id))[0] == 202
+    with Body(home) as body:
+        body.tick()
+        assert ("BODY_PAUSE", "device:phone") in _accepted(body) and kid in body.device_keys()
+
+
+def test_a_founder_rotation_to_a_malformed_key_changes_no_key_and_stops_nothing(tmp_path):
+    """The rotation verifies (the founder signed it) but names no Ed25519 key: apply refuses it, so the keys stay as
+    they are and a revocation the founder key signs still wins. Reading it must not raise out of the pre-read, which
+    would stop the body's tick and every greg serve route."""
+    home, key, body_id, devices = _delegated(tmp_path, "phone")
+    phone, kid = devices["phone"]
+    _drop(home, sign_command(key, "ROTATE_FOUNDER_KEY", {"new_public_key": "zz" * 32}, body_id=body_id), "rotate")
+    send_signed(home, key, "DEVICE_REVOKE", {"device_key_id": kid})
+    code, data = _post(home, sign_command(phone, "BODY_PAUSE", {}, body_id=body_id, now=_now() - BACK))
+    assert code == 403 and "revocation is waiting" in data["error"]
+    with Body(home) as body:
+        body.tick()
+        assert kid not in body.device_keys() and ("DEVICE_REVOKE", "founder") in _accepted(body)
+
+
+# --------------------------------------------- N2 (re-check of 8f72ceff): a device does not choose its place by its clock
+def test_greg_serve_names_a_command_by_when_it_arrived_not_by_the_signers_clock(tmp_path):
+    home, key, body_id, devices = _delegated(tmp_path, "phone")
+    phone, _ = devices["phone"]
+    arrived = _now().replace(microsecond=5)
+    for signed_at in (arrived - timedelta(hours=1), arrived + timedelta(minutes=4)):
+        envelope = sign_command(phone, "BODY_PAUSE", {}, body_id=body_id, now=signed_at)
+        code, _, payload = remote.handle(home, "POST", "/api/command", {}, json.dumps(envelope).encode(), now=arrived)
+        assert code == 202 and json.loads(payload)["delivered_to_inbox"].startswith(
+            arrived.strftime("%Y-%m-%dT%H%M%S.000005Z-remote-body_pause-"))
+
+
+def test_a_forward_dated_device_command_that_arrived_first_is_applied_first(tmp_path):
+    """The phone posts BODY_RESUME signed four minutes ahead; then the founder pauses. Before: the phone's file was
+    named by its clock, sorted after the founder's pause, and undid it (paused False)."""
+    home, key, body_id, devices = _delegated(tmp_path, "phone", kinds=("DECISION", "BODY_PAUSE", "BODY_RESUME"))
+    phone, _ = devices["phone"]
+    assert _post(home, sign_command(phone, "BODY_RESUME", {}, body_id=body_id,
+                                    now=_now() + timedelta(minutes=4)))[0] == 202
+    send_signed(home, key, "BODY_PAUSE", {})
+    with Body(home) as body:
+        body.tick()
+        assert [k for k, _ in _accepted(body)][-2:] == ["BODY_RESUME", "BODY_PAUSE"] and body.paused()
+
+
+def test_a_backdated_device_approve_that_arrived_after_the_founders_reject_does_not_answer_first(tmp_path):
+    """The review's decision_race.py: the founder rejects an approval request; the phone then approves, signed one
+    second before the founder. Before: the phone's file sorted first, its approve was recorded and the effect ran;
+    the founder's reject was refused as 'already answered differently'."""
+    from tests.unit.test_greg_remote import _approval_mission, _phone
+    home, key, body_id, phone, clock = _phone(tmp_path)
+    note = _approval_mission(home, key, body_id)
+    with Body(home, clock=clock) as body:
+        body.tick()
+        clock.advance(1)
+        request = body.journal.replay("decision.requested")[0].payload
+    founder_at = _now()
+    send_signed(home, key, "DECISION", {"request_id": request["request_id"], "answer": "reject", "reason": "no"})
+    approve = sign_command(phone, "DECISION", {"request_id": request["request_id"], "answer": "approve", "reason": ""},
+                           body_id=body_id, now=founder_at - timedelta(seconds=1))
+    assert _post(home, approve)[0] == 202
+    with Body(home, clock=clock) as body:
+        for _ in range(4):
+            body.tick()
+            clock.advance(1)
+        assert [e.payload["answer"] for e in body.journal.replay("decision.answered")] == ["reject"]
+    assert not note.exists()

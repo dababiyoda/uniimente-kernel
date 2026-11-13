@@ -281,7 +281,8 @@ REVOCATION_FILE_BYTES = 64 * 1024     # a DEVICE_REVOKE envelope is well under 1
 
 
 def revocation_candidates(paths) -> list[dict]:
-    """The DEVICE_REVOKE envelopes among these inbox files, unverified: read first, verified later by the caller.
+    """The DEVICE_REVOKE and ROTATE_FOUNDER_KEY envelopes among these inbox files, in file order, unverified: read
+    first, verified later by the caller (a rotation decides which founder key a later revocation must be signed by).
 
     Read without following a link and without waiting on a FIFO; a file that is not one regular, bounded JSON
     object is passed over (whoever applies the inbox reads it and refuses it)."""
@@ -305,7 +306,7 @@ def revocation_candidates(paths) -> list[dict]:
             envelope = json.loads(raw)
         except (ValueError, RecursionError):      # a document nested too deep raises RecursionError, not ValueError
             continue
-        if isinstance(envelope, dict) and envelope.get("kind") == "DEVICE_REVOKE":
+        if isinstance(envelope, dict) and envelope.get("kind") in ("DEVICE_REVOKE", "ROTATE_FOUNDER_KEY"):
             found.append(envelope)
     return found
 
@@ -313,18 +314,22 @@ def revocation_candidates(paths) -> list[dict]:
 def pending_revocations(candidates, verifier: FounderVerifier, *, now: datetime) -> frozenset[str]:
     """Device keys revoked by a founder-signed DEVICE_REVOKE still waiting in the inbox: they sign nothing more.
 
-    Revocation wins. The inbox is applied in file-name order and a name starts with the signer's own ``issued_at``,
-    which a device sets itself: its clock (whoever holds a stolen phone holds that), anywhere from seven days back
-    (a command's longest lifetime) to five minutes ahead. A device being revoked could therefore have its command
-    applied before the founder's revocation, in the same pass over the inbox or on the restart after a crash. So a
+    Revocation wins. The inbox is applied in file-name order. Since 2026-11-13 a name starts with when the file
+    arrived (arrival_name); before, it started with the signer's own ``issued_at``, which a device sets itself, and a
+    file can still be placed in the inbox under any name by whoever writes there. A device being revoked could
+    therefore have its command applied before the founder's revocation, in the same pass over the inbox or on the
+    restart after a crash. So a
     device key that such a revocation names is refused everywhere a command or a read is verified (the body's
     ``apply``, greg serve), whatever the order, until the revocation is recorded and the key is simply gone.
 
-    Only a revocation counts: it is the one founder command that changes who may sign. The other commands that
+    Only a revocation counts, read under the founder keys as a waiting ROTATE_FOUNDER_KEY before it in file order will
+    have left them: those are the founder commands that change who may sign. The other commands that
     only narrow (BODY_PAUSE, BODY_STOP, NODE_REVOKE, CAPABILITY_DETACH, a narrowing LIFECYCLE or GOAL_CONTROL, a
     rejecting DECISION) change what the body does, never whether a device's signature verifies: a device command
     applied before one of them was signed by a key still delegated, and which of the two comes first stays file-name
-    order, as before. Moving them ahead of device commands would let a delegated device's BODY_RESUME or LIFECYCLE
+    order, that is, arrival order. A device command that arrives after the founder's narrowing command in the same
+    pass is applied after it and can undo it, as it could in the next pass (a founder question: whether, within one
+    pass, the founder's narrowing command should prevail). Moving them ahead of device commands would let a delegated device's BODY_RESUME or LIFECYCLE
     resume, applied after the founder's pause, undo it. Every founder command keeps file-name order as well: a
     revocation moved ahead of the founder's own earlier DEVICE_ENROLL of the same key would be refused, or let that
     enrollment in after it, and leave the key delegated.
@@ -334,13 +339,31 @@ def pending_revocations(candidates, verifier: FounderVerifier, *, now: datetime)
     a file nobody signed changes who may sign nothing. One whose nonce is already spent was recorded, and the key it
     names is already gone from the delegations."""
     revoked = set()
+    # The founder keys as they will stand when each candidate is applied in this pass: a ROTATE_FOUNDER_KEY earlier in
+    # file order that verifies is applied first, as apply applies it (the first enrolled key out, the new key in), so
+    # a revocation signed by the key it enrolls verifies then. Read here the same way, or such a revocation counts for
+    # nothing here and a device's command is applied before it (re-check of 8f72ceff, N1).
+    keys = dict(verifier.enrolled)
     for envelope in candidates:
+        current = FounderVerifier(body_id=verifier.body_id, enrolled=keys, seen_nonce=verifier.seen_nonce,
+                                  devices=verifier.devices)
+        kind = envelope.get("kind")
         try:
-            verifier.verify(envelope, now=now, expected_kind="DEVICE_REVOKE")
+            current.verify(envelope, now=now, expected_kind=kind)
+            principal = current.principal(envelope, now=now)
         except Exception:     # untrusted bytes: whatever fails to verify counts for nothing (apply refuses it)
             continue
         body = envelope["body"]
-        if set(body) == {"device_key_id"} and isinstance(body["device_key_id"], str):
+        if kind == "ROTATE_FOUNDER_KEY":
+            new_hex = body.get("new_public_key") if isinstance(body, dict) else None
+            try:
+                new_id = key_id(new_hex) if isinstance(new_hex, str) else None
+            except (ValueError, FounderAuthError):   # apply refuses a rotation to a malformed key; keys stay as they are
+                new_id = None
+            if principal == "founder" and keys and new_id is not None:
+                keys.pop(next(iter(keys)))
+                keys[new_id] = new_hex
+        elif set(body) == {"device_key_id"} and isinstance(body["device_key_id"], str):
             revoked.add(body["device_key_id"])
     return frozenset(revoked)
 
@@ -1568,13 +1591,25 @@ def drop_intake(home: str | Path, *, source: str, content: str, channel: str) ->
     return target
 
 
+def arrival_name(at: datetime) -> str:
+    """The start of an inbox file's name: when it reached the inbox, by this machine's clock, in a fixed width.
+
+    The body applies its inbox in file-name order. Until 2026-11-13 a name started with the signer's own
+    ``issued_at``, which a delegated device sets itself (from seven days back to five minutes ahead), so a device chose
+    its place against the founder's commands: a forward-dated BODY_RESUME was applied after the founder's later
+    BODY_PAUSE, and a backdated approving DECISION before the founder's earlier reject (re-check of 8f72ceff, N2).
+    Named by arrival, commands are applied in the order they reached the body. Microseconds, always written, keep
+    names of one second in order as text."""
+    return at.astimezone(timezone.utc).strftime("%Y-%m-%dT%H%M%S.%fZ")
+
+
 def send_signed(home: str | Path, key, kind: str, body: dict, *, ttl: timedelta = timedelta(hours=24)) -> Path:
     """Sign one founder command and drop it into the body inbox (any interface, then close)."""
     from greg.founder import sign_command
     layout = Layout(home)
     config = json.loads(layout.config.read_text())
     envelope = sign_command(key, kind, body, body_id=config["body_id"], ttl=ttl)
-    target = layout.inbox / f"{envelope['issued_at'].replace(':', '')}-{kind.lower()}-{envelope['nonce'][:8]}.json"
+    target = layout.inbox / f"{arrival_name(datetime.now(timezone.utc))}-{kind.lower()}-{envelope['nonce'][:8]}.json"
     temporary = target.with_suffix(".tmp")
     temporary.write_text(json.dumps(envelope, indent=1))
     temporary.replace(target)

@@ -35,8 +35,8 @@ import secrets
 import sys
 
 from events.spine import EventSpine
-from greg.body import (Layout, consumed_nonces, device_delegations, pending_revocations, revocation_candidates,
-                       status)
+from greg.body import (Layout, arrival_name, consumed_nonces, device_delegations, pending_revocations,
+                       revocation_candidates, status)
 from greg.founder import FounderAuthError, FounderVerifier
 from greg.journal import Journal
 from provenance.ledger import EvidenceLedger
@@ -181,7 +181,8 @@ def handle(home: Path, method: str, path: str, headers, body: bytes, *, now: dat
                 raise RemoteError(503, DEVICE_WAITS)
         if len(list(layout.inbox.glob("*.json"))) >= MAX_PENDING:
             raise RemoteError(429, "inbox full; the body is not keeping up")
-        name = f"{envelope['issued_at'].replace(':', '')}-remote-{envelope['kind'].lower()}-{envelope['nonce'][:8]}"
+        # Named by when it arrived here, never by the signer's own issued_at (greg.body.arrival_name)
+        name = f"{arrival_name(now)}-remote-{envelope['kind'].lower()}-{envelope['nonce'][:8]}"
         target = layout.inbox / f"{name}-{secrets.token_hex(4)}.json"
         tmp = target.with_suffix(".tmp")
         tmp.write_text(json.dumps(envelope))

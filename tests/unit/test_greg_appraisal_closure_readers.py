@@ -696,9 +696,9 @@ def test_hand_ordered_a_reading_settles_only_when_its_closures_appraisal_re_deri
     """Hand-ordered. A closure's appraisal re-derives, of the readings after the last run of its window, only the
     latest reading of each check it requires (greg/appraisal.py ``appraise``): a failure closure only the checks it
     names ("checks it does not name are not part of the claim"), a hold of a standing mission with a ladder only the
-    ladder's checks, an achievement every success check. A reading of any other check, and an earlier reading of a
-    check the closure re-read later, was re-derived by no appraisal: it stays unsettled and earns no competence
-    credit. Before, each settled under the closure's verdict (independent re-check of #310, C1: on a real body a
+    ladder's checks, an achievement every success check. A reading of any other check, an earlier reading of a check
+    the closure re-read later, and a reading taken before the window's last run (even one nothing re-read) was
+    re-derived by no appraisal: it stays unsettled and earns no competence credit. Before, each settled under the closure's verdict (independent re-check of #310, C1: on a real body a
     passing check a failure closure did not name settled as correct under its VERIFIED_UNMET)."""
     led = Hand(tmp_path)
     led.register("m:unnamed", checks=("good", "bad"))
@@ -711,22 +711,30 @@ def test_hand_ordered_a_reading_settles_only_when_its_closures_appraisal_re_deri
     rung, outside = led.observe("m:ladder", "c"), led.observe("m:ladder", "d")
     held = led.appraise("m:ladder", "VERIFIED", led.close("m:ladder", "held"))
     led.register("m:reread")
+    pre = led.observe("m:reread")                     # before the run: superseded by it
     led.run("m:reread")
     first, last = led.observe("m:reread", passed=False), led.observe("m:reread")
     led.close("m:reread", "achieved")
     won = led.appraise("m:reread", "VERIFIED")
+    led.register("m:pre")                             # the only reading precedes the run, and nothing re-reads it
+    alone = led.observe("m:pre")
+    led.run("m:pre")
+    led.close("m:pre", "achieved")
+    led.appraise("m:pre", "VERIFIED")
     appraisal_of = settlement._observation_appraisal(led.j)
     settled = {name: (appraisal_of(e).event_id if appraisal_of(e) is not None else None) for name, e in (
-        ("good", good), ("bad", bad), ("rung", rung), ("outside", outside), ("first", first), ("last", last))}
-    assert settled == {"good": None, "bad": failure.event_id, "rung": held.event_id, "outside": None,
-                       "first": None, "last": won.event_id}
+        ("good", good), ("bad", bad), ("rung", rung), ("outside", outside), ("pre", pre), ("first", first),
+        ("last", last), ("alone", alone))}
+    assert settled == {"good": None, "bad": failure.event_id, "rung": held.event_id, "outside": None, "pre": None,
+                       "first": None, "last": won.event_id, "alone": None}
     book = appraisal.standings(led.j)
     assert book.judging("m:unnamed", book.pos[good.event_id], reading=True, check="good") is None
     assert book.judging("m:unnamed", book.pos[bad.event_id], reading=True, check="bad").event_id == unmet.event_id
     assert book.judging("m:unnamed", book.pos[bad.event_id], reading=True) is None     # a reading names its check
     assert [book.reading("m:unnamed", book.pos[e.event_id], c)[1] for e, c in ((good, "good"), (bad, "bad"))] == [
         "unnamed", None]
-    assert book.reading("m:reread", book.pos[first.event_id], "c")[1] == "reread"
+    assert [book.reading("m:reread", book.pos[e.event_id], "c")[1] for e in (pre, first, last)] == [
+        "superseded", "reread", None]
     # what a reading's own closure judges about the run is unchanged: the run is judged as before
     assert judged(led.j, "m:unnamed", led.j.replay("mission.action")[0]) == unmet.event_id
 

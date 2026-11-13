@@ -57,33 +57,48 @@ census is historical metadata; it does not provide raw access to all 93 listed i
 | BACKCAST_GPS leads with its explicitly preserved July kernel-build instance | Prepend a reading projection of existing N0–N10, P0–P13 and horizons | Preserve the July instance; no second roadmap or primary node |
 | AGENTS' latest list stops at October 30; November sources are pending on #295 | Route to exact immutable pending sources, with refresh and intake status | Source availability is not integration or runtime authorization |
 | INDEX points only to `greg path` | Route both `greg path` and `greg path --build` | Device acceptance and build evidence remain separate |
-| The current eleven original source hashes are absent from existing `docs/` | Record the raw-access gap; retain originals privately for review, with no public upload | Public export requires explicit approval; existing GitHub sources remain usable |
+| The eleven original source hashes were absent from the inspected integration `docs/` | Following explicit approval, publish exact originals and a provenance/hash index on this context branch | Eleven available attachments are not the entire historical chat archive |
 | Board #96's body was accidentally truncated | Append verified current navigation and a loss notice | Do not reconstruct missing historical text or erase comments |
 | START_HERE and default-entry changes have existing open owners | Exclude contested files and hand off exact source pins | A claim is not an atomic lock or an acknowledged split |
 
 ## Source access
 
+**Approved follow-up:** after the specific question about publishing the eleven
+prepared texts to this public repository, Alfonso answered, verbatim:
+
+> Yes all context and should be availble for workeees
+
+The approval is recorded in [#315 comment 6841834495](https://github.com/dababiyoda/uniimente-kernel/pull/315#issuecomment-6841834495).
+This follow-up publishes [all eleven originals, index and hash manifest](../intent/sources/project-context-2026-11-12/README.md)
+in the same existing draft. Their source bytes are unchanged. Workers can read them
+at the immutable revision in the current PR/board handoff without waiting for a
+protected merge. Pending #295 remains the owner of the separate November directives.
+The current decision is linked in [the approved-export record](deliberation-context-source-export-20261112.json).
+This publication grants no runtime authority and makes no all-client adoption claim.
+
+### Earlier rejection and resolution
+
 The eleven attachments were inspected in the task's private workspace. A proposed
 byte-preserved public export was blocked by automatic approval review: the current
 request did not explicitly approve publishing that payload to this public repository.
-No source tree or commit was created by that rejected action. The eleven raw texts,
-their metadata manifest and packet index are excluded from this public diff and
-retained privately as a reviewable archive. No alternative upload route is used.
+No source tree or commit was created by that rejected action. The initial navigation
+commit `c88e49a3` excluded the raw texts, manifest and index and retained a private
+review archive. No alternative upload route was used. The later explicit approval
+above resolves that publication boundary; the source files are added only after it.
 
-Those attachments remain unavailable to repository-only workers until an explicit
-public-export decision. Current workers can still read the existing canonical GitHub
-sources, the full October directive and exact pending November #295 sources linked
-from BACKCAST_GPS. The complete historical chat archive remains unavailable. Do not
-equate this navigation repair with full source ingestion.
+The full October directive and exact pending November #295 sources remain linked
+from BACKCAST_GPS. The complete historical chat archive remains unavailable. The
+eleven originals close the current attachment-access gap, not every historical gap.
 
 ## Measurements and validation
 
 The task's controllable outcome is source/route availability, not product closure.
 Baseline: zero of the eleven attachment hashes matched a file under the inspected
-integration tree's `docs/`. A private candidate packet was verified byte for byte,
-but its public upload was rejected. The published navigation makes **no claim of
-increasing public raw-attachment availability**. Its testable outcome is locating
-the existing full roadmap, latest readable sources, live owners and authority limits.
+integration tree's `docs/`. The initial public upload was rejected; after explicit
+approval the same eleven originals are added with byte-count and SHA-256 checks.
+The intended source-access change is 0/11 to 11/11 readable originals on this
+published branch, verified against the final remote files at handoff. This proves
+source availability, not a performance dividend or runtime capability.
 
 Baseline existing checks on `8d205324`: receipt validator suite 49/49; repository
 review zero hard findings. Pytest collection was attempted and unavailable in the
@@ -102,7 +117,7 @@ remain NOT_MEASURED until comparable later sessions are observed.
 | Surface | Result / next owner |
 |---|---|
 | Kernel child branch | AGENTS canonical route, BACKCAST_GPS projection, INDEX and explicit access limits; exact revision in PR receipt |
-| Attached raw source packet | Public upload blocked by automatic approval review; private review archive prepared; no public copies in this diff |
+| Attached raw source packet | Earlier public upload rejected; explicit founder approval now recorded; eleven originals/index/manifest added, with published hash checks in PR handoff |
 | Board #96 | Claim and scope refinement published; verified navigation/loss notice to be appended at handoff, with exact result linked from the PR |
 | #196 / #295 / #206 | Exact-head coordination handoff; receiver acknowledgment is pending until actually received |
 | Default Kernel entry | #152/#193 owners receive narrow adoption handoff; main remains unmodified by this task |

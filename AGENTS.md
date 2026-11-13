@@ -40,7 +40,7 @@ conflict-resolution hierarchy).
 |---|---|
 | reconstruct the beginning-to-completion route | [BACKCAST_GPS.md § Current full-machine route](docs/BACKCAST_GPS.md#current-full-machine-route); this projects existing `greg/path.json`, including N0–N10, P0–P13 and preserved horizons |
 | choose the next build or claim completion | `python -m greg path --build` beside `python -m greg path`; `acceptance/directive-sections.json`, `acceptance/directive-asks.pin.json`, and `foundry/completion.yaml`; recorded outcomes on the exact candidate, not static labels |
-| work without access to the ChatGPT Project | the exact existing GitHub sources in the source route above and [source-access limits](docs/collaboration/CONTEXT-ROUTE-2026-11-12.md#source-access); the historical census is metadata, not universal raw-chat access; unpublished attachments remain unavailable until an approved export |
+| work without access to the ChatGPT Project | [the eleven original project sources and hash manifest](docs/intent/sources/project-context-2026-11-12/README.md), the exact GitHub sources in the route above, and [source-access limits](docs/collaboration/CONTEXT-ROUTE-2026-11-12.md#source-access); the historical census is metadata, not universal raw-chat access |
 | change any code | `docs/ARCHITECTURE.md` § Current module map, then the package `README.md` |
 | touch the Constitution, authority, identity, the Gate or founder keys | `governance/integrity/README.md`; these need a founder signature |
 | touch a frozen evaluation or evidence bundle | its `freeze*.json` and README; new runs get new paths |

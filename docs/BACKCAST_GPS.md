@@ -107,15 +107,17 @@ not a prerequisite for every small repair.
 | Where are all 55 build obligations? | [Foundry delivery intent](intent/INTENT-2026-09-27-FOUNDRY-55.json), [`foundry/completion.yaml`](../foundry/completion.yaml), its [checker](../foundry/completion.py), and actual runtime consumers/evidence |
 | How does each master-directive ask reach code and evidence? | [`acceptance/directive-sections.json`](../acceptance/directive-sections.json), [`directive-asks.pin.json`](../acceptance/directive-asks.pin.json), [`missions.json`](../acceptance/missions.json), [`completion-contract.json`](../acceptance/completion-contract.json). These existing maps own coverage; this guide does not create another completion registry |
 | Which gate can be built while device acceptance waits? | [October 30 sequencing correction](intent/INTENT-20261030-BUILD-BEFORE-DEVICE-RUN.json), `greg path --build`, live #96/#196 handoffs and exact composed evidence |
-| Which sources can a repo-only worker actually read? | Existing files under `docs/intent/sources/`, the exact pending #295 links above and [source-access limits](collaboration/CONTEXT-ROUTE-2026-11-12.md#source-access). The [September census](PROJECT_SOURCE_CENSUS_2026-09-26.md) is historical metadata; attached raw texts have not been published to GitHub |
+| Which sources can a repo-only worker actually read? | [The eleven original project texts with provenance/hash manifest](intent/sources/project-context-2026-11-12/README.md), existing files under `docs/intent/sources/`, the exact pending #295 links above and [source-access limits](collaboration/CONTEXT-ROUTE-2026-11-12.md#source-access). The [September census](PROJECT_SOURCE_CENSUS_2026-09-26.md) is historical metadata, not the complete raw-chat archive |
 | How are context and contradictions retained? | [Cognition SOP](PROJECT_COGNITION_SOP.md), [continuity addendum](PROJECT_COGNITION_CONTINUITY.md), [Founder Effect Compiler](FOUNDER_EFFECT_COMPILER.md), [intent ledger](FOUNDER_INTENT_LEDGER.md) and [collaboration protocol](RECURSIVE_COLLABORATION_PROTOCOL.md) |
 | Who owns a change and where should it go? | [Architecture current module map](ARCHITECTURE.md#current-module-map), [START_HERE](collaboration/START_HERE.md), live [#96](https://github.com/dababiyoda/uniimente-kernel/issues/96), relevant PRs and exact-head [receipt](collaboration/RECEIPT.md) |
 | What is actually adopted across clients and organs? | [ROLLOUT](collaboration/ROLLOUT.md), actual default-branch entry files and pinned consumer PRs, plus the [dated access/propagation receipt](collaboration/CONTEXT-ROUTE-2026-11-12.md). A plan or pointer is not observed client compliance |
 
-The source census covers commercial doctrine, persistent embodiment, causal-memory
-and primitive-recombination proposals, and multiscale cognition. A title or upload ID
-does not make its raw text readable. Record gaps and use the exact existing GitHub
-sources above; never claim that every project chat was inspected. Historical claims
+The eleven-source packet provides the original commercial doctrine, persistent
+embodiment, causal-memory and primitive-recombination proposals, multiscale cognition,
+DALEOBANKS' one creative identity and audience material. Its public export was explicitly
+approved by Alfonso in the linked source-access record. A title or upload ID in the
+older census does not make other raw material readable. Record remaining gaps and
+use exact sources; never claim that every project chat was inspected. Historical claims
 about perfect provenance, guaranteed improvement or indestructible operation remain
 claims requiring evidence, not established engineering facts. Retain useful mechanisms
 while following later founder corrections.

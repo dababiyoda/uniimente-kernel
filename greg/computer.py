@@ -158,7 +158,8 @@ def session(params: dict, ctx: InvocationContext) -> dict:
         try:
             _backend(require_bubblewrap=True)
         except WorkerIsolationError as exc:
-            raise CapabilityError(f"confined egress needs bubblewrap network namespaces here: {exc}") from None
+            raise CapabilityError(f"confined egress needs bubblewrap network namespaces here: {exc}",
+                                  failure_class="transient") from None   # isolation the host lacks is the host's
     name = re.sub(r"[^a-z0-9_.-]", "-", str(params.get("session", "session")).lower())[:60] or "session"
     trace_dir = _inside(ctx.workspace / "browser" / name, (ctx.workspace,))
     trace_dir.mkdir(parents=True, exist_ok=True)

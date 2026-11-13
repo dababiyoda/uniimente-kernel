@@ -105,7 +105,8 @@ def server_tools(server: dict, *, scratch_parent: Path) -> list[dict]:
     try:
         _backend(require_bubblewrap=True)
     except WorkerIsolationError as exc:
-        raise CapabilityError(f"an MCP server runs only in a bubblewrap namespace, unavailable here: {exc}") from None
+        raise CapabilityError(f"an MCP server runs only in a bubblewrap namespace, unavailable here: {exc}",
+                              failure_class="transient") from None   # isolation the host lacks is the host's
     Path(scratch_parent).mkdir(parents=True, exist_ok=True)
     scratch = Path(tempfile.mkdtemp(prefix="mcp-list-", dir=scratch_parent))
     try:
@@ -197,7 +198,8 @@ def _invoke(c: dict, ctx: InvocationContext, *, writable=(), hosts=(), env=None,
     try:
         _backend(require_bubblewrap=True)
     except WorkerIsolationError as exc:
-        raise CapabilityError(f"an MCP server runs only in a bubblewrap namespace, unavailable here: {exc}") from None
+        raise CapabilityError(f"an MCP server runs only in a bubblewrap namespace, unavailable here: {exc}",
+                              failure_class="transient") from None   # isolation the host lacks is the host's
     ctx.workspace.mkdir(parents=True, exist_ok=True)
     scratch = Path(tempfile.mkdtemp(prefix=f"mcp-{c['server']}-", dir=ctx.workspace))
     provider = {"name": c["server"], "command": c["command"], "root": str(c["root"]), "readable": c["readable"],
@@ -394,7 +396,8 @@ def _remote_act(params: dict, ctx: InvocationContext) -> dict:
     try:
         _backend(require_bubblewrap=True)
     except WorkerIsolationError as exc:
-        raise CapabilityError(f"GREG's MCP client runs only in a bubblewrap namespace, unavailable here: {exc}") from None
+        raise CapabilityError(f"GREG's MCP client runs only in a bubblewrap namespace, unavailable here: {exc}",
+                              failure_class="transient") from None   # isolation the host lacks is the host's
     ctx.workspace.mkdir(parents=True, exist_ok=True)
     scratch = Path(tempfile.mkdtemp(prefix=f"mcp-{server}-", dir=ctx.workspace))
     sockets = Path(tempfile.mkdtemp(prefix="greg-door-"))

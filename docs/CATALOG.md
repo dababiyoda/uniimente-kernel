@@ -14,8 +14,8 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 | Area | Files | What it holds |
 |---|---:|---|
 | [`(top)`](#doctrine-orders-and-top-level-references) | 31 | Doctrine, orders and top-level references |
-| [`intent`](#founder-intent-records-and-their-verbatim-sources) | 68 | Founder intent records and their verbatim sources |
-| [`collaboration`](#collaboration-records-handoffs-deliberations-reviews-reconciliations) | 184 | Collaboration records: handoffs, deliberations, reviews, reconciliations |
+| [`intent`](#founder-intent-records-and-their-verbatim-sources) | 81 | Founder intent records and their verbatim sources |
+| [`collaboration`](#collaboration-records-handoffs-deliberations-reviews-reconciliations) | 187 | Collaboration records: handoffs, deliberations, reviews, reconciliations |
 | [`decisions`](#architecture-decision-records) | 5 | Architecture decision records |
 | [`deliberations`](#founder-rulings) | 1 | Founder rulings |
 | [`evidence`](#measured-evidence-frozen-runs-admissions-proofs) | 510 | Measured evidence (frozen runs, admissions, proofs) |
@@ -126,10 +126,23 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 | [`intent/INTENT-0027-organize-around-existing-work.md`](intent/INTENT-0027-organize-around-existing-work.md) |  | Intent Record INTENT-0027 |
 | [`intent/INTENT-0001-uniimente-as-legal-principal.md`](intent/INTENT-0001-uniimente-as-legal-principal.md) |  | Intent Record INTENT-0001 |
 
-### Verbatim founder source (34)
+### Verbatim founder source (47)
 
 | File | Date | Title |
 |---|---|---|
+| [`intent/sources/project-context-2026-11-12/manifest.json`](intent/sources/project-context-2026-11-12/manifest.json) | 2026-11-12 | passive_project_source_snapshot |
+| [`intent/sources/project-context-2026-11-12/README.md`](intent/sources/project-context-2026-11-12/README.md) | 2026-11-12 | Original project sources available to repository workers |
+| [`intent/sources/project-context-2026-11-12/11-DALEOBANKS-DALI-LEONARDO-DA-VINCI-BANKSY..txt`](intent/sources/project-context-2026-11-12/11-DALEOBANKS-DALI-LEONARDO-DA-VINCI-BANKSY..txt) | 2026-11-12 |  |
+| [`intent/sources/project-context-2026-11-12/10-For-daleobanks-helps-w-vitality.txt`](intent/sources/project-context-2026-11-12/10-For-daleobanks-helps-w-vitality.txt) | 2026-11-12 |  |
+| [`intent/sources/project-context-2026-11-12/09-Architectural-Blueprint-for-a-Multiscale-Continuously-Compounding-Autonomous-Ag.txt`](intent/sources/project-context-2026-11-12/09-Architectural-Blueprint-for-a-Multiscale-Continuously-Compounding-Autonomous-Ag.txt) | 2026-11-12 |  |
+| [`intent/sources/project-context-2026-11-12/08-continuously-operating-compounding-personal-egregore.txt`](intent/sources/project-context-2026-11-12/08-continuously-operating-compounding-personal-egregore.txt) | 2026-11-12 |  |
+| [`intent/sources/project-context-2026-11-12/07-build-a-real-continuously-operating-autonomous-entity-an-egregore-.txt`](intent/sources/project-context-2026-11-12/07-build-a-real-continuously-operating-autonomous-entity-an-egregore-.txt) | 2026-11-12 |  |
+| [`intent/sources/project-context-2026-11-12/06-By-reconstructing-the-foundational-primitives-found-in-the-codecrafters-io-build.txt`](intent/sources/project-context-2026-11-12/06-By-reconstructing-the-foundational-primitives-found-in-the-codecrafters-io-build.txt) | 2026-11-12 |  |
+| [`intent/sources/project-context-2026-11-12/05-Architecting-the-Artificial-Egregore-Native-Causal-Graph-Versioning-as-the-Auton.txt`](intent/sources/project-context-2026-11-12/05-Architecting-the-Artificial-Egregore-Native-Causal-Graph-Versioning-as-the-Auton.txt) | 2026-11-12 |  |
+| [`intent/sources/project-context-2026-11-12/04-The-execution-order-is-acknowledged.-The-architecture-for-the-Modular-Asymmetric.txt`](intent/sources/project-context-2026-11-12/04-The-execution-order-is-acknowledged.-The-architecture-for-the-Modular-Asymmetric.txt) | 2026-11-12 |  |
+| [`intent/sources/project-context-2026-11-12/03-What-gives-UNIIMENTE-the-science-fiction-advantage.txt`](intent/sources/project-context-2026-11-12/03-What-gives-UNIIMENTE-the-science-fiction-advantage.txt) | 2026-11-12 |  |
+| [`intent/sources/project-context-2026-11-12/02-Architecting-the-Artificial-Egregore.txt`](intent/sources/project-context-2026-11-12/02-Architecting-the-Artificial-Egregore.txt) | 2026-11-12 |  |
+| [`intent/sources/project-context-2026-11-12/01-DOCTRINE.txt`](intent/sources/project-context-2026-11-12/01-DOCTRINE.txt) | 2026-11-12 |  |
 | [`intent/sources/REGULAR-REVIEW-2026-11-05-source.md`](intent/sources/REGULAR-REVIEW-2026-11-05-source.md) | 2026-11-05 | Founder directive, 2026-11-05: structural self-improvement and regular review (verbatim) |
 | [`intent/sources/FOUNDER-CORRECTION-2026-10-30-source.md`](intent/sources/FOUNDER-CORRECTION-2026-10-30-source.md) | 2026-10-30 | Founder correction, 2026-10-30: build the prompt completely, then run the device (verbatim) |
 | [`intent/sources/OPUS-MAXIMUS-MASTER-BUILD-DIRECTIVE-2026-10-28-source.md`](intent/sources/OPUS-MAXIMUS-MASTER-BUILD-DIRECTIVE-2026-10-28-source.md) | 2026-10-28 | Founder "UNIIMENTE / GREG OPUS MAXIMUS MASTER BUILD DIRECTIVE", re-issued 2026-10-28 (verbatim) |
@@ -167,10 +180,12 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 
 ## Collaboration records: handoffs, deliberations, reviews, reconciliations
 
-### Deliberation (five lenses, two passes) (42)
+### Deliberation (five lenses, two passes) (44)
 
 | File | Date | Title |
 |---|---|---|
+| [`collaboration/deliberation-context-source-export-20261112.json`](collaboration/deliberation-context-source-export-20261112.json) | 2026-11-12 | Publish the eleven exact project source originals after explicit founder approval |
+| [`collaboration/deliberation-context-route-20261112.json`](collaboration/deliberation-context-route-20261112.json) | 2026-11-12 | Expose existing GitHub context while keeping unapproved attachment publication blocked |
 | [`collaboration/deliberation-worker-evidence-integrity-2026-11-05.json`](collaboration/deliberation-worker-evidence-integrity-2026-11-05.json) | 2026-11-05 | worker.appraise: refuse compiled modules; certify unreachable changes only by mutation fallback or a founder oracle |
 | [`collaboration/deliberation-regular-review-20261105.json`](collaboration/deliberation-regular-review-20261105.json) | 2026-11-05 | Contributor orientation, layering ratchets and a recurring read-only structural review |
 | [`collaboration/deliberation-typed-blockers-20261030.json`](collaboration/deliberation-typed-blockers-20261030.json) | 2026-10-30 | Type every open mission blocker from retained facts and the engine's own rule, on greg blockers, the morning report and  |
@@ -356,10 +371,11 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 | [`collaboration/goal-chase-attention-evidence/approve.json`](collaboration/goal-chase-attention-evidence/approve.json) |  |  |
 | [`collaboration/GREG-ONE-MISSION-PROOF.md`](collaboration/GREG-ONE-MISSION-PROOF.md) |  | GREG-001: one persistent local mission |
 
-### Other (50)
+### Other (51)
 
 | File | Date | Title |
 |---|---|---|
+| [`collaboration/CONTEXT-ROUTE-2026-11-12.md`](collaboration/CONTEXT-ROUTE-2026-11-12.md) | 2026-11-12 | Context route, source access and propagation receipt |
 | [`collaboration/BRANCH-CATALOG-2026-11-06.md`](collaboration/BRANCH-CATALOG-2026-11-06.md) | 2026-11-06 | Branch catalog |
 | [`collaboration/DIGEST-RULE-CONSOLIDATION-2026-10-30.md`](collaboration/DIGEST-RULE-CONSOLIDATION-2026-10-30.md) | 2026-10-30 | Digest-rule consolidation — 2026-10-30 |
 | [`collaboration/FINDING-BODY-MEMORY-2026-10-28.md`](collaboration/FINDING-BODY-MEMORY-2026-10-28.md) | 2026-10-28 | A body's memory no longer holds every payload in its history (2026-10-28) |

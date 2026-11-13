@@ -1,0 +1,22 @@
+{
+ "arms": {
+  "B0": "55e6d74af4c0e4e24c410dec3f443675e60e5571",
+  "NEW": "1d6b1c1",
+  "P": "610c343 (PR #194 head with #184 merged)"
+ },
+ "files": {
+  "cortex/evaluation/resolution/analyze.py": "sha256:427fff7a6197b3d2077c64666651cc16b7150d7f41da6d6660473d01da17d48c",
+  "cortex/evaluation/resolution/harness.py": "sha256:dca5d57e628f32aff2947e7998c32fd2c12aae0504195e37392cdca839df21d2",
+  "cortex/evaluation/resolution/label.py": "sha256:8395b1eff1b3da44de14c2d7fc605be953e15ac493f1155d18ebcd79457108cb",
+  "cortex/evaluation/resolution/suite.py": "sha256:5dbfa76b526712233293a6f7916c902a5ce773ebca6e7c3e21f0788dfd02935a",
+  "cortex/evaluation/resolution/v2/analyze_v2.py": "sha256:80f7cf360a36776833213187145b177727fa0a6e2e58c6b68f966106fd108ca8",
+  "cortex/evaluation/resolution/v2/harness_v2.py": "sha256:339cfa30d588451a40ee1e4ea3931bfb60543d6ba7f043d1cdfe266f138da44f",
+  "cortex/evaluation/resolution/v2/suite_v2.py": "sha256:c662ec765bb8d0549dd5220160daaad6ccb322516edf7cc3bf79354b146ec22f",
+  "cortex/evaluation/suites/crossgeo-heldout-v0.3.json": "sha256:f4ad12b7dccf02d2494eb233f9611ef0ab61b2e598762f1b8fed85eb176deefd",
+  "docs/evidence/greg-abstention-resolution/2026-11-13/suite.json": "sha256:34b5722d0f50eac88716764005b1d7405186e2bcb713071039f317d4e9be3d5d",
+  "docs/evidence/greg-abstention-resolution/2026-11-13/v2/PREREGISTRATION.md": "sha256:e088f3a6e0e9d2ec8097aa66d846892e4a781178802317ac71c537b00afb1657"
+ },
+ "run": "v2",
+ "schema": "greg-resolution-freeze/1",
+ "seed": 20261114
+}

@@ -78,7 +78,9 @@ def chromium() -> str:
     before); matching only the old layout passed over the installed build (2026-11-12)."""
     chosen = os.environ.get("GREG_CHROMIUM", "")
     candidates = sorted(glob.glob("/opt/pw-browsers/chromium-*/chrome-linux*/chrome"))
-    for path in ([chosen] if chosen and Path(chosen).is_file() else []) + candidates[::-1] + [
+    # os.path.isfile answers False on any OSError: a value GREG cannot look at (a name longer than the system allows,
+    # a directory the body cannot search) is passed over like any other non-file, never raised out of the session.
+    for path in ([chosen] if chosen and os.path.isfile(chosen) else []) + candidates[::-1] + [
             "/usr/bin/chromium", "/usr/bin/chromium-browser", "/usr/bin/google-chrome"]:
         if os.access(path, os.X_OK):
             return path
@@ -93,7 +95,7 @@ def _trust_profile(home: Path) -> int:
     the operating system already has. Returns the number of anchors imported.
     """
     bundle = os.environ.get(TRUST_BUNDLE_ENV)
-    if not bundle or not Path(bundle).is_file():
+    if not bundle or not os.path.isfile(bundle):              # never an OSError from a path GREG cannot look at
         return 0
     certutil = "/usr/bin/certutil"
     if not os.access(certutil, os.X_OK):

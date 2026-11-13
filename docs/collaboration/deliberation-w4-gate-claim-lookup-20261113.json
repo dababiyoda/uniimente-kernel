@@ -1,0 +1,325 @@
+{
+ "decision_id": "W4-GATE-CLAIM-LOOKUP-20261113",
+ "title": "Whiteboard W4: the 3-line Consequence Gate claim-lookup patch and the SR002 / integrity pin",
+ "problem": "Step 11 of policy/consequence_gate.py checks that a proposal or grant was not dispatched before by copying every grant_dispatch record. One claim is written per Gate-mediated act, so the check grows with history. On #196 only the newest 1024 payloads stay in memory, so each older claim is read back from the ledger file on every act. The 3-line fix (select by proposal_id, then by grant_id) changes the Gate's bytes, which are pinned by the live integrity check (governance/integrity/manifest.json, founder-signed authorizations only), the SR-001/SR-002 subject bindings (evolution/repair/subjects.py) and many frozen evaluations.",
+ "founder_intent_refs": [
+  "Whiteboard 2026-11-13 (issue #96 comment 6852550499), item W4; founder approval of the authority note, comment 6852618695",
+  "docs/collaboration/FINDING-LEDGER-APPEND-COST-2026-10-14.md (#137) section 'Founder decision: the Gate's claim scan'",
+  "governance/integrity/README.md: only a signature by an enrolled founder key authorizes a protected artifact"
+ ],
+ "baseline": "#196 f383fd26: the Gate scans every grant_dispatch record on every act; policy/consequence_gate.py at sha256 1c189be5...",
+ "alternatives": [
+  {
+   "name": "Apply the 3-line patch now",
+   "description": "Replace the scan with two select() lookups and re-bind the pins.",
+   "advantages": [
+    "Gate act cost flat in history (0.00 ms at 6,000 claims vs 33.95 ms)"
+   ],
+   "disadvantages": [
+    "Fails the live integrity check (CI job 3) until an enrolled founder key signs the new digest; no key is enrolled"
+   ],
+   "revival_evidence": "Alfonso enrolls his key and signs INTEGRITY_AUTHORIZE for the patched digest"
+  },
+  {
+   "name": "Keep claim payloads resident (ledger-only)",
+   "description": "Exempt grant_dispatch payloads from RESIDENT_RECORDS eviction so the scan never reads the file.",
+   "advantages": [
+    "Touches no pinned artifact",
+    "About 3x cheaper (11.97 ms at 6,000 claims)"
+   ],
+   "disadvantages": [
+    "Still linear in history",
+    "Spends memory W5 is trying to bound"
+   ],
+   "revival_evidence": "The Gate stays frozen for a long time and the per-act cost becomes the measured bottleneck"
+  },
+  {
+   "name": "Re-bind SR002 by editing subjects.py",
+   "description": "Update the SR002 tuple to the new digest.",
+   "advantages": [
+    "Repair-harness tests stay aligned"
+   ],
+   "disadvantages": [
+    "SR002 is a fixed source binding for past evaluations; rewriting it falsifies what those evaluations attest. A new binding (SR-003) is the honest route"
+   ],
+   "revival_evidence": "None; rejected"
+  },
+  {
+   "name": "Land only the equivalence guard test now",
+   "description": "Pin step 11's refusal by proposal and by grant separately, with no Gate change.",
+   "advantages": [
+    "Green today; proves the patch refuses exactly what the scan refuses before the founder signs"
+   ],
+   "disadvantages": [
+    "Does not remove the cost"
+   ],
+   "revival_evidence": "Selected"
+  }
+ ],
+ "do_nothing_option": {
+  "expected_outcome": "Per-act cost grows about 5.7 us per prior claim: about 0.4 s per act after 50 days of one minute-cadence mission (72,000 claims) and about 3 s after a year. It runs under the Body's turn lock, so it delays every mission.",
+  "advantages": [
+   "No pinned artifact changes"
+  ],
+  "disadvantages": [
+   "A long-running body slows linearly",
+   "The patch's equivalence stays untested"
+  ]
+ },
+ "roles": [
+  {
+   "role": "founder-intent steward",
+   "position": "The Gate is a founder-ratified artifact; agents must not move its digest.",
+   "material_concerns": [
+    "Whiteboard authority note: agents decide reversible work; Gate and Constitution need a founder signature (AGENTS.md)"
+   ],
+   "recommendation": "NEEDS_FOUNDER_DECISION",
+   "evidence_refs": [
+    "governance/integrity/README.md",
+    "AGENTS.md task table"
+   ]
+  },
+  {
+   "role": "systems architect",
+   "position": "The patch is semantically the same check: select() re-checks every answer against the record, and the ledger lock is an RLock, so calling it under the Gate's held lock is safe.",
+   "material_concerns": [
+    "The scan raises KeyError on a malformed claim; select() treats it as not matching. Only the Gate writes claims, with both fields."
+   ],
+   "recommendation": "NEEDS_FOUNDER_DECISION",
+   "evidence_refs": [
+    "provenance/ledger.py select()",
+    "provenance/ledger.py: self._lock = threading.RLock()"
+   ]
+  },
+  {
+   "role": "adversarial reviewer",
+   "position": "A future edit could keep only one of the two lookups and still pass the existing suite: no test refused by grant alone.",
+   "material_concerns": [
+    "Add a test per field; check it kills the one-field mutant"
+   ],
+   "recommendation": "EXPERIMENT",
+   "evidence_refs": [
+    "tests/unit/test_consequence_gate.py::test_a_prior_dispatch_claim_by_proposal_or_by_grant_stops_the_act"
+   ]
+  },
+  {
+   "role": "operator and maintainer",
+   "position": "The cost is real and linear; measured, not estimated.",
+   "material_concerns": [
+    "Microbenchmark on #196 f383fd26 (provenance.ledger.EvidenceLedger, file-backed, default RESIDENT_RECORDS=1024, 13 records per Gate act, median of 7): Gate's by_type scan 3.03 / 13.86 / 33.95 ms at 600 / 2,400 / 6,000 prior claims; the 3-line select patch 0.00 ms at each size. With every payload resident: 1.03 / 5.40 / 11.97 ms."
+   ],
+   "recommendation": "NEEDS_FOUNDER_DECISION",
+   "evidence_refs": [
+    "docs/collaboration/FINDING-LEDGER-APPEND-COST-2026-10-14.md"
+   ]
+  },
+  {
+   "role": "evidence and welfare guardian",
+   "position": "Frozen evaluations record the old digest as their input; they stay true. Re-binding SR002 in place would not.",
+   "material_concerns": [
+    "A changed Gate needs new evaluation bindings (SR-003), not edits to SR002 or freeze files"
+   ],
+   "recommendation": "NEEDS_FOUNDER_DECISION",
+   "evidence_refs": [
+    "evolution/repair/subjects.py SR002",
+    "AGENTS.md: new runs get new paths"
+   ]
+  }
+ ],
+ "evidence": [
+  {
+   "claim": "The scan's cost grows with history; the patch is flat",
+   "finding": "Microbenchmark on #196 f383fd26 (provenance.ledger.EvidenceLedger, file-backed, default RESIDENT_RECORDS=1024, 13 records per Gate act, median of 7): Gate's by_type scan 3.03 / 13.86 / 33.95 ms at 600 / 2,400 / 6,000 prior claims; the 3-line select patch 0.00 ms at each size. With every payload resident: 1.03 / 5.40 / 11.97 ms.",
+   "reference": "scratch benchmark, reproducible from this record",
+   "tier": "sandbox_execution"
+  },
+  {
+   "claim": "The patched Gate fails the live integrity check",
+   "finding": "python -m governance.integrity --check names policy/consequence_gate.py at a6563d82... and prints the founder's enroll and authorize steps; founder-keys.json genesis is empty",
+   "reference": "governance/integrity",
+   "tier": "deterministic_fixture"
+  },
+  {
+   "claim": "The patch passes every test that reads the Gate",
+   "finding": "28 test files referencing consequence_gate: 570 passed, 23 skipped, 1 failed (test_cortex_pipeline unavailable-model, which fails identically on the unpatched base). Repair harness, continuity history, governance integrity and adapter tests all pass",
+   "reference": "pytest on the patched worktree",
+   "tier": "unit_test"
+  },
+  {
+   "claim": "The guard test kills a one-field patch",
+   "finding": "Gate reading only proposal_id: the grant_id case fails; base and full patch both pass",
+   "reference": "tests/unit/test_consequence_gate.py::test_a_prior_dispatch_claim_by_proposal_or_by_grant_stops_the_act",
+   "tier": "unit_test"
+  }
+ ],
+ "counterevidence": [
+  {
+   "claim": "#137 reported 13 repair-harness failures when the Gate changed",
+   "finding": "On #196 f383fd26 the same 3-line change fails no repair-harness test; the remaining blocker is the integrity check, not the harness",
+   "reference": "commit 3884493e message; pytest tests/unit/test_repair_*.py",
+   "tier": "unit_test"
+  }
+ ],
+ "pass_1": {
+  "intended_outcome": "Gate act cost stops growing with history, without any agent moving a founder-pinned digest.",
+  "advantages": [
+   {
+    "id": "A1",
+    "statement": "Flat Gate cost",
+    "amplified_value": "Removes the last measured per-act growth on the Body's turn"
+   },
+   {
+    "id": "A2",
+    "statement": "Equivalence is now tested",
+    "amplified_value": "The founder can sign knowing the patch refuses exactly what the scan refuses"
+   }
+  ],
+  "disadvantages": [
+   {
+    "id": "D1",
+    "statement": "Agents cannot apply the patch",
+    "severity": "medium",
+    "response_type": "governance",
+    "redesigned_response": "Hand the founder the exact digest and commands; the integrity check prints them"
+   },
+   {
+    "id": "D2",
+    "statement": "Cost grows until the founder acts",
+    "severity": "medium",
+    "response_type": "evidence",
+    "redesigned_response": "Record the growth curve so the decision has numbers"
+   },
+   {
+    "id": "D3",
+    "statement": "Key enrollment is a prerequisite for every protected change",
+    "severity": "medium",
+    "response_type": "governance",
+    "redesigned_response": "Name it as the first founder step"
+   }
+  ],
+  "selected_design": "Land the guard test; NEEDS_FOUNDER_DECISION for the Gate bytes",
+  "comparisons": {
+   "baseline": "Scan; cost linear in claims",
+   "do_nothing": "Same, and the patch's equivalence untested",
+   "simplest_viable_alternative": "Guard test only",
+   "strongest_competing_architecture": "Keep claim payloads resident: no pin moves, 3x cheaper, still linear, costs memory",
+   "reversible_experiment": "Guard test in a draft PR; revert by deleting two tests"
+  },
+  "rejected_alternatives": [
+   {
+    "name": "Re-bind SR002 in place",
+    "rejection_reason": "Falsifies what past evaluations attest",
+    "revival_evidence": "None"
+   },
+   {
+    "name": "Keep claim payloads resident",
+    "rejection_reason": "Still linear and conflicts with W5's memory bound",
+    "revival_evidence": "The Gate stays frozen and this cost becomes the bottleneck"
+   },
+   {
+    "name": "Apply the patch in a PR now",
+    "rejection_reason": "CI's integrity job fails by design until a founder signature exists",
+    "revival_evidence": "Founder key enrolled and the digest authorized"
+   }
+  ]
+ },
+ "pass_2": {
+  "attack_summary": "Attacked the guard test for vacuity, the patch for semantic drift, and the decision for hiding the cost.",
+  "new_weaknesses": [
+   {
+    "id": "W1",
+    "category": "gaming",
+    "statement": "A guard that seeds both fields would pass a one-field Gate",
+    "strengthening_response": "Each case seeds exactly one matching field; mutant run confirmed"
+   },
+   {
+    "id": "W2",
+    "category": "fragility",
+    "statement": "select() swallows a malformed claim the scan would raise on",
+    "strengthening_response": "Only the Gate writes claims; recorded as a residual risk"
+   },
+   {
+    "id": "W3",
+    "category": "comprehensibility",
+    "statement": "'SR002 re-bind' in #137's finding reads as editing subjects.py",
+    "strengthening_response": "Clarified: a changed Gate gets a new binding; SR002 stays as the record of past evaluations"
+   }
+  ],
+  "residual_risks": [
+   {
+    "risk": "Per-act cost keeps growing until the founder signs",
+    "mitigation": "Numbers recorded; revisit if a body passes about 20,000 claims",
+    "owner": "Alfonso",
+    "review_trigger": "Founder key enrollment or a body past 20,000 claims"
+   },
+   {
+    "risk": "A malformed grant_dispatch record would be refused by the scan but ignored by select()",
+    "mitigation": "Only the Gate writes them, under its lock",
+    "owner": "Gate maintainers",
+    "review_trigger": "Any second writer of grant_dispatch"
+   }
+  ],
+  "pass_1_disadvantage_dispositions": [
+   {
+    "disadvantage_id": "D1",
+    "outcome": "accepted",
+    "owner": "Alfonso",
+    "rationale": "Founder signature is the designed control",
+    "review_trigger": "Founder key enrollment"
+   },
+   {
+    "disadvantage_id": "D2",
+    "outcome": "accepted",
+    "owner": "Alfonso",
+    "rationale": "Bounded and measured",
+    "review_trigger": "A body past 20,000 claims"
+   },
+   {
+    "disadvantage_id": "D3",
+    "outcome": "deferred",
+    "owner": "Alfonso",
+    "rationale": "Enrollment is his act (trust on first use)",
+    "review_trigger": "Founder session"
+   }
+  ],
+  "final_design": "Guard test lands now (draft PR into #196). The Gate change waits for: (1) Alfonso enrolls his key; (2) signs INTEGRITY_AUTHORIZE for the patched digest; (3) a new SR-003 binding for later evaluations.",
+  "recommendation": "NEEDS_FOUNDER_DECISION"
+ },
+ "dissent": {
+  "present": true,
+  "handling": "Recorded; does not block the guard test.",
+  "entries": [
+   {
+    "role": "adversarial reviewer",
+    "position": "EXPERIMENT for the guard test alone",
+    "rationale": "The test is reversible work agents may decide",
+    "evidence_threshold": "Green CI on the draft",
+    "owner": "this session",
+    "review_trigger": "CI on the draft PR"
+   }
+  ]
+ },
+ "authority_impact": {
+  "level": "constitutional",
+  "changes_authority": false,
+  "requires_authorized_human": true,
+  "approval_status": "pending",
+  "approver": "Alfonso Lopez, by an enrolled-key INTEGRITY_AUTHORIZE for policy/consequence_gate.py"
+ },
+ "migration_plan": "None for the guard test. For the Gate change: enroll key, authorize digest, add an SR-003 binding; history files are unchanged.",
+ "rollback_plan": {
+  "possible": true,
+  "steps": [
+   "Delete the two guard tests",
+   "For the Gate: restore the bytes at 1c189be5... (the integrity check names them)"
+  ],
+  "reason_impossible": null
+ },
+ "kill_criteria": [
+  "The guard test fails on the unpatched Gate",
+  "A second writer of grant_dispatch appears before the founder decides"
+ ],
+ "decision": "NEEDS_FOUNDER_DECISION",
+ "decision_owner": "Alfonso for the Gate bytes; the #196 integrator for the guard test",
+ "review_trigger": "Founder key enrollment, or a body past 20,000 dispatch claims"
+}

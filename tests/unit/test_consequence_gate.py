@@ -284,3 +284,34 @@ def test_tampering_an_old_retained_record_refuses_the_next_commit(stack):
                        executor=lambda p: calls.append(p) or GOOD(p))
     assert calls == []                                      # the executor never ran
     assert len(ledger.by_type("grant_dispatch")) == dispatched and not ledger.verify_chain()[0]
+
+
+# ---------- step 11: a dispatch is claimed once (whiteboard W4) ----------
+
+@pytest.mark.parametrize("claimed_field", ["proposal_id", "grant_id"])
+def test_a_prior_dispatch_claim_by_proposal_or_by_grant_stops_the_act(stack, claimed_field):
+    """Step 11 refuses an act whose proposal or whose grant already holds a dispatch claim, and runs nothing.
+    Each field is tested on its own, so a claim check that reads only one of them fails here (whiteboard W4:
+    the index-backed lookup proposed for the Gate must refuse exactly what the scan refuses)."""
+    gate, passports, ledger, actor, _ = stack
+    proposal = make_proposal(actor.passport_id)
+    grant = gate.grants.issue_single_action(proposal=proposal, policy_version="1.0.0")
+    ids = {"proposal_id": proposal.proposal_id, "grant_id": grant["grant_id"]}
+    other = {"proposal_id": "prop-elsewhere", "grant_id": "grant-elsewhere"}
+    ledger.append("grant_dispatch", {**other, claimed_field: ids[claimed_field],
+                                     "witness_id": "w-earlier", "effect_digest": "e" * 64})
+    ran = []
+    rec = gate.run(proposal, executor=lambda p: ran.append(p) or GOOD(p), standing_grant=grant)
+    assert ran == []
+    assert rec.state == "reconciliation_required"
+    assert any("dispatch already claimed" in r for r in rec.refusal_reasons)
+    assert len(ledger.by_type("grant_dispatch")) == 1     # no second claim was written
+
+
+def test_an_unrelated_dispatch_claim_does_not_stop_the_act(stack):
+    gate, passports, ledger, actor, _ = stack
+    ledger.append("grant_dispatch", {"proposal_id": "prop-elsewhere", "grant_id": "grant-elsewhere",
+                                     "witness_id": "w-earlier", "effect_digest": "e" * 64})
+    rec = authorized_run(gate, make_proposal(actor.passport_id), executor=GOOD)
+    assert rec.state == "recorded"
+    assert len(ledger.by_type("grant_dispatch")) == 2

@@ -15,7 +15,7 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 |---|---:|---|
 | [`(top)`](#doctrine-orders-and-top-level-references) | 31 | Doctrine, orders and top-level references |
 | [`intent`](#founder-intent-records-and-their-verbatim-sources) | 87 | Founder intent records and their verbatim sources |
-| [`collaboration`](#collaboration-records-handoffs-deliberations-reviews-reconciliations) | 194 | Collaboration records: handoffs, deliberations, reviews, reconciliations |
+| [`collaboration`](#collaboration-records-handoffs-deliberations-reviews-reconciliations) | 195 | Collaboration records: handoffs, deliberations, reviews, reconciliations |
 | [`decisions`](#architecture-decision-records) | 6 | Architecture decision records |
 | [`deliberations`](#founder-rulings) | 1 | Founder rulings |
 | [`evidence`](#measured-evidence-frozen-runs-admissions-proofs) | 511 | Measured evidence (frozen runs, admissions, proofs) |
@@ -186,10 +186,11 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 
 ## Collaboration records: handoffs, deliberations, reviews, reconciliations
 
-### Deliberation (five lenses, two passes) (46)
+### Deliberation (five lenses, two passes) (47)
 
 | File | Date | Title |
 |---|---|---|
+| [`collaboration/deliberation-w4-gate-claim-lookup-20261113.json`](collaboration/deliberation-w4-gate-claim-lookup-20261113.json) | 2026-11-13 | Whiteboard W4: the 3-line Consequence Gate claim-lookup patch and the SR002 / integrity pin |
 | [`collaboration/deliberation-context-source-export-20261112.json`](collaboration/deliberation-context-source-export-20261112.json) | 2026-11-12 | Publish the eleven exact project source originals after explicit founder approval |
 | [`collaboration/deliberation-context-route-20261112.json`](collaboration/deliberation-context-route-20261112.json) | 2026-11-12 | Expose existing GitHub context while keeping unapproved attachment publication blocked |
 | [`collaboration/deliberation-revoked-device-authority-20261111.json`](collaboration/deliberation-revoked-device-authority-20261111.json) | 2026-11-11 | A revoked device's unused authority authorizes no new effect; completed effects and history stay; a suspected compromise |

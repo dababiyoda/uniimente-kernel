@@ -2648,8 +2648,8 @@
    "path": "tests/unit/test_genomes_strategic.py",
    "lineage": "pr158",
    "classification": "complementary",
-   "disposition": "kept",
-   "note": "present in one lineage only (pr158)"
+   "disposition": "modified",
+   "note": "present in one lineage only (pr158); modified on #309 (2026-11-12): the liveness abstention test measures the 20,000-state limit with a budget the clock cannot exhaust first (a loaded CI runner answered UNKNOWN after 18,110 states), and two tests pin the slow-machine abstention and the timeout answer; #158's other tests in the file are unchanged"
   },
   {
    "path": "tests/unit/test_graph_node_cut_genome.py",

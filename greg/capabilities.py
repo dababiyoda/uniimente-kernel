@@ -30,6 +30,7 @@ import stat
 import subprocess
 import sys
 import tempfile
+import time
 import urllib.parse
 import urllib.request
 
@@ -69,6 +70,11 @@ class CapabilityError(RuntimeError):
             raise ValueError(f"unknown failure class {failure_class!r}")
         super().__init__(*args)
         self.failure_class = failure_class
+
+
+# A capability whose executable is chosen when it runs names no path in ``binaries`` and is listed here instead:
+# capability_id -> a function answering (available, why) each time ``CapabilityManifest.available`` is asked.
+AVAILABLE_AT_CALL_TIME: dict = {}
 
 
 @dataclass
@@ -178,7 +184,8 @@ class CapabilityManifest:
         for binary in self.binaries:
             if not Path(binary).is_absolute() or not os.access(binary, os.X_OK):
                 return False, f"binary {binary} not installed or not executable"
-        return True, "available"
+        asked_now = AVAILABLE_AT_CALL_TIME.get(self.capability_id)
+        return asked_now() if asked_now is not None else (True, "available")
 
 
 # -- secret broker ------------------------------------------------------------------
@@ -656,15 +663,233 @@ CHROME_CANDIDATES = (
     "/Applications/Chromium.app/Contents/MacOS/Chromium",
     "/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromium-browser",
 )
+HEADLESS_SHELL_CANDIDATES = ("/usr/bin/chrome-headless-shell",)
+
+
+# The one directory GREG looks in for Playwright's browser builds: the PLAYWRIGHT_BROWSERS_PATH of the images GREG has
+# run in. GREG reads neither that variable nor Playwright's default cache (~/.cache/ms-playwright), so on a body
+# where Playwright was installed the default way only the system paths above and GREG_CHROMIUM find a browser.
+# Playwright keeps one directory per build, ending in the build number. Each build has the dedicated headless shell
+# (the binary made for a one-shot headless render; from Chrome 132 the earlier headless mode exists only there) and
+# the full browser, each under an OS-named directory whose name has changed between releases (chrome-linux,
+# chrome-linux64), so both spellings are matched.
+PLAYWRIGHT_BROWSERS = "/opt/pw-browsers"
+HEADLESS_SHELLS = "chromium_headless_shell-*/chrome-headless-shell-*/chrome-headless-shell"
+FULL_BROWSERS = "chromium-*/chrome-linux*/chrome"
+RENDER_SECONDS = 45
+# A browser that could not render is tried again after this long, so one that was only slow, or was repaired, is
+# found again without a restart, and one that cannot render costs its timeout once in that time, not on every call.
+RENDER_RETRY_SECONDS = 600.0
+# One call starts no further check once its checks have taken this long. A check ends at RENDER_SECONDS, so one call
+# judges for less than JUDGING_SECONDS + RENDER_SECONDS (two browsers that never return, at these values), and its
+# render after that for at most RENDER_SECONDS. Candidates left over are named in the refusal as not judged, and
+# the next call starts with them, because what this call learned is remembered.
+JUDGING_SECONDS = 60.0
+NO_BROWSER = "no Chrome or Chromium is installed on this body"
+
+
+def _executable(path: str) -> bool:
+    return bool(path) and Path(path).is_file() and os.access(path, os.X_OK)
+
+
+def playwright_builds(pattern: str) -> list[str]:
+    """Playwright-installed binaries matching ``pattern``, the newest build first (by build number, not by text).
+    A directory whose name does not end in a plain number is listed after every numbered build."""
+    def build(path: str) -> int:
+        number = Path(path).relative_to(PLAYWRIGHT_BROWSERS).parts[0].rsplit("-", 1)[-1]
+        # ASCII digits only: str.isdigit() alone also accepts characters int() refuses (a superscript two)
+        return int(number) if number.isascii() and number.isdigit() else -1
+    return sorted(glob.glob(f"{PLAYWRIGHT_BROWSERS}/{pattern}"), key=build, reverse=True)
+
+
+def chrome_candidates() -> list[str]:
+    """Every installed browser GREG may render with, in the order it tries them. Nothing is run here.
+
+    GREG_CHROMIUM, when set, is the founder's choice and the only candidate. It must be the absolute path of an
+    executable file; set to anything else it is refused by name, and no other browser is run in its place. Unset
+    or empty, GREG chooses: the headless shells first, then an installed Chrome or Chromium, then Playwright's
+    full builds."""
+    chosen = os.environ.get("GREG_CHROMIUM", "")
+    if chosen:
+        if not (os.path.isabs(chosen) and _executable(chosen)):
+            raise CapabilityError(f"GREG_CHROMIUM is set to {chosen!r}, which is not the absolute path of an "
+                                  "executable file; GREG runs the browser that variable names or none (unset it "
+                                  "to let GREG choose among the installed browsers)")
+        return [chosen]
+    found: list[str] = []
+    for candidate in (*playwright_builds(HEADLESS_SHELLS), *HEADLESS_SHELL_CANDIDATES, *CHROME_CANDIDATES,
+                      *playwright_builds(FULL_BROWSERS)):
+        if _executable(candidate) and candidate not in found:
+            found.append(candidate)
+    return found
+
+
+def installed_chrome() -> str:
+    """The first installed candidate, named without running it; a refusal when there is none."""
+    found = chrome_candidates()
+    if not found:
+        raise CapabilityError(NO_BROWSER)
+    return found[0]
+
+
+def browser_installed() -> tuple[bool, str]:
+    """What ``CapabilityManifest.available`` answers for browser.render, asked each time it is called.
+
+    The manifest names no binary: a path fixed when this module was imported can be gone when the capability runs
+    (Playwright replaces a build's directory on upgrade), and a path that differs between the body and its
+    appraiser's process gives them different manifest digests. So what is installed is looked up here, by the same
+    list a render chooses from. Nothing is run: this says a candidate is installed, not that it renders."""
+    try:
+        return (True, "available") if chrome_candidates() else (False, NO_BROWSER)
+    except CapabilityError as exc:
+        return False, str(exc)
+
+
+AVAILABLE_AT_CALL_TIME["browser.render"] = browser_installed
+
+
+def _headless(binary: str, profile: str) -> list[str]:
+    """How every headless run of ``binary`` starts: a render, and the check that this binary can render at all."""
+    return [binary, "--headless=new", "--disable-gpu", "--no-first-run", "--no-default-browser-check",
+            "--disable-extensions", "--disable-background-networking", "--disable-sync",
+            "--disable-component-update", "--disable-default-apps", "--mute-audio", "--hide-scrollbars",
+            f"--user-data-dir={profile}"]
+
+
+def _sandboxes_itself() -> bool:
+    """Chromium cannot sandbox itself as root on Linux."""
+    return not (sys.platform.startswith("linux") and os.geteuid() == 0)
+
+
+PROFILE_REMOVALS = 5
+
+
+class _Profile:
+    """A fresh browser profile directory, removed afterwards.
+
+    A browser killed at its time limit leaves helper processes that go on writing into the profile (measured with
+    Chrome for Testing 153: removing the directory then failed with "Directory not empty", and that error replaced
+    the check's own answer). Removal is tried PROFILE_REMOVALS times over a second; if the directory still exists
+    it is left behind (seen: helpers that outlived the retries left an empty directory). Failing to remove a
+    profile never replaces the result of the run that used it. Only the browser's own process is killed at the
+    limit, not its process group; ending the helpers with it is not done here."""
+
+    def __init__(self, prefix: str):
+        self.path = tempfile.mkdtemp(prefix=prefix)
+
+    def __enter__(self) -> str:
+        return self.path
+
+    def __exit__(self, *exc) -> None:
+        for attempt in range(PROFILE_REMOVALS):
+            if attempt:
+                time.sleep(0.2)
+            shutil.rmtree(self.path, ignore_errors=True)
+            if not os.path.lexists(self.path):
+                return
+
+
+RENDER_CHECK_TEXT = "greg-renders-42"
+# A page with no address: its script writes the text above, so finding it proves the binary started, ran JavaScript
+# and wrote the page out. Nothing is fetched to show it.
+RENDER_CHECK_PAGE = "data:text/html," + urllib.parse.quote(
+    '<title>check</title><p id="out"></p>'
+    '<script>document.getElementById("out").textContent = "greg-renders-" + (20 + 22)</script>')
+# path -> (the build judged there, when, why it cannot render or None). One entry per path: a build that replaces
+# another at the same path replaces what was remembered of it.
+_render_judged: dict[str, tuple[tuple, float, str | None]] = {}
+
+
+def _build(made: os.stat_result) -> tuple:
+    """Which build a file is: its size, modification time and change time. A rewrite changes the first two; a file
+    replaced by another of the same size with its modification time put back still has a new change time."""
+    return (made.st_size, made.st_mtime_ns, made.st_ctime_ns)
+
+
+def _remembered(binary: str) -> tuple[tuple, tuple | None]:
+    """The build now at ``binary`` and what is remembered of it that still holds (None: it must be run to know).
+
+    A build that rendered stays judged; one that did not is judged again after RENDER_RETRY_SECONDS. Raises OSError
+    when the file cannot be read."""
+    build = _build(os.stat(binary))
+    judged = _render_judged.get(binary)
+    if judged is not None and judged[0] == build and (
+            judged[2] is None or time.monotonic() - judged[1] < RENDER_RETRY_SECONDS):
+        return build, judged
+    return build, None
+
+
+def cannot_render(binary: str) -> str | None:
+    """None when ``binary`` renders the local page it is given, else why it does not.
+
+    Chrome's full binary does not return from a one-shot headless render on every machine (measured: Chrome for
+    Testing 153 in a Linux container never writes the page out, where the headless shell installed beside it takes
+    half a second). A browser that is installed is therefore not yet one GREG can render with. Each build is
+    judged by running it: the same command line, environment and sandbox rule as an unconfined render, on a page
+    that has no address, with every name resolving to nothing and every request sent to a closed port, so the
+    check contacts no one.
+
+    The check is a browser process started by the body itself, outside any namespace. Only the unconfined route
+    (``ctx.egress is None``) calls it, and its sandbox rule is that route's. A confined-egress body never does."""
+    try:
+        build, judged = _remembered(binary)
+    except OSError as exc:
+        return f"cannot be read ({exc.strerror})"
+    if judged is not None:
+        return judged[2]
+    with _Profile("greg-browser-check-") as profile:
+        argv = [*_headless(binary, profile), "--host-resolver-rules=MAP * ~NOTFOUND",
+                "--proxy-server=http://127.0.0.1:9", "--virtual-time-budget=1000", "--dump-dom", RENDER_CHECK_PAGE]
+        if not _sandboxes_itself():
+            argv.insert(1, "--no-sandbox")
+        try:
+            proc = subprocess.run(argv, capture_output=True, timeout=RENDER_SECONDS, cwd=profile,
+                                  env={"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "HOME": profile})
+        except subprocess.TimeoutExpired:
+            why = f"did not finish rendering a local page within {RENDER_SECONDS} seconds"
+        except OSError as exc:
+            why = f"could not be started ({exc.strerror})"
+        else:
+            why = None if proc.returncode == 0 and RENDER_CHECK_TEXT.encode() in proc.stdout else (
+                "did not render a local page: " + (
+                    proc.stderr.decode("utf-8", "replace").strip()[-200:] or (
+                        f"exit {proc.returncode}" if proc.returncode else
+                        "it wrote another page" if proc.stdout.strip() else "it wrote nothing")))
+    _render_judged[binary] = (build, time.monotonic(), why)
+    return why
+
+
+def _must_run_to_judge(binary: str) -> bool:
+    try:
+        return _remembered(binary)[1] is None
+    except OSError:
+        return False
 
 
 def chrome_binary() -> str:
-    """The browser GREG drives: an installed Chrome/Chromium (founder-chosen via GREG_CHROMIUM)."""
-    for candidate in (os.environ.get("GREG_CHROMIUM", ""), *CHROME_CANDIDATES,
-                      *sorted(glob.glob("/opt/pw-browsers/chromium-*/chrome-linux/chrome"))):
-        if candidate and Path(candidate).is_file() and os.access(candidate, os.X_OK):
+    """The browser an unconfined render uses: the first installed candidate that renders a local page it is given.
+
+    Refuses, naming each candidate and why, when none does: an installed browser that cannot render is not used,
+    and no other browser stands in for the founder's own choice (GREG_CHROMIUM). One call judges for a bounded
+    time (JUDGING_SECONDS): a candidate it did not get to is named as not judged, and is not called unable to
+    render."""
+    refused, waiting, started = [], [], time.monotonic()
+    candidates = chrome_candidates()
+    for candidate in candidates:
+        if _must_run_to_judge(candidate) and time.monotonic() - started >= JUDGING_SECONDS:
+            waiting.append(Path(candidate).name)
+            continue
+        why = cannot_render(candidate)
+        if why is None:
             return candidate
-    return CHROME_CANDIDATES[0]
+        refused.append(f"{Path(candidate).name} {why}")
+    if not candidates:
+        raise CapabilityError(NO_BROWSER)
+    raise CapabilityError(
+        ("no installed browser renders a page here: " if not waiting else
+         "no browser judged so far renders a page here: ") + "; ".join(refused) + (
+            f"; not judged in this call, which starts no check after {JUDGING_SECONDS:g} seconds of judging: "
+            + ", ".join(waiting) if waiting else ""))
 
 
 class _VisibleText(HTMLParser):
@@ -695,7 +920,6 @@ def browser_render(params, ctx: InvocationContext) -> dict:
     NOTFOUND, so page scripts cannot reach third parties. https, or http on loopback only.
     Fresh profile per call, no extensions, no sync, no background networking.
     """
-    import tempfile
     url = str(params["url"])
     parts = urllib.parse.urlsplit(url)
     host = parts.hostname or ""
@@ -703,12 +927,14 @@ def browser_render(params, ctx: InvocationContext) -> dict:
     authority = f"{host}:{parts.port or (443 if parts.scheme == 'https' else 80)}"
     if parts.scheme != "https" and not (parts.scheme == "http" and loopback):
         raise CapabilityError("browser.render loads https pages (http only on this machine's loopback)")
-    binary = chrome_binary()
-    with tempfile.TemporaryDirectory(prefix="greg-browser-") as profile:
-        common = [binary, "--headless=new", "--disable-gpu", "--no-first-run", "--no-default-browser-check",
-                  "--disable-extensions", "--disable-background-networking", "--disable-sync",
-                  "--disable-component-update", "--disable-default-apps", "--mute-audio", "--hide-scrollbars",
-                  f"--user-data-dir={profile}"]
+    # Unconfined, the browser is one that has rendered a local page here (chrome_binary runs that check in the
+    # body's own process tree). Behind the relay nothing is judged: the check would be a browser started outside the
+    # namespace the confined route exists to keep it in, under a sandbox rule that is not the confined render's. The
+    # first installed candidate is handed to the namespace, and a browser that cannot render there is refused by
+    # that render itself, as before the check existed.
+    binary = chrome_binary() if ctx.egress is None else installed_chrome()
+    with _Profile("greg-browser-") as profile:
+        common = _headless(binary, profile)
         if ctx.egress is None:
             argv = [*common, f"--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE {host}",
                     # Every request goes to a dead proxy except the exact target origin, so page scripts
@@ -721,21 +947,29 @@ def browser_render(params, ctx: InvocationContext) -> dict:
             # The door is the namespace's own loopback; nothing else exists there to resolve or reach.
             argv = [*common, "--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1", "--proxy-server={door}",
                     "--proxy-bypass-list=<-loopback>", "--virtual-time-budget=5000", "--dump-dom", url]
-        sandboxed = not (sys.platform.startswith("linux") and os.geteuid() == 0) and ctx.egress is None
+        sandboxed = _sandboxes_itself() and ctx.egress is None
         if not sandboxed:
             argv.insert(1, "--no-sandbox")  # Chromium cannot sandbox itself as root on Linux, nor nest its own
             #                                  user namespace inside GREG's; reported below
         env = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "HOME": profile}
         try:
             if ctx.egress is None:
-                proc = subprocess.run(argv, capture_output=True, timeout=45, env=env, cwd=profile)
+                try:
+                    proc = subprocess.run(argv, capture_output=True, timeout=RENDER_SECONDS, env=env, cwd=profile)
+                except OSError as exc:
+                    _render_judged.pop(binary, None)        # it passed its check and is gone or broken now
+                    raise CapabilityError(f"browser could not be started ({exc.strerror})") from exc
                 route = f"only {authority} reachable"
             else:
                 proc = _render_behind_relay(argv, ctx.egress, host, int(authority.rsplit(":", 1)[1]), loopback,
                                             Path(profile), env)
                 route = f"relay: only {authority}, every request journaled"
         except subprocess.TimeoutExpired as exc:
-            raise CapabilityError("browser did not finish rendering within 45 seconds") from exc
+            # What was remembered of this binary is the file the candidate path names, which may be a wrapper script
+            # around the real browser. A render that never returned is evidence against a remembered success, so
+            # the next call judges the binary again (and passes over it if it no longer renders).
+            _render_judged.pop(binary, None)
+            raise CapabilityError(f"browser did not finish rendering within {RENDER_SECONDS} seconds") from exc
     if proc.returncode or not proc.stdout.strip():
         raise CapabilityError("browser could not render the page: " + proc.stderr.decode("utf-8", "replace")[-300:])
     dom_cut = len(proc.stdout) > MAX_READ_BYTES * 4
@@ -771,7 +1005,7 @@ def _render_behind_relay(argv, relay, host: str, port: int, loopback: bool, prof
     with Door(scoped, "browser.render") as door:
         namespace = namespace_argv(writable=[profile], readonly=[str(Path(argv[0]).resolve().parent)], chdir=profile)
         return subprocess.run(namespace + door_argv(sys.executable, door.fd, argv), pass_fds=[door.fd],
-                              capture_output=True, timeout=45, env=env)
+                              capture_output=True, timeout=RENDER_SECONDS, env=env)
 
 
 def mac_notify(params, ctx: InvocationContext) -> dict:
@@ -971,9 +1205,14 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                                 "browser", "read_only", "web:", {"url": "str"},
                                 {"title": "str", "text": "str", "dom_sha256": "str"},
                                 network="target-host-only", data_classes=("public_web",), retry_safe=True,
-                                binaries=(chrome_binary(),), target_from="url",
+                                # no ``binaries``: the browser is chosen when a render runs (chrome_candidates),
+                                # and ``available`` asks browser_installed() then, so the manifest and its digest
+                                # are the same in every process on every machine, whatever is installed
+                                target_from="url",
                                 provenance={"source": "uniimente-kernel/greg/capabilities.py",
-                                            "mechanism_from": "installed Chrome/Chromium --headless --dump-dom"}),
+                                            "mechanism_from": "installed Chrome/Chromium --headless --dump-dom",
+                                            "binary": "chosen at call time: GREG_CHROMIUM, else the first "
+                                                      "installed candidate (greg.capabilities.chrome_candidates)"}),
                        browser_render),
     "mac.notify": (_builtin("mac.notify", "founder.notify", "Local macOS notification to the founder",
                             "os_automation", "internal_write", "founder:", {"text": "str", "title": "str?"}, {"delivered": "bool"},

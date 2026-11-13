@@ -1612,7 +1612,9 @@ def evidence(journal, goal_id: str) -> dict:
                   "answer_command": (_answer_row(book, rid) or {}).get("command_digest"),
                   "answer_signature_verified": signed_answer(signed, rid, _answer_row(book, rid)) is not None,
                   "answer_counted": rid in book.answers,
-                  "approve_means": _approve_means_of(book.requests[rid])}
+                  "approve_means": _approve_means_of(book.requests[rid]),
+                  # counted as history, yet authorizing nothing more: its signer device was revoked
+                  **({"answer_voided": book.voided[rid]["why"]} if rid in book.voided else {})}
                  for rid in requests],
         "mission_receipts": sorted({e.payload["receipt"] for e in journal.replay("mission.")
                                     if e.type in ("greg.mission.action", "greg.mission.observed")

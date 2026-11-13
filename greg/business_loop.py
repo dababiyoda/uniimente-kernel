@@ -26,12 +26,36 @@ from decimal import Decimal, InvalidOperation
 import hashlib
 import io
 from pathlib import Path
+import re
+import unicodedata
 
 from greg.capabilities import CapabilityError, InvocationContext, _inside, bounded_read, faithful_text
 from greg.textform import canon
 
 DEFAULT_COLUMNS = {"amount": "amount", "currency": "currency", "reference": "description"}
 _STRIP = str.maketrans("", "", " ,$€£¥ ")
+_MINUS = {"\u2212", "\u2043", "\u2796"}   # minus sign, hyphen bullet, heavy minus: dashes outside category Pd
+
+
+def reference_key(text) -> str:
+    """A case reference as GREG compares it: compatibility forms folded (NFKC, so a full-width digit is the digit),
+    case-folded, invisible format characters dropped, every dash and minus written '-', whitespace runs as one space.
+    A reference that differs only in those (LD-240117 written with a non-breaking hyphen) is the same reference."""
+    folded = unicodedata.normalize("NFKC", unicodedata.normalize("NFKC", str(text)).casefold())
+    kept = ("-" if unicodedata.category(c) == "Pd" or c in _MINUS else c for c in folded
+            if unicodedata.category(c) != "Cf")
+    return " ".join("".join(kept).split())
+
+
+def carries_reference(text, reference) -> bool:
+    """``text`` names ``reference`` as a whole (reference_key on both): a longer reference that only contains it does
+    not (LD-2401170 does not carry LD-240117), so a letter or digit may not touch either end of it."""
+    wanted = reference_key(reference)
+    if not wanted:
+        return False
+    before = r"(?<![^\W_])" if re.match(r"[^\W_]", wanted[0]) else ""
+    after = r"(?![^\W_])" if re.match(r"[^\W_]", wanted[-1]) else ""
+    return re.search(before + re.escape(wanted) + after, reference_key(text)) is not None
 
 
 def parse_amount(text: str, *, minor_units: bool = False) -> Decimal | None:
@@ -75,7 +99,7 @@ def reconcile(params: dict, ctx: InvocationContext) -> dict:
     missing = [c for c in columns.values() if rows and c not in rows[0]]
     if missing:
         return {"path": str(path), "exists": True, "matched": False, "matches": 0, "rows_read": len(rows),
-                "sha256": hashlib.sha256(data).hexdigest(),
+                "sha256": hashlib.sha256(data).hexdigest(), "missing_columns": missing,
                 "detail": f"statement lacks the signed columns {missing}; header is {sorted(rows[0])}"}
     minor = bool(params.get("minor_units"))
     hits, near = [], []
@@ -83,6 +107,8 @@ def reconcile(params: dict, ctx: InvocationContext) -> dict:
     for index, row in enumerate(rows):
         if wanted not in canon(row.get(columns["reference"]) or ""):
             continue
+        if not carries_reference(row.get(columns["reference"]) or "", reference):
+            continue        # only inside a longer reference: another case's posting (LD-2401170 for LD-240117)
         amount = parse_amount(row.get(columns["amount"]), minor_units=minor)
         same_currency = (row.get(columns["currency"]) or "").strip().upper() == currency
         if amount == expected and same_currency:
@@ -96,6 +122,8 @@ def reconcile(params: dict, ctx: InvocationContext) -> dict:
         index, row = hits[0]
         return {**result, "matched": True, "row": index + 2,
                 "row_sha256": hashlib.sha256(repr(sorted(row.items())).encode()).hexdigest(),
+                # the row's own values as exported, so an actual is read from the statement, never from the estimate
+                "posting": {name: row.get(column) for name, column in columns.items()},
                 "detail": f"one posting of {expected} {currency} carries {reference}"}
     if hits:
         return {**result, "matched": False, "rows": [i + 2 for i, _ in hits],

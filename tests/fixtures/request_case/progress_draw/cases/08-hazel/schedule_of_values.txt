@@ -1,0 +1,29 @@
+SYNTHETIC — not a real party. Sandbox test material: every contract, company, person, amount and date in this file is invented.
+document: schedule of values
+contract_reference: SYN-SC-2026-0417
+payer: Synthetic General Contractor A (SYNTHETIC)
+subcontractor: Synthetic Masonry Subcontractor B (SYNTHETIC)
+project: Synthetic Project 7, three-storey office shell (SYNTHETIC)
+currency: USD
+original_contract_sum: 200000.00
+retainage_percent: 10
+L1 description: Mobilization
+L1 scheduled_value: 12000.00
+L2 description: Foundation masonry
+L2 scheduled_value: 48000.00
+L3 description: Exterior wall masonry
+L3 scheduled_value: 96000.00
+L4 description: Interior partitions
+L4 scheduled_value: 36000.00
+L5 description: Cleanup and closeout
+L5 scheduled_value: 8000.00
+CO-01 description: Additional lintel reinforcement at east openings
+CO-01 amount: 6000.00
+CO-01 approved: yes
+CO-01 approved_date: 2026-09-18
+CO-02 description: Parapet cap upgrade to cast stone
+CO-02 amount: 4500.00
+CO-02 approved: no
+CO-02 status: pending owner review
+
+Notes: Retainage is withheld at the percent above on the work billed in each draw and is released at final completion. An approved change order is billed as its own line, using the change order id as the line id. A change order that is not approved may not be billed.

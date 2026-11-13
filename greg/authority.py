@@ -144,6 +144,14 @@ class AuthorityOffice:
             return ActionOutcome("OUTSIDE_SCOPE", outside, **base)
 
         claim, receipt = self._prior(proposal_id)
+        if receipt is not None and receipt.payload["result"].get("result_class") != "positive":
+            # A refused run reused is still refused, as the legacy path above and a fresh refusal say: never DONE
+            # with no output, which a check then judged as a decided failure on an absent field (several checks
+            # reading one sensor share this receipt).
+            result = receipt.payload["result"]
+            return ActionOutcome("REFUSED", [result.get("observed_outcome", "capability failed")],
+                                 receipt_hash=receipt.hash, grant_id=receipt.payload.get("grant_id"),
+                                 failure_class=result.get("failure_class"), **base)
         if receipt is not None:  # already done before an interruption: reuse, never redo
             # with the whole output it kept, so a reused reading is judged as the fresh one was (review of #209)
             return ActionOutcome("DONE", ["retained receipt reused after restart"], output=receipt.payload["result"].get("output"),

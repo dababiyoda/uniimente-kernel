@@ -1769,6 +1769,10 @@ class MissionEngine:
         from greg.ventures import LedgerReader
         return LedgerReader(self.journal) if self.journal is not None else None
 
+    def _event_reader(self):
+        from greg.cases import EventReader
+        return EventReader(self.journal) if self.journal is not None else None
+
     def _context(self, m: MissionState, manifest) -> InvocationContext:
         # worker.appraise reads the ledger to bind a retained WorkOrder to its canonical commission receipt, as the
         # separate appraiser does: evidence a stopped body wrote before its receipt is never accepted (H.G11).
@@ -1782,6 +1786,8 @@ class MissionEngine:
                                  journal=self._ledger_reader() if manifest.capability_id in ("venture.assess",
                                                                                              "daleobanks.verify",
                                                                                              "worker.appraise")
+                                 # a case reads its request, earlier cases and its own receipts, and writes nothing
+                                 else self._event_reader() if manifest.capability_id in ("case.assess", "case.packet")
                                  else self.journal if manifest.capability_id in ("memory.precedents", "daleobanks.outcome")
                                  or manifest.capability_id.startswith(("artifact.", "cognition.", "pipeline.", "institution.",
                                                                        "organ.", "foundry.")) else None,
@@ -2587,6 +2593,24 @@ class MissionEngine:
             declined = self._declined(m, now)
             if declined is not None:
                 return self._honor_refusal(m, now, *declined)
+            step = next((s for s in m.spec["strategies"] if s["action_id"] == m.blocker.get("action_id")), {})
+            measured_failing = failing - set(self.sensor_errors) - set(self.unread)
+            lapsed = sorted(set(step.get("requires", [])) & measured_failing)
+            if lapsed:
+                # The person is not left asked for a step whose precondition observation says no longer holds (a case
+                # that stopped being eligible while its payment was asked for): the ask is withdrawn and the mission
+                # re-plans on the measured world; the step is asked again, as a new ask, once its preconditions hold.
+                # Only a measured failure lapses a precondition: a sensor error, a timeout or a reading the evidence
+                # could not decide measured nothing, and the ask stays open on it.
+                rid = m.blocker["request_id"]
+                why = (f"a precondition of {step['action_id']} no longer holds ({', '.join(lapsed)}), so the person is "
+                       "not left asked for it; GREG took no action for it")
+                self.journal.record("decision.withdrawn", {"request_id": rid, "mission_id": m.mission_id, "why": why,
+                                                           "evidence": evidence, "at": iso(now)}, key=[rid, "withdrawn"])
+                self._unblock(m, why)
+                self.book.rebuild()
+                self._schedule(self.book.missions[m.mission_id], now, 0)
+                return {"state": "RESUMED", "still_failing": sorted(failing), "why": why}
         if waiting_on:
             self._schedule(m, now, m.spec["closure"].get("cadence_seconds", 3600))
             return {"state": "WAITING", "blocker": m.blocker, "still_failing": sorted(failing)}
@@ -3021,7 +3045,8 @@ class MissionEngine:
         watched = sorted(set(spec.get("advances", [])))
         checks = [{"check_id": c["check_id"], "description": c["description"],
                    "observed_by": c["sensor"].get("capability") or c["sensor"].get("function"),
-                   "params": c["sensor"].get("params", {})} for c in m.spec["success_checks"] if c["check_id"] in watched]
+                   "params": c["sensor"].get("params", {}), **self._last_read(m, c)}
+                  for c in m.spec["success_checks"] if c["check_id"] in watched]
         rid = self._request(
             m, kind="HUMAN_WORK", scope_digest=sha256_json({"function": function, "purpose": purpose}),
             action_id=spec.get("action_id"),
@@ -3058,6 +3083,25 @@ class MissionEngine:
                         "reconsider": "the deliverable is observed by the mission's own checks, or you revise or "
                                       "abandon the mission"})
         return None
+
+    def _last_read(self, m: MissionState, check: dict) -> dict:
+        """What a watched check's latest failing observation read in its signed field, shown to the person asked, so
+        they see exactly what is still missing (the facts a case waits on). Only a number, a truth value or a flat list,
+        as its receipt kept it and bounded like an approval's params; text and objects are not repeated into an ask,
+        nor an object inside a list (a case's disputes carry the documents' own words). A flat list of strings is
+        repeated as the capability composed it: one a person is shown composes it in its own words, never a
+        document's text (greg.cases: fact, document, line and reason)."""
+        seen = m.observations.get(check["check_id"])
+        record = self.journal.ledger.find(seen["receipt"]) if seen and not seen.get("passed") and seen.get("receipt") \
+            else None
+        output = (record.payload.get("result") or {}).get("output") if record is not None else None
+        try:
+            value = _raw_field(output, check["predicate"].get("field", ""))
+        except LookupError:
+            return {}
+        if isinstance(value, (str, dict)) or isinstance(value, list) and any(isinstance(v, (dict, list)) for v in value):
+            return {}
+        return {"last_read": {"field": check["predicate"].get("field", ""), **params_view(value)}}
 
     def _executed(self, m: MissionState) -> list[tuple[dict, str]]:
         """(latest DONE record, consequence class) of each executed strategy that is not read-only, in execution

@@ -1,0 +1,21 @@
+SYNTHETIC — not a real party. Sandbox test material: every contract, company, person, amount and date in this file is invented.
+document: inspection sign-off
+contract_reference: SYN-SC-2026-0417
+draw_number: 4
+period_end_date: 2026-10-31
+inspector_name: R. Example, Synthetic Inspection Services D (SYNTHETIC)
+inspection_date: 2026-11-01
+L1 observed_percent_complete: 100
+L2 observed_percent_complete: 100
+L3 observed_percent_complete: 64
+L4 observed_percent_complete: 30
+L5 observed_percent_complete: 0
+CO-01 observed_percent_complete: 50
+open_punch_items: 2
+punch_item_1: L2 mortar joint touch-up at grid C-4
+punch_item_1 blocking: no
+punch_item_2: L4 control-joint sealant missing in room 112
+punch_item_2 blocking: no
+signed: yes
+
+Inspector notes: Walked all four elevations and level 1. Percentages are of each line's scheduled scope in place on the inspection date.

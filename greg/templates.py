@@ -674,6 +674,120 @@ def business_case(*, case: str, buyer: str, offer: str, price: str, currency: st
     }
 
 
+def request_case(*, reference: str, request: str, rulebook: Path, folder: Path, statement: str = "statement.csv",
+                 columns: dict | None = None, minor_units: bool = False, horizon_days: float = 45,
+                 venture: str | None = None, preapprove_packet: bool = False) -> dict:
+    """One request-led case, as a founder-signed mission: a third party asks to be paid for completed work.
+
+    Incoming request -> evidence extraction -> missing information -> eligibility -> routing -> completion evidence
+    -> acceptance -> settlement reconciliation -> retained learning. Every check is one read of ``case.assess``
+    (greg/cases.py) against the rulebook, which is data signed here by its sha256: request recorded, evidence complete,
+    no dispute, eligible, completion accepted, payment observed (business.reconcile's own matching) and a packet
+    delivered for the current assessment. GREG's only write is the packet (``case.packet``, one new file per
+    assessment). Every act toward a person is ``human.*`` work, one costed ask each: asking the requester for exactly
+    the missing facts, declining with the failed rules, settling a named dispute, obtaining written acceptance, and
+    the payment itself, which a person
+    makes outside GREG. GREG contacts, commits to and pays no one. Each of those steps requires a current packet, so
+    the person asked always has the assessment it rests on; a step whose precondition stops holding is withdrawn
+    (greg/missions.py) and the mission re-plans.
+
+    ``preapprove_packet`` puts the packet write in the cone; by default the cone is read-only and the packet write
+    stops for the founder's approval of its exact scope (once: later packets of the same mission use the same scope)."""
+    from greg.cases import load_rulebook
+    from greg.capabilities import CapabilityError
+    rulebook, folder = Path(rulebook).expanduser().resolve(), Path(folder).expanduser().resolve()
+    data = rulebook.read_bytes()
+    try:
+        book = load_rulebook(data)
+    except CapabilityError as exc:
+        raise ValueError(f"the rulebook cannot be signed: {exc}") from None
+    reference, request = " ".join(str(reference).split()), " ".join(str(request).split())
+    if len(reference) < 6 or len(reference) > 80:
+        raise ValueError("reference is the case reference the documents carry (6 to 80 characters)")
+    if not request or len(request) > 200:
+        raise ValueError("request names the request this mission answers (at most 200 characters)")
+    if Path(statement).name != statement or statement.startswith("."):
+        raise ValueError("statement is a plain file name in the case folder")
+    if venture is not None and not re.fullmatch(r"[a-z0-9][a-z0-9-]{1,40}", venture):
+        raise ValueError("venture is a short lowercase name (letters, digits, hyphens)")
+    slug = re.sub(r"[^a-z0-9]+", "-", reference.lower()).strip("-")[:40]
+    mission_id = f"m:request-{slug}-{hashlib.sha256(request.encode()).hexdigest()[:8]}"
+    params = {"rulebook": str(rulebook), "rulebook_sha256": hashlib.sha256(data).hexdigest(), "folder": str(folder),
+              "reference": reference, "statement": str(folder / statement),
+              **({"columns": columns} if columns else {}), **({"minor_units": True} if minor_units else {})}
+    sensor = {"capability": "case.assess", "target": f"fs:{folder.name}", "params": params}
+
+    def check(check_id, description, field, value):
+        return {"check_id": check_id, "description": description, "sensor": sensor,
+                "predicate": {"op": "equals", "field": field, "value": value}}
+
+    label, channel = book["label"], book["request"]["channel"]
+
+    def person(action_id, function, advances, requires, rationale):
+        return {"action_id": action_id, "function": function, "target": f"person:{function}", "advances": advances,
+                "requires": requires, "rationale": rationale}
+    return {
+        "mission_id": mission_id,
+        "founder_expression": (f"Assess request {request!r} for case {reference} under rulebook {book['rulebook']} "
+                               f"{book['version']} ({label}); route it as the rulebook says, and settle only what "
+                               "the evidence makes eligible and a statement shows paid."),
+        "intended_effect": (f"case {reference} is assessed from its documents with every fact sourced, routed as the "
+                            "rulebook says, and closes only when eligible, accepted and a payment is reconciled; "
+                            "GREG writes only case packets and contacts, commits to and pays no one"),
+        "priority": 70, "closure": {"kind": "bounded", "cadence_seconds": 3600},
+        "success_checks": [
+            check("request_recorded", f"a request carrying {reference} is on file on channel {channel}",
+                  "request_recorded", True),
+            check("evidence_complete", "no fact the decision waits on is unknown", "unresolved", []),
+            check("undisputed", "no conflict between documents and no dispute the rulebook names", "disputes", []),
+            check("eligible", "every rule of the rulebook is met", "eligibility", "eligible"),
+            check("accepted", "completion is accepted in writing, as the rulebook says", "accepted", True),
+            check("paid", f"exactly one statement posting settles {reference} (business.reconcile)",
+                  "payment_observed", True),
+            check("packet_current", "a case packet is delivered for the current assessment", "packet_current", True),
+        ],
+        "strategies": [
+            person("forward-request", "human.forward_request", ["request_recorded"], [],
+                   f"save the requester's message carrying {reference} with `greg intake --channel {channel}`; GREG "
+                   "reads it as data, never as a command"),
+            {"action_id": "deliver-packet", "capability": "case.packet", "target": "deliver:cases", "params": params,
+             "advances": ["packet_current"], "requires": ["request_recorded"],
+             "rationale": "deliver the case packet for the current assessment: facts with sources, conflicts, rules, "
+                          "eligibility, next action, unresolved facts, evidence trail and the accounting projection"},
+            person("request-evidence", "human.request_evidence", ["evidence_complete"], ["packet_current"],
+                   f"ask the requester for exactly the facts this ask lists (the latest case packet names each with "
+                   f"its document) and save the documents into {folder}"),
+            # the rulebook's "decline" route: a person tells the requester, citing the failed rules; corrected
+            # documents, if they come, make the same case eligible again (whether a declined case should end its
+            # mission is the founder's: abandon it, as today)
+            person("decline", "human.decline", ["eligible"], ["packet_current"],
+                   "the case is declined under the rulebook: tell the requester, citing each rule the latest case "
+                   f"packet names as not met; if they send corrected documents, save them into {folder}; GREG tells "
+                   "no one"),
+            person("resolve-dispute", "human.resolve_dispute", ["undisputed"], ["packet_current"],
+                   "the case is held: settle the dispute the latest case packet names with the parties and save the "
+                   f"corrected or confirming document into {folder}"),
+            person("obtain-acceptance", "human.obtain_acceptance", ["accepted"],
+                   ["eligible", "undisputed", "packet_current"],
+                   f"obtain the counterparty's written acceptance of completion for {reference} and save it into "
+                   f"{folder} as the rulebook names it"),
+            person("pay", "human.pay", ["paid"], ["eligible", "undisputed", "accepted", "packet_current"],
+                   f"the payment itself is a person's act outside GREG: if you decide to pay, pay the amount the "
+                   f"latest case packet shows with the reference {reference}, then export the statement as "
+                   f"{statement} into {folder}; GREG pays no one"),
+        ],
+        "light_cone": {"capabilities": ["case.assess", "case.packet"] if preapprove_packet else ["case.assess"],
+                       "targets": ["fs:*", "deliver:*", "person:*"],
+                       "max_consequence_class": "internal_write" if preapprove_packet else "read_only",
+                       "budget_usd": 0, "horizon": _horizon(horizon_days)},
+        **({"venture": venture} if venture else {}),
+        "provenance": {"origin": "template:request-case", "planner": "greg.templates/1",
+                       "inputs": {"reference": reference, "request": request, "rulebook": book["rulebook"],
+                                  "rulebook_version": book["version"], "rulebook_sha256": params["rulebook_sha256"],
+                                  "label": label}},
+    }
+
+
 def business_loop_amount(price) -> str:
     """A signed price as a plain decimal string with at most two places, never a float."""
     from decimal import Decimal, InvalidOperation
@@ -689,7 +803,7 @@ def business_loop_amount(price) -> str:
 TEMPLATES = {"repo-guardian": repo_guardian, "integration-watch": integration_watch, "workspace-note": workspace_note,
              "engineering-brief": engineering_brief, "venture-assessment": venture_assessment,
              "verify-download": verify_download, "word-limit": word_limit, "human-work": human_work,
-             "business-case": business_case, "shared-work": shared_work}
+             "business-case": business_case, "shared-work": shared_work, "request-case": request_case}
 
 
 def cognitive_problem(problem: dict, *, horizon_days=2) -> dict:

@@ -1,0 +1,6 @@
+date,reference,amount,currency,memo
+2026-10-01,SYNTHETIC-MARKER,0.00,USD,SYNTHETIC — not a real party; every row in this file is invented
+2026-10-14,ACH-54902,28800.00,USD,SYN-SC-2026-0417 draw 3 progress payment
+2026-11-03,ACH-55120,4200.00,USD,Synthetic Supplier E invoice 7781
+2026-11-07,WIRE-3301,35100.00,USD,SYN-SC-2026-0417 progress payment
+2026-11-12,ACH-55240,35100.00,USD,SYN-SC-2026-0417 payment

@@ -903,7 +903,7 @@ def intake_recommendation(params, ctx: InvocationContext) -> dict:
     except rehearsal.RehearsalRefused as exc:   # a refusal with its reason, which names the repository; never a fault
         raise CapabilityError(f"refused: {str(exc)[:600]}") from None
     except rehearsal.RehearsalError as exc:
-        raise CapabilityError(_required_filter(str(exc), configured.get("required_filters", ()))
+        raise CapabilityError(_required_filter(exc.detail or str(exc), configured.get("required_filters", ()))
                               or f"the rehearsal could not be carried out: {str(exc)[:300]}") from None
     except OSError as exc:      # scratch could not be written (a full disk, a path that is not a repository): nothing
         raise CapabilityError(  # was delivered and the repository is untouched, so this is a refusal, not an unknown

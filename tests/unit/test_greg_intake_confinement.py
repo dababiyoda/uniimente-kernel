@@ -849,6 +849,19 @@ def test_p2_a_repository_whose_path_holds_a_newline_is_read(tmp_path, monkeypatc
     assert out["recommendations"] == {"label": "ready to take"}
 
 
+def test_p2_a_git_directory_whose_path_ends_in_a_newline_is_read(tmp_path, monkeypatch):
+    """Re-check of 948888bb, N3. rev-parse ends each answer with one LF and the check removes exactly that one: a
+    check that stripped every trailing LF read a git directory at '.../gd\\n' as '.../gd' and refused the repository
+    (no test said so)."""
+    roots = tmp_path / "roots"
+    where = roots / "repo"
+    shas = build_repo(where)
+    shutil.move(str(where / ".git"), str(roots / "gd\n"))
+    os.symlink(roots / "gd\n", where / ".git")
+    out = recommend(tmp_path, where, shas, ["label"], monkeypatch)
+    assert out["recommendations"] == {"label": "ready to take"}
+
+
 # -- E6, E7: no work-tree attributes, no system attributes -----------------------------------------------------------
 
 def two_heads_one_file(roots: Path) -> tuple[Path, dict]:
@@ -1016,3 +1029,20 @@ def test_p7_a_filter_driver_marked_required_is_never_run_and_its_refusal_says_wh
     out = recommend(tmp_path, repo, shas, ["label"], monkeypatch, "label-only")
     assert out["recommendations"] == {"label": "ready to take"}
     assert not ran.exists()
+
+
+def test_p7_the_refusal_says_why_when_the_tracked_files_name_is_long(tmp_path, monkeypatch):
+    """Re-check of 948888bb, N4. The error kept only the last 300 characters of what git said, so with a long file name
+    'fatal: <path>: smudge filter lfs failed' lost its start, the match failed, and the refusal said only that git
+    archive failed. The reason is read from git's whole answer now."""
+    repo = tmp_path / "roots" / "repo"
+    shas = build_repo(repo)
+    long_name = "d" * 120 + "/" + "e" * 120 + "/" + "f" * 100 + ".bin"
+    pointer = "version https://git-lfs.github.com/spec/v1\noid sha256:" + "a" * 64 + "\nsize 3\n"
+    shas["lfs"] = branch(repo, "lfs", {".gitattributes": "*.bin filter=lfs -text\n", long_name: pointer})
+    git(repo, "checkout", "-q", "base")
+    for key in ("clean", "smudge", "process"):
+        git(repo, "config", f"filter.lfs.{key}", "cat")
+    git(repo, "config", "filter.lfs.required", "true")
+    exc = refused(tmp_path, repo, shas, ["label", "lfs"], monkeypatch)
+    assert str(exc).startswith("refused: ") and "is tracked through the filter driver 'lfs'" in str(exc), exc

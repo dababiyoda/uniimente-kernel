@@ -80,8 +80,19 @@ _WORK: contextvars.ContextVar = contextvars.ContextVar("greg_intake_rehearsal_wo
 CHANGED = ("--no-renames", "--diff-filter=AMT")
 
 
+DETAIL_BYTES = 8192      # how much of what git said a RehearsalError keeps for a reader
+
+
 class RehearsalError(Exception):
-    """The rehearsal could not be carried out as asked (an unknown ref, a tree that could not be exported)."""
+    """The rehearsal could not be carried out as asked (an unknown ref, a tree that could not be exported).
+
+    The message keeps the last 300 characters of what git said; ``detail`` keeps up to DETAIL_BYTES of it, so a reader
+    looking for one line (a required filter driver, re-check of 948888bb, N4) still finds it when a long file name
+    pushed it out of the message."""
+
+    def __init__(self, message: str, *, detail: str = ""):
+        super().__init__(message)
+        self.detail = detail
 
 
 class RehearsalRefused(RehearsalError):
@@ -169,7 +180,8 @@ def git_environment(env: dict):
 def git(root: Path, *args: str, stdin: bytes | None = None, check: bool = True) -> subprocess.CompletedProcess:
     proc = _run(["git", *args], root, stdin=stdin)
     if check and proc.returncode:
-        raise RehearsalError(f"git {' '.join(args[:3])}: {proc.stderr.decode('utf-8', 'replace').strip()[-300:]}")
+        said = proc.stderr.decode("utf-8", "replace").strip()
+        raise RehearsalError(f"git {' '.join(args[:3])}: {said[-300:]}", detail=said[-DETAIL_BYTES:])
     return proc
 
 

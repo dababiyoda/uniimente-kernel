@@ -305,6 +305,13 @@ CONFINEMENT_MUTANTS = [
      "    if not _utf8(repository):", "    if False:"),
     (I, "P7: a required filter driver's failure is refused in one line saying why",
      "        if match.group(2) in required:", "        if False:"),
+    # -- the re-check of 948888bb: N3 (a test gap) and N4 -------------------------------------------------------------
+    (I, "N3: git's word loses exactly one LF, so a git directory whose path ends in LF is read",
+     "        theirs = os.path.realpath(os.fsdecode(said.stdout[:-1]))",
+     '        theirs = os.path.realpath(os.fsdecode(said.stdout.rstrip(b"\\n")))'),
+    (I, "N4: the required-filter reason is read from git's whole answer, not the 300 characters kept in the message",
+     "        raise CapabilityError(_required_filter(exc.detail or str(exc), ",
+     "        raise CapabilityError(_required_filter(str(exc), "),
 ]
 
 if __name__ == "__main__":

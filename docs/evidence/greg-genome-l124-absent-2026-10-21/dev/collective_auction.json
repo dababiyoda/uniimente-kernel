@@ -1,0 +1,149 @@
+{
+ "family": "collective_auction",
+ "partition": "dev",
+ "status_if_heldout_matched": "SUPERSEDED",
+ "arms": {
+  "candidate": {
+   "correct": 10,
+   "wrong": 0,
+   "abstain": 0,
+   "mean_quality": 1.0,
+   "median_seconds": 0.020018
+  },
+  "baseline": {
+   "correct": 0,
+   "wrong": 10,
+   "abstain": 0,
+   "mean_quality": 0.984965,
+   "median_seconds": 0.000404
+  },
+  "competitor": {
+   "correct": 10,
+   "wrong": 0,
+   "abstain": 0,
+   "mean_quality": 1.0,
+   "median_seconds": 0.000786
+  }
+ },
+ "vs_baseline": {
+  "wins": 10,
+  "losses": 0,
+  "ties": 0,
+  "p_better": 0.000977,
+  "p_worse": 1.0
+ },
+ "vs_competitor": {
+  "wins": 0,
+  "losses": 0,
+  "ties": 10,
+  "p_better": 1.0,
+  "p_worse": 1.0
+ },
+ "subregions": {
+  "ample_dense": {
+   "n": 3,
+   "vs_baseline": {
+    "wins": 3,
+    "losses": 0,
+    "ties": 0,
+    "p_better": 0.125,
+    "p_worse": 1.0
+   },
+   "vs_competitor": {
+    "wins": 0,
+    "losses": 0,
+    "ties": 3,
+    "p_better": 1.0,
+    "p_worse": 1.0
+   }
+  },
+  "scarce_dense": {
+   "n": 5,
+   "vs_baseline": {
+    "wins": 5,
+    "losses": 0,
+    "ties": 0,
+    "p_better": 0.03125,
+    "p_worse": 1.0
+   },
+   "vs_competitor": {
+    "wins": 0,
+    "losses": 0,
+    "ties": 5,
+    "p_better": 1.0,
+    "p_worse": 1.0
+   }
+  },
+  "scarce_sparse": {
+   "n": 2,
+   "vs_baseline": {
+    "wins": 2,
+    "losses": 0,
+    "ties": 0,
+    "p_better": 0.25,
+    "p_worse": 1.0
+   },
+   "vs_competitor": {
+    "wins": 0,
+    "losses": 0,
+    "ties": 2,
+    "p_better": 1.0,
+    "p_worse": 1.0
+   }
+  }
+ },
+ "diagnostics": {
+  "median_cpu_seconds": {
+   "candidate": 0.020009,
+   "baseline": 0.000405,
+   "competitor": 0.000788
+  },
+  "note": "reported diagnostics, never inputs to the admission decision: the rule decides on wall-clock medians only. cpu_seconds is the calling thread's CPU time per call (time.thread_time; work on other threads or processes is not in it); diagnostics.median_cpu_seconds is its median per arm; host_load is the host's load at the start and end of the run"
+ },
+ "host_load": {
+  "start": {
+   "at": "2026-10-21T18:06:11.735627+00:00",
+   "loadavg": {
+    "1m": 3.19,
+    "5m": 2.71,
+    "15m": 2.2,
+    "runnable": 3,
+    "entities": 117
+   },
+   "cpu_affinity": [
+    0
+   ],
+   "cpu_count": 4,
+   "other_python_processes": {
+    "count": 3,
+    "by_state": {
+     "R": 2,
+     "S": 1
+    },
+    "running_last_on_our_cpus": 0
+   }
+  },
+  "end": {
+   "at": "2026-10-21T18:06:12.363483+00:00",
+   "loadavg": {
+    "1m": 3.19,
+    "5m": 2.71,
+    "15m": 2.2,
+    "runnable": 3,
+    "entities": 118
+   },
+   "cpu_affinity": [
+    0
+   ],
+   "cpu_count": 4,
+   "other_python_processes": {
+    "count": 3,
+    "by_state": {
+     "R": 2,
+     "S": 1
+    },
+    "running_last_on_our_cpus": 0
+   }
+  }
+ }
+}

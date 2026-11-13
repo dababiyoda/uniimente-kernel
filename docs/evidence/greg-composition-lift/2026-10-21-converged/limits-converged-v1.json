@@ -1,0 +1,11 @@
+{
+  "of": "docs/evidence/greg-composition-lift/2026-10-21-converged/results-converged-v1.json",
+  "added_after_run": true,
+  "why": "run_converged_v1 omitted the limits block every earlier P6 report carries. The frozen results file is not rewritten; its limits are declared here from the pre-registration (prereg-converged-v1.json: families, not_remeasured, reported_not_in_rule). The limits describe the data and the setup, not the result.",
+  "limits": [
+    "F1, F2R, F3 and F4 are constructed to need two intelligences; they test the machinery on the converged code, not whether natural tasks need composition",
+    "F1 truth assumes the stated intervals are calibrated lognormal 90% intervals",
+    "the natural families (F5 M4, F6 bank calls, F7 SNDlib, F8 Uber) are not re-measured: their held-out data were already looked at",
+    "one container; latency is this machine's; the compiled arm measured the compiler at the freeze commit"
+  ]
+}

@@ -1,0 +1,201 @@
+{
+ "schema": "greg-release-exclusions/1",
+ "rule": "Every tracked file that carries third-party-derived values whose redistribution terms are not cleared. These files stay in git as frozen evidence, identified by (commit, path, sha256). No release, tag artifact or Python package may contain them until the founder or counsel clears the source. Founder approval does not substitute for a third party's rights. A file is blocked by its sha256 (also after gzip decompression), by a path that ends in a listed path, or by a listed data marker in its text, at any depth of nested archives. Enforced by scripts/check_release_exclusions.py (Canonical CI) and tests/unit/test_release_exclusions.py.",
+ "markers": {
+  "m4": [
+   "\"F5-"
+  ],
+  "bank": [
+   "\"F6-"
+  ],
+  "sndlib": [
+   "\"F7-",
+   "\"abilene"
+  ],
+  "uber": [
+   "\"F8-"
+  ]
+ },
+ "sources": {
+  "m4": {
+   "description": "M4 weekly series (Mcompetitions/M4-methods; no licence found)",
+   "status": "uncleared: founder or counsel decision (reconciliation record section 12)"
+  },
+  "bank": {
+   "description": "fpp3 bank_calls (GPL-3 package; data credited to Weinberg, Brown and Stroud 2007)",
+   "status": "uncleared: founder or counsel decision (reconciliation record section 12)"
+  },
+  "sndlib": {
+   "description": "SNDlib 1.0 networks via TopoHub (SNDlib licence text unverified)",
+   "status": "uncleared: founder or counsel decision (reconciliation record section 12)"
+  },
+  "uber": {
+   "description": "NYC TLC Uber pickups 2015 (FOIL release via fivethirtyeight/uber-tlc-foil-response; no licence statement)",
+   "status": "uncleared: founder or counsel decision (reconciliation record section 12)"
+  }
+ },
+ "paths": [
+  {
+   "path": "cortex/evaluation/data/m4_weekly.json.gz",
+   "source": "m4",
+   "carries": "the extract",
+   "sha256": "sha256:1da0a9c8c38cb7988e87f01e16fc7337c58626003b2e43022f64aacd092c98c3"
+  },
+  {
+   "path": "cortex/evaluation/composition_lift/suite-v2.json",
+   "source": "m4",
+   "carries": "F5 series histories",
+   "sha256": "sha256:c8a292a803bd4d2baba54328f673f1c3ca657e350209321dde92b77ce835be00"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-08/results-v2.json",
+   "source": "m4",
+   "carries": "F5 actual arrays",
+   "sha256": "sha256:7121586860ebf8b208238624df50df15aa081c1546b6561f83ab00250b9c0a80"
+  },
+  {
+   "path": "cortex/evaluation/data/bank_calls_halfhour.json.gz",
+   "source": "bank",
+   "carries": "the extract",
+   "sha256": "sha256:e2ec4cdae7888dbdbca01a5509cfd770fa2bbdf8d4fb16ed51261fcf8c2a8cdb"
+  },
+  {
+   "path": "cortex/evaluation/composition_lift/suite-v3.json",
+   "source": "bank",
+   "carries": "raw half-hourly counts",
+   "sha256": "sha256:84b323b2302496bc28c639d2f2f2b07cce886d08fd24caee9fbc26b7dc32b4d9"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-14-v3/results-v3.json",
+   "source": "bank",
+   "carries": "raw half-hourly counts",
+   "sha256": "sha256:35aa07f76b897ae3fcbbb2de9d0498cef5da779aa3c0a3e7e9e9e57628d6305a"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-14-v3/run.log",
+   "source": "bank",
+   "carries": "per-item values",
+   "sha256": "sha256:3ceca3b91af885338403837f753627b2d0efcf4adf2f0b69ac984160aa756407"
+  },
+  {
+   "path": "cortex/evaluation/data/sndlib_networks.json.gz",
+   "source": "sndlib",
+   "carries": "the extract",
+   "sha256": "sha256:f9b1d3d45ba9a70e8d2d6dc1db0a674eb21a7bb7559bb6ae7d2debcf65e7fc47"
+  },
+  {
+   "path": "cortex/evaluation/composition_lift/suite-v4.json",
+   "source": "sndlib",
+   "carries": "networks, arcs and demands",
+   "sha256": "sha256:4822eeb343cb1594e86cbb3bac4d6204634ad8e587b5c3f7d76025b1e8249602"
+  },
+  {
+   "path": "cortex/evaluation/composition_lift/freeze-v4.json",
+   "source": "sndlib",
+   "carries": "network identifiers and derived inputs",
+   "sha256": "sha256:f965222d8f9df5a2ff260f989e6594bd944d3aab7a50fcdc3b5aca5037404396"
+  },
+  {
+   "path": "cortex/evaluation/composition_lift/prereg-v4.json",
+   "source": "sndlib",
+   "carries": "network-derived inputs",
+   "sha256": "sha256:547923a6522cb44bea6c9985af5e517eaa3a15fa6b3e4fee7f272e97203b8db1"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-14-v4/results-v4.json",
+   "source": "sndlib",
+   "carries": "per-item network data",
+   "sha256": "sha256:43e7469c3eb2230439979b7ef1570d29658151aa86449a60c4640240c31e545c"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-14-v4/development-v4.json",
+   "source": "sndlib",
+   "carries": "per-item network data",
+   "sha256": "sha256:fd87502edce246b8d1f585fb975eaf30ac29d4941717fbc46a0fd5218b8a263d"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-14-v4/run.log",
+   "source": "sndlib",
+   "carries": "per-item values",
+   "sha256": "sha256:0dd0623a4dd908663f5cd2ceffd08bb55cec7760ecd97b0a12b6c1a9ff56b615"
+  },
+  {
+   "path": "docs/evidence/pr155-f7-audit/2026-10-14/results.json",
+   "source": "sndlib",
+   "carries": "per-item values",
+   "sha256": "sha256:4ecd563ebfc4c40c540e7b0471477f8a5cc443c7d77501a569dec4f938676058"
+  },
+  {
+   "path": "docs/evidence/pr155-f7-spend-diagnostic/2026-10-15/results.json",
+   "source": "sndlib",
+   "carries": "derived budgets and spend",
+   "sha256": "sha256:6bcd44218914135f08ac4c817b86f8a8b8b81dae3c2104c576740052423e822e"
+  },
+  {
+   "path": "cortex/evaluation/data/uber_nyc_2015_halfhour.json.gz",
+   "source": "uber",
+   "carries": "the extract",
+   "sha256": "sha256:33e05dfa57d437b61497e341caacec693eb19d13742f0aadc99768a42e008e0c"
+  },
+  {
+   "path": "cortex/evaluation/composition_lift/suite-v5.json",
+   "source": "uber",
+   "carries": "half-hourly counts",
+   "sha256": "sha256:66cd635fafe8bc53ab5ae27b431d77a7d00f0d2164801e59eb8148701fa5c108"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-14-v5/results-v5.json",
+   "source": "uber",
+   "carries": "per-item values",
+   "sha256": "sha256:1d2a488063598a155620ec243ce174297501d467166644e92bfee76c949d438a"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-14-v5/development-v5.json",
+   "source": "uber",
+   "carries": "per-item values",
+   "sha256": "sha256:fe56a3ac01150d539cd564549c3a313028919c9131d47536522e482713f8d059"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-14-v5/run.log",
+   "source": "uber",
+   "carries": "per-item values",
+   "sha256": "sha256:ee4613a5bf4af4c5320e48fa8f8509531689cf1aea78659a4022a8b5855d7c18"
+  },
+  {
+   "path": "cortex/evaluation/composition_lift/freeze-v6-attempt2.json",
+   "source": "sndlib",
+   "carries": "per-item network-derived values (#158's F7 re-measurement with flow_expansion_mcf)",
+   "sha256": "sha256:66bb0c7dabfa62a22db9ef67e07b6099dd85e5ba067623a5d39d547a8884a5ba"
+  },
+  {
+   "path": "cortex/evaluation/composition_lift/freeze-v6.json",
+   "source": "sndlib",
+   "carries": "per-item network-derived values (#158's F7 re-measurement with flow_expansion_mcf)",
+   "sha256": "sha256:2c6f513e53d1b9c3c6c7e0772c08210bb043f73144cbde97722cb6415f45d656"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-16-f7-mcf/attempt-1/run.log",
+   "source": "sndlib",
+   "carries": "per-item network-derived values (#158's F7 re-measurement with flow_expansion_mcf)",
+   "sha256": "sha256:9d5ccced4b754e859e9958bf90560233fb12338637453bb37f41a39035b74f97"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-16-f7-mcf/results-v6.json",
+   "source": "sndlib",
+   "carries": "per-item network-derived values (#158's F7 re-measurement with flow_expansion_mcf)",
+   "sha256": "sha256:7b746a749f9eb620ac47d82c8c081fb036c4efa6c996b4748250c1fd4087a392"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-16-f7-mcf/run.log",
+   "source": "sndlib",
+   "carries": "per-item network-derived values (#158's F7 re-measurement with flow_expansion_mcf)",
+   "sha256": "sha256:eea74ffe2282460ceda736bb49b92681a8c0123575f48ffabb28c2fa484ee575"
+  }
+ ],
+ "provenance_only": {
+  "paths": [
+   "docs/evidence/greg-data-exposure-ledger.json"
+  ],
+  "why": "generated provenance records that cite listed artifacts by path, digest and instance name (for example SNDlib network names such as abilene) and carry no data values. Exempt from the marker rule only byte-identical to the tracked file; an edited copy is scanned, and the digest, canonical-JSON and path rules still apply."
+ }
+}

@@ -1,0 +1,923 @@
+{
+ "summary": {
+  "partition": "dev",
+  "items": 100,
+  "equal_throughput": 100,
+  "composition_spends_more": 46,
+  "pmcf_spends_more": 0,
+  "same_plan": 44,
+  "excess_share_of_budget_mean": 0.0757,
+  "excess_share_of_budget_max": 0.5583
+ },
+ "rows": [
+  {
+   "item": "F7-abilene-0",
+   "composition_throughput": 50,
+   "pmcf_throughput": 50,
+   "composition_spend": 873,
+   "pmcf_spend": 621,
+   "budget": 880,
+   "same_plan": false
+  },
+  {
+   "item": "F7-abilene-1",
+   "composition_throughput": 50,
+   "pmcf_throughput": 50,
+   "composition_spend": 803,
+   "pmcf_spend": 519,
+   "budget": 880,
+   "same_plan": false
+  },
+  {
+   "item": "F7-abilene-2",
+   "composition_throughput": 58,
+   "pmcf_throughput": 58,
+   "composition_spend": 458,
+   "pmcf_spend": 438,
+   "budget": 460,
+   "same_plan": false
+  },
+  {
+   "item": "F7-abilene-3",
+   "composition_throughput": 53,
+   "pmcf_throughput": 53,
+   "composition_spend": 458,
+   "pmcf_spend": 446,
+   "budget": 460,
+   "same_plan": false
+  },
+  {
+   "item": "F7-abilene-4",
+   "composition_throughput": 39,
+   "pmcf_throughput": 39,
+   "composition_spend": 240,
+   "pmcf_spend": 236,
+   "budget": 240,
+   "same_plan": false
+  },
+  {
+   "item": "F7-abilene-5",
+   "composition_throughput": 48,
+   "pmcf_throughput": 48,
+   "composition_spend": 898,
+   "pmcf_spend": 891,
+   "budget": 900,
+   "same_plan": false
+  },
+  {
+   "item": "F7-abilene-6",
+   "composition_throughput": 55,
+   "pmcf_throughput": 55,
+   "composition_spend": 700,
+   "pmcf_spend": 700,
+   "budget": 700,
+   "same_plan": true
+  },
+  {
+   "item": "F7-abilene-7",
+   "composition_throughput": 59,
+   "pmcf_throughput": 59,
+   "composition_spend": 240,
+   "pmcf_spend": 238,
+   "budget": 240,
+   "same_plan": false
+  },
+  {
+   "item": "F7-abilene-8",
+   "composition_throughput": 40,
+   "pmcf_throughput": 40,
+   "composition_spend": 80,
+   "pmcf_spend": 80,
+   "budget": 80,
+   "same_plan": true
+  },
+  {
+   "item": "F7-abilene-9",
+   "composition_throughput": 53,
+   "pmcf_throughput": 53,
+   "composition_spend": 690,
+   "pmcf_spend": 667,
+   "budget": 700,
+   "same_plan": false
+  },
+  {
+   "item": "F7-abilene-10",
+   "composition_throughput": 48,
+   "pmcf_throughput": 48,
+   "composition_spend": 899,
+   "pmcf_spend": 852,
+   "budget": 900,
+   "same_plan": false
+  },
+  {
+   "item": "F7-abilene-11",
+   "composition_throughput": 51,
+   "pmcf_throughput": 51,
+   "composition_spend": 829,
+   "pmcf_spend": 806,
+   "budget": 840,
+   "same_plan": false
+  },
+  {
+   "item": "F7-abilene-12",
+   "composition_throughput": 40,
+   "pmcf_throughput": 40,
+   "composition_spend": 80,
+   "pmcf_spend": 80,
+   "budget": 80,
+   "same_plan": true
+  },
+  {
+   "item": "F7-abilene-13",
+   "composition_throughput": 39,
+   "pmcf_throughput": 39,
+   "composition_spend": 200,
+   "pmcf_spend": 200,
+   "budget": 200,
+   "same_plan": true
+  },
+  {
+   "item": "F7-abilene-14",
+   "composition_throughput": 61,
+   "pmcf_throughput": 61,
+   "composition_spend": 220,
+   "pmcf_spend": 210,
+   "budget": 220,
+   "same_plan": false
+  },
+  {
+   "item": "F7-abilene-15",
+   "composition_throughput": 39,
+   "pmcf_throughput": 39,
+   "composition_spend": 356,
+   "pmcf_spend": 356,
+   "budget": 360,
+   "same_plan": true
+  },
+  {
+   "item": "F7-abilene-16",
+   "composition_throughput": 46,
+   "pmcf_throughput": 46,
+   "composition_spend": 320,
+   "pmcf_spend": 308,
+   "budget": 320,
+   "same_plan": false
+  },
+  {
+   "item": "F7-abilene-17",
+   "composition_throughput": 50,
+   "pmcf_throughput": 50,
+   "composition_spend": 980,
+   "pmcf_spend": 968,
+   "budget": 980,
+   "same_plan": false
+  },
+  {
+   "item": "F7-abilene-18",
+   "composition_throughput": 52,
+   "pmcf_throughput": 52,
+   "composition_spend": 274,
+   "pmcf_spend": 274,
+   "budget": 280,
+   "same_plan": true
+  },
+  {
+   "item": "F7-abilene-19",
+   "composition_throughput": 48,
+   "pmcf_throughput": 48,
+   "composition_spend": 520,
+   "pmcf_spend": 510,
+   "budget": 520,
+   "same_plan": false
+  },
+  {
+   "item": "F7-di-yuan-0",
+   "composition_throughput": 76,
+   "pmcf_throughput": 76,
+   "composition_spend": 1180,
+   "pmcf_spend": 1180,
+   "budget": 1180,
+   "same_plan": true
+  },
+  {
+   "item": "F7-di-yuan-1",
+   "composition_throughput": 72,
+   "pmcf_throughput": 72,
+   "composition_spend": 1879,
+   "pmcf_spend": 1879,
+   "budget": 1920,
+   "same_plan": true
+  },
+  {
+   "item": "F7-di-yuan-2",
+   "composition_throughput": 80,
+   "pmcf_throughput": 80,
+   "composition_spend": 3609,
+   "pmcf_spend": 3587,
+   "budget": 3700,
+   "same_plan": false
+  },
+  {
+   "item": "F7-di-yuan-3",
+   "composition_throughput": 79,
+   "pmcf_throughput": 79,
+   "composition_spend": 2182,
+   "pmcf_spend": 2182,
+   "budget": 2200,
+   "same_plan": true
+  },
+  {
+   "item": "F7-di-yuan-4",
+   "composition_throughput": 54,
+   "pmcf_throughput": 54,
+   "composition_spend": 2755,
+   "pmcf_spend": 2755,
+   "budget": 2780,
+   "same_plan": false
+  },
+  {
+   "item": "F7-di-yuan-5",
+   "composition_throughput": 47,
+   "pmcf_throughput": 47,
+   "composition_spend": 3368,
+   "pmcf_spend": 3332,
+   "budget": 3440,
+   "same_plan": false
+  },
+  {
+   "item": "F7-di-yuan-6",
+   "composition_throughput": 52,
+   "pmcf_throughput": 52,
+   "composition_spend": 1420,
+   "pmcf_spend": 1365,
+   "budget": 1420,
+   "same_plan": false
+  },
+  {
+   "item": "F7-di-yuan-7",
+   "composition_throughput": 62,
+   "pmcf_throughput": 62,
+   "composition_spend": 3995,
+   "pmcf_spend": 3848,
+   "budget": 4020,
+   "same_plan": false
+  },
+  {
+   "item": "F7-di-yuan-8",
+   "composition_throughput": 72,
+   "pmcf_throughput": 72,
+   "composition_spend": 2885,
+   "pmcf_spend": 2885,
+   "budget": 2940,
+   "same_plan": true
+  },
+  {
+   "item": "F7-di-yuan-9",
+   "composition_throughput": 53,
+   "pmcf_throughput": 53,
+   "composition_spend": 920,
+   "pmcf_spend": 920,
+   "budget": 920,
+   "same_plan": true
+  },
+  {
+   "item": "F7-di-yuan-10",
+   "composition_throughput": 69,
+   "pmcf_throughput": 69,
+   "composition_spend": 2120,
+   "pmcf_spend": 2120,
+   "budget": 2120,
+   "same_plan": true
+  },
+  {
+   "item": "F7-di-yuan-11",
+   "composition_throughput": 73,
+   "pmcf_throughput": 73,
+   "composition_spend": 1522,
+   "pmcf_spend": 1522,
+   "budget": 1540,
+   "same_plan": true
+  },
+  {
+   "item": "F7-di-yuan-12",
+   "composition_throughput": 64,
+   "pmcf_throughput": 64,
+   "composition_spend": 2477,
+   "pmcf_spend": 2411,
+   "budget": 2500,
+   "same_plan": false
+  },
+  {
+   "item": "F7-di-yuan-13",
+   "composition_throughput": 52,
+   "pmcf_throughput": 52,
+   "composition_spend": 660,
+   "pmcf_spend": 660,
+   "budget": 660,
+   "same_plan": true
+  },
+  {
+   "item": "F7-di-yuan-14",
+   "composition_throughput": 65,
+   "pmcf_throughput": 65,
+   "composition_spend": 3212,
+   "pmcf_spend": 3212,
+   "budget": 3240,
+   "same_plan": true
+  },
+  {
+   "item": "F7-di-yuan-15",
+   "composition_throughput": 58,
+   "pmcf_throughput": 58,
+   "composition_spend": 2111,
+   "pmcf_spend": 2111,
+   "budget": 2120,
+   "same_plan": true
+  },
+  {
+   "item": "F7-di-yuan-16",
+   "composition_throughput": 52,
+   "pmcf_throughput": 52,
+   "composition_spend": 1420,
+   "pmcf_spend": 1420,
+   "budget": 1420,
+   "same_plan": true
+  },
+  {
+   "item": "F7-di-yuan-17",
+   "composition_throughput": 51,
+   "pmcf_throughput": 51,
+   "composition_spend": 1180,
+   "pmcf_spend": 1170,
+   "budget": 1180,
+   "same_plan": false
+  },
+  {
+   "item": "F7-di-yuan-18",
+   "composition_throughput": 49,
+   "pmcf_throughput": 49,
+   "composition_spend": 3690,
+   "pmcf_spend": 3548,
+   "budget": 3700,
+   "same_plan": false
+  },
+  {
+   "item": "F7-di-yuan-19",
+   "composition_throughput": 56,
+   "pmcf_throughput": 56,
+   "composition_spend": 2584,
+   "pmcf_spend": 2506,
+   "budget": 2620,
+   "same_plan": false
+  },
+  {
+   "item": "F7-india35-0",
+   "composition_throughput": 46,
+   "pmcf_throughput": 46,
+   "composition_spend": 671,
+   "pmcf_spend": 657,
+   "budget": 680,
+   "same_plan": false
+  },
+  {
+   "item": "F7-india35-1",
+   "composition_throughput": 56,
+   "pmcf_throughput": 56,
+   "composition_spend": 140,
+   "pmcf_spend": 140,
+   "budget": 140,
+   "same_plan": true
+  },
+  {
+   "item": "F7-india35-2",
+   "composition_throughput": 52,
+   "pmcf_throughput": 52,
+   "composition_spend": 196,
+   "pmcf_spend": 196,
+   "budget": 200,
+   "same_plan": true
+  },
+  {
+   "item": "F7-india35-3",
+   "composition_throughput": 31,
+   "pmcf_throughput": 31,
+   "composition_spend": 808,
+   "pmcf_spend": 479,
+   "budget": 1180,
+   "same_plan": false
+  },
+  {
+   "item": "F7-india35-4",
+   "composition_throughput": 30,
+   "pmcf_throughput": 30,
+   "composition_spend": 439,
+   "pmcf_spend": 356,
+   "budget": 500,
+   "same_plan": false
+  },
+  {
+   "item": "F7-india35-5",
+   "composition_throughput": 58,
+   "pmcf_throughput": 58,
+   "composition_spend": 741,
+   "pmcf_spend": 741,
+   "budget": 820,
+   "same_plan": true
+  },
+  {
+   "item": "F7-india35-6",
+   "composition_throughput": 54,
+   "pmcf_throughput": 54,
+   "composition_spend": 820,
+   "pmcf_spend": 801,
+   "budget": 820,
+   "same_plan": false
+  },
+  {
+   "item": "F7-india35-7",
+   "composition_throughput": 25,
+   "pmcf_throughput": 25,
+   "composition_spend": 658,
+   "pmcf_spend": 474,
+   "budget": 900,
+   "same_plan": false
+  },
+  {
+   "item": "F7-india35-8",
+   "composition_throughput": 44,
+   "pmcf_throughput": 44,
+   "composition_spend": 877,
+   "pmcf_spend": 832,
+   "budget": 880,
+   "same_plan": false
+  },
+  {
+   "item": "F7-india35-9",
+   "composition_throughput": 56,
+   "pmcf_throughput": 56,
+   "composition_spend": 1080,
+   "pmcf_spend": 1060,
+   "budget": 1080,
+   "same_plan": false
+  },
+  {
+   "item": "F7-india35-10",
+   "composition_throughput": 26,
+   "pmcf_throughput": 26,
+   "composition_spend": 239,
+   "pmcf_spend": 105,
+   "budget": 240,
+   "same_plan": false
+  },
+  {
+   "item": "F7-india35-11",
+   "composition_throughput": 42,
+   "pmcf_throughput": 42,
+   "composition_spend": 650,
+   "pmcf_spend": 650,
+   "budget": 680,
+   "same_plan": true
+  },
+  {
+   "item": "F7-india35-12",
+   "composition_throughput": 42,
+   "pmcf_throughput": 42,
+   "composition_spend": 275,
+   "pmcf_spend": 275,
+   "budget": 280,
+   "same_plan": true
+  },
+  {
+   "item": "F7-india35-13",
+   "composition_throughput": 56,
+   "pmcf_throughput": 56,
+   "composition_spend": 180,
+   "pmcf_spend": 180,
+   "budget": 180,
+   "same_plan": true
+  },
+  {
+   "item": "F7-india35-14",
+   "composition_throughput": 53,
+   "pmcf_throughput": 53,
+   "composition_spend": 1034,
+   "pmcf_spend": 1027,
+   "budget": 1040,
+   "same_plan": false
+  },
+  {
+   "item": "F7-india35-15",
+   "composition_throughput": 45,
+   "pmcf_throughput": 45,
+   "composition_spend": 557,
+   "pmcf_spend": 536,
+   "budget": 560,
+   "same_plan": false
+  },
+  {
+   "item": "F7-india35-16",
+   "composition_throughput": 52,
+   "pmcf_throughput": 52,
+   "composition_spend": 735,
+   "pmcf_spend": 724,
+   "budget": 740,
+   "same_plan": false
+  },
+  {
+   "item": "F7-india35-17",
+   "composition_throughput": 48,
+   "pmcf_throughput": 48,
+   "composition_spend": 258,
+   "pmcf_spend": 258,
+   "budget": 260,
+   "same_plan": true
+  },
+  {
+   "item": "F7-india35-18",
+   "composition_throughput": 38,
+   "pmcf_throughput": 38,
+   "composition_spend": 678,
+   "pmcf_spend": 353,
+   "budget": 760,
+   "same_plan": false
+  },
+  {
+   "item": "F7-india35-19",
+   "composition_throughput": 32,
+   "pmcf_throughput": 32,
+   "composition_spend": 412,
+   "pmcf_spend": 350,
+   "budget": 520,
+   "same_plan": false
+  },
+  {
+   "item": "F7-nobel-germany-0",
+   "composition_throughput": 56,
+   "pmcf_throughput": 56,
+   "composition_spend": 139,
+   "pmcf_spend": 139,
+   "budget": 140,
+   "same_plan": false
+  },
+  {
+   "item": "F7-nobel-germany-1",
+   "composition_throughput": 77,
+   "pmcf_throughput": 77,
+   "composition_spend": 79,
+   "pmcf_spend": 79,
+   "budget": 80,
+   "same_plan": true
+  },
+  {
+   "item": "F7-nobel-germany-2",
+   "composition_throughput": 51,
+   "pmcf_throughput": 51,
+   "composition_spend": 60,
+   "pmcf_spend": 60,
+   "budget": 60,
+   "same_plan": true
+  },
+  {
+   "item": "F7-nobel-germany-3",
+   "composition_throughput": 85,
+   "pmcf_throughput": 85,
+   "composition_spend": 79,
+   "pmcf_spend": 79,
+   "budget": 80,
+   "same_plan": true
+  },
+  {
+   "item": "F7-nobel-germany-4",
+   "composition_throughput": 69,
+   "pmcf_throughput": 69,
+   "composition_spend": 118,
+   "pmcf_spend": 118,
+   "budget": 120,
+   "same_plan": true
+  },
+  {
+   "item": "F7-nobel-germany-5",
+   "composition_throughput": 65,
+   "pmcf_throughput": 65,
+   "composition_spend": 140,
+   "pmcf_spend": 120,
+   "budget": 140,
+   "same_plan": false
+  },
+  {
+   "item": "F7-nobel-germany-6",
+   "composition_throughput": 57,
+   "pmcf_throughput": 57,
+   "composition_spend": 59,
+   "pmcf_spend": 59,
+   "budget": 60,
+   "same_plan": true
+  },
+  {
+   "item": "F7-nobel-germany-7",
+   "composition_throughput": 43,
+   "pmcf_throughput": 43,
+   "composition_spend": 20,
+   "pmcf_spend": 20,
+   "budget": 20,
+   "same_plan": false
+  },
+  {
+   "item": "F7-nobel-germany-8",
+   "composition_throughput": 57,
+   "pmcf_throughput": 57,
+   "composition_spend": 117,
+   "pmcf_spend": 117,
+   "budget": 120,
+   "same_plan": false
+  },
+  {
+   "item": "F7-nobel-germany-9",
+   "composition_throughput": 71,
+   "pmcf_throughput": 71,
+   "composition_spend": 40,
+   "pmcf_spend": 40,
+   "budget": 40,
+   "same_plan": true
+  },
+  {
+   "item": "F7-nobel-germany-10",
+   "composition_throughput": 76,
+   "pmcf_throughput": 76,
+   "composition_spend": 79,
+   "pmcf_spend": 78,
+   "budget": 80,
+   "same_plan": false
+  },
+  {
+   "item": "F7-nobel-germany-11",
+   "composition_throughput": 43,
+   "pmcf_throughput": 43,
+   "composition_spend": 20,
+   "pmcf_spend": 20,
+   "budget": 20,
+   "same_plan": true
+  },
+  {
+   "item": "F7-nobel-germany-12",
+   "composition_throughput": 45,
+   "pmcf_throughput": 45,
+   "composition_spend": 40,
+   "pmcf_spend": 40,
+   "budget": 40,
+   "same_plan": false
+  },
+  {
+   "item": "F7-nobel-germany-13",
+   "composition_throughput": 52,
+   "pmcf_throughput": 52,
+   "composition_spend": 99,
+   "pmcf_spend": 99,
+   "budget": 100,
+   "same_plan": true
+  },
+  {
+   "item": "F7-nobel-germany-14",
+   "composition_throughput": 72,
+   "pmcf_throughput": 72,
+   "composition_spend": 60,
+   "pmcf_spend": 60,
+   "budget": 60,
+   "same_plan": true
+  },
+  {
+   "item": "F7-nobel-germany-15",
+   "composition_throughput": 47,
+   "pmcf_throughput": 47,
+   "composition_spend": 40,
+   "pmcf_spend": 40,
+   "budget": 40,
+   "same_plan": false
+  },
+  {
+   "item": "F7-nobel-germany-16",
+   "composition_throughput": 68,
+   "pmcf_throughput": 68,
+   "composition_spend": 60,
+   "pmcf_spend": 60,
+   "budget": 60,
+   "same_plan": false
+  },
+  {
+   "item": "F7-nobel-germany-17",
+   "composition_throughput": 49,
+   "pmcf_throughput": 49,
+   "composition_spend": 80,
+   "pmcf_spend": 80,
+   "budget": 80,
+   "same_plan": false
+  },
+  {
+   "item": "F7-nobel-germany-18",
+   "composition_throughput": 51,
+   "pmcf_throughput": 51,
+   "composition_spend": 60,
+   "pmcf_spend": 60,
+   "budget": 60,
+   "same_plan": true
+  },
+  {
+   "item": "F7-nobel-germany-19",
+   "composition_throughput": 59,
+   "pmcf_throughput": 59,
+   "composition_spend": 40,
+   "pmcf_spend": 39,
+   "budget": 40,
+   "same_plan": false
+  },
+  {
+   "item": "F7-polska-0",
+   "composition_throughput": 64,
+   "pmcf_throughput": 64,
+   "composition_spend": 178,
+   "pmcf_spend": 175,
+   "budget": 180,
+   "same_plan": false
+  },
+  {
+   "item": "F7-polska-1",
+   "composition_throughput": 79,
+   "pmcf_throughput": 79,
+   "composition_spend": 100,
+   "pmcf_spend": 95,
+   "budget": 100,
+   "same_plan": false
+  },
+  {
+   "item": "F7-polska-2",
+   "composition_throughput": 60,
+   "pmcf_throughput": 60,
+   "composition_spend": 80,
+   "pmcf_spend": 80,
+   "budget": 80,
+   "same_plan": true
+  },
+  {
+   "item": "F7-polska-3",
+   "composition_throughput": 68,
+   "pmcf_throughput": 68,
+   "composition_spend": 160,
+   "pmcf_spend": 152,
+   "budget": 160,
+   "same_plan": false
+  },
+  {
+   "item": "F7-polska-4",
+   "composition_throughput": 85,
+   "pmcf_throughput": 85,
+   "composition_spend": 120,
+   "pmcf_spend": 120,
+   "budget": 120,
+   "same_plan": true
+  },
+  {
+   "item": "F7-polska-5",
+   "composition_throughput": 76,
+   "pmcf_throughput": 76,
+   "composition_spend": 100,
+   "pmcf_spend": 100,
+   "budget": 100,
+   "same_plan": true
+  },
+  {
+   "item": "F7-polska-6",
+   "composition_throughput": 61,
+   "pmcf_throughput": 61,
+   "composition_spend": 100,
+   "pmcf_spend": 100,
+   "budget": 100,
+   "same_plan": true
+  },
+  {
+   "item": "F7-polska-7",
+   "composition_throughput": 66,
+   "pmcf_throughput": 66,
+   "composition_spend": 40,
+   "pmcf_spend": 40,
+   "budget": 40,
+   "same_plan": true
+  },
+  {
+   "item": "F7-polska-8",
+   "composition_throughput": 77,
+   "pmcf_throughput": 77,
+   "composition_spend": 98,
+   "pmcf_spend": 98,
+   "budget": 100,
+   "same_plan": false
+  },
+  {
+   "item": "F7-polska-9",
+   "composition_throughput": 66,
+   "pmcf_throughput": 66,
+   "composition_spend": 40,
+   "pmcf_spend": 40,
+   "budget": 40,
+   "same_plan": false
+  },
+  {
+   "item": "F7-polska-10",
+   "composition_throughput": 75,
+   "pmcf_throughput": 75,
+   "composition_spend": 40,
+   "pmcf_spend": 40,
+   "budget": 40,
+   "same_plan": true
+  },
+  {
+   "item": "F7-polska-11",
+   "composition_throughput": 55,
+   "pmcf_throughput": 55,
+   "composition_spend": 158,
+   "pmcf_spend": 155,
+   "budget": 160,
+   "same_plan": false
+  },
+  {
+   "item": "F7-polska-12",
+   "composition_throughput": 85,
+   "pmcf_throughput": 85,
+   "composition_spend": 40,
+   "pmcf_spend": 40,
+   "budget": 40,
+   "same_plan": true
+  },
+  {
+   "item": "F7-polska-13",
+   "composition_throughput": 61,
+   "pmcf_throughput": 61,
+   "composition_spend": 160,
+   "pmcf_spend": 158,
+   "budget": 160,
+   "same_plan": false
+  },
+  {
+   "item": "F7-polska-14",
+   "composition_throughput": 76,
+   "pmcf_throughput": 76,
+   "composition_spend": 160,
+   "pmcf_spend": 160,
+   "budget": 160,
+   "same_plan": true
+  },
+  {
+   "item": "F7-polska-15",
+   "composition_throughput": 68,
+   "pmcf_throughput": 68,
+   "composition_spend": 139,
+   "pmcf_spend": 134,
+   "budget": 140,
+   "same_plan": false
+  },
+  {
+   "item": "F7-polska-16",
+   "composition_throughput": 80,
+   "pmcf_throughput": 80,
+   "composition_spend": 159,
+   "pmcf_spend": 155,
+   "budget": 160,
+   "same_plan": false
+  },
+  {
+   "item": "F7-polska-17",
+   "composition_throughput": 89,
+   "pmcf_throughput": 89,
+   "composition_spend": 60,
+   "pmcf_spend": 60,
+   "budget": 60,
+   "same_plan": true
+  },
+  {
+   "item": "F7-polska-18",
+   "composition_throughput": 62,
+   "pmcf_throughput": 62,
+   "composition_spend": 97,
+   "pmcf_spend": 97,
+   "budget": 100,
+   "same_plan": true
+  },
+  {
+   "item": "F7-polska-19",
+   "composition_throughput": 66,
+   "pmcf_throughput": 66,
+   "composition_spend": 178,
+   "pmcf_spend": 172,
+   "budget": 180,
+   "same_plan": false
+  }
+ ],
+ "source_commit": "0f51b26a000d9b72736c513065713b25972719d8",
+ "working_tree_dirty": false,
+ "versions": {
+  "networkx": "3.6.1",
+  "ortools": "9.15.6755",
+  "scipy": "1.17.1",
+  "numpy": "2.4.6"
+ },
+ "python": "3.11.15"
+}

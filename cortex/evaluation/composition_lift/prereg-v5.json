@@ -1,0 +1,116 @@
+{
+ "schema": "greg-p6-preregistration/1",
+ "family_id": "F8",
+ "title": "Staff the next half hour of NYC Uber pickups against a standing plan (Layer 1 basal tracker -> Erlang C queueing)",
+ "natural": true,
+ "natural_scope": "natural: real pickups and realised outcomes (the count that actually arrived in the decision block); the service time, waiting target, cost weights, decision blocks and notice are a declared decision layer",
+ "data_provenance": {
+  "source": "NYC Taxi and Limousine Commission Uber trip records, January-June 2015, released under the Freedom of Information Law and published by FiveThirtyEight: https://raw.githubusercontent.com/fivethirtyeight/uber-tlc-foil-response/master/uber-trip-data/uber-raw-data-janjune-15.csv.zip (sha256 b85c7373ce0b0186eb204e14600033033abf0b2ce47cc97b4ca59e1ec6ec8bec; 14,270,479 rows) with the TLC zone table https://raw.githubusercontent.com/fivethirtyeight/uber-tlc-foil-response/master/uber-trip-data/taxi-zone-lookup.csv (sha256 5dc91d7d4eb133ca6ce612a0ca9919383baf3193d879311ea459a10dd646e076); extract built by cortex/evaluation/data/build_uber_nyc_2015.py (refuses other digests, skips the __MACOSX members, deterministic gzip)",
+  "file": "cortex/evaluation/data/uber_nyc_2015_halfhour.json.gz",
+  "sha256": "33e05dfa57d437b61497e341caacec693eb19d13742f0aadc99768a42e008e0c",
+  "licence": "public records: NYC TLC trip records released under FOIL and published by FiveThirtyEight; no open licence is stated; evaluation use only; attribute the NYC TLC and FiveThirtyEight; redistribution beyond evaluation is a founder decision",
+  "streams": [
+   "Manhattan",
+   "Brooklyn",
+   "Queens (excluding JFK and LaGuardia)",
+   "Bronx",
+   "JFK Airport",
+   "LaGuardia Airport"
+  ],
+  "left_out": "Staten Island, Newark Airport (EWR) and the TLC Unknown zones: 13,328 rows, counted in the extract",
+  "clock": "blocks are local wall-clock time in New York (America/New_York), binned from the text of Pickup_date (build_uber_nyc_2015.CLOCK). Daylight saving time starts on 2015-03-08, a held-out Sunday: its local hour 02:00-03:00 does not exist, so blocks 4-5 of that date hold zero pickups in every stream. Those zeros are structural, not demand; the extract's bytes are unchanged and the calendar (local_block_seconds) marks the blocks missing. No date in the data has a repeated hour",
+  "independent_check": "the builder's extract and the designer's separate aggregation agree on all 1086 stream-days"
+ },
+ "decision_layer": {
+  "item": "one (stream, date, decision block)",
+  "decision_blocks": "08:00, 13:00 and 18:00 (blocks 16, 26, 36 of 48), decided with 30 minutes' notice: the payload holds today's counts through two blocks before the decision block (through 07:30 for 08:00)",
+  "missing_blocks": "a block of a local hour that does not exist is MISSING, decided from the calendar alone before any arm runs (only 2015-03-08 blocks 4-5): that date's payloads carry null for it (no tracker measurement, no EWMA ratio, left out of both sums of the cumulative ratio), and a standing plan averages, per block, only the previous same weekdays that have the block (the plans of 2015-03-15, 03-22, 03-29 and 04-05 average three weeks for blocks 4-5). A decision block and the latest observed block never fall in a missing hour; a pickup recorded in one, or a repeated hour, makes the harness refuse the data",
+  "standing_plan": "per block, the mean count of that block on the 4 previous same weekdays (only those that have the block: a missing block is left out of the mean)",
+  "service": "mean service time 1200 s, target wait 120 s, P(wait > target) <= 0.2, block 1800 s",
+  "cost": "c * agents + P * max(0, required - agents), c = 1, P in {3, 10, 30} by date index (days since 2015-01-01) mod 3; critical fractile q* = 1 - c/P",
+  "truth": "required = Erlang C requirement at the realised rate N_k / 1800, computed on the evaluation side (greg.cognition.genomes.solvers_b.erlang_truth, SciPy Poisson path)",
+  "fallback": "when an arm declines (abstains or emits a malformed plan) the system staffs the standing plan by Erlang C; the fallback is costed, and declines are counted and reported per arm as its abstention rate",
+  "tracker": "kalman_track (basal_kalman 1.0.0, constant velocity, dt = 1) on z_j = N_j / plan_j for the observed blocks, null where plan_j < 0.5 x the day's mean plan and where N_j is missing; fewer than 3 usable measurements abstains; prior mean [1, 0], prior variance [prior_var, q]; q, r and prior_var per stream by maximum likelihood of the genome's innovations recursion over development days only, on the grids q = 10^(x/4), x in -32..-4; r = 10^(x/4), x in -20..0; prior_var = 10^(x/4), x in -16..0; computed deterministically when the suite is built and frozen with it",
+  "translation": "q* = 1 - c/P; m = positions[-1] + z(q*) sqrt(final_position_variance + r); rate = plan_next * max(m, 0.05) / 1800; a non-finite or non-positive rate is TRANSLATION_FAILED; a tracker abstention is STAGE_ABSTAINED; the staffing plan's own numbers are checked before any stage runs: block_seconds a finite number above 0, agent_cost and shortage_penalty finite numbers with shortage_penalty > agent_cost > 0, and q* rounded to 6 decimals strictly between 0 and 1 (a refused plan raises CognitionError; no F8 item reaches these checks: block 1800 s, c = 1, P in {3, 10, 30})"
+ },
+ "n_heldout": 2196,
+ "n_heldout_note": "122 held-out dates x 6 streams x 3 decision blocks",
+ "partition_rule": "by date, fixed before any arm ran: 2015-01-01..01-28 history only (standing plans); 2015-01-29..02-28 development (31 dates, 558 items: static recipe choice, tracker noise MLE, EWMA alpha and residual sd); 2015-03-01..06-30 held out (122 dates, 2196 items)",
+ "constituents": [
+  "kalman_alone (kalman_track through cortex.reason; the q* multiplier x plan, staffed by the 85% occupancy rule)",
+  "erlang_alone (erlang_c_staffing through cortex.reason at the latest observed block's rate; that block, k - 2, is never missing)"
+ ],
+ "static_arm": {
+  "chosen_on": "development",
+  "must_decide": true,
+  "rule": "the recipe with the lowest total development cost (fallbacks costed) among recipes that can run on every development item; a recipe whose geometry does not fit an item (NO_RECIPE or a refused payload) cannot run and is not a static baseline. A tracker abstention is a decision to fall back, costed, not a failure to run."
+ },
+ "routed_arm": "chain without a pinned recipe: the geometry router chooses (it matches payload keys, so routed is expected to equal static; reported, no routing claim)",
+ "compiled_arm": {
+  "entry": "compile",
+  "request": "{compile: {geometry: {consequence_class: read_only}, data: <the item payload>}}",
+  "role": "reported, not part of the rule"
+ },
+ "practitioner_arms": [
+  "standing_plan_then_staff (the plan -> Erlang C; identical to the fallback; in process)",
+  "cumulative_ratio_then_staff (today-so-far / plan-so-far multiplier x plan, over the observed blocks that are not missing -> Erlang C; in process)",
+  "ewma_ratio_then_staff (EWMA of the usable ratios, alpha per stream chosen on development by lead-2 squared error -> Erlang C; in process)"
+ ],
+ "ablations": [
+  "ewma_ratio_quantile_then_staff (EWMA + z(q*) x the EWMA's development residual sd -> Erlang C; in process): a simpler tracker with a quantile",
+  "kalman_median_then_staff (the tracker's median multiplier -> Erlang C, both through cortex.reason): isolates the quantile"
+ ],
+ "cost_metric": "continuous realised cost per item, fallbacks costed: c * agents + P * max(0, required - agents); outcomes decided / fallback / wrong (malformed plan) counted per arm",
+ "latency_rule": {
+  "kind": "multiplier",
+  "value": 5.0,
+  "rationale": "staffing is decided 30 minutes ahead, so seconds do not matter inside the 60 s chain budget; 5x bounds the compute composition may spend over the best constituent. Declared before any held-out arm was timed."
+ },
+ "rule": "F8 counts toward VPL when routed composition's total realised cost over the 2196 held-out items (fallbacks costed) is below the best constituent's, it emits no more malformed plans than the best constituent (the VPL definition's no added false answers), the one-sided exact sign test over items (cost lower by more than 1e-9 = win; ties dropped) gives p < alpha, and its median latency is within 60 s and at most 5x the best constituent's median. Best constituent chosen on held-out results (lowest total realised cost).",
+ "alpha": 0.05,
+ "secondary": [
+  "per-date sign test (streams and blocks summed per date, 122 dates)",
+  "per-stream totals and sign tests",
+  "abstention (fallback) rate per arm",
+  "routed against each practitioner arm and each ablation (sign test and cost reduction)",
+  "compiled arm against routed",
+  "coverage: share of items staffed at or above the requirement, per q*",
+  "one-sided Wilcoxon signed-rank p against the best constituent"
+ ],
+ "disclosures": [
+  "the designer ran arms on February 2015 development days and inspected April-May 2014 Uber data (a different release) while choosing the family; on development, the EWMA-ratio-plus-q* ablation beat the Kalman composition 69-41 in the designer's feasibility run",
+  "the builder ran every arm on all 558 development items (GREG arms through cortex.reason with the two families attached in an evaluation-only registry view; practitioner arms and the EWMA ablation in process) before completing this pre-registration. Development only, not evidence: routed composition 195,960 against kalman_alone 210,142 (the best constituent there; 334-94 items, 30-1 dates) and erlang_alone 433,398; against ewma_ratio_quantile_then_staff 162,838, routed won 303-152 items but cost 20.3% more in total: on the 501 items it answered it cost 133,900 against 139,732, and on its 57 fallbacks 62,060 against 23,106. Routed, static and compiled answers were identical on all 558 items. No parameter, rule or arm was changed after that run until the independent review recorded in disclosure [5], whose design change was made from the calendar alone and left every development result identical",
+  "development abstention (fallback) rate of the composition and of kalman_alone: 10.2% (57 of 558): LaGuardia 08:00 on 30 of 31 dates and Manhattan 08:00 on 5 (fewer than 3 usable measurements: the night blocks are planned below half the day's mean), the other 22 the Kalman genome's own innovation (NIS) test refusing its declared noise model. The standing-plan fallback is costed for every declining arm, as specified before the development run; on development it is the decisive term against the EWMA ablation",
+  "while auditing the extract for gaps the builder printed, over all 181 dates (held-out dates included), each stream's dates with a daily total below half its median and the LaGuardia dates with a zero count at 07:00, 12:00 or 17:00, and checked equality of the whole extract against the designer's separate aggregation. No arm ran on a held-out date; the design had been fixed before that look, and the only later change is the review-driven change recorded in disclosure [5], made from the calendar alone",
+  "the development latency was measured on one core shared with other processes running on the same machine; held-out latency will be this machine's under whatever load it then has",
+  "independent review of 53082f4 (2026-10-14), before any held-out arm ran and before the suite was built: the extract bins pickups by local wall-clock time, so 2015-03-08 (held out; daylight saving time starts) has no 02:00-03:00 and its blocks 4-5 are structural zeros, declared nowhere. The development partition contains no transition. On a development Sunday with those two observed counts set to zero, routed composition fell back on 7 of 12 items (the tracker read a collapse of demand and its NIS test refused), the EWMA arms barely moved, and the next four Sundays' plans would have averaged the zeros in. The design was changed from the calendar alone (the missing_blocks rule above; build_uber_nyc_2015.local_block_seconds; the composition contract now takes a null observed count as no measurement). The extract's bytes and digest are unchanged. Development calibration, all 558 development items and every arm on 18 sampled development items are identical before and after the change",
+  "held-out looks around that review: the reviewer printed five held-out counts to confirm the artefact (Manhattan, 2015-03-08, blocks 3-7: 1423, 0, 0, 1321, 1087; three of them are real demand and are tracker measurements for that date's Manhattan items) and compared a separate aggregation with the extract over all 181 dates, held-out included; the builder who made the change checked one boolean over the held-out date 2015-03-08, that all six streams hold zero pickups in blocks 4-5 (true; the harness now refuses a pickup in a missing hour), and read no other held-out value. No arm ran on a held-out date",
+  "the same review found that track_then_staff let ZeroDivisionError (block_seconds 0) and statistics.StatisticsError (a shortage penalty rounding q* to 0 or 1) escape cortex.reason after the tracker stage had run, and accepted a string or a bool as block_seconds; the staffing plan is now checked before any stage in both staffing recipes (translation above). No F8 item reaches those paths, so no development result changed",
+  "the verification of 3462d37 found that disclosures [1], [3] and [6] understated the review change and the reviewer's held-out look; their wording was corrected before the suite was built and before any freeze, and no rule, parameter, arm or data changed"
+ ],
+ "predictions": [
+  {
+   "arm": "best_constituent",
+   "expected": "routed composition costs less in total than both constituents and wins the item sign test (development: 334-94 against kalman_alone)",
+   "informativeness": "weak: erlang_alone ignores the plan and kalman_alone staffs by an occupancy rule without a queueing model; lift over them says little about Layer 1"
+  },
+  {
+   "arm": "ewma_ratio_quantile_then_staff",
+   "expected": "a loss for routed composition on total realised cost (development: 20.3% dearer), possibly with more item wins than losses (development: 303-152)",
+   "meaning": "a loss on total cost would mean Layer 1's Kalman tracker, deployed under its own abstention contract with a standing-plan fallback, adds nothing over a simpler tracker with a quantile on these data; on development the tracker was 4.2% cheaper where it answered, so the loss is the cost of its refusals"
+  },
+  {
+   "arm": "static_composition and compiled",
+   "expected": "identical answers to routed on every item"
+  },
+  {
+   "arm": "routed_composition abstention",
+   "expected": "about 10% of items fall back (LaGuardia 08:00 structurally, the rest NIS refusals)"
+  }
+ ],
+ "compute": {
+  "development_measured": "558 items, every arm, one core shared with other processes: 5,177 cortex stage calls at 0.418 s each (9.3 calls per item), 3.88 s per item mean (3.18 s median) across all arms; the development static-recipe choice took about 7.5 minutes; 43 minutes wall in all",
+  "heldout_estimate": "2196 items x 3.88 s + 7.5 min of static-recipe choice = about 2.5 core-hours (about 40 minutes with --workers 4 on 4 pinned cores)"
+ },
+ "declared_before_heldout": true
+}

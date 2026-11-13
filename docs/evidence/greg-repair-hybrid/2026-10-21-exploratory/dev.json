@@ -1,0 +1,798 @@
+{
+ "hybrid_version": "1.0.0",
+ "items": [
+  {
+   "arms": {
+    "central_only": {
+     "actions": 135,
+     "category": "correct",
+     "claims": 23,
+     "quality": 0.9996651785714286
+    },
+    "hybrid": {
+     "actions": 135,
+     "category": "correct",
+     "claims": 23,
+     "quality": 0.9996651785714286
+    },
+    "local_only": {
+     "actions": 17378,
+     "category": "correct",
+     "claims": 23,
+     "quality": 0.9568998015873016
+    },
+    "naive_switch": {
+     "actions": 135,
+     "category": "correct",
+     "claims": 23,
+     "quality": 0.9996651785714286
+    },
+    "vouch_only": {
+     "actions": 1084,
+     "category": "correct",
+     "claims": 21,
+     "quality": 0.9973115079365079
+    }
+   },
+   "hybrid_first_discrepancy": null,
+   "hybrid_owner": "planner",
+   "hybrid_verified": true,
+   "seed": 0,
+   "subregion": "reliable_controller"
+  },
+  {
+   "arms": {
+    "central_only": {
+     "actions": 107,
+     "category": "correct",
+     "claims": 0,
+     "quality": 0.9996815476190476
+    },
+    "hybrid": {
+     "actions": 107,
+     "category": "correct",
+     "claims": 0,
+     "quality": 0.9996815476190476
+    },
+    "local_only": {
+     "actions": 11203,
+     "category": "correct",
+     "claims": 19,
+     "quality": 0.9666577380952381
+    },
+    "naive_switch": {
+     "actions": 6689,
+     "category": "correct",
+     "claims": 19,
+     "quality": 0.980092261904762
+    },
+    "vouch_only": {
+     "actions": 107,
+     "category": "correct",
+     "claims": 0,
+     "quality": 0.9996815476190476
+    }
+   },
+   "hybrid_first_discrepancy": null,
+   "hybrid_owner": "planner",
+   "hybrid_verified": true,
+   "seed": 1,
+   "subregion": "crashed_controller"
+  },
+  {
+   "arms": {
+    "central_only": {
+     "actions": 222,
+     "category": "correct",
+     "claims": 20,
+     "quality": 0.999421875
+    },
+    "hybrid": {
+     "actions": 222,
+     "category": "correct",
+     "claims": 20,
+     "quality": 0.999421875
+    },
+    "local_only": {
+     "actions": 16300,
+     "category": "correct",
+     "claims": 20,
+     "quality": 0.9575520833333333
+    },
+    "naive_switch": {
+     "actions": 222,
+     "category": "correct",
+     "claims": 20,
+     "quality": 0.999421875
+    },
+    "vouch_only": {
+     "actions": 1251,
+     "category": "correct",
+     "claims": 16,
+     "quality": 0.9967421875
+    }
+   },
+   "hybrid_first_discrepancy": null,
+   "hybrid_owner": "planner",
+   "hybrid_verified": true,
+   "seed": 2,
+   "subregion": "reliable_controller"
+  },
+  {
+   "arms": {
+    "central_only": {
+     "actions": 175,
+     "category": "wrong",
+     "claims": 24,
+     "quality": -1.5004340277777777
+    },
+    "hybrid": {
+     "actions": 18702,
+     "category": "correct",
+     "claims": 24,
+     "quality": 0.9536160714285714
+    },
+    "local_only": {
+     "actions": 16709,
+     "category": "correct",
+     "claims": 24,
+     "quality": 0.9585590277777778
+    },
+    "naive_switch": {
+     "actions": 175,
+     "category": "wrong",
+     "claims": 24,
+     "quality": -1.5004340277777777
+    },
+    "vouch_only": {
+     "actions": 369,
+     "category": "correct",
+     "claims": 0,
+     "quality": -0.0009151785714285713
+    }
+   },
+   "hybrid_first_discrepancy": 0,
+   "hybrid_owner": "local",
+   "hybrid_verified": true,
+   "seed": 3,
+   "subregion": "stale_controller"
+  },
+  {
+   "arms": {
+    "central_only": {
+     "actions": 179,
+     "category": "correct",
+     "claims": 20,
+     "quality": 0.9995338541666666
+    },
+    "hybrid": {
+     "actions": 179,
+     "category": "correct",
+     "claims": 20,
+     "quality": 0.9995338541666666
+    },
+    "local_only": {
+     "actions": 17642,
+     "category": "correct",
+     "claims": 20,
+     "quality": 0.8804855623535185
+    },
+    "naive_switch": {
+     "actions": 179,
+     "category": "correct",
+     "claims": 20,
+     "quality": 0.9995338541666666
+    },
+    "vouch_only": {
+     "actions": 1232,
+     "category": "correct",
+     "claims": 19,
+     "quality": 0.9967916666666666
+    }
+   },
+   "hybrid_first_discrepancy": null,
+   "hybrid_owner": "planner",
+   "hybrid_verified": true,
+   "seed": 4,
+   "subregion": "reliable_controller"
+  },
+  {
+   "arms": {
+    "central_only": {
+     "actions": 133,
+     "category": "correct",
+     "claims": 0,
+     "quality": 0.9996536458333334
+    },
+    "hybrid": {
+     "actions": 133,
+     "category": "correct",
+     "claims": 0,
+     "quality": 0.9996536458333334
+    },
+    "local_only": {
+     "actions": 15264,
+     "category": "correct",
+     "claims": 20,
+     "quality": 0.96025
+    },
+    "naive_switch": {
+     "actions": 9552,
+     "category": "correct",
+     "claims": 20,
+     "quality": 0.8858291630950972
+    },
+    "vouch_only": {
+     "actions": 133,
+     "category": "correct",
+     "claims": 0,
+     "quality": 0.9996536458333334
+    }
+   },
+   "hybrid_first_discrepancy": null,
+   "hybrid_owner": "planner",
+   "hybrid_verified": true,
+   "seed": 5,
+   "subregion": "crashed_controller"
+  },
+  {
+   "arms": {
+    "central_only": {
+     "actions": 124,
+     "category": "correct",
+     "claims": 23,
+     "quality": 0.9997309027777778
+    },
+    "hybrid": {
+     "actions": 124,
+     "category": "correct",
+     "claims": 23,
+     "quality": 0.9997309027777778
+    },
+    "local_only": {
+     "actions": 20597,
+     "category": "correct",
+     "claims": 23,
+     "quality": 0.9553016493055555
+    },
+    "naive_switch": {
+     "actions": 124,
+     "category": "correct",
+     "claims": 23,
+     "quality": 0.9997309027777778
+    },
+    "vouch_only": {
+     "actions": 1086,
+     "category": "correct",
+     "claims": 23,
+     "quality": 0.9976432291666667
+    }
+   },
+   "hybrid_first_discrepancy": null,
+   "hybrid_owner": "planner",
+   "hybrid_verified": true,
+   "seed": 6,
+   "subregion": "reliable_controller"
+  },
+  {
+   "arms": {
+    "central_only": {
+     "actions": 113,
+     "category": "wrong",
+     "claims": 18,
+     "quality": -1.5003363095238096
+    },
+    "hybrid": {
+     "actions": 15498,
+     "category": "correct",
+     "claims": 18,
+     "quality": 0.9211427404295053
+    },
+    "local_only": {
+     "actions": 14201,
+     "category": "correct",
+     "claims": 18,
+     "quality": 0.9250028594771242
+    },
+    "naive_switch": {
+     "actions": 113,
+     "category": "wrong",
+     "claims": 18,
+     "quality": -1.5003363095238096
+    },
+    "vouch_only": {
+     "actions": 276,
+     "category": "correct",
+     "claims": 0,
+     "quality": -0.0008214285714285715
+    }
+   },
+   "hybrid_first_discrepancy": 0,
+   "hybrid_owner": "local",
+   "hybrid_verified": true,
+   "seed": 7,
+   "subregion": "stale_controller"
+  },
+  {
+   "arms": {
+    "central_only": {
+     "actions": 149,
+     "category": "correct",
+     "claims": 19,
+     "quality": 0.9996119791666667
+    },
+    "hybrid": {
+     "actions": 149,
+     "category": "correct",
+     "claims": 19,
+     "quality": 0.9996119791666667
+    },
+    "local_only": {
+     "actions": 13068,
+     "category": "correct",
+     "claims": 19,
+     "quality": 0.96596875
+    },
+    "naive_switch": {
+     "actions": 149,
+     "category": "correct",
+     "claims": 19,
+     "quality": 0.9996119791666667
+    },
+    "vouch_only": {
+     "actions": 876,
+     "category": "correct",
+     "claims": 19,
+     "quality": 0.99771875
+    }
+   },
+   "hybrid_first_discrepancy": null,
+   "hybrid_owner": "planner",
+   "hybrid_verified": true,
+   "seed": 8,
+   "subregion": "reliable_controller"
+  },
+  {
+   "arms": {
+    "central_only": {
+     "actions": 94,
+     "category": "correct",
+     "claims": 0,
+     "quality": 0.4997668650793651
+    },
+    "hybrid": {
+     "actions": 15954,
+     "category": "correct",
+     "claims": 22,
+     "quality": 0.9604315476190476
+    },
+    "local_only": {
+     "actions": 18417,
+     "category": "correct",
+     "claims": 24,
+     "quality": 0.9543229166666667
+    },
+    "naive_switch": {
+     "actions": 16347,
+     "category": "correct",
+     "claims": 24,
+     "quality": 0.9594568452380953
+    },
+    "vouch_only": {
+     "actions": 94,
+     "category": "correct",
+     "claims": 0,
+     "quality": 0.4997668650793651
+    }
+   },
+   "hybrid_first_discrepancy": 24,
+   "hybrid_owner": "local",
+   "hybrid_verified": true,
+   "seed": 9,
+   "subregion": "crashed_controller"
+  }
+ ],
+ "mode": "dev",
+ "schema": "greg-repair-hybrid-exploratory/1",
+ "seeds": [
+  0,
+  9
+ ],
+ "summary": {
+  "all": {
+   "central_only": {
+    "errors": {
+     "n": 10,
+     "upper_95": 0.506901,
+     "wrong": 2
+    },
+    "mean_quality": 0.4496295510912699,
+    "mean_quality_without_wrong": 0.9371332310267857,
+    "median_actions": 134.0,
+    "p8_mean_loss": Infinity
+   },
+   "hybrid": {
+    "errors": {
+     "n": 10,
+     "upper_95": 0.258866,
+     "wrong": 0
+    },
+    "mean_quality": 0.9832489342612044,
+    "mean_quality_without_wrong": 0.9832489342612044,
+    "median_actions": 164.0,
+    "p8_mean_loss": -0.9832489342612044
+   },
+   "local_only": {
+    "errors": {
+     "n": 10,
+     "upper_95": 0.258866,
+     "wrong": 0
+    },
+    "mean_quality": 0.9481000388596517,
+    "mean_quality_without_wrong": 0.9481000388596517,
+    "median_actions": 16504.5,
+    "p8_mean_loss": -0.9481000388596517
+   },
+   "n": 10,
+   "naive_switch": {
+    "errors": {
+     "n": 10,
+     "upper_95": 0.506901,
+     "wrong": 2
+    },
+    "mean_quality": 0.4822571722618907,
+    "mean_quality_without_wrong": 0.9779177574900617,
+    "median_actions": 177.0,
+    "p8_mean_loss": Infinity
+   },
+   "paired": {
+    "hybrid_vs_central_only": {
+     "losses": 0,
+     "sign_p_one_sided": 0.125,
+     "ties": 7,
+     "wins": 3
+    },
+    "hybrid_vs_local_only": {
+     "losses": 2,
+     "sign_p_one_sided": 0.0546875,
+     "ties": 0,
+     "wins": 8
+    },
+    "hybrid_vs_naive_switch": {
+     "losses": 0,
+     "sign_p_one_sided": 0.03125,
+     "ties": 5,
+     "wins": 5
+    },
+    "hybrid_vs_vouch_only": {
+     "losses": 0,
+     "sign_p_one_sided": 0.00390625,
+     "ties": 2,
+     "wins": 8
+    },
+    "naive_switch_vs_central_only": {
+     "losses": 2,
+     "sign_p_one_sided": 0.875,
+     "ties": 7,
+     "wins": 1
+    }
+   },
+   "vouch_only": {
+    "errors": {
+     "n": 10,
+     "upper_95": 0.258866,
+     "wrong": 0
+    },
+    "mean_quality": 0.748357279265873,
+    "mean_quality_without_wrong": 0.748357279265873,
+    "median_actions": 622.5,
+    "p8_mean_loss": -0.748357279265873
+   }
+  },
+  "by_subregion": {
+   "crashed_controller": {
+    "central_only": {
+     "errors": {
+      "n": 3,
+      "upper_95": 0.631597,
+      "wrong": 0
+     },
+     "mean_quality": 0.8330340195105821,
+     "mean_quality_without_wrong": 0.8330340195105821,
+     "median_actions": 107,
+     "p8_mean_loss": -0.8330340195105821
+    },
+    "hybrid": {
+     "errors": {
+      "n": 3,
+      "upper_95": 0.631597,
+      "wrong": 0
+     },
+     "mean_quality": 0.9865889136904761,
+     "mean_quality_without_wrong": 0.9865889136904761,
+     "median_actions": 133,
+     "p8_mean_loss": -0.9865889136904761
+    },
+    "local_only": {
+     "errors": {
+      "n": 3,
+      "upper_95": 0.631597,
+      "wrong": 0
+     },
+     "mean_quality": 0.9604102182539682,
+     "mean_quality_without_wrong": 0.9604102182539682,
+     "median_actions": 15264,
+     "p8_mean_loss": -0.9604102182539682
+    },
+    "n": 3,
+    "naive_switch": {
+     "errors": {
+      "n": 3,
+      "upper_95": 0.631597,
+      "wrong": 0
+     },
+     "mean_quality": 0.9417927567459848,
+     "mean_quality_without_wrong": 0.9417927567459848,
+     "median_actions": 9552,
+     "p8_mean_loss": -0.9417927567459848
+    },
+    "paired": {
+     "hybrid_vs_central_only": {
+      "losses": 0,
+      "sign_p_one_sided": 0.5,
+      "ties": 2,
+      "wins": 1
+     },
+     "hybrid_vs_local_only": {
+      "losses": 0,
+      "sign_p_one_sided": 0.125,
+      "ties": 0,
+      "wins": 3
+     },
+     "hybrid_vs_naive_switch": {
+      "losses": 0,
+      "sign_p_one_sided": 0.125,
+      "ties": 0,
+      "wins": 3
+     },
+     "hybrid_vs_vouch_only": {
+      "losses": 0,
+      "sign_p_one_sided": 0.5,
+      "ties": 2,
+      "wins": 1
+     },
+     "naive_switch_vs_central_only": {
+      "losses": 2,
+      "sign_p_one_sided": 0.875,
+      "ties": 0,
+      "wins": 1
+     }
+    },
+    "vouch_only": {
+     "errors": {
+      "n": 3,
+      "upper_95": 0.631597,
+      "wrong": 0
+     },
+     "mean_quality": 0.8330340195105821,
+     "mean_quality_without_wrong": 0.8330340195105821,
+     "median_actions": 107,
+     "p8_mean_loss": -0.8330340195105821
+    }
+   },
+   "reliable_controller": {
+    "central_only": {
+     "errors": {
+      "n": 5,
+      "upper_95": 0.45072,
+      "wrong": 0
+     },
+     "mean_quality": 0.9995927579365078,
+     "mean_quality_without_wrong": 0.9995927579365078,
+     "median_actions": 149,
+     "p8_mean_loss": -0.9995927579365078
+    },
+    "hybrid": {
+     "errors": {
+      "n": 5,
+      "upper_95": 0.45072,
+      "wrong": 0
+     },
+     "mean_quality": 0.9995927579365078,
+     "mean_quality_without_wrong": 0.9995927579365078,
+     "median_actions": 149,
+     "p8_mean_loss": -0.9995927579365078
+    },
+    "local_only": {
+     "errors": {
+      "n": 5,
+      "upper_95": 0.45072,
+      "wrong": 0
+     },
+     "mean_quality": 0.9432415693159418,
+     "mean_quality_without_wrong": 0.9432415693159418,
+     "median_actions": 17378,
+     "p8_mean_loss": -0.9432415693159418
+    },
+    "n": 5,
+    "naive_switch": {
+     "errors": {
+      "n": 5,
+      "upper_95": 0.45072,
+      "wrong": 0
+     },
+     "mean_quality": 0.9995927579365078,
+     "mean_quality_without_wrong": 0.9995927579365078,
+     "median_actions": 149,
+     "p8_mean_loss": -0.9995927579365078
+    },
+    "paired": {
+     "hybrid_vs_central_only": {
+      "losses": 0,
+      "sign_p_one_sided": 1.0,
+      "ties": 5,
+      "wins": 0
+     },
+     "hybrid_vs_local_only": {
+      "losses": 0,
+      "sign_p_one_sided": 0.03125,
+      "ties": 0,
+      "wins": 5
+     },
+     "hybrid_vs_naive_switch": {
+      "losses": 0,
+      "sign_p_one_sided": 1.0,
+      "ties": 5,
+      "wins": 0
+     },
+     "hybrid_vs_vouch_only": {
+      "losses": 0,
+      "sign_p_one_sided": 0.03125,
+      "ties": 0,
+      "wins": 5
+     },
+     "naive_switch_vs_central_only": {
+      "losses": 0,
+      "sign_p_one_sided": 1.0,
+      "ties": 5,
+      "wins": 0
+     }
+    },
+    "vouch_only": {
+     "errors": {
+      "n": 5,
+      "upper_95": 0.45072,
+      "wrong": 0
+     },
+     "mean_quality": 0.9972414682539682,
+     "mean_quality_without_wrong": 0.9972414682539682,
+     "median_actions": 1086,
+     "p8_mean_loss": -0.9972414682539682
+    }
+   },
+   "stale_controller": {
+    "central_only": {
+     "errors": {
+      "n": 2,
+      "upper_95": 1.0,
+      "wrong": 2
+     },
+     "mean_quality": -1.5003851686507936,
+     "mean_quality_without_wrong": 0.0,
+     "median_actions": 144.0,
+     "p8_mean_loss": Infinity
+    },
+    "hybrid": {
+     "errors": {
+      "n": 2,
+      "upper_95": 0.776393,
+      "wrong": 0
+     },
+     "mean_quality": 0.9373794059290383,
+     "mean_quality_without_wrong": 0.9373794059290383,
+     "median_actions": 17100.0,
+     "p8_mean_loss": -0.9373794059290383
+    },
+    "local_only": {
+     "errors": {
+      "n": 2,
+      "upper_95": 0.776393,
+      "wrong": 0
+     },
+     "mean_quality": 0.941780943627451,
+     "mean_quality_without_wrong": 0.941780943627451,
+     "median_actions": 15455.0,
+     "p8_mean_loss": -0.941780943627451
+    },
+    "n": 2,
+    "naive_switch": {
+     "errors": {
+      "n": 2,
+      "upper_95": 1.0,
+      "wrong": 2
+     },
+     "mean_quality": -1.5003851686507936,
+     "mean_quality_without_wrong": 0.0,
+     "median_actions": 144.0,
+     "p8_mean_loss": Infinity
+    },
+    "paired": {
+     "hybrid_vs_central_only": {
+      "losses": 0,
+      "sign_p_one_sided": 0.25,
+      "ties": 0,
+      "wins": 2
+     },
+     "hybrid_vs_local_only": {
+      "losses": 2,
+      "sign_p_one_sided": 1.0,
+      "ties": 0,
+      "wins": 0
+     },
+     "hybrid_vs_naive_switch": {
+      "losses": 0,
+      "sign_p_one_sided": 0.25,
+      "ties": 0,
+      "wins": 2
+     },
+     "hybrid_vs_vouch_only": {
+      "losses": 0,
+      "sign_p_one_sided": 0.25,
+      "ties": 0,
+      "wins": 2
+     },
+     "naive_switch_vs_central_only": {
+      "losses": 0,
+      "sign_p_one_sided": 1.0,
+      "ties": 2,
+      "wins": 0
+     }
+    },
+    "vouch_only": {
+     "errors": {
+      "n": 2,
+      "upper_95": 0.776393,
+      "wrong": 0
+     },
+     "mean_quality": -0.0008683035714285714,
+     "mean_quality_without_wrong": -0.0008683035714285714,
+     "median_actions": 322.5,
+     "p8_mean_loss": 0.0008683035714285714
+    }
+   }
+  },
+  "checks": {
+   "A1": true,
+   "A2": true,
+   "E1": true,
+   "E2a": true,
+   "E2b": true,
+   "E3": true,
+   "E4": true,
+   "E5": true
+  },
+  "criteria": {
+   "A1": "ablation: naive_switch makes > 0 false claims on stale items (the vouching is what removes them)",
+   "A2": "ablation: vouch_only makes 0 false claims and its stale mean quality is below the hybrid's (the fallback is what restores function)",
+   "E1": "reliable: hybrid loses to central_only on at most 1% of items, and makes 0 false claims there",
+   "E2a": "stale: hybrid mean quality > central_only's, hybrid makes 0 false claims and central_only > 0",
+   "E2b": "stale: hybrid wins more paired items than it loses against central_only",
+   "E3": "all items: hybrid makes 0 false claims and fewer than central_only",
+   "E4": "reliable: hybrid actions <= central_only's on every item and < local_only's on every item",
+   "E5": "reported only: hybrid beats local_only on paired items overall and central_only on mean quality overall"
+  },
+  "hybrid_discrepancy_by_subregion": {
+   "crashed_controller": 1,
+   "reliable_controller": 0,
+   "stale_controller": 2
+  },
+  "hybrid_owner_counts": {
+   "local": 3,
+   "planner": 7
+  },
+  "hybrid_unverified_items": [],
+  "label": "EXPLORATORY (not admission, not a P8 cycle)",
+  "verdict": "EMERGENCE_SUPPORTED"
+ },
+ "wall_clock_s": 2.5
+}

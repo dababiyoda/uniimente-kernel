@@ -1,0 +1,4 @@
+[{"generations": 5, "population": 8, "seed": 20261008, "search": "mutate-incumbent/1"},
+ {"generations": 5, "population": 8, "seed": 20261016, "search": "mutate-incumbent/1"},
+ {"generations": 5, "population": 8, "seed": 20261016, "search": "cover/1", "lhs": 0},
+ {"generations": 5, "population": 8, "seed": 20261016, "search": "cover/1", "lhs": 16}]

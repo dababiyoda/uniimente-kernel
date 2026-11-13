@@ -48,6 +48,9 @@ class ProofClass(StrEnum):
     HUMAN = "human_judgment"
     PATTERN = "pattern_evidence"
     COLLECTIVE = "collective_trace"
+    # Additive (IntelligenceGenome library): one envelope whose ``evidence_type`` labels the epistemic
+    # type of the certificate (calculation, optimality certificate, simulation, counterexample, ...).
+    GENOME = "genome_certificate"
     # Additive (cortex bridge): the complete cortex receipt, itself a typed union of
     # formal / optimization / estimation / evidence / causal / semantic / deterrence proofs.
     CORTEX = "cortex_receipt"
@@ -318,6 +321,7 @@ PROOF_FIELDS = {
     "human_judgment": ("participants", "expertise", "conflicts", "dissent", "decision_authority"),
     "pattern_evidence": ("observations", "model", "scores", "limits"),
     "collective_trace": ("participants", "independence", "dissent", "trace", "baseline_status"),
+    "genome_certificate": ("intelligence_id", "version", "evidence_type", "inputs_digest", "certificate", "limits"),
     "cortex_receipt": ("schema", "receipt_id", "geometry", "route", "verifier", "truth", "disposition",
                        "accountability", "outcome", "authority_created", "execution_authority"),
 }

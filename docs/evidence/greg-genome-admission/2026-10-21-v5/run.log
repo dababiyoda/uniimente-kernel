@@ -1,0 +1,24 @@
+{"family": "basal_nlms", "status": "NICHE_CAPABILITY", "vs_baseline": {"wins": 30, "losses": 0, "ties": 0, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 10, "losses": 20, "ties": 0, "p_better": 0.978613, "p_worse": 0.049369}}
+{"family": "basal_token_bucket", "status": "DEFAULT_FOR_GEOMETRY", "vs_baseline": {"wins": 23, "losses": 7, "ties": 0, "p_better": 0.002611, "p_worse": 0.999285}, "vs_competitor": {"wins": 20, "losses": 10, "ties": 0, "p_better": 0.049369, "p_worse": 0.978613}}
+{"family": "binpack_cpsat", "status": "DEFAULT_FOR_GEOMETRY", "vs_baseline": {"wins": 19, "losses": 1, "ties": 10, "p_better": 2e-05, "p_worse": 0.999999}, "vs_competitor": {"wins": 1, "losses": 1, "ties": 28, "p_better": 0.75, "p_worse": 0.75}}
+{"family": "blackbox_multistart_lbfgsb", "status": "DEFAULT_FOR_GEOMETRY", "vs_baseline": {"wins": 18, "losses": 0, "ties": 12, "p_better": 4e-06, "p_worse": 1.0}, "vs_competitor": {"wins": 7, "losses": 15, "ties": 8, "p_better": 0.973761, "p_worse": 0.0669}}
+{"family": "collective_auction", "status": "SUPERSEDED", "vs_baseline": {"wins": 26, "losses": 0, "ties": 4, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 0, "losses": 0, "ties": 30, "p_better": 1.0, "p_worse": 1.0}}
+{"family": "community_louvain", "status": "DEFAULT_FOR_GEOMETRY", "vs_baseline": {"wins": 27, "losses": 0, "ties": 3, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 28, "losses": 0, "ties": 2, "p_better": 0.0, "p_worse": 1.0}}
+{"family": "crowd_weighted_vote", "status": "DEFAULT_FOR_GEOMETRY", "vs_baseline": {"wins": 30, "losses": 0, "ties": 0, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 26, "losses": 2, "ties": 2, "p_better": 2e-06, "p_worse": 1.0}}
+{"family": "develop_diffusion", "status": "REJECTED", "vs_baseline": {"wins": 15, "losses": 15, "ties": 0, "p_better": 0.572232, "p_worse": 0.572232}, "vs_competitor": {"wins": 9, "losses": 20, "ties": 1, "p_better": 0.98794, "p_worse": 0.030714}}
+{"family": "graph_node_cut_exact", "status": "DEFAULT_FOR_GEOMETRY", "vs_baseline": {"wins": 7, "losses": 0, "ties": 23, "p_better": 0.007812, "p_worse": 1.0}, "vs_competitor": {"wins": 7, "losses": 0, "ties": 23, "p_better": 0.007812, "p_worse": 1.0}}
+{"family": "maxsat_cpsat", "status": "DEFAULT_FOR_GEOMETRY", "vs_baseline": {"wins": 25, "losses": 0, "ties": 5, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 4, "losses": 0, "ties": 26, "p_better": 0.0625, "p_worse": 1.0}}
+{"family": "reconcile_qp", "status": "NICHE_CAPABILITY", "vs_baseline": {"wins": 26, "losses": 0, "ties": 4, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 2, "losses": 0, "ties": 28, "p_better": 0.25, "p_worse": 1.0}}
+{
+ "basal_nlms": "NICHE_CAPABILITY",
+ "basal_token_bucket": "DEFAULT_FOR_GEOMETRY",
+ "binpack_cpsat": "DEFAULT_FOR_GEOMETRY",
+ "blackbox_multistart_lbfgsb": "DEFAULT_FOR_GEOMETRY",
+ "collective_auction": "SUPERSEDED",
+ "community_louvain": "DEFAULT_FOR_GEOMETRY",
+ "crowd_weighted_vote": "DEFAULT_FOR_GEOMETRY",
+ "develop_diffusion": "REJECTED",
+ "graph_node_cut_exact": "DEFAULT_FOR_GEOMETRY",
+ "maxsat_cpsat": "DEFAULT_FOR_GEOMETRY",
+ "reconcile_qp": "NICHE_CAPABILITY"
+}

@@ -1,0 +1,243 @@
+{
+ "schema": "greg-p8-repair1-exposure-query/1",
+ "ledger": {
+  "path": "docs/evidence/greg-data-exposure-ledger.json",
+  "sha256": "sha256:73330224a8f3c355bf08ea109d46cc1cf4e9792546ab4dfb797a114765c532fb",
+  "built_at": "scripts/data_exposure_ledger.py",
+  "pin_179": {
+   "pr": 179,
+   "branch": "origin/claude/greg-mind-lineage-convergence",
+   "commit": "a3106f6a4c3e11762f7b2dc044ecad0a2a0a1dfb"
+  }
+ },
+ "queries": {
+  "family": {
+   "all_seeds_0_99999": [
+    {
+     "id": "#158|docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json|admission held-out|develop_repair|heldout",
+     "role": "admission held-out",
+     "lineages": [
+      "#158"
+     ],
+     "looked_at": true,
+     "generator": "greg.cognition.genomes.developmental:repair_instance",
+     "seeds": [
+      [
+       1000,
+       1029
+      ]
+     ]
+    },
+    {
+     "id": "#158|docs/evidence/greg-genome-admission/2026-10-14-v2/freeze.json|admission held-out|develop_repair|heldout",
+     "role": "admission held-out",
+     "lineages": [
+      "#158"
+     ],
+     "looked_at": true,
+     "generator": "greg.cognition.genomes.developmental:repair_instance",
+     "seeds": [
+      [
+       1100,
+       1129
+      ]
+     ]
+    },
+    {
+     "id": "#158|docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json|dev|develop_repair|dev",
+     "role": "dev",
+     "lineages": [
+      "#158"
+     ],
+     "looked_at": true,
+     "generator": "greg.cognition.genomes.developmental:repair_instance",
+     "seeds": [
+      [
+       0,
+       9
+      ]
+     ]
+    },
+    {
+     "id": "#158|docs/evidence/greg-genome-admission/2026-10-14-v2/freeze.json|dev|develop_repair|dev",
+     "role": "dev",
+     "lineages": [
+      "#158"
+     ],
+     "looked_at": true,
+     "generator": "greg.cognition.genomes.developmental:repair_instance",
+     "seeds": [
+      [
+       0,
+       9
+      ]
+     ]
+    },
+    {
+     "id": "#158|tests/unit/test_genomes_developmental.py|dev|-|greg.cognition.genomes.developmental:repair_instance:519",
+     "role": "dev",
+     "lineages": [
+      "#158"
+     ],
+     "looked_at": true,
+     "generator": "greg.cognition.genomes.developmental:repair_instance",
+     "seeds": [
+      [
+       0,
+       0
+      ]
+     ]
+    },
+    {
+     "id": "#158|tests/unit/test_greg_competency_compiler.py|dev|develop_repair|greg.cognition.genomes.developmental:repair_instance:965",
+     "role": "dev",
+     "lineages": [
+      "#158"
+     ],
+     "looked_at": true,
+     "generator": "greg.cognition.genomes.developmental:repair_instance",
+     "seeds": [
+      [
+       0,
+       0
+      ]
+     ]
+    },
+    {
+     "id": "#179|tests/unit/test_greg_competency_compiler.py|dev|develop_repair|greg.cognition.genomes.developmental:repair_instance:967",
+     "role": "dev",
+     "lineages": [
+      "#158"
+     ],
+     "looked_at": true,
+     "generator": "greg.cognition.genomes.developmental:repair_instance",
+     "seeds": [
+      [
+       0,
+       0
+      ]
+     ]
+    }
+   ],
+   "declared_review_3000_3999": [],
+   "review_4000_4999": []
+  },
+  "generator": {
+   "all_seeds_0_99999": [
+    {
+     "id": "#158|docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json|admission held-out|develop_repair|heldout",
+     "role": "admission held-out",
+     "lineages": [
+      "#158"
+     ],
+     "looked_at": true,
+     "generator": "greg.cognition.genomes.developmental:repair_instance",
+     "seeds": [
+      [
+       1000,
+       1029
+      ]
+     ]
+    },
+    {
+     "id": "#158|docs/evidence/greg-genome-admission/2026-10-14-v2/freeze.json|admission held-out|develop_repair|heldout",
+     "role": "admission held-out",
+     "lineages": [
+      "#158"
+     ],
+     "looked_at": true,
+     "generator": "greg.cognition.genomes.developmental:repair_instance",
+     "seeds": [
+      [
+       1100,
+       1129
+      ]
+     ]
+    },
+    {
+     "id": "#158|docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json|dev|develop_repair|dev",
+     "role": "dev",
+     "lineages": [
+      "#158"
+     ],
+     "looked_at": true,
+     "generator": "greg.cognition.genomes.developmental:repair_instance",
+     "seeds": [
+      [
+       0,
+       9
+      ]
+     ]
+    },
+    {
+     "id": "#158|docs/evidence/greg-genome-admission/2026-10-14-v2/freeze.json|dev|develop_repair|dev",
+     "role": "dev",
+     "lineages": [
+      "#158"
+     ],
+     "looked_at": true,
+     "generator": "greg.cognition.genomes.developmental:repair_instance",
+     "seeds": [
+      [
+       0,
+       9
+      ]
+     ]
+    },
+    {
+     "id": "#158|tests/unit/test_genomes_developmental.py|dev|-|greg.cognition.genomes.developmental:repair_instance:519",
+     "role": "dev",
+     "lineages": [
+      "#158"
+     ],
+     "looked_at": true,
+     "generator": "greg.cognition.genomes.developmental:repair_instance",
+     "seeds": [
+      [
+       0,
+       0
+      ]
+     ]
+    },
+    {
+     "id": "#158|tests/unit/test_greg_competency_compiler.py|dev|develop_repair|greg.cognition.genomes.developmental:repair_instance:965",
+     "role": "dev",
+     "lineages": [
+      "#158"
+     ],
+     "looked_at": true,
+     "generator": "greg.cognition.genomes.developmental:repair_instance",
+     "seeds": [
+      [
+       0,
+       0
+      ]
+     ]
+    },
+    {
+     "id": "#179|tests/unit/test_greg_competency_compiler.py|dev|develop_repair|greg.cognition.genomes.developmental:repair_instance:967",
+     "role": "dev",
+     "lineages": [
+      "#158"
+     ],
+     "looked_at": true,
+     "generator": "greg.cognition.genomes.developmental:repair_instance",
+     "seeds": [
+      [
+       0,
+       0
+      ]
+     ]
+    }
+   ],
+   "declared_review_3000_3999": [],
+   "review_4000_4999": []
+  }
+ },
+ "aliasing_equivalences_naming_repair": [],
+ "cross_generator_identical_naming_repair": [],
+ "overlaps_naming_repair": [],
+ "generator_prng": [
+  "Random(f'genome:develop_repair:{seed}')"
+ ]
+}

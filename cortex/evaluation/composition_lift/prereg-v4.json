@@ -1,0 +1,65 @@
+{
+ "schema": "greg-p6-preregistration/1",
+ "family_id": "F7",
+ "title": "Lease capacity for a traffic surge on a real backbone (graph bottleneck -> integer allocation)",
+ "natural": true,
+ "natural_scope": "natural instances (real topologies, link lengths, demand pairs, ECMP loads); the truth is the exact optimum of a declared planning problem, not a realised outcome",
+ "data_provenance": {
+  "source": "SNDlib 1.0 networks (Orlowski, Wessaely, Pioro, Tomaszewski, Networks 55:276-286, 2010) as bundled by TopoHub 1.5.1 (PyPI wheel sha256 331dd0dab419ede67d5a680b724795d2320fb7f45bd8f2cf2281f155a117cdbb); extract built by cortex/evaluation/data/build_sndlib_networks.py",
+  "file": "cortex/evaluation/data/sndlib_networks.json.gz",
+  "sha256": "f9b1d3d45ba9a70e8d2d6dc1db0a674eb21a7bb7559bb6ae7d2debcf65e7fc47",
+  "licence": "TopoHub conversion MIT; SNDlib publishes no open licence and states its data is meant for research use (cite the paper); evaluation use only; redistribution beyond research is a founder decision"
+ },
+ "decision_layer": {
+  "unit": "1% of the network's busiest-link ECMP load",
+  "installed_capacity": "10 x m units per direction, m = max(1, ceil(load / 8)) (at most 80% utilisation)",
+  "free_capacity": "floor(installed - load) per direction",
+  "admissible_paths": "K = 4 shortest loop-free s->t paths by length (Yen); K drops to 3 then 2 while the arc union exceeds 32 arcs; still above 32 arcs at K = 2 -> out of scope (topology only, counted)",
+  "lease_price": "1 + round(km / 100) per unit per arc",
+  "max_increment": 20,
+  "budget": "20 x the price of the cheapest admissible path",
+  "truth": "largest surge F whose min-cost flow (free arc at free capacity, priced arc up to 20 units) fits the budget; NetworkX network simplex with bisection (greg.cognition.genomes.flow.expansion_truth)"
+ },
+ "n_heldout": 200,
+ "n_heldout_note": "20 held-out networks x 10 largest demand pairs, before topology-only out-of-scope exclusions, which the suite records",
+ "partition_rule": "networks sorted by name; index % 5 == 0 is development (abilene, di-yuan, india35, nobel-germany, polska); the other 20 networks are held out; items are the 10 largest demand pairs per network",
+ "constituents": [
+  "graph_alone_greedy (reinforce_min_cut through cortex.reason)",
+  "optimize_flow_blind (CP-SAT optimize on a flow-blind model through cortex.reason)"
+ ],
+ "static_arm": {
+  "chosen_on": "development",
+  "must_decide": true,
+  "rule": "the recipe deciding the most development items optimally among recipes that decide every development item"
+ },
+ "routed_arm": "chain without a pinned recipe: the geometry router chooses (it matches payload keys, so within F7 routed is expected to equal static; reported, no routing claim)",
+ "compiled_arm": {
+  "entry": "compile",
+  "request": "{compile: {geometry: {consequence_class: read_only}, data: {capacity_network: ...}}}",
+  "role": "reported, not part of the rule"
+ },
+ "practitioner_arms": [
+  "shortest_path_upgrade (lease end to end along the cheapest path, one unit per arc per round, in process)",
+  "parametric_min_cost_flow (the truth algorithm with its plan, in process; optimal by construction, reported to show what composition does not add)"
+ ],
+ "cost_metric": "binary: optimal (achieved throughput equals the exact optimum) vs suboptimal / wrong (over budget, out of bounds, or a false flow claim) / no_decision; throughput shortfall against the optimum reported",
+ "latency_rule": {
+  "kind": "multiplier",
+  "value": 10.0,
+  "rationale": "capacity leasing is an offline planning decision; latency matters only past the 60 s chain budget, and 10x bounds the compute the composition may spend over the best constituent. Declared before any F7 arm was timed."
+ },
+ "rule": "F7 counts toward VPL when routed composition decides more held-out items optimally than the best constituent, gives no more wrong answers, the one-sided exact sign test over discordant items gives p < alpha, its median latency is within 60 s, and its median latency is at most 10x the best constituent's. Best constituent chosen on held-out results (most optimal, then fewest wrong).",
+ "alpha": 0.05,
+ "secondary": [
+  "per-network sign test (routed vs best constituent, optimal counts per network)",
+  "compiled arm vs routed",
+  "routed vs each practitioner arm",
+  "throughput shortfall"
+ ],
+ "disclosures": [
+  "development items (5 networks) were inspected while designing the decision layer: the greedy graph method was optimal on 23 of 50, so the family is not degenerate; no parameter was changed after that look",
+  "the arc counts of downstream corridors for all 25 networks' top-20 pairs were computed (topology only, no arm run) while choosing the admissible-path rule; that look led to K shortest paths instead of a downstream-only corridor, which left most top pairs with a single arc",
+  "the optimisation family's 64-variable ceiling (32 arcs) bounds the admissible-path union; larger corridors are out of scope rather than routed to a different solver"
+ ],
+ "declared_before_heldout": true
+}

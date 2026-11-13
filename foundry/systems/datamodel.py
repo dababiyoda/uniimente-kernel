@@ -55,19 +55,34 @@ MIGRATIONS = [
     # The outcome that stands for each mission's current closure (greg/appraisal.py ``standings``): an appraisal counts
     # only for the closure it judged, and a final UNAVAILABLE establishes nothing. ``last_verdict`` read the latest
     # outcome row, so a late verdict on an earlier closure replaced the standing of a newer one (founder ruling of
-    # 2026-11-12: "A stale appraisal cannot qualify a different closure").
+    # 2026-11-12: "A stale appraisal cannot qualify a different closure"). ``closure_facts`` keeps every fact that
+    # rule reads (registrations, closures, appraisals with the closure each names), one row per event id, and
+    # ``standings`` is derived from all of them in (at, event id) order after every ingest and on this migration
+    # (``_derive_standings``): it is a function of the facts the model holds, not of the order or grouping of the
+    # ingest calls that brought them. ``bound`` is 0 only on an appraisal row carried from schema 3's ``outcomes``,
+    # which kept no closures: the closure it judged is unknown until the journal is ingested again.
     (4, "closure standings", [
-        "CREATE TABLE standings (mission_id TEXT PRIMARY KEY, closure TEXT, outcome_id TEXT, verdict TEXT)",
+        "CREATE TABLE closure_facts (id TEXT PRIMARY KEY, mission_id TEXT, at TEXT, kind TEXT, closure_event TEXT, "
+        "verdict TEXT, bound INTEGER NOT NULL)",
+        "CREATE TABLE standings (mission_id TEXT PRIMARY KEY, closure TEXT, outcome_id TEXT, verdict TEXT, "
+        "basis TEXT)",
         "DROP VIEW mission_ledger",
         "CREATE VIEW mission_ledger AS SELECT d.mission_id, d.expression, "
         "(SELECT group_concat(a.answer, ',') FROM authority a WHERE a.mission_id = d.mission_id) AS authority, "
         "(SELECT count(*) FROM actions x WHERE x.mission_id = d.mission_id AND x.status = 'DONE') AS actions_done, "
         "(SELECT coalesce(sum(x.cost_usd), 0) FROM actions x WHERE x.mission_id = d.mission_id) AS cost_usd, "
         "(SELECT s.verdict FROM standings s WHERE s.mission_id = d.mission_id) AS current_verdict, "
+        "(SELECT s.basis FROM standings s WHERE s.mission_id = d.mission_id) AS current_basis, "
         "(SELECT coalesce(sum(m.amount_cents), 0) FROM money m WHERE m.mission_id = d.mission_id) AS revenue_cents "
         "FROM decisions d",
-    ], ["DROP VIEW mission_ledger", V3_LEDGER_VIEW, "DROP TABLE standings"], ["standings"]),
+    ], ["DROP VIEW mission_ledger", V3_LEDGER_VIEW, "DROP TABLE standings", "DROP TABLE closure_facts"],
+     ["closure_facts"]),
 ]
+# The facts ``standings`` reads, and what a standing row says it rests on.
+CLOSURE_FACTS = ("mission.registered", "mission.held", "mission.achieved", "mission.unmet", "mission.appraised")
+FROM_CLOSURES = "closure"
+UNBOUND = ("unbound: appraisals ingested under schema 3, which kept no closures, cannot be bound to the closure each "
+           "judged; ingest the journal again to derive the standing")
 
 
 class ModelError(RuntimeError):
@@ -112,6 +127,8 @@ def migrate(root: Path, to: int) -> dict:
                         for r in rows:
                             db.execute(f"INSERT INTO {table} VALUES ({','.join('?' * len(r))})", r)
                     backup.unlink()
+                if v in AFTER_UP:                      # derived from what is stored now, the restored rows included
+                    AFTER_UP[v](db)
                 db.execute("INSERT INTO schema_migrations VALUES (?, ?, ?)", (v, name, _checksum(up)))
                 steps.append(f"up {v}")
             while version(db) > to:
@@ -164,27 +181,64 @@ def ingest_greg(root: Path, events: list[dict]) -> dict:
                                (eid, e["at"], p.get("source"), json.dumps(p.get("summary") or p.get("content")),
                                 json.dumps(p.get("evidence"))))
             if version(db) >= 4:
-                _standings(db, events)
+                for e in events:
+                    kind, p = e["type"].removeprefix("greg."), e["payload"]
+                    if kind in CLOSURE_FACTS:     # the fact as recorded; it replaces only a row carried unbound
+                        db.execute("INSERT INTO closure_facts VALUES (?,?,?,?,?,?,1) ON CONFLICT(id) DO UPDATE SET "
+                                   "mission_id = excluded.mission_id, at = excluded.at, kind = excluded.kind, "
+                                   "closure_event = excluded.closure_event, verdict = excluded.verdict, bound = 1 "
+                                   "WHERE closure_facts.bound = 0",
+                                   (e["event_id"], p.get("mission_id"), e["at"], kind, p.get("closure_event"),
+                                    p.get("verdict")))
+                _derive_standings(db)
         return {"rows_changed": db.total_changes - before}
     finally:
         db.close()
 
 
-def _standings(db, events) -> None:
+def _derive_standings(db) -> None:
     """Each mission's current closure (its achievement, or its newest closure) and the outcome that stands for it,
-    from the events of this ingest in ledger order: pass the whole journal, as ``greg foundry`` reads it. NULL while
-    that closure has no verdict of its own. Re-ingesting the same journal changes nothing."""
+    derived by greg/appraisal.py ``standings`` from every closure fact the model holds, in (at, event id) order. So
+    it depends only on the set of facts ingested, never on the order or grouping of the ingest calls; re-ingesting
+    what the model holds changes nothing. The verdict is NULL while that closure has no verdict of its own. A mission
+    with an appraisal row carried unbound from schema 3 gets no verdict and the ``UNBOUND`` basis: the closure that
+    row judged is unknown, and reading it as the latest row would let a late verdict on an earlier closure stand for
+    a newer one (founder ruling of 2026-11-12)."""
     from greg.appraisal import standings_of_events
-    book = standings_of_events(events)
+    facts = db.execute("SELECT id, mission_id, at, kind, closure_event, verdict, bound FROM closure_facts "
+                       "ORDER BY at, id").fetchall()
+    unbound = {mid for _, mid, _, kind, _, _, bound in facts if not bound}
+    book = standings_of_events(
+        {"type": "greg." + kind, "event_id": eid,
+         "payload": {"mission_id": mid, **({"closure_event": named} if named else {}),
+                     **({"verdict": verdict} if verdict is not None else {})}}
+        for eid, mid, _, kind, named, verdict, _ in facts if mid not in unbound)
+    derived = {mid: (None, None, None, UNBOUND) for mid in unbound}
     for mid in book.missions():
         current = book.current(mid)
         stands = current.standing
-        db.execute("INSERT INTO standings VALUES (?,?,?,?) ON CONFLICT(mission_id) DO UPDATE SET "
-                   "closure = excluded.closure, outcome_id = excluded.outcome_id, verdict = excluded.verdict "
-                   "WHERE closure IS NOT excluded.closure OR outcome_id IS NOT excluded.outcome_id "
-                   "OR verdict IS NOT excluded.verdict",
-                   (mid, current.event_id or "achievement", stands.event_id if stands is not None else None,
-                    current.verdict))
+        derived[mid] = (current.event_id or "achievement", stands.event_id if stands is not None else None,
+                        current.verdict, FROM_CLOSURES)
+    for mid, row in derived.items():
+        db.execute("INSERT INTO standings VALUES (?,?,?,?,?) ON CONFLICT(mission_id) DO UPDATE SET "
+                   "closure = excluded.closure, outcome_id = excluded.outcome_id, verdict = excluded.verdict, "
+                   "basis = excluded.basis WHERE closure IS NOT excluded.closure OR outcome_id IS NOT "
+                   "excluded.outcome_id OR verdict IS NOT excluded.verdict OR basis IS NOT excluded.basis",
+                   (mid, *row))
+
+
+def _from_schema_3(db) -> None:
+    """Migration 4's derivation from what a schema-3 model stores: each registration (``decisions``) as a closure
+    fact, and each appraisal row (``outcomes``) as one whose closure is unknown (``bound`` 0), unless the fact itself
+    is already held (restored from a down migration's backup). Then ``_derive_standings``."""
+    db.execute("INSERT OR IGNORE INTO closure_facts SELECT id, mission_id, at, 'mission.registered', NULL, NULL, 1 "
+               "FROM decisions")
+    db.execute("INSERT OR IGNORE INTO closure_facts SELECT id, mission_id, at, 'mission.appraised', NULL, verdict, 0 "
+               "FROM outcomes")
+    _derive_standings(db)
+
+
+AFTER_UP = {4: _from_schema_3}       # run by ``migrate`` after a migration's up statements and backup restore
 
 
 def record_money(root: Path, *, id: str, at: str, mission_id: str, customer: dict, amount_cents: int,

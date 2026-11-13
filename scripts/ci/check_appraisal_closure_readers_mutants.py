@@ -8,11 +8,14 @@ receives no unsupported success credit.").
 
 Mutants for the one reader (greg/appraisal.py ``standings``): how a record that names no closure is read, which of
 several appraisals of one closure stands, the one rule for which closure judges a run or a reading
-(``Standings.judging``), and the book kept per journal. Then one or more per reader: greg/sop.py, greg/metrics.py,
-greg/routing.py, greg/cognition/settlement.py, greg/acceptance.py, greg/autonomy.py, greg/goal_gravity.py,
-greg/cognition/seed_path.py, and the Foundry readers (foundry/systems/reputation.py, twin.py, observability.py,
-graph.py, datamodel.py). Mutants are applied in a scratch copy of the repository, never to the working tree. The copy
-runs without bytecode and its __pycache__ is purged before each mutant. A mutant is caught only when
+(``Standings.judging``: a reading only when its closure's appraisal re-derived it, of a check that closure requires,
+the latest reading of that check in the window), and the book kept per journal. Then one or more per reader:
+greg/sop.py, greg/metrics.py, greg/routing.py, greg/cognition/settlement.py (and its word on whether a claim can
+still settle), greg/acceptance.py, greg/autonomy.py, greg/goal_gravity.py, greg/cognition/seed_path.py, and the
+Foundry readers (foundry/systems/reputation.py, twin.py, observability.py, graph.py, datamodel.py: the ledger view is
+derived from every stored closure fact, never from the order of the ingest calls, and migration 4 derives it from
+what is stored). Mutants are applied in a scratch copy of the repository, never to the working tree. The copy runs
+without bytecode and its __pycache__ is purged before each mutant. A mutant is caught only when
 tests/unit/test_greg_appraisal_closure_readers.py reports a FAILED test (an import or collection error does not
 count). Exit status 1 if any mutant survives or no longer applies.
 """
@@ -34,8 +37,10 @@ GRAPH = "foundry/systems/graph.py"
 DATAMODEL = "foundry/systems/datamodel.py"
 TESTS = "tests/unit/test_greg_appraisal_closure_readers.py"
 LATEST = 'for e in journal.replay("mission.appraised") if book.named_by(e.event_id)'
+READING = ('        closure = book.judging(p.get("mission_id"), book.pos.get(event.event_id), reading=True,\n'
+           '                               check=p.get("check_id"))\n')
 OWN_CLOSURE = ("        closure = self._by_mission[mission_id][i]\n        if not closure.start < position:\n"
-               "            return None\n")
+               "            return None, \"outside\"\n")
 MUTANTS = [
     # the one reader: several appraisals of one closure, and records that name no closure
     (APPRAISAL, "the first appraisal of a closure stands, not its final one",
@@ -56,11 +61,24 @@ MUTANTS = [
      OWN_CLOSURE,
      "        closure = [c for c in self._by_mission[mission_id][i:] if c.start < position][-1]\n"),
     (APPRAISAL, "a run after the mission's newest closure is judged by that closure",
-     '            return None                 # after the mission\'s newest closure: no closure has evaluated it yet\n',
-     '            return self._by_mission[mission_id][-1]\n'),
+     '            return None, "open"         # after the mission\'s newest closure: no closure has evaluated it yet\n',
+     '            return self._by_mission[mission_id][-1], None\n'),
     (APPRAISAL, "a reading taken before a later run of its window is judged by the closure",
      '            if last and runs[last - 1] > closure.start and runs[last - 1] > position:\n',
      '            if False:\n'),
+    # ... and only a reading the closure's appraisal re-derived (independent re-check of #310, C1)
+    (APPRAISAL, "a reading of a check its closure's appraisal does not re-derive is judged by the closure",
+     '            if check is None or check not in closure.rederives:\n', '            if False:\n'),
+    (APPRAISAL, "a failure closure re-derives every check, not only those it names as failing",
+     '            rederives = (frozenset(p.get("failing_checks") or ()) & every if kind == "mission.unmet"\n',
+     '            rederives = (every if kind == "mission.unmet"\n'),
+    (APPRAISAL, "a hold re-derives every check, not only those of the signed ladder",
+     '                         else rungs if kind == "mission.held" else every)\n',
+     '                         else every if kind == "mission.held" else every)\n'),
+    (APPRAISAL, "a reading its closure re-read later in the window is judged by the closure",
+     '            if later < len(reads) and reads[later] < closure.at:\n', '            if False:\n'),
+    (APPRAISAL, "the checks a registration signs are not kept, so no closure re-derives any reading",
+     '            self._checks[mid] = _rederived(p.get("spec"))\n', ''),
     # the book kept per journal
     (APPRAISAL, "every call folds the journal from scratch: nothing is kept",
      '        kept = _KEPT.get(spine)\n', '        kept = None\n'),
@@ -89,11 +107,18 @@ MUTANTS = [
      '    for mid, closure in {e.payload["mission_id"]: book.named_by(e.event_id)\n'
      '                         ' + LATEST + '}.items():\n'),
     (SETTLEMENT, "every reading settles under the mission's newest closure, whichever closure claimed it",
-     '        closure = book.judging(event.payload.get("mission_id"), book.pos.get(event.event_id), reading=True)\n',
-     '        closure = (book.of(event.payload.get("mission_id")) or [None])[-1]\n'),
+     READING, '        closure = (book.of(p.get("mission_id")) or [None])[-1]\n'),
     (SETTLEMENT, "a reading is judged as a run: one a later run of its window superseded still settles",
-     '        closure = book.judging(event.payload.get("mission_id"), book.pos.get(event.event_id), reading=True)\n',
-     '        closure = book.judging(event.payload.get("mission_id"), book.pos.get(event.event_id))\n'),
+     READING, '        closure = book.judging(p.get("mission_id"), book.pos.get(event.event_id))\n'),
+    # whether a claim that does not settle can still settle (independent re-check of #310, C3)
+    (SETTLEMENT, "a claim whose own closure stands on a final verdict is said to wait for an appraisal",
+     '            if closure.standing is None:\n                waiting = True\n',
+     '            if True:\n                waiting = True\n'),
+    (SETTLEMENT, "a claim read only after the mission's achievement is said to wait for a later closure",
+     '            if why == "open" and (achieved is None or achieved.event_id is None):\n',
+     '            if why == "open":\n'),
+    (SETTLEMENT, "a dispute that can never settle is said to wait until a closure is appraised",
+     '        if not settles(row) and never is not None:\n', '        if False:\n'),
     (ACCEPTANCE, "the acceptance report reads the mission's latest appraisal, not the achievement's",
      '        appraised = {m: book.achievement(m).verdict for m in achieved}\n',
      '        appraised = {e.payload["mission_id"]: e.payload["verdict"] for e in journal.replay("mission.appraised")}\n'),
@@ -112,10 +137,12 @@ MUTANTS = [
     (REPUTATION, "a closure's verdict reaches every run of its mission",
      '            closure = book.judging(p.get("mission_id"), book.pos.get(e["event_id"]))\n'
      '            stands = closure.standing if closure is not None else None\n'
-     '            if stands is not None:\n',
+     '            if stands is not None:\n'
+     '                judged.setdefault(stands.event_id, set()).add(p.get("capability") or "?")',
      '            for closure in book.of(p.get("mission_id")):\n'
      '                stands = closure.standing\n'
-     '                if stands is not None:\n'),
+     '                if stands is not None:\n'
+     '                    judged.setdefault(stands.event_id, set()).add(p.get("capability") or "?")'),
     (REPUTATION, "every appraisal of a closure is an outcome, an UNAVAILABLE answer included",
      '        if e["type"].removeprefix("greg.") == "mission.appraised" and e["event_id"] in judged:\n',
      '        named = book.named_by(e["event_id"]) if e["type"].endswith("mission.appraised") else None\n'
@@ -138,6 +165,17 @@ MUTANTS = [
     (GRAPH, "an appraisal measures every receipt so far, whatever closure judged its run",
      '            for receipt in measured.get(id(closure), ()) if closure is not None else ():\n',
      '            for receipt in [r for rows in measured.values() for r in rows]:\n'),
+    (DATAMODEL, "the standing follows the order of the ingest calls, not the (at, event id) order of the facts",
+     '                       "ORDER BY at, id").fetchall()\n', '                       "ORDER BY rowid").fetchall()\n'),
+    (DATAMODEL, "an appraisal row carried from schema 3 is read as one naming no closure",
+     '        for eid, mid, _, kind, named, verdict, _ in facts if mid not in unbound)\n',
+     '        for eid, mid, _, kind, named, verdict, _ in facts)\n'),
+    (DATAMODEL, "migration 4 derives nothing from what the model already stores",
+     '                if v in AFTER_UP:                      # derived from what is stored now, the restored rows '
+     'included\n', '                if False:\n'),
+    (DATAMODEL, "a fact ingested again never binds the row schema 3 carried",
+     '                                   "WHERE closure_facts.bound = 0",\n',
+     '                                   "WHERE 0",\n'),
     (DATAMODEL, "the mission ledger reads the latest outcome row, whatever closure it judged",
      '        "(SELECT s.verdict FROM standings s WHERE s.mission_id = d.mission_id) AS current_verdict, "\n',
      '        "(SELECT o.verdict FROM outcomes o WHERE o.mission_id = d.mission_id ORDER BY o.at DESC, o.id DESC "\n'

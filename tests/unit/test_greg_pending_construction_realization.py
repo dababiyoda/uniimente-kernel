@@ -268,6 +268,15 @@ def appraise(journal, verdict, mission_id="m:pending-fixture"):
                                          "checks": {k: verdict.startswith("VERIFIED") for k in REQUIRED_CHECKS}})
 
 
+def held(journal, verdict, mission_id="m:pending-fixture"):
+    """A hold of the mission and its own appraisal, which names it."""
+    from greg.sop import REQUIRED_CHECKS
+    journal.record("mission.held", {"mission_id": mission_id})
+    journal.record("mission.appraised", {"mission_id": mission_id, "verdict": verdict,
+                                         "closure_event": journal.events[-1].event_id,
+                                         "checks": {k: verdict.startswith("VERIFIED") for k in REQUIRED_CHECKS}})
+
+
 def test_the_row_says_when_a_report_will_settle_following_the_missions_latest_appraisal():
     """Review finding 2 on #210 (...foabg): a claim whose mission's latest appraisal is not VERIFIED was offered
     with an unconditional "settles once"; a report on it is recorded and scores nothing until it is."""
@@ -278,7 +287,9 @@ def test_the_row_says_when_a_report_will_settle_following_the_missions_latest_ap
     appraise(journal, "REFUTED")
     [row] = settlement.awaiting_realization(journal)
     assert row["mission_appraisal"] == "REFUTED"
-    assert row["settles"].startswith("only once the closure its readings belong to has an eligible settling appraisal")
+    # The final REFUTED is the standing of the claim's own closure, which is never appraised again (greg/appraisal.py):
+    # the row says the claim never settles, not that it waits (independent re-check of #310, C3).
+    assert row["settles"].startswith("never: its readings' own closures stand REFUTED")
 
 
 
@@ -291,18 +302,22 @@ def test_a_verified_failure_closure_settles_like_a_verified_success_and_a_later_
     assert row["mission_appraisal"] == "VERIFIED_UNMET" and row["settles"].startswith("once for the claim")
     appraise(journal, "REFUTED")
     [row] = settlement.awaiting_realization(journal)
-    assert row["settles"].startswith("only once") and "VERIFIED_UNMET" in row["settles"]
+    assert row["settles"].startswith("never: its readings' own closures stand REFUTED")    # final, as above
 
 
 def test_a_report_on_one_answer_never_settles_a_different_later_answer_of_the_same_claim():
     """Answer-version alias (directive on #210, 2026-10-28), reproduced on ec38d8a5 as a strict xfail and fixed: the
     claim identity bound mission, check, input, method and version but not the answer, so a report on one certified
     answer (promise 2) settled a later, different answer of the same check (promise 4), which was no longer asked
-    for. A construction's claim now names its answer (``answer_version``)."""
+    for. A construction's claim now names its answer (``answer_version``). Each answer is read in the window of its
+    own closure, whose appraisal re-derived it: a closure's appraisal re-derives only the latest reading of a check in
+    its window, so an answer read before a later answer of the same check settles under no appraisal (greg/appraisal.py
+    ``Standings.judging``; independent re-check of #310)."""
     journal, first = pending()                                  # promises profit 2
+    held(journal, "VERIFIED")                                   # its own closure re-derived that reading
     later = answer(journal, result={"profit": 4})               # same signed check and input, a different answer
     observe(journal, later)
-    appraise(journal, "VERIFIED")
+    held(journal, "VERIFIED")
     settlement.record_realization(journal, receipt=first, realized=1, source="founder_reported")
     outcomes = settlement.measured_outcomes(journal)
     assert len(outcomes) == 2 and len({o["answer_version"] for o in outcomes}) == 2

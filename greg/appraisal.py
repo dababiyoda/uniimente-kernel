@@ -917,30 +917,45 @@ def _verdict(request, checks, findings, required=(), unmet=False, not_run=None, 
 #     failure closure, which the founder or another run may have changed since. Its VERIFIED is no evidence that the
 #     run succeeded and its REFUTED none that the run failed: it never judges the run in its own closure's place,
 #     before or after that closure's own appraisal lands.
-#   - a reading is judged by its own closure on the same terms, and only when it was taken after the last run
-#     completed in that closure's window: those are the readings the closure's appraisal re-derives. A reading taken
-#     before a later run of its window is superseded by that run, and no appraisal re-derives it.
+#   - a reading is judged by its own closure on the same terms, and only when that closure's appraisal re-derived it.
+#     ``appraise`` re-derives, of the readings taken after the last run completed in the window, the latest reading
+#     of each check the closure requires: every success check for an achievement; for a hold, the checks of the
+#     signed ladder's rungs when the mission has one, otherwise every success check; for a failure closure, only the
+#     checks it names as failing ("checks it does not name are not part of the claim"). Every other reading of the
+#     window was re-derived by no appraisal: one taken before a later run (superseded by that run), one of a check the
+#     closure does not require, and one the closure re-read later (a later reading of the same check in its window).
 #   - the judgment is that closure's standing. A run or a reading with no own closure yet (after the mission's newest
-#     closure), one whose own closure is unappraised or whose final appraisal is UNAVAILABLE, and a reading taken
-#     before a later run of its window, is unjudged: unappraised for routing and the earned ladder, unsettled for
+#     closure), one whose own closure is unappraised or whose final appraisal is UNAVAILABLE, and a reading its own
+#     closure's appraisal did not re-derive, is unjudged: unappraised for routing and the earned ladder, unsettled for
 #     settlement. It never borrows a verdict from a closure that did not evaluate it.
 # What a mission stands on now (its current closure: the achievement, or the newest closure while there is none) is
 # a different question, asked by readers of the mission as a whole (sop, metrics, compounding, Goal Gravity).
 ESTABLISHES = ("VERIFIED", "VERIFIED_UNMET", "REFUTED")
 CLOSING = {"mission.held": "held", "mission.achieved": "achieved", "mission.unmet": "unmet"}
 FOLDED = ("mission.registered", "mission.held", "mission.achieved", "mission.unmet", "mission.appraised",
-          "mission.action")
+          "mission.action", "mission.observed")
+
+
+def _rederived(spec) -> tuple:
+    """(every success check id of this signed mission, the checks a hold's appraisal re-derives): ``appraise``
+    requires the union of the ladder's rungs for a hold when the mission has a ladder, otherwise every success check.
+    A check id the mission does not declare is never re-derived."""
+    every = frozenset(c.get("check_id") for c in (spec or {}).get("success_checks") or () if isinstance(c, dict))
+    ladder = ((spec or {}).get("closure") or {}).get("ladder") or ()
+    rungs = frozenset(c for rung in ladder if isinstance(rung, (list, tuple)) for c in rung)
+    return every, (rungs & every if ladder else every)
 
 
 class Closure:
     """One closure of a mission and every appraisal that names it."""
-    __slots__ = ("mission_id", "event_id", "kind", "start", "at", "appraisals")
+    __slots__ = ("mission_id", "event_id", "kind", "start", "at", "appraisals", "rederives")
 
-    def __init__(self, mission_id, event_id, kind, start, at):
+    def __init__(self, mission_id, event_id, kind, start, at, rederives=frozenset()):
         self.mission_id, self.event_id = mission_id, event_id   # event_id None: an achievement the ledger lacks
         self.kind = kind                                        # "achieved", "held" or "unmet"
         self.start, self.at = start, at                         # its window, as ledger positions (both exclusive)
         self.appraisals = []                                    # in ledger order
+        self.rederives = rederives                              # the check ids its appraisal re-derives a reading of
 
     @property
     def record(self):
@@ -981,6 +996,8 @@ class Standings:
         self._achievement = {}          # mission id -> the achievement an appraisal naming no closure judged
         self._opened = {}               # mission id -> position of its registration or its newest hold so far
         self._runs = {}                 # mission id -> positions of its completed (DONE) runs, ascending
+        self._reads = {}                # (mission id, check id) -> positions of its readings, ascending
+        self._checks = {}               # mission id -> ``_rederived`` of its latest registration's signed spec
         self._named = {}                # appraisal event id -> the closure it judged
         self.unbound = []               # appraisals that name no closure on this ledger
         self._order = {}                # mission ids in the order of their first appraisal on the ledger
@@ -1000,8 +1017,14 @@ class Standings:
             if p.get("status") == "DONE":
                 self._runs.setdefault(mid, []).append(at)
             return
+        if kind == "mission.observed":
+            self._reads.setdefault((mid, p.get("check_id")), []).append(at)
+            return
         if kind in CLOSING:             # a closure: its window opened at the latest start before it
-            closure = Closure(mid, event.event_id, CLOSING[kind], self._opened.get(mid, -1), at)
+            every, rungs = self._checks.get(mid, (frozenset(), frozenset()))
+            rederives = (frozenset(p.get("failing_checks") or ()) & every if kind == "mission.unmet"
+                         else rungs if kind == "mission.held" else every)
+            closure = Closure(mid, event.event_id, CLOSING[kind], self._opened.get(mid, -1), at, rederives)
             self._add(closure)
             self._by_event[event.event_id] = closure
             prior = self._achievement.get(mid)
@@ -1011,13 +1034,15 @@ class Standings:
             self._opened[mid] = at
         if kind == "mission.registered":    # a record naming no closure judged this registration's achievement
             self._achievement.pop(mid, None)
+            self._checks[mid] = _rederived(p.get("spec"))
         if kind != "mission.appraised":
             return
         self._order.setdefault(mid, None)
         wanted = p.get("closure_event")
         closure = self._by_event.get(wanted) if wanted else self._achievement.get(mid)
         if closure is None and not wanted:      # no achievement on the ledger before it: one it does not hold
-            closure = Closure(mid, None, "achieved", self._opened.get(mid, -1), at)
+            closure = Closure(mid, None, "achieved", self._opened.get(mid, -1), at,
+                              self._checks.get(mid, (frozenset(),))[0])
             self._add(closure)
             self._achievement[mid] = closure
         if closure is None or closure.mission_id != mid:
@@ -1056,27 +1081,46 @@ class Standings:
         hold, or a failure closure recorded since). None before the first closure."""
         return self.achievement(mission_id) or (self.of(mission_id) or [None])[-1]
 
-    def judging(self, mission_id, position, *, reading=False):
-        """The closure that judges the run (or, with ``reading``, the reading) this mission recorded at this ledger
-        position, or None while none does (the rule in the section comment above). It is the run's own closure: the
-        first closure of the mission recorded after it, when that closure's window holds it. A reading is judged by
-        that closure only when it was taken after the last run completed in the window. Its judgment is the
-        closure's ``standing``; no other closure ever judges in its place."""
+    def judging(self, mission_id, position, *, reading=False, check=None):
+        """The closure that judges the run (or, with ``reading``, the reading of ``check``) this mission recorded at
+        this ledger position, or None while none does (the rule in the section comment above). It is the run's own
+        closure: the first closure of the mission recorded after it, when that closure's window holds it. A reading
+        is judged by that closure only when the closure's appraisal re-derived it: taken after the last run completed
+        in the window, of a check the closure requires, and the latest reading of that check in the window. A reading
+        whose check is not given is judged by no closure. Its judgment is the closure's ``standing``; no other closure
+        ever judges in its place."""
+        return self._judge(mission_id, position, reading, check)[0]
+
+    def reading(self, mission_id, position, check):
+        """(the closure that judges this reading of ``check``, or None; why not). ``why`` is None when a closure
+        judges it, "open" while no closure of the mission has been recorded after it (a later one may claim it), and
+        otherwise why no appraisal ever will re-derive it: "unplaced" (not on this ledger), "outside" (no window
+        holds it), "superseded" (a later run of its window), "unnamed" (its own closure does not require that check)
+        or "reread" (its own closure re-read that check later in the window)."""
+        return self._judge(mission_id, position, True, check)
+
+    def _judge(self, mission_id, position, reading, check):
         if position is None or position < 0:
-            return None
+            return None, "unplaced"
         ats = self._ats.get(mission_id, ())
         i = bisect_right(ats, position)
         if i >= len(ats):
-            return None                 # after the mission's newest closure: no closure has evaluated it yet
+            return None, "open"         # after the mission's newest closure: no closure has evaluated it yet
         closure = self._by_mission[mission_id][i]
         if not closure.start < position:
-            return None
+            return None, "outside"
         if reading:
             runs = self._runs.get(mission_id, ())
             last = bisect_left(runs, closure.at)    # runs before the closure; the last one in the window, if any
             if last and runs[last - 1] > closure.start and runs[last - 1] > position:
-                return None             # a later run of its window superseded it: no appraisal re-derived it
-        return closure
+                return None, "superseded"   # a later run of its window superseded it: no appraisal re-derived it
+            if check is None or check not in closure.rederives:
+                return None, "unnamed"      # its appraisal re-derives only the checks its closure requires
+            reads = self._reads.get((mission_id, check), ())
+            later = bisect_right(reads, position)
+            if later < len(reads) and reads[later] < closure.at:
+                return None, "reread"       # the appraisal re-derived the latest reading of that check, not this one
+        return closure, None
 
     def current_records(self) -> dict:
         """mission id -> (its current closure, that closure's final appraisal), for every mission whose current

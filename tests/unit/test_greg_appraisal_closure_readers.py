@@ -163,10 +163,10 @@ class Hand:
         self.n += 1
         return self.j.record(kind, data, key=[kind, self.n])
 
-    def register(self, mid, closure=None):
-        spec = mission(mid, checks=[note_check("c", Path("/nowhere/c.txt"), "ok")],
-                       strategies=[write_strategy("w", "c.txt", "ok", ["c"])], capabilities=["fs.read", "fs.write"],
-                       **({"closure": closure} if closure else {}))
+    def register(self, mid, closure=None, checks=("c",)):
+        spec = mission(mid, checks=[note_check(c, Path(f"/nowhere/{c}.txt"), "ok") for c in checks],
+                       strategies=[write_strategy("w", "c.txt", "ok", list(checks))],
+                       capabilities=["fs.read", "fs.write"], **({"closure": closure} if closure else {}))
         return self.rec("mission.registered", {"mission_id": mid, "command_digest": "sha256:" + mid, "spec": spec})
 
     def run(self, mid, action="w", receipt=None, capability="fs.write"):
@@ -174,11 +174,11 @@ class Hand:
                                            "status": "DONE", "capability": capability,
                                            "receipt": receipt or f"sha256:r{self.n}"})
 
-    def observe(self, mid, check="c"):
-        return self.rec("mission.observed", {"mission_id": mid, "check_id": check, "passed": True})
+    def observe(self, mid, check="c", passed=True):
+        return self.rec("mission.observed", {"mission_id": mid, "check_id": check, "passed": passed})
 
-    def close(self, mid, kind):
-        return self.rec("mission." + kind, {"mission_id": mid})
+    def close(self, mid, kind, **more):
+        return self.rec("mission." + kind, {"mission_id": mid, **more})
 
     def appraise(self, mid, verdict, closure=None, **more):
         checks = {**CHECKS, "world_reobserved": verdict != "REFUTED"}
@@ -692,6 +692,45 @@ def test_hand_ordered_a_reading_settles_only_under_the_closure_that_re_derived_i
     assert (record["done"], record["verified"]) == (3, 2)
 
 
+def test_hand_ordered_a_reading_settles_only_when_its_closures_appraisal_re_derived_that_check(tmp_path):
+    """Hand-ordered. A closure's appraisal re-derives, of the readings after the last run of its window, only the
+    latest reading of each check it requires (greg/appraisal.py ``appraise``): a failure closure only the checks it
+    names ("checks it does not name are not part of the claim"), a hold of a standing mission with a ladder only the
+    ladder's checks, an achievement every success check. A reading of any other check, and an earlier reading of a
+    check the closure re-read later, was re-derived by no appraisal: it stays unsettled and earns no competence
+    credit. Before, each settled under the closure's verdict (independent re-check of #310, C1: on a real body a
+    passing check a failure closure did not name settled as correct under its VERIFIED_UNMET)."""
+    led = Hand(tmp_path)
+    led.register("m:unnamed", checks=("good", "bad"))
+    led.run("m:unnamed")
+    good, bad = led.observe("m:unnamed", "good"), led.observe("m:unnamed", "bad", passed=False)
+    unmet = led.close("m:unnamed", "unmet", failing_checks=["bad"])
+    failure = led.appraise("m:unnamed", "VERIFIED_UNMET", unmet)
+    led.register("m:ladder", closure={"kind": "infinite", "ladder": [["c"]]}, checks=("c", "d"))
+    led.run("m:ladder")
+    rung, outside = led.observe("m:ladder", "c"), led.observe("m:ladder", "d")
+    held = led.appraise("m:ladder", "VERIFIED", led.close("m:ladder", "held"))
+    led.register("m:reread")
+    led.run("m:reread")
+    first, last = led.observe("m:reread", passed=False), led.observe("m:reread")
+    led.close("m:reread", "achieved")
+    won = led.appraise("m:reread", "VERIFIED")
+    appraisal_of = settlement._observation_appraisal(led.j)
+    settled = {name: (appraisal_of(e).event_id if appraisal_of(e) is not None else None) for name, e in (
+        ("good", good), ("bad", bad), ("rung", rung), ("outside", outside), ("first", first), ("last", last))}
+    assert settled == {"good": None, "bad": failure.event_id, "rung": held.event_id, "outside": None,
+                       "first": None, "last": won.event_id}
+    book = appraisal.standings(led.j)
+    assert book.judging("m:unnamed", book.pos[good.event_id], reading=True, check="good") is None
+    assert book.judging("m:unnamed", book.pos[bad.event_id], reading=True, check="bad").event_id == unmet.event_id
+    assert book.judging("m:unnamed", book.pos[bad.event_id], reading=True) is None     # a reading names its check
+    assert [book.reading("m:unnamed", book.pos[e.event_id], c)[1] for e, c in ((good, "good"), (bad, "bad"))] == [
+        "unnamed", None]
+    assert book.reading("m:reread", book.pos[first.event_id], "c")[1] == "reread"
+    # what a reading's own closure judges about the run is unchanged: the run is judged as before
+    assert judged(led.j, "m:unnamed", led.j.replay("mission.action")[0]) == unmet.event_id
+
+
 def body_events(journal) -> list[dict]:
     return [{"type": e.type, "event_id": e.event_id, "payload": e.payload, "at": e.occurred_at}
             for e in journal.replay("")]
@@ -752,6 +791,76 @@ def test_the_foundry_readers_judge_each_run_by_its_own_closure_and_read_unavaila
     assert (subjects["fs.append"]["effective_outcomes"], subjects["fs.append"]["incidents"]) == (1.0, 0)
 
 
+def test_the_mission_ledger_is_a_function_of_the_ingested_facts_and_migration_4_derives_it(tmp_path):
+    """Hand-ordered. The Foundry data model's ``current_verdict`` is the standing of each mission's current closure
+    (greg/appraisal.py ``standings``), derived from every closure fact the model holds, in (at, event id) order: it
+    does not depend on the order or the grouping of the ingest calls that brought them. Migration 4 derives it from
+    what the model already stores. Schema 3 kept no closures, so an appraisal row it stored cannot be bound to the
+    closure it judged: such a mission is marked unbound, with no verdict, until the journal is ingested again (never
+    read as the latest row, the reading the founder ruled out). Before (independent re-check of #310, C2): the
+    verdict followed the last ingest call, so a reordered list blanked it and an older export overwrote a newer
+    standing; right after the migration every mission was NULL with nothing saying why."""
+    import random
+    from foundry.systems import datamodel
+    led = Hand(tmp_path)
+    led.register("m:f")
+    led.run("m:f")
+    unmet = led.close("m:f", "unmet")
+    led.run("m:f", capability="fs.append")
+    led.close("m:f", "achieved")
+    led.appraise("m:f", "VERIFIED")
+    led.appraise("m:f", "REFUTED", unmet)
+    led.register("m:h", closure={"kind": "infinite"})
+    holds = []
+    for verdict in ("VERIFIED", "REFUTED", None):    # hold 3 is recorded and not appraised
+        led.run("m:h")
+        led.observe("m:h")
+        holds.append(led.close("m:h", "held"))
+        if verdict:
+            holds[-1] = led.appraise("m:h", verdict, holds[-1])
+    h1 = holds[0]                                    # hold 1's VERIFIED
+    led.register("m:g")
+    led.run("m:g")
+    led.close("m:g", "achieved")
+    led.appraise("m:g", "UNAVAILABLE", not_run={"fs.read": "fs.read is DETACHED"})
+    led.appraise("m:g", "VERIFIED")
+    events = body_events(led.j)
+    truth = {"m:f": "VERIFIED", "m:g": "VERIFIED", "m:h": None}
+
+    def ledger(root, column="current_verdict"):
+        return {r["mission_id"]: r[column] for r in datamodel.mission_ledger(root)}
+
+    root = tmp_path / "model"
+    datamodel.migrate(root, 4)
+    datamodel.ingest_greg(root, events)
+    assert ledger(root) == truth
+    shuffled = events[:]
+    random.Random(7).shuffle(shuffled)
+    prefix = events[:[e["event_id"] for e in events].index(h1.event_id) + 1]   # an older export: up to H1's VERIFIED
+    for again in (events, shuffled, events[::-1], prefix):
+        assert (datamodel.ingest_greg(root, again)["rows_changed"], ledger(root)) == (0, truth)
+    assert set(ledger(root, "current_basis").values()) == {"closure"}
+    other = tmp_path / "other"                      # the same facts, brought in pieces and out of order
+    datamodel.migrate(other, 4)
+    datamodel.ingest_greg(other, prefix[::-1])
+    assert ledger(other)["m:h"] == "VERIFIED"        # what those facts say: H1 is the newest closure they hold
+    datamodel.ingest_greg(other, events[len(prefix):][::-1])
+    assert ledger(other) == truth
+
+    v3 = tmp_path / "v3"                             # a model populated under schema 3, then migrated
+    datamodel.migrate(v3, 3)
+    datamodel.ingest_greg(v3, events)
+    assert datamodel.migrate(v3, 4)["steps"] == ["up 4"]
+    assert ledger(v3) == {"m:f": None, "m:g": None, "m:h": None}
+    assert all(b.startswith("unbound") for b in ledger(v3, "current_basis").values())
+    datamodel.ingest_greg(v3, shuffled)              # the journal again: every stored appraisal is bound now
+    assert ledger(v3) == truth and set(ledger(v3, "current_basis").values()) == {"closure"}
+
+    assert datamodel.migrate(root, 3)["steps"] == ["down 4"] and (root / "backup-v4.json").exists()
+    assert datamodel.migrate(root, 4)["steps"] == ["up 4"]   # the facts come back and the standing is derived again
+    assert ledger(root) == truth and datamodel.ingest_greg(root, events)["rows_changed"] == 0
+
+
 def test_cognition_settle_takes_computation_verified_only_from_the_receipts_own_closure(tmp_path):
     """Hand-ordered. A standing mission: receipt R1, hold 1 appraised VERIFIED (A1); receipt R2, hold 2 appraised
     REFUTED; receipt R3 after the newest hold. A1 judged hold 1's window, which holds R1 only: it qualifies R1 as
@@ -788,6 +897,63 @@ def test_cognition_settle_takes_computation_verified_only_from_the_receipts_own_
             call(outcome_id, receipt_id, ref.event_id)
     assert call("o1", first, a1.event_id)["tier"] == "computation_verified"
     assert [e.payload["receipt_id"] for e in led.j.replay("cognition.outcome")] == [first]
+
+
+def test_a_claim_says_it_never_settles_when_its_own_closure_stands_on_a_final_refutation():
+    """Hand-ordered, on the pending-construction fixture. A claim's only reading belongs to hold 1 of a standing
+    mission; hold 1 is REFUTED and hold 2 VERIFIED. A closure's established verdict is final (greg/appraisal.py: it is
+    never appraised again), so this claim never settles, and the founder-facing rows must say so, not that it waits
+    for an appraisal. When the claim's own closure is still unappraised, it waits for that closure, not for the
+    mission's current one. A reading taken after a bounded mission's achievement is evaluated by no closure and
+    never will be. Before (independent re-check of #310, C3), priority_why said the claim waits "until that closure
+    is appraised" next to "the mission's current closure stands VERIFIED"."""
+    from tests.unit.test_greg_pending_construction_realization import CHECK, observe, pending
+
+    def hold(journal):
+        journal.record("mission.held", {"mission_id": "m:pending-fixture"})
+        return journal.events[-1].event_id
+
+    def appraise(journal, verdict, closure_event):
+        journal.record("mission.appraised", {"mission_id": "m:pending-fixture", "verdict": verdict,
+                                             "closure_event": closure_event,
+                                             "checks": {k: verdict.startswith("VERIFIED") for k in CHECKS}})
+
+    def dispute(journal, receipt):             # two reports that disagree on whether the promise was kept
+        for value in (1, 2):
+            settlement.record_realization(journal, receipt=receipt, realized=value, source="founder_reported")
+        [row] = [r for r in settlement.awaiting_realization(journal) if r.get("kind") == "objective_conflict"]
+        return row
+
+    journal, receipt = pending()
+    appraise(journal, "REFUTED", hold(journal))
+    appraise(journal, "VERIFIED", hold(journal))
+    [row] = settlement.awaiting_realization(journal)
+    assert row["mission_appraisal"] == "VERIFIED"
+    assert row["settles"].startswith("never") and "REFUTED" in row["settles"]
+    row = dispute(journal, receipt)
+    assert (row["priority"], row["claim_settles"]) == ("hold", False)
+    assert row["priority_why"].startswith("this claim cannot settle") and "REFUTED" in row["priority_why"]
+    assert "until" not in row["priority_why"]
+
+    journal, receipt = pending()
+    hold(journal)                                       # hold 1: the claim's own closure, not appraised yet
+    appraise(journal, "VERIFIED", hold(journal))
+    [row] = settlement.awaiting_realization(journal)
+    assert row["mission_appraisal"] == "VERIFIED" and row["settles"].startswith("only once")
+    row = dispute(journal, receipt)
+    assert row["priority_why"].startswith("no appraisal settles this claim's observations yet")
+    assert "until a closure that re-derives one of its readings is appraised" in row["priority_why"]
+    assert "cannot settle" not in row["priority_why"]
+
+    journal, receipt = pending(observed=False)          # the only reading comes after the achievement: no closure
+    journal.record("mission.registered", {"mission_id": "m:pending-fixture", "command_digest": "sha256:" + "c" * 64,
+                                          "spec": {"success_checks": [CHECK]}})
+    journal.record("mission.achieved", {"mission_id": "m:pending-fixture"})
+    appraise(journal, "VERIFIED", None)                 # names no closure: the achievement's
+    observe(journal, receipt)                           # is recorded after it, so none evaluates this reading
+    [row] = settlement.awaiting_realization(journal)
+    assert row["mission_appraisal"] == "VERIFIED"
+    assert row["settles"].startswith("never: its readings were re-derived by no appraisal, and none ever will be")
 
 
 def test_goal_gravity_withdraws_the_verdict_when_the_current_closure_has_none(tmp_path, appraiser):
@@ -852,9 +1018,10 @@ def test_standings_is_kept_per_journal_and_folded_forward(tmp_path, monkeypatch)
     folded = appraisal.standings(led.j)
 
     def shape(b):
-        return ([(c.mission_id, c.event_id, c.kind, c.start, c.at, [e.event_id for e in c.appraisals])
-                 for m in b.missions() for c in b.of(m)], [e.event_id for e in b.unbound], b.appraised,
-                {m: b._runs.get(m) for m in b.missions()})
+        return ([(c.mission_id, c.event_id, c.kind, c.start, c.at, [e.event_id for e in c.appraisals],
+                  sorted(c.rederives)) for m in b.missions() for c in b.of(m)],
+                [e.event_id for e in b.unbound], b.appraised, {m: b._runs.get(m) for m in b.missions()},
+                dict(b._reads))
     assert shape(folded) == shape(appraisal._fold_from_scratch(led.j, led.j.positions("")))
     monkeypatch.setattr(appraisal.Standings, "of", lambda self, mid: pytest.fail("achievement scanned the closures"))
     assert folded.achievement("m:a").verdict == "VERIFIED" and folded.current("m:a").kind == "achieved"

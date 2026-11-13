@@ -3,7 +3,8 @@
 The first computer is Body 1, not the institution's identity. The institution is
 the ledger, the founder key and the missions; a replacement machine restores
 from them. Additional nodes join only by founder-signed NODE_ENROLL, each with
-its own identity and a bounded light cone, never universal authority.
+its own identity and a bounded light cone, never universal authority, and leave
+by founder-signed NODE_REVOKE or at the expiry their enrollment names.
 
 Growth is an instrument for founder goals. Telemetry may justify a
 recommendation with alternatives and uncertainty; it may not buy, rent or
@@ -43,6 +44,7 @@ import tempfile
 import time
 
 from greg import asks
+from greg.founder import instant, key_id, stamp
 from greg.journal import Journal, fact_id, iso, utcnow
 from greg.lightcone import LightCone
 from provenance.ledger import sha256_json
@@ -612,14 +614,164 @@ def verify_improvement(before, after, *, alpha: float = ALPHA) -> dict:
     return {**result, **stats, "verdict": "VERIFIED" if faster else "NOT_IMPROVED", "reason": reason}
 
 
-def enroll_node(journal: Journal, body: dict, command_digest: str) -> dict:
+# --- additional nodes: founder-signed enrollment, revocation and expiry ------------------------------------------
+# A node is a machine identity under a bounded light cone, never a principal. NODE_ENROLL and NODE_REVOKE are founder
+# key only (greg/founder.py: no device may sign them), and a node's key is never a key that has spoken for the founder
+# nor this body's own identity key: a node is another machine. A restore voids every enrollment from before it
+# (greg/recovery.py), as it voids device delegations. An enrollment is admission, not activation: nothing here leases
+# work to a node or verifies anything a node signs.
+
+def _node_key(value) -> bytes:
+    raw = None
+    if isinstance(value, str) and len(value) == 64:
+        try:
+            raw = bytes.fromhex(value)
+        except ValueError:
+            raw = None
+    if raw is None or len(raw) != 32:
+        raise ValueError("node key must be a 32-byte Ed25519 public key in hex")
+    return raw
+
+
+def _principal_keys(journal: Journal) -> set[bytes]:
+    """Every public key this body ever enrolled for the founder (rotated-out keys too) or delegated to a device
+    (revoked delegations too): a key that has spoken for the founder never becomes a machine identity."""
+    found = [e.payload.get("public_key") for e in journal.replay("founder.enrolled")]
+    found += [e.payload.get("new_public_key") for e in journal.replay("founder.key_rotated")]
+    found += [e.payload.get("public_key") for e in journal.replay("device.enrolled")]
+    keys = set()
+    for value in found:
+        try:
+            keys.add(bytes.fromhex(value))
+        except (TypeError, ValueError):
+            continue
+    return keys
+
+
+def _own_body_ids(journal: Journal) -> set[str]:
+    """The body_id this body recorded for itself (at founder enrollment and at each boot). init_body derives it from
+    the body's own identity key, so a key that derives it is the key whose private half is in this body's home."""
+    ids = {e.payload.get("body_id") for e in journal.replay("founder.enrolled")}
+    ids |= {e.payload.get("body_id") for e in journal.replay("body.booted")}
+    return {i for i in ids if isinstance(i, str)}
+
+
+def _body_id_of(raw: bytes) -> str:
+    return "body-" + key_id(raw.hex())[8:24]      # greg/body.py init_body: the body_id of an identity key
+
+
+def node_states(journal: Journal, *, now: datetime | None = None) -> dict[str, dict]:
+    """Read-only: each enrolled node_id's current enrollment and its state now, ACTIVE, REVOKED or EXPIRED.
+
+    Folded in ledger order: an enrollment starts a node_id's current enrollment, the first revocation after it ends
+    it (the founder's NODE_REVOKE, or a restore voiding it), and a node is EXPIRED once ``now`` reaches the
+    ``expires_at`` its enrollment names. Only an ACTIVE node is a node: whatever asks which nodes exist (enrollment,
+    revocation, restore, ``greg node list``) reads it here."""
+    now = now or utcnow()
+    current = {}
+    for event in journal.replay("node."):
+        data = event.payload
+        if event.type == "greg.node.enrolled":
+            current[data["node_id"]] = {"enrollment": data, "revocation": None}
+        elif event.type == "greg.node.revoked":
+            entry = current.get(data.get("node_id"))
+            if entry is not None and entry["revocation"] is None:
+                entry["revocation"] = data
+    states = {}
+    for node_id, entry in current.items():
+        expires, revocation = entry["enrollment"].get("expires_at"), entry["revocation"]
+        state = ("REVOKED" if revocation is not None
+                 else "EXPIRED" if expires is not None and now >= instant(expires) else "ACTIVE")
+        how = ({} if revocation is None else {"revoked_by_restore": revocation["restore_id"]}
+               if revocation.get("by") == "restore" else {"revocation_digest": revocation["command_digest"]})
+        states[node_id] = {**entry["enrollment"], "state": state, **how}
+    return states
+
+
+def active_nodes(journal: Journal, *, now: datetime | None = None) -> dict[str, dict]:
+    """Read-only: the nodes enrolled now, neither revoked nor expired."""
+    return {k: v for k, v in node_states(journal, now=now).items() if v["state"] == "ACTIVE"}
+
+
+def unrevoked_nodes(journal: Journal, *, now: datetime | None = None) -> list[str]:
+    """Read-only: every node_id whose current enrollment no revocation has ended, whether active or expired."""
+    return sorted(n for n, v in node_states(journal, now=now).items() if v["state"] != "REVOKED")
+
+
+def void_for_restore(journal: Journal, node_ids: list[str], *, restore_id: str, now: datetime) -> None:
+    """A restored body knows nothing after its recovery point, where the founder may have revoked a node (its key
+    perhaps compromised). greg/recovery.py passes ``unrevoked_nodes``, expired ones included so that a clock set back
+    cannot revive one, and each is revoked by the restore; the founder enrolls again each node still trusted."""
+    states = node_states(journal, now=now)
+    for node_id in node_ids:
+        node = states[node_id]
+        journal.record("node.revoked", {"node_id": node_id, "node_public_key": node["node_public_key"],
+                                        "enrollment_digest": node["command_digest"], "by": "restore",
+                                        "restore_id": restore_id, "at": iso(now)}, key=[node_id, restore_id])
+
+
+def enroll_node(journal: Journal, body: dict, command_digest: str, *, now: datetime | None = None) -> dict:
+    """Record one founder-signed NODE_ENROLL. The same signed command applied again (a crash before its acceptance
+    was recorded) returns the enrollment it already made."""
+    for event in journal.replay("node.enrolled"):
+        if event.payload.get("command_digest") == command_digest:
+            return event.payload
+    now = now or utcnow()   # the body's dispatch passes no clock: an enrollment is judged by this host's clock
     required = {"node_id", "node_public_key", "light_cone"}
-    if set(body) != required:
-        raise ValueError("NODE_ENROLL needs node_id, node_public_key, light_cone")
+    if not required <= set(body) <= required | {"expires_at"}:
+        raise ValueError("NODE_ENROLL needs node_id, node_public_key, light_cone and optionally expires_at")
+    node_id = body["node_id"]
+    if not isinstance(node_id, str) or not 1 <= len(node_id) <= 128:
+        raise ValueError("node_id must be 1..128 characters")
+    raw = _node_key(body["node_public_key"])
     cone = LightCone.from_dict(body["light_cone"])
-    if bytes.fromhex(body["node_public_key"]).__len__() != 32:
-        raise ValueError("node key must be a 32-byte Ed25519 public key")
-    record = {"node_id": body["node_id"], "node_public_key": body["node_public_key"], "light_cone": cone.to_dict(),
-              "founder_authority_inherited": False, "command_digest": command_digest}
-    journal.record("node.enrolled", record, key=body["node_id"])
+    expires = None
+    if "expires_at" in body:
+        if not isinstance(body["expires_at"], str):
+            raise ValueError("expires_at must be an ISO 8601 instant with a timezone")
+        try:
+            when = instant(body["expires_at"])
+            expires = stamp(when)
+        except OverflowError:
+            raise ValueError("expires_at is out of range") from None
+        if when <= now:
+            raise ValueError("a node's expires_at must be later than the command time")
+    nodes = node_states(journal, now=now)
+    if nodes.get(node_id, {}).get("state") == "ACTIVE":
+        raise ValueError(f"node {node_id} is already enrolled and active: revoke it (NODE_REVOKE) or let its "
+                         "enrollment expire before enrolling it again")
+    if raw in _principal_keys(journal):
+        raise ValueError("a node key may not be a key enrolled for the founder or delegated to a device")
+    own = _own_body_ids(journal)
+    if _body_id_of(raw) in own:
+        raise ValueError("a node key may not be this body's own identity key: a node is another machine")
+    if node_id in own:
+        raise ValueError("a node_id may not be this body's own id")
+    if any(n["state"] == "ACTIVE" and bytes.fromhex(n["node_public_key"]) == raw for n in nodes.values()):
+        raise ValueError("another active node already holds this key; each node has its own")
+    record = {"node_id": node_id, "node_public_key": raw.hex(), "light_cone": cone.to_dict(),
+              "expires_at": expires, "founder_authority_inherited": False, "command_digest": command_digest,
+              "at": iso(now)}
+    journal.record("node.enrolled", record, key=[node_id, command_digest])
     return record
+
+
+def revoke_node(journal: Journal, body: dict, command_digest: str, *, now: datetime | None = None) -> dict:
+    """Record one founder-signed NODE_REVOKE, ending a node's current enrollment. An unknown node, or one whose
+    current enrollment is already revoked, is refused; an expired one may still be revoked, which makes it explicit."""
+    for event in journal.replay("node.revoked"):
+        if event.payload.get("command_digest") == command_digest:
+            return {"node_id": event.payload["node_id"], "revoked": True,
+                    "enrollment_digest": event.payload["enrollment_digest"]}
+    now = now or utcnow()
+    if set(body) != {"node_id"}:
+        raise ValueError("NODE_REVOKE needs exactly node_id")
+    node = node_states(journal, now=now).get(body["node_id"]) if isinstance(body["node_id"], str) else None
+    if node is None:
+        raise ValueError("revocation names no enrolled node")
+    if node["state"] == "REVOKED":
+        raise ValueError(f"node {node['node_id']} is already revoked")
+    record = {"node_id": node["node_id"], "node_public_key": node["node_public_key"],
+              "enrollment_digest": node["command_digest"], "command_digest": command_digest, "at": iso(now)}
+    journal.record("node.revoked", record, key=[node["node_id"], command_digest])
+    return {"node_id": node["node_id"], "revoked": True, "enrollment_digest": node["command_digest"]}

@@ -10,6 +10,11 @@ a row here.
 other entry file defers to it. This index is for finding a document, not for
 deciding what to read first.
 
+**To find any document or record**, use [`CATALOG.md`](CATALOG.md): every file under
+`docs/` once, by area, kind and date, without moving anything. **To find any branch**
+and whether its work is finished, use the newest
+`collaboration/BRANCH-CATALOG-*.md`.
+
 ## 1. Founder intent and doctrine (binding)
 
 | Document | Role |
@@ -30,6 +35,7 @@ deciding what to read first.
 | `PROJECT_COGNITION_CONTINUITY.md` | Source ingestion, context checksum, anti-context-loss test |
 | `PROJECT_SOURCE_CENSUS_2026-09-26.md` | Inventory of founder Project sources (dated) |
 | `PROJECT_COGNITION_PROPAGATION_RECEIPT_2026-09-26.md` | Record of where the SOP was propagated (dated) |
+| `CATALOG.md` | Generated catalog of every document and record, by area, kind and date (`scripts/docs_catalog.py`) |
 | `REVIEW_CADENCE.md` | The recurring review: what runs per PR, weekly, per five PRs, monthly, quarterly |
 | `DISCUSSIONS_SEED.md` | Seed text for the pinned founder Discussion #89 |
 | `collaboration/` | Claims, handoffs, deliberations, reconciliations; **start at `collaboration/INDEX.md`** (team entry: `collaboration/START_HERE.md`) |

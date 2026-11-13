@@ -4,13 +4,20 @@ fail a behavioral test when removed (scratch copy; live source never mutated).
 The device-revocation mutants (2026-11-13, the review of 7474e937) carry their own test files as a fifth element: a
 revocation waiting in the inbox wins over a backdated device command (B2), greg serve refuses device keys while the
 ledger ends inside an incomplete record and shows that record to the founder (B3, B4), and the proof host's stop
-control gives an incomplete line a real chance to complete before it blocks (B1)."""
+control gives an incomplete line a real chance to complete before it blocks (B1).
+
+The second fix round (2026-11-13, the re-check of 8f72ceff): a waiting revocation is read under the founder keys a
+waiting rotation ahead of it enrolls (N1), greg serve names an inbox file by when it arrived, not by the signer's own
+clock (N2), and a JSON document nested too deep is malformed input wherever GREG reads input it does not control (N3,
+its own test file). send_signed's arrival name is not mutated: the founder signs at the moment the file arrives, so
+the two names differ at most in width."""
 from pathlib import Path
 import os, shutil, subprocess, sys, tempfile
 ROOT=Path(__file__).resolve().parents[2]
 TESTS=['tests/unit/test_greg_node_revoke.py']
 REVOKING=['tests/unit/test_device_revocation_wins.py']
 LIVE=['tests/unit/test_live_ledger_readers.py']
+NESTED=['tests/unit/test_greg_nested_json_inputs.py']
 F='greg/founder.py'
 C='greg/compute.py'
 B='greg/body.py'
@@ -112,8 +119,35 @@ MUTANTS=[
      'verifier = self.verifier(revoking=self.revoking() if revoking is None else revoking)',
      'verifier = self.verifier(revoking=revoking or ())',REVOKING),
     ('a revocation that does not verify counts',B,
-     '            verifier.verify(envelope, now=now, expected_kind="DEVICE_REVOKE")\n        except Exception:',
-     '            pass\n        except Exception:',REVOKING),
+     '            current.verify(envelope, now=now, expected_kind=kind)\n','',REVOKING),
+    # N1: a revocation signed by the key a waiting rotation enrolls
+    ('a waiting rotation is not read',B,
+     'envelope.get("kind") in ("DEVICE_REVOKE", "ROTATE_FOUNDER_KEY")','envelope.get("kind") in ("DEVICE_REVOKE",)',
+     REVOKING),
+    ('a waiting rotation does not change the keys a later revocation is read under',B,
+     '                keys.pop(next(iter(keys)))\n                keys[new_id] = new_hex\n','                pass\n',REVOKING),
+    ('a rotation to a malformed key raises out of the pre-read',B,
+     '            except (ValueError, FounderAuthError):   # apply refuses a rotation',
+     '            except ZeroDivisionError:   # apply refuses a rotation',REVOKING),
+    # N2: greg serve names a command by when it arrived
+    ("greg serve names a command by the signer's clock",S,
+     'name = f"{arrival_name(now)}-remote-',
+     'name = f"{envelope[\'issued_at\'].replace(\':\', \'\')}-remote-',REVOKING),
+    # N3: a document nested too deep is malformed input
+    ('the revocation pre-read raises on a nested file',B,
+     '        except (ValueError, RecursionError):      # a document nested too deep',
+     '        except ValueError:      # a document nested too deep',NESTED),
+    ('the intake raises on a nested file',B,
+     '                except (ValueError, RecursionError):  # nested too deep',
+     '                except ValueError:  # nested too deep',NESTED),
+    ('applying the inbox raises on a nested file',B,
+     '        except (FounderAuthError, MissionError, ValueError, RecursionError, KeyError, TypeError,',
+     '        except (FounderAuthError, MissionError, ValueError, KeyError, TypeError,',NESTED),
+    ("the morning report's command digests raise on a nested file",B,
+     '        except (OSError, ValueError, RecursionError):\n            continue\n    return out',
+     '        except (OSError, ValueError):\n            continue\n    return out',NESTED),
+    ('greg serve raises on a nested command',S,
+     'except (UnicodeDecodeError, ValueError, RecursionError):','except (UnicodeDecodeError, ValueError):',NESTED),
     ('a revocation of more than exactly one key counts',B,
      'if set(body) == {"device_key_id"} and isinstance(body["device_key_id"], str):',
      'if isinstance(body.get("device_key_id"), str):',REVOKING),
@@ -170,7 +204,7 @@ def main():
             print('CAUGHT' if caught else 'SURVIVED_OR_INVALID',name,flush=True)
             invalid+=not caught;caught_count+=caught;path.write_text(original)
         purge(repo)
-        clean=subprocess.run([sys.executable,'-B','-m','pytest','-q','-p','no:cacheprovider',*TESTS,*REVOKING,*LIVE],
+        clean=subprocess.run([sys.executable,'-B','-m','pytest','-q','-p','no:cacheprovider',*TESTS,*REVOKING,*LIVE,*NESTED],
             cwd=repo,env=env,capture_output=True,text=True,timeout=300)
         print('UNMUTATED', 'PASS' if clean.returncode==0 else 'FAIL',flush=True)
         invalid+=clean.returncode!=0

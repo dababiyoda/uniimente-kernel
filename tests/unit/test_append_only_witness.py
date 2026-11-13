@@ -253,8 +253,11 @@ def test_randomized_split_view_campaign():
 
 def test_capability_genome_is_complete_and_read_only():
     from capabilities.genome import GenomeRegistry
-    from provenance.witness import capability_genome
-    genome = capability_genome()
+    from capabilities.specs import genome_from_spec
+    from provenance.witness import GENOME_SPEC, capability_genome
+    genome = genome_from_spec(GENOME_SPEC)
+    with pytest.warns(DeprecationWarning):
+        assert capability_genome() == genome  # the kept wrapper still works
     assert genome.validate() == []
     assert genome.authority.max_consequence_class == "read_only"
     registry = GenomeRegistry()

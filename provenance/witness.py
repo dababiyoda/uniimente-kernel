@@ -197,31 +197,56 @@ __all__ = ["Checkpoint", "QuorumPolicy", "SplitViewEvidence", "Witness",
            "WitnessRefused", "checkpoint_note"]
 
 
+# The genome as plain data, so the published boundary distribution (which ships
+# `provenance` without `capabilities`) can describe this capability without
+# importing kernel-only packages. The kernel builds a CapabilityGenome from it
+# with `capabilities.specs.genome_from_spec(GENOME_SPEC)`.
+GENOME_SPEC = {
+    "name": "provenance.append_only_witness",
+    "version": "1.0.0",
+    "description": ("Consistency proofs (RFC 9162) between ledger checkpoints, witnesses "
+                    "that cosign only append-only extensions, and a k-of-n quorum "
+                    "acceptance policy. Detects rewritten history with O(1) auditor state."),
+    "interface": {"inputs": {"checkpoint": "Checkpoint", "proof": "ConsistencyProof"},
+                  "outputs": {"cosignature": "str", "accepted": "bool",
+                              "refusal": "SplitViewEvidence"}},
+    "contracts": ["evidence"],
+    "authority": {"max_consequence_class": "read_only", "budget_ceiling_usd": 0.0},
+    "acceptance_tests": ["tests/unit/test_append_only_witness.py",
+                         "scripts/experiment_append_only_witness.py",
+                         "scripts/sigstore_inclusion_oracle.cjs"],
+    "failure_modes": [
+        "first-use trust: a witness with no prior state cosigns whatever it sees first",
+        "quorum of fresh witnesses accepts a fork they never saw the original of",
+        "HMAC cosignatures are verifiable only by key holders (not publicly transferable)",
+        "witness state is durable only when state_path is given; without it a restart reverts to first-use trust",
+        "sizes are authenticated by the cosigned note, not by the consistency proof",
+    ],
+    "recovery_path": ("Detach: stop consulting QuorumPolicy; existing inclusion proofs and "
+                      "hash-chain verification are unchanged. Witness refusals are retained "
+                      "as SplitViewEvidence for review."),
+}
+
+
 def capability_genome():
-    """Capability Genome for witnessed append-only checkpoints."""
-    from capabilities.genome import AuthorityEnvelope, CapabilityGenome
-    return CapabilityGenome(
-        name="provenance.append_only_witness",
-        version="1.0.0",
-        description=("Consistency proofs (RFC 9162) between ledger checkpoints, witnesses "
-                     "that cosign only append-only extensions, and a k-of-n quorum "
-                     "acceptance policy. Detects rewritten history with O(1) auditor state."),
-        interface={"inputs": {"checkpoint": "Checkpoint", "proof": "ConsistencyProof"},
-                   "outputs": {"cosignature": "str", "accepted": "bool",
-                               "refusal": "SplitViewEvidence"}},
-        contracts=["evidence"],
-        authority=AuthorityEnvelope(max_consequence_class="read_only", budget_ceiling_usd=0.0),
-        acceptance_tests=["tests/unit/test_append_only_witness.py",
-                          "scripts/experiment_append_only_witness.py",
-                          "scripts/sigstore_inclusion_oracle.cjs"],
-        failure_modes=[
-            "first-use trust: a witness with no prior state cosigns whatever it sees first",
-            "quorum of fresh witnesses accepts a fork they never saw the original of",
-            "HMAC cosignatures are verifiable only by key holders (not publicly transferable)",
-            "witness state is durable only when state_path is given; without it a restart reverts to first-use trust",
-            "sizes are authenticated by the cosigned note, not by the consistency proof",
-        ],
-        recovery_path=("Detach: stop consulting QuorumPolicy; existing inclusion proofs and "
-                       "hash-chain verification are unchanged. Witness refusals are retained "
-                       "as SplitViewEvidence for review."),
-    )
+    """Capability Genome for witnessed append-only checkpoints.
+
+    Deprecated compatibility wrapper, kept so existing callers keep working.
+    New code: ``capabilities.specs.genome_from_spec(provenance.witness.GENOME_SPEC)``.
+    It needs the kernel's ``capabilities`` package, which the boundary
+    distribution does not ship; there it raises an ImportError that says so.
+    Removing this wrapper, and with it the last boundary import, is a boundary
+    owner decision with a version bump (pain point S-2).
+    """
+    import warnings
+    warnings.warn("provenance.witness.capability_genome() is deprecated; use "
+                  "capabilities.specs.genome_from_spec(provenance.witness.GENOME_SPEC)",
+                  DeprecationWarning, stacklevel=2)
+    try:
+        from capabilities.specs import genome_from_spec
+    except ImportError as exc:  # boundary-only install
+        raise ImportError(
+            "provenance.witness.capability_genome() needs the uniimente-kernel "
+            "'capabilities' package, which the boundary distribution does not include; "
+            "read provenance.witness.GENOME_SPEC instead") from exc
+    return genome_from_spec(GENOME_SPEC)

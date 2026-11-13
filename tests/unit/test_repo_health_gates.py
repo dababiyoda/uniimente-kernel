@@ -121,3 +121,14 @@ def test_tmpfs_tempdir_is_detected_as_volatile():
     assert doctor._fs_type("/tmp/x", MOUNTS) == "tmpfs"
     assert doctor._fs_type("/home/runner/work", MOUNTS) == "ext4"
     assert "tmpfs" in doctor.VOLATILE_FS
+
+
+def test_renamed_copies_of_one_body_are_reported_once(tmp_path):
+    def body(var: str) -> str:
+        return ("    total = 0\n" + "".join(f"    total += {var} * {i}\n" for i in range(10))
+                + "    return total\n")
+    (tmp_path / "a.py").write_text("def score(x):\n" + body("x"))
+    (tmp_path / "b.py").write_text("def weigh(y):\n" + body("y"))
+    (tmp_path / "c.py").write_text("def short(z):\n    return z\n")
+    groups = review.duplicate_functions(tmp_path)
+    assert [sorted(x["path"] for x in g) for g in groups] == [["a.py", "b.py"]]

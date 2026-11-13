@@ -37,8 +37,16 @@ def greg_cli(user_home, body_home, *args):
 def test_every_key_path_in_the_runbook_is_the_one_install_sh_writes():
     expected = installer_key()
     assert cli.DEFAULT_FOUNDER_KEY == expected
-    named = re.findall(r"--key\s+([^\s`]+)", RUNBOOK.read_text())
-    assert named and set(named) == {expected}, sorted(set(named))
+    text = RUNBOOK.read_text()
+    named = re.findall(r"--key\s+([^\s`]+)", text)
+    # One deliberate exception: the rotation recovery for an enrolled unprotected key makes a second key beside the
+    # installer's, named <installer key>.protected, and only inside "A key you cannot open".
+    rotated = expected + ".protected"
+    assert named and set(named) <= {expected, rotated} and expected in named, sorted(set(named))
+    start = text.index("A key you cannot open")
+    end = text.find("\n#", start + 1)
+    section = text[start:end if end != -1 else len(text)]
+    assert rotated not in text[:start] + text[start + len(section):], "the rotation key escaped its section"
 
 
 def test_a_signed_command_names_its_key_and_a_missing_key_is_one_line(tmp_path):
@@ -71,3 +79,13 @@ def test_a_signed_command_names_its_key_and_a_missing_key_is_one_line(tmp_path):
     assert signed.returncode == 0, signed.stderr
     [dropped] = list((body_home / "inbox").glob("*.json"))
     assert json.loads(dropped.read_text())["kind"] == "MISSION"
+
+
+def test_step_2_keeps_the_report_that_judges_its_own_closure():
+    """C4: step 2 once kept `greg acceptance`, which judges only the step-4 First Mission and read NOT_YET even after a
+    founder-tier N1 closure. Step 2 keeps `greg vepmc` (the N1 judge); `greg acceptance` runs after step 4."""
+    text = RUNBOOK.read_text()
+    step2 = text[text.index("## 2. Run and judge one bounded mission"):text.index("## After the first closure")]
+    fenced = "\n".join(re.findall(r"```bash\n(.*?)```", step2, re.S))
+    assert "greg vepmc > ~/GREG/vepmc.json" in fenced and "greg acceptance" not in fenced
+    assert text.index("## 4. The Founder's First Mission") < text.index("```bash\ngreg acceptance\n```")

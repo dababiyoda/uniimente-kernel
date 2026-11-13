@@ -27,6 +27,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+          fetch-depth: 0  # the branch catalog compares full histories
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -38,6 +39,9 @@ jobs:
         run: |
           python scripts/repo_review.py --lint --github "${{ github.repository }}" > review.md
           python scripts/repo_review.py --lint --github "${{ github.repository }}" --json > review.json
+          git fetch --quiet origin '+refs/heads/*:refs/remotes/origin/*'
+          python scripts/branch_catalog.py --github "${{ github.repository }}" --markdown branches.md --json branches.json
+          python scripts/docs_catalog.py --check docs/CATALOG.md || echo "docs/CATALOG.md is stale: regenerate at the next intake" >> review.md
           cat review.md >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         with:
@@ -45,4 +49,6 @@ jobs:
           path: |
             review.md
             review.json
+            branches.md
+            branches.json
           retention-days: 90

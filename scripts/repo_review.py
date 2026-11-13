@@ -20,6 +20,7 @@ decides nothing.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import ast
 import json
 import os
@@ -28,6 +29,7 @@ import statistics
 import subprocess
 import sys
 import urllib.request
+import warnings
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -46,8 +48,8 @@ KEPT_TWO_WAY = {
     ("capabilities", "cortex"): "router and cortex reference each other's genomes",
     ("capabilities", "greg"): "greg registers capabilities; the router reads greg genomes",
     ("capabilities", "provenance"): "capabilities/router.py uses provenance.digests (the right direction, #254); the "
-                                    "cycle is only the kept boundary defect provenance/witness.py -> capabilities "
-                                    "(KEPT_BOUNDARY, pain point S-2), and goes when that is fixed",
+                                    "cycle is only the deprecated wrapper provenance/witness.py capability_genome() "
+                                    "(KEPT_BOUNDARY, pain point S-2), and goes when the wrapper is removed",
     ("closure", "egregore"): "closure probes egregore; egregore reports closure",
     ("closure", "evolution"): "closure probes evolution; evolution uses closure fixtures",
     ("closure", "foundry"): "closure probes foundry; foundry uses closure fixtures",
@@ -57,9 +59,10 @@ KEPT_TWO_WAY = {
 }
 KEPT_BOUNDARY = {
     ("provenance", "capabilities"):
-        "provenance/witness.py capability_genome() imports capabilities.genome lazily; "
-        "calling it from a boundary-only install raises ImportError (recorded defect, "
-        "docs/collaboration/CONTRIBUTOR-PAIN-POINTS-2026-11-05.md S-2)",
+        "only the deprecated wrapper provenance/witness.py capability_genome() imports "
+        "capabilities.specs; the genome itself is plain data (GENOME_SPEC) and a "
+        "boundary-only install gets a clear ImportError (test_boundary_distribution_works_"
+        "installed_alone). Removing the wrapper needs a boundary version bump: owner decision (S-2)",
 }
 
 # Entry surfaces that must defer to the canonical reading order in AGENTS.md.
@@ -331,6 +334,52 @@ def size_profile(root: Path = ROOT, top: int = 10) -> dict:
             "largest": [{"path": p, "lines": n} for n, p in sizes[:top]]}
 
 
+class _Shape(ast.NodeTransformer):
+    """Erase names and literal values so renamed copies of one body compare equal."""
+
+    def visit_Name(self, node):
+        return ast.copy_location(ast.Name(id="_", ctx=node.ctx), node)
+
+    def visit_arg(self, node):
+        node.arg, node.annotation = "_", None
+        return node
+
+    def visit_Constant(self, node):
+        return ast.copy_location(ast.Constant(value=type(node.value).__name__), node)
+
+
+def duplicate_functions(root: Path = ROOT, min_lines: int = 10) -> list[list[dict]]:
+    """Function bodies of at least ``min_lines`` repeated in more than one file.
+
+    Copies that differ only in names or literal values count as one shape. A trend
+    for the weekly review, never a gate: some copies are deliberate (a frozen
+    script, an organ that must not import another).
+    """
+    groups: dict[str, list[dict]] = {}
+    for rel in tracked_files(root):
+        if not rel.endswith(".py") or rel.startswith(("tests/", "docs/")) or "/evaluation/" in rel:
+            continue
+        try:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                tree = ast.parse((root / rel).read_text(encoding="utf-8", errors="replace"))
+        except (SyntaxError, FileNotFoundError):
+            continue
+        for node in ast.walk(tree):
+            if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                continue
+            length = node.end_lineno - node.lineno
+            if length < min_lines:
+                continue
+            body = [b for b in node.body
+                    if not (isinstance(b, ast.Expr) and isinstance(getattr(b, "value", None), ast.Constant))]
+            shape = ast.dump(_Shape().visit(ast.Module(body=body, type_ignores=[])), annotate_fields=False)
+            key = hashlib.sha256(shape.encode()).hexdigest()
+            groups.setdefault(key, []).append({"path": rel, "function": node.name, "lines": length})
+    dups = [g for g in groups.values() if len({x["path"] for x in g}) > 1]
+    return sorted(dups, key=lambda g: -(len(g) - 1) * g[0]["lines"])
+
+
 def build_report(root: Path = ROOT, github: str | None = None,
                  kept_two_way: dict | None = None, kept_boundary: dict | None = None,
                  kept_unwired: dict | None = None, lint: bool = False) -> dict:
@@ -365,6 +414,7 @@ def build_report(root: Path = ROOT, github: str | None = None,
                      "two_way_pairs_kept": len(kept_two_way),
                      "boundary_violations_kept": len(kept_boundary)},
         "size": size_profile(root),
+        "duplicates": duplicate_functions(root),
         "gates": {
             "scripts": len(gates),
             "anchors_checked": sum(r["anchors_checked"] for r in gates.values()),
@@ -404,6 +454,11 @@ def to_markdown(report: dict) -> str:
               f"median {size['median_file_lines']}; {size['files_over_1500_lines']} files over "
               "1,500 lines.", ""]
     lines += [f"- {f['path']}: {f['lines']}" for f in size["largest"]]
+    dups = report["duplicates"]
+    lines += ["", "## Duplicate function bodies (trend, not a gate)",
+              f"{len(dups)} shapes of 10+ lines repeat across files, "
+              f"{sum((len(g) - 1) * g[0]['lines'] for g in dups)} duplicated lines."]
+    lines += ["- " + ", ".join(f"{x['path']}:{x['function']}" for x in g) for g in dups[:10]]
     g = report["gates"]
     lines += ["", "## Mutation gates",
               f"{g['scripts']} gate scripts, {g['anchors_checked']} literal anchors checked; "

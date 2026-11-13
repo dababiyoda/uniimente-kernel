@@ -15,7 +15,15 @@
     greg body designate --key K                   founder signs the intended first body (and, with a
                                                   passphrase-protected key, the founder-tier attestation)
     greg founder attest --key K                   founder-tier attestation alone (e.g. after key rotation)
+    greg founder rotate --key OLD --new-key NEW   the enrolled key signs its replacement by a protected key
     greg device enroll --pubkey HEX --label phone --key K   delegate a narrow key to a phone
+    greg device revoke KEY_ID --key K [--suspected-compromise]   end a delegation; what the key approved and
+                                                    was not yet used authorizes nothing more (the flag also opens
+                                                    a retrospective review of everything it signed; with the flag,
+                                                    a key already revoked gets the review of that revocation)
+    greg device reviews                             read-only: revocations, what each voided, the reviews
+    greg node enroll NODE_ID --pubkey HEX --cone CONE.json --key K   admit a node's own key (founder-signed)
+    greg node revoke NODE_ID --key K | greg node list   end a node's enrollment; read-only node states
     greg serve                                   loopback remote channel for the phone
     greg anchor configure --tsa-url URL --roots ROOTS.pem --key K   timestamp the ledger head externally
     greg anchor export --roots R.pem --out W.json   witness bundle kept OUTSIDE GREG
@@ -46,7 +54,7 @@ import sys
 from greg import service
 from greg.body import (Body, BodyError, Layout, init_body, morning_projection, observe, send_signed,
                        status)
-from greg.founder import generate_founder_key, load_founder_key, public_bytes
+from greg.founder import FounderAuthError, generate_founder_key, load_founder_key, public_bytes
 from greg.tribunal import mark_reviewed, morning_report
 from provenance.ledger import WriterConflict
 
@@ -79,13 +87,51 @@ def _replace_with(target: Path, text: str, mode: int = 0o644) -> None:
 DEFAULT_HOME = os.environ.get("GREG_HOME", str(Path.home() / ".uniimente" / "greg"))
 
 
-def _passphrase(args) -> bytes | None:
+NO_EMPTY_PASSPHRASE = ("an empty passphrase is refused: it would leave your founder key unprotected, and an "
+                       "unprotected key never reaches the founder tier. Type a passphrase, or pass --no-passphrase "
+                       "for a test key")
+
+
+def _passphrase(args, *, confirm: bool = False) -> bytes | None:
+    """The founder key passphrase: from GREG_FOUNDER_PASSPHRASE (tests and scripts; empty means none), None for
+    --no-passphrase, otherwise typed at a hidden prompt. A typed empty answer never means "no passphrase" (that is
+    --no-passphrase), and ``confirm`` (keygen) asks twice: a typo there would lock the founder out of their own key."""
     env = os.environ.get("GREG_FOUNDER_PASSPHRASE")
     if env is not None:
         return env.encode() or None
     if getattr(args, "no_passphrase", False):
         return None
-    return getpass.getpass("founder key passphrase: ").encode() or None
+    for _ in range(3):
+        typed = getpass.getpass("founder key passphrase: ")
+        # Whitespace alone is as weak as nothing: refused when a new key is made (``confirm``). A key already made
+        # with one still opens, so signing never locks out its own founder.
+        if not typed or (confirm and not typed.strip()):
+            print(f"greg: {NO_EMPTY_PASSPHRASE}", file=sys.stderr)
+            continue
+        if confirm and getpass.getpass("founder key passphrase, again: ") != typed:
+            print("greg: the two passphrases differ; nothing was written. Type it again", file=sys.stderr)
+            continue
+        return typed.encode()
+    raise BodyError("no usable passphrase after three tries; nothing was written or signed")
+
+
+def _load_key(path, passphrase: bytes | None):
+    """The founder key, or one plain line (never a traceback) when the passphrase does not open it."""
+    try:
+        return load_founder_key(Path(path).expanduser(), passphrase)
+    except FounderAuthError as exc:        # a key readable by others, or not Ed25519
+        raise BodyError(str(exc)) from None
+    except TypeError:                      # cryptography: a password for a plain key, or none for an encrypted one
+        if passphrase is None:
+            raise BodyError(f"the founder key {path} is passphrase-protected; run without --no-passphrase and type "
+                            "its passphrase") from None
+        raise BodyError(f"the founder key {path} is not passphrase-protected; pass --no-passphrase to use it "
+                        "(it never reaches the founder tier)") from None
+    except ValueError as exc:
+        if "password" not in str(exc).lower() and "decrypt" not in str(exc).lower():
+            raise
+        raise BodyError(f"incorrect passphrase for the founder key {path}; nothing was signed "
+                        "(greg/CHROMEBOOK_FIRST_MISSION.md, \"A key you cannot open\")") from None
 
 
 def _known_handles() -> set:
@@ -142,7 +188,7 @@ def _key_file(args, kind: str | None) -> str:
 
 
 def _drop(home: str, kind: str, body: dict, args) -> Path:
-    key = load_founder_key(_key_file(args, kind), _passphrase(args))
+    key = _load_key(_key_file(args, kind), _passphrase(args))
     return send_signed(home, key, kind, body, ttl=timedelta(hours=getattr(args, "ttl_hours", 24)))
 
 
@@ -244,12 +290,41 @@ def _drop_attested(home: str, kind: str, body: dict, args, *, require: bool = Fa
     passphrase = _passphrase(args)
     if passphrase is None and require:
         raise BodyError(NO_FOUNDER_TIER)
-    key = load_founder_key(keyfile, passphrase)
+    key = _load_key(keyfile, passphrase)
     ttl = timedelta(hours=getattr(args, "ttl_hours", 24))
     dropped = [send_signed(home, key, kind, body, ttl=ttl)] if kind else []
     if passphrase is not None:
         dropped.append(send_signed(home, key, "FOUNDER_TIER", dict(FOUNDER_TIER_BODY), ttl=ttl))
     return dropped
+
+
+def _protected(path: str) -> bool:
+    try:
+        return Path(path).expanduser().read_text().startswith("-----BEGIN ENCRYPTED PRIVATE KEY-----")
+    except (OSError, UnicodeDecodeError):
+        return False
+
+
+def _rotate(home: str, args) -> Path:
+    """The way out of an enrolled key that never reaches the founder tier (an unprotected one, the state the C1
+    defect left behind): the enrolled key signs ROTATE_FOUNDER_KEY naming a new passphrase-protected key, which is
+    proven to open before anything is signed. Nothing moves until the running body accepts the signed file."""
+    old_file = _key_file(args, "ROTATE_FOUNDER_KEY")
+    new_file = _key_file(argparse.Namespace(key=args.new_key), "ROTATE_FOUNDER_KEY")
+    if not _protected(new_file):
+        raise BodyError(f"the new key {args.new_key} is not passphrase-protected; create one with "
+                        f"greg founder keygen --key {args.new_key} (nothing was signed)")
+    if Path(new_file).resolve() == Path(old_file).resolve():
+        raise BodyError("--new-key names the enrolled key itself; nothing was signed")
+    if _protected(old_file):
+        print(f"passphrase for the enrolled key {args.key}:", file=sys.stderr)
+        old = _load_key(old_file, _passphrase(args))
+    else:
+        old = _load_key(old_file, None)
+    print(f"passphrase for the new key {args.new_key}:", file=sys.stderr)
+    new = _load_key(new_file, _passphrase(args))
+    return send_signed(home, old, "ROTATE_FOUNDER_KEY", {"new_public_key": public_bytes(new.public_key()).hex()},
+                       ttl=timedelta(hours=args.ttl_hours))
 
 
 def _slot_value(declared: dict, assignment: str):
@@ -346,6 +421,10 @@ def main(argv=None) -> int:
     at = fs.add_parser("attest", help="sign a founder-tier attestation from a passphrase-protected key (grants nothing)")
     at.add_argument("--key", required=True); at.add_argument("--no-passphrase", action="store_true")
     at.add_argument("--ttl-hours", type=int, default=24)
+    ro = fs.add_parser("rotate", help="the enrolled founder key signs its replacement by a passphrase-protected key")
+    ro.add_argument("--key", required=True, help="the currently enrolled key (protected or not)")
+    ro.add_argument("--new-key", required=True, help="the new, passphrase-protected key (greg founder keygen)")
+    ro.add_argument("--ttl-hours", type=int, default=24)
     b = sub.add_parser("body", help="founder designation of the first physical execution body")
     bs = b.add_subparsers(dest="body_cmd", required=True)
     bd = bs.add_parser("designate"); bd.add_argument("--key", required=True)
@@ -483,9 +562,28 @@ def main(argv=None) -> int:
     de.add_argument("--kinds", default="DECISION,CRITIQUE,BODY_PAUSE,BODY_RESUME,BODY_STOP")
     de.add_argument("--days", type=int, default=30)
     dr = ds.add_parser("revoke"); dr.add_argument("device_key_id")
+    dr.add_argument("--suspected-compromise", action="store_true",
+                    help="also open a retrospective integrity review: every command the key signed and every effect "
+                         "that rested on one, listed for you (it rewrites nothing and revokes nothing further). For a "
+                         "key you already revoked, sign it again with this flag: it opens the review of that "
+                         "revocation, once")
+    ds.add_parser("reviews", help="read-only: each device revocation, what it voided, and the integrity reviews")
     for q in (de, dr):
         q.add_argument("--key", required=True); q.add_argument("--no-passphrase", action="store_true")
         q.add_argument("--ttl-hours", type=int, default=24)
+    nd = sub.add_parser("node", help="other compute nodes: admit or revoke one (founder-signed), or list them; a node "
+                                     "never signs a founder command")
+    nds = nd.add_subparsers(dest="node_cmd", required=True)
+    ne = nds.add_parser("enroll", help="founder-signed: admit a node's own key under a bounded light cone")
+    ne.add_argument("node_id"); ne.add_argument("--pubkey", required=True, help="the node's Ed25519 public key (hex)")
+    ne.add_argument("--cone", required=True, help="light cone JSON file: capabilities, targets, max_consequence_class, "
+                                                  "budget_usd, horizon")
+    ne.add_argument("--expires-at", help="ISO 8601 instant with a timezone; the node is inactive from then on")
+    nr = nds.add_parser("revoke", help="founder-signed: end a node's current enrollment"); nr.add_argument("node_id")
+    for q in (ne, nr):
+        q.add_argument("--key", required=True); q.add_argument("--no-passphrase", action="store_true")
+        q.add_argument("--ttl-hours", type=int, default=24)
+    nds.add_parser("list", help="read-only: each enrolled node and whether it is active, revoked or expired")
     an = sub.add_parser("anchor", help="RFC 3161 time anchoring of the ledger head")
     ans = an.add_subparsers(dest="anchor_cmd", required=True)
     ac = ans.add_parser("configure", help="founder-signed: timestamp the ledger head at this TSA")
@@ -637,8 +735,12 @@ def main(argv=None) -> int:
                                          "the evidence and authority it needs, and the next move")
     bl.add_argument("--mission", default=None, help="only this mission's blocker")
     rh = sub.add_parser("rehearse", help="credential-free rehearsal: a throwaway body and REHEARSAL key run the "
-                                          "Founder's First Mission end to end")
+                                          "Founder's First Mission end to end, or --path for N3 then N4 then N7 "
+                                          "on that one body")
     rh.add_argument("--dir"); rh.add_argument("--kernel-root"); rh.add_argument("--effort", type=int, default=8)
+    rh.add_argument("--path", action="store_true",
+                    help="on one throwaway body, reach N3, then N4, then N7 in that order; the founder's path "
+                         "does not move")
     rh.add_argument("--console", type=int, help="then serve Mission Control for that body on this port")
     c = sub.add_parser("console", help="the founder console on http://127.0.0.1:PORT")
     c.add_argument("--key", help="founder key; without it the console is read-only")
@@ -669,9 +771,9 @@ def main(argv=None) -> int:
                                        confined_egress=args.confined_egress,
                                        worker_confinement=args.worker_confinement), indent=1))
         elif args.cmd == "founder" and args.founder_cmd == "keygen":
-            print(generate_founder_key(args.key, _passphrase(args)))
+            print(generate_founder_key(args.key, _passphrase(args, confirm=True)))
         elif args.cmd == "founder" and args.founder_cmd == "public":
-            key = load_founder_key(args.key, _passphrase(args))
+            key = _load_key(args.key, _passphrase(args))
             print(public_bytes(key.public_key()).hex())
         elif args.cmd == "founder" and args.founder_cmd == "enroll":
             with Body(home) as body:
@@ -756,6 +858,8 @@ def main(argv=None) -> int:
         elif args.cmd == "accept":
             print(_drop(home, "CRITIQUE", {"target_event_id": args.event_id, "verdict": "accept",
                                            "evidence_type": "founder_judgment", "text": args.text}, args))
+        elif args.cmd == "founder" and args.founder_cmd == "rotate":
+            print(_rotate(home, args))
         elif args.cmd == "founder" and args.founder_cmd == "attest":
             print(*_drop_attested(home, None, {}, args, require=True), sep="\n")
         elif args.cmd == "body" and args.body_cmd == "designate":
@@ -1094,7 +1198,7 @@ def main(argv=None) -> int:
             from greg import planner
             from greg.capabilities import SecretBroker
             from greg.console import Console, serve
-            key = load_founder_key(args.key, _passphrase(args)) if args.key else None
+            key = _load_key(args.key, _passphrase(args)) if args.key else None
             layout = Layout(home)
             models_config, egress = None, None
             if layout.config.is_file():
@@ -1128,7 +1232,37 @@ def main(argv=None) -> int:
                                                 "kinds": [k.strip() for k in args.kinds.split(",") if k.strip()],
                                                 "expires_at": expires.isoformat().replace("+00:00", "Z")}, args))
         elif args.cmd == "device" and args.device_cmd == "revoke":
-            print(_drop(home, "DEVICE_REVOKE", {"device_key_id": args.device_key_id}, args))
+            print(_drop(home, "DEVICE_REVOKE", {"device_key_id": args.device_key_id,
+                                                **({"suspected_compromise": True}
+                                                   if args.suspected_compromise else {})}, args))
+        elif args.cmd == "device" and args.device_cmd == "reviews":
+            from greg import revocation
+            from greg.missions import MissionBook
+            if Layout(home).ledger.exists():   # the body is the ledger's one writer: read it through a read-only view
+                with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                    data = {"revocations": revocation.summary(journal, MissionBook(journal)),
+                            "reviews": [e.payload for e in journal.replay(revocation.REVIEW_RECORD)]}
+            else:
+                data = {"revocations": [], "reviews": [], "reality_status": "NO_BODY_LEDGER"}
+            print(json.dumps(data, indent=1))
+        elif args.cmd == "node" and args.node_cmd == "enroll":
+            try:
+                cone = json.loads(Path(args.cone).expanduser().read_text())
+            except (OSError, ValueError) as exc:
+                raise BodyError(f"cannot read the light cone {args.cone}: {exc}") from None
+            print(_drop(home, "NODE_ENROLL", {"node_id": args.node_id, "node_public_key": args.pubkey,
+                                              "light_cone": cone,
+                                              **({"expires_at": args.expires_at} if args.expires_at else {})}, args))
+        elif args.cmd == "node" and args.node_cmd == "revoke":
+            print(_drop(home, "NODE_REVOKE", {"node_id": args.node_id}, args))
+        elif args.cmd == "node":
+            from greg import compute
+            if Layout(home).ledger.exists():   # the body is the ledger's one writer: read it through a read-only view
+                with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                    data = {"nodes": list(compute.node_states(journal).values())}
+            else:
+                data = {"nodes": [], "reality_status": "NO_BODY_LEDGER"}
+            print(json.dumps(data, indent=1))
         elif args.cmd == "anchor" and args.anchor_cmd == "configure":
             print(_drop(home, "ANCHOR_CONFIGURE", {"tsa_url": args.tsa_url,
                                                    "tsa_roots_pem": Path(args.roots).read_text(),

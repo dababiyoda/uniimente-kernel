@@ -42,16 +42,40 @@ ENGINE_USES = {
 }
 
 
+# Where the pinned engine's only Linux wheel for a CPU needs a newer glibc than Debian 12's 2.36 (ChromeOS Linux's
+# base), read from the files PyPI lists for the pinned release (requirements-cortex.txt z3-solver==5.1.0.0:
+# manylinux_2_27_x86_64 and manylinux_2_38_aarch64; checked 2026-10-28). The installer never compiles an engine, so
+# such a machine has no wheel to install. Explains a missing engine; never a reason to install another version.
+WHEEL_GLIBC_FLOOR = {("z3-solver", "aarch64"): (2, 38)}
+
+
+def _glibc() -> tuple[int, ...] | None:
+    lib, version = platform.libc_ver()
+    try:
+        return tuple(int(part) for part in version.split(".")[:2]) if lib == "glibc" and version else None
+    except ValueError:
+        return None
+
+
 def engines() -> dict:
     """Which open-source reasoning engines this interpreter carries, read from installed metadata only."""
     from greg import mechanisms
+    machine, glibc = platform.machine().lower(), _glibc()
+    machine = {"arm64": "aarch64"}.get(machine, machine)
     rows = []
     for name, uses in ENGINE_USES.items():
         dist = mechanisms.installed(name)
-        rows.append({"distribution": name, "installed": dist is not None, "version": dist.version if dist else None,
-                     "license": mechanisms.license_of(dist) if dist else None, "serves": uses})
+        row = {"distribution": name, "installed": dist is not None, "version": dist.version if dist else None,
+               "license": mechanisms.license_of(dist) if dist else None, "serves": uses}
+        floor = WHEEL_GLIBC_FLOOR.get((name, machine))
+        if dist is None and floor and glibc is not None and glibc < floor:
+            row["why_missing"] = (f"no binary wheel for this machine: the pinned {name}'s Linux {machine} wheel needs "
+                                  f"glibc {'.'.join(map(str, floor))}, this system has {'.'.join(map(str, glibc))}; "
+                                  f"its functions abstain and GREG asks before one is needed")
+        rows.append(row)
     missing = [r["distribution"] for r in rows if not r["installed"]]
     return {"present": len(rows) - len(missing), "total": len(rows), "missing": missing, "engines": rows,
+            "platform": {"machine": machine, "glibc": ".".join(map(str, glibc)) if glibc else None},
             "note": "not prerequisites: a missing engine makes its functions abstain and GREG asks; GREG never "
                     "installs one (the founder-run installer does, unless --no-engines)"}
 

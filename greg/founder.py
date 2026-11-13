@@ -44,6 +44,7 @@ COMMAND_KINDS = (
     "BODY_PAUSE", "BODY_RESUME", "BODY_STOP",
     "BODY_DESIGNATE",  # founder names this body as the intended first execution body
     "NODE_ENROLL",        # admit another compute node with its own bounded identity
+    "NODE_REVOKE",        # end one node's current enrollment; founder key only, like NODE_ENROLL
     "SOP_RATIFY",         # promote an observed procedure into a reusable capability
     "MODEL_ROUTE_SET",    # replace cognition routes, not authority; founder key only
     "ROTATE_FOUNDER_KEY",
@@ -64,11 +65,12 @@ COMMAND_KINDS = (
 FOUNDER_TIER_BODY = {"key_custody": "passphrase"}
 MAX_TTL = timedelta(days=7)
 # A device key (e.g. Alfonso's phone) is a delegation, never a second founder: it may only
-# answer, criticize, pause, resume or stop. Missions, goals, capabilities, key rotation and
-# device enrollment always need the founder key itself. GOAL_CONTROL is delegable only for
-# narrowing controls (greg/goal_gravity.py DEVICE_GOAL_CONTROLS): stop, lower, never, mute,
-# ask-before, forget, revoke a capability. Resuming, changing or revoking a goal needs the
-# founder key.
+# answer, criticize, pause, resume or stop. Missions, goals, capabilities, nodes (NODE_ENROLL,
+# NODE_REVOKE), key rotation and device enrollment always need the founder key itself, and the
+# verifier refuses a device any kind outside DEVICE_KINDS whatever its delegation record lists.
+# GOAL_CONTROL is delegable only for narrowing controls (greg/goal_gravity.py
+# DEVICE_GOAL_CONTROLS): stop, lower, never, mute, ask-before, forget, revoke a capability.
+# Resuming, changing or revoking a goal needs the founder key.
 DEVICE_KINDS = ("DECISION", "CRITIQUE", "LIFECYCLE", "BODY_PAUSE", "BODY_RESUME", "BODY_STOP", "GOAL_CONTROL")
 DEVICE_MAX_LIFETIME = timedelta(days=90)
 READ_SKEW = timedelta(seconds=60)
@@ -251,7 +253,7 @@ class FounderVerifier:
             raise FounderAuthError("founder key not enrolled or revoked")
         if now >= instant(device["expires_at"]):
             raise FounderAuthError("device delegation expired")
-        if kind is not None and kind not in device["kinds"]:
+        if kind is not None and (kind not in DEVICE_KINDS or kind not in device["kinds"]):
             raise FounderAuthError(f"device key may not sign {kind}; founder key required")
         return device["public_key"], "device:" + device["label"]
 

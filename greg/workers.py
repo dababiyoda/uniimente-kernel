@@ -52,6 +52,7 @@ import signal
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 
 from greg import evidence_strength, isolation
@@ -143,6 +144,34 @@ def _kill_process_group(proc):
     proc.wait()
 
 
+_LIVE_GROUPS: dict[int, int] = {}   # process group (start_new_session: pgid == pid) -> the thread that started it
+_LIVE_LOCK = threading.Lock()
+
+
+def _live(pid: int) -> None:
+    with _LIVE_LOCK:
+        _LIVE_GROUPS[pid] = threading.get_ident()
+
+
+def _dead(pid: int) -> None:
+    with _LIVE_LOCK:
+        _LIVE_GROUPS.pop(pid, None)
+
+
+def kill_live_workers(threads=None) -> list[int]:
+    """Kill the process groups of the children still running that the given threads started (all threads when None):
+    the last resort of a Body that is going away while an adapter has stopped polling its stop predicate
+    (greg.background.Background.shutdown passes its own dispatch threads, so one Body never kills another's)."""
+    with _LIVE_LOCK:
+        groups = sorted(pid for pid, owner in _LIVE_GROUPS.items() if threads is None or owner in threads)
+    for group in groups:
+        try:
+            os.killpg(group, signal.SIGKILL)
+        except (ProcessLookupError, PermissionError):
+            pass
+    return groups
+
+
 def supervised_run(argv, *, input=None, capture_output=True, text=False, timeout, cwd, env,
                    preexec_fn=None, close_fds=True, stop_check=None, pass_fds=()):
     """Cancellable child supervision with file-backed, bounded stdout/stderr (extracted from #157).
@@ -159,6 +188,7 @@ def supervised_run(argv, *, input=None, capture_output=True, text=False, timeout
         proc = subprocess.Popen(argv, stdin=incoming, stdout=outgoing, stderr=errors, cwd=cwd, env=env,
                                 preexec_fn=preexec_fn, close_fds=close_fds, pass_fds=tuple(pass_fds),
                                 start_new_session=True)
+        _live(proc.pid)
         deadline = time.monotonic() + timeout
         try:
             while proc.poll() is None:
@@ -178,6 +208,7 @@ def supervised_run(argv, *, input=None, capture_output=True, text=False, timeout
                 output.append(value.decode("utf-8", "replace") if text else value)
             return subprocess.CompletedProcess(argv, proc.returncode, output[0], output[1])
         finally:
+            _dead(proc.pid)
             if proc.poll() is None:
                 _kill_process_group(proc)
             else:
@@ -188,6 +219,27 @@ def supervised_run(argv, *, input=None, capture_output=True, text=False, timeout
                     os.killpg(proc.pid, signal.SIGKILL)
                 except (ProcessLookupError, PermissionError):
                     pass
+
+
+def _tracked_run(argv, *, timeout, env, text=True) -> subprocess.CompletedProcess:
+    """``subprocess.run(capture_output=True)`` in its own process group, registered while it runs, so a closing Body
+    can kill it (kill_live_workers) even though it is not polled for STOP (#273 re-review B). The program is looked
+    up on PATH=/usr/bin:/bin whatever env the caller hands in: the effect-call scan cannot read a caller's env
+    through this wrapper, so the PATH is set here, in the pinned call (#273 re-review 2, E)."""
+    proc = subprocess.Popen(argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=text,
+                            env={**env, "PATH": "/usr/bin:/bin"}, start_new_session=True)
+    _live(proc.pid)
+    try:
+        try:
+            out, err = proc.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            _kill_process_group(proc)
+            raise
+        return subprocess.CompletedProcess(argv, proc.returncode, out, err)
+    finally:
+        _dead(proc.pid)
+        if proc.poll() is None:
+            _kill_process_group(proc)
 
 
 def _sha(data: bytes) -> str:
@@ -847,8 +899,7 @@ def _git(repo: Path, *args, check: bool = True, home: Path | None = None,
     """``text=False`` returns raw bytes: a worker may write any bytes, and decoding them would crash."""
     env = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "GIT_CONFIG_NOSYSTEM": "1",
            "GIT_CONFIG_GLOBAL": "/dev/null", "HOME": str(home or repo), "GIT_TERMINAL_PROMPT": "0"}
-    proc = subprocess.run(["git", *_GIT_HARDENING, "-C", str(repo), *args], capture_output=True, text=text,
-                          timeout=120, env=env)
+    proc = _tracked_run(["git", *_GIT_HARDENING, "-C", str(repo), *args], text=text, timeout=120, env=env)
     if check and proc.returncode:
         stderr = proc.stderr if text else proc.stderr.decode("utf-8", "replace")
         raise WorkerError(f"git {' '.join(args[:3])} failed: {stderr[-300:]}")
@@ -860,10 +911,10 @@ def private_clone(source: str, base: str, dest: Path) -> str:
     if dest.exists():
         shutil.rmtree(dest)
     dest.parent.mkdir(parents=True, exist_ok=True)
-    proc = subprocess.run(["git", "clone", "--quiet", "--no-hardlinks", "--no-checkout", source, str(dest)],
-                          capture_output=True, text=True, timeout=300,
-                          env={"PATH": "/usr/bin:/bin", "GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": "/dev/null",
-                               "HOME": str(dest.parent), "GIT_TERMINAL_PROMPT": "0"})
+    proc = _tracked_run(["git", "clone", "--quiet", "--no-hardlinks", "--no-checkout", source, str(dest)],
+                        text=True, timeout=300,
+                        env={"PATH": "/usr/bin:/bin", "GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": "/dev/null",
+                             "HOME": str(dest.parent), "GIT_TERMINAL_PROMPT": "0"})
     if proc.returncode:
         raise WorkerError("could not clone the repository: " + proc.stderr[-300:])
     commit = _git(Path(source), "rev-parse", "--verify", base + "^{commit}").stdout.strip()
@@ -1289,9 +1340,13 @@ def appraise(params: dict, ctx: InvocationContext) -> dict:
             base = private_clone(repo, summary["base_commit"], fresh)
         else:
             work = root / "work"
-            subprocess.run(["git", "clone", "--quiet", "--no-hardlinks", str(work), str(fresh)], check=True,
-                           capture_output=True, env={"PATH": "/usr/bin:/bin", "GIT_CONFIG_NOSYSTEM": "1",
-                                                     "GIT_CONFIG_GLOBAL": "/dev/null", "HOME": tmp})
+            # In a registered process group with a timeout, like every other git call here, so a closing Body
+            # can kill it (#273 re-review 2).
+            proc = _tracked_run(["git", "clone", "--quiet", "--no-hardlinks", str(work), str(fresh)], timeout=300,
+                                env={"PATH": "/usr/bin:/bin", "GIT_CONFIG_NOSYSTEM": "1",
+                                     "GIT_CONFIG_GLOBAL": "/dev/null", "HOME": tmp})
+            if proc.returncode:                 # as check=True did
+                raise subprocess.CalledProcessError(proc.returncode, proc.args, proc.stdout, proc.stderr)
             base = summary["base_commit"]
             _git(fresh, "checkout", "--quiet", "--detach", base)
         if base != summary["base_commit"]:

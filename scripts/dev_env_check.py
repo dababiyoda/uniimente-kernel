@@ -46,7 +46,9 @@ EXTRA_TOOLS = {
     "git": "everything; frozen-history tests need full history",
 }
 EXTRA_MODULES = {
-    "playwright": "Python Playwright: tests/integration/test_greg_phone_* (directive-completion installs 1.63.0)",
+    "playwright": "Python Playwright 1.63.0 and its Chromium (python -m playwright install chromium): browser.session, "
+                  "Mission Control and phone-page tests (Canonical CI job 11 installs both and sets "
+                  "GREG_REQUIRE_BROWSER=1; directive-completion installs 1.63.0)",
 }
 VOLATILE_FS = ("tmpfs", "ramfs")  # the same rule greg/backup.py applies (VOLATILE)
 

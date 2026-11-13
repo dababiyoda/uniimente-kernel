@@ -153,7 +153,11 @@ def test_crash_after_dispatch_is_uncertain_and_receipts_are_reused(tmp_path):
 
         def exploding(params, ctx):
             raise RuntimeError("power lost mid-effect")
-        crash = body.office.act(attempt=1, **{**kwargs, "adapter": exploding})
+        body.registry.adapters["fs.write"] = exploding      # the office runs the registered adapter only
+        try:
+            crash = body.office.act(attempt=1, **{**kwargs, "adapter": exploding})
+        finally:
+            body.registry.adapters["fs.write"] = adapter
         assert crash.status == "UNCERTAIN"
         retry = body.office.act(attempt=1, **kwargs)
         assert retry.status == "UNCERTAIN"  # never a blind redispatch of the same effect

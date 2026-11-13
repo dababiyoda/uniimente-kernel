@@ -13,7 +13,7 @@ from greg.body import Body
 from greg.console import Console, serve
 from greg.mission_control import VIEWS, classify_capability
 from tests.greg_fixtures import drop, make_body, signed
-from tests.integration.test_greg_first_mission import kernel_copy
+from tests.integration.test_greg_first_mission import kernel_copy, requires_selection_engine
 
 
 SESSIONS = {}          # port -> (owner path, opener holding the owner's session cookie)
@@ -86,6 +86,7 @@ def test_capability_classes_are_truthful_projections():
 
 
 def test_first_mission_from_the_front_page_to_a_verified_dossier(running):
+    requires_selection_engine()
     home, key, body_id, console, port = running
     _, page = http(port, "/")
     url, review = http(port, "/first-mission", {"csrf": token(page), "effort_budget": "8"})
@@ -130,6 +131,7 @@ def test_refusals_hold_on_mission_control(running):
 
 
 def test_commerce_rehearsal_from_the_ventures_view(running):
+    requires_selection_engine()
     home, key, body_id, console, port = running
     from urllib.error import HTTPError
     _, page = http(port, "/mc/ventures")
@@ -144,8 +146,10 @@ def test_commerce_rehearsal_from_the_ventures_view(running):
     with Body(home) as body:
         body.boot()
         for _ in range(12):
-            if body.tick()["missions"][0]["state"] == "ACHIEVED":
+            first = body.tick()["missions"][0]
+            if first["state"] == "ACHIEVED":
                 break
+    assert first["state"] == "ACHIEVED", first        # the rehearsal needs the dossier; say so, not a missing form
     _, page = http(port, "/mc/ventures")
     url, review = http(port, "/venture-rehearsal", {"csrf": token(page)})
     assert "template:venture-rehearsal" in review and "FIXTURE" in review and "$0" in review

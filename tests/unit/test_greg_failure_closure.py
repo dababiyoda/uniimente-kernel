@@ -148,6 +148,79 @@ def test_a_failure_the_world_no_longer_shows_is_refuted(tmp_path):
         body.close()
 
 
+def test_a_failure_closure_is_recorded_once_when_the_mission_fails_again_after_a_lifted_blocker(tmp_path):
+    """A mission closes unmet and blocks on the founder. A detach of its sensor replaces that blocker and the
+    re-attach lifts it, so the engine reaches the same failure again for the same completed-action count. It used to
+    record ``mission.unmet`` a second time under the same identity with a new time; the journal refuses a fact
+    re-recorded with different content, and every later tick raised: two ordinary founder commands crash-looped the
+    body (found 2026-11-11 while testing the appraiser's re-attach path)."""
+    body, key, body_id, clock = run(tmp_path, [], ticks=0)
+    try:
+        note = workspace(body.layout.home, "m:stuck") / "n.txt"
+        body.apply(signed(key, body_id, "MISSION", mission(
+            "m:stuck", checks=[note_check("n", note, "wanted")],
+            strategies=[write_strategy("w", "n.txt", "something else", ["n"])], capabilities=["fs.read", "fs.write"])))
+
+        def turns(n, seconds=31):
+            for _ in range(n):
+                body.tick()
+                clock.advance(seconds)
+
+        turns(4)
+        assert appraisals(body)["m:stuck"]["verdict"] == "VERIFIED_UNMET"
+        assert body.engine.book.missions["m:stuck"].blocker["type"] == "decision"
+        body.apply(signed(key, body_id, "CAPABILITY_DETACH", {"capability_id": "fs.read"}))
+        turns(3, 3600)                                    # a blocked mission's checks are re-read at its cadence
+        assert body.engine.book.missions["m:stuck"].blocker["type"] == "capability"
+        body.apply(signed(key, body_id, "CAPABILITY_ATTACH", {"capability_id": "fs.read"}))
+        turns(3, 3600)                                    # before: EventError on each of these
+        assert len(body.journal.replay("mission.unmet")) == 1               # one closure for one action count
+        assert body.engine.book.missions["m:stuck"].blocker["type"] == "decision"
+        assert [e.payload["verdict"] for e in body.journal.replay("mission.appraised")] == ["VERIFIED_UNMET"]
+    finally:
+        body.close()
+
+
+def test_a_mission_that_fails_again_after_more_work_closes_unmet_a_second_time(tmp_path):
+    """One failure closure per completed-action count, not one per mission. Two strategies run and both checks still
+    fail: closed unmet at two actions. The founder fixes one file by hand, it drifts again, and he answers the ask:
+    the strategy for that check is admissible again (greg/missions.py: "drift later"), runs, and the check still
+    fails. That is a new outcome at three actions and has its own closure and its own appraisal."""
+    body, key, body_id, clock = run(tmp_path, [], ticks=0)
+    try:
+        folder = workspace(body.layout.home, "m:two")
+        a, b = folder / "a.txt", folder / "b.txt"
+        body.apply(signed(key, body_id, "MISSION", mission(
+            "m:two", checks=[note_check("a", a, "wanted a"), note_check("b", b, "wanted b")],
+            strategies=[write_strategy("wa", "a.txt", "something else", ["a"]),
+                        write_strategy("wb", "b.txt", "something else", ["b"])], capabilities=["fs.read", "fs.write"])))
+
+        def turns(n, seconds=31):
+            for _ in range(n):
+                body.tick()
+                clock.advance(seconds)
+
+        def closures():
+            return [(e.payload["actions_done"], e.payload["failing_checks"]) for e in body.journal.replay("mission.unmet")]
+
+        turns(6)
+        assert closures() == [(2, ["a", "b"])]
+        a.write_text("wanted a")                          # fixed by hand: the check passes, so "wa" may be tried again
+        turns(3, 3600)
+        a.write_text("drifted")
+        turns(3, 3600)
+        assert closures() == [(2, ["a", "b"])]            # still blocked on the founder: nothing ran, nothing new closed
+        request = body.engine.book.missions["m:two"].blocker["request_id"]
+        body.apply(signed(key, body_id, "DECISION", {"request_id": request, "answer": "reject"}))
+        turns(4, 3600)
+        assert closures() == [(2, ["a", "b"]), (3, ["a", "b"])]
+        first, second = body.journal.replay("mission.unmet")
+        assert [(e.payload["verdict"], e.payload["closure_event"]) for e in body.journal.replay("mission.appraised")] == [
+            ("VERIFIED_UNMET", first.event_id), ("VERIFIED_UNMET", second.event_id)]
+    finally:
+        body.close()
+
+
 def test_a_mission_waiting_on_a_precondition_is_not_closed_unmet(tmp_path):
     body, key, body_id, clock = run(tmp_path, [], ticks=0)
     try:

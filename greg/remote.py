@@ -10,7 +10,10 @@ What this server is allowed to do, and nothing else:
 
 * serve the static phone client;
 * answer reads (status, decisions, VEPMC) from the ledger opened READ-ONLY, and
-  only for a request signed by the founder key or a delegated, unexpired device key;
+  only for a request signed by the founder key or a delegated, unexpired device key
+  that no founder revocation waiting in the inbox names (a device key is refused
+  outright while the ledger ends inside a record not yet complete: it may be the
+  key's revocation);
 * accept a signed command envelope, pre-verify it (so unauthenticated traffic
   cannot flood the inbox), and drop it atomically into the inbox.
 
@@ -32,7 +35,8 @@ import secrets
 import sys
 
 from events.spine import EventSpine
-from greg.body import Layout, consumed_nonces, device_delegations, status
+from greg.body import (Layout, consumed_nonces, device_delegations, pending_revocations, revocation_candidates,
+                       status)
 from greg.founder import FounderAuthError, FounderVerifier
 from greg.journal import Journal
 from provenance.ledger import EvidenceLedger
@@ -59,6 +63,9 @@ class RemoteError(Exception):
 
 
 UNREADABLE = "the body's history cannot be read right now; run greg status on the body's computer"
+DEVICE_WAITS = ("the body's history ends with a record that is not complete yet, which may change what this device "
+                "key may do; device keys are refused until it is complete. Try again shortly; if this persists, the "
+                "body must be restarted on its computer")
 
 
 class _Reader:
@@ -67,19 +74,27 @@ class _Reader:
     The body is usually running while this reads, and its last line may be one it is still writing: the kernel
     grows the file a page at a time while it copies one write, so the file can end inside that line. The line was
     never acknowledged, so it is left out (``tail="ignore"``), as every other observer of a running body does
-    (greg.body.observe). Each request reads again, so what this request did not see yet the next one does: a
-    delegation or a key enrolled by that line verifies on the next read, a revocation in it applies from the next
-    read (this one is answered as if it had come a moment before the body began the write, which is when the
-    revocation is not yet acknowledged either), a command accepted by it shows in the next /api/commands, and a
-    replayed nonce it spends is refused by the body, which verifies every command again. A
-    complete line that is not a record is still corruption: the read is refused with 503 and a fixed message,
-    never the ledger's own text (it names paths on the body's computer)."""
+    (greg.body.observe), and ``torn`` says it was there. Each request reads again, so what this request did not see
+    yet the next one does: a delegation or a key enrolled by that line verifies on the next read, a command accepted
+    by it shows in the next /api/commands, and a replayed nonce it spends is refused by the body, which verifies
+    every command again.
 
-    def __init__(self, home: Path):
+    That line may be a revocation, and when a crash tore it, it never completes: the body records it again only
+    when it restarts. So while ``torn``, ``handle`` refuses every device key (DEVICE_WAITS) and serves only the
+    founder key, whose status shows the incomplete line. A revocation still waiting in the inbox counts as well:
+    the founder's DEVICE_REVOKE files there are read before the ledger (greg.body.pending_revocations), so a
+    revocation the body records between the two reads is in one or the other, and the key it names verifies
+    nothing. A complete line that is not a record is still corruption: the read is refused with 503 and a fixed
+    message, never the ledger's own text (it names paths on the body's computer)."""
+
+    def __init__(self, home: Path, *, now: datetime):
         self.layout = Layout(home)
         self.config = json.loads(self.layout.config.read_text())
+        self.now = now
 
     def __enter__(self):
+        # Read first: a revocation file is moved out of the inbox only after its record is acknowledged.
+        candidates = revocation_candidates(sorted(self.layout.inbox.glob("*.json")))
         try:
             self.ledger = EvidenceLedger(self.config["constitution_hash"], str(self.layout.ledger), read_only=True,
                                          tail="ignore")
@@ -95,8 +110,13 @@ class _Reader:
                     founder.pop(event.payload["old_key_id"], None)
                     founder[event.payload["new_key_id"]] = event.payload["new_public_key"]
             nonces = consumed_nonces(self.journal)
+            devices = device_delegations(self.journal)
+            settled = FounderVerifier(body_id=self.config["body_id"], enrolled=founder,
+                                      seen_nonce=nonces.__contains__, devices=devices)
             self.verifier = FounderVerifier(body_id=self.config["body_id"], enrolled=founder,
-                                            seen_nonce=nonces.__contains__, devices=device_delegations(self.journal))
+                                            seen_nonce=nonces.__contains__, devices=devices,
+                                            revoking=pending_revocations(candidates, settled, now=self.now))
+            self.torn = self.ledger.unacknowledged_tail is not None
         except BaseException:
             self.ledger.close()        # __exit__ never runs when __enter__ raises
             raise
@@ -118,11 +138,13 @@ def handle(home: Path, method: str, path: str, headers, body: bytes, *, now: dat
         return _json(200, {"protocol": "greg-remote-v1", "body_id": config["body_id"],
                            "server_time": now.isoformat().replace("+00:00", "Z")})
     if method == "GET" and path in ("/api/status", "/api/decisions", "/api/vepmc", "/api/commands"):
-        with _Reader(home) as reader:
+        with _Reader(home, now=now) as reader:
             try:
                 principal = reader.verifier.verify_read(headers, method=method, path=path, now=now)
             except (FounderAuthError, ValueError) as exc:
                 raise RemoteError(401, str(exc))
+            if reader.torn and principal != "founder":
+                raise RemoteError(503, DEVICE_WAITS)
             from greg.presentation import cognitive_summaries
             cognitive = cognitive_summaries(reader.journal) if path == "/api/status" else []
             if path == "/api/vepmc":
@@ -146,12 +168,14 @@ def handle(home: Path, method: str, path: str, headers, body: bytes, *, now: dat
             envelope = json.loads(body.decode("utf-8"))
         except (UnicodeDecodeError, ValueError):
             raise RemoteError(400, "command must be JSON")
-        with _Reader(home) as reader:
+        with _Reader(home, now=now) as reader:
             try:  # pre-verification only; the body verifies again before anything happens
                 reader.verifier.verify(envelope, now=now)
                 principal = reader.verifier.principal(envelope, now=now)
             except (FounderAuthError, ValueError, KeyError, TypeError) as exc:
                 raise RemoteError(403, str(exc))
+            if reader.torn and principal != "founder":
+                raise RemoteError(503, DEVICE_WAITS)
         if len(list(layout.inbox.glob("*.json"))) >= MAX_PENDING:
             raise RemoteError(429, "inbox full; the body is not keeping up")
         name = f"{envelope['issued_at'].replace(':', '')}-remote-{envelope['kind'].lower()}-{envelope['nonce'][:8]}"

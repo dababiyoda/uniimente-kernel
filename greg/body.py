@@ -236,6 +236,74 @@ def device_delegations(journal: Journal) -> dict[str, dict]:
     return devices
 
 
+REVOCATION_FILE_BYTES = 64 * 1024     # a DEVICE_REVOKE envelope is well under 1 KiB; greg serve takes 64 KiB at most
+
+
+def revocation_candidates(paths) -> list[dict]:
+    """The DEVICE_REVOKE envelopes among these inbox files, unverified: read first, verified later by the caller.
+
+    Read without following a link and without waiting on a FIFO; a file that is not one regular, bounded JSON
+    object is passed over (whoever applies the inbox reads it and refuses it)."""
+    found = []
+    for path in paths:
+        try:
+            fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+        except OSError:
+            continue
+        try:
+            if not stat.S_ISREG(os.fstat(fd).st_mode):
+                continue
+            raw = os.read(fd, REVOCATION_FILE_BYTES + 1)
+        except OSError:
+            continue
+        finally:
+            os.close(fd)
+        if len(raw) > REVOCATION_FILE_BYTES:
+            continue
+        try:
+            envelope = json.loads(raw)
+        except ValueError:
+            continue
+        if isinstance(envelope, dict) and envelope.get("kind") == "DEVICE_REVOKE":
+            found.append(envelope)
+    return found
+
+
+def pending_revocations(candidates, verifier: FounderVerifier, *, now: datetime) -> frozenset[str]:
+    """Device keys revoked by a founder-signed DEVICE_REVOKE still waiting in the inbox: they sign nothing more.
+
+    Revocation wins. The inbox is applied in file-name order and a name starts with the signer's own ``issued_at``,
+    which a device sets itself: its clock (whoever holds a stolen phone holds that), anywhere from seven days back
+    (a command's longest lifetime) to five minutes ahead. A device being revoked could therefore have its command
+    applied before the founder's revocation, in the same pass over the inbox or on the restart after a crash. So a
+    device key that such a revocation names is refused everywhere a command or a read is verified (the body's
+    ``apply``, greg serve), whatever the order, until the revocation is recorded and the key is simply gone.
+
+    Only a revocation counts: it is the one founder command that changes who may sign. The other commands that
+    only narrow (BODY_PAUSE, BODY_STOP, NODE_REVOKE, CAPABILITY_DETACH, a narrowing LIFECYCLE or GOAL_CONTROL, a
+    rejecting DECISION) change what the body does, never whether a device's signature verifies: a device command
+    applied before one of them was signed by a key still delegated, and which of the two comes first stays file-name
+    order, as before. Moving them ahead of device commands would let a delegated device's BODY_RESUME or LIFECYCLE
+    resume, applied after the founder's pause, undo it. Every founder command keeps file-name order as well: a
+    revocation moved ahead of the founder's own earlier DEVICE_ENROLL of the same key would be refused, or let that
+    enrollment in after it, and leave the key delegated.
+
+    A candidate counts only when it verifies (signature, body, lifetime, unspent nonce), which for DEVICE_REVOKE
+    means signed by the founder key (no device may sign it: DEVICE_KINDS), and names exactly one ``device_key_id``:
+    a file nobody signed changes who may sign nothing. One whose nonce is already spent was recorded, and the key it
+    names is already gone from the delegations."""
+    revoked = set()
+    for envelope in candidates:
+        try:
+            verifier.verify(envelope, now=now, expected_kind="DEVICE_REVOKE")
+        except Exception:     # untrusted bytes: whatever fails to verify counts for nothing (apply refuses it)
+            continue
+        body = envelope["body"]
+        if set(body) == {"device_key_id"} and isinstance(body["device_key_id"], str):
+            revoked.add(body["device_key_id"])
+    return frozenset(revoked)
+
+
 # A founder-signed GOAL or GOAL_CONTROL the body verified and then rejected (it would widen authority, it
 # duplicates a goal, ...) consumes its nonce: re-dropping the retained file later, after the state that
 # refused it changed (a revoke, a supersede), must not apply it without a new signature.
@@ -575,13 +643,22 @@ class Body:
     def _seen_nonce(self, nonce: str) -> bool:
         return nonce in consumed_nonces(self.journal)
 
-    def verifier(self) -> FounderVerifier:
+    def verifier(self, *, revoking=()) -> FounderVerifier:
         return FounderVerifier(body_id=self.config["body_id"], enrolled=self.enrolled_keys(),
-                               seen_nonce=self._seen_nonce, devices=self.device_keys())
+                               seen_nonce=self._seen_nonce, devices=self.device_keys(), revoking=revoking)
+
+    def revoking(self, paths=None) -> frozenset[str]:
+        """Device keys a verified founder DEVICE_REVOKE waiting in the inbox revokes (pending_revocations)."""
+        paths = sorted(self.layout.inbox.glob("*.json")) if paths is None else paths
+        candidates = revocation_candidates(paths)
+        return pending_revocations(candidates, self.verifier(), now=self.clock()) if candidates else frozenset()
 
     # -- commands ------------------------------------------------------------------
-    def apply(self, envelope: dict, *, channel: str = "direct") -> dict:
-        """Verify one signed founder command and apply it (idempotent on replay of the same file)."""
+    def apply(self, envelope: dict, *, channel: str = "direct", revoking=None) -> dict:
+        """Verify one signed founder command and apply it (idempotent on replay of the same file).
+
+        ``revoking``: the device keys revoked by founder revocations still waiting in the inbox, as read once for a
+        pass over the inbox; read from the inbox now when not given. A command such a key signed is refused."""
         digest = sha256_json(envelope)
         # Only a record carrying this very envelope and its nonce, as this method writes one, makes a replay of the
         # file a no-op: a bare record naming the digest cannot silently drop the founder's command.
@@ -598,7 +675,7 @@ class Body:
                                        "for it; sign your answer again")
             return {"status": "ALREADY_APPLIED", "digest": digest}
         now = self.clock()
-        verifier = self.verifier()
+        verifier = self.verifier(revoking=self.revoking() if revoking is None else revoking)
         env = verifier.verify(envelope, now=now)
         principal = verifier.principal(env, now=now)
         kind, body = env["kind"], env["body"]
@@ -801,13 +878,20 @@ class Body:
         return bool(state) and state[-1] == "greg.body.paused"
 
     def ingest_inbox(self, *, only_kind: str | None = None) -> list[dict]:
+        """Apply the signed commands waiting in the inbox, in file-name order (``only_kind``: only that kind).
+
+        Revocation wins over that order: the device keys every verified founder DEVICE_REVOKE among these files
+        revokes are read before any file is applied, and a command one of them signed is refused wherever its file
+        sorts, before or after the revocation (pending_revocations says why, and why only a revocation counts)."""
         results = []
         stuck = self.__dict__.setdefault("_stuck", set())   # files this process could neither ingest nor set aside
-        for path in sorted(self.layout.inbox.glob("*.json")):
+        paths = sorted(self.layout.inbox.glob("*.json"))
+        revoking = self.revoking(paths)
+        for path in paths:
             if path.name in stuck:
                 continue
             try:
-                outcome = self._ingest_one(path, only_kind=only_kind)
+                outcome = self._ingest_one(path, only_kind=only_kind, revoking=revoking)
             except Exception as exc:   # anywhere in the file's handling, its rejection path included
                 if not self.paused():
                     raise     # a running body exits on it: its supervisor restarts it and the breaker counts the boot
@@ -876,13 +960,13 @@ class Body:
             pass   # the skip stands even when the ledger cannot take the record; the heartbeat still shows HELD
         return {"status": "SKIPPED", "file": path.name, "reason": error}
 
-    def _ingest_one(self, path: Path, *, only_kind: str | None = None) -> dict | None:
+    def _ingest_one(self, path: Path, *, only_kind: str | None = None, revoking=frozenset()) -> dict | None:
         envelope = None
         try:
             envelope = json.loads(path.read_text())
             if only_kind is not None and (not isinstance(envelope, dict) or envelope.get("kind") != only_kind):
                 return None
-            outcome = self.apply(envelope, channel="inbox")
+            outcome = self.apply(envelope, channel="inbox", revoking=revoking)
         except (FounderAuthError, MissionError, ValueError, KeyError, TypeError,
                 tribunal.CritiqueError) as exc:
             raw = path.read_bytes()
@@ -1368,6 +1452,11 @@ def _attach_waiting(journal, achieved: set) -> list[dict]:
     return list(waiting.values())
 
 
+UNACKNOWLEDGED_TAIL = ("history ends with a record that is not complete: one being written now, or one a crash tore "
+                       "(the body sets it aside when it next starts); left out of everything shown here, and until it "
+                       "is complete greg serve refuses device keys")
+
+
 def status(home: str | Path) -> dict:
     """Read-only projection for the founder; safe while the body runs."""
     layout = Layout(home)
@@ -1411,6 +1500,11 @@ def status(home: str | Path) -> dict:
             "body_id": config["body_id"], "version": config["version"],
             "background": heartbeat, "boots": len(boots),
             "security": {"founder_keys_enrolled": founder, "chain_verified": ok, "chain": chain,
+                         # History read here ends with a line that was never completed: one the body is writing
+                         # now, or one torn by a crash (the body sets it aside on its next start). Until it is
+                         # complete greg serve refuses every device key: that line may be its revocation.
+                         "unacknowledged_tail": ledger.unacknowledged_tail and {
+                             **ledger.unacknowledged_tail, "meaning": UNACKNOWLEDGED_TAIL},
                          "devices": [{k: d[k] for k in ("device_key_id", "label", "kinds", "expires_at")}
                                      for d in device_delegations(journal).values()],
                          "stop_file_present": layout.stop_file.exists(),

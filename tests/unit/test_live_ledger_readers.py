@@ -300,6 +300,123 @@ def test_a_malformed_complete_control_line_is_still_refused(tmp_path):
         retained_stop(job, C)
 
 
+# How long one read of the control ledger takes is not retained_stop's to choose: a long ledger, or a loaded machine,
+# takes a second or more per open (measured for the review of 7474e937: 1.2-1.5 s for 46.7 MB; about 1 s for 13 MB
+# under load). The tests below give every open a fixed duration on a fake clock, so the timing they check is exact
+# and independent of this machine's load: an open reads the file as it is when the open starts, then the clock moves
+# on by the read's duration; the writer's lines change at the times each test names.
+class _FakeTime:
+    def __init__(self):
+        self.now = 0.0
+
+    def monotonic(self):
+        return self.now
+
+    def sleep(self, seconds):
+        self.now += seconds
+
+
+def _slow_reads(monkeypatch, read_seconds, changes, *, before_each=None):
+    """Make every open of the control ledger take ``read_seconds``; ``changes`` is [(time, action)], each action
+    run once the clock has reached its time, before the next open starts (``before_each`` before every open).
+    Returns the clock and the time each open started."""
+    import egregore.local_mission as local_mission
+    clock, starts = _FakeTime(), []
+
+    class SlowLedger(EvidenceLedger):
+        def __init__(self, *args, **kwargs):
+            while changes and clock.now >= changes[0][0]:
+                changes.pop(0)[1]()
+            if before_each:
+                before_each()
+            assert len(starts) < 200, "retained_stop never stopped reading"    # a removed bound fails, never hangs
+            starts.append(clock.now)
+            super().__init__(*args, **kwargs)
+            clock.now += read_seconds
+    monkeypatch.setattr(local_mission, "EvidenceLedger", SlowLedger)
+    monkeypatch.setattr(local_mission, "time", clock)
+    return clock, starts
+
+
+def _lines_being_written(path, records):
+    """Append each (type, payload) record with the real writer; return the file states a reader finds: for each
+    line, the history before it plus the line up to the first page boundary inside it; and the whole file."""
+    cuts = []
+    for record_type, payload in records:
+        start = path.stat().st_size
+        _appending(path, record_type, payload)()
+        cuts.append((start // PAGE + 1) * PAGE)
+    whole = path.read_bytes()
+    return [whole[:cut] for cut in cuts], whole
+
+
+SIGNAL = ("egregore.signal_ingested", {"signal": {"signal_id": "s-2"}})
+STOP = ("egregore.suspended", {"actor": "operator", "reason": "stop", "previously_suspended": False})
+
+
+@pytest.mark.parametrize("record, decided", [(STOP, True), (SIGNAL, False)])
+def test_a_line_completed_during_one_read_longer_than_the_window_is_read_again_and_decides(tmp_path, monkeypatch,
+                                                                                            record, decided):
+    """B1 of the review of 7474e937: the window was timed from before the first open, so when that open alone ran
+    past it, a line that had completed 50 ms in was reported as never completed and the mission was blocked."""
+    path, job = _control(tmp_path)
+    (cut,), whole = _lines_being_written(path, [record])
+    path.write_bytes(cut)
+    _, starts = _slow_reads(monkeypatch, 1.5, [(0.05, lambda: path.write_bytes(whole))])
+    assert retained_stop(job, C) is decided     # was: ReconciliationRequired 'a line that was never completed'
+    assert [round(s, 2) for s in starts] == [0.0, 1.51]   # the window opened when the first read returned
+
+
+def test_a_read_that_began_inside_the_window_never_decides_the_line_will_not_finish(tmp_path, monkeypatch):
+    """Reads of 0.4 s, a 0.6 s window from the first read's return (0.4 to 1.0). The read that began at 0.82
+    returns at 1.22, after the window, still seeing the line incomplete, but it looked before the window closed. The
+    line completes at 1.1; the read that begins at 1.23, after the window, finds it complete."""
+    path, job = _control(tmp_path)
+    (cut,), whole = _lines_being_written(path, [SIGNAL])
+    path.write_bytes(cut)
+    _, starts = _slow_reads(monkeypatch, 0.4, [(1.1, lambda: path.write_bytes(whole))])
+    assert retained_stop(job, C, settle=0.6) is False
+    assert [round(s, 2) for s in starts] == [0.0, 0.41, 0.82, 1.23]
+
+
+def test_a_line_that_never_completes_is_judged_by_a_read_that_began_after_its_window(tmp_path, monkeypatch):
+    path, job = _control(tmp_path)
+    (cut,), _ = _lines_being_written(path, [SIGNAL])
+    path.write_bytes(cut)
+    _, starts = _slow_reads(monkeypatch, 1.5, [])
+    with pytest.raises(ReconciliationRequired, match="a line that was never completed"):
+        retained_stop(job, C)
+    assert [round(s, 2) for s in starts] == [0.0, 1.51, 3.02]   # window 1.5 to 2.5; judged by the read at 3.02
+
+
+def test_a_writer_still_appending_gives_each_line_its_own_window(tmp_path, monkeypatch):
+    """The first line completes at 0.9 and the writer is then inside the next one, which completes at 1.6. A single
+    window from 0.3 would have judged the second line, seen first at 0.93, by a read at 1.55."""
+    path, job = _control(tmp_path)
+    (first, second), whole = _lines_being_written(path, [SIGNAL, SIGNAL])
+    path.write_bytes(first)
+    _, starts = _slow_reads(monkeypatch, 0.3, [(0.9, lambda: path.write_bytes(second)),
+                                               (1.6, lambda: path.write_bytes(whole))])
+    assert retained_stop(job, C) is False
+    assert starts[-1] >= 1.6
+
+
+def test_the_wait_is_bounded_when_every_read_finds_another_line_being_written(tmp_path, monkeypatch):
+    """Every read finds a new line incomplete (the last one completed, the writer is inside the next): each line
+    gets its own window, so only the bound ends the wait, from the first read that found a line incomplete (0.3)."""
+    path, job = _control(tmp_path)
+    complete = [path.read_bytes()]
+
+    def next_line():
+        path.write_bytes(complete[0])
+        (cut,), complete[0] = _lines_being_written(path, [SIGNAL])
+        path.write_bytes(cut)
+    _, starts = _slow_reads(monkeypatch, 0.3, [], before_each=next_line)
+    with pytest.raises(ReconciliationRequired, match="still ended inside a line being written 10 s after"):
+        retained_stop(job, C)
+    assert starts[-2] < 0.3 + 10.0 <= starts[-1] < 0.3 + 10.0 + 0.32
+
+
 # ------------------------------------------------------------------------------------------------ morning review
 from egregore.morning_review import append_note, review  # noqa: E402
 

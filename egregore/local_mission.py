@@ -125,22 +125,31 @@ def receipt_for(ledger, p):
 
 
 CONTROL_SETTLE_SECONDS = 1.0
+CONTROL_SETTLE_LIMIT_SECONDS = 10.0
 
 
-def retained_stop(job, constitution_hash, *, settle=CONTROL_SETTLE_SECONDS):
+def retained_stop(job, constitution_hash, *, settle=CONTROL_SETTLE_SECONDS, limit=CONTROL_SETTLE_LIMIT_SECONDS):
     """The safety control is bound into the exact granted job.
 
     Another process appends to the control ledger (the standing runtime's signals and cycles, an operator's stop)
     while this reads it, and the file can end inside the line being written: the kernel grows it a page at a time
     while it copies one write. That line was never acknowledged, so it is read past (``tail="ignore"``), never as
     corruption. It may be the stop itself, so "no stop" is not decided while it is there: an acknowledged stop
-    decides at once; otherwise the ledger is read again until its last line is complete, for at most ``settle``
-    seconds. A line still incomplete after that is a write that will not finish (torn by a crash, or a writer
-    stalled), and the control's state is unknown: ReconciliationRequired, as an unreadable control always was."""
+    decides at once; otherwise the ledger is read again until its last line is complete.
+
+    The line gets ``settle`` seconds to complete, timed from when a read first returned with it incomplete, never
+    from before that read: one read of a long control ledger, or one on a loaded machine, can itself take longer
+    than the window, and the line may have completed while it ran. Only a read that began after the window closed
+    and still found that same line incomplete shows a write that will not finish (torn by a crash, or a writer
+    stalled): the control's state is unknown, ReconciliationRequired, as an unreadable control always was. A later
+    read that finds a different line incomplete means the first one completed and a writer is still appending: that
+    line gets its own window. The wait is bounded: a read that began ``limit`` seconds after the first incomplete
+    line was seen, and still finds one, ends it with ReconciliationRequired as well."""
     if "control_ledger" not in job:
         return False  # Legacy proof-only job.
-    deadline = time.monotonic() + settle
+    line = since = first = None   # the incomplete line's offset; when a read first returned with it; the first such
     while True:
+        began = time.monotonic()
         control = EvidenceLedger(constitution_hash, job["control_ledger"], read_only=True, tail="ignore")
         try:
             if control.by_type("egregore.suspended"):
@@ -150,11 +159,19 @@ def retained_stop(job, constitution_hash, *, settle=CONTROL_SETTLE_SECONDS):
             control.close()
         if tail is None:
             return False
-        if time.monotonic() >= deadline:
+        if tail["offset"] != line:            # a line not found incomplete before: its window opens now
+            line, since = tail["offset"], time.monotonic()
+            first = since if first is None else first
+        elif began >= since + settle:         # this read began after that line's window closed
             raise ReconciliationRequired(
                 f"the control ledger ends with {tail['bytes']} bytes of a line that was never completed (a write torn "
                 "by a crash, or a writer that stopped mid-write); whether it stops this mission is unknown, so "
                 "nothing proceeds until the control ledger is reconciled")
+        if began >= first + limit:
+            raise ReconciliationRequired(
+                f"the control ledger still ended inside a line being written {limit:g} s after the first such read "
+                "(a writer appending without pause); whether it stops this mission is unknown, so nothing proceeds "
+                "until the control ledger is reconciled")
         time.sleep(0.01)
 
 

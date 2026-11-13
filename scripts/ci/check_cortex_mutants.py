@@ -476,6 +476,23 @@ CLOSURE_INTEGRITY_MUTANTS = [
 ]
 
 # 2026-10-15: capability formation is perception for Goal Gravity (a blocked goal wakes when what it waits on changes).
+FORMED_ATTACH_TESTS = ["tests/unit/test_greg_appraiser_formed_attach.py"]
+FORMED_ATTACH_MUTANTS = [
+    # the appraiser audits the genesis chain and attach authority of formed capabilities (acceptance C.G9)
+    ("formed attach findings are ignored", "greg/appraisal.py",
+     '        checks["formed_capabilities_authorized"] = not attach_findings',
+     '        checks["formed_capabilities_authorized"] = True'),
+    ("a founder command's envelope is not re-verified", "greg/appraisal.py",
+     'ok = (len(command) == 1 and _envelope_signed(journal, ledger, seq, command[0], "CAPABILITY_ATTACH")',
+     "ok = (len(command) == 1"),
+    ("an auto-attach is accepted outside the signing mission's light cone", "greg/appraisal.py",
+     '                  and LightCone.from_dict(spec["light_cone"])._capability_inside(cid))', "                  )"),
+    ("any recorded attach counts as authorized", "greg/appraisal.py",
+     '            ok, why = False, f"its attach', '            ok, why = True, f"its attach'),
+    ("a capability with no recorded ATTACHED serves unchallenged", "greg/appraisal.py",
+     '        if not last or last[-1].payload.get("state") != "ATTACHED":', "        if False:"),
+]
+
 CAPABILITY_PERCEPTION_TESTS = ["tests/integration/test_greg_capability_wakes_goal.py"]
 CAPABILITY_PERCEPTION_MUTANTS = [
     ("a capability change is invisible to Goal Gravity", "greg/goal_gravity.py",
@@ -1198,6 +1215,7 @@ GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),
           ("founder tier", FOUNDER_TIER_TESTS, FOUNDER_TIER_MUTANTS),
           ("founder tier (body)", FOUNDER_TIER_BODY_TESTS, FOUNDER_TIER_BODY_MUTANTS),
           ("closure integrity", CLOSURE_INTEGRITY_TESTS, CLOSURE_INTEGRITY_MUTANTS),
+          ("formed attach authority", FORMED_ATTACH_TESTS, FORMED_ATTACH_MUTANTS),
           ("capability perception", CAPABILITY_PERCEPTION_TESTS, CAPABILITY_PERCEPTION_MUTANTS),
           ("goal-requested formation", GOAL_FORMATION_TESTS, GOAL_FORMATION_MUTANTS),
           ("portfolio words", PORTFOLIO_WORDS_TESTS, PORTFOLIO_WORDS_MUTANTS),

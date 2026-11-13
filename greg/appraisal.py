@@ -387,6 +387,94 @@ def _withheld(registry, cid: str) -> str | None:
     return why
 
 
+# Acceptance C.G9. A formed capability (built, acquired, constructed, composed) has no reviewed code behind it: its
+# only authority is the chain Genesis recorded and the founder's scope or command that attached it. The appraiser
+# reads that chain itself, as of each receipt it rests on, and never trusts the registry's say-so. An ATTACHED state
+# with no accepted, re-verifiable founder authority behind it (a state set in memory and journaled by hand, a command
+# that was not signed, a mission scope that did not cover it) refutes the closure that used it.
+AUTO_ATTACHED = "founder-signed mission auto_attach (read_only)"   # greg/genesis.py AUTO_ATTACH and its engine variant
+
+
+def _envelope_signed(journal: Journal, ledger, seq: dict, command: dict, kind: str) -> bool:
+    """An accepted command of ``kind`` whose retained envelope re-verifies against a founder key enrolled before it
+    was accepted. MISSION and CAPABILITY_ATTACH are founder-key-only (greg/founder.py DEVICE_KINDS excludes them)."""
+    env = command.get("envelope")
+    if not isinstance(env, dict) or env.get("kind") != kind or sha256_json(env) != command.get("digest"):
+        return False
+    public = _founder_keys(journal, command["_seq"], ledger).get(env.get("founder_key_id"))
+    try:
+        Ed25519PublicKey.from_public_bytes(bytes.fromhex(public)).verify(bytes.fromhex(env["signature"]),
+                                                                          _signing_bytes(env))
+    except (InvalidSignature, ValueError, KeyError, TypeError):
+        return False
+    return True
+
+
+def _formed_attach_findings(journal: Journal, ledger, seq: dict, receipts: list) -> list[str]:
+    """Findings for every receipt (label, ledger record) served by a formed capability whose genesis chain or attach
+    authority the ledger does not show before that receipt. Built-ins are reviewed code and are not audited here."""
+    def at(e):
+        return seq.get(e.event_id, 1 << 60)
+
+    witnesses = {r.payload.get("grant_id"): r.payload for r in ledger.by_type("witness")}
+    registrations = journal.replay("capability.registered")
+    states = journal.replay("capability.state")
+    opened = {e.payload.get("deficit_id"): at(e) for e in journal.replay("deficit.opened")}
+    verified = [(e.payload, at(e)) for e in journal.replay("genesis.verified") if e.payload.get("passed") is True]
+    commands = [{**e.payload, "_seq": at(e)} for e in journal.replay("command.accepted")]
+    findings = []
+    for label, receipt in receipts:
+        if receipt is None or receipt.record_type != "receipt":
+            continue                                   # an unbound or missing receipt is another check's finding
+        cid = (witnesses.get(receipt.payload.get("grant_id")) or {}).get("capability")
+        if cid is None or cid in BUILTINS:
+            continue
+        before = receipt.seq
+        registered = [e for e in registrations if e.payload["manifest"]["capability_id"] == cid and at(e) < before]
+        if not registered:
+            findings.append(f"{label}: {cid} served it with no capability.registered before the receipt")
+            continue
+        registration = registered[-1]
+        deficit, manifest = registration.payload.get("deficit_id"), registration.payload["manifest"]
+        if deficit not in opened or not opened[deficit] < at(registration):
+            findings.append(f"{label}: {cid} was registered for no deficit opened before it")
+            continue
+        if not any(v.get("deficit_id") == deficit and (v.get("capability_id") == cid or (
+                str(v.get("capability_id", "")).startswith("built:")
+                and cid.endswith("." + v["capability_id"][len("built:"):][:12]))) and v_at < at(registration)
+                   for v, v_at in verified):
+            findings.append(f"{label}: {cid} has no passing genesis.verified under {deficit} before registration")
+            continue
+        last = [e for e in states if e.payload.get("capability_id") == cid and at(e) < before]
+        if not last or last[-1].payload.get("state") != "ATTACHED":
+            findings.append(f"{label}: {cid} was not ATTACHED by any recorded state change before the receipt")
+            continue
+        attach, attach_at = last[-1].payload, at(last[-1])
+        by = attach.get("by") or ""
+        if by == "founder command":
+            # Body.apply records the state change, then the command's acceptance: both precede the receipt
+            command = [c for c in commands if c.get("digest") == attach.get("command_digest") and c["_seq"] < before]
+            ok = (len(command) == 1 and _envelope_signed(journal, ledger, seq, command[0], "CAPABILITY_ATTACH")
+                  and (command[0]["envelope"].get("body") or {}).get("capability_id") == cid)
+            why = "its founder command is not an accepted, founder-signed CAPABILITY_ATTACH of it"
+        elif by.startswith(AUTO_ATTACHED):
+            signed = [c for c in commands if c.get("kind") == "MISSION" and c["_seq"] < attach_at
+                      and ((c.get("envelope") or {}).get("body") or {}).get("mission_id") == attach.get("mission_id")]
+            spec = signed[-1]["envelope"]["body"] if signed else {}
+            ok = (bool(signed) and _envelope_signed(journal, ledger, seq, signed[-1], "MISSION")
+                  and (spec.get("auto_attach") or {}).get("max_consequence_class") == "read_only"
+                  and manifest.get("consequence_class") == "read_only"
+                  and LightCone.from_dict(spec["light_cone"])._capability_inside(cid))
+            why = (f"mission {attach.get('mission_id')}'s signed scope does not pre-authorize a read-only "
+                   "auto_attach of it")
+        else:
+            ok, why = False, f"its attach ({by or 'no recorded authority'}) is neither a founder command nor a " \
+                             "signed mission auto_attach"
+        if not ok:
+            findings.append(f"{label}: {cid} was ATTACHED without founder authority: {why}")
+    return findings
+
+
 def _waited_on(journal: Journal, mid: str, closure_event: str | None) -> dict:
     """capability id -> why, for every capability an earlier appraisal of this same closure did not run. Empty when
     this is the closure's first appraisal.
@@ -839,10 +927,20 @@ def appraise(request: dict) -> dict:
                     preconditions_ok = False
                     findings.append(f"{action['action_id']}: ran before {check_id} was observed passing")
         checks["preconditions_honored"] = preconditions_ok
+
+        # 7. formed capabilities authorized (acceptance C.G9): every receipt the closure rests on that a formed
+        # capability served shows its genesis chain and a founder-authorized attach before it
+        rested = [(e.payload["check_id"], ledger.find(e.payload["receipt"]) if e.payload.get("receipt") else None)
+                  for check in required_checks
+                  for e in [o for o in observations if o.payload["check_id"] == check["check_id"]][-1:]]
+        rested += [(a["action_id"], ledger.find(a["receipt"]) if a.get("receipt") else None) for a in actions]
+        attach_findings = _formed_attach_findings(journal, ledger, seq, rested)
+        checks["formed_capabilities_authorized"] = not attach_findings
+        findings.extend(attach_findings)
         required = ("chain_intact", "registered_once", "achieved_claimed", "closure_matches_signed_rule",
                     "founder_signature_verified", "closure_evidence_bound", "checks_rederived_from_receipts",
                     "world_reobserved", "exactly_once", "deliveries_bound_to_evidence",
-                    "approval_boundaries_honored", "preconditions_honored")
+                    "approval_boundaries_honored", "preconditions_honored", "formed_capabilities_authorized")
         # A check that is False only because of something not run, or read too late, speaks neither for nor against
         # the closure. Named here so that no reader has to guess it from the other fields.
         not_established = [name for name, held, left_open in (

@@ -6,6 +6,8 @@ import json
 import shutil
 from pathlib import Path
 
+import pytest
+
 from greg.body import Body
 from greg.templates import first_mission
 from tests.greg_fixtures import drop, make_body, signed
@@ -20,6 +22,17 @@ def kernel_copy(tmp: Path) -> Path:
         (root / rel).parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(REPO / rel, root / rel)
     return root
+
+
+def requires_selection_engine():
+    """Skip, naming the package, where numpy is absent: the First Mission's ``select`` step runs
+    ``cognition.dp_knapsack``, whose solver imports numpy (requirements-cognition.txt, which every Canonical CI job
+    that runs these tests installs). Without it the genome abstains (DEPENDENCY_UNAVAILABLE), ``select`` keeps no
+    output, the dossier is never bound and the mission waits on a NO_STRATEGY decision ("select.output is not
+    object"): a failure about the machine, not the mission. Found 2026-11-12 in a Playwright environment installed
+    from requirements-dev.txt alone."""
+    pytest.importorskip("numpy", reason="the First Mission's select step (cognition.dp_knapsack) needs numpy: "
+                                        "pip install -r requirements-cognition.txt")
 
 
 def setup(tmp_path, *, attach=True, budget=8):
@@ -49,6 +62,7 @@ def actions(home, mission_id):
 
 
 def test_first_mission_runs_end_to_end_and_is_independently_verified(tmp_path):
+    requires_selection_engine()
     home, _, _, root, spec = setup(tmp_path)
     out, _ = run_until_settled(home)
     assert out["missions"][0]["state"] == "ACHIEVED", out
@@ -72,6 +86,7 @@ def test_first_mission_runs_end_to_end_and_is_independently_verified(tmp_path):
 
 
 def test_crash_after_survey_resumes_without_repeating_a_completed_step(tmp_path):
+    requires_selection_engine()
     home, _, _, _, spec = setup(tmp_path)
     with Body(home) as body:           # the first tick runs exactly one step, then the process "dies"
         body.boot()
@@ -97,6 +112,7 @@ def test_unattached_selection_engine_stops_for_the_founder_instead_of_running(tm
 
 def test_tampered_dossier_is_refuted_by_the_independent_sensor(tmp_path):
     from greg.capabilities import BUILTINS, InvocationContext
+    requires_selection_engine()
     home, _, _, root, spec = setup(tmp_path)
     run_until_settled(home)
     path = next((home / "deliveries" / "first-mission").glob("*.json"))

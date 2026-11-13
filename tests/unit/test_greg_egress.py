@@ -126,6 +126,9 @@ def test_a_repaired_redirect_through_the_authority_office_is_done_not_uncertain(
     body = Body(home).open()
     try:
         manifest = replace(BUILTINS["http.get"][0], egress_allowlist=("localhost",))
+        # Registered on this test body: the office refuses a manifest or adapter its registry does not hold, so a
+        # caller cannot widen a capability's egress allowlist by presenting an edited manifest under its id.
+        body.registry.manifests["http.get"], body.registry.adapters["http.get"] = manifest, http_get
         ctx = InvocationContext(workspace=tmp_path / "ws", read_roots=(data,), secrets=body.secrets,
                                 manifest=manifest)
         cone = LightCone.from_dict({"capabilities": ["http.get"], "targets": ["https:*"],

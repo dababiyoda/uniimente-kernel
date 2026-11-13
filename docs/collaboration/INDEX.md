@@ -41,6 +41,7 @@ was true on that date.
 | `*-AUDIT-*`, `*-COVERAGE-*`, `LINEAGE-*`, `SOURCE-COVERAGE-*`, `REPOSITORY-*`, `wave0-*` | inventories and audits | as of their date |
 | `DIGEST-RULE-CONSOLIDATION-*`, `LEDGER-DEDUP-*`, `FINDING-*` | duplication and defect findings | until their follow-up PRs land |
 | `BRANCH-CATALOG-*` | every remote branch: finished (on the line), open PR, parked or unclaimed (`scripts/branch_catalog.py`) | the newest one; regenerated weekly |
+| `COMPOSE-REHEARSAL-*` | what merging a set of heads breaks in behaviour, and what causes it (`scripts/compose_rehearsal.py`) | as of its date and the line head it names |
 | `CONTRIBUTOR-PAIN-POINTS-*` | contributor friction register | the newest one; re-measured by the monthly review (`docs/REVIEW_CADENCE.md`) |
 
 Sub-folders: `reviews/` (independent review reports), `lineage-archive/`

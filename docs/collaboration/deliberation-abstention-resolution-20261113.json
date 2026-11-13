@@ -1,0 +1,311 @@
+{
+ "decision_id": "DELIB-20261113-ABSTENTION-RESOLUTION",
+ "title": "Abstention-to-resolution routing on GREG's mission path",
+ "problem": "Cortex and compile abstentions reach the founder as a generic NO_STRATEGY ask with no actionable content. Attaching the missing organ does not unblock the mission, and the typed deficit from #167 is consumed by nothing.",
+ "founder_intent_refs": [
+  "INTENT-20261019-UPWARD-ASCENT",
+  "INTENT-20261021-seed-cortex-on-greg-path",
+  "INTENT-20261113-ABSTENTION-RESOLUTION",
+  "INTENT-0030"
+ ],
+ "baseline": "B0 = 55e6d74 (#184 head) and P = 610c343 (#194 with #184 merged): every perturbation ends in NO_STRATEGY and nothing closes (v1 labelling and arms).",
+ "alternatives": [
+  {
+   "name": "Parser founder (S)",
+   "description": "A capable founder reads raw receipts and composes the attach or successor by hand on today's code.",
+   "advantages": [
+    "No code change"
+   ],
+   "disadvantages": [
+    "The founder authors every field",
+    "An attach does not unblock the waiting mission"
+   ],
+   "revival_evidence": "S matches or beats NEW on E2 in v2"
+  },
+  {
+   "name": "Producer only",
+   "description": "Typed resolution on receipts, with no engine consumer.",
+   "advantages": [
+    "Smallest change"
+   ],
+   "disadvantages": [
+    "Nothing acts on it; this is #167's state"
+   ],
+   "revival_evidence": "A_producer within 0.20 of NEW"
+  },
+  {
+   "name": "Auto-apply resolutions",
+   "description": "GREG applies attaches and successors itself.",
+   "advantages": [
+    "Zero founder burden"
+   ],
+   "disadvantages": [
+    "Self-authorizing capability growth; constitutionally prohibited"
+   ],
+   "revival_evidence": "None. Prohibited."
+  }
+ ],
+ "do_nothing_option": {
+  "expected_outcome": "Abstentions keep producing generic asks; missions stay blocked even after the right attach.",
+  "advantages": [
+   "No risk of new defects"
+  ],
+  "disadvantages": [
+   "The #190 dividend stays owed",
+   "The founder's burden is unchanged"
+  ]
+ },
+ "roles": [
+  {
+   "role": "Founder-Intent Steward",
+   "position": "Serves #190's measured-dividend requirement and the 'nothing is disconnected' directive: a produced deficit is now consumed on GREG's one mission path.",
+   "material_concerns": [
+    "The dividend must be a measured effect, not a resemblance",
+    "Metaphor-free: no new organ or framework, one module and one engine hook"
+   ],
+   "evidence_refs": [
+    "PREREGISTRATION.md",
+    "INTENT-20261019-UPWARD-ASCENT"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Systems Architect",
+   "position": "There is one producer (a receipt field bound by the digest) and one consumer (an engine hook). The hook reuses existing ask kinds, command kinds and blockers; it adds no ledger type and no second authority path.",
+   "material_concerns": [
+    "Coupling between the cortex route policy and PART_OF; a drift test guards it",
+    "Compile-side detaches must stay with Genesis"
+   ],
+   "evidence_refs": [
+    "tests/unit/test_greg_resolution.py",
+    "test_greg_cognition_genesis.py"
+   ],
+   "recommendation": "RETAIN"
+  },
+  {
+   "role": "Adversarial Reviewer",
+   "position": "The author wrote the operators, the harness and the code, and the instrument defects were found by the same author. The guards against that are the frozen v1 result kept as-is, a v2 with NEW unchanged and disjoint base items, and the ablations. No independent reviewer has run yet.",
+   "material_concerns": [
+    "Builder-known operators",
+    "v1 harness defects",
+    "A prepared command might widen authority"
+   ],
+   "evidence_refs": [
+    "INSTRUMENT-DEFECTS.md (44f2ed4, before v1 results)",
+    "test_a_prepared_successor_never_widens_the_original"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Operator and Maintainer",
+   "position": "The addition is small: 164 lines of producer and about 120 lines of engine. Ten mutants are all caught, and the seed replay passes 120/120. Rollback is a revert of 1d6b1c1.",
+   "material_concerns": [
+    "The engine hook runs on every DONE cognition receipt; its cost is one dict read"
+   ],
+   "evidence_refs": [
+    "seed replay 120/120",
+    "mutation group 10/10"
+   ],
+   "recommendation": "RETAIN"
+  },
+  {
+   "role": "Evidence and Welfare Guardian",
+   "position": "A protection question becomes a HUMAN_JUDGMENT wait and never closes. B0 achieved 30/30 UNANSWERED missions with an unanswered part (a baseline harm); the prerequisites remove that, and NEW must not reintroduce it.",
+   "material_concerns": [
+    "H1 harm must be zero under the pre-registered text",
+    "A founder-detached capability must never be silently re-attached"
+   ],
+   "evidence_refs": [
+    "v1/run-B0.json (30 harm)",
+    "v1/run-A_producer.json (0 harm)"
+   ],
+   "recommendation": "EXPERIMENT"
+  }
+ ],
+ "evidence": [
+  {
+   "claim": "One prepared attach closes a detach-blocked mission",
+   "tier": "unit_test",
+   "reference": "tests/unit/test_greg_resolution.py::TestConsumer",
+   "finding": "ACHIEVED after one signed CAPABILITY_ATTACH; without the consumer, not achieved"
+  },
+  {
+   "claim": "v1 frozen run, NEW arm",
+   "tier": "sandbox_execution",
+   "reference": "docs/evidence/greg-abstention-resolution/2026-11-13/v1/run-NEW.json",
+   "finding": "44 closed of 203 rows; 29 errors (D1); 19 harm under the frozen D2 rule"
+  },
+  {
+   "claim": "Both single-sided ablations close nothing",
+   "tier": "sandbox_execution",
+   "reference": "v1/run-A_producer.json, v1/run-A_consumer.json",
+   "finding": "0 closed in each arm"
+  }
+ ],
+ "counterevidence": [
+  {
+   "claim": "v1's verdict will likely be FAILED_HARM under the frozen instrument",
+   "tier": "sandbox_execution",
+   "reference": "v1/run-NEW.json, INSTRUMENT-DEFECTS.md",
+   "finding": "D2 scores formal-part attach closures as harm while the second engine stays detached; kept and reported"
+  },
+  {
+   "claim": "No independent reviewer has replicated any result",
+   "tier": "other",
+   "reference": "this session",
+   "finding": "All runs are by the author"
+  }
+ ],
+ "pass_1": {
+  "intended_outcome": "One founder signature closes the missions a typed abstention can name, with zero harmful closures and Genesis unchanged for FORM.",
+  "advantages": [
+   {
+    "id": "A1",
+    "statement": "It consumes #167's typed deficit on the canonical path",
+    "amplified_value": "Every future cortex organ inherits actionable abstentions for free"
+   },
+   {
+    "id": "A2",
+    "statement": "It reduces what the founder must author to the values only the founder holds",
+    "amplified_value": "It compounds as missions repeat: the burden per closure falls toward one signature"
+   }
+  ],
+  "disadvantages": [
+   {
+    "id": "D-1",
+    "statement": "A prepared successor could carry a widened scope",
+    "severity": "high",
+    "response_type": "protective",
+    "redesigned_response": "The successor is a deepcopy of the signed spec with only the request changed; a test asserts light_cone, closure and capabilities are identical"
+   },
+   {
+    "id": "D-2",
+    "statement": "Re-proposing a capability the founder just detached overrides the founder's decision",
+    "severity": "medium",
+    "response_type": "governance",
+    "redesigned_response": "Compile detaches stay with Genesis, which never re-proposes them. The cortex ATTACH asks only when that organ is the sole route, as the existing _cognition_ask does."
+   },
+   {
+    "id": "D-3",
+    "statement": "The author measures their own work",
+    "severity": "medium",
+    "response_type": "evidence",
+    "redesigned_response": "Pre-registration, a frozen v1 kept with its result, a v2 with NEW unchanged and disjoint items, and ablations"
+   }
+  ],
+  "comparisons": {
+   "baseline": "B0/P: 0 closures",
+   "do_nothing": "0 closures; the dividend stays owed",
+   "simplest_viable_alternative": "Producer only (A_producer): 0 closures in v1",
+   "strongest_competing_architecture": "Parser founder S on P: measured in v1 and v2",
+   "reversible_experiment": "The pre-registered held-out runs v1 and v2 with ablations"
+  },
+  "rejected_alternatives": [
+   {
+    "name": "Auto-apply resolutions",
+    "rejection_reason": "A capability would authorize its own attachment",
+    "revival_evidence": "None: constitutional"
+   }
+  ]
+ },
+ "pass_2": {
+  "attack_summary": "Attacked the design as deployed: the instrument, the authority surface and the blocker semantics.",
+  "new_weaknesses": [
+   {
+    "id": "W1",
+    "category": "overfit",
+    "statement": "The suite's operators are builder-known, so NEW may fit them",
+    "strengthening_response": "v2 draws new base items with a new seed; the adversarial partition is still owed and is reported as a gap"
+   },
+   {
+    "id": "W2",
+    "category": "fragility",
+    "statement": "PART_OF can drift from the cortex route policy",
+    "strengthening_response": "A test asserts PART_OF equals the bridged solver organs; a mutation check covers it"
+   },
+   {
+    "id": "W3",
+    "category": "gaming",
+    "statement": "A forged receipt could claim a verified resolution",
+    "strengthening_response": "The CognitiveReceipt field rejects verified!=false or foreign authority after the digest re-binds; a mutant proves it"
+   }
+  ],
+  "pass_1_disadvantage_dispositions": [
+   {
+    "disadvantage_id": "D-1",
+    "outcome": "resolved",
+    "rationale": "Test plus mutant: a successor that fills the founder's value itself is caught",
+    "owner": "GREG mission-engine maintainers",
+    "review_trigger": "Any change to _successor"
+   },
+   {
+    "disadvantage_id": "D-2",
+    "outcome": "resolved",
+    "rationale": "The Genesis test caught the conflict and the compile path now defers",
+    "owner": "GREG cognition maintainers",
+    "review_trigger": "Any change to Genesis attach doctrine"
+   },
+   {
+    "disadvantage_id": "D-3",
+    "outcome": "accepted",
+    "rationale": "No independent reviewer is available in-session; disclosed",
+    "owner": "Alfonso Lopez",
+    "review_trigger": "Independent review on the draft PR"
+   }
+  ],
+  "final_design": "Producer field on the receipt, plus an engine hook that asks once with an unsigned prepared command and blocks on the matching existing blocker. FORM falls through to Genesis, and compile detaches stay with Genesis.",
+  "residual_risks": [
+   {
+    "risk": "The dividend may not clear E1/E2 even in v2",
+    "mitigation": "Report NO_DIVIDEND or PREREQUISITE_PORT_PLUS_INTEGRATION as measured; no re-tuning",
+    "owner": "session author",
+    "review_trigger": "v2 analysis"
+   },
+   {
+    "risk": "A HUMAN_HANDOFF block could leave missions waiting indefinitely",
+    "mitigation": "The founder can answer, abandon or revise; listed as an open question",
+    "owner": "Alfonso Lopez",
+    "review_trigger": "Founder review"
+   }
+  ],
+  "recommendation": "EXPERIMENT"
+ },
+ "dissent": {
+  "present": true,
+  "handling": "Recorded; merge waits on the founder and the v2 result.",
+  "entries": [
+   {
+    "role": "Adversarial Reviewer",
+    "position": "Do not claim a dividend from author-run measurements alone",
+    "rationale": "Builder-known operators and instrument defects found by the builder",
+    "evidence_threshold": "The v2 verdict plus one independent replication of NEW vs B0 on v2's suite",
+    "owner": "Alfonso Lopez",
+    "review_trigger": "Draft PR review"
+   }
+  ]
+ },
+ "authority_impact": {
+  "level": "standard",
+  "changes_authority": false,
+  "requires_authorized_human": false,
+  "approval_status": "not_required",
+  "approver": null
+ },
+ "migration_plan": "Additive: receipts without a resolution stay valid, and answered receipts keep their identity. The draft PR is stacked on #194; nothing is migrated. This record decides only the experiment, a draft PR that is consequence-inert. Merging is a separate decision that requires Alfonso's approval and is not taken here.",
+ "rollback_plan": {
+  "possible": true,
+  "steps": [
+   "git revert 1d6b1c1 (and d9fea85 for the tests and gate)",
+   "Retained receipts with a resolution remain valid history and are simply no longer consumed"
+  ],
+  "reason_impossible": null
+ },
+ "kill_criteria": [
+  "Any H1 harmful closure in v2 under the pre-registered text",
+  "Any prepared command that widens scope",
+  "FORM losing Genesis (F1 fails)"
+ ],
+ "decision": "EXPERIMENT",
+ "decision_owner": "Alfonso Lopez",
+ "review_trigger": "The v2 analysis lands, or the founder reviews the draft PR"
+}

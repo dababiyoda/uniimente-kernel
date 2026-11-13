@@ -2,6 +2,27 @@
 
 # Founder Intent Ledger
 
+## Abstention-to-resolution: the first measured dividend on GREG's path — 2026-11-13
+
+A model-authored normalization, not the founder's words. It is the first capability dividend owed under `INTENT-20261019-UPWARD-ASCENT`.
+
+| Required field | INTENT-20261113-ABSTENTION-RESOLUTION |
+| --- | --- |
+| statement | When cognition abstains on a signed mission step, a typed `resolution` on the receipt becomes one founder ask of an existing kind with an unsigned prepared command; FORM still reaches Genesis |
+| source_refs | #190 (UPWARD-ASCENT); #167 (the typed deficit nothing consumed); [record](intent/INTENT-20261113-ABSTENTION-RESOLUTION.json); [deliberation](collaboration/deliberation-abstention-resolution-20261113.json) |
+| owner | Alfonso Lopez (merge, attach); GREG cognition and mission-engine maintainers implement |
+| state | active; decision EXPERIMENT (draft only) |
+| binding_scope | `greg/cognition/resolution.py`, the receipt field, `MissionEngine._resolution_ask`, `cortex/evaluation/resolution/` |
+| constitutional_constraints | no new ask kind, command kind, ledger type or authority path; a prepared command acts only when signed; a successor never widens its original; `auto_attach` never consumes one |
+| success_evidence | pre-registered held-out runs ([v1](evidence/greg-abstention-resolution/2026-11-13/PREREGISTRATION.md), [v2](evidence/greg-abstention-resolution/2026-11-13/v2/PREREGISTRATION.md)); `tests/unit/test_greg_resolution.py`; 10 of 10 mutants caught; seed replay 120 of 120 |
+| failure_evidence | the frozen v1 instrument has two defects (D1, D2) recorded before any v1 result; v1 is kept with its result whatever it shows; B0 achieves all 30 UNANSWERED missions with a part unanswered (a baseline harm) |
+| dependencies | #194 (base); #184 |
+| conflicts | v1 floor-rule reading for harm-scored operators (recorded in `label.py`); compile detaches stay with Genesis |
+| next_review_trigger | the v2 analysis; founder review of the draft PR |
+| supersedes | none |
+| superseded_by | none |
+| implementation_refs | `1d6b1c1`, `d9fea85` |
+
 ## Seed Cortex 0.2.2 on GREG's path, stacked on #184 — 2026-10-21
 
 Faithful summary, not verbatim and not founder authentication. Repetition adds no authority.

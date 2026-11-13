@@ -1,0 +1,44 @@
+{
+ "intent_id": "INTENT-20261113-ABSTENTION-RESOLUTION",
+ "title": "An abstaining cognition step asks the one founder decision that would let it answer",
+ "statement": "Model-authored normalization, not founder words. This is the first capability dividend owed under INTENT-20261019-UPWARD-ASCENT. When GREG's cognition abstains on a signed mission step, a typed resolution on the receipt becomes exactly one founder ask of an existing kind. The ask carries an unsigned prepared command, so one signature closes the mission. A real capability absence still reaches Capability Genesis on the same tick.",
+ "source": "INTENT-20261019-UPWARD-ASCENT (#190) and the 2026-10-13 founder directive preserved on #167; applied by the 2026-11-13 'Resume and follow the repository's own entry instructions'",
+ "source_location": "docs/evidence/greg-abstention-resolution/2026-11-13/PREREGISTRATION.md; docs/intent/sources (UPWARD-ASCENT on #190's branch)",
+ "source_date_or_version": "2026-11-13",
+ "status": "active",
+ "authority_level": "active_requirement",
+ "consequence_class": "bounded",
+ "intended_outcome": "Missions blocked by a missing input, a mis-declared geometry or a founder-detached organ close after one signed founder action, measured against a pre-registered baseline. The bar: no harmful false closure, no new authority path, and FORM still reaching Genesis on the same tick.",
+ "affected_systems": [
+  "greg/cognition/resolution.py",
+  "greg/cognition/bridge.py",
+  "greg/cognition/compiler.py",
+  "greg/cognition/contracts.py",
+  "greg/missions.py",
+  "cortex/evaluation/resolution"
+ ],
+ "rationale": "#167's typed deficit was produced but consumed by nothing at runtime. On the prerequisites head every cortex abstention ended in a generic NO_STRATEGY ask, and attaching the missing organ did not unblock it. Recombination is owed a measured dividend on GREG's path (#190).",
+ "conflicts": [
+  "The pre-registration's floor rule did not separate harm-scored operators; label.py records the reading chosen (no floor partition for them).",
+  "The frozen v1 harness defects D1 and D2 bind against any correct implementation; v2 corrects them under a new pre-registration and v1 is kept.",
+  "A compile family the founder detached: Genesis never re-proposes it. Resolved by leaving those to Genesis."
+ ],
+ "evidence_refs": [
+  "docs/evidence/greg-abstention-resolution/2026-11-13/",
+  "tests/unit/test_greg_resolution.py",
+  "scripts/ci/check_cortex_mutants.py (abstention resolution group, 10/10 caught)"
+ ],
+ "implementation_refs": [
+  "1d6b1c1",
+  "d9fea85"
+ ],
+ "owner": "Alfonso Lopez (merge, attach, promotion); GREG cognition and mission-engine maintainers implement",
+ "next_review_trigger": "The v2 analysis lands, or the founder reviews the dividend's draft PR",
+ "unresolved_questions": [
+  "Should a prepared successor MISSION close the original mission, or leave it open as now?",
+  "Should HUMAN_HANDOFF block the mission until a person answers (current design), or only inform?",
+  "Is the dividend's measured closure enough to merge, or does the founder want device verification first?"
+ ],
+ "created_at": "2026-11-13T13:30:00Z",
+ "updated_at": "2026-11-13T13:30:00Z"
+}

@@ -2281,10 +2281,11 @@
     {
      "id": "G4",
      "gap": "G4: acquired-capability branch. No test shows a Capability-Genesis-formed capability measurably improving a later related mission.",
-     "state": "OPEN",
+     "state": "CLOSED",
      "buildable_now": true,
      "dependency": "none",
-     "next": "Base it on tests/unit/test_greg_genesis_builder.py. Mission A opens a deficit; builders.StaticBuilder(WRONG, GOOD) builds; the capability is verified by the frozen oracle and attached. Restart the Body. Submit mission B, a different mission_id and different input data needing the same function. Assert: no new deficit.opened, genesis.built count unchanged, builder.calls unchanged, no signed build budget consumed, B ACHIEVED and appraised VERIFIED in fewer ticks and actions than A. Ablation: on a fresh home, or after a founder-signed CAPABILITY_DETACH of the built capability, B opens a deficit and either needs builder calls or, without a build budget, blocks or escalates. The metric is builder invocations, ticks-to-ACHIEVED and budget, not registry rows."
+     "next": "Base it on tests/unit/test_greg_genesis_builder.py. Mission A opens a deficit; builders.StaticBuilder(WRONG, GOOD) builds; the capability is verified by the frozen oracle and attached. Restart the Body. Submit mission B, a different mission_id and different input data needing the same function. Assert: no new deficit.opened, genesis.built count unchanged, builder.calls unchanged, no signed build budget consumed, B ACHIEVED and appraised VERIFIED in fewer ticks and actions than A. Ablation: on a fresh home, or after a founder-signed CAPABILITY_DETACH of the built capability, B opens a deficit and either needs builder calls or, without a build budget, blocks or escalates. The metric is builder invocations, ticks-to-ACHIEVED and budget, not registry rows.",
+     "closed_by": "tests/unit/test_greg_genesis_capability_dividend.py (SANDBOX): mission B after a restart, served by the capability mission A formed, opens no deficit, records no Genesis route, build or verification, makes 0 builder calls, spends 0 of its signed build budget, and is appraised VERIFIED after reaching ACHIEVED in 1 tick against 2 ticks, 2 builder calls, 2 verifications and 0.10 of reported build spend for the same mission B on a fresh home; after a founder-signed CAPABILITY_DETACH, B gets no dividend (escalates without a build budget; with one, the identical rebuild is refused as founder-detached and not attached)"
     },
     {
      "id": "G5",

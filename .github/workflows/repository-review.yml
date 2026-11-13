@@ -5,7 +5,7 @@ name: Repository review
 # comments, labels, opens issues or pushes. It never gates a pull request
 # (the same structural rules already run in the unit suite). GitHub runs
 # scheduled workflows only from the default branch, so the schedule starts
-# when this file reaches main.
+# when this file is on the default branch (docs/collaboration/ROLLOUT.md).
 on:
   schedule:
     - cron: "17 6 * * 1"
@@ -42,6 +42,7 @@ jobs:
           git fetch --quiet origin '+refs/heads/*:refs/remotes/origin/*'
           python scripts/branch_catalog.py --github "${{ github.repository }}" --markdown branches.md --json branches.json
           python scripts/docs_catalog.py --check docs/CATALOG.md || echo "docs/CATALOG.md is stale: regenerate at the next intake" >> review.md
+          python scripts/work_map.py --github "${{ github.repository }}" --markdown work-map.md --json work-map.json
           cat review.md >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         with:
@@ -51,4 +52,6 @@ jobs:
             review.json
             branches.md
             branches.json
+            work-map.md
+            work-map.json
           retention-days: 90

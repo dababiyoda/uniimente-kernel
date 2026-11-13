@@ -287,13 +287,33 @@ def _get(url: str, token: str | None):
         return json.load(resp)
 
 
+RECEIPT_MARKER = "<!-- uniimente:receipt -->"
+
+
+def receipt_of(body: str | None) -> dict | None:
+    """The version-2 receipt in a PR body (docs/collaboration/RECEIPT.md), or None when there is none or it
+    does not parse. A receipt is a declaration the receipt check validated against the PR's head, not proof."""
+    body = body or ""
+    at = body.find(RECEIPT_MARKER)
+    if at < 0:
+        return None
+    m = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", body[at:], re.S)
+    if not m:
+        return None
+    try:
+        data = json.loads(m[1])
+    except ValueError:
+        return None
+    return data if isinstance(data, dict) else None
+
+
 def github_metrics(repo: str, token: str | None, limit: int = 100) -> dict:
     """SOP-06 proxies from public PR metadata. Proxies, not the SOP's measures:
     a receipt block is a declaration, not a verified handoff."""
     base = f"https://api.github.com/repos/{repo}"
     open_prs = _get(f"{base}/pulls?state=open&per_page=100", token)
     closed = _get(f"{base}/pulls?state=closed&per_page={min(limit, 100)}", token)
-    marker = "<!-- uniimente:receipt -->"
+    marker = RECEIPT_MARKER
     merged = [p for p in closed if p.get("merged_at")]
     unmerged = [p for p in closed if not p.get("merged_at")]
     words = re.compile(r"\b(stale|supersed|duplicate|rework|re-record|conflict)", re.I)

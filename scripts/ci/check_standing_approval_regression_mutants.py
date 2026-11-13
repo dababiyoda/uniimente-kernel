@@ -29,7 +29,7 @@ UNMET = f"{TESTS}::test_an_effective_run_closed_by_an_unmet_closure_stays_unappr
 # recorded after it, whose window holds it. The window mutants are anchored there.
 APPRAISAL = "greg/appraisal.py"
 OWN_CLOSURE = ("        closure = self._by_mission[mission_id][i]\n        if not closure.start < position:\n"
-               "            return None\n")
+               "            return None, \"outside\"\n")
 MUTANTS = [
     ("body hook removed", "greg/body.py",
      "        autonomy.regress(self.journal, self.engine.book, now)"

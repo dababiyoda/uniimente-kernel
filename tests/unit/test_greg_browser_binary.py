@@ -210,6 +210,37 @@ def test_a_choice_that_names_no_browser_is_refused_by_name_and_nothing_else_is_r
     assert not runs(other) and not runs(str(machine / "chosen" / "my-chrome"))
 
 
+TOO_LONG = "/" + "a" * 300              # one name longer than NAME_MAX: looking at it raises ENAMETOOLONG
+
+
+def refused_by_name(value: str) -> str:
+    return (f"GREG_CHROMIUM is set to {value!r}, which is not the absolute path of an executable file; GREG runs "
+            "the browser that variable names or none (unset it to let GREG choose among the installed browsers)")
+
+
+def test_a_choice_or_a_candidate_too_long_to_look_at_is_refused_or_passed_over_never_an_oserror(machine, tmp_path,
+                                                                                               monkeypatch):
+    """Review of #311 (M1), still present after #293: ``Path.is_file`` raises on a name longer than the system allows
+    (and on a directory the body cannot search), so OSError [Errno 36] left chrome_candidates, the manifest's
+    ``available``, the office's precheck and every render. Such a choice is now refused by name like any other, and
+    such a candidate is passed over."""
+    from greg.authority import AuthorityOffice
+    other = shell(machine, 1243)
+    monkeypatch.setenv("GREG_CHROMIUM", TOO_LONG)
+    said = refused_by_name(TOO_LONG)
+    for refuses in (capabilities.chrome_candidates, capabilities.chrome_binary, capabilities.installed_chrome,
+                    lambda: browser_render({"url": URL}, context(tmp_path))):
+        with pytest.raises(CapabilityError) as refused:
+            refuses()
+        assert str(refused.value) == said
+    manifest = BUILTINS["browser.render"][0]
+    assert manifest.available() == (False, said)
+    assert AuthorityOffice.precheck(manifest, target="web:127.0.0.1", params={"url": URL}) == ("UNAVAILABLE", said)
+    monkeypatch.delenv("GREG_CHROMIUM")
+    monkeypatch.setattr(capabilities, "CHROME_CANDIDATES", (TOO_LONG, *capabilities.CHROME_CANDIDATES))
+    assert capabilities.chrome_candidates() == [other] and not runs(other)
+
+
 def test_no_installed_browser_is_a_refusal(machine, tmp_path):
     """A body with no browser: the manifest says so when asked (the office's precheck answers UNAVAILABLE with this
     reason before the adapter runs), and the adapter called directly, or reached after the last browser was removed,
@@ -339,9 +370,12 @@ def test_a_render_that_never_returns_ends_at_the_limit_and_the_binary_is_judged_
     remembered of that binary is forgotten, so the next call runs its check again."""
     binary = shell(machine, 1243, RENDERS_ONLY_THE_CHECK)
     started = time.monotonic()
-    with pytest.raises(CapabilityError, match="^browser did not finish rendering within 1 seconds$"):
+    with pytest.raises(CapabilityError, match="^browser did not finish rendering within 1 seconds$") as refused:
         browser_render({"url": URL}, context(tmp_path))
     assert time.monotonic() - started < 4
+    # The host's limit, not a reading of the page (review of #311, M2): before, untyped, so a mission's check that
+    # renders recorded a measured failure where nothing was measured.
+    assert refused.value.failure_class == "transient"
     assert [line.rsplit(" ", 1)[-1] for line in runs(binary)] == [capabilities.RENDER_CHECK_PAGE, URL]
     assert capabilities.chrome_binary() == binary
     assert len(runs(binary)) == 3 and runs(binary)[-1].endswith(capabilities.RENDER_CHECK_PAGE)
@@ -468,9 +502,10 @@ def test_behind_the_relay_without_namespaces_nothing_runs_at_all(machine, tmp_pa
 
     monkeypatch.setattr(worker_isolation, "_backend", no_namespaces)
     browsers = [shell(machine, 1243), stand_in(machine / "sys" / "google-chrome", RENDERS)]
-    with pytest.raises(CapabilityError, match="confined egress needs bubblewrap network namespaces here"):
+    with pytest.raises(CapabilityError, match="confined egress needs bubblewrap network namespaces here") as refused:
         browser_render({"url": URL}, context(tmp_path, egress=object()))
     assert not any(runs(b) for b in browsers)
+    assert refused.value.failure_class == "transient"      # isolation the host lacks is the host's (#311, M2)
 
 
 def test_behind_the_relay_a_browser_is_not_refused_by_the_unconfined_sandbox_rule(machine, tmp_path, monkeypatch):
@@ -545,7 +580,7 @@ def test_a_running_body_renders_across_a_browser_upgrade(machine, tmp_path):
 BODY_WITH_A_CHOSEN_BROWSER = """
 import json, sys
 from pathlib import Path
-from greg.body import Body
+from greg.body import Body, status
 from tests.greg_fixtures import Clock, drop, make_body, signed
 home, key, body_id, _ = make_body(Path(sys.argv[1]))
 drop(home, signed(key, body_id, "MISSION", json.loads(sys.argv[2])))
@@ -554,16 +589,18 @@ with Body(home, clock=clock) as body:
     for _ in range(4):
         body.tick()
         clock.advance(1)
-    print(json.dumps({kind: [e.payload.get("verdict", True) for e in body.journal.replay("mission." + kind)]
-                      for kind in ("achieved", "appraised")}))
+    seen = {kind: [e.payload.get("verdict", True) for e in body.journal.replay("mission." + kind)]
+            for kind in ("achieved", "appraised")}
+    seen["observed"] = [e.payload["detail"] for e in body.journal.replay("mission.observed")]
+seen["health"] = next(c["health"] for c in status(home)["capabilities"] if c["capability_id"] == "browser.render")
+print(json.dumps(seen))
 """
 
 
-def test_a_closure_observed_with_the_founders_chosen_browser_is_verified(machine, tmp_path):
-    """The body's process has GREG_CHROMIUM in its environment; the appraiser's process is started without it.
-    Before: the manifest named the chosen binary in the body and another in the appraiser, their digests differed,
-    and the appraiser answered REFUTED ("receipt not bound to this closure and signed sensor") to a true closure."""
-    chosen = stand_in(machine / "chosen" / "my-chrome", RENDERS)
+def body_with(tmp_path, chosen: str) -> dict:
+    """The mission of ``_render_check`` run for four ticks by a real Body whose process has GREG_CHROMIUM set to
+    ``chosen`` (the appraiser's process is started without it); then browser.render's health in the founder's
+    status."""
     env = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "PYTHONDONTWRITEBYTECODE": "1", "GREG_CHROMIUM": chosen,
            "PYTHONPATH": os.pathsep.join([str(Path(capabilities.__file__).resolve().parents[1]),
                                           *(p for p in sys.path if "-packages" in p)])}
@@ -571,5 +608,24 @@ def test_a_closure_observed_with_the_founders_chosen_browser_is_verified(machine
     ran = subprocess.run([sys.executable, "-c", BODY_WITH_A_CHOSEN_BROWSER, str(tmp_path / "body-home"),
                           json.dumps(_render_check("m:chosen"))], env=env, capture_output=True, text=True, timeout=120)
     assert ran.returncode == 0, ran.stderr[-2000:]
-    assert json.loads(ran.stdout.splitlines()[-1]) == {"achieved": [True], "appraised": ["VERIFIED"]}
+    return json.loads(ran.stdout.splitlines()[-1])
+
+
+def test_a_closure_observed_with_the_founders_chosen_browser_is_verified(machine, tmp_path):
+    """The body's process has GREG_CHROMIUM in its environment; the appraiser's process is started without it.
+    Before: the manifest named the chosen binary in the body and another in the appraiser, their digests differed,
+    and the appraiser answered REFUTED ("receipt not bound to this closure and signed sensor") to a true closure."""
+    chosen = stand_in(machine / "chosen" / "my-chrome", RENDERS)
+    seen = body_with(tmp_path, chosen)
+    assert (seen["achieved"], seen["appraised"], seen["health"]) == ([True], ["VERIFIED"], "available")
     assert [line.rsplit(" ", 1)[-1] for line in runs(chosen)] == [capabilities.RENDER_CHECK_PAGE, URL]
+
+
+def test_a_body_whose_chosen_browser_is_too_long_to_look_at_keeps_ticking_and_says_why(tmp_path):
+    """Review of #311 (M1), still present after #293: the OSError left ``Body.tick``, so the body's process ended
+    (every mission stopped, not only this one), and the founder's status raised it too. Now the body keeps ticking,
+    each observation says why, and the status shows the refusal as browser.render's health."""
+    seen = body_with(tmp_path, TOO_LONG)
+    said = refused_by_name(TOO_LONG)
+    assert (seen["achieved"], seen["appraised"], seen["health"]) == ([], [], said)
+    assert seen["observed"] and all(("sensor UNAVAILABLE: " + said).startswith(d) for d in seen["observed"])

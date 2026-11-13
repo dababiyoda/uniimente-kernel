@@ -17,7 +17,7 @@ C = "greg/capabilities.py"
 
 ORDER = ("    for candidate in (*playwright_builds(HEADLESS_SHELLS), *HEADLESS_SHELL_CANDIDATES, *CHROME_CANDIDATES,\n"
          "                      *playwright_builds(FULL_BROWSERS)):")
-IS_A_FILE = "    return bool(path) and Path(path).is_file() and os.access(path, os.X_OK)"
+IS_A_FILE = "    return bool(path) and os.path.isfile(path) and os.access(path, os.X_OK)"
 NUMBERED = "        return int(number) if number.isascii() and number.isdigit() else -1"
 A_CHOICE = "        if not (os.path.isabs(chosen) and _executable(chosen)):"
 REFUSED_CHOICE = (A_CHOICE + """
@@ -62,7 +62,9 @@ MUTANTS = [
      "        if _executable(candidate) and candidate not in found:", "        if candidate not in found:"),
     (C, "a directory is not an installed browser", IS_A_FILE, "    return bool(path) and os.access(path, os.X_OK)"),
     (C, "a file that is not executable is not an installed browser", IS_A_FILE,
-     "    return bool(path) and Path(path).is_file()"),
+     "    return bool(path) and os.path.isfile(path)"),
+    (C, "a path GREG cannot look at is not an installed browser, never an OSError (review of #311, M1)", IS_A_FILE,
+     "    return bool(path) and Path(path).is_file() and os.access(path, os.X_OK)"),
     # the founder's choice
     (C, "the founder's chosen browser is the only candidate",
      "        return [chosen]\n    found: list[str] = []", "    found: list[str] = [chosen] if chosen else []"),
@@ -154,7 +156,8 @@ MUTANTS = [
     (C, "a render (not the check) that never returns ends at RENDER_SECONDS", RENDER_RUN,
      "timeout=RENDER_SECONDS * 10000, env=env, cwd=profile)"),
     (C, "a render that ran out of time is a refusal naming the limit",
-     '            raise CapabilityError(f"browser did not finish rendering within {RENDER_SECONDS} seconds") from exc',
+     '            raise CapabilityError(f"browser did not finish rendering within {RENDER_SECONDS} seconds",\n'
+     '                                  failure_class="transient") from exc',
      "            raise"),
     (C, "a render runs in its own fresh directory, not the body's", RENDER_RUN, "timeout=RENDER_SECONDS, env=env)"),
     # a confined-egress body: nothing is judged outside the namespace
@@ -172,6 +175,13 @@ MUTANTS = [
     (C, "a body with no browser says browser.render is unavailable",
      '        return (True, "available") if chrome_candidates() else (False, NO_BROWSER)',
      '        return (True, "available") if chrome_candidates() is not None else (False, NO_BROWSER)'),
+    # what the host lacks is the host's, not a failed render (review of #311, M2)
+    (C, "a render past its limit is the host's timeout, typed transient",
+     'within {RENDER_SECONDS} seconds",\n                                  failure_class="transient") from exc',
+     'within {RENDER_SECONDS} seconds") from exc'),
+    (C, "no namespaces behind the relay is the host's, typed transient",
+     'namespaces here: {exc}",\n                              failure_class="transient") from None',
+     'namespaces here: {exc}") from None'),
 ]
 
 if __name__ == "__main__":

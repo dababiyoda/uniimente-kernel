@@ -689,7 +689,10 @@ NO_BROWSER = "no Chrome or Chromium is installed on this body"
 
 
 def _executable(path: str) -> bool:
-    return bool(path) and Path(path).is_file() and os.access(path, os.X_OK)
+    # os.path.isfile answers False on any OSError: a path GREG cannot look at (a name longer than the system allows,
+    # a directory the body cannot search) is not an installed browser. Path.is_file raises on those (Python 3.13
+    # ignores only ENOENT, ENOTDIR, EBADF and ELOOP), and the OSError left a body's tick (review of #311, M1).
+    return bool(path) and os.path.isfile(path) and os.access(path, os.X_OK)
 
 
 def playwright_builds(pattern: str) -> list[str]:
@@ -967,9 +970,12 @@ def browser_render(params, ctx: InvocationContext) -> dict:
         except subprocess.TimeoutExpired as exc:
             # What was remembered of this binary is the file the candidate path names, which may be a wrapper script
             # around the real browser. A render that never returned is evidence against a remembered success, so
-            # the next call judges the binary again (and passes over it if it no longer renders).
+            # the next call judges the binary again (and passes over it if it no longer renders). The limit is the
+            # host's, not a reading of the page: typed transient, so a mission's check that renders waits for a
+            # re-observation rather than recording a measured failure (review of #311, M2).
             _render_judged.pop(binary, None)
-            raise CapabilityError(f"browser did not finish rendering within {RENDER_SECONDS} seconds") from exc
+            raise CapabilityError(f"browser did not finish rendering within {RENDER_SECONDS} seconds",
+                                  failure_class="transient") from exc
     if proc.returncode or not proc.stdout.strip():
         raise CapabilityError("browser could not render the page: " + proc.stderr.decode("utf-8", "replace")[-300:])
     dom_cut = len(proc.stdout) > MAX_READ_BYTES * 4
@@ -999,7 +1005,9 @@ def _render_behind_relay(argv, relay, host: str, port: int, loopback: bool, prof
     try:
         _backend(require_bubblewrap=True)
     except WorkerIsolationError as exc:
-        raise CapabilityError(f"confined egress needs bubblewrap network namespaces here: {exc}") from None
+        # Isolation this host cannot provide is the host's (as run_isolated types it), not a failed render.
+        raise CapabilityError(f"confined egress needs bubblewrap network namespaces here: {exc}",
+                              failure_class="transient") from None
     scoped = Relay({"browser.render": {"allow": [[host, port]], "external": not loopback}}, relay.journal,
                    connect=relay.connect, proxy=relay.proxy)
     with Door(scoped, "browser.render") as door:

@@ -83,7 +83,8 @@ def _organ(script: str, stdin: dict, *args: str, cwd: Path, confined: bool = Fal
             try:
                 _backend(require_bubblewrap=True)
             except WorkerIsolationError as exc:
-                raise CapabilityError(f"confined egress needs bubblewrap network namespaces here: {exc}") from None
+                raise CapabilityError(f"confined egress needs bubblewrap network namespaces here: {exc}",
+                                      failure_class="transient") from None   # isolation the host lacks is the host's
             argv = namespace_argv(writable=[pycache], readonly=[cwd, *(a for a in args if Path(a).is_absolute())],
                                   chdir=cwd) + argv
         try:

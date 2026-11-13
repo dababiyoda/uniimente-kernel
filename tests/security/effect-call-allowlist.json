@@ -973,6 +973,29 @@
    "pin": "5c48ac2d06f8a7f1940e35cb29fea69b424d785d350775c77353785e6f771d7d"
   },
   {
+   "module": "greg/intake.py",
+   "qualname": "_guard",
+   "callee": "ctypes.util.find_library",
+   "count": 1,
+   "serves": [
+    "capability:brief.intake"
+   ],
+   "justification": "asks whether this host has libseccomp (ctypes.util.find_library reads the loader cache, by running ldconfig -p) only to decide whether each of the rehearsal's git and tar processes gets the reviewed seccomp network filter; no repository input reaches it, and the recommendation says which was decided",
+   "pin": "1a5897c55c857516e388ffd674356acd7ce1c35bb97a5903ff2ffe9d2ef0e033"
+  },
+  {
+   "module": "greg/intake_rehearsal.py",
+   "qualname": "_run",
+   "callee": "subprocess.run",
+   "count": 2,
+   "serves": [
+    "capability:brief.intake",
+    "operator:python scripts/compose_rehearsal.py"
+   ],
+   "justification": "the rehearsal's one process starter: git (rev-parse, cat-file, merge-base, rev-list, merge-tree, commit-tree, archive, diff, show, ls-tree, merge-file, config reads, and read-tree, hash-object, update-index and write-tree against a scratch index file), never a fetch, push, checkout or ref update, and `tar -x` into a new scratch directory. Under brief.intake (a Guard from greg.intake._guard) the program is found on READ_ONLY_GIT_ENV's PATH (/usr/bin:/bin), it starts in an empty scratch working tree, and each process runs under a Landlock ruleset (greg.worker_isolation._install_landlock) (it reads the read roots and the host runtime and writes only the mission's scratch), with the reviewed seccomp network filter where the host has libseccomp, a time limit, and a refusal when the kernel refused it a file; on a host without Landlock only under the body's supervised setting, unconfined, which the recommendation says. From scripts/compose_rehearsal.py it runs with the person's own PATH, environment and privileges, with no guard",
+   "pin": "31384050d7d2d8e4677a59be52ad2a20a0fe0a59b004a5732c5d938ae9d92b0b"
+  },
+  {
    "module": "greg/mcp_login.py",
    "qualname": "_callback_server",
    "callee": "asyncio.start_server",
@@ -1492,6 +1515,14 @@
    "count": 2,
    "searches": "ambient PATH",
    "note": "a presence check, then the person's systemctl runs `--user show-environment`, in `greg doctor --chromebook` and the installer"
+  },
+  {
+   "module": "greg/intake.py",
+   "qualname": "_guard",
+   "program": "<computed>",
+   "count": 1,
+   "searches": "<computed>",
+   "note": "shutil.which finds git and tar on READ_ONLY_GIT_ENV's PATH (/usr/bin:/bin) only to grant their install trees read access in the rehearsal's Landlock ruleset; it runs nothing. The processes greg.intake_rehearsal._run starts later find the same programs on the same PATH, confined as its allowed entry says"
   },
   {
    "module": "greg/licensing.py",

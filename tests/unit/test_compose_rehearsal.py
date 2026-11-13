@@ -281,3 +281,80 @@ def test_the_command_line_writes_both_reports_and_exits_1_on_a_conflict_0_when_c
     assert cr.main(["--repo", str(repo), "--base", "base", "--unit", "x=label", "--unit", "x=one"]) == 2
     assert cr.main(["--repo", str(repo), "--base", "base", "--unit", "x=no-such-ref"]) == 2
     assert cr.main(["--repo", str(repo), "--base", "no-such-base", "--unit", "x=label"]) == 2
+
+
+def test_the_command_line_runs_a_renamed_test_and_names_the_head_a_left_out_one_conflicts_with(repo, tmp_path):
+    """Review of 885b7b7a, F5 and F9, on the command line's side of the shared code: a test file renamed and edited
+    is run (git's rename detection, even a person's ``diff.renames = copies``, no longer drops it), and a head left
+    out for a textual conflict names the earlier head it conflicts with, since which one is left out depends on the
+    listed order."""
+    git(repo, "config", "diff.renames", "copies")
+    git(repo, "checkout", "-q", "-b", "mover", "base")
+    git(repo, "mv", "tests/test_base.py", "tests/test_pricing.py")
+    moved = repo / "tests" / "test_pricing.py"
+    moved.write_text(moved.read_text() + "# moved\n")
+    git(repo, "add", "-A")
+    git(repo, "commit", "-qm", "mover")
+    git(repo, "checkout", "-q", "base")
+    assert git(repo, "diff", "--name-status", "base", "mover").startswith("R")     # git itself calls it a rename
+    [mover] = rehearse(repo, tmp_path, "mover")["units"]
+    assert mover["tests"] == ["tests/test_pricing.py"] and mover["alone"]["counts"] == {"passed": 1}
+    report = rehearse(repo, tmp_path, "steeper", "flat")
+    assert report["textual_conflicts_with"] == {"flat": ["steeper"]}
+    assert "- **flat** conflicts with what was merged before it (directly with steeper; which of them is left out " \
+           "depends on the listed order) in: `pkg.py`, `tests/test_base.py`" in cr.markdown(report)
+
+
+SHARED = "tests/test_shared.py"
+FILLER = "import pkg\n" + "".join(f"\n\ndef test_filler_{i}():\n    assert pkg.label({i}) == 'item-{i}'\n"
+                                  for i in range(6))
+TEST_A = "\n\ndef test_a():\n    assert pkg.price(2) == 4\n"
+
+
+def test_a_failure_in_a_test_file_two_heads_edited_is_a_conflict_and_the_command_exits_1(repo, tmp_path, capsys):
+    """Review of 387e8417, R1, on the command line with real pytest. Two heads add tests to one file: ``a`` a test
+    that relies on today's price, ``c`` (or the price-changing ``b2`` itself) one at the top. The merged tree holds
+    the file merged from both versions, and ``a``'s test fails there. The rehearsal dropped that measured failure
+    (the file was neither head's byte for byte), reported clean and exited 0. It is a behavioural conflict again,
+    naming the other head whose edits the file holds; that head is not left out to look for the cause."""
+    (repo / SHARED).write_text(FILLER)
+    git(repo, "add", ".")
+    git(repo, "commit", "-qm", "a shared test file")
+    branch(repo, "a", {SHARED: FILLER + TEST_A})
+    branch(repo, "c", {SHARED: FILLER.replace("import pkg\n", "import pkg\n\n\ndef test_c():\n    assert True\n", 1)})
+    branch(repo, "b", {"pkg.py": PKG.replace("n * 2", "n * 3"), "tests/test_b.py": "import pkg\n\n\ndef test_b():\n"
+                                                                                    "    assert pkg.price(1) == 3\n"})
+    branch(repo, "b2", {"pkg.py": PKG.replace("n * 2", "n * 3"),
+                        SHARED: FILLER.replace("import pkg\n", "import pkg\n\n\ndef test_b():\n    assert True\n", 1)})
+    git(repo, "checkout", "-q", "base")
+    node = f"{SHARED}::test_a"
+    for units, cause, other in ((["a", "c", "b"], ["b"], "c"), (["a", "b2"], [], "b2")):
+        out = tmp_path / f"{'-'.join(units)}.json"
+        code = cr.main(["--repo", str(repo), "--base", "base", *[f"--unit={u}={u}" for u in units], "--timeout", "120",
+                        "--json", str(out)])
+        report, text = json.loads(out.read_text()), capsys.readouterr().out
+        assert (code, report["clean"], len(report["not_compared"])) == (1, False, 0), units
+        conflict = next(c for c in report["behavioural_conflicts"] if c["test"] == node and c["unit"] == "a")
+        assert conflict["caused_by"] == cause and conflict["shared_with"] == [other], units
+        assert "No textual or behavioural conflict was found" not in text
+        assert f"- `{node}` (from a): caused by **{cause[0] if cause else 'no single head'}**" in text
+
+
+def test_a_head_behind_a_base_that_edited_its_test_file_is_blamed_on_the_base(repo, tmp_path):
+    """Review of 387e8417, R2, with real pytest: ``behind`` adds a test to the shared file, and the line then changes
+    the price and edits the top of that file. The merged tree is the line and ``behind`` alone, holding the file
+    merged from both. The failure was dropped as "a merge of several heads' versions"; it is the base's again. A line
+    that only adds a header to the file breaks nothing, and the report is clean."""
+    (repo / SHARED).write_text(FILLER)
+    git(repo, "add", ".")
+    git(repo, "commit", "-qm", "a shared test file")
+    branch(repo, "behind", {SHARED: FILLER + TEST_A})
+    branch(repo, "line", {"pkg.py": PKG.replace("n * 2", "n * 3"), SHARED: "# the line moved\n" + FILLER})
+    branch(repo, "line-header", {SHARED: "# a header only\n" + FILLER})
+    git(repo, "checkout", "-q", "base")
+    report = cr.rehearse(repo, "line", [cr.Unit("behind", "behind")], [], 120, tmp_path / "moved")
+    assert (report["clean"], len(report["not_compared"])) == (False, 0)
+    assert [(c["test"], c["caused_by"], c["shared_with"]) for c in report["behavioural_conflicts"]] == [
+        (f"{SHARED}::test_a", ["(the base)"], ["(the base)"])]
+    quiet = cr.rehearse(repo, "line-header", [cr.Unit("behind", "behind")], [], 120, tmp_path / "header")
+    assert quiet["clean"] is True and quiet["behavioural_conflicts"] == [] and quiet["not_compared"] == []

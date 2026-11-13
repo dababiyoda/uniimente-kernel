@@ -852,6 +852,8 @@ STRENGTHENS = {
     "mac.frontmost_app": ("proof", "routing"), "repo.pin_audit": ("proof", "eligibility", "reliability"),
     "github.pulls": ("proof", "routing"), "brief.freshness": ("proof", "settlement"),
     "brief.engineering": ("settlement", "proof", "routing"),
+    "brief.intake": ("proof", "routing", "eligibility", "settlement"),
+    "brief.intake_status": ("proof", "settlement"),
     "repo.integration_audit": ("proof", "eligibility", "reliability"),
     "browser.render": ("proof", "capability_formation"),
     "memory.precedents": ("proof", "routing", "compounding"),
@@ -1026,6 +1028,38 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                                                "mechanism_from": "#112 source-bound morning brief; "
                                                                  "#101 exact Git reads"}),
                           _lazy("greg.briefs", "engineering_brief")),
+    "brief.intake": (_builtin("brief.intake", "report.intake_recommendation",
+                              "For a base and selected heads (exact revisions): compose them in memory, run each "
+                              "head's changed tests on its own tree and on the merged tree inside the worker "
+                              "envelope, match the author's claims to what ran, and deliver one intake "
+                              "recommendation; it approves nothing", "cli", "internal_write", "deliver:",
+                              {"repository": "path", "base": "sha40", "units": "list[{name,sha40,tests?}]",
+                               "union": "list[path]?", "claims": "dict?", "timeout_seconds": "int?"},
+                              {"path": "str", "sha256": "str", "bytes": "int", "twin": "str", "inputs": "dict",
+                               "inputs_digest": "str", "request_digest": "str", "checks": "dict",
+                               "counts": "dict", "recommendations": "dict"},
+                              filesystem="deliver-write", data_classes=("repository_metadata",),
+                              binaries=tuple(b for b in ("/usr/bin/git", "/usr/bin/tar") if Path(b).exists())
+                              or ("/usr/bin/git", "/usr/bin/tar"),
+                              tests=("tests/unit/test_greg_intake.py", "tests/integration/test_greg_intake_mission.py"),
+                              provenance={"source": "uniimente-kernel/greg/intake.py",
+                                          "mechanism_from": "#296 composition rehearsal (greg/intake_rehearsal.py); "
+                                                            "the worker acceptance envelope (greg/workers.py "
+                                                            "run_tests); brief.engineering's receipted render"}),
+                     _lazy("greg.intake", "intake_recommendation")),
+    "brief.intake_status": (_builtin("brief.intake_status", "delivery.intake_status",
+                                     "Whether an intact, recent intake recommendation for one exact request "
+                                     "(its digest), delivered by GREG under a receipt on the canonical ledger, is in "
+                                     "the delivery folder", "api", "read_only", "deliver:",
+                                     {"request_digest": "sha256:hex", "max_age_hours": "number?"},
+                                     {"kind": "str", "request_digest": "str", "matching": "int",
+                                      "for_other_requests": "int", "too_old": "int", "unusable": "int",
+                                      "not_delivered_by_greg": "int", "latest": "str|null",
+                                      "age_hours": "float|null"},
+                                     filesystem="read-scoped", retry_safe=True,
+                                     tests=("tests/unit/test_greg_intake.py",),
+                                     provenance={"source": "uniimente-kernel/greg/intake.py"}),
+                            _lazy("greg.intake", "intake_status")),
     "repo.integration_audit": (_builtin("repo.integration_audit", "repository.integration_audit",
                                         "Static integration findings across Kernel/DALEOBANKS/WMI (exact Git blobs, read-only)",
                                         "cli", "read_only", "repo:",

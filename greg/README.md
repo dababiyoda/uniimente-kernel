@@ -201,6 +201,132 @@ suspending Chromebook; the heartbeat file is unsigned local evidence; nothing he
 | One command from a fresh clone to a designated, supervised Body 1 | `greg/chromebook/install.sh` composes doctor, init, keygen, enroll, service install and designate; idempotent; never sees the passphrase; ports #122's Python 3.11+ selection and durable `greg` command | `tests/unit/test_greg_chromebook_install.py` (container, no systemd; not run on ChromeOS) |
 | Verifier evidence names the tree it measured | `verifier/run_binding.py` (ported from #85) adds `head_commit` and `tracked_tree` to every run record | `tests/unit/test_run_record_head_binding.py` |
 
+## Intake recommendation: GREG's first mission for its own development (2026-11-12)
+
+Founder requirement: "Given selected open changes, produce an evidence-backed intake recommendation, identify
+behavioral conflicts, prepare a reversible composition, execute the relevant checks, and explain what remains
+unproven." It is an ordinary signed mission (`intake-recommendation` in `greg/templates.py`): one capability,
+`brief.intake` (`greg/intake.py`), and one read-only sensor, `brief.intake_status`.
+
+What it does, for one repository inside a read root, a base and an ordered list of units `{name, sha}`:
+
+- takes full 40-character SHAs only (a branch name or a short SHA is refused) and fetches nothing;
+- composes the heads in memory and runs each head's changed tests on its own tree and on the merged tree. The
+  rehearsal is `greg/intake_rehearsal.py`, the same code `scripts/compose_rehearsal.py` runs from the command line;
+- runs those tests only inside the envelope GREG uses for a worker's acceptance tests. On a host without
+  bubblewrap they are refused under the body's `required` setting and run on the `supervised` floor (network
+  denied; Landlock where the kernel has it) when the founder chose that. There is no third posture. The rehearsal's
+  own git and tar run in that envelope's Landlock backend, under the same setting;
+- matches the author's claims and check results, supplied in the mission as data, to what ran here;
+- delivers one Markdown file and its JSON twin under `briefs/` in the delivery root, never overwriting another.
+  Its sections, in order: exact revisions, dependency order, textual conflicts, behavioural conflicts a clean merge
+  does not reveal, claims matched to executed evidence, missing or stale appraisals, a reproducible recipe, what
+  remains unproven, approval boundaries.
+
+Each test file on each tree gets one of five words, never merged: `passed`, `failed`, `timed out`, `not run` (with
+the reason), `errored`. Each unit gets one of `ready to take`, `take after <unit>`, `hold: <reason>`,
+`not checked: <reason>`; never `ready` while one of its checks gave no result. A test that fails on the unit's own head is
+`not checked`, not `hold`: it ran inside the envelope (no socket, even to localhost; the temporary directory inside
+the tree; a scrubbed environment), and nothing here separates the head's code from that confinement. On 2026-11-12,
+on twelve real heads, five units held for this reason all passed those files outside the envelope. A behavioural
+conflict, a difference measured inside one envelope between the head and the merge, still holds. A recommendation
+written by an earlier renderer is not re-judged by a later one: the appraiser says it is stale and a fresh
+recommendation is needed.
+
+After the independent review of 885b7b7a (2026-11-12; renderer `greg.intake.render/3`):
+
+- the sensor counts only a recommendation GREG delivered: a `brief.intake` receipt on the canonical ledger names the
+  file, and the file is still what that receipt renders (the appraiser's own `verify_delivery`). A pair planted in the
+  delivery folder, however exact, is counted apart as `not_delivered_by_greg` and closes nothing; the engine and the
+  appraiser hand the sensor a ledger it can read and not write;
+- a test file a head renamed, copied or turned into a link is run (rename and copy detection are off in the listing,
+  on both callers);
+- git reads only the named repository: no search upward from a plain directory, and a `.git` file, a worktree's
+  repository or an alternate object store outside the read roots is refused, as is a configuration include;
+- a head that contains a held head is held; when a textual conflict depends on the listed order, the head merged
+  first says so beside its recommendation;
+- check results are read check name by check name (a check with results only for another head holds the unit),
+  `in_progress`, `queued`, `pending` are running, `cancelled`, `skipped`, `neutral` are no result (only those for a
+  revision: not checked), a head is named by its full SHA or a prefix of at least 12 hex digits, "success" and
+  "N passed" read as a pass, and a claim this run contradicts keeps the unit from ready;
+- a STOP during a run delivers nothing, a run stopped by STOP or by the output ceiling is never "refused before it
+  ran", and one invocation has a time budget of an hour across all its files.
+- a head's test file that the merged tree holds in exactly another head's version (a descendant's) is not compared
+  for that head: it is `not run` there, naming whose version ran, and the unit is not checked (2026-11-12: 303-old's
+  test was replaced by its descendant 303's and never met 304). The same failures are compared under the head whose
+  version it is.
+
+After the second independent review, of 387e8417 (2026-11-12; renderer `greg.intake.render/4`):
+
+- a failure measured on the merged tree is never dropped. Where the merged tree holds a test file merged from
+  several versions (two heads adding tests to one file, or the base editing it after a head branched), a failing
+  test is a behavioural conflict; whose test it is is not separated, so every head whose edits the file holds is
+  held and says so, and those heads are not left out when the cause is searched (without one, the test may not be
+  there). The command line exits 1 for it. Running each head's own version of such a file against the merge, which
+  would separate whose test it is, is not done;
+- a head with which the cause search gave no result (a rerun that timed out) is not checked, never ready;
+- whose version of a file each tree holds is read from git's tree entries: GREG's own process opens no file a head
+  wrote and follows no link it committed, and a file is found with `lstat`, so an error on a link is that file's,
+  never a transient refusal of the whole recommendation;
+- only a passed or failed result for this head makes a check name current (a cancelled re-run no longer masks a
+  stale failure), and a failing check that names no head holds, as a claim naming no head does, even beside a pass
+  of the same name;
+- git reads nothing outside the read roots through a link in the repository (a pack, an object directory, the
+  configuration, `info/attributes`, an alternates listing, `.git` itself) or through a file the configuration names
+  (`core.attributesFile`, `mailmap.file`, `diff.orderFile`; `core.worktree` too until render/5): each is refused (a
+  linked `hooks` directory is not looked at: no hook runs).
+  Alternate stores are counted by nesting, as git follows them (five levels), and a relative one is resolved from
+  the store that lists it;
+- a recommendation's age, for the mission's check, comes from its receipt's time on the ledger, not from the file.
+
+After the re-check of c6e79087 (2026-11-12; renderer `greg.intake.render/5`), the pre-check that re-implemented in
+Python how git parses its files and resolves paths was found to differ from git in twelve ways (E1-E12). Now the
+kernel enforces "git reads nothing outside the read roots":
+
+- every git and tar process of the rehearsal runs in the worker envelope's Landlock backend
+  (`greg.worker_isolation`): it reads only the read roots and what git and tar need to run, writes only the
+  mission's scratch, and, where the host has the seccomp filter, opens no socket. A file the kernel refuses git is a
+  refusal that names the repository, never a transient fault and never a result read from what git could not read;
+  each process has a time limit, so a FIFO can no longer hang the request;
+- on a host without Landlock the body's worker confinement decides, as for the heads' tests: `required` refuses;
+  `supervised` runs git unconfined and the recommendation says so;
+- git runs in an empty scratch working tree with no system attributes, so neither the repository's checkout (a
+  directory a head can commit as a link) nor `/etc/gitattributes` changes what is merged or exported, and
+  `core.worktree` is never read;
+- the pre-check stays as the part that says why. It reads an alternates listing, `commondir` and a `.git` file as
+  git does (whole, split on LF only, nothing trimmed but what git trims) and refuses a name git and it could read two
+  ways (a NUL or control byte, a leading or trailing space, bytes that are not UTF-8), a FIFO or device git would read,
+  and a path it cannot resolve strictly (a loop of links resolves to nothing, as in the kernel, and refuses
+  nothing); it skips the hooks of every git directory and lists a store or common directory named inside one by
+  itself; it counts every visit through a directory link toward its cap, and no real directory. git's own word on
+  the repository and the stores it reads (`rev-parse`, `count-objects -v`) must match;
+- a process whose confinement cannot be installed never runs, and the request is refused; git's file listings are
+  read quoted (`core.quotePath` is set back on), so a name that is not UTF-8 is reported as not run, never a crash;
+- what nothing before git runs can close is closed by the kernel: a link turned outside after the check is refused.
+  A file hard-linked into the repository from outside the read roots is read like its own (as `git clone --local`
+  relies on); every recommendation says so.
+
+It approves nothing. Composing heads for development and approving a protected merge are separate boundaries: the
+mission composes in scratch and writes a file; protected integration needs the founder's and the integrator's
+approval. By default the delivery itself stops at a founder approval; `--preauthorize-delivery` signs it into the
+mission instead.
+
+```bash
+# request.json: {"repository": "/abs/path", "base": "<sha40>", "units": [{"name": "290", "sha": "<sha40>"}, ...],
+#                "union": [".github/workflows/canonical-ci.yml"], "claims": {"290": {...}}, "timeout_seconds": 900}
+python -m greg --home ~/.uniimente/greg mission new intake-recommendation --intake request.json --key ~/.greg-founder.pem
+python -m greg --home ~/.uniimente/greg decisions                    # the delivery waits for your approval
+python -m greg --home ~/.uniimente/greg decide <request_id> approve --key ~/.greg-founder.pem
+```
+
+Limits: only the tests a head changed (or the mission names) are run, so a clean result does not prove the heads
+compatible; tests run with no network, so a test that needs it fails on both trees alike; a head's tests are that
+head's code, and a head that forges its own test output is not detected; the appraiser re-renders the file from
+its receipt and compares the bytes, and does not run the tests again; a repository whose configuration names a
+merge driver is refused; claims are whatever the mission's author supplied (nothing is read from a hosting
+service). Tests: `tests/unit/test_greg_intake.py`, `tests/unit/test_greg_intake_confinement.py`,
+`tests/integration/test_greg_intake_mission.py`; mutation gate `scripts/ci/check_intake_mutants.py`.
+
 ## Using it (developer mode today)
 
 **Alfonso's Chromebook first-body route: [`CHROMEBOOK_FIRST_MISSION.md`](CHROMEBOOK_FIRST_MISSION.md).**

@@ -1,0 +1,612 @@
+"""The composition rehearsal: do several heads still behave when they are merged together?
+
+One implementation, two callers. ``scripts/compose_rehearsal.py`` is the command a person runs; ``greg.intake`` is the
+capability a signed mission runs (``brief.intake``). Both call :func:`rehearse`.
+
+Two changes can merge without a conflict and break each other: one moves the code the other calls, or tightens a rule
+the other relies on. For a base and an ordered set of heads, :func:`rehearse`:
+
+1. computes the merge in memory, one head at a time (``git merge-tree --write-tree``, then ``git commit-tree``:
+   objects only, no working tree, no ref). A head that conflicts textually is reported as such and left out of the
+   merged tree, unless the conflict is confined to files named in ``union``: there both sides' lines are kept
+   (right for a list every change appends to, wrong for anything else) and the report says so;
+2. exports each head, and the merged tree, to scratch directories (``git archive``);
+3. runs each head's own tests, by default the test files it changed, on its own tree and on the merged tree;
+4. reports every test that passes on its own head and fails on the merged tree, and finds the cause: the base
+   itself, when the test already fails with that head alone merged onto it (the line moved since the head
+   branched), else the other head without which it passes, found by leaving one head out at a time.
+
+A test that already fails on its own head is listed apart: it is not a composition problem. A head for which no
+test was run is listed as not checked, never as compatible. A failure measured on the merged tree is never dropped:
+where the merged tree holds a test file merged from several versions (two heads adding tests to one file, or the base
+editing it after a head branched), the failure is a conflict that names those other edits, since whose test it is is
+not separated; where it holds exactly another head's version, the failure is compared under that head.
+
+What differs between the two callers is how a test file is run and where git writes, never the rehearsal:
+
+- ``run``: the function that runs test files inside an exported tree. Running a head's tests runs that head's code,
+  so this module never does it: the caller passes the runner. The command line's runner (in the script) starts
+  pytest as the person at the terminal, unconfined: they chose to run those heads' code. A mission's runner
+  (``greg.intake.ConfinedRunner``) uses GREG's worker envelope, and also says, per file, whether the file was
+  measured at all (``states``). A file that timed out or was not run is no measurement: it is never compared, never
+  a conflict and never a cause (:func:`measured`). The command line's runner reports no states, so everything it ran
+  counts as measured, exactly as before this module existed. Both read pytest's output with :func:`read_pytest` and
+  start it with :data:`PYTEST`.
+- :func:`git_environment`: the environment git runs in. By default the caller's own. A mission passes a scrubbed
+  one, with :func:`scratch_objects` so that the merge's new objects are written under its scratch directory and the
+  repository it reads gains nothing.
+- :func:`confined`: how each git and tar process starts. By default as the caller's own child, with no time limit.
+  A mission passes a :class:`Guard`: a ``preexec`` that confines the process before it runs (``greg.intake``
+  installs the worker envelope's Landlock backend: it reads only the read roots and the host runtime and writes
+  only the mission's scratch), a time limit, and the repository's path, which every refusal names. Under a guard,
+  a process the kernel refused a file (``Permission denied`` on its error output), one that ran out of time, and
+  one whose confinement could not be installed each end the rehearsal with :class:`RehearsalRefused`: never a
+  result read from a process that was refused part of what it read, and never a fault to retry.
+
+Limits, stated in every report: only the named tests are run, so a clean result does not prove the heads are
+compatible; a test that fails only with three or more heads together is reported without a single cause; nothing
+here approves a merge.
+"""
+from __future__ import annotations
+
+from collections.abc import Callable
+import contextlib
+import contextvars
+from dataclasses import dataclass, field
+import os
+from pathlib import Path
+import re
+import subprocess
+import tempfile
+
+IDENTITY = {"GIT_AUTHOR_NAME": "compose-rehearsal", "GIT_AUTHOR_EMAIL": "rehearsal@localhost",
+            "GIT_COMMITTER_NAME": "compose-rehearsal", "GIT_COMMITTER_EMAIL": "rehearsal@localhost",
+            "GIT_AUTHOR_DATE": "2000-01-01T00:00:00Z", "GIT_COMMITTER_DATE": "2000-01-01T00:00:00Z"}
+RESULT = re.compile(r"^(FAILED|ERROR) (\S+)")
+SHOWN = 8          # failing-before-the-merge tests listed per head in the Markdown report
+ON_BASE = "(the base)"   # the cause named when a head's test fails on base + that head alone
+COUNT = re.compile(r"(\d+) (passed|failed|skipped|error|errors|xfailed|xpassed)")
+# How pytest is asked to run test files, after the interpreter: both runners use these arguments, so a result
+# means the same thing whoever ran it.
+PYTEST = ("-B", "-m", "pytest", "-q", "-p", "no:cacheprovider", "-rfE", "--no-header")
+# The environment git and tar run in: None is the caller's own (the command line); a mission sets a scrubbed one.
+_ENV: contextvars.ContextVar = contextvars.ContextVar("greg_intake_rehearsal_env", default=None)
+# Where a rehearsal's own temporary files go (keep_both's scratch index): inside its scratch directory while
+# :func:`rehearse` runs, so a mission's rehearsal writes nothing outside its workspace.
+_WORK: contextvars.ContextVar = contextvars.ContextVar("greg_intake_rehearsal_work", default=None)
+# How a head's changed test files are listed. Rename and copy detection are off (a person's ``diff.renames`` setting
+# included): a test renamed or copied and edited is an added file, never an R or C entry an A/M filter would drop.
+# A type change (a file that became a symbolic link) is listed too. Both callers read this one listing.
+CHANGED = ("--no-renames", "--diff-filter=AMT")
+
+
+class RehearsalError(Exception):
+    """The rehearsal could not be carried out as asked (an unknown ref, a tree that could not be exported)."""
+
+
+class RehearsalRefused(RehearsalError):
+    """A git or tar process under a :class:`Guard` was refused part of what it reads (by the kernel's confinement), ran
+    out of time, or could not be confined: the request is refused for that reason, never retried as a fault."""
+
+
+@dataclass(frozen=True)
+class Guard:
+    """How a mission's rehearsal starts each git and tar process (see :func:`confined`)."""
+    preexec: Callable[[], None] | None      # installs the confinement in the child before it runs; None: none
+    timeout: float                          # seconds one process may take
+    where: str                              # the repository, named in every refusal
+    confined: bool                          # whether ``preexec`` confines the file system (else it is said so)
+    cwd: str | None = None                  # where each process starts instead of the repository (the empty work tree)
+
+
+_GUARD: contextvars.ContextVar = contextvars.ContextVar("greg_intake_rehearsal_guard", default=None)
+
+
+@contextlib.contextmanager
+def confined(guard: Guard | None):
+    """Start every git and tar process of the rehearsal under ``guard`` while the block runs."""
+    token = _GUARD.set(guard)
+    try:
+        yield
+    finally:
+        _GUARD.reset(token)
+
+
+DENIED = b"Permission denied"            # strerror(EACCES) in the C locale the rehearsal's git runs in (LANG=C.UTF-8)
+
+
+def _run(argv: list[str], root: Path, *, stdin: bytes | None = None,
+         extra: dict | None = None) -> subprocess.CompletedProcess:
+    """One git or tar process of the rehearsal, in the rehearsal's environment, under the mission's guard if any."""
+    guard = _GUARD.get()
+    if guard is None:
+        return subprocess.run(argv, cwd=root, input=stdin, capture_output=True, env=_env(**(extra or {})))
+    what = " ".join(argv[:2])
+    try:
+        proc = subprocess.run(argv, cwd=guard.cwd or root, input=stdin, capture_output=True, env=_env(**(extra or {})),
+                              preexec_fn=guard.preexec, timeout=guard.timeout)
+    except subprocess.TimeoutExpired:
+        raise RehearsalRefused(f"{what} did not finish within {guard.timeout:g}s while reading {guard.where}: a file "
+                               "it reads there never ends (a FIFO) or the repository is too large for the "
+                               "rehearsal's time limit; refused") from None
+    except subprocess.SubprocessError:          # the guard's preexec raised in the child: nothing ran unconfined
+        raise RehearsalRefused(f"{what} could not be started inside the rehearsal's confinement while reading "
+                               f"{guard.where}; refused") from None
+    if DENIED in proc.stderr:
+        line = next((text for text in proc.stderr.decode("utf-8", "replace").splitlines() if "Permission denied" in text),
+                    "Permission denied")
+        why = ("the rehearsal's git reads only the read roots and the host runtime and writes only the mission's "
+               "scratch, so a repository that leads it elsewhere is refused" if guard.confined else
+               "the host refused it, and a result read without that file is not one to deliver")
+        raise RehearsalRefused(f"{what} was refused a file while reading {guard.where} ({line.strip()[-300:]}): {why}")
+    return proc
+
+
+@dataclass
+class Unit:
+    name: str
+    ref: str
+    sha: str = ""
+    tests: list[str] = field(default_factory=list)
+
+
+def _env(**extra: str) -> dict:
+    base = _ENV.get()
+    return {**(os.environ if base is None else base), **IDENTITY, **extra}
+
+
+@contextlib.contextmanager
+def git_environment(env: dict):
+    """Run the rehearsal's git and tar with exactly ``env`` (plus the fixed commit identity) instead of the caller's
+    own environment."""
+    token = _ENV.set(dict(env))
+    try:
+        yield
+    finally:
+        _ENV.reset(token)
+
+
+def git(root: Path, *args: str, stdin: bytes | None = None, check: bool = True) -> subprocess.CompletedProcess:
+    proc = _run(["git", *args], root, stdin=stdin)
+    if check and proc.returncode:
+        raise RehearsalError(f"git {' '.join(args[:3])}: {proc.stderr.decode('utf-8', 'replace').strip()[-300:]}")
+    return proc
+
+
+def scratch_objects(root: Path, objects: Path) -> dict:
+    """Environment entries under which git writes every new object into ``objects`` and still reads the repository's
+    own: the merge commits, trees and blobs of a rehearsal then live in scratch, and the repository gains nothing."""
+    listed = git(root, "rev-parse", "--path-format=absolute", "--git-path", "objects").stdout.rstrip(b"\n")
+    own = Path(os.fsdecode(listed)).resolve()
+    if not own.is_dir():
+        raise RehearsalError(f"{root} has no object store to read")
+    objects.mkdir(parents=True, exist_ok=True)
+    named = str(own)
+    if ":" in named or named.startswith('"'):        # git splits this variable at ':' and unquotes a quoted entry
+        named = '"' + named.replace("\\", "\\\\").replace('"', '\\"') + '"'
+    return {"GIT_OBJECT_DIRECTORY": str(objects), "GIT_ALTERNATE_OBJECT_DIRECTORIES": named}
+
+
+def resolve(root: Path, ref: str) -> str:
+    return git(root, "rev-parse", "--verify", "--quiet", f"{ref}^{{commit}}").stdout.decode().strip()
+
+
+def keep_both(root: Path, ours: str, theirs: str, tree: str, paths: list[str]) -> str:
+    """``tree`` with each of ``paths`` replaced by the three-way merge that keeps both sides' lines.
+
+    For a file where every change adds lines at the same place (a list of CI steps, a ledger that grows at the top),
+    keeping both additions is the resolution a person would make. It is wrong for anything else, so it is applied
+    only to the files the caller names, and the report says where it was applied. Objects only: a scratch index
+    file, no working tree, no ref."""
+    fork = git(root, "merge-base", ours, theirs, check=False).stdout.decode().strip()
+    with tempfile.TemporaryDirectory(prefix="compose-rehearsal-index-", dir=_WORK.get()) as work:
+        index = {"GIT_INDEX_FILE": str(Path(work) / "index")}
+
+        def scratch(*args: str, stdin: bytes | None = None) -> bytes:
+            proc = _run(["git", *args], root, stdin=stdin, extra=index)
+            if proc.returncode:
+                raise RehearsalError(f"git {' '.join(args[:2])}: {proc.stderr.decode('utf-8', 'replace')[-200:]}")
+            return proc.stdout
+        scratch("read-tree", tree)
+        for path in paths:
+            sides = []
+            for name, commit in (("ours", ours), ("base", fork), ("theirs", theirs)):
+                shown = git(root, "show", f"{commit}:{path}", check=False) if commit else None
+                side = Path(work) / name
+                side.write_bytes(shown.stdout if shown is not None and shown.returncode == 0 else b"")
+                sides.append(str(side))
+            merged = _run(["git", "merge-file", "--union", "-p", *sides], root)
+            if merged.returncode < 0 or merged.returncode > 127:
+                raise RehearsalError(f"could not merge {path}: {merged.stderr.decode('utf-8', 'replace')[-200:]}")
+            blob = scratch("hash-object", "-w", "--stdin", stdin=merged.stdout).decode().strip()
+            entry = git(root, "ls-tree", ours, "--", path).stdout.decode().split()
+            scratch("update-index", "--add", "--cacheinfo", f"{entry[0] if entry else '100644'},{blob},{path}")
+        return scratch("write-tree").decode().strip()
+
+
+def merge(root: Path, ours: str, theirs: str, label: str,
+          union: tuple[str, ...] = ()) -> tuple[str | None, list[str], list[str]]:
+    """The commit of ``ours`` merged with ``theirs``, made in memory, or None and the files that conflict. A conflict
+    confined to the files named in ``union`` is resolved by keeping both sides' lines; those files come back third."""
+    proc = git(root, "merge-tree", "--write-tree", "--name-only", "--no-messages", ours, theirs, check=False)
+    lines = proc.stdout.decode().splitlines()
+    kept: list[str] = []
+    if proc.returncode == 1:
+        files = [name for name in lines[1:] if name] or ["(conflict)"]
+        if not lines or not set(files) <= set(union):
+            return None, files, []
+        tree, kept = keep_both(root, ours, theirs, lines[0], files), files
+    elif proc.returncode or not lines:
+        raise RehearsalError(f"git merge-tree {ours[:10]} {theirs[:10]}: "
+                             + proc.stderr.decode("utf-8", "replace").strip()[-300:])
+    else:
+        tree = lines[0]
+    made = git(root, "commit-tree", tree, "-p", ours, "-p", theirs, "-m", f"rehearsal: {label}")
+    return made.stdout.decode().strip(), [], kept
+
+
+def compose(root: Path, base: str, units: list[Unit], union: tuple[str, ...] = (),
+            kept_both: dict[str, list[str]] | None = None) -> tuple[str, list[str], dict[str, list[str]]]:
+    """Merge the units onto the base in order. Returns the merged commit, the names merged, and the textual
+    conflicts of each unit that could not be merged onto what came before it. ``kept_both``, when given, is filled
+    with the files of each unit that were resolved by keeping both sides' lines."""
+    at, merged, conflicts = base, [], {}
+    for unit in units:
+        made, files, kept = merge(root, at, unit.sha, unit.name, union)
+        if made is None:
+            conflicts[unit.name] = files
+            continue
+        if kept and kept_both is not None:
+            kept_both[unit.name] = kept
+        at = made
+        merged.append(unit.name)
+    return at, merged, conflicts
+
+
+def export(root: Path, treeish: str, dest: Path) -> Path:
+    dest.mkdir(parents=True)
+    archive = git(root, "archive", "--format=tar", treeish)
+    unpack = _run(["tar", "-x", "-C", str(dest)], root, stdin=archive.stdout)
+    if unpack.returncode:
+        raise RehearsalError(f"could not export {treeish[:10]}: {unpack.stderr.decode('utf-8', 'replace')[-200:]}")
+    return dest
+
+
+def changed_tests(root: Path, base: str, sha: str) -> list[str]:
+    """The test files a head added or changed since it left the base."""
+    fork = git(root, "merge-base", base, sha, check=False).stdout.decode().strip() or base
+    names = git(root, "diff", "--name-only", *CHANGED, fork, sha, "--", "tests").stdout.decode().splitlines()
+    return sorted(n for n in names if Path(n).name.startswith("test_") and n.endswith(".py"))
+
+
+def entries(root: Path, commit: str, files) -> dict[str, str]:
+    """The tree entry ("<mode> <object id>") of each of ``files`` at ``commit``, read from git's objects. Comparing
+    entries, not exported bytes, opens no file a head wrote and follows no link it committed (a link is its own
+    entry, mode 120000); a file absent at ``commit`` has none."""
+    wanted = set(files)
+    if not wanted:
+        return {}
+    found = {}
+    for record in git(root, "ls-tree", "-r", "-z", commit, "--", *sorted(wanted)).stdout.split(b"\0"):
+        meta, _, name = record.partition(b"\t")
+        fields, path = meta.decode("ascii", "replace").split(), name.decode("utf-8", "replace")
+        if len(fields) == 3 and fields[1] == "blob" and path in wanted:
+            found[path] = f"{fields[0]} {fields[2]}"
+    return found
+
+
+def read_pytest(out: str) -> tuple[list[str], dict, list[str]]:
+    """What pytest's own output says: the node ids it named as FAILED or ERROR, the counts on its last line, and the
+    non-empty lines. The text is the output of code under test: it is read, never trusted to be complete."""
+    failed = sorted({m.group(2) for m in map(RESULT.match, out.splitlines()) if m})
+    lines = [line for line in out.splitlines() if line.strip()]
+    counts = {kind.rstrip("s") if kind == "errors" else kind: int(n) for n, kind in COUNT.findall(lines[-1])} \
+        if lines else {}
+    return failed, counts, lines
+
+
+def measured(result: dict, file: str) -> bool:
+    """Whether ``result`` says how ``file`` behaved. A runner that reports no per-file ``states`` (the command line's)
+    measured everything it ran. One that does (a mission's confined runner) may have timed out, been refused its
+    envelope or lost part of pytest's output: such a file is no measurement, of a pass or of a failure."""
+    if file in result.get("not_compared", ()):
+        return False
+    states = result.get("states")
+    return states is None or bool(states.get(file, {}).get("measured"))
+
+
+def node_file(node: str) -> str:
+    return node.split("::", 1)[0]
+
+
+def rehearse(root: Path, base_ref: str, units: list[Unit], also: list[str], timeout: int, scratch: Path,
+             union: tuple[str, ...] = (), *, run, facts: dict | None = None) -> dict:
+    """The rehearsal. ``run(tree, files, timeout)`` runs test files inside an exported tree and is always the
+    caller's choice: this module starts no test itself. ``facts``, when given, is filled with what the report does
+    not carry: the merged commit and its tree."""
+    Path(scratch).mkdir(parents=True, exist_ok=True)
+    token = _WORK.set(str(scratch))
+    try:
+        return _rehearse(root, base_ref, units, also, timeout, Path(scratch), union, run=run, facts=facts)
+    finally:
+        _WORK.reset(token)
+
+
+def conflicts_directly(root: Path, units: list[Unit], merged: list[str], textual: dict) -> dict[str, list[str]]:
+    """For each head left out for a textual conflict, the heads merged before it that conflict with it on their own
+    (``git merge-tree`` of the two heads). The verdict depends on the order: listed the other way round, the other
+    head would have been the one left out. Empty for a conflict only the combination of earlier heads produces."""
+    out = {}
+    for index, unit in enumerate(units):
+        if unit.name not in textual:
+            continue
+        out[unit.name] = [other.name for other in units[:index] if other.name in merged
+                          and git(root, "merge-tree", "--write-tree", "--name-only", "--no-messages", other.sha,
+                                  unit.sha, check=False).returncode == 1]
+    return out
+
+
+def _rehearse(root: Path, base_ref: str, units: list[Unit], also: list[str], timeout: int, scratch: Path,
+              union: tuple[str, ...], *, run, facts: dict | None) -> dict:
+    base = resolve(root, base_ref)
+    if not base:
+        raise RehearsalError(f"unknown base {base_ref}")
+    for unit in units:
+        unit.sha = resolve(root, unit.ref)
+        if not unit.sha:
+            raise RehearsalError(f"unknown ref for {unit.name}: {unit.ref}")
+        unit.tests = unit.tests or changed_tests(root, base, unit.sha)
+    kept_both: dict[str, list[str]] = {}
+    merged_commit, merged, textual = compose(root, base, units, union, kept_both)
+    in_merge = [u for u in units if u.name in merged]
+
+    own = {}
+    for unit in units:
+        tree = export(root, unit.sha, scratch / f"own-{unit.name}")
+        own[unit.name] = run(tree, unit.tests, timeout)
+    base_also = run(export(root, base, scratch / "base"), also, timeout) if also else None
+
+    composed_tree = export(root, merged_commit, scratch / "composed")
+    if facts is not None:
+        facts["merged_commit"] = merged_commit
+        facts["composed_tree"] = git(root, "rev-parse", f"{merged_commit}^{{tree}}").stdout.decode().strip()
+    composed = {u.name: run(composed_tree, u.tests, timeout) for u in in_merge}
+    composed_also = run(composed_tree, also, timeout) if also else None
+    # Whose version of each test file the merged tree holds, read from git's tree entries (review of 387e8417, R3:
+    # comparing the exported bytes opened, in this process, whatever a link a head committed points at).
+    # - The head's own version: compared as usual.
+    # - Exactly the version of another head that runs this file too (its descendant's, F18: 303-old's test was
+    #   replaced by 303's and never met 304): what ran there is that head's file, not this one's. It is not compared
+    #   for this head, which is not checked; the same failures are compared under the head whose version it is, so
+    #   nothing measured is dropped.
+    # - A merge of the head's version with other edits (another head's, or the base's since the head branched): it
+    #   IS compared, and a failure is a behavioural conflict (R1, R2: F18 dropped such a failure, the head that caused
+    #   it read "ready to take" and the command line said clean). Whose test a failing one is is not separated from
+    #   the file's entries, so the conflict names the others whose edits the merged file holds (``shared_with``).
+    files = sorted({f for u in in_merge for f in u.tests})
+    there_all, at_base = entries(root, merged_commit, files), entries(root, base, files)
+    own_at = {u.name: entries(root, u.sha, files) for u in in_merge}
+    fork_at = {u.name: entries(root, git(root, "merge-base", base, u.sha, check=False).stdout.decode().strip() or base,
+                               files) for u in in_merge}
+    not_compared, shared = [], {}
+    for unit in in_merge:
+        foreign = {}
+        for file in unit.tests:
+            mine, there = own_at[unit.name].get(file), there_all.get(file)
+            if mine is None or there is None or mine == there:
+                continue
+            owners = [o.name for o in in_merge if o.name != unit.name and file in o.tests
+                      and own_at[o.name].get(file) == there]
+            if owners:
+                foreign[file] = f"the merged tree holds {', '.join(owners)}'s version of this file, not " \
+                                f"{unit.name}'s: its own version was not run against the merge"
+                not_compared.append({"unit": unit.name, "file": file, "note": foreign[file]})
+                continue
+            # the others whose edits the merged file holds: a head that changed it (not merely carrying this head's
+            # version), and the base when it changed the file after this head branched
+            shared[unit.name, file] = [o.name for o in in_merge if o.name != unit.name
+                                       and own_at[o.name].get(file) not in (fork_at[o.name].get(file), mine)] + \
+                ([ON_BASE] if at_base.get(file) != fork_at[unit.name].get(file) else [])
+        if foreign:
+            result = composed[unit.name]
+            result["failed"] = [n for n in result["failed"] if node_file(n) not in foreign]
+            result["not_compared"] = sorted(foreign)
+            if "states" in result:
+                result["states"] = {**result["states"], **{f: {"state": "not run", "measured": False, "why": why}
+                                                           for f, why in foreign.items()}}
+
+    # ``not_measured``: a test seen failing on one tree whose file gave no result on the other. It is neither a
+    # conflict nor "failing before the merge": one half of the comparison is missing. Always empty for a runner
+    # that reports no per-file state.
+    behavioural, already_failing, not_measured = [], [], []
+    for unit in in_merge:
+        alone = {n for n in own[unit.name]["failed"]
+                 if node_file(n) not in composed[unit.name].get("not_compared", ())}
+        for node in composed[unit.name]["failed"]:
+            if node not in alone and not measured(own[unit.name], node_file(node)):
+                not_measured.append({"test": node, "unit": unit.name,
+                                     "note": "fails merged; its own head gave no result for this file"})
+                continue
+            (already_failing if node in alone else behavioural).append({"test": node, "unit": unit.name})
+        for node in sorted(alone - set(composed[unit.name]["failed"])):
+            if not measured(composed[unit.name], node_file(node)):
+                not_measured.append({"test": node, "unit": unit.name,
+                                     "note": "fails alone; the merged tree gave no result for this file"})
+                continue
+            already_failing.append({"test": node, "unit": unit.name, "note": "fails alone, passes merged"})
+    if also:
+        before = set(base_also["failed"])
+        for node in composed_also["failed"]:
+            (already_failing if node in before else behavioural).append({"test": node, "unit": "(also)"})
+    for conflict in behavioural:
+        if (conflict["unit"], node_file(conflict["test"])) in shared:
+            conflict["shared_with"] = shared[conflict["unit"], node_file(conflict["test"])]
+
+    # Which head causes each behavioural conflict: the merge without it passes the test. Each merge-without-one is
+    # made and exported once, and each test file is run on it once, however many of its tests conflict. A head whose
+    # edits the merged test file holds is not left out: without it the failing test may simply not be there.
+    without: dict[str, Path | None] = {}
+    reruns: dict[tuple[str, str], dict] = {}
+    by_name = {u.name: u for u in in_merge}
+    for conflict in behavioural:
+        causes, blind, file, tried = [], [], node_file(conflict["test"]), []
+        editors = [name for name in conflict.get("shared_with", ()) if name != ON_BASE]
+        if conflict["unit"] in by_name:
+            # First the cheapest explanation: the head no longer works on the line itself. Its own tree passes because
+            # it branched from an older line; merged onto today's base, with no other head, the test already fails.
+            key = ("(base)+" + conflict["unit"], file)
+            if key not in reruns and len(in_merge) == 1:
+                reruns[key] = composed[conflict["unit"]]        # the merged tree is the base and this head alone
+            elif key not in reruns:
+                commit, kept, _ = compose(root, base, [by_name[conflict["unit"]]], union)
+                reruns[key] = (run(export(root, commit, scratch / f"onbase-{conflict['unit']}"), [file], timeout)
+                               if kept else {"failed": [], "ran": False})
+            if reruns[key]["ran"] and not measured(reruns[key], file):
+                blind.append(ON_BASE)
+            if reruns[key]["ran"] and conflict["test"] in reruns[key]["failed"]:
+                conflict["caused_by"] = [ON_BASE]
+                conflict["note"] = "fails as soon as this head is merged onto the base, with no other head: " \
+                                   "the line has moved since it branched" + _whose(conflict, editors)
+                continue
+        for other in in_merge:
+            if other.name == conflict["unit"] or other.name in editors:
+                continue
+            if other.name not in without:
+                rest = [u for u in in_merge if u.name != other.name]
+                commit, kept, _ = compose(root, base, rest, union)
+                # when the rest does not merge without it, this split gives no verdict
+                without[other.name] = (export(root, commit, scratch / f"without-{other.name}")
+                                       if len(kept) == len(rest) else None)
+            tree = without[other.name]
+            if tree is None:
+                continue
+            if (other.name, file) not in reruns:
+                reruns[other.name, file] = run(tree, [file], timeout)
+            result = reruns[other.name, file]
+            if result["ran"] and not measured(result, file):
+                blind.append(other.name)
+                continue
+            if conflict["test"] not in result["failed"] and result["ran"]:
+                causes.append(other.name)
+            if result["ran"]:
+                tried.append(other.name)
+        conflict["caused_by"] = causes
+        conflict["note"] = ("passes when this head is left out" if len(causes) == 1 else
+                            "no single head explains it: it passes with any one of these left out" if causes else
+                            "no single head explains it: it fails with any one head left out" if not editors else
+                            "no single head explains it: it fails with any one of " + ", ".join(tried) + " left out"
+                            if tried else "no head that did not edit this file was left out")
+        if blind:
+            # A rerun that timed out or was not run rules nothing in and nothing out: say which, beside what was
+            # measured, and never "it fails with any one head left out" for a rerun that gave no result.
+            conflict["not_measured_without"] = blind
+            others = [name for name in blind if name != ON_BASE]
+            gaps = " and ".join((["on the base with this head alone"] if ON_BASE in blind else [])
+                                + (["with " + ", ".join(others) + " left out"] if others else []))
+            conflict["note"] = (conflict["note"] + "; it gave no result " + gaps if causes else
+                                "the cause was not found: the test gave no result " + gaps)
+        conflict["note"] += _whose(conflict, editors)
+
+    report = {
+        "tool": "compose_rehearsal/1", "base": base,
+        "units": [{"name": u.name, "sha": u.sha, "tests": u.tests, "in_merge": u.name in merged,
+                   "alone": {k: own[u.name][k] for k in ("counts", "failed", "missing")},
+                   "merged": ({k: composed[u.name][k] for k in ("counts", "failed", "missing")}
+                              if u.name in composed else None)} for u in units],
+        "also": {"tests": also, "base": base_also and {k: base_also[k] for k in ("counts", "failed")},
+                 "merged": composed_also and {k: composed_also[k] for k in ("counts", "failed")}} if also else None,
+        "merge_order": merged, "textual_conflicts": textual, "kept_both_sides": kept_both,
+        "textual_conflicts_with": conflicts_directly(root, units, merged, textual),
+        # A head with no test to run was checked for nothing: it must not read as compatible.
+        "unchecked": [u.name for u in units if not [f for f in u.tests if f not in own[u.name]["missing"]]],
+        "behavioural_conflicts": behavioural, "failing_before_the_merge": already_failing,
+        "not_compared": not_compared,
+        "clean": not textual and not behavioural,
+        "limits": ["only the named tests were run: a clean result does not prove the heads are compatible",
+                   "a unit left out for a textual conflict was not tested in the merge",
+                   "where both sides' lines were kept in a named file, that resolution was not reviewed by a person",
+                   "read-only: nothing was merged, pushed or edited; no result here approves a merge"],
+    }
+    if any("states" in result for result in own.values()):
+        # A runner that says, file by file, what was measured: carry that beside the counts. Absent for the command
+        # line's runner, so its report is what it always was.
+        for unit, entry in zip(units, report["units"]):
+            entry["states"] = {"alone": own[unit.name].get("states", {}),
+                               "merged": composed[unit.name].get("states", {}) if unit.name in composed else None}
+        report["not_measured"] = not_measured
+    return report
+
+
+def _whose(conflict: dict, editors: list[str]) -> str:
+    """What the note says of a failing test in a file the merged tree holds merged from several versions."""
+    if not conflict.get("shared_with"):
+        return ""
+    edits = ", ".join("the base" if name == ON_BASE else name for name in conflict["shared_with"])
+    said = f"; the merged tree holds this file merged from {conflict['unit']}'s version and the edits of {edits}"
+    if not editors:
+        return said
+    return (said + f": whose test it is was not separated, and {', '.join(editors)} "
+            + ("was" if len(editors) == 1 else "were") + " not left out (without a head that edited the file, the "
+            "test may not be there)")
+
+
+def _directly(report: dict, name: str) -> str:
+    """" (directly with A, B)" when those heads, merged before ``name``, conflict with it on their own."""
+    heads = (report.get("textual_conflicts_with") or {}).get(name) or []
+    return f" (directly with {', '.join(heads)}; which of them is left out depends on the listed order)" if heads \
+        else ""
+
+
+def markdown(report: dict) -> str:
+    lines = [f"# Composition rehearsal on `{report['base'][:10]}`", "",
+             "Each head's own tests, run on its own tree and on the merged tree. Read-only; nothing was merged.", "",
+             "| Head | Commit | Test files | Alone | Merged |", "|---|---|---:|---|---|"]
+
+    def counts(result) -> str:
+        if result is None:
+            return "not merged"
+        shown = ", ".join(f"{n} {kind}" for kind, n in sorted(result["counts"].items())) or "nothing ran"
+        return shown + (f" ({len(result['failed'])} failing)" if result["failed"] else "")
+    for unit in report["units"]:
+        lines.append(f"| {unit['name']} | `{unit['sha'][:10]}` | {len(unit['tests'])} | {counts(unit['alone'])} | "
+                     f"{counts(unit['merged'])} |")
+    lines += ["", f"Merge order: {', '.join(report['merge_order']) or 'none'}.", ""]
+    if report["kept_both_sides"]:
+        lines += ["## Conflicts resolved by keeping both sides' lines", ""] + [
+            f"- **{name}**: " + ", ".join(f"`{f}`" for f in files)
+            for name, files in report["kept_both_sides"].items()] + [
+            "", "Asked for on the command line for these files only. Nobody reviewed the result.", ""]
+    if report["textual_conflicts"]:
+        lines += ["## Textual conflicts", ""] + [f"- **{name}** conflicts with what was merged before it"
+                                                  + _directly(report, name) + " in: "
+                                                  + ", ".join(f"`{f}`" for f in files)
+                                                  for name, files in report["textual_conflicts"].items()] + [""]
+    if report["behavioural_conflicts"]:
+        lines += ["## Tests that pass alone and fail merged", ""]
+        for conflict in report["behavioural_conflicts"]:
+            cause = ", ".join(conflict["caused_by"]) or "no single head"
+            lines.append(f"- `{conflict['test']}` (from {conflict['unit']}): caused by **{cause}**; {conflict['note']}.")
+        lines.append("")
+    if report["failing_before_the_merge"]:
+        lines += ["## Failing before the merge (not a composition problem)", ""]
+        by_unit: dict[str, list[dict]] = {}
+        for item in report["failing_before_the_merge"]:
+            by_unit.setdefault(item["unit"], []).append(item)
+        for name, items in by_unit.items():          # the JSON report lists every one; here, the first few and a count
+            lines += [f"- `{item['test']}` (from {name})" + (f": {item['note']}" if item.get("note") else "")
+                      for item in items[:SHOWN]]
+            if len(items) > SHOWN:
+                lines.append(f"- and {len(items) - SHOWN} more from {name} (all are in the JSON report)")
+        lines.append("")
+    if report.get("not_compared"):
+        lines += ["## Not compared", ""] + [f"- `{item['file']}` (from {item['unit']}): {item['note']}"
+                                            for item in report["not_compared"]] + [""]
+    if report["unchecked"]:
+        lines += ["## Not checked", "", "No test was run for: " + ", ".join(f"**{n}**" for n in report["unchecked"])
+                  + ". These heads changed no test file and none was named for them, so nothing here says whether "
+                  "they are compatible.", ""]
+    lines += ["## Result", "", "No textual or behavioural conflict was found in the tests that were run."
+              if report["clean"] else "Conflicts were found; see above.", "", "Limits:"]
+    return "\n".join(lines + [f"- {limit}" for limit in report["limits"]]) + "\n"
+
+

@@ -571,6 +571,8 @@
     "greg/gravity.py",
     "greg/improvement.py",
     "greg/institution.py",
+    "greg/intake.py",
+    "greg/intake_rehearsal.py",
     "greg/isolation.py",
     "greg/journal.py",
     "greg/licensing.py",

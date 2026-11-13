@@ -15,6 +15,8 @@ name: Canonical CI
 # (Mind, Genesis, the real DALEOBANKS and WealthMachine code, a worker, SIGKILL and founder
 # reconciliation, independent re-derivation) with its hostile cases, and never skips.
 # A ninth runs the institutional verifier V1-V5 beside job 1 instead of after it.
+# An eleventh installs Python Playwright and its Chromium and runs the browser tests with
+# GREG_REQUIRE_BROWSER=1, so a missing browser fails instead of reading as skipped.
 # The two pre-existing workflows (tests.yml, ade1-standing-cognition.yml) are
 # preserved but reduced to manual dispatch so they cannot double-execute.
 # They are not deleted: UNIIMENTE_FINAL_BUILD_ORDER §2 and §12 forbid
@@ -98,7 +100,7 @@ jobs:
           if-no-files-found: error
           retention-days: 90
   mutation_gates:
-    name: "10 · Mutation gates"
+    name: "10 · Mutation gates (A)"
     runs-on: ubuntu-latest
     # Each gate removes one safeguard in a scratch copy and requires a failing test. They need none of job 1's
     # results, so they run here in parallel with it. In job 1, after the full suite, they had pushed the job past its
@@ -110,6 +112,9 @@ jobs:
     # cancelled at 90 minutes with every mutant so far caught on two heads that add one more gate (#300, 0aa09c87;
     # the composed candidate #299, eebd3b46). A cancelled gate job is not a passed one. The limit is doubled; running
     # the gates as parallel shards would shorten the job instead and is the integrator's and the founder's choice.
+    # Split in two on 2026-11-13: run one at a time, the gates outgrew 180 minutes once the convergence intake
+    # (8c0f502a) added 14 of them; that head's job 10 was cancelled at the limit with every gate so far passing. Job
+    # 10b runs the other half on its own runner, so both run in parallel and every gate still runs, unchanged.
     timeout-minutes: 180
     steps:
       - uses: actions/checkout@v4
@@ -137,18 +142,48 @@ jobs:
         run: python scripts/ci/check_wasm_lifecycle_mutant.py
       - name: Canonical WorkOrder and reobservation mutations
         run: python scripts/ci/check_worker_appraisal_mutants.py
+      - name: Appraiser attach-state mutations (the separate appraiser runs nothing for a capability that is not ATTACHED)
+        run: python scripts/ci/check_appraiser_attach_state_mutants.py
       - name: Whole-output judgment mutations (a check decided over the output its receipt kept, never on what it could not measure)
         run: python scripts/ci/check_whole_output_mutants.py
+      - name: Founder-device acceptance tier and live-runtime mutations
+        run: python scripts/ci/check_acceptance_mutants.py
+      - name: Consistent backup mutations
+        run: python scripts/ci/check_consistent_backup_mutants.py
+      - name: Cathedral detector mutations (activity rising while founder-tier outcomes do not)
+        run: python scripts/ci/check_cathedral_detector_mutants.py
+      - name: Effect-call allowlist mutations (every process or connection GREG's code opens is listed)
+        run: python scripts/ci/check_effect_call_allowlist_mutants.py
+      - name: Retained-receipt mutations (a retained Gate receipt is read by its result, as the call that produced it read it)
+        run: python scripts/ci/check_retained_receipt_mutants.py
+
+  mutation_gates_b:
+    name: "10b · Mutation gates (B)"
+    runs-on: ubuntu-latest
+    # The second half of job 10's gates; see the note there.
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements-dev.txt -r requirements-cognition.txt
+      - name: Provision worker namespace isolation (bubblewrap), as job 1 does
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q bubblewrap
+          if bwrap --unshare-user --unshare-pid --unshare-net --die-with-parent --ro-bind / / -- /usr/bin/true; then
+            echo "bubblewrap namespaces: usable"
+          else
+            echo "bubblewrap namespaces: NOT usable on this runner; real-isolation tests skip and say why"
+          fi
       - name: Standing-approval regression mutations (a failed run under a standing approval withdraws it)
         run: python scripts/ci/check_standing_approval_regression_mutants.py
       - name: Capability disposition mutations (RETAIN, REPAIR, REGRESS or REMOVE proposed after outcomes, never applied)
         run: python scripts/ci/check_capability_disposition_mutants.py
-      - name: Founder-device acceptance tier and live-runtime mutations
-        run: python scripts/ci/check_acceptance_mutants.py
       - name: Path predicates and build frontier mutations
         run: python scripts/ci/check_path_predicate_mutants.py
-      - name: Consistent backup mutations
-        run: python scripts/ci/check_consistent_backup_mutants.py
       - name: Typed blocker mutations (each open blocker names why, what lifts it and who must act)
         run: python scripts/ci/check_typed_blockers_mutants.py
       - name: Compute closure mutations (a lasting bottleneck is asked again; memory and IO measured; changes verified)
@@ -159,16 +194,22 @@ jobs:
         run: python scripts/ci/check_ask_terms_mutants.py
       - name: Canonical-owner registry mutations (one owner per duplicated function, guarded)
         run: python scripts/ci/check_canonical_owner_guard_mutants.py
-      - name: Cathedral detector mutations (activity rising while founder-tier outcomes do not)
-        run: python scripts/ci/check_cathedral_detector_mutants.py
-      - name: Effect-call allowlist mutations (every process or connection GREG's code opens is listed)
-        run: python scripts/ci/check_effect_call_allowlist_mutants.py
       - name: Node revocation and enrolled-node receipt mutations (NODE_REVOKE founder-only, receipts admitted only inside the node's cone)
         run: python scripts/ci/check_node_revoke_mutants.py
+      - name: Authority attach-state mutations (the office refuses a capability the founder has not left ATTACHED)
+        run: python scripts/ci/check_authority_attach_state_mutants.py
+      - name: Authority registered-identity mutations (the office runs a capability's own registered adapter only)
+        run: python scripts/ci/check_authority_registered_identity_mutants.py
+      - name: Revoked-device mutations (a revoked device's unused approval authorizes nothing; completed effects and history stay; a suspected compromise opens a review)
+        run: python scripts/ci/check_revoked_device_mutants.py
       - name: Functional reconstitution mutations (a lost function returns by another mechanism; a completed write is not repeated; a founder detach stands)
         run: python scripts/ci/check_reconstitution_mutants.py
       - name: Unmeasured-check mutations (a check a faulted capability could not read is never pursued, never retried unseen, and blames no strategy)
         run: python scripts/ci/check_unmeasured_check_mutants.py
+      - name: Browser binary mutations (an unconfined render uses an installed browser only after it rendered a local page; behind the relay no browser starts outside the namespace; GREG_CHROMIUM is the only browser run, or is refused by name)
+        run: python scripts/ci/check_browser_binary_mutants.py
+      - name: Composition rehearsal mutations (a test that passes alone and fails merged is reported with its cause; nothing is merged)
+        run: python scripts/ci/check_compose_rehearsal_mutants.py
       - name: Compile-unanswered mutations (a compile receipt that did not answer is no measured failure; a host stop is retried, not asked about at once)
         run: python scripts/ci/check_compile_unanswered_mutants.py
 
@@ -401,8 +442,8 @@ jobs:
       - name: Kernel environment
         # organs.exchange runs organ code under the kernel's own interpreter, as the research line does, so it needs
         # the research line's pinned organ imports (python-dotenv). Until ubuntu-26.04 the ten-step proof that
-        # exercises it was skipped for want of bubblewrap namespaces.
-        run: pip install -r kernel/requirements-dev.txt -r kernel/requirements-cognition.txt -r kernel/requirements-research-line.txt
+        # exercises it was skipped for want of bubblewrap namespaces. Playwright (job 11's pin) drives the proof's step 9.
+        run: pip install -r kernel/requirements-dev.txt -r kernel/requirements-cognition.txt -r kernel/requirements-research-line.txt playwright==1.63.0
       - name: Each organ in its own environment, from its own requirements
         run: |
           python -m venv organs/daleobanks-venv
@@ -417,11 +458,31 @@ jobs:
           else
             echo "bubblewrap namespaces: NOT usable on this runner; the ten-step proof skips and says why"
           fi
+      # Without a browser the ten-step proof recorded step 9 (Mission Control at three widths) as NOT_RUN and passed.
+      - name: Install Playwright's Chromium for the ten-step proof's step 9, as job 11 does
+        run: |
+          export PLAYWRIGHT_BROWSERS_PATH="$RUNNER_TEMP/pw-browsers"
+          python -m playwright install --with-deps chromium
+          shell=$(ls -d "$PLAYWRIGHT_BROWSERS_PATH"/chromium_headless_shell-*/chrome-headless-shell-linux64/chrome-headless-shell | tail -n 1)
+          test -x "$shell"
+          "$shell" --version
+          echo "PLAYWRIGHT_BROWSERS_PATH=$PLAYWRIGHT_BROWSERS_PATH" >> "$GITHUB_ENV"
+          echo "GREG_CHROMIUM=$shell" >> "$GITHUB_ENV"
+      # GREG asks for Chromium's own sandbox when it does not run as root (greg/computer.py). On this runner the
+      # first run of job 11 (106a8eb8) failed 6 tests with "No usable sandbox": Ubuntu's AppArmor restricts
+      # unprivileged user namespaces for binaries without a profile. This lets the test machine provide them; it
+      # does not change what GREG asks for.
+      - name: Let Chromium create its own sandbox on this runner, as job 11 does
+        run: |
+          if sysctl -n kernel.apparmor_restrict_unprivileged_userns >/dev/null 2>&1; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          fi
       - name: Whole-machine mission, organ capabilities and hostile cases (organs required, no skips)
         working-directory: kernel
         env:
           UNIIMENTE_REQUIRE_ORGANS: "1"
           GREG_REQUIRE_LANDLOCK: "1"
+          GREG_REQUIRE_BROWSER: "1"
           UNIIMENTE_DALEOBANKS_ROOT: "${{ github.workspace }}/organs/daleobanks"
           UNIIMENTE_DALEOBANKS_PYTHON: "${{ github.workspace }}/organs/daleobanks-venv/bin/python"
           UNIIMENTE_WEALTHMACHINE_ROOT: "${{ github.workspace }}/organs/wealthmachine"
@@ -435,7 +496,9 @@ jobs:
           # test_cross_organ_mission.py reads the same checkouts under these names
           UNIIMENTE_DALEOBANKS_DIR: "${{ github.workspace }}/organs/daleobanks"
           UNIIMENTE_WEALTHMACHINE_DIR: "${{ github.workspace }}/organs/wealthmachine"
-        run: python -m pytest -q -rs tests/integration/test_one_machine.py tests/integration/test_one_machine_ten_steps.py tests/integration/test_one_mission_fifteen_steps.py tests/integration/test_organ_staffing_figures.py tests/integration/test_combined_construction_outcome.py tests/integration/test_one_machine_attacks.py tests/unit/test_greg_organs.py tests/unit/test_greg_organ_exchange_verdict.py tests/unit/test_greg_organ_bridge.py tests/unit/test_greg_daleobanks_bridge.py tests/unit/test_greg_bind_from_check.py tests/unit/test_greg_model_identity_policy.py tests/unit/test_greg_organ_exchange.py::test_real_organs tests/unit/test_greg_media_case.py::test_real_daleobanks_consumes_the_minds_receipts tests/unit/test_greg_task_fabric.py::test_on_the_real_daleobanks_its_own_checks_pass_a_distorted_draft_and_the_mind_holds_it_back tests/unit/test_cross_organ_mission.py::test_full_three_process_mission --junitxml="$RUNNER_TEMP/job8.xml"
+        run: |
+          test -x "$GREG_CHROMIUM" || { echo "::error::GREG_CHROMIUM does not name the browser installed above: '$GREG_CHROMIUM'"; exit 1; }
+          python -m pytest -q -rs tests/integration/test_one_machine.py tests/integration/test_one_machine_ten_steps.py tests/integration/test_one_mission_fifteen_steps.py tests/integration/test_organ_staffing_figures.py tests/integration/test_combined_construction_outcome.py tests/integration/test_one_machine_attacks.py tests/unit/test_greg_organs.py tests/unit/test_greg_organ_exchange_verdict.py tests/unit/test_greg_organ_bridge.py tests/unit/test_greg_daleobanks_bridge.py tests/unit/test_greg_bind_from_check.py tests/unit/test_greg_model_identity_policy.py tests/unit/test_greg_organ_exchange.py::test_real_organs tests/unit/test_greg_media_case.py::test_real_daleobanks_consumes_the_minds_receipts tests/unit/test_greg_task_fabric.py::test_on_the_real_daleobanks_its_own_checks_pass_a_distorted_draft_and_the_mind_holds_it_back tests/unit/test_cross_organ_mission.py::test_full_three_process_mission --junitxml="$RUNNER_TEMP/job8.xml"
       - name: Count job 8's skips (it says it never skips; pytest exits 0 on a skip, so the count is reported)
         if: always()
         run: >-
@@ -465,3 +528,56 @@ jobs:
           path: one-machine-evidence/
           if-no-files-found: warn
           retention-days: 30
+
+  browser:
+    name: "11 · Browser tests in a real Chromium (Playwright and its browser required, never skipped)"
+    runs-on: ubuntu-latest
+    # Until 2026-11-12 no job installed Python Playwright or a browser, so browser.session (greg/computer.py), Mission
+    # Control and the phone page in Chromium, and browser.render behind the relay skipped on every change ("could not
+    # import 'playwright'"), and the phone test had stopped matching the decision record (e166308c) unseen.
+    # GREG_REQUIRE_BROWSER=1 turns a missing or unrunnable browser into a failure (tests/browser_requirement.py).
+    # These modules took about 4 minutes in a container; the limit bounds a hung run.
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      # Cognition: the First Mission that Mission Control drives selects with cognition.dp_knapsack (numpy).
+      # Playwright: the pin directive-completion.yml installs; its browser build is fetched below.
+      - run: pip install -r requirements-dev.txt -r requirements-cognition.txt playwright==1.63.0
+      # GREG_CHROMIUM is Playwright's Chrome Headless Shell. In a container, full Chrome for Testing 153's one-shot
+      # `--headless=new --dump-dom` (browser.render) loaded the page and never printed it or exited, while the
+      # headless shell, Playwright's own default for headless launches, rendered at once; Playwright drives either.
+      - name: Install Playwright's Chromium and its system libraries; name the binary every browser test drives
+        run: |
+          export PLAYWRIGHT_BROWSERS_PATH="$RUNNER_TEMP/pw-browsers"
+          python -m playwright install --with-deps chromium
+          shell=$(ls -d "$PLAYWRIGHT_BROWSERS_PATH"/chromium_headless_shell-*/chrome-headless-shell-linux64/chrome-headless-shell | tail -n 1)
+          test -x "$shell"
+          "$shell" --version
+          echo "PLAYWRIGHT_BROWSERS_PATH=$PLAYWRIGHT_BROWSERS_PATH" >> "$GITHUB_ENV"
+          echo "GREG_CHROMIUM=$shell" >> "$GITHUB_ENV"
+      # GREG asks for Chromium's own sandbox when it does not run as root (greg/computer.py). On this runner the
+      # first run of job 11 (106a8eb8) failed 6 tests with "No usable sandbox": Ubuntu's AppArmor restricts
+      # unprivileged user namespaces for binaries without a profile. This lets the test machine provide them; it
+      # does not change what GREG asks for.
+      - name: Let Chromium create its own sandbox on this runner (unprivileged user namespaces)
+        run: |
+          if sysctl -n kernel.apparmor_restrict_unprivileged_userns >/dev/null 2>&1; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          fi
+      - name: Provision bubblewrap for the confined browser (#26 relay), as job 1 does
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q bubblewrap
+          if bwrap --unshare-user --unshare-pid --unshare-net --die-with-parent --ro-bind / / -- /usr/bin/true; then
+            echo "bubblewrap namespaces: usable"
+          else
+            echo "bubblewrap namespaces: NOT usable on this runner; the confined browser tests skip and say why"
+          fi
+      - name: Browser tests (a missing or unrunnable browser fails; other skips are listed)
+        env:
+          GREG_REQUIRE_BROWSER: "1"
+        run: |
+          test -x "$GREG_CHROMIUM" || { echo "::error::GREG_CHROMIUM does not name the browser installed above: '$GREG_CHROMIUM'"; exit 1; }
+          python -m pytest -q -rs tests/unit/test_greg_computer.py tests/unit/test_greg_browser.py tests/integration/test_greg_mission_control_browser.py tests/integration/test_greg_phone_asks.py tests/integration/test_greg_phone_e2e.py tests/integration/test_greg_confined_egress.py tests/integration/test_greg_mcp_token.py

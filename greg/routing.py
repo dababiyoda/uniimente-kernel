@@ -11,7 +11,10 @@ Proof feeds routing (verification weighting, after memory/causal.py): when the
 independent appraiser REFUTES a closure because its receipts or the re-observed
 world do not hold, every capability that acted for that mission loses reliability.
 A refutation for reasons that are not the capability's (signature, inbox, replay
-boundary) does not move routing. Appraiser-VERIFIED actions are counted apart.
+boundary) does not move routing, and neither does a check the appraiser left open
+because it ran no sensor for it or read the world too late (``not_established`` on
+the appraisal: nothing was measured against the capability). Appraiser-VERIFIED
+actions are counted apart.
 Each dispatched attempt is one outcome: a founder reconciliation of an UNCERTAIN
 dispatch replaces that attempt's outcome and, having no receipt, is counted apart
 (founder_reconciled) and never moves reliability.
@@ -64,7 +67,8 @@ def track_record(journal: Journal) -> dict[str, dict]:
     appraisals = {}
     for event in journal.replay("mission.appraised"):
         data = event.payload
-        effect_ok = all(data.get("checks", {}).get(c, False) for c in EFFECT_CHECKS)
+        left_open = data.get("not_established") or ()     # False without a measurement: not the capability's
+        effect_ok = all(data.get("checks", {}).get(c, False) or c in left_open for c in EFFECT_CHECKS)
         if data["verdict"] == "VERIFIED":
             appraisals[data["mission_id"]] = "verified"
         elif data["verdict"] == "REFUTED" and not effect_ok:

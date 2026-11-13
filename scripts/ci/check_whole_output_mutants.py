@@ -81,8 +81,11 @@ MUTANTS = [
      '"output_artifact": outcome.output_artifact}, self.artifact_root)\n        # Evidence that cannot decide',
      '"output_artifact": outcome.output_artifact}, None)\n        # Evidence that cannot decide',
      T + "test_a_refusal_written_past_16_kib_of_a_note_is_honored"),
+    # One function reads every receipt (AuthorityOffice.outcome_of: the dispatch that produced it and a retained one
+    # found again), so this mutant and "a reading reused after a restart" below remove the same line.
     ("the outcome drops the receipt's artifact record", "greg/authority.py",
-     '                                 output_artifact=result.get("output_artifact"), **base)', "**base)",
+     '                             output_artifact=result.get("output_artifact"), **kept)',
+     "                             **kept)",
      T + "test_a_required_phrase_past_16_kib_closes_the_mission_without_asking_and_is_verified"),
     ("the appraiser re-derives a closure from the prefix only", "greg/appraisal.py",
      'verdict, detail = judge_receipt(check["predicate"], receipt.payload["result"], artifacts)',
@@ -168,8 +171,8 @@ MUTANTS = [
      "        return False if False in pairs else None if None in pairs else True",
      T + "test_a_cut_below_the_judged_value_never_decides_as_its_wrapper"),
     ("a reading reused after a restart is judged on its prefix", "greg/authority.py",
-     '                                 cost_usd=cost_usd, output_artifact=receipt.payload["result"].get("output_artifact"),',
-     "                                 cost_usd=cost_usd,",
+     '                             output_artifact=result.get("output_artifact"), **kept)',
+     "                             **kept)",
      T + "test_a_reading_reused_after_a_restart_keeps_the_whole_output_its_receipt_kept"),
     ("the appraiser re-derives a bind by artifact from the prefix", "greg/appraisal.py",
      '_set_path(params, edge["param"], bound_value(edge, result.get("output"), whole,',

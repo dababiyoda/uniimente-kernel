@@ -207,8 +207,8 @@ MUTANTS = [
      '                if v in AFTER_UP:                      # derived from what is stored now, the restored rows '
      'included\n', '                if False:\n'),
     (DATAMODEL, "a fact ingested again never binds the row schema 3 carried",
-     '                                   "WHERE closure_facts.bound = 0",\n',
-     '                                   "WHERE 0",\n'),
+     '                               "WHERE closure_facts.bound = 0",\n',
+     '                               "WHERE 0",\n'),
     (DATAMODEL, "the mission ledger reads the latest outcome row, whatever closure it judged",
      '        "(SELECT s.verdict FROM standings s WHERE s.mission_id = d.mission_id) AS current_verdict, "\n',
      '        "(SELECT o.verdict FROM outcomes o WHERE o.mission_id = d.mission_id ORDER BY o.at DESC, o.id DESC "\n'

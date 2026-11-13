@@ -1,0 +1,133 @@
+{
+ "ablation": [],
+ "dirty_greg_or_tests": false,
+ "head": "8a1051b91e88fc6b26930e2a28765bf52b270b5e",
+ "kernel": "/home/user/uk-r1a",
+ "label": "new",
+ "python": "3.13.16",
+ "rows": [],
+ "timing": [
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    0,
+    2,
+    2
+   ],
+   "achieved": true,
+   "base_run": {
+    "argv": [
+     "/usr/bin/python",
+     "-m",
+     "pytest",
+     "-q",
+     "-p",
+     "no:cacheprovider",
+     "tests/test_plan.py"
+    ],
+    "passed": false,
+    "returncode": 2,
+    "seconds": 0.37
+   },
+   "case": "O1",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:one-machine-r1a-o1",
+   "regime": "required",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": {
+    "commands": [
+     2,
+     2,
+     2,
+     2,
+     2
+    ],
+    "median_seconds": 0.709,
+    "seconds": [
+     0.752,
+     0.709,
+     0.698,
+     0.709,
+     0.696
+    ]
+   },
+   "wall_seconds": 11.8,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    0,
+    2,
+    2
+   ],
+   "achieved": true,
+   "base_run": {
+    "argv": [
+     "/usr/bin/python",
+     "-m",
+     "pytest",
+     "-q",
+     "-p",
+     "no:cacheprovider",
+     "tests/test_plan.py"
+    ],
+    "passed": false,
+    "returncode": 2,
+    "seconds": 0.31
+   },
+   "case": "O1",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:one-machine-r1a-o1",
+   "regime": "supervised",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": {
+    "commands": [
+     2,
+     2,
+     2,
+     2,
+     2
+    ],
+    "median_seconds": 0.612,
+    "seconds": [
+     0.623,
+     0.598,
+     0.6,
+     0.612,
+     0.646
+    ]
+   },
+   "wall_seconds": 9.1,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  }
+ ]
+}

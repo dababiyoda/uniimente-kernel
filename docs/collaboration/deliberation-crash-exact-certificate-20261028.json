@@ -1,0 +1,311 @@
+{
+ "decision_id": "FM-CRASH-EXACT-CERTIFICATE-20261028",
+ "title": "Prove project.crash optimality exactly, from the original project, instead of from the LP's floating-point gap",
+ "problem": "certify_crash compared a plan's cost only with the LP objective at the engine's own point, and that point passes linear.certify_lp, whose gap tolerance is relative 1e-7 x (1 + |primal|). With absolute start and finish times, the tolerance at 1e8 durations is tens of cost units, so a suboptimal vertex was certified as the cheapest plan (#217).",
+ "founder_intent_refs": [
+  "INTENT-20261001-FULL-MACHINE-COMPLETION",
+  "INTENT-20261019-UPWARD-ASCENT",
+  "INTENT-20261013-FRONTIER-LEAP-RECOMBINE (every constructed answer re-proved in the original problem's terms)",
+  "founder directive 2026-10-28 (TRUE ABSOLUTE OPUS MAXIMUS), this session",
+  "https://github.com/dababiyoda/uniimente-kernel/issues/217"
+ ],
+ "baseline": "#196 at 917404cf: the issue's two suboptimal points certified (costs 30 and 18 against the optimum 15); probe with HiGHS's real prices calls 5/387, 242/355 and 345/345 suboptimal plans cheapest at durations +1e6, +1e7 and +1e8.",
+ "alternatives": [
+  {
+   "name": "simplest_viable_alternative",
+   "description": "Route A: read the engine's certified LP prices back as a flow from the project's start to its deadline, and compute Fulkerson's lower bound from it in exact integers inside certify_crash; drop the two implied variable bounds from encode_crash so every dual is such a flow.",
+   "advantages": [
+    "Only greg/recombine.py changes; linear.py and its 17 frozen bindings are untouched.",
+    "Optimality is re-proved per call from the original project, like the staffing, matching and selection certificates."
+   ],
+   "disadvantages": [
+    "crash-via-lp's source digest changes, so formed project.crash constructions quarantine and re-qualify.",
+    "Recorded crash answers without a flow cannot be re-certified by the new certifier."
+   ],
+   "revival_evidence": "Selected after two passes."
+  },
+  {
+   "name": "strongest_competing_architecture",
+   "description": "Route B: tighten or rescale the gap tolerance in linear.certify_lp for every LP.",
+   "advantages": [
+    "Fixes the tolerance for every LP, not only crash."
+   ],
+   "disadvantages": [
+    "linear.py is bound at its current digest by 17 frozen records; every LP-based admitted verdict would need pre-registered re-admission.",
+    "A floating-point tolerance can only be narrowed, never made exact, for an engine that works in floating point."
+   ],
+   "revival_evidence": "Another LP consumer shown to certify a wrong optimum at scale; then a pre-registered re-admission plan for the 17 bindings."
+  },
+  {
+   "name": "reversible_experiment",
+   "description": "Route C: detection only, refusing a certificate whose absolute gap is large in the crash's own cost scale.",
+   "advantages": [
+    "Cheap; no binding changes outside recombine.py."
+   ],
+   "disadvantages": [
+    "Not sound: approximate stationarity times large bounds still loosens the bound."
+   ],
+   "revival_evidence": "None; kept as the rejected cheaper option."
+  }
+ ],
+ "do_nothing_option": {
+  "expected_outcome": "GREG keeps certifying some suboptimal crash plans as cheapest on large-duration projects.",
+  "advantages": [
+   "No digest change; no re-qualification."
+  ],
+  "disadvantages": [
+   "A construction's certificate exists so that GREG never trusts its engine; this one did."
+  ]
+ },
+ "roles": [
+  {
+   "role": "Founder-Intent Steward",
+   "position": "An answer GREG calls proved must be proved; the destination of constructed capabilities is certified answers in the founder's own terms. All five roles performed by one agent; not independent review.",
+   "material_concerns": [
+    "Do not let the fix narrow the function (durations, sizes) or hide refusals."
+   ],
+   "evidence_refs": [
+    "docs/evidence/greg-crash-certificate/2026-10-28/README.md",
+    "tests/unit/test_greg_recombine.py"
+   ],
+   "recommendation": "RETAIN"
+  },
+  {
+   "role": "Systems Architect",
+   "position": "Keep the proof inside the reduction that owns it; leave the shared LP certificate and its frozen bindings alone. All five roles performed by one agent; not independent review.",
+   "material_concerns": [
+    "Rounded floating-point prices must never be trusted: the flow is checked, not believed."
+   ],
+   "evidence_refs": [
+    "greg/recombine.py (_deadline_flow, _deadline_bound, certify_crash, encode_crash)"
+   ],
+   "recommendation": "RETAIN"
+  },
+  {
+   "role": "Adversarial Reviewer",
+   "position": "Attack the bound: forged flows, negative or fractional units, non-precedence arcs, broken conservation, a dropped deadline term, an engine's objective that lies. All five roles performed by one agent; not independent review.",
+   "material_concerns": [
+    "A bound above the true optimum would certify an overpriced plan; weak duality must hold for every flow the checker accepts."
+   ],
+   "evidence_refs": [
+    "tests/unit/test_greg_recombine.py::test_no_flow_bounds_above_the_true_optimum",
+    "tests/unit/test_greg_recombine.py::test_a_flow_that_does_not_prove_its_bound_is_refused",
+    "scripts/ci/check_cortex_mutants.py (six crash mutants)"
+   ],
+   "recommendation": "RETAIN"
+  },
+  {
+   "role": "Operator and Maintainer",
+   "position": "Availability must not drop: both real engines' prices must round to exact certificates. All five roles performed by one agent; not independent review.",
+   "material_concerns": [
+    "GLOP places price on implied bounds for zero-duration tasks; the encoding must not offer them."
+   ],
+   "evidence_refs": [
+    "docs/evidence/greg-crash-certificate/2026-10-28/qualification.json",
+    "tests/unit/test_greg_recombine.py::test_the_real_lp_engines_prices_round_to_an_exact_certificate"
+   ],
+   "recommendation": "RETAIN"
+  },
+  {
+   "role": "Evidence and Welfare Guardian",
+   "position": "A founder deciding by a 'cheapest plan' must not be shown an overpriced one as proved; recorded answers certified by the old certificate keep their old label and are not silently re-labelled. All five roles performed by one agent; not independent review.",
+   "material_concerns": [
+    "Old recorded crash answers cannot be re-certified without a flow; say so where they are consumed (#213)."
+   ],
+   "evidence_refs": [
+    "docs/evidence/greg-crash-certificate/2026-10-28/false-optimum-probe.json"
+   ],
+   "recommendation": "RETAIN"
+  }
+ ],
+ "evidence": [
+  {
+   "claim": "The issue's suboptimal points are certified before and refused after",
+   "tier": "unit_test",
+   "reference": "tests/unit/test_greg_recombine.py::test_the_issue_217_counterexample_suboptimal_vertices_are_refused_at_large_durations; fail-before.txt",
+   "finding": "Before: costs 15, 30 and 18 certified. After: only 15."
+  },
+  {
+   "claim": "With real engine prices, suboptimal plans are no longer called cheapest at any scale",
+   "tier": "sandbox_execution",
+   "reference": "docs/evidence/greg-crash-certificate/2026-10-28/false-optimum-probe.json",
+   "finding": "Before 0, 0, 5, 242, 345 false optima at offsets 1, 1e4, 1e6, 1e7, 1e8; after 0 at every offset; neither refused an optimum."
+  },
+  {
+   "claim": "Qualification is unchanged on both engines",
+   "tier": "sandbox_execution",
+   "reference": "docs/evidence/greg-crash-certificate/2026-10-28/qualification.json",
+   "finding": "416 engine cases each on HiGHS and GLOP, 0 wrong, 0 refused."
+  }
+ ],
+ "counterevidence": [
+  {
+   "claim": "Rounding the engine's prices always yields a certificate",
+   "tier": "unit_test",
+   "reference": "first engine run during development (GLOP, zero-duration tasks)",
+   "finding": "False with the old encoding: GLOP priced the implied bounds start <= deadline and finish >= 0, which the flow cannot express (3 of 34 at small scale). Fixed by dropping those implied bounds from the encoding."
+  },
+  {
+   "claim": "Every engine optimum now certifies",
+   "tier": "unit_test",
+   "reference": "tests/unit/test_greg_recombine.py::test_the_real_lp_engines_prices_round_to_an_exact_certificate[8]",
+   "finding": "False at 1e8: GLOP's floating-point plan can finish a task one unit short, which the exact plan check refuses, as it did before this change."
+  }
+ ],
+ "pass_1": {
+  "intended_outcome": "project.crash calls a plan the cheapest only when GREG has proved, in exact integers from the original project, that no on-time plan costs less.",
+  "advantages": [
+   {
+    "id": "A1",
+    "statement": "The certificate is a flow a person can read: how much each unit of deadline is worth along which tasks.",
+    "amplified_value": "Certificate transport, as the other constructions do; the bound is the time-cost trade-off's marginal price of the deadline."
+   },
+   {
+    "id": "A2",
+    "statement": "No tolerance anywhere in the optimality proof.",
+    "amplified_value": "Correct at every scale the engine accepts, independent of the engine's floating point."
+   }
+  ],
+  "disadvantages": [
+   {
+    "id": "D1",
+    "statement": "Engine prices are floating point and might not round to an exact flow.",
+    "severity": "medium",
+    "response_type": "evidence",
+    "redesigned_response": "The constraint matrix is a network matrix with integer costs, so optimal duals are integral; measured on both engines at three scales and on the 60-seed qualification."
+   },
+   {
+    "id": "D2",
+    "statement": "Formed project.crash constructions quarantine on the digest change.",
+    "severity": "low",
+    "response_type": "governance",
+    "redesigned_response": "This is the designed response to a reduction-code change; they re-qualify through the frozen oracle."
+   },
+   {
+    "id": "D3",
+    "statement": "Recorded crash answers from before the change carry no flow.",
+    "severity": "low",
+    "response_type": "evidence",
+    "redesigned_response": "Disclosed; their consumers (#213's recertify) re-certify with the certifier they were recorded under or a freshly computed flow."
+   }
+  ],
+  "comparisons": {
+   "baseline": "Suboptimal plans certified at large durations.",
+   "do_nothing": "Leaves a reproduced false-optimum condition.",
+   "simplest_viable_alternative": "Route A, chosen.",
+   "strongest_competing_architecture": "Route B would unbind 17 frozen records and still rest on a tolerance.",
+   "reversible_experiment": "Route C is not sound."
+  },
+  "rejected_alternatives": [
+   {
+    "name": "strongest_competing_architecture",
+    "rejection_reason": "Unbinds 17 frozen records for a defect local to one reduction; still tolerance-based.",
+    "revival_evidence": "Another LP consumer shown to certify a wrong optimum at scale."
+   },
+   {
+    "name": "reversible_experiment",
+    "rejection_reason": "Detection without a sound bound.",
+    "revival_evidence": "None."
+   }
+  ]
+ },
+ "pass_2": {
+  "attack_summary": "Attack the strengthened design: forged and malformed flows, weak duality, the encoding change, engine degeneracy, scale, consumers of recorded answers, and the claim of no availability loss.",
+  "new_weaknesses": [
+   {
+    "id": "N1",
+    "category": "gaming",
+    "statement": "A forged flow could claim a bound above the true optimum.",
+    "strengthening_response": "Weak duality holds for every nonnegative integer conserved flow on precedence arcs; property-tested against exhaustive enumeration (over 1,000 flows) and mutant-tested."
+   },
+   {
+    "id": "N2",
+    "category": "fragility",
+    "statement": "Dropping the implied bounds could change the program's feasible set or make it unbounded.",
+    "strengthening_response": "Both bounds are implied by the duration rows (finish >= start + shortest >= 0; start <= finish - shortest <= deadline); the objective is bounded below by -sum c d; qualification unchanged."
+   },
+   {
+    "id": "N3",
+    "category": "dependency",
+    "statement": "A future engine might return a fractional (non-vertex) optimal dual.",
+    "strengthening_response": "Then the rounded flow fails its own check and the answer is refused: an availability loss, never a false proof. Recorded as a limit."
+   }
+  ],
+  "pass_1_disadvantage_dispositions": [
+   {
+    "disadvantage_id": "D1",
+    "outcome": "accepted",
+    "rationale": "Measured: no flow-certificate refusal on either engine across the qualification and the scale tests.",
+    "owner": "GREG construction maintainers",
+    "review_trigger": "A new LP engine candidate, or a refusal by the flow certificate in service."
+   },
+   {
+    "disadvantage_id": "D2",
+    "outcome": "accepted",
+    "rationale": "Designed quarantine on reduction-code change.",
+    "owner": "GREG construction maintainers",
+    "review_trigger": "Integration into #196."
+   },
+   {
+    "disadvantage_id": "D3",
+    "outcome": "accepted",
+    "rationale": "Disclosed in the evidence README and the PR; the #213 adaptation is offered to whichever PR is joined second.",
+    "owner": "session_01Kucyfoabgsg6W8H8xj4qea",
+    "review_trigger": "Joining this PR and #213 into #196."
+   }
+  ],
+  "final_design": "Route A in greg/recombine.py only: _deadline_flow in decode, _deadline_bound in certify, encode without the two implied bounds; six new mutants; linear.py untouched.",
+  "residual_risks": [
+   {
+    "risk": "GLOP's floating-point plan at 1e8 can miss a bound by a unit and is refused.",
+    "mitigation": "Unchanged from before; the exact plan check refuses it and the construction's engine fault path applies.",
+    "owner": "GREG construction maintainers",
+    "review_trigger": "Founder projects at that scale."
+   },
+   {
+    "risk": "Synthetic projects only; no founder project was run.",
+    "mitigation": "Reality label sandbox; VEPMC 0.",
+    "owner": "Alfonso",
+    "review_trigger": "First founder project.crash mission."
+   }
+  ],
+  "recommendation": "RETAIN"
+ },
+ "dissent": {
+  "present": true,
+  "handling": "Preserved.",
+  "entries": [
+   {
+    "role": "Systems Architect",
+    "position": "linear.certify_lp's relative tolerance is still loose at large magnitudes for any other LP consumer.",
+    "rationale": "Route A fixes the crash construction, which re-proves its own optimality; lp.optimize answers used directly keep the engine-level tolerance.",
+    "evidence_threshold": "A consumer of lp.optimize shown to rely on its optimum at a scale where the tolerance exceeds the decision-relevant difference.",
+    "owner": "GREG cognition maintainers",
+    "review_trigger": "Next LP admission or a consumer audit."
+   }
+  ]
+ },
+ "authority_impact": {
+  "level": "standard",
+  "changes_authority": false,
+  "requires_authorized_human": false,
+  "approval_status": "not_required",
+  "approver": null
+ },
+ "migration_plan": "Draft child of #196; the integrator decides intake. Formed project.crash constructions quarantine and re-qualify; recorded answers stay as recorded.",
+ "rollback_plan": {
+  "possible": true,
+  "steps": [
+   "Revert this PR's commit; the old certificate and its evidence return; nothing else changes."
+  ],
+  "reason_impossible": null
+ },
+ "kill_criteria": [
+  "A legitimate engine optimum is refused by the flow certificate.",
+  "A suboptimal on-time plan is certified as cheapest.",
+  "Any LP-based frozen binding changes."
+ ],
+ "decision": "RETAIN",
+ "decision_owner": "#196 integration owner for intake; Alfonso for any merge",
+ "review_trigger": "Integration into #196, a new LP engine candidate, or a flow-certificate refusal in service."
+}

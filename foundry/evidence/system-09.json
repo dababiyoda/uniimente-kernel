@@ -1,7 +1,7 @@
 {
  "command": "python -m foundry.completion --run 9",
  "name": "Containers",
- "note": "not re-run by the CI audit while the row is PARTIAL (it re-runs only COMPLETE rows); re-derive with `python -m foundry.completion --run 9`",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
  "result": {
   "context_intact": true,
   "context_sha256": "b3e1a317447802134f586af84ee06046c21519bebbbbcc6b4465c888343910dd",

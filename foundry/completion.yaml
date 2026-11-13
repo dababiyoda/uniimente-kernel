@@ -162,11 +162,11 @@
   tests:
   - tests/unit/test_greg_oci.py
   evidence: foundry/evidence/system-09.json
-  hosted_evidence: foundry/evidence/system-09-hosted.json
+  hosted_evidence: foundry/evidence/hosted/system-09.json
   evidence_tier: SANDBOX_VERIFIED
   limitations: The local record re-derives only the signed Body's digest-pinned context (image_built false); the image
     itself is built and run only on a disposable hosted CI runner (Canonical CI job 7, scripts/ci/prove_oci.py), never in
-    the development container or on a founder body. Hosted evidence (system-09-hosted.json, run 39736818025 on 55e6d74)
+    the development container or on a founder body. Hosted evidence (hosted/system-09.json, run 39736818025 on 55e6d74)
     showed two no-cache builds with identical OCI layouts and the image answering 6 requests exactly as the host does; it
     is re-observed on every CI run, not by the local audit. One restricted-rule capability is packaged; full GREG and organ
     dependency images and stronger general-code execution (system 10) remain unfinished.

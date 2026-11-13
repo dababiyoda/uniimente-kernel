@@ -169,7 +169,7 @@ def handle(home: Path, method: str, path: str, headers, body: bytes, *, now: dat
             raise RemoteError(413, "command too large")
         try:
             envelope = json.loads(body.decode("utf-8"))
-        except (UnicodeDecodeError, ValueError):
+        except (UnicodeDecodeError, ValueError, RecursionError):   # nested too deep is not a command either
             raise RemoteError(400, "command must be JSON")
         with _Reader(home, now=now) as reader:
             try:  # pre-verification only; the body verifies again before anything happens

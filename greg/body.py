@@ -303,7 +303,7 @@ def revocation_candidates(paths) -> list[dict]:
             continue
         try:
             envelope = json.loads(raw)
-        except ValueError:
+        except (ValueError, RecursionError):      # a document nested too deep raises RecursionError, not ValueError
             continue
         if isinstance(envelope, dict) and envelope.get("kind") == "DEVICE_REVOKE":
             found.append(envelope)
@@ -1005,7 +1005,7 @@ class Body:
             if why is None:
                 try:
                     item = json.loads(raw)
-                except ValueError:
+                except (ValueError, RecursionError):  # nested too deep is not JSON GREG can read either
                     why = "not JSON"
             if why is None:
                 why = _intake_shape(item)
@@ -1044,7 +1044,7 @@ class Body:
             if only_kind is not None and (not isinstance(envelope, dict) or envelope.get("kind") != only_kind):
                 return None
             outcome = self.apply(envelope, channel="inbox", revoking=revoking)
-        except (FounderAuthError, MissionError, ValueError, KeyError, TypeError,
+        except (FounderAuthError, MissionError, ValueError, RecursionError, KeyError, TypeError,
                 tribunal.CritiqueError) as exc:
             raw = path.read_bytes()
             consumed = getattr(exc, "consumed", None)
@@ -1588,7 +1588,7 @@ def inbox_digests(layout: "Layout") -> set[str]:
     for path in layout.inbox.glob("*.json"):
         try:
             out.add(sha256_json(json.loads(path.read_text())))
-        except (OSError, ValueError):
+        except (OSError, ValueError, RecursionError):
             continue
     return out
 

@@ -319,6 +319,15 @@ class Layout:
         self.stop_file = self.home / "STOP"
         self.pause_file = self.home / "PAUSE"
 
+    def read_config(self) -> dict:
+        """This body's configuration; a home ``greg init`` never made is a one-line refusal, not a traceback."""
+        try:
+            raw = self.config.read_text()
+        except FileNotFoundError:
+            raise BodyError(f"no body at {self.home}: run `greg init` first "
+                            "(greg/CHROMEBOOK_FIRST_MISSION.md section 1)") from None
+        return json.loads(raw)
+
 
 def _private_write(path: Path, data: bytes):
     fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
@@ -433,7 +442,7 @@ class Body:
         self.monotonic = monotonic or time.monotonic   # excludes host sleep: presence.note_gap compares it
         if not self.layout.config.exists():
             raise BodyError("no body here; run `greg init` first")
-        self.config = json.loads(self.layout.config.read_text())
+        self.config = self.layout.read_config()
         # Bodies created before deliverables existed deliver inside their own home.
         self.deliver_root = Path(self.config.get("deliver_root") or self.layout.home / "deliveries")
         self.clock = clock or (lambda: datetime.now(timezone.utc))
@@ -1424,7 +1433,7 @@ def observe(home: str | Path, *, actor: str = "spiffe://uniimente.internal/greg/
     a crash) was never acknowledged and is left out rather than failing the read.
     """
     layout = Layout(home)
-    config = json.loads(layout.config.read_text())
+    config = layout.read_config()
     ledger = EvidenceLedger(config["constitution_hash"], str(layout.ledger), read_only=True, tail="ignore")
     try:
         yield Journal(EventSpine(ledger), actor=actor)
@@ -1488,7 +1497,7 @@ def send_signed(home: str | Path, key, kind: str, body: dict, *, ttl: timedelta 
     """Sign one founder command and drop it into the body inbox (any interface, then close)."""
     from greg.founder import sign_command
     layout = Layout(home)
-    config = json.loads(layout.config.read_text())
+    config = layout.read_config()
     envelope = sign_command(key, kind, body, body_id=config["body_id"], ttl=ttl)
     target = layout.inbox / f"{envelope['issued_at'].replace(':', '')}-{kind.lower()}-{envelope['nonce'][:8]}.json"
     temporary = target.with_suffix(".tmp")
@@ -1550,7 +1559,7 @@ def _attach_waiting(journal, achieved: set) -> list[dict]:
 def status(home: str | Path) -> dict:
     """Read-only projection for the founder; safe while the body runs."""
     layout = Layout(home)
-    config = json.loads(layout.config.read_text())
+    config = layout.read_config()
     ledger = EvidenceLedger(config["constitution_hash"], str(layout.ledger), read_only=True, tail="ignore") \
         if layout.ledger.exists() else None
     heartbeat = json.loads(layout.heartbeat.read_text()) if layout.heartbeat.exists() else None

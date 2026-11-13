@@ -122,13 +122,13 @@ class Console:
         return {"status": state, "missions": missions, "vepmc": vepmc, "recent": recent, "deliveries": deliveries, "cognitive": cognitive}
 
     def deliver_root(self) -> Path:
-        config = json.loads(self.layout.config.read_text())
+        config = self.layout.read_config()
         return Path(config.get("deliver_root") or self.home / "deliveries")
 
     def context(self) -> planner.PlannerContext:
         if self.planner_context is not None:
             return self.planner_context
-        config = json.loads(self.layout.config.read_text())
+        config = self.layout.read_config()
         return planner.PlannerContext(read_roots=tuple(Path(r) for r in config["read_roots"]),
                                       capabilities=status(self.home)["capabilities"],
                                       workspace=self.layout.workspace, hosted=self._hosted())
@@ -177,7 +177,7 @@ class Console:
             revision = (events[-1].event_id if events else None, self._keys_stamp())
             if revision == self._route_revision:
                 return
-            base = json.loads(self.layout.config.read_text()).get("models")
+            base = self.layout.read_config().get("models")
             selected = effective_route_config(base, journal)
         replacement = self._held(self.transport_factory(selected))
         with self.lock:

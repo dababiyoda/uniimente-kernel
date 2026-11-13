@@ -577,18 +577,93 @@ def _field(output, path: str):
     return cut["prefix"] if cut else value
 
 
+# A Competency Compiler receipt (greg.cognition.compiler.SCHEMA, any version), and the states in which its
+# ``result`` is an answer: ANSWERED; WORLD_UNVERIFIED, the conditional answer of a high-consequence question (the
+# same state without a result is an abstention the executed method passed up); HUMAN_JUDGMENT_RECORDED, the
+# founder's signed decision. REFUTED is a negative result and PLANNED is the whole of what ``execute: false`` asked
+# for, so neither abstained. In every other state (ABSTAIN, UNKNOWN, CAPABILITY_DEFICIT, PROHIBITED,
+# HUMAN_JUDGMENT_REQUIRED, FORMALIZATION_INCOMPLETE, a composition's STAGE_ABSTAINED and the rest) nothing answered.
+COMPILATION = "greg-competency-compilation/"
+COMPILE_ANSWERS = ("ANSWERED", "WORLD_UNVERIFIED", "HUMAN_JUDGMENT_RECORDED")
+COMPILE_DECIDED = ("REFUTED", "PLANNED")
+
+
 def unanswered(output) -> str | None:
     """Why a cognitive sensor receipt carries no answer; None when it answered or refuted.
 
     A receipt that abstained (budget exhausted, timeout, capability deficit, evidence
     expired, no quorum...) did not measure the world. Reading its missing field as a
     negative observation would book the world as unchanged and blame the strategy.
-    REFUTED is a real negative result and stays one."""
-    if not isinstance(output, dict) or "abstention_state" not in output:
+    REFUTED is a real negative result and stays one.
+
+    Two receipt shapes reach a check through ``cognition.solve``, and each is read by its own typed fields: a
+    cortex receipt by ``abstention_state``, a Competency Compiler receipt by ``schema``, ``state`` and ``result``.
+    The compile receipt has no ``abstention_state``; read by that key alone it always looked answered, so a
+    question the host stopped was recorded as a measured failure."""
+    if not isinstance(output, dict):
+        return None
+    if isinstance(output.get("schema"), str) and output["schema"].startswith(COMPILATION):
+        state = output.get("state")
+        if state in COMPILE_DECIDED or (state in COMPILE_ANSWERS and output.get("result") is not None):
+            return None
+        return str(state) if isinstance(state, str) and state else "NO_STATE"
+    if "abstention_state" not in output:
         return None
     if output.get("abstention_state") in ("NONE", "REFUTED"):
         return None
     return str(output.get("reason_code") or output.get("abstention_state"))
+
+
+# The fields of a cognitive receipt that hold its answer, by shape. A compile receipt answers in ``result``, with
+# the confidence of that result (``confidence_type``) and the executed method's own receipt (``selected_receipt``);
+# a cortex receipt answers in ``output``, with its proof (``proof_type``, ``proof_artifact``) and ``uncertainty``.
+# Every other field describes the receipt itself: its state (``state``, ``abstention_state``, ``reason_code``),
+# why it holds no answer (``host_stop``, ``capability_deficit``, ``missing_information``) and what it did not do
+# (``authority_created``). An empty path names the whole receipt, answer included.
+ANSWER_FIELDS = {"compile": ("result", "confidence_type", "selected_receipt"),
+                 "cortex": ("output", "proof_type", "proof_artifact", "uncertainty")}
+
+
+def reads_answer(output, path: str) -> bool:
+    """Whether a predicate's field reads the answer of a cognitive receipt, not the receipt's own state.
+
+    Asked only of a receipt ``unanswered`` says carries no answer. On such a receipt a predicate about the answer
+    reads nothing: ``absent result.counterexample`` is satisfied by a receipt with no result at all, and the
+    mission closed ACHIEVED, appraised VERIFIED, on a question the Mind declined (review of 1c4a758c, N1). That
+    reading is unmeasured on either side of its predicate. A predicate about the receipt's own state (``state``
+    equals PROHIBITED: "the Mind refuses this act") reads what the receipt says and is judged as it is."""
+    if not isinstance(output, dict) or not path:
+        return True
+    shape = "compile" if isinstance(output.get("schema"), str) and output["schema"].startswith(COMPILATION) \
+        else "cortex"
+    return _canon(path.split(".", 1)[0]) in {_canon(name) for name in ANSWER_FIELDS[shape]}
+
+
+HOST_STOP_CLASSES = ("transient", "budget_exceeded", "executor_error")
+# The reason codes a cortex receipt (the direct route: an operation or a cortex problem, with no compilation around
+# it) carries for a stop the host or a resource ceiling made: its solver or worker timed out or overran the
+# enclosing deadline (TIMEOUT), or its compute budget ran out (BUDGET_EXHAUSTED). The compile route reads the same
+# two codes from the executed method's receipt (``compiler._host_stop``).
+CORTEX_STOP_CODES = {"TIMEOUT": "transient", "BUDGET_EXHAUSTED": "budget_exceeded"}
+
+
+def host_stop(output) -> str | None:
+    """The failure class of the stop a cognitive receipt names when it carries no answer; None otherwise.
+
+    A Competency Compiler receipt says in a typed field (``host_stop``) that a worker timed out, exited abnormally
+    or could not be launched, or that the compute budget ran out, before any method answered. A cortex receipt on
+    the direct route has no such field; it says so in its own typed ``reason_code`` (``CORTEX_STOP_CODES``). Such
+    a reading establishes nothing in either direction: it is no failure of its check, and no success whatever its
+    predicate. Whether a receipt carries an answer is ``unanswered``'s reading alone; this adds only the receipt's
+    own word on why it does not."""
+    if not unanswered(output):
+        return None
+    stop = output.get("host_stop")
+    if isinstance(stop, dict) and stop.get("failure_class") in HOST_STOP_CLASSES:
+        return stop["failure_class"]
+    if "abstention_state" in output and "host_stop" not in output:
+        return CORTEX_STOP_CODES.get(output.get("reason_code"))
+    return None
 
 
 def blames_strategy(reason: str) -> bool:
@@ -2385,12 +2460,15 @@ class MissionEngine:
             # asked and the mission re-observed forever.
             # The streak counts observation rounds, not readings: three unmeasurable checks are one round, not
             # three (review of #209, E3).
+            # A round the Mind declined (``declined``: a compile receipt with no answer and no host stop) ends the
+            # streak like a measured reading. It is recorded as unmeasured so that nobody is blamed for it, but the
+            # sensor did not fail to read: counted, a deficit followed by one stalled pass would be two rounds.
             rounds = []
             for obs in reversed([e.payload for e in self.journal.replay("mission.observed")
                                  if e.payload["mission_id"] == m.mission_id]):
                 if obs["check_id"] not in errors:
                     continue
-                if measured(obs):
+                if measured(obs) or obs.get("declined"):
                     break
                 if obs.get("at") not in rounds or obs.get("at") is None:
                     rounds.append(obs.get("at"))
@@ -2663,6 +2741,7 @@ class MissionEngine:
         for check in m.current_checks():
             sensor = check["sensor"]
             failure_class = None          # typed where a capability failure was raised, when one was
+            declined = None               # why the Mind gave no answer, where its receipt says the host did not stop it
             manifest, adapter, missing = self._resolve(sensor)
             if manifest is None:
                 self._deficit(m, sensor, now, purpose=f"sensor for {check['check_id']}")
@@ -2720,7 +2799,18 @@ class MissionEngine:
                     detail = f"sensor inconclusive (incomplete evidence): {detail}"
                     sensor_errors.add(check["check_id"])
                     inconclusive.add(check["check_id"])
+                if passed and unanswered(outcome.output) \
+                        and reads_answer(outcome.output, check["predicate"].get("field", "")):
+                    # The receipt carries no answer (the Mind declined, or the host stopped it), and the predicate
+                    # reads the answer: what it found is the answer's absence, not a reading of the world. It is
+                    # unmeasured, as a missing answer is under a predicate it fails (``why`` below): it never
+                    # passes and never fails. Before, ``absent result.counterexample`` passed on a deficit and on
+                    # a signed budget below the smallest step, and the mission closed ACHIEVED on a question
+                    # nobody answered (review of 1c4a758c, N1). A predicate about the receipt's own state still
+                    # reads it (``reads_answer``).
+                    passed = False
                 fault = outcome.output.get("capability_fault") if isinstance(outcome.output, dict) else None
+                stopped = False      # this reading is already recorded as one a fault or the host kept from reading
                 if not passed and isinstance(fault, dict) and self.genesis is not None \
                         and fault.get("capability_id") in self.registry.manifests:
                     # A construction the Mind invoked faulted: attribute it to that capability, so the
@@ -2739,27 +2829,54 @@ class MissionEngine:
                         failure_class = failure_class or "executor_error"
                         sensor_errors.add(check["check_id"])
                         self.mind_faults.add(check["check_id"])
+                        stopped = True
                     elif failure_class in ("transient", "budget_exceeded"):
                         # The host (or a resource ceiling) stopped the construction: the world was not
                         # measured. The SENSOR_RETRY path applies; no strategy is blamed for it.
                         detail = f"sensor inconclusive ({failure_class}): {detail}"
                         sensor_errors.add(check["check_id"])
                         inconclusive.add(check["check_id"])
+                        stopped = True
+                halted = None if stopped else host_stop(outcome.output)
+                if halted:
+                    # The receipt carries no answer because the host (or a resource ceiling) ended the compiled
+                    # decision: a worker timed out, exited abnormally or could not be launched, or the compute
+                    # budget ran out (the receipt's typed ``host_stop``, greg.cognition.compiler). The world was
+                    # not measured, and a later read may succeed, so the reading takes the path of a construction
+                    # the host stopped: SENSOR_RETRY with a back-off, and the founder asked once after three
+                    # unmeasured rounds. Before, it was recorded as a measured failure, and a question with no
+                    # strategy asked the founder for one the first time the host stalled.
+                    # It counts as unmeasured whatever the predicate made of it. A predicate an empty receipt
+                    # satisfies (``absent``, an equality with None) used to pass on such a reading, and the
+                    # mission closed ACHIEVED on a question nobody had answered.
+                    passed, failure_class = False, halted
+                    detail = f"sensor inconclusive ({failure_class}): {detail}"
+                    sensor_errors.add(check["check_id"])
+                    inconclusive.add(check["check_id"])
                 views = disagreement(outcome.output)
                 if views and not passed:
                     self.disagreements[check["check_id"]] = {**views, "observation": outcome.receipt_hash}
-                why = None if passed else unanswered(outcome.output)
+                why = None if passed or stopped or halted else unanswered(outcome.output)
                 if why:
                     # The receipt abstained: the world was not measured. The mission keeps its
                     # retry cadence (learned routing settles the lead engine's resource failure
                     # from these retries); _record_routing_outcomes never blames the strategy.
                     detail = f"sensor inconclusive ({why}): {detail}"
                     unread.add(check["check_id"])
+                    if "host_stop" in outcome.output:
+                        # A compile receipt says whether the host stopped it, and this one says it did not: the
+                        # Mind declined (a deficit, a prohibition, a question for a person, missing inputs). That
+                        # is no failed measurement, so it ends the run of unmeasured rounds the SENSOR_FAILURE
+                        # question counts, as it did when it was recorded as a measured failure. A cortex receipt
+                        # cannot say, and its abstentions count as before.
+                        declined = why
             data = {"mission_id": m.mission_id, "check_id": check["check_id"], "passed": passed,
                     "detail": detail[:300], "receipt": outcome.receipt_hash, "rung": m.rung, "at": iso(now),
                     "capability": manifest.capability_id}     # the sensor as resolved (a spec may name a function)
             if failure_class is not None:
                 data["failure_class"] = failure_class
+            if declined is not None:
+                data["declined"] = declined
             self.journal.record("mission.observed", data, key=[m.mission_id, check["check_id"], outcome.proposal_id])
             if outcome.receipt_hash:
                 evidence.append(outcome.receipt_hash)

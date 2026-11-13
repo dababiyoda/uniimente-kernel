@@ -158,7 +158,7 @@ jobs:
         run: python scripts/ci/check_cathedral_detector_mutants.py
       - name: Effect-call allowlist mutations (every process or connection GREG's code opens is listed)
         run: python scripts/ci/check_effect_call_allowlist_mutants.py
-      - name: Node revocation and enrolled-node receipt mutations (NODE_REVOKE founder-only, receipts admitted only inside the node's cone)
+      - name: Node and device revocation mutations (NODE_REVOKE founder-only, receipts admitted only inside the node's cone, a waiting device revocation wins, no device key while history ends mid-record, the stop control's settle window)
         run: python scripts/ci/check_node_revoke_mutants.py
 
   verifier:

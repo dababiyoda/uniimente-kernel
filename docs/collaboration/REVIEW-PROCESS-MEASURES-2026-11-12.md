@@ -45,6 +45,13 @@ second process, not an independent operator).
 | operational slice, case 2 | the transfer worked without product code, but the rule language has no lookup, loop or conditional, so case 2's rulebook is 2,199 generated lines tied to one contract; a duplicate has no route of its own; a payment is read for a declined case; a later draw's payment is never counted; needs are static, so extra facts are asked for | the pre-registered withheld case and its frozen naive baseline (12/12 against GREG's 11/12) | after case 1 was built and reviewed |
 | #304 (base defect) | **a fix that did not reach every consumer**: the ledger's tolerant tail policy was added for the reader-racing-writer case, but a test observer written the day before kept the strict policy, and so did four product readers (`greg serve`, the proof host's stop check, the morning review, the research report); `greg serve` dropped the phone's request | CI job 1 on #304, then a root-cause investigation and a skeptic (deterministic `userfaultfd` reproduction) | #313 |
 | session capacity | the agent capacity for this session ran out mid-flight (weekly limit until 2026-11-18 11:00 UTC): #305 round 4, the live-reader review and the #310 re-check did not run; work left uncommitted is preserved as a patch | the workflow results | after 22:00 UTC |
+| operational slice, second fix round | a posting for a suffixed sibling reference (`LD-240117-B`) was counted as `LD-240117`'s payment and could close two cases VERIFIED (the reference boundary treated a dash as the end of a reference; present since round 1); the new temporary-folder sweep raised `OverflowError` on a folder name holding a pid no process can have, so every packet delivery failed (introduced by the round); the packet's `Accepted:` line appended the rule's own wording, so "no" read like "accepted" | independent re-check of both fix rounds (35 of 35 earlier findings rebuilt on old and new heads; 31 no longer reproduce, 4 are recorded founder decisions) | after two fix rounds, before the PR |
+| #310 fix round | **a fix that did not reach every consumer (second occurrence)**: the re-seal to `freeze-v13` left the ten-step evidence README naming `freeze-v12`, which CI jobs 9 and 1 check | CI jobs 9 and 1 on `49edcfca` | after push; fixed in `2a75c58d`, and `gates_for_changes.py` now prints a `TESTS-NAMING` line for every test that names a changed file |
+| #310 fix round | under a failure closure's `VERIFIED_UNMET`, a reading of a check the closure does not name settles as appraised, though the appraisal never re-derived it (an appraisal lends its verdict to evidence it did not examine; pre-existing) | independent re-check of `49edcfca` (F0-F8 fixed, F9 partly) | after the fix round |
+| #312 fix round | **two selections for one decision**: the withdrawal of a moot ask re-checks against the ranking the asks use (`_choice`), not the one the loop runs (`_pursue`), so a moot ask survives a re-attach (D1); an attach ask outlasts the alternative becoming runnable (D2) | independent re-check of `8abbfa7f` | after the fix round |
+| #313 | **an order chosen by the signer**: the body applies inbox commands in filename order, and a filename starts with the signer's own `issued_at`, so a device that backdates its clock (within the five minutes the verifier allows) has its command applied before the founder's pending `DEVICE_REVOKE` (high, present on the base); the tolerant tail lets `greg serve` keep serving and accepting a device whose revocation a crash tore (medium, introduced); the stop-settle deadline was fixed before a first read that alone can take over a second (medium) | independent review of `7474e937` (each finding reproduced with probes, including a `userfaultfd`-held writer) | after push; fix round running |
+| #305 round 4 | one of 30 new confinement mutants survived (E10: the test did not name what could not be listed) | the intake mutation gate (29/30) | before push; fixed in `da8ccb0d` (30/30) |
+| environment | the shared disk reached 99-100% during the slice re-check (three gate attempts); a container restart at about 00:40 UTC stopped a running workflow and a probe run (the scratchpad and uncommitted work survived) | the agents' reports; the session | 2026-11-12 22:00 to 2026-11-13 00:45 UTC |
 | #308 | `a995c3ce` (the session's own fix for job 11) moved job 8's two `GITHUB_ENV` lines into a new shell: job 8 ran with the browser variables empty and **passed** | independent review (F1, medium) | after push; **CI green**, so only review could see it |
 | candidate `e0f84ed1` | a genome test raced the clock (UNKNOWN after 18,110 of 20,000 states on a loaded runner) | CI job 1 | after push; #309 |
 | #291 + #273 | #273's call site refused beside #291 (13 of 17 tests) | composing by hand (2026-11-11); found again unaided by the intake mission (2026-11-12) | before intake |
@@ -84,7 +91,12 @@ behaviour conflicts and should not be read as a compatibility check.
 | a test that pins another unit's old defect | the intake mission, when the selection holds no descendant of the old head (F18 in fix) | pre-registered case: missed with the descendant present, found without it |
 
 Not yet shown: that any of these caught a defect in a unit built **after** it existed. The first unit to test that
-is the operational slice (built after all five), whose review results will be recorded here.
+was the operational slice (built after all five). Result: **none of its 35 confirmed review findings, nor the three
+the re-check added, was reported by the catches that ran on it** (`gates_for_changes.py`, the baseline runner and
+the stale-anchor scan ran clean on each of its heads); every one came from independent review. The composition
+catches (the intake mission and the candidate) have not yet been run on it. Its defects are domain logic (rule
+evaluation, references, asks, packets), outside each catch's class: the catches guard their classes and do not
+replace review.
 
 ## 4. Cost and delay (recorded where read)
 
@@ -124,3 +136,14 @@ when the session's usage limit halted every agent (03:45 to about 10:00 UTC).
    narrow guard.
 4. This file records, for the operational slice and each later unit, which of its defects the earlier catches
    found and which still escaped to review or CI.
+
+## 6. Recurrence of named classes
+
+| Class | Occurrences | Earlier catch added | Did it fire since? |
+|---|---|---|---|
+| a fix that did not reach every consumer | #304's tolerant tail (four product readers and one test observer missed; #313); #310's re-seal (one evidence README missed) | `TESTS-NAMING` lines in `gates_for_changes.py`; #313's reviewer searched every product ledger reader and found none missed | not yet exercised on a later unit |
+| a boundary re-derived instead of enforced | #305 rounds 1-3 (the pin re-implemented git's path handling) | round 4 confines git and tar with the kernel (Landlock) instead | its independent re-check is running |
+| a finding list cut short on its way to a fixer | the operational slice's first fix round | later rounds pass the whole finding text inline and the review file's path | no recurrence in the three later fix rounds |
+| two selections for one decision | #312 (asks, loop and withdrawal ranked differently) | none yet; the fix unifies the selection | fix round running |
+| an order chosen by the signer | #313's inbox order | none yet; the fix applies narrowing commands first | fix round running |
+

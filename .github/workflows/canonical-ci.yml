@@ -164,6 +164,8 @@ jobs:
         run: python scripts/ci/check_authority_attach_state_mutants.py
       - name: Authority registered-identity mutations (the office runs a capability's own registered adapter only)
         run: python scripts/ci/check_authority_registered_identity_mutants.py
+      - name: Retained-receipt mutations (a retained Gate receipt is read by its result, as the call that produced it read it)
+        run: python scripts/ci/check_retained_receipt_mutants.py
 
   verifier:
     # Its V2 re-runs tests/unit, so inside job 1 it pushed that job past its 30 minutes once the

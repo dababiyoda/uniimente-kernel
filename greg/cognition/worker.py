@@ -26,7 +26,7 @@ MAX_STDIN_REQUEST = 4 * 1024 * 1024
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from greg.cognition.contracts import CognitionError, canonical  # noqa: E402
+from greg.cognition.contracts import MEMORY_CEILING_EXIT, CognitionError, canonical  # noqa: E402
 from greg.cognition.solvers import SOLVERS  # noqa: E402
 
 
@@ -142,5 +142,13 @@ def main():
         emit(canonical({"error": "DEPENDENCY_UNAVAILABLE", "detail": str(exc)[:300]}))
 
 
+def run():
+    """``main``, with its memory ceiling typed: an allocation the ceiling refuses exits MEMORY_CEILING_EXIT."""
+    try:
+        main()
+    except MemoryError:
+        os._exit(MEMORY_CEILING_EXIT)
+
+
 if __name__ == "__main__":
-    main()
+    run()

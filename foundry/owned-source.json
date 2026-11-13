@@ -604,6 +604,7 @@
     "greg/rehearsal.py",
     "greg/remote.py",
     "greg/resilience.py",
+    "greg/revocation.py",
     "greg/routing.py",
     "greg/service.py",
     "greg/sop.py",

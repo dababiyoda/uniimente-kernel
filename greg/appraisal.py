@@ -48,6 +48,7 @@ from greg.founder import _signing_bytes
 from greg.journal import Journal
 from greg.lightcone import LightCone
 from greg.missions import INSUFFICIENT, TRUE, evaluate_receipt, judge, judge_receipt, pre_approved, unanswered
+from greg.missions import host_stop, reads_answer
 from provenance.ledger import EvidenceLedger, sha256_json
 
 REOBSERVABLE = {"fs.read", "fs.search", "fs.list", "git.inspect", "repo.pin_audit", "repo.integration_audit",
@@ -671,6 +672,20 @@ def appraise(request: dict) -> dict:
                 rederived = False
                 findings.append(f"{check['check_id']}: the receipt abstained "
                                 f"({unanswered(receipt.payload['result'].get('output'))}), so it proves no failure")
+            elif passed and host_stop(receipt.payload["result"].get("output")):
+                # A receipt the host stopped answered nothing: a predicate it satisfies by being empty (absent, an
+                # equality with None) is no reading of a success (the engine records it "sensor inconclusive").
+                rederived = False
+                findings.append(f"{check['check_id']}: the host stopped the receipt's read "
+                                f"({host_stop(receipt.payload['result'].get('output'))}), so it proves no success")
+            elif passed and unanswered(receipt.payload["result"].get("output")) \
+                    and reads_answer(receipt.payload["result"].get("output"), check["predicate"].get("field", "")):
+                # A receipt that carries no answer, read by a predicate about the answer: what the predicate found
+                # is the answer's absence, which is no reading of a success (the engine records it unmeasured).
+                rederived = False
+                findings.append(f"{check['check_id']}: the receipt carries no answer "
+                                f"({unanswered(receipt.payload['result'].get('output'))}), so a predicate on its "
+                                "answer proves no success")
             elif receipt.payload["result"].get("result_class") != "positive":
                 # A refused sensor run is no reading of the world: it proves neither a success nor a failure.
                 rederived = False
@@ -716,6 +731,10 @@ def appraise(request: dict) -> dict:
                     # abstaining one (no answer) is no measurement of the world, either way
                     now_ok = None if now_verdict == INSUFFICIENT or (now_verdict != TRUE and unanswered(output)) \
                         else now_verdict == TRUE
+                    if host_stop(output):      # the host stopped this re-reading: it measured nothing, pass or miss
+                        now_ok = None
+                    if now_ok and unanswered(output) and reads_answer(output, check["predicate"].get("field", "")):
+                        now_ok = None      # a re-reading with no answer, judged on its answer: it measured nothing
                     reasons = output.get("findings") if isinstance(output, dict) else None
                     if not now_ok and isinstance(reasons, list) and reasons:
                         # Say why, in the capability's own words: a forged acceptance and a host that cannot

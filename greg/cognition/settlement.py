@@ -248,38 +248,51 @@ def _observation_appraisal(journal, settling=None, book=None):
 def _claim_standing(book, seen) -> tuple:
     """Whether a claim that settles under none of its readings yet ever can (``_observation_appraisal``):
     ("open", ()) while one of its readings has no closure that evaluated it yet, or is judged by a closure whose
-    appraisal has established nothing yet (unappraised, or a final UNAVAILABLE, which is appraised again);
-    ("never", (verdicts, unread)) when each reading is judged by a closure whose established verdict, final
-    (greg/appraisal.py: a closure with one is never appraised again), is not an eligible settling one, or was
-    re-derived by no appraisal (``Standings.reading``), or comes after the mission's achievement, after which no
-    closure is recorded. ``verdicts`` say how those closures stand; ``unread`` whether some reading was re-derived by
-    no appraisal."""
-    verdicts, waiting, unread = set(), False, False
+    appraisal has established nothing yet and still may: a closure not appraised yet, or one the appraiser answered
+    UNAVAILABLE because it ran nothing for a capability that is not ATTACHED, which the body appraises again once the
+    founder attaches it (greg/body.py ``not_run_by_appraiser``, ``Body._reattached_closures``);
+    ("never", (verdicts, unread, unavailable)) when each reading is judged by a closure whose established verdict,
+    final (greg/appraisal.py: a closure with one is never appraised again), is not an eligible settling one, or whose
+    final appraisal is an UNAVAILABLE the body never repeats (no verdict in APPRAISAL_ATTEMPTS appraiser runs, or
+    appraised too late to establish it: greg/body.py ``appraised_late``), or was re-derived by no appraisal
+    (``Standings.reading``), or comes after the mission's achievement, after which no closure is recorded.
+    ``verdicts`` say how those closures stand, ``unavailable`` why those were left unavailable, and ``unread``
+    whether some reading was re-derived by no appraisal."""
+    from greg.body import appraised_late, not_run_by_appraiser
+    verdicts, unavailable, waiting, unread = set(), set(), False, False
     for *_, mission_id, _, event in seen:
         closure, why = book.reading(mission_id, book.pos.get(event.event_id), event.payload.get("check_id"))
         if closure is not None:
-            if closure.standing is None:
-                waiting = True
-            else:
+            final = closure.record
+            if closure.standing is not None:
                 verdicts.add(closure.verdict if closure.verdict == "REFUTED"
                              else f"{closure.verdict} without the checks settlement requires")
+            elif final is None or not_run_by_appraiser(final.payload):
+                waiting = True          # not appraised yet, or appraised again once what was not run is attached
+            else:                       # a final UNAVAILABLE: it established nothing and is never repeated
+                unavailable.add("appraised too late to establish it" if appraised_late(final.payload)
+                                else "no verdict in the appraiser's runs")
         else:
             achieved = book.achievement(mission_id)
             if why == "open" and (achieved is None or achieved.event_id is None):
                 waiting = True          # no closure recorded after it yet: a later one may claim it
             else:
                 unread = True           # no appraisal re-derives it, now or later (nothing closes after an achievement)
-    return ("open", ()) if waiting else ("never", (tuple(sorted(verdicts)), unread))
+    return ("open", ()) if waiting else ("never", (tuple(sorted(verdicts)), unread, tuple(sorted(unavailable))))
 
 
-def _never_why(verdicts, unread) -> str:
+def _never_why(verdicts, unread, unavailable=()) -> str:
     """Why a claim never settles (``_claim_standing``), for the founder-facing rows."""
     said = []
     if verdicts:
         said.append("its readings' own closures stand " + ", ".join(verdicts)
                     + " (final: a closure with an established verdict is never appraised again)")
-    if unread or not verdicts:
-        said.append(("its other readings were" if verdicts else "its readings were")
+    if unavailable:
+        said.append(("its other readings' own closures were" if verdicts else "its readings' own closures were")
+                    + " appraised UNAVAILABLE (" + "; ".join(unavailable) + "), which establishes nothing and is "
+                    "final: the body does not appraise such a closure again")
+    if unread or not (verdicts or unavailable):
+        said.append(("its other readings were" if verdicts or unavailable else "its readings were")
                     + " re-derived by no appraisal, and none ever will be")
     return ", and ".join(said)
 

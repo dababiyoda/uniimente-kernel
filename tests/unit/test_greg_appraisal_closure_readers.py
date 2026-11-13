@@ -1021,7 +1021,13 @@ def test_a_claim_says_it_never_settles_when_its_own_closure_stands_on_a_final_re
     for an appraisal. When the claim's own closure is still unappraised, it waits for that closure, not for the
     mission's current one. A reading taken after a bounded mission's achievement is evaluated by no closure and
     never will be. Before (independent re-check of #310, C3), priority_why said the claim waits "until that closure
-    is appraised" next to "the mission's current closure stands VERIFIED"."""
+    is appraised" next to "the mission's current closure stands VERIFIED".
+
+    A final UNAVAILABLE is final too: no verdict in the body's appraiser runs, or appraised too late to establish the
+    closure, and the body never appraises that closure again (greg/body.py). Only the appraiser's answer that it ran
+    nothing for a capability that is not ATTACHED waits: the closure is appraised again once the founder attaches it.
+    Before (independent re-check of #310, N2), a claim on a final UNAVAILABLE was told it waits for an appraisal."""
+    from greg.body import not_run_by_appraiser
     from tests.unit.test_greg_pending_construction_realization import CHECK, observe, pending
 
     def hold(journal):
@@ -1049,6 +1055,35 @@ def test_a_claim_says_it_never_settles_when_its_own_closure_stands_on_a_final_re
     assert (row["priority"], row["claim_settles"]) == ("hold", False)
     assert row["priority_why"].startswith("this claim cannot settle") and "REFUTED" in row["priority_why"]
     assert "until" not in row["priority_why"]
+
+    def answered(journal, closure_event, **answer):     # an UNAVAILABLE as the body records it
+        journal.record("mission.appraised", {"mission_id": "m:pending-fixture", "verdict": "UNAVAILABLE",
+                                             "closure_event": closure_event, "checks": {k: False for k in CHECKS},
+                                             **answer})
+        return journal.events[-1].payload
+
+    for final, said in (({"findings": ["killed", "killed", "killed"], "attempts": 3}, "no verdict in the "
+                         "appraiser's runs"), ({"appraised_late": {"stale": ["the world no longer agrees"]}},
+                                               "appraised too late to establish it")):
+        journal, receipt = pending()                    # hold 1's final answer is an UNAVAILABLE never repeated
+        payload = answered(journal, hold(journal), **final)
+        assert not not_run_by_appraiser(payload)        # the body never has hold 1 appraised again
+        appraise(journal, "VERIFIED", hold(journal))
+        [row] = settlement.awaiting_realization(journal)
+        assert row["settles"].startswith("never: its readings' own closures were appraised UNAVAILABLE (" + said)
+        row = dispute(journal, receipt)
+        assert row["priority_why"].startswith("this claim cannot settle") and said in row["priority_why"]
+        assert "until" not in row["priority_why"] and row["claim_settles"] is False
+
+    journal, receipt = pending()                        # the one UNAVAILABLE that waits: a capability not attached
+    payload = answered(journal, hold(journal), not_run={"fs.read": "fs.read is DETACHED"},
+                       appraised_late={"stale": ["the world no longer agrees"]})
+    assert not_run_by_appraiser(payload)                # appraised again once the founder attaches fs.read
+    appraise(journal, "VERIFIED", hold(journal))
+    [row] = settlement.awaiting_realization(journal)
+    assert row["settles"].startswith("only once")
+    row = dispute(journal, receipt)
+    assert row["priority_why"].startswith("no appraisal settles this claim's observations yet")
 
     journal, receipt = pending()
     hold(journal)                                       # hold 1: the claim's own closure, not appraised yet

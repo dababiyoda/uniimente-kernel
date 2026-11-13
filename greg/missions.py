@@ -2173,7 +2173,16 @@ class MissionEngine:
         repaired = self._self_repair(m, now)
         if repaired is not None:
             return repaired
-        errors = set(self.sensor_errors)
+        # What this pass may pursue. A reading the evidence could not decide is not pursued (below). Neither is a
+        # check whose formed sensor capability itself faulted, whichever way the fault reached this pass (the sensor
+        # call failed, or the Mind's answer named the construction that faulted): no strategy mends the instrument
+        # that reads it, and self-repair replaces that capability on its second strike.
+        pursuable = failing - self.inconclusive - set(self.capability_faults)
+        # The pass re-observes, and pursues nothing, in two cases. Every failing check is a sensor error other than
+        # a fault the Mind named: the rule as it was, which a Mind-named fault never met because it was recorded as
+        # measured. Or nothing is left to pursue. A sensor the capability refused beside a Mind-named fault keeps
+        # its route, as it did when that fault counted as a measured failure.
+        errors = set(failing) if not pursuable or failing <= set(self.sensor_errors) - self.mind_faults else set()
         if errors and errors == failing:
             # The world was not measured; that is not a failed goal. Back off and
             # re-observe; escalate once after repeated measurement failure.
@@ -2210,7 +2219,10 @@ class MissionEngine:
         # and closes nothing. Before, it rode along with another check's real failure: its strategies were dispatched
         # and the failure closure named it as "re-observed failing" (review of #196, J1). A sensor the capability
         # refused keeps its route: a strategy may create what it reads (a catalog's offer before its discover).
-        return self._pursue(m, now, failing - self.inconclusive, evidence)
+        # A check whose formed sensor capability itself faulted is left out too (``pursuable`` above). Before, such a
+        # check rode along with another check's real failure, and the completed write that advances it was dispatched
+        # a second time, over whatever the world then held.
+        return self._pursue(m, now, pursuable, evidence)
 
     def _settle_uncertain(self, m: MissionState, s: dict, manifest, aid: str, attempt: int, scope_digest: str,
                           now: datetime, record: dict | None = None) -> dict:
@@ -2414,6 +2426,7 @@ class MissionEngine:
                     break
                 streak += 1
             if streak < 2:
+                self.awaiting_repair.add(check_id)
                 continue
             repaired, deferred = self._form(m, manifest.function, now, lambda: self.genesis.repair(
                 mission=m, capability_id=manifest.capability_id, failure=detail, params=params, now=now),
@@ -2450,6 +2463,8 @@ class MissionEngine:
         # pursued like any failing check, never certified as one: an abstaining receipt, an input not resolvable yet
         unread = self.unread = set()
         self.capability_faults = {}
+        self.mind_faults = set()        # checks whose fault the Mind's answer named (the sensor call itself was DONE)
+        self.awaiting_repair = set()    # faulted checks at their first strike: self-repair acts on the second
         self.disagreements = {}
         for check in m.current_checks():
             sensor = check["sensor"]
@@ -2515,6 +2530,15 @@ class MissionEngine:
                     failure_class = fault.get("failure_class")
                     if is_capability_fault(formed, detail, failure_class):
                         self.capability_faults[check["check_id"]] = (formed, detail, sensor.get("params", {}))
+                        # The construction that reads this check faulted, so the world was not measured. It is
+                        # recorded as a failed sensor call is: marked unmeasured and typed. Before, it was recorded
+                        # as a measured failure. Its strategy was then blamed for it, the retry path never counted
+                        # it (so nothing ever asked the founder), and a long predicate cut the fault's marker out
+                        # of the kept detail, which hid the fault from self-repair.
+                        detail = f"sensor inconclusive (capability fault): {detail}"
+                        failure_class = failure_class or "executor_error"
+                        sensor_errors.add(check["check_id"])
+                        self.mind_faults.add(check["check_id"])
                     elif failure_class in ("transient", "budget_exceeded"):
                         # The host (or a resource ceiling) stopped the construction: the world was not
                         # measured. The SENSOR_RETRY path applies; no strategy is blamed for it.
@@ -3481,6 +3505,15 @@ class MissionEngine:
             candidates.append((neg_expected, route, index, s, estimate))
         if not candidates and prepare_for is not None:
             return {"state": "NOTHING_TO_PREPARE"}
+        waits_on = {c for cs in held.values() for c in cs}
+        if not candidates and held and waits_on <= set(getattr(self, "awaiting_repair", ())):
+            # Every remaining route waits only on a check whose formed sensor capability faulted for the first time
+            # in a row. Self-repair replaces that capability on its second strike, so the mission looks again
+            # instead of asking the founder for a strategy; before, it asked and withdrew the question two passes
+            # later. A fault self-repair does not act on (a second strike it left alone) is not in the set, and
+            # the question below is asked as before.
+            self._schedule(m, now, 30)
+            return {"state": "SENSOR_RETRY", "checks": sorted(waits_on)}
         if not candidates:
             key = sha256_json({"failing": sorted(failing), "failed": sorted(m.failed), "excluded": sorted(m.excluded)})
             split = {c: v for c, v in sorted(getattr(self, "disagreements", {}).items()) if c in failing}

@@ -83,3 +83,13 @@ class Journal:
 
     def event_hash(self, event_id: str) -> str | None:
         return self.spine.record_hash(event_id)
+
+
+def foundry_events(journal) -> list[dict]:
+    """GREG's journal as it is handed to the Foundry systems (``greg foundry``; foundry/systems/*.py): one dict per
+    retained greg.* event, in ledger order. ``seq`` is the event's ledger position (``Journal.positions``: the same
+    number each time the event is handed over, since the ledger only grows) and is the order; ``at`` is the wall
+    clock when the ledger recorded it, which a clock correction can set back, so it is a time, never an order."""
+    position = journal.positions("")
+    return [{"type": e.type, "event_id": e.event_id, "payload": e.payload, "at": e.occurred_at,
+             "seq": position[e.event_id]} for e in journal.replay("")]

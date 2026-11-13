@@ -7,7 +7,9 @@ UNIIMENTE adds is the model and its discipline:
   - migrations are numbered, checksummed and reversible; a down migration exports
     the data it removes to a backup file and the next up migration restores it, so
     moving between versions never loses rows;
-  - GREG's journal is ingested idempotently by event id (re-ingesting is a no-op);
+  - GREG's journal is ingested idempotently by event id (re-ingesting is a no-op), and what it says about each
+    mission's closures is read in the journal's own order: each event's ledger position (``seq``), which GREG's
+    export carries (greg/journal.py ``foundry_events``), never the wall clock, which a correction can set back;
   - ``mission_ledger`` answers, per mission, what was intended, who authorized it,
     what was done at what cost, what reality said, and what money moved.
 
@@ -56,14 +58,16 @@ MIGRATIONS = [
     # only for the closure it judged, and a final UNAVAILABLE establishes nothing. ``last_verdict`` read the latest
     # outcome row, so a late verdict on an earlier closure replaced the standing of a newer one (founder ruling of
     # 2026-11-12: "A stale appraisal cannot qualify a different closure"). ``closure_facts`` keeps every fact that
-    # rule reads (registrations, closures, appraisals with the closure each names), one row per event id, and
-    # ``standings`` is derived from all of them in (at, event id) order after every ingest and on this migration
-    # (``_derive_standings``): it is a function of the facts the model holds, not of the order or grouping of the
-    # ingest calls that brought them. ``bound`` is 0 only on an appraisal row carried from schema 3's ``outcomes``,
-    # which kept no closures: the closure it judged is unknown until the journal is ingested again.
+    # rule reads (registrations, closures, appraisals with the closure each names), one row per event id with its
+    # ledger position (``seq``) when it was handed over with one, and ``standings`` is derived from all of them after
+    # every ingest and on this migration (``_derive_standings``), each mission's facts in ledger order: it is a
+    # function of the facts the model holds, not of the order or grouping of the ingest calls that brought them.
+    # ``bound`` is 0 only on an appraisal row carried from schema 3's ``outcomes``, which kept no closures: the
+    # closure it judged is unknown until the journal is ingested again. (``seq`` was added before this migration left
+    # its draft branch; a model built at the draft's first version of it is refused by its checksum.)
     (4, "closure standings", [
         "CREATE TABLE closure_facts (id TEXT PRIMARY KEY, mission_id TEXT, at TEXT, kind TEXT, closure_event TEXT, "
-        "verdict TEXT, bound INTEGER NOT NULL)",
+        "verdict TEXT, bound INTEGER NOT NULL, seq INTEGER)",
         "CREATE TABLE standings (mission_id TEXT PRIMARY KEY, closure TEXT, outcome_id TEXT, verdict TEXT, "
         "basis TEXT)",
         "DROP VIEW mission_ledger",
@@ -81,6 +85,9 @@ MIGRATIONS = [
 # The facts ``standings`` reads, and what a standing row says it rests on.
 CLOSURE_FACTS = ("mission.registered", "mission.held", "mission.achieved", "mission.unmet", "mission.appraised")
 FROM_CLOSURES = "closure"
+CLOCK_ORDER = ("closure, in recorded-time order: some of this mission's closure facts were handed over without their "
+               "ledger position (seq), so they are read in (at, event id) order, and a wall clock set back can put a "
+               "newer closure before an older one; hand them over again from greg.journal.foundry_events")
 UNBOUND = ("unbound: appraisals ingested under schema 3, which kept no closures, cannot be bound to the closure each "
            "judged; ingest the journal again to derive the standing")
 
@@ -183,42 +190,81 @@ def ingest_greg(root: Path, events: list[dict]) -> dict:
             if version(db) >= 4:
                 for e in events:
                     kind, p = e["type"].removeprefix("greg."), e["payload"]
-                    if kind in CLOSURE_FACTS:     # the fact as recorded; it replaces only a row carried unbound
-                        db.execute("INSERT INTO closure_facts VALUES (?,?,?,?,?,?,1) ON CONFLICT(id) DO UPDATE SET "
-                                   "mission_id = excluded.mission_id, at = excluded.at, kind = excluded.kind, "
-                                   "closure_event = excluded.closure_event, verdict = excluded.verdict, bound = 1 "
-                                   "WHERE closure_facts.bound = 0",
-                                   (e["event_id"], p.get("mission_id"), e["at"], kind, p.get("closure_event"),
-                                    p.get("verdict")))
+                    if kind not in CLOSURE_FACTS:
+                        continue
+                    seq = _position(e)
+                    held = db.execute("SELECT seq FROM closure_facts WHERE id = ?", (e["event_id"],)).fetchone()
+                    if seq is not None and held is not None and held[0] is not None and held[0] != seq:
+                        raise ModelError(f"event {e['event_id']} was handed over at ledger position {seq}, but the "
+                                         f"model holds it at {held[0]}: one model follows one ledger's order; "
+                                         "rebuild it from that ledger")
+                    # the fact as recorded; it replaces only a row carried unbound
+                    db.execute("INSERT INTO closure_facts VALUES (?,?,?,?,?,?,1,?) ON CONFLICT(id) DO UPDATE SET "
+                               "mission_id = excluded.mission_id, at = excluded.at, kind = excluded.kind, "
+                               "closure_event = excluded.closure_event, verdict = excluded.verdict, bound = 1, "
+                               "seq = coalesce(closure_facts.seq, excluded.seq) "
+                               "WHERE closure_facts.bound = 0",
+                               (e["event_id"], p.get("mission_id"), e["at"], kind, p.get("closure_event"),
+                                p.get("verdict"), seq))
+                    if seq is not None:           # a fact handed over again with its position gains it
+                        db.execute("UPDATE closure_facts SET seq = ? WHERE id = ? AND seq IS NULL",
+                                   (seq, e["event_id"]))
                 _derive_standings(db)
         return {"rows_changed": db.total_changes - before}
     finally:
         db.close()
 
 
+def _position(event: dict):
+    """The event's ledger position as handed over (``seq``: greg/journal.py ``foundry_events``), or None."""
+    seq = event.get("seq")
+    return seq if type(seq) is int and seq >= 0 else None
+
+
 def _derive_standings(db) -> None:
     """Each mission's current closure (its achievement, or its newest closure) and the outcome that stands for it,
-    derived by greg/appraisal.py ``standings`` from every closure fact the model holds, in (at, event id) order. So
-    it depends only on the set of facts ingested, never on the order or grouping of the ingest calls; re-ingesting
-    what the model holds changes nothing. The verdict is NULL while that closure has no verdict of its own. A mission
-    with an appraisal row carried unbound from schema 3 gets no verdict and the ``UNBOUND`` basis: the closure that
-    row judged is unknown, and reading it as the latest row would let a late verdict on an earlier closure stand for
-    a newer one (founder ruling of 2026-11-12)."""
+    derived by greg/appraisal.py ``standings`` from every closure fact the model holds, each mission's facts in their
+    ledger order (``seq``), as greg's own standings reads them. So it depends only on the set of facts ingested,
+    never on the order or grouping of the ingest calls; re-ingesting what the model holds changes nothing. The
+    verdict is NULL while that closure has no verdict of its own.
+
+    The one fallback: a mission with a fact that was handed over without its position is folded in (at, event id)
+    order and its basis says so (``CLOCK_ORDER``). That order is the ledger's only while the wall clock never went
+    back: after a correction (an NTP step, a restored virtual machine, a manual change) a newer closure stamped
+    earlier sorts first, so the row can show an older closure's verdict for a mission whose current closure has none
+    (a stale appraisal standing for a different closure), or leave an appraisal stamped before the closure it names
+    unbound; equal stamps fall to the event id, not the ledger. Handing the facts over again with their positions
+    ends it. A mission with an appraisal row carried unbound from schema 3 gets no verdict and the ``UNBOUND`` basis:
+    the closure that row judged is unknown, and reading it as the latest row would let a late verdict on an earlier
+    closure stand for a newer one (founder ruling of 2026-11-12)."""
     from greg.appraisal import standings_of_events
-    facts = db.execute("SELECT id, mission_id, at, kind, closure_event, verdict, bound FROM closure_facts "
-                       "ORDER BY at, id").fetchall()
-    unbound = {mid for _, mid, _, kind, _, _, bound in facts if not bound}
+    facts = db.execute("SELECT id, mission_id, at, kind, closure_event, verdict, bound, seq FROM closure_facts")
+    unbound, missions = set(), {}
+    for fact in facts:
+        if not fact[6]:
+            unbound.add(fact[1])
+        missions.setdefault(fact[1], []).append(fact)
+    ordered, clock = [], set()
+    for mid, rows in missions.items():
+        if mid in unbound:
+            continue
+        if all(seq is not None for *_, seq in rows):
+            rows.sort(key=lambda f: (f[7], f[0]))                 # the ledger's order
+        else:
+            clock.add(mid)
+            rows.sort(key=lambda f: (f[2], f[0]))                 # the fallback: (at, event id)
+        ordered += rows
     book = standings_of_events(
         {"type": "greg." + kind, "event_id": eid,
          "payload": {"mission_id": mid, **({"closure_event": named} if named else {}),
                      **({"verdict": verdict} if verdict is not None else {})}}
-        for eid, mid, _, kind, named, verdict, _ in facts if mid not in unbound)
+        for eid, mid, _, kind, named, verdict, _, _ in ordered)
     derived = {mid: (None, None, None, UNBOUND) for mid in unbound}
     for mid in book.missions():
         current = book.current(mid)
         stands = current.standing
         derived[mid] = (current.event_id or "achievement", stands.event_id if stands is not None else None,
-                        current.verdict, FROM_CLOSURES)
+                        current.verdict, CLOCK_ORDER if mid in clock else FROM_CLOSURES)
     for mid, row in derived.items():
         db.execute("INSERT INTO standings VALUES (?,?,?,?,?) ON CONFLICT(mission_id) DO UPDATE SET "
                    "closure = excluded.closure, outcome_id = excluded.outcome_id, verdict = excluded.verdict, "
@@ -231,10 +277,10 @@ def _from_schema_3(db) -> None:
     """Migration 4's derivation from what a schema-3 model stores: each registration (``decisions``) as a closure
     fact, and each appraisal row (``outcomes``) as one whose closure is unknown (``bound`` 0), unless the fact itself
     is already held (restored from a down migration's backup). Then ``_derive_standings``."""
-    db.execute("INSERT OR IGNORE INTO closure_facts SELECT id, mission_id, at, 'mission.registered', NULL, NULL, 1 "
-               "FROM decisions")
-    db.execute("INSERT OR IGNORE INTO closure_facts SELECT id, mission_id, at, 'mission.appraised', NULL, verdict, 0 "
-               "FROM outcomes")
+    db.execute("INSERT OR IGNORE INTO closure_facts SELECT id, mission_id, at, 'mission.registered', NULL, NULL, 1, "
+               "NULL FROM decisions")
+    db.execute("INSERT OR IGNORE INTO closure_facts SELECT id, mission_id, at, 'mission.appraised', NULL, verdict, 0, "
+               "NULL FROM outcomes")
     _derive_standings(db)
 
 

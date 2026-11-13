@@ -740,8 +740,9 @@ def test_hand_ordered_a_reading_settles_only_when_its_closures_appraisal_re_deri
 
 
 def body_events(journal) -> list[dict]:
-    return [{"type": e.type, "event_id": e.event_id, "payload": e.payload, "at": e.occurred_at}
-            for e in journal.replay("")]
+    """The events as ``greg foundry`` hands them to the Foundry readers (greg/cli.py)."""
+    from greg.journal import foundry_events
+    return foundry_events(journal)
 
 
 def test_the_foundry_readers_judge_each_run_by_its_own_closure_and_read_unavailable_as_unknown(tmp_path, capsys):
@@ -801,8 +802,8 @@ def test_the_foundry_readers_judge_each_run_by_its_own_closure_and_read_unavaila
 
 def test_the_mission_ledger_is_a_function_of_the_ingested_facts_and_migration_4_derives_it(tmp_path):
     """Hand-ordered. The Foundry data model's ``current_verdict`` is the standing of each mission's current closure
-    (greg/appraisal.py ``standings``), derived from every closure fact the model holds, in (at, event id) order: it
-    does not depend on the order or the grouping of the ingest calls that brought them. Migration 4 derives it from
+    (greg/appraisal.py ``standings``), derived from every closure fact the model holds, in ledger order: it does not
+    depend on the order or the grouping of the ingest calls that brought them. Migration 4 derives it from
     what the model already stores. Schema 3 kept no closures, so an appraisal row it stored cannot be bound to the
     closure it judged: such a mission is marked unbound, with no verdict, until the journal is ingested again (never
     read as the latest row, the reading the founder ruled out). Before (independent re-check of #310, C2): the
@@ -867,6 +868,112 @@ def test_the_mission_ledger_is_a_function_of_the_ingested_facts_and_migration_4_
     assert datamodel.migrate(root, 3)["steps"] == ["down 4"] and (root / "backup-v4.json").exists()
     assert datamodel.migrate(root, 4)["steps"] == ["up 4"]   # the facts come back and the standing is derived again
     assert ledger(root) == truth and datamodel.ingest_greg(root, events)["rows_changed"] == 0
+
+
+def test_the_mission_ledger_follows_the_ledger_order_after_the_wall_clock_was_set_back(tmp_path):
+    """Hand-ordered. The events GREG hands the Foundry (greg/journal.py ``foundry_events``) carry each event's
+    ledger position (``seq``), and the data model folds each mission's closure facts in that order, as greg's own
+    ``standings`` does, whatever their wall-clock stamps say. Two clock corrections:
+
+    - m:s, a standing mission: hold 1 appraised VERIFIED, then hold 2 recorded and not appraised yet, stamped before
+      hold 1 (the clock was set back). The current closure is hold 2 and it has no verdict: hold 1's VERIFIED is a
+      stale appraisal and cannot qualify it (founder ruling of 2026-11-12);
+    - m:t: a hold and its VERIFIED stamped before the hold. The appraisal names that hold, so it stands.
+
+    It stays a function of the facts the model holds: shuffled, reversed, brought in two calls or ingested again, the
+    view is the same and re-ingesting changes no row. A mission with a fact handed over without its position is
+    folded in (at, event id) order, the one fallback, and its row says so; the fact handed over again with its
+    position gains it. One event at two positions is refused, and nothing of that ingest is kept. A down and up
+    migration keeps the positions. Before (independent re-check of #310, N1): facts were folded in (at, event id)
+    order, so m:s showed hold 1's VERIFIED and m:t no verdict, while greg's standings said None and VERIFIED."""
+    import random
+    from foundry.systems import datamodel
+    from greg.journal import foundry_events
+    led = Hand(tmp_path)
+    led.register("m:s", closure={"kind": "infinite"})
+    led.run("m:s")
+    led.observe("m:s")
+    led.appraise("m:s", "VERIFIED", led.close("m:s", "held"))
+    led.run("m:s")
+    led.observe("m:s")
+    newer = led.close("m:s", "held")                    # recorded, not appraised yet
+    led.register("m:t", closure={"kind": "infinite"})
+    led.run("m:t")
+    led.observe("m:t")
+    stamped_early = led.appraise("m:t", "VERIFIED", led.close("m:t", "held"))
+    events = foundry_events(led.j)
+    assert [e["seq"] for e in events] == list(range(len(events)))
+    for e in events:
+        if e["event_id"] in (newer.event_id, stamped_early.event_id):
+            e["at"] = "2000-01-01T00:00:00.000000Z"     # the wall clock was set back before these were recorded
+    book = appraisal.standings(led.j)
+    truth = {"m:s": None, "m:t": "VERIFIED"}
+    assert {mid: book.current(mid).verdict for mid in truth} == truth
+    assert book.current("m:s").event_id == newer.event_id
+
+    def ledger(root, column="current_verdict"):
+        return {r["mission_id"]: r[column] for r in datamodel.mission_ledger(root)}
+
+    root = tmp_path / "model"
+    datamodel.migrate(root, 4)
+    datamodel.ingest_greg(root, events)
+    assert ledger(root) == truth and set(ledger(root, "current_basis").values()) == {datamodel.FROM_CLOSURES}
+    shuffled = events[:]
+    random.Random(11).shuffle(shuffled)
+    for again in (events, shuffled, events[::-1]):
+        assert (datamodel.ingest_greg(root, again)["rows_changed"], ledger(root)) == (0, truth)
+    pieces = tmp_path / "pieces"                       # the same facts in two calls, each out of order
+    datamodel.migrate(pieces, 4)
+    datamodel.ingest_greg(pieces, shuffled[:9])
+    datamodel.ingest_greg(pieces, shuffled[9:][::-1])
+    assert ledger(pieces) == truth
+
+    bare = tmp_path / "bare"                           # handed over without positions: the fallback, and it says so
+    datamodel.migrate(bare, 4)
+    datamodel.ingest_greg(bare, [{k: v for k, v in e.items() if k != "seq"} for e in events])
+    assert set(ledger(bare, "current_basis").values()) == {datamodel.CLOCK_ORDER}
+    datamodel.ingest_greg(bare, events)                # the same facts again, with their positions
+    assert ledger(bare) == truth and set(ledger(bare, "current_basis").values()) == {datamodel.FROM_CLOSURES}
+    assert datamodel.ingest_greg(bare, events)["rows_changed"] == 0
+
+    moved = [{**e, "seq": e["seq"] + 1} if e["event_id"] == newer.event_id else e for e in events]
+    with pytest.raises(datamodel.ModelError, match="ledger position"):
+        datamodel.ingest_greg(root, moved)
+    assert ledger(root) == truth and datamodel.ingest_greg(root, events)["rows_changed"] == 0
+
+    assert datamodel.migrate(root, 3)["steps"] == ["down 4"]
+    assert datamodel.migrate(root, 4)["steps"] == ["up 4"]   # the positions come back with the facts
+    assert ledger(root) == truth and set(ledger(root, "current_basis").values()) == {datamodel.FROM_CLOSURES}
+    assert datamodel.ingest_greg(root, events)["rows_changed"] == 0
+
+
+def test_greg_foundry_follows_the_ledger_order_after_the_wall_clock_was_set_back(tmp_path, capsys, monkeypatch):
+    """On a real body home, hand-ordered: ``greg foundry trace`` lists a mission's spans in ledger order, whatever
+    the wall clock said when each was recorded (greg/journal.py ``foundry_events`` carries ``seq``, which
+    foundry/systems/observability.py sorts on first). The clock is set back between the first hold and the second
+    run. Before (independent re-check of #310, N1, the same class in another consumer): the export carried only the
+    wall-clock stamp, so the second run and hold were listed before the first."""
+    from datetime import datetime, timezone
+    from events import spine
+    from greg import cli
+    home, _, _, _ = make_body(tmp_path)
+
+    class SetBack(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return datetime(2000, 1, 1, tzinfo=timezone.utc)
+
+    with Body(home) as body:
+        led = Hand.__new__(Hand)
+        led.j, led.n = body.journal, 0
+        written = [led.register("m:c", closure={"kind": "infinite"}), led.run("m:c"), led.close("m:c", "held")]
+        monkeypatch.setattr(spine, "datetime", SetBack)
+        written += [led.run("m:c"), led.close("m:c", "held")]
+        monkeypatch.undo()
+    assert written[-1].occurred_at < written[0].occurred_at
+    assert cli.main(["--home", str(home), "foundry", "trace", "--mission", "m:c"]) == 0
+    spans = json.loads(capsys.readouterr().out)["missions"]["m:c"]["spans"]
+    assert [s["event_id"] for s in spans] == [e.event_id for e in written]
 
 
 def test_cognition_settle_takes_computation_verified_only_from_the_receipts_own_closure(tmp_path):

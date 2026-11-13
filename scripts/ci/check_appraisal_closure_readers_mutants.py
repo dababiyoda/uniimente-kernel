@@ -13,8 +13,9 @@ the latest reading of that check in the window), and the book kept per journal. 
 greg/sop.py, greg/metrics.py, greg/routing.py, greg/cognition/settlement.py (and its word on whether a claim can
 still settle), greg/acceptance.py, greg/autonomy.py, greg/goal_gravity.py, greg/cognition/seed_path.py, and the
 Foundry readers (foundry/systems/reputation.py, twin.py, observability.py, graph.py, datamodel.py: the ledger view is
-derived from every stored closure fact, never from the order of the ingest calls, and migration 4 derives it from
-what is stored). Mutants are applied in a scratch copy of the repository, never to the working tree. The copy runs
+derived from every stored closure fact, never from the order of the ingest calls, each mission's facts in their
+ledger order and never the wall clock's, and migration 4 derives it from what is stored), with GREG's export to them
+(greg/journal.py ``foundry_events``, greg/cli.py ``greg foundry``: each event's ledger position). Mutants are applied in a scratch copy of the repository, never to the working tree. The copy runs
 without bytecode and its __pycache__ is purged before each mutant. A mutant is caught only when
 tests/unit/test_greg_appraisal_closure_readers.py reports a FAILED test (an import or collection error does not
 count). Exit status 1 if any mutant survives or no longer applies.
@@ -35,6 +36,8 @@ TWIN = "foundry/systems/twin.py"
 OBSERVABILITY = "foundry/systems/observability.py"
 GRAPH = "foundry/systems/graph.py"
 DATAMODEL = "foundry/systems/datamodel.py"
+JOURNAL = "greg/journal.py"
+CLI = "greg/cli.py"
 TESTS = "tests/unit/test_greg_appraisal_closure_readers.py"
 LATEST = 'for e in journal.replay("mission.appraised") if book.named_by(e.event_id)'
 READING = ('        closure = book.judging(p.get("mission_id"), book.pos.get(event.event_id), reading=True,\n'
@@ -165,11 +168,31 @@ MUTANTS = [
     (GRAPH, "an appraisal measures every receipt so far, whatever closure judged its run",
      '            for receipt in measured.get(id(closure), ()) if closure is not None else ():\n',
      '            for receipt in [r for rows in measured.values() for r in rows]:\n'),
-    (DATAMODEL, "the standing follows the order of the ingest calls, not the (at, event id) order of the facts",
-     '                       "ORDER BY at, id").fetchall()\n', '                       "ORDER BY rowid").fetchall()\n'),
+    (DATAMODEL, "the standing follows the order of the ingest calls, not the ledger order of the facts",
+     "            rows.sort(key=lambda f: (f[7], f[0]))                 # the ledger's order\n",
+     "            pass\n"),
     (DATAMODEL, "an appraisal row carried from schema 3 is read as one naming no closure",
-     '        for eid, mid, _, kind, named, verdict, _ in facts if mid not in unbound)\n',
-     '        for eid, mid, _, kind, named, verdict, _ in facts)\n'),
+     '        if mid in unbound:\n            continue\n', '        if False:\n            continue\n'),
+    # ... in the ledger's order, not the wall clock's (independent re-check of #310, N1)
+    (DATAMODEL, "a mission's facts are read in wall-clock order though every one carries its ledger position",
+     '        if all(seq is not None for *_, seq in rows):\n', '        if False:\n'),
+    (DATAMODEL, "the ledger position an event is handed over with is not read",
+     '    return seq if type(seq) is int and seq >= 0 else None\n', '    return None\n'),
+    (DATAMODEL, "a fact handed over again with its ledger position never gains it",
+     '                        db.execute("UPDATE closure_facts SET seq = ? WHERE id = ? AND seq IS NULL",\n',
+     '                        db.execute("UPDATE closure_facts SET seq = ? WHERE id = ? AND 0",\n'),
+    (DATAMODEL, "one event handed over at two ledger positions is accepted",
+     '                    if seq is not None and held is not None and held[0] is not None and held[0] != seq:\n',
+     '                    if False:\n'),
+    (DATAMODEL, "a row read in wall-clock order does not say so",
+     '                        current.verdict, CLOCK_ORDER if mid in clock else FROM_CLOSURES)',
+     '                        current.verdict, FROM_CLOSURES)'),
+    (JOURNAL, "GREG's export to the Foundry carries no ledger position",
+     '             "seq": position[e.event_id]} for e in journal.replay("")]',
+     '             } for e in journal.replay("")]'),
+    (CLI, "greg foundry hands its readers the wall clock only, not the ledger order",
+     '                    events = foundry_events(journal)\n',
+     '                    events = [{k: v for k, v in e.items() if k != "seq"} for e in foundry_events(journal)]\n'),
     (DATAMODEL, "migration 4 derives nothing from what the model already stores",
      '                if v in AFTER_UP:                      # derived from what is stored now, the restored rows '
      'included\n', '                if False:\n'),

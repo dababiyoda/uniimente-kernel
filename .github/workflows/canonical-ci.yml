@@ -210,6 +210,8 @@ jobs:
         run: python scripts/ci/check_browser_binary_mutants.py
       - name: Composition rehearsal mutations (a test that passes alone and fails merged is reported with its cause; nothing is merged)
         run: python scripts/ci/check_compose_rehearsal_mutants.py
+      - name: Compile-unanswered mutations (a compile receipt that did not answer is no measured failure; a host stop is retried, not asked about at once)
+        run: python scripts/ci/check_compile_unanswered_mutants.py
 
   verifier:
     # Its V2 re-runs tests/unit, so inside job 1 it pushed that job past its 30 minutes once the

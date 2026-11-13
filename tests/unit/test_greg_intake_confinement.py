@@ -478,6 +478,7 @@ def test_e10_a_name_too_long_to_look_up_is_a_refusal_never_a_transient_fault(tmp
     exc = refused(tmp_path, repo, shas, ["label"], monkeypatch)
     assert getattr(exc, "failure_class", None) != "transient", exc
     assert "too long" in str(exc).lower(), exc
+    assert "its git directory cannot be listed" in str(exc), exc      # what was being read when it failed, and where
 
 
 # -- the guard: what every git and tar process of the rehearsal may do ---------------------------------------------

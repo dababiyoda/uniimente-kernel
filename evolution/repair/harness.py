@@ -22,6 +22,19 @@ kernel's live import path — `closure/kernel_registry.py` still imports the
 original directly, and this module never edits it. Calling that "installation"
 without the qualification would overstate the result, so the qualification is in
 the evidence record as well as here.
+
+WHAT READS HISTORY AND WHAT READS LIVE CODE (CONTRADICTION-0002 Option A,
+FOUNDER-RULING-2026-08-23). Continuity is read from the frozen copies the
+subject binding names (``evolution/repair/continuity``): that is the historical
+question "does this run reproduce?". Everything else the experiment exercises is
+deliberately live, because the experiment is about the running institution
+losing and regaining a function: the measurement corpus (organs/, contracts/
+and the original manifest loader), the four candidates and the blind detector,
+the runtime disable, the on-disk original linker kept for rollback, the
+Constitution compiled by the live compiler while the function is absent, and
+shutdown. The twelve live continuity artifacts are read only to show that the
+run itself disturbed none of them. Whether the live Constitution is authorised
+is ``governance.integrity``'s question; this record never answers it.
 """
 from __future__ import annotations
 
@@ -65,13 +78,53 @@ CANDIDATES = {
 REPAIR_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
-def continuity_fingerprint(root: str = KERNEL_ROOT) -> str:
-    """One hash over the twelve artifacts that define identity and authority."""
+def continuity_fingerprint(root: str | None = None, *, subject=SR002) -> str:
+    """One hash over the twelve artifacts that define identity and authority.
+
+    With no root: the subject's frozen historical copies (CONTRADICTION-0002
+    Option A), so the answer is fixed by the subject binding and does not move
+    when the institution lawfully amends its live files. With a root: that
+    tree's bytes, in the same order.
+    """
+    if root is None:
+        return subject.fingerprint()
     digest = hashlib.sha256()
     for rel in spec.CONTINUITY_ARTIFACT_SHA256:
         with open(os.path.join(root, rel), "rb") as handle:
             digest.update(handle.read())
     return digest.hexdigest()
+
+
+def live_continuity_fingerprint(root: str = KERNEL_ROOT) -> str:
+    """The same twelve artifacts read from the live tree.
+
+    Compared only with itself across one run ("did this run disturb
+    anything?"), never with a freeze-time constant, and never presented as
+    the live constitutional tripwire.
+    """
+    return continuity_fingerprint(root)
+
+
+#: Recorded in every run so no reader has to infer which reading is which.
+READINGS = {
+    "history": [
+        "continuity: frozen copies named by the subject binding's digests "
+        "(evolution/repair/continuity), before, while absent and after",
+    ],
+    "live": [
+        "measurement corpus: organs/*.manifest.yaml through the original "
+        "linker loader, and contracts/*.schema.json",
+        "the four candidates, the blind detector and the runtime disable",
+        "original_on_disk_intact: the linker kept on disk as rollback target",
+        "authority_compiles: constitution/*.ucl compiled by the live compiler "
+        "while the function is absent",
+        "shutdown_succeeds: the live AffectController",
+        "continuity.live: the twelve live artifacts, compared only with "
+        "themselves across this run",
+    ],
+    "not_answered_here": "whether the live constitutional and authority "
+                         "artifacts are authorised (governance.integrity)",
+}
 
 
 def original_is_intact(root: str = KERNEL_ROOT) -> bool:
@@ -140,6 +193,11 @@ class ReplacementExperiment:
         self.subject = subject
         self.contracts_dir = os.path.join(root, "contracts")
         self.events: list[dict] = []
+        #: The live artifacts when the experiment is constructed. In-run
+        #: continuity compares the live tree with THIS, so the gate means
+        #: "the experiment disturbed nothing", while reproduction is judged on
+        #: the subject's frozen history.
+        self._live_continuity_at_start = live_continuity_fingerprint(root)
 
     # -- inputs ------------------------------------------------------------
 
@@ -199,7 +257,12 @@ class ReplacementExperiment:
 
         refusals_ok = not any(s.kind in ("refusal_incorrect", "health_check_failed")
                               for s in live.symptoms)
-        continuity_ok = self.subject.matches(self.root)
+        # Two duties, kept apart (CONTRADICTION-0002 Option A): the subject's
+        # frozen history must reproduce, and this trial must not have
+        # disturbed the live artifacts.
+        continuity_ok = (self.subject.matches()
+                         and live_continuity_fingerprint(self.root)
+                         == self._live_continuity_at_start)
 
         gates = {
             "live_edges_4_of_4": live.function_fraction == 1.0,
@@ -284,10 +347,13 @@ class ReplacementExperiment:
                         "environment": {"python": platform.python_version(),
                                         "platform": platform.system()}}
         record["subject_binding"] = self.subject.to_dict()
+        record["readings"] = READINGS
 
-        # 1. continuity before anything happens
-        before = continuity_fingerprint(self.root)
-        record["continuity"] = {"before": before}
+        # 1. continuity before anything happens: the subject's frozen history,
+        # and separately the live bytes this run must leave undisturbed.
+        before = continuity_fingerprint(subject=self.subject)
+        live = {"before": live_continuity_fingerprint(self.root)}
+        record["continuity"] = {"before": before, "live": live}
         manifests = self._live_manifests()
 
         # 2. control: the capability is healthy to begin with
@@ -307,7 +373,9 @@ class ReplacementExperiment:
                 expectations.live_contract(), manifests, self.contracts_dir)
             record["detected_loss"] = lost.to_dict()
             # 4. governance holds while the function is absent
-            record["continuity"]["while_absent"] = continuity_fingerprint(self.root)
+            record["continuity"]["while_absent"] = \
+                continuity_fingerprint(subject=self.subject)
+            live["while_absent"] = live_continuity_fingerprint(self.root)
             record["governance_while_absent"] = {
                 "authority_compiles": authority_still_compiles(self.root),
                 "shutdown_succeeds": shutdown_still_works(),
@@ -415,11 +483,25 @@ class ReplacementExperiment:
         record["spider_web_audit"] = self._audit().to_dict()
 
         # 12. continuity after
-        after = continuity_fingerprint(self.root)
+        after = continuity_fingerprint(subject=self.subject)
+        live["after"] = live_continuity_fingerprint(self.root)
+        #: The run-scoped safety property: this experiment changed nothing.
+        live["unchanged_by_this_run"] = (
+            live["before"] == live["while_absent"] == live["after"]
+            == self._live_continuity_at_start)
+        #: Recorded, never gated on: a lawful amendment of a live artifact
+        #: makes this False and that is correct.
+        live["matches_subject"] = self.subject.matches(self.root)
+        historical = (before == record["continuity"]["while_absent"] == after
+                      == self.subject.continuity_sha256
+                      and self.subject.matches())
         record["continuity"].update({
             "after": after,
-            "unchanged": before == after == self.subject.continuity_sha256
-                         and self.subject.matches(self.root),
+            "reading": ("historical: frozen copies of subject "
+                        f"{self.subject.subject_id} in evolution/repair/"
+                        "continuity (CONTRADICTION-0002 Option A)"),
+            "historical_reproduces": historical,
+            "unchanged": historical and live["unchanged_by_this_run"],
             "artifact_count": len(spec.CONTINUITY_ARTIFACT_SHA256),
         })
 
@@ -436,6 +518,11 @@ class ReplacementExperiment:
             "Manifest loading (YAML + schema validation) is performed once by "
             "the original loader before the disable. Only edge resolution is "
             "replaced, so the experiment's variable stays single.",
+            "Continuity is judged on the subject's frozen historical copies "
+            "(CONTRADICTION-0002 Option A). The live artifacts are read only "
+            "to show this run disturbed nothing; this record says nothing "
+            "about whether they are authorised, which is governance.integrity's "
+            "question.",
         ]
         record["events"] = self.events
         return record

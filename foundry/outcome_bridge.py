@@ -4,13 +4,18 @@ The existing Business Foundry owns payment, delivery, and customer-outcome
 execution. This bridge does not repeat those actions. It converts a completed
 CustomerCase plus explicit reconciliation evidence into an ExternalOutcome for
 Foundry retain/modify/kill review.
+
+``externally_verified`` comes only from external observation: the case's
+customer and money must both be observed from an external system of record
+(business/commercial_loop.py). A synthetic, fixture, emulator or test-mode
+case is refused here; it is never laundered into external verification.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any
 
-from business.commercial_loop import ACCEPTED_VERIFICATIONS, CustomerCase
+from business.commercial_loop import ACCEPTED_VERIFICATIONS, OBSERVED, CustomerCase, observation_problems
 from .advantage import AdvantageRefused, ExternalOutcome
 
 
@@ -56,6 +61,16 @@ def external_outcome_from_case(
         raise AdvantageRefused("commercial outcome detail is missing")
     if case.resolution not in {"retained", "terminated"}:
         raise AdvantageRefused("commercial case lacks a valid resolution")
+    if getattr(case, "customer_mode", None) != OBSERVED or getattr(case, "money_mode", None) != OBSERVED:
+        raise AdvantageRefused("a synthetic customer or synthetic money is never external verification "
+                               f"(customer {getattr(case, 'customer_mode', None)}, "
+                               f"money {getattr(case, 'money_mode', None)})")
+    for label, observation, money in (("customer", case.customer_observation, False),
+                                      ("money", case.money_observation, True)):
+        problems = observation_problems(observation, money=money)
+        if problems:
+            raise AdvantageRefused(f"{label} is labelled observed without an external observation: "
+                                   + "; ".join(problems))
 
     receipt_refs = tuple(dict.fromkeys((
         _require_hash(case.payment_receipt_hash, "payment_receipt_hash"),
@@ -63,6 +78,8 @@ def external_outcome_from_case(
         reconciliation.acceptance_receipt_ref,
         reconciliation.outcome_receipt_ref,
         reconciliation.reconciliation_ref,
+        case.customer_observation["record_ref"],
+        case.money_observation["record_ref"],
     )))
     return ExternalOutcome(
         economic_commitment_usd=float(reconciliation.economic_commitment_usd),

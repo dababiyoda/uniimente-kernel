@@ -318,7 +318,10 @@ def test_a_candidate_that_loops_is_judged_failed_by_its_cpu_limit_not_deferred_a
     path = tmp_path / "candidate.py"
     path.write_text(loop)
     passed, report = builders.verify(path, CONTRACT["examples"])
-    assert passed is False and "exited" in report["failures"][0]["error"]
+    # The 8s CPU limit normally ends it ("exited"); on a loaded host the 10s wall clock can come first, which
+    # verify also judges a failure, because the host ran an isolated no-op. Either way: failed, not an outage.
+    error = report["failures"][0]["error"]
+    assert passed is False and ("exited" in error or "while the host was healthy" in error), error
 
 
 class _CapBillingBuilder(builders.StaticBuilder):

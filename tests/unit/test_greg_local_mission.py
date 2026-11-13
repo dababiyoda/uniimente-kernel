@@ -1,6 +1,7 @@
 """Real local Git capability, synthetic pre-existing authority, no network."""
 import copy
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -269,3 +270,26 @@ def test_lost_host_claim_requires_reconciliation(mission, tmp_path):
     result = supervise(path, mission, auth)
     assert result["status"] == "HOST_ALREADY_CLAIMED"
     assert result["worker_exits"] == []
+
+
+def test_a_worker_that_always_dies_exhausts_the_bound_and_blocks_without_redispatch(mission, tmp_path, monkeypatch):
+    """Acceptance H.G6: the proof host's attempt bound driven to exhaustion. Every replacement worker dies with the
+    explicit proof-fault code (75), so the host replaces it exactly max_attempts times, then blocks for explicit
+    operator reconciliation; nothing was dispatched, and asking again forks nothing new."""
+    import egregore.local_mission as local_mission
+    auth, path = authority(mission), tmp_path / "history"
+    prepare(path, mission, auth)
+    monkeypatch.setattr(local_mission, "_worker", lambda *args: os._exit(75))
+    result = supervise(path, mission, auth)
+    assert result["worker_exits"] == [75, 75, 75] and result["attempt_limit"] == 3
+    assert len(set(result["worker_pids"])) == 3                     # three distinct replacements, then no more
+    assert result["status"] == "BLOCKED" and "no blind redispatch" in result["next_reconsideration"]
+    assert result["pending_message"]["kind"] == "RECOVERY_REQUIRED"
+    assert supervise(path, mission, auth) == result                  # retained: the same blocker, no fourth fork
+    history = ledger(path, auth)
+    try:
+        assert not history.by_type("grant_dispatch") and not history.by_type("receipt")
+        assert not EventSpine(history).replay("greg.closed")
+        assert len(EventSpine(history).replay("greg.host_stopped")) == 1
+    finally:
+        history.close()

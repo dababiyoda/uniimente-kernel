@@ -1,0 +1,348 @@
+{
+ "store": "evolution/repair/continuity",
+ "format": "content-addressed: objects/<sha256 hex> holds exactly the bytes whose sha256 is its name; no extension, so no copy is mistaken for a live Constitution, Gate or registry",
+ "ruling": "CONTRADICTION-0002 Option A, FOUNDER-RULING-2026-08-23 (docs/deliberations/FOUNDER-RULING-2026-08-23-infinite-goal-chase.md)",
+ "materialized_on": "2026-10-14",
+ "verification": "every copy was hashed and compared with the binding's pinned digest before it was written, the reachable witness was compared byte for byte, and each binding's combined sha256 was recomputed and equalled its continuity_sha256; tests/unit/test_repair_continuity_history.py re-proves all three against git",
+ "pinned_digests_changed": false,
+ "authority": "historical reproducibility only; not the live constitutional tripwire (governance.integrity), grants nothing",
+ "subjects": {
+  "package3-original": {
+   "binding": "evolution/repair/spec.py (FROZEN = spec.CONTINUITY_ARTIFACT_SHA256, spec.CONTINUITY_COMBINED_SHA256)",
+   "source_commit": "cb234faf932d239d79b0e7ab28e54f576b8a15bf",
+   "reachable_witness": "cb234faf932d239d79b0e7ab28e54f576b8a15bf",
+   "materialized_with": "git -C <kernel repository> show <source_commit>:<path>",
+   "continuity_sha256": "c1d621a80671d1f39f75e3d525561b45795a978d7d15b1eee7d43546140e63aa",
+   "artifacts": [
+    [
+     "constitution/constitution.ucl",
+     "5c269850d8da799db66030103c52a175596d9c5f3bb61d25f54d7da9dde2ecd0"
+    ],
+    [
+     "constitution/sovereignty.ucl",
+     "dc44c1f4304d42791a9db634796584531d40ba6b46191f2cba3877e48ee7fbcc"
+    ],
+    [
+     "constitution/shutdown-policy.ucl",
+     "e3b443663cc5ed81a8b8827d8feb49962f82f262e85c282113f534c2afab2e54"
+    ],
+    [
+     "constitution/amendment-policy.ucl",
+     "0132d53ec1e770a526f0e57888235a0b0bac4ed14b443782da537fb70b2ac01f"
+    ],
+    [
+     "constitution/participant-rights.ucl",
+     "feba5d83800cd5d04702087473eea4d38290950097072efc578cfd498d631687"
+    ],
+    [
+     "authority/authority-matrix.yaml",
+     "bd763098ecbbfd6ea7e8c9d80b83ed329fefd4766e53ed9b11006719fc671a45"
+    ],
+    [
+     "authority/legal-principals.yaml",
+     "bdbe881c32353ec3546c459f7250f2bc34b40b014e7fe661f36281c7b9af5061"
+    ],
+    [
+     "authority/reserved-matters.yaml",
+     "f185e0d11dec25e2bc3dbb73ce92bbb5d276358d1ac8abcaca7526a2805eb924"
+    ],
+    [
+     "identity/organ-registry.yaml",
+     "7a78955247df0d8204959d0cbb38b05d6e49578e3c0a9f3f0f7d0c916fcebb40"
+    ],
+    [
+     "identity/agent-registry.yaml",
+     "5c8b7b4775299c2c3943a4e3432798b1f864fada0070f4a5f3699400d95cd7fd"
+    ],
+    [
+     "identity/service-identities.yaml",
+     "cd8c2c493b22a25926bbcedb049ebe28d86bd6e087ab920c0bbe2bae08cceac0"
+    ],
+    [
+     "policy/consequence_gate.py",
+     "0b133b57eea1e349db63c8edf3ad9514d934e7b0b11f67cad0c9adc4b78a63ce"
+    ]
+   ]
+  },
+  "sr001-boundary-0.1.1": {
+   "binding": "evolution/repair/subjects.py SR001",
+   "source_commit": "3e059c20331d96e05a44daac1b097896aaabde93",
+   "reachable_witness": "b2f101a98d01d31e594018bc71b9d8d16e64d797",
+   "materialized_with": "git -C <kernel repository> show <source_commit>:<path>; the source commit is present in the repository object store but is not an ancestor of the branch, so reachable_witness carries the same bytes",
+   "continuity_sha256": "5594003e1f691bb4a20220505c932b69332c83743ece43a3325f5bbe89a19d70",
+   "artifacts": [
+    [
+     "constitution/constitution.ucl",
+     "5c269850d8da799db66030103c52a175596d9c5f3bb61d25f54d7da9dde2ecd0"
+    ],
+    [
+     "constitution/sovereignty.ucl",
+     "dc44c1f4304d42791a9db634796584531d40ba6b46191f2cba3877e48ee7fbcc"
+    ],
+    [
+     "constitution/shutdown-policy.ucl",
+     "e3b443663cc5ed81a8b8827d8feb49962f82f262e85c282113f534c2afab2e54"
+    ],
+    [
+     "constitution/amendment-policy.ucl",
+     "0132d53ec1e770a526f0e57888235a0b0bac4ed14b443782da537fb70b2ac01f"
+    ],
+    [
+     "constitution/participant-rights.ucl",
+     "feba5d83800cd5d04702087473eea4d38290950097072efc578cfd498d631687"
+    ],
+    [
+     "authority/authority-matrix.yaml",
+     "bd763098ecbbfd6ea7e8c9d80b83ed329fefd4766e53ed9b11006719fc671a45"
+    ],
+    [
+     "authority/legal-principals.yaml",
+     "bdbe881c32353ec3546c459f7250f2bc34b40b014e7fe661f36281c7b9af5061"
+    ],
+    [
+     "authority/reserved-matters.yaml",
+     "f185e0d11dec25e2bc3dbb73ce92bbb5d276358d1ac8abcaca7526a2805eb924"
+    ],
+    [
+     "identity/organ-registry.yaml",
+     "7a78955247df0d8204959d0cbb38b05d6e49578e3c0a9f3f0f7d0c916fcebb40"
+    ],
+    [
+     "identity/agent-registry.yaml",
+     "5c8b7b4775299c2c3943a4e3432798b1f864fada0070f4a5f3699400d95cd7fd"
+    ],
+    [
+     "identity/service-identities.yaml",
+     "cd8c2c493b22a25926bbcedb049ebe28d86bd6e087ab920c0bbe2bae08cceac0"
+    ],
+    [
+     "policy/consequence_gate.py",
+     "1c189be5af884932ed2115557b5a285883a2c6045af183c7f6f65a0815a06f2e"
+    ]
+   ]
+  },
+  "sr002-0.1.0": {
+   "binding": "evolution/repair/subjects.py SR002",
+   "source_commit": "07af5758197501662df81ff05e2b34ce8224a322",
+   "reachable_witness": "d7c235ae5f34e9370f44ca8567b13bcb0444e3f9",
+   "materialized_with": "git show <source_commit>:<path> after fetching the commit by sha from https://github.com/dababiyoda/uniimente-kernel into a scratch repository, because it is not in this repository's object store; reachable_witness is the merge (#103) that recorded this binding and carries the same bytes",
+   "continuity_sha256": "7755bdc6759a153f113cf4af98815f899b9a047aaf679fd38faff16b44f4aab8",
+   "artifacts": [
+    [
+     "constitution/constitution.ucl",
+     "5c269850d8da799db66030103c52a175596d9c5f3bb61d25f54d7da9dde2ecd0"
+    ],
+    [
+     "constitution/sovereignty.ucl",
+     "dc44c1f4304d42791a9db634796584531d40ba6b46191f2cba3877e48ee7fbcc"
+    ],
+    [
+     "constitution/shutdown-policy.ucl",
+     "e3b443663cc5ed81a8b8827d8feb49962f82f262e85c282113f534c2afab2e54"
+    ],
+    [
+     "constitution/amendment-policy.ucl",
+     "0132d53ec1e770a526f0e57888235a0b0bac4ed14b443782da537fb70b2ac01f"
+    ],
+    [
+     "constitution/participant-rights.ucl",
+     "feba5d83800cd5d04702087473eea4d38290950097072efc578cfd498d631687"
+    ],
+    [
+     "authority/authority-matrix.yaml",
+     "bd763098ecbbfd6ea7e8c9d80b83ed329fefd4766e53ed9b11006719fc671a45"
+    ],
+    [
+     "authority/legal-principals.yaml",
+     "bff91ae68dcf54aed7e4021c30d5230a25b35a2167928ddd70842702a2bd732b"
+    ],
+    [
+     "authority/reserved-matters.yaml",
+     "f185e0d11dec25e2bc3dbb73ce92bbb5d276358d1ac8abcaca7526a2805eb924"
+    ],
+    [
+     "identity/organ-registry.yaml",
+     "995810a39c21f7e8da811598fdd83e2fe07127c51656c9652d2283d98c3f1085"
+    ],
+    [
+     "identity/agent-registry.yaml",
+     "533e919e6c1cb918cfd249765f35ab24efc24729d79af804d09d96d65d45d20e"
+    ],
+    [
+     "identity/service-identities.yaml",
+     "cd8c2c493b22a25926bbcedb049ebe28d86bd6e087ab920c0bbe2bae08cceac0"
+    ],
+    [
+     "policy/consequence_gate.py",
+     "1c189be5af884932ed2115557b5a285883a2c6045af183c7f6f65a0815a06f2e"
+    ]
+   ]
+  }
+ },
+ "objects": {
+  "0132d53ec1e770a526f0e57888235a0b0bac4ed14b443782da537fb70b2ac01f": {
+   "size": 1780,
+   "paths": [
+    "constitution/amendment-policy.ucl"
+   ],
+   "subjects": [
+    "package3-original",
+    "sr001-boundary-0.1.1",
+    "sr002-0.1.0"
+   ]
+  },
+  "0b133b57eea1e349db63c8edf3ad9514d934e7b0b11f67cad0c9adc4b78a63ce": {
+   "size": 17356,
+   "paths": [
+    "policy/consequence_gate.py"
+   ],
+   "subjects": [
+    "package3-original"
+   ]
+  },
+  "1c189be5af884932ed2115557b5a285883a2c6045af183c7f6f65a0815a06f2e": {
+   "size": 19934,
+   "paths": [
+    "policy/consequence_gate.py"
+   ],
+   "subjects": [
+    "sr001-boundary-0.1.1",
+    "sr002-0.1.0"
+   ]
+  },
+  "533e919e6c1cb918cfd249765f35ab24efc24729d79af804d09d96d65d45d20e": {
+   "size": 2019,
+   "paths": [
+    "identity/agent-registry.yaml"
+   ],
+   "subjects": [
+    "sr002-0.1.0"
+   ]
+  },
+  "5c269850d8da799db66030103c52a175596d9c5f3bb61d25f54d7da9dde2ecd0": {
+   "size": 4536,
+   "paths": [
+    "constitution/constitution.ucl"
+   ],
+   "subjects": [
+    "package3-original",
+    "sr001-boundary-0.1.1",
+    "sr002-0.1.0"
+   ]
+  },
+  "5c8b7b4775299c2c3943a4e3432798b1f864fada0070f4a5f3699400d95cd7fd": {
+   "size": 2274,
+   "paths": [
+    "identity/agent-registry.yaml"
+   ],
+   "subjects": [
+    "package3-original",
+    "sr001-boundary-0.1.1"
+   ]
+  },
+  "7a78955247df0d8204959d0cbb38b05d6e49578e3c0a9f3f0f7d0c916fcebb40": {
+   "size": 2945,
+   "paths": [
+    "identity/organ-registry.yaml"
+   ],
+   "subjects": [
+    "package3-original",
+    "sr001-boundary-0.1.1"
+   ]
+  },
+  "995810a39c21f7e8da811598fdd83e2fe07127c51656c9652d2283d98c3f1085": {
+   "size": 2738,
+   "paths": [
+    "identity/organ-registry.yaml"
+   ],
+   "subjects": [
+    "sr002-0.1.0"
+   ]
+  },
+  "bd763098ecbbfd6ea7e8c9d80b83ed329fefd4766e53ed9b11006719fc671a45": {
+   "size": 2546,
+   "paths": [
+    "authority/authority-matrix.yaml"
+   ],
+   "subjects": [
+    "package3-original",
+    "sr001-boundary-0.1.1",
+    "sr002-0.1.0"
+   ]
+  },
+  "bdbe881c32353ec3546c459f7250f2bc34b40b014e7fe661f36281c7b9af5061": {
+   "size": 1199,
+   "paths": [
+    "authority/legal-principals.yaml"
+   ],
+   "subjects": [
+    "package3-original",
+    "sr001-boundary-0.1.1"
+   ]
+  },
+  "bff91ae68dcf54aed7e4021c30d5230a25b35a2167928ddd70842702a2bd732b": {
+   "size": 939,
+   "paths": [
+    "authority/legal-principals.yaml"
+   ],
+   "subjects": [
+    "sr002-0.1.0"
+   ]
+  },
+  "cd8c2c493b22a25926bbcedb049ebe28d86bd6e087ab920c0bbe2bae08cceac0": {
+   "size": 1694,
+   "paths": [
+    "identity/service-identities.yaml"
+   ],
+   "subjects": [
+    "package3-original",
+    "sr001-boundary-0.1.1",
+    "sr002-0.1.0"
+   ]
+  },
+  "dc44c1f4304d42791a9db634796584531d40ba6b46191f2cba3877e48ee7fbcc": {
+   "size": 2455,
+   "paths": [
+    "constitution/sovereignty.ucl"
+   ],
+   "subjects": [
+    "package3-original",
+    "sr001-boundary-0.1.1",
+    "sr002-0.1.0"
+   ]
+  },
+  "e3b443663cc5ed81a8b8827d8feb49962f82f262e85c282113f534c2afab2e54": {
+   "size": 2533,
+   "paths": [
+    "constitution/shutdown-policy.ucl"
+   ],
+   "subjects": [
+    "package3-original",
+    "sr001-boundary-0.1.1",
+    "sr002-0.1.0"
+   ]
+  },
+  "f185e0d11dec25e2bc3dbb73ce92bbb5d276358d1ac8abcaca7526a2805eb924": {
+   "size": 2112,
+   "paths": [
+    "authority/reserved-matters.yaml"
+   ],
+   "subjects": [
+    "package3-original",
+    "sr001-boundary-0.1.1",
+    "sr002-0.1.0"
+   ]
+  },
+  "feba5d83800cd5d04702087473eea4d38290950097072efc578cfd498d631687": {
+   "size": 2214,
+   "paths": [
+    "constitution/participant-rights.ucl"
+   ],
+   "subjects": [
+    "package3-original",
+    "sr001-boundary-0.1.1",
+    "sr002-0.1.0"
+   ]
+  }
+ }
+}

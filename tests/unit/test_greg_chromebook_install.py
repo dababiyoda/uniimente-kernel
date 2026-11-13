@@ -2,8 +2,8 @@
 
 Exercised in a Linux container without systemd, so --no-service and --allow-other-linux
 are used; the ChromeOS path, the systemd user service and Alfonso's passphrase-protected
-key are NOT exercised here. This proves the composition of existing greg commands, not
-a Chromebook install.
+key are NOT exercised here. A generated encrypted fixture key exercises only the
+read-only CLI. This proves the composition of existing greg commands, not a Chromebook install.
 """
 from __future__ import annotations
 
@@ -15,6 +15,9 @@ import subprocess
 import sys
 
 import pytest
+
+from greg.body import Body
+from greg.founder import FounderAuthError, generate_founder_key, key_id, load_founder_key, sign_command
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "greg/chromebook/install.sh"
@@ -98,3 +101,110 @@ def test_engines_are_best_effort_and_can_be_skipped(tmp_path):
     done = run(dev_args(tmp_path) + ["--no-engines"], tmp_path)
     assert done.returncode == 0, done.stdout[-3000:] + done.stderr[-3000:]
     assert "Reasoning engines present:" in done.stdout
+
+
+# -- #138 (b8a0ccd): the actual signer must be the companion's key and the body's enrolled key ----------
+
+def test_existing_private_key_recovers_missing_public_companion(tmp_path):
+    public = generate_founder_key(tmp_path / "founder.pem", None)
+    before = (tmp_path / "founder.pem").read_bytes()
+    result = run(dev_args(tmp_path), tmp_path)
+    assert result.returncode == 0, result.stderr
+    assert (tmp_path / "founder.pem").read_bytes() == before
+    assert (tmp_path / "founder.pem.pub").read_text().strip() == public
+    greg(tmp_path, "run", "--tick-seconds", "0.05", "--max-ticks", "1")
+    state = json.loads(greg(tmp_path, "status"))
+    assert state["security"]["founder_keys_enrolled"] == [key_id(public)]
+    assert len(state["designation"]) == 1
+
+
+def test_wrong_public_companion_refuses_before_enrollment_or_designation(tmp_path):
+    generate_founder_key(tmp_path / "founder.pem", None)
+    other_public = generate_founder_key(tmp_path / "other.pem", None)
+    companion = tmp_path / "founder.pem.pub"
+    companion.write_text(other_public + "\n")
+    before = (tmp_path / "founder.pem").read_bytes()
+    result = run(dev_args(tmp_path), tmp_path)
+    assert result.returncode == 14 and "does not match" in result.stderr
+    assert companion.read_text().strip() == other_public
+    assert (tmp_path / "founder.pem").read_bytes() == before
+    assert not list((tmp_path / "body/inbox").glob("*.json"))
+    assert not (tmp_path / "home/.config/systemd/user/greg-body.service").exists()
+    with Body(tmp_path / "body") as body:
+        assert not body.enrolled_keys()
+        assert not body.journal.replay("body.designated")
+
+
+def test_other_private_key_cannot_replace_existing_enrollment(tmp_path):
+    assert run(dev_args(tmp_path), tmp_path).returncode == 0
+    greg(tmp_path, "run", "--tick-seconds", "0.05", "--max-ticks", "1")
+    before = (tmp_path / "body/ledger.jsonl").read_bytes()
+    other = tmp_path / "other.pem"
+    generate_founder_key(other, None)
+    args = dev_args(tmp_path)
+    args[args.index("--key") + 1] = str(other)
+    result = run(args, tmp_path)
+    assert result.returncode == 14 and "not this body's currently enrolled" in result.stderr
+    assert (tmp_path / "body/ledger.jsonl").read_bytes() == before
+    assert not list((tmp_path / "body/inbox").glob("*.json"))
+
+
+def test_installer_accepts_only_the_current_key_after_signed_rotation(tmp_path):
+    assert run(dev_args(tmp_path), tmp_path).returncode == 0
+    greg(tmp_path, "run", "--tick-seconds", "0.05", "--max-ticks", "1")
+    old = load_founder_key(tmp_path / "founder.pem", None)
+    new_file = tmp_path / "rotated.pem"
+    new_public = generate_founder_key(new_file, None)
+    with Body(tmp_path / "body") as body:
+        body.apply(sign_command(old, "ROTATE_FOUNDER_KEY", {"new_public_key": new_public},
+                                body_id=body.config["body_id"]))
+    state = json.loads(greg(tmp_path, "status"))
+    assert state["security"]["founder_keys_enrolled"] == [key_id(new_public)]
+    args = dev_args(tmp_path)
+    args[args.index("--key") + 1] = str(new_file)
+    result = run(args, tmp_path)
+    assert result.returncode == 0, result.stderr
+    assert "already enrolled" in result.stdout and "already designated" in result.stdout
+    assert (tmp_path / "rotated.pem.pub").read_text().strip() == new_public
+    assert not list((tmp_path / "body/inbox").glob("*.json"))
+    rejected = run(dev_args(tmp_path), tmp_path)
+    assert rejected.returncode == 14 and "not this body's currently enrolled" in rejected.stderr
+
+
+def test_founder_public_unlocks_encrypted_key_without_opening_a_body(tmp_path, monkeypatch, capsys):
+    from greg.cli import main
+    key = tmp_path / "encrypted.pem"
+    public = generate_founder_key(key, b"fixture-passphrase")
+    before = key.read_bytes()
+    monkeypatch.delenv("GREG_FOUNDER_PASSPHRASE", raising=False)
+    monkeypatch.setattr("greg.cli.getpass.getpass", lambda prompt: "fixture-passphrase")
+    missing_body = tmp_path / "not-a-body"
+    assert main(["--home", str(missing_body), "founder", "public", "--key", str(key)]) == 0
+    assert capsys.readouterr().out.strip() == public
+    assert not missing_body.exists() and key.read_bytes() == before
+    key.chmod(0o644)
+    with pytest.raises(FounderAuthError, match="readable by others"):
+        main(["--home", str(missing_body), "founder", "public", "--key", str(key)])
+
+
+def test_a_rerun_offers_the_founder_tier_to_a_body_designated_without_it(tmp_path):
+    """A body designated before FOUNDER_TIER existed stayed silently unattested (review of 2026-10-14).
+    The re-run now sees it in ``greg status`` and queues the attestation with the protected key."""
+    args = [a for a in dev_args(tmp_path) if a != "--no-passphrase"]
+    env = {**os.environ, "HOME": str(tmp_path / "home"), "PATH": f"{tmp_path / 'bin'}:{os.environ['PATH']}",
+           "GREG_FOUNDER_PASSPHRASE": "a test passphrase, not Alfonso's"}
+    (tmp_path / "home").mkdir(exist_ok=True)
+    first = subprocess.run(["bash", str(SCRIPT), *args], capture_output=True, text=True, env=env, timeout=300)
+    assert first.returncode == 0, first.stdout[-3000:] + first.stderr[-3000:]
+    for queued in (tmp_path / "body/inbox").glob("*founder_tier*.json"):
+        queued.unlink()                                  # as if designated before the attestation existed
+    greg(tmp_path, "run", "--tick-seconds", "0.05", "--max-ticks", "2")
+    assert json.loads(greg(tmp_path, "status"))["founder_tier"]["enrolled_key_attested"] is False
+    second = subprocess.run(["bash", str(SCRIPT), *args], capture_output=True, text=True, env=env, timeout=300)
+    assert second.returncode == 0, second.stdout[-3000:] + second.stderr[-3000:]
+    assert "already designated" in second.stdout and "Founder-tier attestation queued" in second.stdout
+    assert list((tmp_path / "body/inbox").glob("*founder_tier*.json"))
+    greg(tmp_path, "run", "--tick-seconds", "0.05", "--max-ticks", "2")
+    assert json.loads(greg(tmp_path, "status"))["founder_tier"]["enrolled_key_attested"] is True
+    third = subprocess.run(["bash", str(SCRIPT), *args], capture_output=True, text=True, env=env, timeout=300)
+    assert "has claimed the founder tier" in third.stdout and not list((tmp_path / "body/inbox").glob("*.json"))

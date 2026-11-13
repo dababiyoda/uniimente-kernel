@@ -12,6 +12,9 @@ evaluated against compiled constitutional policy.
 
 - `organ-registry.yaml`, `agent-registry.yaml`, `service-identities.yaml` — registries (Phase 1)
 - `machine_passport.py` — executable passport system (this build)
+- `text.py` — how text reads to a person: the invisible-code-point set derived from Unicode properties,
+  and the fold (NFKC, look-alike letters, case) used to compare what is read. Shared by the GREG data
+  plane and the autonomy authority; it reads text and carries no authority.
 
 ## Interface
 

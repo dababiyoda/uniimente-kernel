@@ -41,9 +41,11 @@ jobs:
     # The limit bounds a hung run; it is not a speed target. Track B (#180 e4674f9) raised it from 30 when the unit
     # suite ran twice here (full suite, then verifier V2): 24 of 30 minutes at #179 c6c4d74, and four stacked heads
     # cancelled inside the verifier on 2026-10-15 with the suite green (17-19 minutes under load). Verifier V2 now
-    # runs once, in job 9 (44f7c35); this job still carries the full suite, the worker-isolation regressions and the
-    # mutation checks, so the 45-minute bound is kept.
-    timeout-minutes: 45
+    # runs once, in job 9 (44f7c35). Hosted runners differ in speed: on 2026-10-15 the suite took 11 min on one
+    # (a48e8fa) and 17.5 min on another (349e732); with 45 the whole job took 34.5 and 38.5 min on slow runners
+    # (#173). This job still carries the full suite, the worker-isolation regressions and the mutation checks, so 60
+    # leaves room for the suite to keep growing on a slow runner without hiding a hang for long.
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
         with:
@@ -160,11 +162,20 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The integrity check reads every committed version of its record files:
+          # a genesis key never changes and no signed record is removed.
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
       - name: No second Constitution, Gate, identity or authority registry
         run: python scripts/ci/check_authority_singleton.py
+      - run: pip install "cryptography>=41"
+      - name: Live constitutional integrity (CONTRADICTION-0002 Option A; only founder-signed authorizations count)
+        # Fails, naming each artifact and the founder's exact steps, when a protected
+        # artifact differs from what an enrolled founder key authorized.
+        run: python -m governance.integrity --check
 
   sealed:
     name: "4 · Developmental work stays sealed"
@@ -190,8 +201,9 @@ jobs:
   cortex_seed:
     name: "6 · Cortex seed experiment (Z3 + CP-SAT, frozen evaluation)"
     runs-on: ubuntu-latest
-    # 150 mutants run in parallel, one repository copy per core (about 11 minutes on 4 cores); headroom for the rest
-    timeout-minutes: 35
+    # mutants run in parallel, one repository copy per core; the merged gates (cortex with the seed ports,
+    # residual) outgrew 20 minutes serially
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -207,9 +219,9 @@ jobs:
         run: python -m pytest -q tests/unit/test_greg_cognition_seed_path.py tests/unit/test_greg_seed_compat.py tests/integration/test_greg_cognition_process.py
       - name: GREG cognition boundary mutation check
         run: python scripts/ci/check_greg_cognition_mutants.py
-      - name: Residual safeguards (cross-engine certificates, legitimacy, disclosure packages, characterization, thinking budget, venture case) and their mutation check
+      - name: Residual safeguards (cross-engine certificates, legitimacy, disclosure packages, characterization, thinking budget, venture and media cases, the Task Fabric evaluator, restore from a tested backup, failure closures) and their mutation check
         run: |
-          python -m pytest -q tests/unit/test_cognition_residual_safeguards.py tests/unit/test_cognition_disclosure.py tests/unit/test_cognition_characterize.py tests/unit/test_cognition_thinking_budget.py tests/unit/test_greg_ventures.py
+          python -m pytest -q tests/unit/test_cognition_residual_safeguards.py tests/unit/test_cognition_disclosure.py tests/unit/test_cognition_characterize.py tests/unit/test_cognition_thinking_budget.py tests/unit/test_greg_ventures.py tests/unit/test_greg_media_case.py tests/unit/test_greg_task_fabric.py tests/unit/test_greg_restore.py tests/unit/test_greg_failure_closure.py
           python scripts/ci/check_cognition_residual_mutants.py
       - name: Seed Genome 120-case frozen engineering comparison
         run: python -m cortex.evaluation.seed_genome.run --out seed-genome-results.json

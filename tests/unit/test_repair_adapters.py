@@ -539,8 +539,20 @@ def test_identity_authority_and_shutdown_survive_the_component_being_absent():
     regardless of whether it repairs."""
     import hashlib
     from evolution import compatibility
+    from evolution.repair import continuity
 
+    # CONTRADICTION-0002 Option A: continuity is read from the frozen copies
+    # the SR002 binding names, not from the live tree, so a lawful change to a
+    # live artifact no longer reads as this experiment breaking. The live
+    # artifacts are still read, but only to show the disable disturbed nothing.
     def fingerprint():
+        digest = hashlib.sha256()
+        for rel, expected in SR002.artifacts:
+            assert rel in spec.CONTINUITY_ARTIFACT_SHA256
+            digest.update(continuity.object_path(expected).read_bytes())
+        return digest.hexdigest()
+
+    def live_fingerprint():
         digest = hashlib.sha256()
         for rel in spec.CONTINUITY_ARTIFACT_SHA256:
             with open(os.path.join(ROOT, rel), "rb") as fh:
@@ -548,10 +560,12 @@ def test_identity_authority_and_shutdown_survive_the_component_being_absent():
         return digest.hexdigest()
 
     before = fingerprint()
+    live_before = live_fingerprint()
     assert before == SR002.continuity_sha256
 
     with ComponentDisabled(spec.SUBJECT_PACKAGE):
         assert fingerprint() == SR002.continuity_sha256
+        assert live_fingerprint() == live_before
 
         # Authority still compiles and still refuses what it always refused.
         from compiler.ucl_compiler import compile_constitution
@@ -566,3 +580,4 @@ def test_identity_authority_and_shutdown_survive_the_component_being_absent():
         assert controller.shutdown() == "shutdown_complete"
 
     assert fingerprint() == SR002.continuity_sha256
+    assert live_fingerprint() == live_before

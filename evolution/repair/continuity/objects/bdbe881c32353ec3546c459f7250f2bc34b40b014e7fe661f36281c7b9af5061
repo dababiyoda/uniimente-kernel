@@ -1,0 +1,29 @@
+# Accountable legal actors. UNIIMENTE is never a legal principal.
+# Every consequential effect attaches to exactly one entry here.
+version: "1.0.0"
+
+principals:
+  alfonso_lopez:
+    type: natural_person
+    status: active
+    capacity: full
+    notes: Sovereign owner. Rank 2 authority.
+  IVIO_NEMT_LLC:
+    type: llc
+    status: proving_ground
+    jurisdiction: to_be_confirmed_by_founder
+    notes: First closed-loop proving ground (IVIO-NEMT). Founder must confirm exact registered name and jurisdiction before any external contractual effect.
+  DALEOBANKS_MEDIA:
+    type: unincorporated_media_property
+    owner: alfonso_lopez
+    status: active
+    notes: Public voice and distribution organ. Not a separate legal actor; effects attach to alfonso_lopez until an entity is formed.
+  UNIIMENTE:
+    type: not_a_legal_actor
+    status: prohibited
+    notes: The institution may never be named as legal principal. It has no independent legal personhood and no survival objective.
+
+rules:
+  unknown_principal: hard_refusal
+  cross_principal_credentials: prohibited   # one legal entity may not act through another's credentials
+  regulated_activity: requires_compliance_signoff_before_first_effect

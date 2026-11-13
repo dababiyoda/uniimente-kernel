@@ -138,7 +138,7 @@ class CompanyLoop:
         return {"actor": actor["id"], "followers": len(self.instance._state()["actors"][self.actor_name]["followers"])}
 
     def open_rail(self, base: str) -> None:
-        self.rail = payments.Rail(self.root / "rail", api_key="sk_test_emulator", base=base)
+        self.rail = payments.Rail(self.root / "rail", api_key="sk_test_emulator", base=base, gate=self.gate)
 
     # -- one cycle -------------------------------------------------------------------------------
     def publish_node(self, node_id: str, *, topic: str) -> dict:
@@ -178,7 +178,7 @@ class CompanyLoop:
             case = f"{session}-audit"
             receipt = "sha256:" + __import__("hashlib").sha256(f"{case}:delivered".encode()).hexdigest()
             out["charge"] = self.rail.charge(case_id=case, customer=session, amount_cents=9000, delivery_receipt=receipt,
-                                             grant=payments.charge_grant(case, 9000))["status"]
+                                             grant=payments.charge_grant(case, 9000, gate=self.gate))["status"]
         elif end == "leave":
             rabbit_hole.observe(self.territory_root, session=session, kind="leave", node_id=path[-1], at=at)
         return out

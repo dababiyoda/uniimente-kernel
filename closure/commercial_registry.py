@@ -200,8 +200,11 @@ def register_commercial_closures(registry: ClosureRegistry) -> ClosureRegistry:
         loop.verify_outcome(case.case_id, verified_by="external_receipt",
                             detail="buyer accepted")
         loop.resolve(case.case_id, retained=True, reason="subscribed")
-        return loop.evaluate().overall == "CLOSED", \
-            "problem-to-payment-to-accepted-outcome loop closes in order"
+        # Stub executors move no real money: the loop runs in order, its customer and money are labelled
+        # synthetic, and the closure controller names a synthetic run as false closure, never an external close.
+        return (case.stage == "retention_or_termination" and case.synthetic
+                and loop.evaluate().overall == "FALSELY_CLOSED"), \
+            "problem-to-payment-to-accepted-outcome loop runs in order; synthetic money never closes it externally"
 
     def business_authority():
         from business.commercial_loop import CommercialLoop, CommercialLoopError

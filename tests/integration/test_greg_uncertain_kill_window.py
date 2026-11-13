@@ -83,7 +83,10 @@ def test_a_kill_before_the_question_is_asked_leads_to_the_question_not_a_second_
     assert len(calls) == 2 and (ws / "note.txt").read_text() == "hello"   # the one retry, after the answer
 
 
-def test_a_kill_before_the_block_reuses_the_open_question_and_its_answer_releases_the_held_cap(tmp_path, monkeypatch):
+def test_a_kill_before_the_block_reuses_the_open_question_and_its_answer_books_the_metered_cap(tmp_path, monkeypatch):
+    """Superseded rule (before #173 H.G4), kept as lineage: the "not executed" answer released attempt 0's held cap
+    and one retry fit the signed $0.05 budget. worker.commission is metered, so the answer now replaces the hold by a
+    booking of its signed cap: the retry exceeds the budget and runs only on the founder's approval."""
     home, key, body_id, _ = make_body(tmp_path)
     mid = "m:priced-kill"
     ws = workspace(home, mid)
@@ -113,11 +116,21 @@ def test_a_kill_before_the_block_reuses_the_open_question_and_its_answer_release
     assert [r["request_id"] for r in _reconciliations(home, clock)] == [open_question["request_id"]]
     with Body(home, clock=clock) as body:
         m = body.engine.book.missions[mid]
-        assert m.blocker["request_id"] == open_question["request_id"] and m.spent_usd == 0.05
+        # #173's model (merge of e410977): the held cap is a reservation the budget counts, not booked spend
+        assert m.blocker["request_id"] == open_question["request_id"]
+        assert (m.spent_usd, m.reserved_usd, m.committed_usd) == (0.0, 0.05, 0.05)
     drop(home, signed(key, body_id, "DECISION", {"request_id": open_question["request_id"],
                                                  "answer": "reconcile_not_executed"}))
     _run(home, clock, 1)
     with Body(home, clock=clock) as body:
         m = body.engine.book.missions[mid]
-        assert ("commission", 0) not in m.reserved      # the answer released attempt 0's hold
-    assert len(calls) == 2                              # and the one retry fit the signed $0.05 budget
+        assert ("commission", 0) not in m.reserved      # the answer settled attempt 0's hold, once
+        # A metered worker's "not executed" settles its effect, not its possible spend (#173 H.G4): the cap is booked,
+        # so the retry exceeds the signed $0.05 budget and is asked for, never dispatched on its own.
+        assert m.spent_usd == 0.05
+        [spend] = [r for r in body.engine.book.open_requests() if r["kind"] == "APPROVAL"]
+        assert spend["action_id"] == "commission" and "exceeds budget" in spend["why_now"]
+    assert len(calls) == 1
+    drop(home, signed(key, body_id, "DECISION", {"request_id": spend["request_id"], "answer": "approve"}))
+    _run(home, clock, 1)
+    assert len(calls) == 2                              # the one retry, after the founder funded it

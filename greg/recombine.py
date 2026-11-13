@@ -596,6 +596,184 @@ def judge_crash(answer: dict, expected: dict) -> bool:
     return not expected["feasible"] or answer["cost"] == expected["cost"]
 
 
+# == project selection (maximum-weight closure) -> maximum flow ==================================
+# Which projects to take when some need others first: each item has a value (a profit, or a cost
+# when negative) and "a requires b" means a may be taken only with b. Picard's reduction: the best
+# closed set is the source side of a minimum cut. The mutation is the certificate GREG keeps: the
+# engine's flow, read back as *funding* (which profitable item's value would have to pay for which
+# costs), proves that no closed set earns more; it is checked against the original items alone.
+
+MAX_ITEMS = 400
+MAX_REQUIRES = 4000
+
+
+def normalize_selection(params: dict) -> dict:
+    if not isinstance(params, dict):
+        raise _invalid("parameters must be an object")
+    items, requires = params.get("items"), params.get("requires", [])
+    if not isinstance(items, list) or not 1 <= len(items) <= MAX_ITEMS:
+        raise _invalid(f"1-{MAX_ITEMS} items required")
+    value = {}
+    for it in items:
+        if not isinstance(it, dict):
+            raise _invalid("each item must be an object")
+        iid = _ident(it.get("id"), "item id")
+        if iid in value:
+            raise _invalid(f"item {iid} repeats")
+        v = it.get("value")
+        if isinstance(v, bool) or not isinstance(v, int) or abs(v) > network.MAX_TOTAL_CAPACITY:
+            raise _invalid(f"value of {iid} must be an integer within 2^31-1 (negative for a cost)")
+        value[iid] = v
+    if not isinstance(requires, list) or len(requires) > MAX_REQUIRES:
+        raise _invalid(f"requires must be a list of at most {MAX_REQUIRES} [item, prerequisite] pairs")
+    pairs = set()
+    for r in requires:
+        if not isinstance(r, list) or len(r) != 2 or not all(x in value for x in r):
+            raise _invalid(f"requirement {r!r} must be [item, prerequisite] naming known items")
+        if r[0] != r[1]:
+            pairs.add(tuple(r))
+    return {"items": sorted([i, v] for i, v in value.items()), "requires": sorted(list(x) for x in pairs)}
+
+
+def _gain(p: dict) -> int:
+    return sum(v for _, v in p["items"] if v > 0)
+
+
+def direct_selection(p: dict):
+    """Nothing profitable: the empty set is optimal and the bound is zero; no engine is needed."""
+    if _gain(p) == 0:
+        return {"chosen": [], "funding": []}
+    return None
+
+
+def encode_selection(p: dict) -> dict:
+    gain, cost = _gain(p), sum(-v for _, v in p["items"] if v < 0)
+    big = gain + 1     # a requirement arc can never be in a minimum cut: cutting every profit costs only `gain`
+    edges = [["source", f"i:{i}", v] for i, v in p["items"] if v > 0]
+    edges += [[f"i:{i}", "sink", -v] for i, v in p["items"] if v < 0]
+    edges += [[f"i:{a}", f"i:{b}", big] for a, b in p["requires"]]
+    if gain + cost + big * len(p["requires"]) > network.MAX_TOTAL_CAPACITY:
+        raise _invalid("the encoded network exceeds the engine's 2^31-1 total capacity")
+    nodes = ["source", "sink"] + [f"i:{i}" for i, _ in p["items"]]
+    return {"edges": edges, "nodes": nodes, "source": "source", "sink": "sink", "directed": True}
+
+
+def decode_selection(p: dict, flow: dict) -> dict:
+    if flow.get("certified") is not True or "min_cut" not in flow:
+        raise ReductionError("the engine answer carries no certified minimum cut")
+    side = set(flow["min_cut"]["source_side"])
+    chosen = sorted(i for i, _ in p["items"] if f"i:{i}" in side)
+    funding = sorted([u[2:] if u != "source" else "source", v[2:] if v != "sink" else "sink", x]
+                     for u, v, x in flow["flows"])
+    return {"chosen": chosen, "funding": funding}
+
+
+def certify_selection(p: dict, answer: dict) -> dict:
+    """GREG-owned and exact. (1) The chosen set is closed under its requirements. (2) The funding is a
+    feasible flow: profit items send at most their value, cost items receive at most their cost, funding
+    moves only along requirements, and every item passes on exactly what it receives. (3) Weak duality:
+    for any closed set S the cut (S + source) has no requirement arc leaving it, so it carries at most
+    gain - funded; hence profit(S) <= gain - funded for every closed S. A chosen set earning exactly
+    gain - funded is therefore the best possible."""
+    value = dict(map(tuple, p["items"]))
+    requires = {tuple(r) for r in p["requires"]}
+    chosen = answer.get("chosen", [])
+    if not isinstance(chosen, list) or not set(chosen) <= set(value) or len(set(chosen)) != len(chosen):
+        raise ReductionError("the chosen set names unknown or repeated items")
+    S = set(chosen)
+    missing = sorted([a, b] for a, b in requires if a in S and b not in S)
+    if missing:
+        raise ReductionError(f"the chosen set is not closed: {missing[0][0]} requires {missing[0][1]}")
+    balance, sent, received = defaultdict(int), defaultdict(int), defaultdict(int)
+    for item in answer.get("funding", []):
+        if not isinstance(item, list) or len(item) != 3:
+            raise ReductionError(f"funding entry {item!r} must be [from, to, amount]")
+        u, v, x = item
+        if isinstance(x, bool) or not isinstance(x, int) or x <= 0:
+            raise ReductionError("funding amounts must be positive integers")
+        if u == "source":
+            if value.get(v, 0) <= 0:
+                raise ReductionError(f"{v} is not a profitable item and cannot be funded from the source")
+            sent[v] += x
+        elif v == "sink":
+            if value.get(u, 0) >= 0:
+                raise ReductionError(f"{u} is not a cost and cannot pay the sink")
+            received[u] += x
+        elif (u, v) not in requires:
+            raise ReductionError(f"funding moves from {u} to {v}, which is not a requirement")
+        balance[u] -= x
+        balance[v] += x
+    for i, x in sent.items():
+        if x > value[i]:
+            raise ReductionError(f"{i} funds {x}, above its value {value[i]}")
+    for i, x in received.items():
+        if x > -value[i]:
+            raise ReductionError(f"{i} is paid {x}, above its cost {-value[i]}")
+    for i in value:
+        if balance[i]:
+            raise ReductionError(f"{i} does not pass on exactly what it receives")
+    funded = sum(sent.values())
+    gain = _gain(p)
+    profit = sum(value[i] for i in S)
+    if profit != gain - funded:
+        raise ReductionError(f"profit {profit} does not meet the bound {gain - funded}: optimality is not shown")
+    left_out = sorted(i for i, v in value.items() if v > 0 and i not in S)
+    return {"certified": True, "chosen": sorted(S), "profit": profit,
+            "cost_taken": sorted(i for i in S if value[i] < 0),
+            "left_out_profitable": left_out,
+            "why_left_out": {i: [[to, x] for u, to, x in answer["funding"] if u == i] for i in left_out},
+            "funding": answer["funding"],
+            "certificate": {"kind": "closure plus a feasible funding flow: profit equals total profit minus "
+                                    "funded value, which bounds every closed set (weak duality, Picard 1976)",
+                            "arithmetic": "exact integers",
+                            "checked_by": "GREG, from the original items; shares no code with the engine"}}
+
+
+def selection_brute_force(p: dict) -> int:
+    """Best profit over every closed subset (exponential; oracle only)."""
+    items = [i for i, _ in p["items"]]
+    value = dict(map(tuple, p["items"]))
+    requires = [tuple(r) for r in p["requires"]]
+    best = 0
+    for mask in range(1 << len(items)):
+        S = {items[k] for k in range(len(items)) if mask >> k & 1}
+        if all(b in S for a, b in requires if a in S):
+            best = max(best, sum(value[i] for i in S))
+    return best
+
+
+FIXED_SELECTION = [
+    ("shared-prerequisite", {"items": [{"id": "Offer1", "value": 5}, {"id": "Offer2", "value": 6},
+                                       {"id": "Platform", "value": -6}, {"id": "Audit", "value": -3}],
+                             "requires": [["Offer1", "Platform"], ["Offer2", "Platform"], ["Offer2", "Audit"]]}),
+    ("not-worth-it", {"items": [{"id": "A", "value": 3}, {"id": "B", "value": -5}], "requires": [["A", "B"]]}),
+    ("chain", {"items": [{"id": "A", "value": 10}, {"id": "B", "value": -3}, {"id": "C", "value": -4}],
+               "requires": [["A", "B"], ["B", "C"]]}),
+    ("nothing-profitable", {"items": [{"id": "A", "value": 0}, {"id": "B", "value": -2}], "requires": []}),
+    ("cycle", {"items": [{"id": "A", "value": 4}, {"id": "B", "value": -3}], "requires": [["A", "B"], ["B", "A"]]}),
+]
+
+
+def _random_selection(rng: random.Random) -> dict:
+    n = rng.randint(1, 7)
+    items = [{"id": f"I{k}", "value": rng.randint(-6, 6)} for k in range(n)]
+    requires = [[f"I{a}", f"I{b}"] for a in range(n) for b in range(n) if a != b and rng.random() < 0.25]
+    return {"items": items, "requires": requires}
+
+
+def oracle_selection(seed: int) -> list[dict]:
+    rng = random.Random(seed)
+    cases = [{"name": n, "input": params} for n, params in FIXED_SELECTION]
+    cases += [{"name": f"random{i}", "input": _random_selection(rng)} for i in range(7)]
+    for case in cases:
+        case["expected"] = {"profit": selection_brute_force(normalize_selection(case["input"]))}
+    return cases
+
+
+def judge_selection(answer: dict, expected: dict) -> bool:
+    return answer.get("certified") is True and answer["profit"] == expected["profit"]
+
+
 # == the reduction library ===================================================================
 
 @dataclass(frozen=True)
@@ -742,6 +920,45 @@ REDUCTIONS: dict[str, Reduction] = {r.function: r for r in (
               interface="Genesis 'constructed' route; mission function project.crash",
               rollback="CAPABILITY_DETACH; the LP engine and the history stay"),
         direct=direct_crash),
+    Reduction(
+        "selection-via-maxflow", "selection.closure", "graph.max_flow",
+        "Which projects, offers or investments to take when some require others first: the most profitable "
+        "set that includes every prerequisite, with a funding proof that nothing earns more and why each "
+        "profitable item left out does not pay for what it needs",
+        {"items": "list", "requires": "list"}, normalize_selection, encode_selection, decode_selection,
+        certify_selection, oracle_selection, judge_selection,
+        "rank items by value and add prerequisites greedily (misses shared prerequisites; proves nothing)",
+        _card(source=["J.-C. Picard, Maximal closure of a graph and applications to combinatorial problems, "
+                      "Management Science 22(11):1268-1272 (1976)",
+                      "J.M.W. Rhys, A selection problem of shared fixed costs and network flows, Management "
+                      "Science 17(3):200-207 (1970)",
+                      "M.L. Balinski, On a selection problem, Management Science 17(3):230-231 (1970)",
+                      "Ford & Fulkerson, Canadian J. Math. 8:399-404 (1956)"],
+              observed="with profits on source arcs, costs on sink arcs and uncuttable requirement arcs, the "
+                       "source side of a minimum cut is a best closed set; its profit is total profit minus the "
+                       "cut",
+              function="maximum-weight closure via max-flow/min-cut duality",
+              io={"in": "items[{id, value (negative = cost)}], requires[[item, prerequisite]]",
+                  "out": "chosen, profit, cost_taken, left_out_profitable, why_left_out{item: [[to, amount]]}, "
+                         "funding[[from, to, amount]]"},
+              resources="one engine call over items + 2 nodes and one arc per requirement (none when nothing is "
+                        "profitable); certificate linear in arcs",
+              failure="engine lies (refused by the max-flow certificate, then by GREG's closure, funding and "
+                      "duality checks); request beyond int32 total capacity refused before the engine",
+              recovery="as staffing: engine quarantined and re-acquired, construction re-formed over it",
+              evidence="frozen brute force over every closed subset; shared-prerequisite, cycle and chain cases",
+              primitive="profit source arcs, cost sink arcs, uncuttable requirement arcs (Picard network)",
+              mutation="certificate transport: the engine's flow becomes funding a person can read (Offer2's value "
+                       "would all go to the Audit it needs, so it is left out) and is re-proved as a weak-duality "
+                       "bound over every closed set",
+              risk="integer values only; probabilistic or time-dependent value needs a different model; the "
+                   "answer is a decision aid, not a commitment to spend",
+              capability="selection.closure: certified best project/offer portfolio under prerequisites",
+              verifier="GREG closure + funding-flow + duality check in exact integers; frozen brute force",
+              interface="Genesis 'constructed' route; mission function selection.closure; template "
+                        "constructed-question",
+              rollback="CAPABILITY_DETACH of the composed id; the engine and the history stay"),
+        direct=direct_selection),
 )}
 
 

@@ -129,8 +129,8 @@ def _payloads(journal: Journal, kind: str) -> list[dict]:
     return [e.payload for e in journal.replay(kind)]
 
 
-def _order(journal: Journal) -> dict:
-    return {e.event_id: i for i, e in enumerate(journal.replay())}
+def _order(journal: Journal):
+    return journal.positions()  # == {e.event_id: i for i, e in enumerate(journal.replay())}
 
 
 def _decided(journal: Journal) -> dict[str, dict]:

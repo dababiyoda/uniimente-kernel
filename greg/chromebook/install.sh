@@ -6,8 +6,9 @@
 #   cd uniimente-kernel && bash greg/chromebook/install.sh
 #
 # It only composes existing greg commands (doctor, init, founder keygen/enroll,
-# service install, body designate). Every step is idempotent: re-running it skips
-# what is done. It never handles your passphrase (greg asks for it directly), never
+# service install, body designate). Re-running preserves the body's identity,
+# history, enrollment and designation; it refreshes the wrapper and service files.
+# It never handles your passphrase (greg asks for it directly), never
 # uses sudo, and grants GREG no capability or permission. Designation names this
 # machine as your first body; it is accepted by the running body, not by this script.
 #
@@ -181,19 +182,34 @@ status_field() {  # $1: python expression over the status dict
 step "7/8 Your founder key"
 KEYGEN_FLAGS=()
 [ "$NO_PASSPHRASE" = 1 ] && KEYGEN_FLAGS+=(--no-passphrase) && echo "WARNING: --no-passphrase leaves the key unprotected (tests only)."
+# The public key is derived from the actual signing key (#138 b8a0ccd); a companion .pub that names another
+# key, or a key that is not this body's currently enrolled founder key, stops before service or designation.
 if [ -f "$KEY" ]; then
   echo "Keeping your existing key at $KEY."
+  PUBLIC="$("$GREG" founder public --key "$KEY" "${KEYGEN_FLAGS[@]}")"
 else
   echo "Choose a passphrase you will remember; GREG cannot recover it. Never give this key to an agent."
-  "$GREG" founder keygen --key "$KEY" "${KEYGEN_FLAGS[@]}" > "$KEY.pub"
+  mkdir -p "$(dirname "$KEY")"
+  PUBLIC="$("$GREG" founder keygen --key "$KEY" "${KEYGEN_FLAGS[@]}")"
+fi
+if [ -e "$KEY.pub" ]; then
+  [ "$(cat "$KEY.pub")" = "$PUBLIC" ] || fail "The public companion $KEY.pub does not match $KEY. Keeping both unchanged; resolve the mismatch before enrolling or starting the body." 14
+else
+  printf '%s\n' "$PUBLIC" > "$KEY.pub"
   chmod 644 "$KEY.pub"
 fi
+SIGNER_ID="$(PYTHONPATH="$REPO${PYTHONPATH:+:$PYTHONPATH}" "$GREG_PY" -c 'from greg.founder import key_id; import sys; print(key_id(sys.argv[1]))' "$PUBLIC")"
 ENROLLED="$(status_field 'len(s.get("security", {}).get("founder_keys_enrolled", []))')"
+[ -n "$ENROLLED" ] || fail "Cannot inspect this body's founder enrollment; keeping it unchanged. Resolve greg status before continuing." 14
 if [ "${ENROLLED:-0}" -gt 0 ] 2>/dev/null; then
+  ACTIVE_KEYS="$(status_field '" ".join(s.get("security", {}).get("founder_keys_enrolled", []))')"
+  case " $ACTIVE_KEYS " in
+    *" $SIGNER_ID "*) ;;
+    *) fail "The key $KEY is not this body's currently enrolled founder key. Keeping enrollment unchanged; use the enrolled key or an explicitly signed key rotation." 14 ;;
+  esac
   echo "A founder key is already enrolled."
 else
-  [ -s "$KEY.pub" ] || fail "Found $KEY but not $KEY.pub. Enroll it yourself: greg founder enroll --pubkey <hex printed when it was created>" 14
-  "$GREG" founder enroll --pubkey "$(cat "$KEY.pub")" >/dev/null
+  "$GREG" founder enroll --pubkey "$PUBLIC" >/dev/null
   echo "Enrolled your public key."
 fi
 
@@ -202,13 +218,34 @@ if [ "$SERVICE" = "yes" ]; then
   "$GREG" service install --platform linux >/dev/null
   systemctl --user daemon-reload
   systemctl --user enable --now greg-body.service
-  echo "greg-body.service is enabled and running (it restarts GREG after a crash while Linux runs)."
+  if [ "$(status_field 's.get("security", {}).get("stop_file_present", False)')" = "True" ]; then
+    echo "greg-body.service is enabled; the founder's persisted STOP remains active. The body is stopped until you explicitly start it."
+  else
+    echo "greg-body.service is enabled; inspect greg status to confirm the body is running. It restarts GREG after a crash while Linux runs."
+  fi
 else
   echo "Skipping the service (--no-service). Start the body yourself with: greg run"
 fi
 DESIGNATED="$(status_field 'len(s.get("designation", []))')"
 if [ "${DESIGNATED:-0}" -gt 0 ] 2>/dev/null; then
   echo "This body is already designated as your first body."
+  # A body designated before FOUNDER_TIER existed (or whose attestation was lost) stays silently unattested:
+  # every closure would remain a structural candidate. Offer the attestation; never for an unprotected key.
+  ATTESTED="$(status_field 's.get("founder_tier", {}).get("enrolled_key_attested", False)')"
+  if [ "$ATTESTED" = "True" ]; then
+    echo "Your founder key has claimed the founder tier on this body."
+  elif ls "$GREG_HOME_DIR"/inbox/*founder_tier*.json >/dev/null 2>&1; then
+    echo "A signed founder-tier attestation is already waiting in the inbox for the body to accept."
+  elif [ "$NO_PASSPHRASE" = 1 ]; then
+    echo "Founder tier: not attested. An unprotected (--no-passphrase) key never claims it; its closures stay structural candidates."
+  else
+    echo "Founder tier: not attested, so no closure would move greg path. Sign the attestation (your passphrase again):"
+    if "$GREG" founder attest --key "$KEY" >/dev/null; then
+      echo "Founder-tier attestation queued; the running body accepts it on its next tick."
+    else
+      echo "Not attested. Run later: greg founder attest --key $KEY"
+    fi
+  fi
 elif ls "$GREG_HOME_DIR"/inbox/*body_designate*.json >/dev/null 2>&1; then
   echo "A signed designation is already waiting in the inbox for the body to accept."
 else
@@ -219,7 +256,8 @@ fi
 
 cat <<EOF
 
-GREG is installed. Open Mission Control (greg/CHROMEBOOK_FIRST_MISSION.md, steps 2 and 4):
+GREG's developmental files are installed. Designation must be accepted by the body before the first mission; this is not a verified Chromebook run.
+Open Mission Control (greg/CHROMEBOOK_FIRST_MISSION.md, steps 2 and 4):
   greg console --key $KEY --no-model     then open the private link it prints in Chrome
   Ask: "Brief me on the state of my repositories." Review, sign, close the tab.
   greg status        note the PID, then: kill -9 <PID>   (the service restarts GREG)

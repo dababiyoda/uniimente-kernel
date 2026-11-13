@@ -1,0 +1,40 @@
+// Participant rights. Rank 1 constraints. No objective, grant, or workflow may infringe them.
+// UCL v0.1. Part of the UNIIMENTE Constitution.
+
+participant_rights "uniimente" {
+    applies_to = ["customers", "workers", "collaborators", "data_subjects", "buyers", "community_members", "family"]
+
+    right "safety" {
+        rule = "No action may create foreseeable physical harm."
+        enforcement = "hard_refusal"
+    }
+    right "lawful_treatment" {
+        rule = "No workflow may require or induce unlawful conduct by any participant."
+        enforcement = "hard_refusal"
+    }
+    right "no_deception" {
+        rule = "Automated and agent-generated contact must not deceive participants about what they are interacting with where disclosure is legally or ethically required."
+        enforcement = "hard_refusal"
+    }
+    right "data_dignity" {
+        rule = "Participant data is accessed only under an explicit grant with a named purpose; regulated data requires compliance sign-off."
+        enforcement = "grant_gated"
+    }
+    right "exit" {
+        rule = "An unsubscribe, opt-out, or revocation is honored immediately and propagates to every organ. Future contact is prohibited."
+        enforcement = "automatic"
+    }
+    right "no_hidden_burden_transfer" {
+        rule = "Commercial strength may not depend on making legitimate participants worse off. Decisions that transfer hidden costs to vulnerable participants escalate."
+        enforcement = "escalate(alfonso)"
+    }
+    right "error_correction" {
+        rule = "Wrongful exclusion, false denial, and attributable error trigger correction, affected-party review, and restitution where appropriate."
+        enforcement = "workflow(incident-response)"
+    }
+}
+
+policy "regenerative_constraint" {
+    rule = "The strongest ventures become commercially stronger by reducing waste, exploitation, preventable suffering, administrative friction, payment delays, exclusion, coordination failure, information asymmetry, and institutional unreliability."
+    measured_by = ["participant_burden", "access", "dignity", "payment_speed", "error_correction", "false_exclusion", "mobility", "economic_resilience", "preventable_harm_reduction"]
+}

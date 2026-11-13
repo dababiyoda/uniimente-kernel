@@ -1,0 +1,94 @@
+# Authority matrix: who may authorize what, at which sovereignty rank.
+# Higher rank always wins (constitution/sovereignty.ucl). Deny by default.
+version: "1.0.0"
+
+ranks:
+  1: law_safety_rights          # external constraint; no internal override exists
+  2: alfonso_reserved_authority
+  3: constitution
+  4: binding_duties
+  5: approved_objectives
+  6: portfolio_policies
+  7: venture_cell_charters
+  8: capability_grants
+  9: workflow_instructions
+  10: individual_tasks
+
+authorities:
+  alfonso:
+    rank: 2
+    may:
+      - shutdown_any_or_all_components
+      - amend_constitution_via_ceremony
+      - revoke_any_grant
+      - ratify_policy_changes
+      - decide_reserved_matters
+      - authorize_capital
+      - promote_autonomy_levels
+      - read_any_record
+    may_never: []   # Alfonso's authority is bounded only by rank 1
+  constitutional_controller:
+    rank: 3
+    may:
+      - enforce_policy_decisions
+      - refuse_actions
+      - pause_components
+      - regress_autonomy_levels
+      - quarantine_agents
+      - seal_ledger
+    may_never:
+      - amend_constitution
+      - grant_material_authority_directly
+      - block_or_delay_shutdown
+      - delete_negative_evidence
+  adversarial_intelligence:
+    rank: 5
+    may:
+      - attack_any_proposal
+      - record_dissent
+      - propose_amendments
+      - trigger_reviews
+    may_never:
+      - execute_effects
+      - hold_grants
+      - suppress_dissent_records
+  portfolio_governor:
+    rank: 6
+    may:
+      - rank_opportunities
+      - recommend_allocations
+      - recommend_terminations
+    may_never:
+      - authorize_spending        # no score independently authorizes spending
+      - execute_effects
+  venture_cell:
+    rank: 7
+    bounded_by: charter
+    may:
+      - operate_within_charter
+      - create_subordinate_task_agents
+    may_never:
+      - grant_beyond_own_authority
+      - amend_charter_unilaterally
+      - exceed_loss_limit
+  agent:
+    rank: 10
+    bounded_by: capability_grant
+    may:
+      - propose
+      - draft
+      - analyze
+      - execute_only_within_current_grant
+    may_never:
+      - self_authorize
+      - amend_constitution_or_charter
+      - access_unrelated_cell_memory
+      - contact_reserved_counterparties
+
+grant_rules:
+  child_grants: strict_subset_of_parent
+  initial_stage: [simulate, shadow]      # executable stages require recorded one-stage promotions
+  promotion_requires: recorded_evidence_and_independent_review
+  expiry: mandatory
+  revocation: immediate_and_propagating
+  commit_time_revalidation: mandatory

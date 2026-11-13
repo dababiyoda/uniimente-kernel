@@ -765,8 +765,11 @@ def test_payments_trace_every_charge_to_delivery_and_grant_and_reconcile_to_the_
     assert result["reconciled_to_processor"] and result["books_balance"]
     assert result["reserve_after_refund_cents"] < result["reserve_cents"] + 7000, "a refund draws the dispute reserve first"
     assert set(result["refusals"]) == {"live_key", "no_delivery_receipt", "no_grant", "grant_for_other_case",
-                                       "double_charge_same_case", "metered_mismatch", "refund_over_charge", "refund_without_reason"}
+                                       "forged_grant", "grant_from_another_gate", "altered_grant", "amount_above_grant",
+                                       "grant_reused", "double_charge_same_case", "metered_mismatch", "refund_over_charge",
+                                       "refund_without_reason"}
     assert all(result["refusals"].values())
+    assert result["every_charge_receipted_by_the_gate"], "only the governing Gate's grants move money, each once"
     # the emulator itself refuses a non-test key and an idempotency key reused for a different request
     server, emu = payments.start_emulator()
     try:
@@ -803,7 +806,8 @@ def test_marketplace_matches_by_sealed_second_price_and_settles_only_through_ver
     assert result["refuted_never_charged"] and result["books"]["equation_holds"] and result["books"]["cash_plus_reserve_matches_processor"]
     assert set(result["refusals"]) >= {"self_dealing", "duplicate_commit", "reveal_before_close", "bid_after_close", "reveal_mismatch",
                                        "verify_by_supplier", "settle_before_verification", "settle_refuted", "forged_signature",
-                                       "unenrolled_signer", "untyped_contract", "settle_grant_for_other_match", "settle_twice"}
+                                       "unenrolled_signer", "untyped_contract", "settle_grant_for_other_match",
+                                       "settle_forged_grant", "settle_twice"}
     assert all(result["refusals"].values()), "every attack named is refused with a reason"
     # a sole unrated bidder cannot be paid more than the newcomer ceiling even when the buyer's ceiling is higher
     root = tmp_path / "fresh"
@@ -840,8 +844,10 @@ def test_agent_commerce_sells_by_card_402_and_processor_verified_receipts(tmp_pa
     assert result["reconciled_to_processor"] and result["books_balance"] and result["refunds_due_after_sweep"] == 0
     assert set(result["refusals"]) >= {"unpriced_skill", "untyped_contract", "buyer_overrides_constant", "no_grant", "grant_for_other_order",
                                        "replay_same_payment", "replay_under_new_order", "underpaid", "payment_bound_to_other_order",
-                                       "unknown_payment", "expired_challenge", "confirm_by_seller", "confirm_before_delivery"}
+                                       "unknown_payment", "expired_challenge", "confirm_by_seller", "confirm_before_delivery",
+                                       "forged_grant", "grant_from_another_gate"}
     assert all(result["refusals"].values())
+    assert result["every_delivery_receipted_by_the_gate"]
     assert "replay refused" in result["refusals"]["replay_under_new_order"]
     orders = foundry_bridge.query({"system": 54, "op": "orders", "args": {}}, _ctx(tmp_path, "foundry.query"))
     assert orders["result"]["orders"] == [], "a fresh workspace has sold nothing"

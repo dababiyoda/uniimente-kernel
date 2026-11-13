@@ -81,7 +81,7 @@ The script worker never falls back, and a body that confines egress refuses supe
 
 ## 7. Recovery
 
-Dispatch claims without receipts become UNCERTAIN on restart. The founder answers `reconcile_executed` (DONE, with the signed cap booked when spend is unknown) or `reconcile_not_executed` (one retry). Routing and resilience count one outcome per attempt.
+Dispatch claims without receipts become UNCERTAIN on restart. The founder answers `reconcile_executed` (DONE, with the signed cap booked when spend is unknown) or `reconcile_not_executed` (one retry; for a metered capability, `worker.commission`, the signed cap stays booked, since its provider may have spent while it ran, so the retry may need an approval: #173 H.G4. The ask states what each answer books, and a "not executed" answer to an ask that did not is asked again with the terms). Routing and resilience count one outcome per attempt.
 
 Standing reconciliation (this branch, the selected invention in `INVENTION_LEDGER.md`): when the founder signed `standing_reconciliation.consequence_inert` into the mission, an UNCERTAIN `worker.commission` whose provider is consequence-inert (network namespace closed, no credentials, no paid route, writes only inside a private clone discarded before any retry), whose order left no completed evidence, and which has had fewer than two standing reconciliations, is settled as RECONCILED_NOT_EXECUTED with a recorded proof and retried once. The signed cap held for the interrupted attempt is released, since nothing could be charged. Anything else still asks the founder, and the request lists the predicates that failed.
 

@@ -28,11 +28,17 @@ Limits (stated, not hidden): reviewed worker processes require OS filesystem con
 a private HOME and a scrubbed environment (``greg/worker_isolation.py``, extracted from #157);
 unsupported hosts refuse dispatch, unless the founder initialized the body with
 ``worker_confinement: supervised``, in which case a worker the envelope cannot confine runs under
-#178's process supervision and its report says the filesystem and network were not confined
-(``SUPERVISION``). Provider network access remains available and is
+#178's process supervision. Where such a host has Landlock (ABI >= 3), #173's grants
+(``greg.isolation.worker_grants``) still confine that supervised worker and everything it starts:
+it reads and executes only the host runtime and writes only its own work directory, so it cannot
+read the Body home (ledger, witness key, device key, inbox), another mission's workspace, another
+work order, the source checkout or another process's environment. Without Landlock its report says
+the filesystem was not confined (``SUPERVISION``). Every report records which applied
+(``isolation`` and ``confinement``). Provider network access remains available and is
 explicitly reported, so this is not a network isolation claim. GREG's acceptance tests run in
-private filesystem, PID and network namespaces. Spend uses finite provider reports or a
-conservative full-cap reservation when unknown.
+private filesystem, PID and network namespaces (or, supervised without the envelope, with the
+network denied and Landlock-confined to the clone where available). Spend uses finite provider
+reports or a conservative full-cap reservation when unknown.
 """
 from __future__ import annotations
 
@@ -44,6 +50,7 @@ import json
 import math
 import os
 from pathlib import Path
+import posixpath
 import re
 import shutil
 import signal
@@ -52,7 +59,8 @@ import sys
 import tempfile
 import time
 
-from greg.capabilities import CapabilityError, InvocationContext, _inside
+from greg import isolation
+from greg.capabilities import CapabilityError, InvocationContext, _inside, run_isolated
 from greg.worker_isolation import WorkerIsolationError, envelope_cannot_confine, prepare_worker
 
 # Surfaces a worker may never change on its own: authority, permission semantics, approval
@@ -113,7 +121,8 @@ def _supervision(ctx, provider, report) -> dict | None:
         return None
     isolation = report.isolation or {}
     if isolation.get("mode") == "supervised":
-        return SUPERVISION
+        # Under Landlock (#173) the supervised worker's filesystem was confined; the receipt says what applied.
+        return {**SUPERVISION, "filesystem": isolation.get("filesystem") or SUPERVISION["filesystem"]}
     governed = isinstance(provider, (ClaudeCodeWorker, CliAgentWorker, ScriptWorker))
     return SUPERVISION if not isolation and not governed else None
 
@@ -269,6 +278,8 @@ class WorkOrder:
             raise WorkerError("require_context_quote needs non-empty document source context")
         # Inputs: founder read roots, or what this same mission already wrote to its own workspace.
         inputs = tuple(str(_inside(Path(p), ctx.read_roots + (ctx.workspace,))) for p in params.get("inputs", []))
+        if "bound_claims" in acceptance:
+            bound_claims(acceptance, mode, allowed_paths, inputs)
         provider = str(params.get("provider", "claude-code"))
         if provider not in PROVIDERS:
             raise WorkerError(f"unknown worker provider {provider!r}; known: {sorted(PROVIDERS)}")
@@ -299,6 +310,7 @@ class WorkerReport:
     error: str | None = None
     isolation: dict = field(default_factory=dict)
     interrupted: bool = False
+    confinement: dict | None = None   # what the OS enforced on the worker process (None: the provider did not say)
 
 
 def worker_spend(raw, cap: float) -> dict:
@@ -331,6 +343,35 @@ def worker_spend(raw, cap: float) -> dict:
             "raw_provider_value": raw_evidence, "reason": reason, "source": "provider_report"}
 
 
+def bound_claims(acceptance: dict, mode: str, allowed_paths, inputs=None) -> dict:
+    """A document order may require every sentence of its deliverable to be a claim the Mind answers as written.
+
+    ``{"claims": file, "quality": primary|secondary|unverified, "expires_at": ISO time}``: the worker lists each
+    sentence with the input spans that support it; quality and freshness are the signer's declaration about the
+    inputs, never the worker's. Acceptance belongs to ``worker.appraise``, which asks the Mind itself."""
+    from datetime import datetime
+    spec = acceptance["bound_claims"]
+    if mode != "document":
+        raise WorkerError("bound_claims applies to document work orders")
+    if not isinstance(spec, dict) or set(spec) != {"claims", "quality", "expires_at"}:
+        raise WorkerError("bound_claims declares exactly claims, quality and expires_at")
+    if not ORDER_NAME.match(str(spec["claims"])) or spec["claims"] == acceptance["output"]:
+        raise WorkerError("bound_claims.claims names a short file beside the deliverable")
+    if not allowed(spec["claims"], allowed_paths) or not allowed(acceptance["output"], allowed_paths):
+        raise WorkerError("the deliverable and its claims file must both be writable")
+    if spec["quality"] not in ("primary", "secondary", "unverified"):
+        raise WorkerError("bound_claims.quality is primary, secondary or unverified")
+    try:
+        datetime.fromisoformat(str(spec["expires_at"]).replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise WorkerError("bound_claims.expires_at is an ISO time") from exc
+    if inputs is not None:
+        names = [Path(p).name for p in inputs]
+        if not names or len(set(names)) != len(names):
+            raise WorkerError("bound_claims needs at least one input, each with its own file name")
+    return spec
+
+
 # -- providers ---------------------------------------------------------------------------
 
 def worker_prompt(order: WorkOrder) -> str:
@@ -357,6 +398,14 @@ def worker_prompt(order: WorkOrder) -> str:
                          "appraisal will compare exact source bytes; a paraphrase does not satisfy this check.")
         if order.acceptance.get("criteria"):
             lines.append("ACCEPTANCE CRITERIA: " + str(order.acceptance["criteria"]))
+        if order.acceptance.get("bound_claims"):
+            names = [Path(p).name for p in order.inputs]
+            lines.append(f"Also write ./{order.acceptance['bound_claims']['claims']}: a JSON list with one entry per "
+                         f"sentence of the deliverable, in order: {{\"text\": the sentence exactly as written, "
+                         f"\"quotes\": [{{\"input\": one of {names}, \"quote\": a span copied exactly from that "
+                         "input that says the same thing}]}. Every sentence needs at least one quote. GREG checks each "
+                         "sentence against its quotes itself: one that changes a figure, a negation, a hedge, a scope, "
+                         "a direction or a name, or that no quote supports, is not accepted.")
     if order.context:
         lines.append("CONTEXT:\n" + order.context)
     lines.append(f"When finished, end your reply with one line: {REPORT_MARK} "
@@ -389,6 +438,34 @@ def _die_with_body():
     if sys.platform.startswith("linux"):
         import ctypes
         ctypes.CDLL("libc.so.6", use_errno=True).prctl(1, 9)   # PR_SET_PDEATHSIG = 1, SIGKILL = 9
+
+
+def _confined(cwd: Path, binary, read_files=()) -> tuple:
+    """The ``preexec_fn`` that confines one worker process, and the record of what it enforces.
+
+    The grants are computed here, in the Body, so the child after fork only makes syscalls. A policy that
+    cannot be built safely (a runtime root containing the workspace) refuses the worker; a host with no
+    usable Landlock runs it as before and says so.
+    """
+    status = isolation.available()
+    if not status.get("available"):
+        reason = status.get("reason") or f"Landlock ABI {status.get('abi')} below 3"
+        return _die_with_body, {"filesystem": "none", "reason": reason}
+    try:
+        grants = isolation.worker_grants(cwd, binaries=[binary], read_files=read_files)
+        libc = isolation._libc()
+    except isolation.IsolationError as exc:
+        raise WorkerError(f"the worker cannot be confined, so it is refused: {exc}") from None
+
+    scope = isolation.signal_scope(status["abi"])   # it never signals the body that supervises it (ABI >= 6)
+
+    def preexec():
+        _die_with_body()
+        isolation.restrict(grants, libc, scope=scope)
+
+    return preexec, {"filesystem": "landlock", "abi": status["abi"], "writable": [str(cwd)],
+                     "readable": sorted(str(p) for p in grants if p != cwd.resolve()),
+                     "signals": isolation.signals_record(scope)}
 
 
 def _worker_env(workspace: Path) -> dict:
@@ -460,6 +537,29 @@ def _confined_or_supervised(prepare, argv: list[str], cwd: Path, *, confinement:
                 "runtime_root": runtime, "evidence": {**SUPERVISION, "envelope_refused": str(exc)[:300]}}
 
 
+def _landlock_supervised(envelope: dict, cwd: Path, binary, read_files=()) -> dict:
+    """How #173's Landlock grants compose with #157's envelope and the founder's setting, for one worker run.
+
+    Inside the envelope (bubblewrap: a private mount namespace binding only the host runtime, the clone and its
+    runtime directory, plus private PID/user/IPC/UTS namespaces) the worker already reaches nothing the Landlock
+    grants would withhold, and Landlock in the launching process would deny bubblewrap the mounts it needs, so the
+    envelope is the confinement and its record says so. Only a run the founder's ``supervised`` setting let past a
+    missing envelope gains Landlock (``_confined``): the worker then reads only the host runtime and writes only its
+    work directory, a policy that cannot be built safely refuses the worker, and without Landlock it stays process
+    supervision with its filesystem NOT confined, as its evidence says. ``required`` never reaches this fallback."""
+    evidence = envelope["evidence"]
+    if evidence.get("mode") != "supervised":
+        return {**envelope, "confinement": {"filesystem": "bubblewrap envelope", "mechanism": evidence.get("mechanism"),
+                                            "readable": list(evidence.get("read_roots", [])),
+                                            "writable": list(evidence.get("write_roots", []))}}
+    preexec, landlock = _confined(cwd, binary, read_files=read_files)
+    filesystem = (f"Landlock-confined: reads the host runtime, writes only {cwd} (same UID as the body; signals "
+                  f"{landlock.get('signals')})"
+                  if landlock.get("filesystem") == "landlock" else evidence.get("filesystem"))
+    return {**envelope, "preexec_fn": preexec, "confinement": landlock,
+            "evidence": {**evidence, "filesystem": filesystem, "landlock": landlock}}
+
+
 class ClaudeCodeWorker:
     """The Claude Code CLI as a headless, tool-using coding/research worker.
 
@@ -509,6 +609,7 @@ class ClaudeCodeWorker:
                 return self._run(order, cwd, envelope, stop_check)
 
     def _run(self, order: WorkOrder, cwd: Path, envelope: dict, stop_check) -> WorkerReport:
+        envelope = _landlock_supervised(envelope, cwd, self.binary)
         started = time.monotonic()
         try:
             proc = self.runner(envelope["argv"], input=worker_prompt(order), capture_output=True, text=True,
@@ -516,14 +617,15 @@ class ClaudeCodeWorker:
                                preexec_fn=envelope["preexec_fn"], stop_check=stop_check, **_fds(envelope))
         except WorkerInterrupted as exc:
             return WorkerReport(self.name, "claude-code", -1, time.monotonic() - started, None,
-                                error=str(exc), isolation=envelope["evidence"], interrupted=True)
+                                error=str(exc), isolation=envelope["evidence"], confinement=envelope.get("confinement"),
+                                interrupted=True)
         except WorkerError as exc:
             return WorkerReport(self.name, "claude-code", -1, time.monotonic() - started, None,
-                                error=str(exc), isolation=envelope["evidence"])
+                                error=str(exc), isolation=envelope["evidence"], confinement=envelope.get("confinement"))
         except subprocess.TimeoutExpired:
             return WorkerReport(self.name, "claude-code", -1, time.monotonic() - started, None,
                                 error=f"worker exceeded {order.timeout_seconds}s and was stopped",
-                                isolation=envelope["evidence"])
+                                isolation=envelope["evidence"], confinement=envelope.get("confinement"))
         duration = time.monotonic() - started
         try:
             result = json.loads(proc.stdout)
@@ -532,7 +634,7 @@ class ClaudeCodeWorker:
         except (json.JSONDecodeError, ValueError):
             return WorkerReport(self.name, "claude-code", proc.returncode, duration, None,
                                 error="unreadable worker output: " + (proc.stderr or proc.stdout)[-300:],
-                                isolation=envelope["evidence"])
+                                isolation=envelope["evidence"], confinement=envelope.get("confinement"))
         text = str(result.get("result", ""))
         usage = result.get("modelUsage")
         denials = result.get("permission_denials")
@@ -545,7 +647,7 @@ class ClaudeCodeWorker:
             claim=_parse_claim(text), summary=text[-MAX_TAIL:],
             permission_denials=[str(d)[:200] for d in denials[:50]] if isinstance(denials, list) else [],
             error=str(result.get("result") or proc.stderr)[-300:] if result.get("is_error") or proc.returncode else None,
-            isolation=envelope["evidence"])
+            isolation=envelope["evidence"], confinement=envelope.get("confinement"))
 
 
 class CliAgentWorker:
@@ -586,6 +688,10 @@ class CliAgentWorker:
         prompt_file = envelope["runtime_root"] / f"{order.order}.prompt.txt"
         prompt_file.write_text(prompt)
         argv = [a.replace("{prompt_file}", str(prompt_file)) for a in envelope["argv"]]
+        # A declared argv may name the program's own script (``python worker.py``): under Landlock it must be
+        # readable, or a confined worker cannot even start. Only regular files the template names, read-only.
+        scripts = [Path(a) for a in self.template[1:] if "{" not in a and Path(a).is_absolute() and Path(a).is_file()]
+        envelope = _landlock_supervised(envelope, cwd, self.binary, read_files=[prompt_file, *scripts])
         started = time.monotonic()
         try:
             proc = self.runner(argv, input=prompt if self.stdin else None, capture_output=True, text=True,
@@ -593,19 +699,20 @@ class CliAgentWorker:
                                preexec_fn=envelope["preexec_fn"], stop_check=stop_check, **_fds(envelope))
         except WorkerInterrupted as exc:
             return WorkerReport(self.name, self.name, -1, time.monotonic() - started, None,
-                                error=str(exc), isolation=envelope["evidence"], interrupted=True)
+                                error=str(exc), isolation=envelope["evidence"], confinement=envelope.get("confinement"),
+                                interrupted=True)
         except WorkerError as exc:
             return WorkerReport(self.name, self.name, -1, time.monotonic() - started, None,
-                                error=str(exc), isolation=envelope["evidence"])
+                                error=str(exc), isolation=envelope["evidence"], confinement=envelope.get("confinement"))
         except subprocess.TimeoutExpired:
             return WorkerReport(self.name, self.name, -1, time.monotonic() - started, None,
                                 error=f"worker exceeded {order.timeout_seconds}s and was stopped",
-                                isolation=envelope["evidence"])
+                                isolation=envelope["evidence"], confinement=envelope.get("confinement"))
         out = proc.stdout or ""
         return WorkerReport(self.name, self.name, proc.returncode, round(time.monotonic() - started, 2), None,
                             claim=_parse_claim(out), summary=out[-MAX_TAIL:],
                             error=None if proc.returncode == 0 else (proc.stderr or out)[-300:],
-                            isolation=envelope["evidence"])
+                            isolation=envelope["evidence"], confinement=envelope.get("confinement"))
 
 
 
@@ -644,6 +751,7 @@ class ScriptWorker:
         envelope = prepare_worker([sys.executable, "-I", "-"], cwd, timeout_seconds=order.timeout_seconds,
                                   provider=self.name, reviewed=True, source_env={}, network=False,
                                   file_bytes=8 * MAX_PROCESS_OUTPUT)
+        envelope = _landlock_supervised(envelope, cwd, sys.executable)     # the envelope's record; never supervised
         identity = "script:" + _sha(order.context.encode())[:16]
         started = time.monotonic()
         try:
@@ -653,21 +761,22 @@ class ScriptWorker:
                                    preexec_fn=envelope["preexec_fn"], stop_check=stop_check, **_fds(envelope))
         except WorkerInterrupted as exc:
             return WorkerReport(self.name, identity, -1, time.monotonic() - started, 0.0, error=str(exc),
-                                isolation=envelope["evidence"], interrupted=True)
+                                isolation=envelope["evidence"], confinement=envelope.get("confinement"),
+                                interrupted=True)
         except WorkerError as exc:
             return WorkerReport(self.name, identity, -1, time.monotonic() - started, 0.0, error=str(exc),
-                                isolation=envelope["evidence"])
+                                isolation=envelope["evidence"], confinement=envelope.get("confinement"))
         except subprocess.TimeoutExpired:
             return WorkerReport(self.name, identity, -1, time.monotonic() - started, 0.0,
                                 error=f"script exceeded {order.timeout_seconds}s and was stopped",
-                                isolation=envelope["evidence"])
+                                isolation=envelope["evidence"], confinement=envelope.get("confinement"))
         duration = time.monotonic() - started
         text = proc.stdout or ""
         return WorkerReport(provider=self.name, identity=identity, exit_code=proc.returncode,
                             duration_s=round(duration, 2), cost_usd=0.0, claim=_parse_claim(text),
                             summary=text[-MAX_TAIL:],
                             error=(proc.stderr or text)[-300:] if proc.returncode else None,
-                            isolation=envelope["evidence"])
+                            isolation=envelope["evidence"], confinement=envelope.get("confinement"))
 
 
 STANDING_RECONCILIATION_LIMIT = 2      # per (mission, action); after that the founder decides
@@ -744,13 +853,14 @@ def _tree_digest(root: Path) -> str:
     return h.hexdigest()
 
 
-def _git(repo: Path, *args, check: bool = True, home: Path | None = None) -> subprocess.CompletedProcess:
+def _git(repo: Path, *args, check: bool = True, home: Path | None = None, text: bool = True) -> subprocess.CompletedProcess:
     env = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "GIT_CONFIG_NOSYSTEM": "1",
            "GIT_CONFIG_GLOBAL": "/dev/null", "HOME": str(home or repo), "GIT_TERMINAL_PROMPT": "0"}
-    proc = subprocess.run(["git", *_GIT_HARDENING, "-C", str(repo), *args], capture_output=True, text=True,
+    proc = subprocess.run(["git", *_GIT_HARDENING, "-C", str(repo), *args], capture_output=True, text=text,
                           timeout=120, env=env)
     if check and proc.returncode:
-        raise WorkerError(f"git {' '.join(args[:3])} failed: {proc.stderr[-300:]}")
+        err = proc.stderr if text else proc.stderr.decode("utf-8", "replace")
+        raise WorkerError(f"git {' '.join(args[:3])} failed: {err[-300:]}")
     return proc
 
 
@@ -771,11 +881,20 @@ def private_clone(source: str, base: str, dest: Path) -> str:
     return commit
 
 
-def collect_changes(clone: Path, base_commit: str) -> tuple[list[str], str]:
+def collect_changes(clone: Path, base_commit: str) -> tuple[list[str], bytes]:
+    """Changed paths and the patch as bytes: a worker may write any bytes, and decoding them would crash."""
     _git(clone, "add", "-A")
     names = _git(clone, "diff", "--cached", "--name-only", base_commit).stdout.split()
-    patch = _git(clone, "diff", "--cached", "--binary", base_commit).stdout
+    patch = _git(clone, "diff", "--cached", "--binary", base_commit, text=False).stdout
     return sorted(names), patch
+
+
+def _supervised_acceptance(landlock: dict | None) -> str:
+    """The record of a supervised acceptance run: what run_isolated applied, or (not yet known) NOT confined."""
+    if (landlock or {}).get("filesystem") == "landlock":
+        return ("supervised: network denied, environment scrubbed, filesystem Landlock-confined to the clone, "
+                f"signals {landlock.get('signals')}")
+    return "supervised: network denied, environment scrubbed, filesystem NOT confined"
 
 
 def run_tests(tests: list, cwd: Path, *, timeout: int, stop_check=None, confinement: str = "required") -> list[dict]:
@@ -784,14 +903,16 @@ def run_tests(tests: list, cwd: Path, *, timeout: int, stop_check=None, confinem
     Worker-written tests are untrusted code. On a host that cannot provide the envelope (no usable
     bubblewrap), the command is refused and recorded as failed; it never runs with GREG's own reach.
     The one exception is the founder's ``supervised`` body setting: there the command runs as #178 ran
-    it, scrubbed and with the network denied (seccomp / sandbox-exec), and its result says the filesystem
-    was not confined. Without network denial it is refused in every mode."""
-    from greg.capabilities import run_isolated
+    it, scrubbed and with the network denied (seccomp / sandbox-exec), and confined as the worker was
+    (#173 ``confine_to``): on Linux with Landlock the patch's code reads only the host runtime and writes
+    only its clone; without Landlock its result says the filesystem was not confined. Unconfined, a
+    patch's test could read the Body's witness key into the retained output tail, or write into the Body
+    home. Without network denial it is refused in every mode."""
     results = []
     for argv in tests:
         argv = [sys.executable if a in ("python", "python3") else a for a in argv]
         started = time.monotonic()
-        mode = "envelope: private filesystem, PID and network namespaces"
+        mode, landlock = "envelope: private filesystem, PID and network namespaces", None
         try:
             try:
                 envelope = prepare_worker(argv, cwd, timeout_seconds=timeout, provider="acceptance-tests",
@@ -801,10 +922,20 @@ def run_tests(tests: list, cwd: Path, *, timeout: int, stop_check=None, confinem
                 # Acceptance the envelope cannot host is only acceptance on a host without it.
                 if confinement_mode(confinement) != "supervised" or not envelope_cannot_confine(exc):
                     raise
-                mode = "supervised: network denied, environment scrubbed, filesystem NOT confined"
-                proc = run_isolated(argv, cwd=cwd, isolate_network=True, timeout=timeout, stop_check=stop_check,
-                                    extra_env={"PATH": f"{Path(sys.executable).parent}:/usr/bin:/bin",
-                                               "PYTHONDONTWRITEBYTECODE": "1"})
+                # Never the envelope's description for a run outside it, even when the run times out (merge review
+                # of e410977): the supervised record is set before the run and refined by what run_isolated applied.
+                mode = _supervised_acceptance(None)
+                try:
+                    proc = run_isolated(argv, cwd=cwd, isolate_network=True, timeout=timeout, stop_check=stop_check,
+                                        confine_to=cwd,
+                                        extra_env={"PATH": f"{Path(sys.executable).parent}:/usr/bin:/bin",
+                                                   "PYTHONDONTWRITEBYTECODE": "1"})
+                except subprocess.TimeoutExpired as exc:
+                    landlock = getattr(exc, "confinement", None)
+                    mode = _supervised_acceptance(landlock)
+                    raise
+                landlock = getattr(proc, "confinement", None)
+                mode = _supervised_acceptance(landlock)
             else:
                 envelope["env"]["PYTHONDONTWRITEBYTECODE"] = "1"
                 proc = supervised_run(envelope["argv"], cwd=cwd, timeout=timeout, capture_output=True,
@@ -813,11 +944,16 @@ def run_tests(tests: list, cwd: Path, *, timeout: int, stop_check=None, confinem
             code, out = proc.returncode, (proc.stdout + proc.stderr).decode("utf-8", "replace")
         except subprocess.TimeoutExpired:
             code, out = -1, f"timed out after {timeout}s"
-        except (CapabilityError, WorkerIsolationError, OSError, subprocess.SubprocessError) as exc:
+        except (CapabilityError, WorkerIsolationError, subprocess.SubprocessError) as exc:
             code, out, mode = -1, "acceptance confinement refused: " + str(exc)[:300], "refused"
+        except OSError as exc:
+            # The worker's clone could not host the run (e.g. it made the clone unwritable): the patch fails
+            # acceptance. Nothing outside the clone ran, so this is never an outcome GREG cannot know.
+            code, out, mode = -1, f"acceptance could not run in the worker's clone: {type(exc).__name__}: {exc}", \
+                "refused"
         results.append({"argv": argv, "returncode": code, "passed": code == 0,
                         "seconds": round(time.monotonic() - started, 2), "tail": out[-MAX_TAIL:],
-                        "network": "denied", "confinement": mode})
+                        "network": "denied", "confinement": mode, "landlock": landlock})
     return results
 
 
@@ -829,6 +965,220 @@ def acceptance_commands(acceptance: dict, names: list[str]) -> list[list[str]]:
         commands.append(["python", "-m", "pytest", "-q", "-p", "no:cacheprovider", *changed] if changed else
                         ["false", "acceptance requires the worker to add or change at least one test"])
     return commands
+
+
+# The evaluator a repository order is judged by (from #173 a48e8fa, widened by the PR #184 port's review 0afd309):
+# what the explicit acceptance commands run and name, as it stood at the recorded base, and every file that can
+# change how the runner behaves. A worker that edits a named test (weakening it to ``assert True``), a helper module
+# or data file beside it, adds a conftest.py, or plants a module the runner imports before the code under test has
+# replaced its own judge; the patched tree would then "pass".
+EVALUATOR_CONFIG = ("conftest.py", "*/conftest.py", "pytest.ini", "tox.ini")
+# Files the interpreter itself loads before any test: site hooks, path files, and installed-distribution metadata
+# whose entry points pytest autoloads as plugins. Any depth, any change.
+EVALUATOR_RUNTIME = ("sitecustomize.py", "*/sitecustomize.py", "usercustomize.py", "*/usercustomize.py", "*.pth",
+                     "*.dist-info/*", "*.egg-info/*")
+# What ``python -m pytest`` imports from ``sys.path``, whose first entry is the clone itself.
+RUNNER_MODULES = frozenset({"pytest", "_pytest", "py", "pluggy", "iniconfig", "packaging",
+                            "sitecustomize", "usercustomize"})
+# A new top-level module with one of these names, on a directory Python or pytest puts on ``sys.path``, shadows the
+# real one. The standard library's own regression suite (``test``) is never imported by the interpreter or by pytest,
+# and ``test/`` is a common repository test directory.
+SHADOWED_MODULES = (frozenset(getattr(sys, "stdlib_module_names", ())) - {"test"}) | RUNNER_MODULES
+EVALUATOR_SHARED = ("pyproject.toml", "setup.cfg")   # may configure pytest, but also carry legitimate changes
+TEST_FILES = ("test_*.py", "*_test.py")             # pytest's default python_files
+TEST_DIRS = ("test", "tests", "testing")
+_INTERPRETER = re.compile(r"(?:python|pypy)[\d.]*|bash|sh|dash|zsh|node|perl|ruby")
+_SHELL = re.compile(r"bash|sh|dash|zsh")
+_WRAPPER = ("env", "timeout", "nice", "nohup", "stdbuf", "time")
+
+
+def _module_name(component: str, last: bool) -> str:
+    """The import name a path component provides on ``sys.path`` (a directory, or a module file by suffix)."""
+    if not last:
+        return component
+    from importlib.machinery import all_suffixes
+    return component.split(".", 1)[0] if any(component.endswith(s) for s in all_suffixes()) else ""
+
+
+def _acceptance_targets(argv: list[str], out: dict) -> None:
+    """What one acceptance argv runs and names: ``scripts`` (files it executes), ``paths`` (files or directories it
+    names), ``config`` (runner configuration it names), ``modules`` (run with ``-m`` or loaded with ``-p``)."""
+    argv = [str(a) for a in argv]
+    while argv and posixpath.basename(argv[0]) in _WRAPPER:      # env A=1 cmd ..., timeout 60 cmd ...
+        timeout = posixpath.basename(argv[0]) == "timeout"
+        argv = argv[1:]
+        while argv and (argv[0].startswith("-") or "=" in argv[0]):
+            argv = argv[1:]
+        if timeout and argv:
+            argv = argv[1:]
+    if not argv:
+        return
+    head, rest = posixpath.basename(argv[0]), argv[1:]
+    if "/" in argv[0]:
+        out["scripts"].add(argv[0])
+    if _INTERPRETER.fullmatch(head):
+        while rest and rest[0].startswith("-"):
+            flag, rest = rest[0], rest[1:]
+            if flag == "-c" and rest:
+                if _SHELL.fullmatch(head):                          # sh -c "python -m pytest tests/x.py && ..."
+                    import shlex
+                    try:
+                        lexer = shlex.shlex(rest[0], posix=True, punctuation_chars=True)
+                        lexer.whitespace_split = True
+                        words = list(lexer)
+                    except ValueError:
+                        words = []
+                    command = []
+                    for word in words + [";"]:
+                        if word and set(word) <= set(";&|()"):
+                            _acceptance_targets(command, out)
+                            command = []
+                        else:
+                            command.append(word)
+                return
+            if flag == "-m" and rest:
+                out["modules"].add(rest[0])
+                if rest[0] in ("pytest", "py.test"):
+                    _runner_targets(rest[1:], out)
+                else:
+                    out["paths"].update(a for a in rest[1:] if not a.startswith("-"))
+                return
+            if flag in ("-W", "-X", "-o", "-O") and rest:
+                rest = rest[1:]
+        if rest:
+            out["scripts"].add(rest[0])
+            out["paths"].update(a for a in rest[1:] if not a.startswith("-"))
+    elif head in ("pytest", "py.test"):
+        _runner_targets(rest, out)
+    else:
+        out["paths"].update(a for a in rest if not a.startswith("-"))
+
+
+def _runner_targets(args: list[str], out: dict) -> None:
+    """pytest's own arguments: ``-p plugin`` and ``-c file`` are part of the evaluator; positionals are test paths."""
+    args = list(args)
+    while args:
+        arg, args = args[0], args[1:]
+        flag, eq, value = arg.partition("=")
+        if flag in ("-p", "-c", "--config-file") and not eq and args:
+            value, args = args[0], args[1:]
+        elif not (flag in ("-p", "-c", "--config-file") and eq):
+            if not arg.startswith("-"):
+                out["paths"].add(arg)
+            continue
+        if flag == "-p" and not value.startswith("no:"):
+            out["modules"].add(value)
+        elif flag != "-p":
+            out["config"].add(value)
+
+
+def evaluator_findings(name_status: str, acceptance: dict, base_files=None, files=None) -> dict:
+    """From ``git diff --name-status --no-renames`` against the base: the frozen evaluator files the patch changed.
+
+    ``base_files``/``files`` are the tracked files at the base and after the patch (inferred from ``name_status``
+    alone when not given). ``replaced`` lists, for any change: runner configuration and interpreter hooks
+    (``EVALUATOR_CONFIG``, ``EVALUATOR_RUNTIME``); the runner's own modules and any module an acceptance command runs
+    with ``-m`` or loads with ``-p``; and a new module that shadows the standard library or the runner on the
+    repository root, or also a top-level module of the repository on a directory pytest prepends to ``sys.path`` for
+    a test. It also lists every file that existed at the base and was modified, deleted or changed type when it is: a
+    script an acceptance command executes; a named file that is not Python (configuration, data, doctest text); a
+    named test file, a test file inside a named directory, or any file in a named directory called ``test``,
+    ``tests`` or ``testing``; or any file in such a test's directory (its helpers and data). A named Python file that
+    is not a test is code under test and stays writable; new test files extend the suite. ``shared``: project files
+    that may also configure the runner.
+    """
+    changes = []
+    for line in name_status.splitlines():
+        status, _, path = line.partition("\t")
+        if path:
+            changes.append((status[:1], path))
+    base = set(base_files) if base_files is not None else {p for s, p in changes if s != "A"}
+    after = set(files) if files is not None else (base - {p for s, p in changes if s == "D"}) | {
+        p for s, p in changes if s != "D"}
+
+    def under(path, tree):
+        return any(f.startswith(path + "/") for f in tree)
+
+    def is_test(path):
+        return any(fnmatchcase(posixpath.basename(path), p) for p in TEST_FILES)
+
+    def basedirs(path):
+        """pytest's prepend import mode puts the first directory above a test without ``__init__.py`` on sys.path."""
+        found = set()
+        for tree in (base, after):
+            d = posixpath.dirname(path)
+            while d and d + "/__init__.py" in tree:
+                d = posixpath.dirname(d)
+            found.add(d)
+        return found
+
+    def norm(path):
+        path = posixpath.normpath(path.split("::", 1)[0])
+        return "" if path in (".", "..") or path.startswith(("/", "../")) else path
+
+    targets = {"scripts": set(), "paths": set(), "config": set(), "modules": set()}
+    for argv in acceptance.get("tests", []):
+        _acceptance_targets(list(argv), targets)
+    frozen = {p for p in map(norm, targets["scripts"] | targets["config"]) if p}
+    tests, helper_dirs = set(), set()
+    for path in filter(None, map(norm, targets["paths"])):
+        if under(path, base) or under(path, after):
+            tests.update(f for f in base if f.startswith(path + "/") and is_test(f))
+            if set(path.split("/")) & set(TEST_DIRS):       # a named test directory is frozen whole
+                helper_dirs.add(path)
+        elif is_test(path):
+            tests.add(path)
+        elif not path.endswith(".py"):
+            frozen.add(path)
+    for test in tests:
+        frozen.add(test)
+        for d in basedirs(test):
+            if not d:                                       # a test inside packages: its nearest test directory
+                parts = test.split("/")[:-1]
+                d = next(("/".join(parts[:i + 1]) for i, part in enumerate(parts) if part in TEST_DIRS), "")
+            if d:
+                helper_dirs.add(d)
+    modules = {m.replace(".", "/") for m in targets["modules"] | RUNNER_MODULES}
+    # Directories Python or pytest puts on sys.path: the clone root, and each test's prepend directory.
+    roots = {""} | {d for tree in (base, after) for f in tree
+                    if is_test(f) or posixpath.basename(f) == "conftest.py" for d in basedirs(f)}
+    namespace = {f.split("/", 1)[0] for f in base if "/" in f and _module_name(f.rsplit("/", 1)[1], True)}
+    top = ({_module_name(f, True) for f in base if "/" not in f} | namespace) - {""}
+    namespace -= {f.split("/", 1)[0] for f in base if f.count("/") == 1 and f.endswith("/__init__.py")}
+    shadowing = SHADOWED_MODULES | {m.split(".", 1)[0] for m in targets["modules"]}
+
+    def module(path):
+        """A frozen module's file or package, at the place ``sys.path`` would find it."""
+        return any(path.startswith(m + "/") or posixpath.dirname(path) == posixpath.dirname(m)
+                   and _module_name(posixpath.basename(path), True) == posixpath.basename(m) for m in modules)
+
+    def shadows(path):
+        """A new module on a ``sys.path`` directory whose name hides one the runner or the tests import."""
+        for root in roots:
+            if root and not path.startswith(root + "/"):
+                continue
+            parts = path[len(root) + 1 if root else 0:].split("/")
+            entry = (root + "/" if root else "") + parts[0]
+            if len(parts) == 1:
+                name = _module_name(parts[0], True)
+            elif entry + "/__init__.py" in after or parts[0] in namespace and root:
+                name = parts[0]                             # a regular package, or a portion of a namespace one
+            else:
+                continue
+            if name and name in (shadowing | top if root else shadowing) and entry not in base and not under(
+                    entry, base):
+                return True
+        return False
+
+    replaced, shared = [], []
+    for status, path in changes:
+        existing = status in ("M", "D", "T")
+        if (allowed(path, EVALUATOR_CONFIG) or allowed(path, EVALUATOR_RUNTIME) or module(path) or shadows(path)
+                or existing and (path in frozen or any(path.startswith(d + "/") for d in helper_dirs))):
+            replaced.append(path)
+        elif allowed(path, EVALUATOR_SHARED):
+            shared.append(path)
+    return {"replaced": sorted(replaced), "shared": sorted(shared)}
 
 
 def scope_findings(names: list[str], order_allowed: tuple, max_files: int | None) -> dict:
@@ -852,11 +1202,11 @@ def commission(params: dict, ctx: InvocationContext) -> dict:
         raise WorkerError(why)
     root = _order_dir(ctx, order.order)
     evidence_path = root / "evidence.json"
-    if evidence_path.is_file():                       # reconciliation said "not executed" but it had finished
-        prior = json.loads(evidence_path.read_text())
-        if prior.get("order_digest") == order.digest() and prior.get("status") in ("COMPLETED", "NO_CHANGE"):
-            return {**prior["summary"], "reused": True}
-    if root.exists():                                 # a partial, interrupted run: discard it, keep a note
+    # Every grant runs its own worker in a fresh clone. Evidence an earlier grant left (a body stopped after
+    # writing it but before the Gate's receipt, then reconciled "not executed") is never returned as this grant's
+    # result: its grant has no receipt, so the bound appraisal rejects it, and this grant's receipt would record a
+    # run that did not happen under it (acceptance H.G11). The earlier grant's receipt, if any, keeps its summary.
+    if root.exists():                                 # an earlier or interrupted run: discard it
         (ctx.workspace / "work-orders").mkdir(parents=True, exist_ok=True)
         shutil.rmtree(root)
     root.mkdir(parents=True)
@@ -865,7 +1215,10 @@ def commission(params: dict, ctx: InvocationContext) -> dict:
              "authority_ref": order.authority_ref, "mission_id": order.mission_id,
              "provider": order.provider, "max_budget_usd": order.max_budget_usd,
              "timeout_seconds": order.timeout_seconds, "workspace": str(work),
-             "authority_created": False, "push_rights": False, "secrets": "none"}
+             "authority_created": False, "push_rights": False, "secrets": "none",
+             "acceptance": order.acceptance,
+             "evaluator": "worker.appraise; every sentence answered by the Mind's evidence family (cognition.evidence)"
+                          if order.acceptance.get("bound_claims") else "worker.appraise"}
     (root / "lease.json").write_text(json.dumps(lease, indent=2, sort_keys=True))
     base_commit = None
     if order.mode == "repository":
@@ -920,9 +1273,9 @@ def commission(params: dict, ctx: InvocationContext) -> dict:
             raise WorkerError("the clone's git metadata changed during GREG's restore; nothing was collected")
         names, patch = collect_changes(work, base_commit)
     except (WorkerError, OSError, subprocess.TimeoutExpired) as exc:
-        names, patch = [], ""
+        names, patch = [], b""
         collection_error = f"could not collect worker changes: {str(exc)[:300]}"
-    patch_bytes = patch.encode()
+    patch_bytes = patch                    # bytes: a worker may write any bytes (#185)
     if len(patch_bytes) > MAX_PATCH:
         collection_error = "the worker's diff exceeds the reviewable patch ceiling"
     findings = scope_findings(names, order.allowed_paths, order.acceptance.get("max_changed_files"))
@@ -988,6 +1341,7 @@ def commission(params: dict, ctx: InvocationContext) -> dict:
                    "permission_denials": report.permission_denials, "isolation": report.isolation,
                    # #178's statement of what supervision leaves unconfined, only where it is true (see below).
                    "supervision": _supervision(ctx, provider, report),
+                   "confinement": report.confinement or {"filesystem": "not reported by the provider"},
                    "interrupted": report.interrupted},
         "cost_usd": spend["charge_usd"], "spend": spend, "collection_error": collection_error,
         "worker_claim": report.claim, "worker_summary_tail": report.summary[-1500:],
@@ -1001,14 +1355,63 @@ def commission(params: dict, ctx: InvocationContext) -> dict:
 
 # -- independent appraisal ----------------------------------------------------------------
 
+def _mind_appraisal(order_name: str, order: dict, spec: dict, fresh: Path, base: str, out: Path | None,
+                    registry=None) -> tuple[dict, list[str], dict]:
+    """Every sentence of the deliverable against GREG's own copies of the inputs, answered by the Mind.
+
+    The inputs are read from the base commit GREG made before the worker ran, never from the worker's tree; the
+    worker's bindings are claims the evidence family checks, never acceptance."""
+    from greg.cognition import restatement
+    from greg.cognition.contracts import CognitionError
+    unchecked = {"checked": False, "limits": "no sentence was checked as written"}
+    if out is None or not out.is_file():      # missing, or outside the private workspace: already rejected
+        return unchecked, [], {}
+    claims_file = fresh / spec["claims"]
+    if not claims_file.is_file():
+        return unchecked, [f"claims file {spec['claims']} is missing: no sentence of the deliverable can be checked"], {}
+    try:
+        document, raw_claims = out.read_text(encoding="utf-8"), claims_file.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        return unchecked, ["the deliverable or its claims file is not UTF-8 text"], {}
+    names = [Path(p).name for p in order["inputs"]]
+    if not names or len(set(names)) != len(names):
+        return unchecked, ["the order's inputs need distinct file names for GREG's copies to be checked"], {}
+    sources = []
+    for name in names:
+        shown = _git(fresh, "show", f"{base}:inputs/{name}", check=False, text=False)
+        if shown.returncode:
+            return unchecked, [f"input {name} is not in GREG's copy at the base commit"], {}
+        try:
+            text = shown.stdout.decode("utf-8")
+        except UnicodeDecodeError:
+            return unchecked, [f"input {name} is not UTF-8 text; the Mind reads text"], {}
+        sources.append(restatement.source(
+            name, text, quality=spec["quality"], expires_at=spec["expires_at"],
+            provenance=f"work order {order_name}: GREG's copy of {name} at base {base[:12]}, made before the worker ran"))
+    claims, findings = restatement.read_claims(raw_claims, names)
+    try:
+        receipts = restatement.answer(claims, sources, problem_prefix=f"work-{order_name}", registry=registry)
+    except (CognitionError, ValueError, TypeError, KeyError) as exc:
+        return unchecked, findings + [f"the Mind could not take the claims: {str(exc)[:200]}"], {}
+    truth, problems = restatement.coverage(document, receipts)
+    return truth, findings + problems, receipts
+
+
 def appraise(params: dict, ctx: InvocationContext) -> dict:
     """``worker.appraise`` (read-only sensor): re-derive the result without trusting the worker or the collector.
 
     Fresh clone of the ORIGINAL repository at the recorded base -> apply the retained patch
     (digest-checked) -> recompute the changed-file set from the patch itself -> scope and
     protected-surface checks -> rerun acceptance with no network -> budget check. The worker's
-    claim and GREG's first test run are ignored. Verdicts: ABSENT, ACCEPTED, REJECTED,
-    NEEDS_FOUNDER_DECISION (protected surface touched: capability may grow, authority may not).
+    claim and GREG's first test run are ignored. Verdicts: ABSENT, ACCEPTED, REJECTED (including a patch
+    that replaced its own evaluator: a named acceptance test, its helpers, an executed script, pytest
+    configuration, interpreter hooks or a module shadowing the runner or the code under test,
+    ``evaluator_findings``), NEEDS_FOUNDER_DECISION (protected surface, or a project file that can configure
+    the runner, touched: capability may grow, authority may not; never overriding a rejection).
+
+    A document order with ``bound_claims`` is accepted only if every sentence of the deliverable is a claim the Mind
+    answered as written against GREG's copies of the inputs. A mission may sign that contract into this sensor's
+    params; the signed contract then applies, and a recorded order that differs from it is rejected.
     """
     order_name = str(params.get("order", ""))
     if not ORDER_NAME.match(order_name):
@@ -1025,9 +1428,23 @@ def appraise(params: dict, ctx: InvocationContext) -> dict:
         frozen_digest = WorkOrder(**order).digest()
     except (TypeError, ValueError):
         return {"order": order_name, "verdict": "REJECTED", "findings": ["retained work order is malformed"]}
+    findings, verdict, mind = [], "ACCEPTED", {}
+    # #185: a mission may sign the acceptance contract into this sensor. It is compared with the record before the
+    # frozen-digest refusal, so an edited record reports both; nothing of a record that fails its digest is run.
+    signed = params.get("bound_claims")
+    if signed is not None:
+        try:
+            bound_claims({**order["acceptance"], "bound_claims": signed}, order["mode"], tuple(order["allowed_paths"]))
+        except WorkerError as exc:
+            return {"order": order_name, "verdict": "REJECTED", "findings": [f"the signed acceptance contract: {exc}"]}
+        except (TypeError, KeyError, AttributeError):
+            return {"order": order_name, "verdict": "REJECTED", "findings": ["retained work order is malformed"]}
+        if signed != order["acceptance"].get("bound_claims"):
+            findings.append("the recorded acceptance contract differs from the one this mission signed")
+            verdict = "REJECTED"
     if frozen_digest != evidence.get("order_digest") or frozen_digest != summary.get("order_digest"):
         return {"order": order_name, "verdict": "REJECTED",
-                "findings": ["retained work order does not match its frozen digest"]}
+                "findings": findings + ["retained work order does not match its frozen digest"]}
     receipt_binding = "standalone appraisal: canonical commission receipt unavailable"
     if ctx.journal is not None:
         receipts = [r for r in ctx.journal.ledger.by_type("receipt")
@@ -1037,16 +1454,15 @@ def appraise(params: dict, ctx: InvocationContext) -> dict:
                 or order.get("order") != order_name
                 or ctx.mission_id and order.get("mission_id") != ctx.mission_id):
             return {"order": order_name, "verdict": "REJECTED",
-                    "findings": ["retained work order differs from its canonical commission receipt"]}
+                    "findings": findings + ["retained work order differs from its canonical commission receipt"]}
         for field in ("patch_sha256", "changed_files", "base_commit", "commit", "spend"):
             if canonical.get(field) != summary.get(field):
                 return {"order": order_name, "verdict": "REJECTED",
-                        "findings": [f"retained {field} differs from the canonical commission receipt"]}
+                        "findings": findings + [f"retained {field} differs from the canonical commission receipt"]}
         if canonical.get("worker", {}).get("cost_usd") != summary.get("worker", {}).get("cost_usd"):
             return {"order": order_name, "verdict": "REJECTED",
-                    "findings": ["retained spend differs from the canonical commission receipt"]}
+                    "findings": findings + ["retained spend differs from the canonical commission receipt"]}
         receipt_binding = "frozen work order and collected artifact bound to canonical commission receipt"
-    findings, verdict = [], "ACCEPTED"
     if summary.get("status") not in ("COMPLETED", "NO_CHANGE"):
         findings.append(f"worker collection did not complete: {summary.get('status')}")
         verdict = "REJECTED"
@@ -1099,6 +1515,15 @@ def appraise(params: dict, ctx: InvocationContext) -> dict:
         if scope["too_many_files"]:
             findings.append("more files changed than the order allows")
             verdict = "REJECTED"
+        evaluator = {"replaced": [], "shared": []}
+        if order["mode"] == "repository":
+            evaluator = evaluator_findings(
+                _git(fresh, "diff", "--cached", "--name-status", "--no-renames", base).stdout, order["acceptance"],
+                base_files=_git(fresh, "ls-tree", "-r", "-z", "--name-only", base).stdout.split("\0")[:-1],
+                files=_git(fresh, "ls-files", "-z").stdout.split("\0")[:-1])
+            if evaluator["replaced"]:
+                findings.append(f"the worker changed the frozen evaluator it is judged by: {evaluator['replaced']}")
+                verdict = "REJECTED"
         if order["mode"] == "repository":
             with_tests = run_tests(acceptance_commands(order["acceptance"], names), fresh,
                                    timeout=min(int(order["timeout_seconds"]), 1200), stop_check=ctx.stop_check,
@@ -1123,8 +1548,20 @@ def appraise(params: dict, ctx: InvocationContext) -> dict:
                     not order.get("context") or order["context"].encode() not in out.read_bytes()):
                 findings.append("document does not quote the frozen source context verbatim")
                 verdict = "REJECTED"
+            spec = signed if signed is not None else order["acceptance"].get("bound_claims")
+            if spec is not None:
+                truth, problems, receipts = _mind_appraisal(order_name, order, spec, fresh, base, out,
+                                                            registry=ctx.capability_registry)
+                mind = {"truth_preservation": truth, "cognition_receipts": receipts}
+                if problems:
+                    findings += problems
+                    verdict = "REJECTED"
         if scope["protected_touched"] and verdict == "ACCEPTED":
             findings.append(f"protected surfaces changed: {scope['protected_touched']}; founder decision required")
+            verdict = "NEEDS_FOUNDER_DECISION"
+        if evaluator["shared"] and verdict == "ACCEPTED":
+            findings.append(f"project files that can configure the test runner changed: {evaluator['shared']}; "
+                            "founder decision required")
             verdict = "NEEDS_FOUNDER_DECISION"
     if summary.get("worker_claim") is not None:
         findings.append("worker self-report retained as claim only; not used for this verdict")
@@ -1134,5 +1571,5 @@ def appraise(params: dict, ctx: InvocationContext) -> dict:
             "independence": "fresh clone of the source at the recorded base, retained patch re-applied, "
                             "acceptance re-run with no network; worker claim and collector tests not used",
             "worker": summary.get("worker", {}).get("identity"), "receipt_binding": receipt_binding,
-            "spend": spend,
+            "spend": spend, **mind,
             "authority_created": False}

@@ -1,0 +1,70 @@
+{
+  "intent_id": "INTENT-20260930-MASTER-BUILD-GATE",
+  "statement": "Preserve the complete founder-intended capability horizon, distinguish intended effects from current evidence, reconcile useful project mechanisms into one persistent GREG, and build the nearest real prerequisite to a verified embodied persistent mission closure without creating new constitutional authority.",
+  "source_refs": [
+    "Current user message, 2026-09-30: UNIIMENTE / GREG OPUS MAXIMUS MASTER BUILD DIRECTIVE, sections 1-77",
+    "docs/intent/INTENT-2026-09-30-OPUS-MAXIMUS-CONVERGENCE.json",
+    "docs/intent/INTENT-2026-09-30-DEVELOPMENTAL-INHERITANCE.json"
+  ],
+  "source_limit": "The current message is directly available in this session. Its stable conversation/message ID and original timestamp beyond the session date are unavailable. This faithful normalization does not claim to preserve the complete source verbatim or cryptographically authenticate a runtime founder.",
+  "controlling_excerpts_whitespace_normalized": [
+    "Keep these separate at all times: INTENDED CURRENT PATH",
+    "COMPETENCE MAY EMERGE UPWARD. AUTHORITY DOES NOT.",
+    "Not implemented does not mean not intended.",
+    "Tested does not mean real-world verified.",
+    "The builder must not be the sole verifier.",
+    "No quantity of:",
+    "DO NOT RETURN WITH ANOTHER CATHEDRAL."
+  ],
+  "intended_observable_effect": "One founder-sovereign institutional identity, authority/evidence lineage and goal architecture continue bounded real missions through interface closure and interruption; only sufficiently evidenced closures are verified and only legitimate founder acceptance can support the real embodied milestone.",
+  "affected_systems": ["greg/", "Kernel authority and evidence", "project source coverage", "specialist repositories", "future bodies and interfaces"],
+  "lifecycle_state": "active",
+  "state": "active",
+  "implementation_state": "partial; this session repairs appraisal and founder-key installation prerequisites, not the destination",
+  "authority_level": "active development requirement; runtime founder commands require independent authentication",
+  "consequence_class": "architectural and evidence-sensitive; reversible development only",
+  "binding_scope": "Inspection, local implementation, isolated branch, tests, evidence preservation and reviewable draft PR. No merge, deployment, spending, publishing of business output, outsider contact, infrastructure acquisition, or live founder enrollment is authorized by this record.",
+  "owner": "Alfonso Lopez remains root authority; Kernel/GREG maintainers own implementation",
+  "implementation_refs": ["greg/appraisal.py", "greg/founder.py", "greg/cli.py", "greg/body.py", "greg/chromebook/install.sh", "greg/path.json"],
+  "evidence_refs": ["docs/collaboration/GREG-GATE-REPAIR-20260930.md", "docs/collaboration/SOURCE-COVERAGE-20260930-PROOF-INTEGRITY.json", "docs/collaboration/LINEAGE-AUDIT-20260930.json"],
+  "horizon_owner": "greg/path.json (34 retained horizons); this record does not replace or narrow those records",
+  "permanent_effects": [
+    "persistent identity, memory, missions and discrepancy reduction through one GREG",
+    "conversation, voice, remote clients and multimodal perception",
+    "replaceable local/cloud model providers and governed tool/API/plugin capability contracts",
+    "broad authorized computer/browser/filesystem use and software generation",
+    "capability acquisition, independent appraisal, functional genesis, repair and recovery",
+    "bounded workers, temporary organizations, justified durable organs and AI/human collaboration",
+    "complete governed business loops, source-grounded output, customer benefit and community learning",
+    "SOP compounding, economic surplus, measured compute investment and multiple enrolled bodies",
+    "sensing, physical actuation, robotics and future technology absorption",
+    "institutional continuity through component replacement with legitimate shutdown"
+  ],
+  "constraints": [
+    "capability growth never increases sovereignty",
+    "external content and model output are data, not authority",
+    "building != installation != activation != consequence authority",
+    "biological metaphors describe effects rather than required software geometry",
+    "exactly one operationally primary node: N1, VEPMC 0 -> 1",
+    "exactly two constitutional strengthening passes for the selected gate repairs",
+    "historical failures and superseded implementation claims remain evidence"
+  ],
+  "correction_axes": ["implementation evidence", "source coverage", "current-node prerequisites"],
+  "destination_change": false,
+  "conflicts": [
+    "Prior independent-appraiser claims omitted evidence completeness: a signed bounded mission with zero observations was VERIFIED. The intended independent-proof effect remains active; repair its implementation.",
+    "The installer trusted a public-key companion without correspondence to the signing key. It could report success and then fail designation. Verify the actual key before enrollment/service/designation.",
+    "Earlier reconciliation claimed 50 open PRs; this session observed 81. Older records remain historical snapshots, not complete current coverage.",
+    "Current hardware sequence is the Chromebook candidate under the preserved September 26 correction; richer Mac/multiple-body capability remains on the horizon.",
+    "All 55 Foundry obligations remain preserved. Their implementation proceeds by measured need; catalog presence is not delivery proof."
+  ],
+  "review_trigger": "Exact-tree CI/review; first real founder body run; any founder correction; any false VERIFIED appraisal or installer key mismatch",
+  "unresolved_questions": [
+    "Chromebook Linux availability and service behavior on Alfonso's actual device are unverified.",
+    "The full 93-source Project corpus, all original conversations and every historical branch body are not accessible or exhaustively inspected in this session.",
+    "The signed ladder contract may contain checks outside its rung union; existing scope is preserved, and broader scope needs a separate contract decision.",
+    "Founder decides whether and when the convergence candidate and these repairs are merged and used on the designated physical body."
+  ],
+  "supersedes": [],
+  "superseded_by": []
+}

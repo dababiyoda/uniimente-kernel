@@ -20,7 +20,10 @@ def _claim_fields(registration, check, receipt):
     return {"identity_version": IDENTITY_VERSION,
             "mission_id": registration["mission_id"], "command_digest": registration["command_digest"],
             "check_id": check["check_id"], "check_digest": digest(check),
-            "input_digest": receipt["input_digest"], "problem_id": receipt["problem_id"]}
+            # The signed sensor params, not the receipt's own input digest: a compiled answer's inner request
+            # carries the latency its thinking budget allotted, so each re-observation of one claim would hash
+            # differently and settle twice. For an uncompiled receipt the two are equal (measured_outcomes checks).
+            "input_digest": digest(check["sensor"].get("params", {})), "problem_id": receipt["problem_id"]}
 
 
 def _outcome_identity(outcome):
@@ -102,7 +105,10 @@ def measured_outcomes(journal):
     latest_appraisal, observations = {}, {}
     for event in journal.replay("mission.appraised"):
         data = event.payload
-        if (data.get("verdict") == "VERIFIED" and all(data.get("checks", {}).get(k) is True for k in REQUIRED_CHECKS)):
+        # a verified success, or a verified failure closure: an outcome ledger that heard only successes would
+        # score every method by its survivors (directive section 11: censored outcomes are not success)
+        if (data.get("verdict") in ("VERIFIED", "VERIFIED_UNMET")
+                and all(data.get("checks", {}).get(k) is True for k in REQUIRED_CHECKS)):
             latest_appraisal[data["mission_id"]] = event
         else:
             latest_appraisal.pop(data["mission_id"], None)

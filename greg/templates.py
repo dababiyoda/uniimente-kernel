@@ -403,9 +403,221 @@ def human_work(*, function: str, purpose: str, workspace_root: Path, deliverable
     }
 
 
+RELATIONSHIPS = ("contract", "employment")
+
+
+def shared_work(*, task: str, person: str, relationship: str, function: str, deliverable: str, acceptance: str,
+                workspace_root: Path, horizon_days: float = 30) -> dict:
+    """One piece of work done by Alfonso, GREG and a named person together (developmental node N6).
+
+    GREG writes the handoff; the person agrees to the terms and does the work; Alfonso reviews
+    it; GREG records the outcome. GREG contacts, hires and pays no one: Alfonso sends the handoff
+    and engages and pays the person under the relationship he names here. Each step of the
+    person's is one ``HUMAN_WORK`` ask that closes only when its evidence is observed in the
+    case folder. The person may decline at any time before delivering: a ``declined.txt``
+    carrying the reference is honored as legitimate, so GREG withdraws its ask, never asks that
+    step again in this mission and asks Alfonso how to proceed. That the person is real and the
+    relationship lawful is attested by Alfonso's acceptance of the closure, not provable here.
+    """
+    if not asks_human_work(function) or function == "human.founder_review" \
+            or not re.fullmatch(r"[a-z0-9_.-]{3,80}", function):
+        raise ValueError("function is the person's work: professional.<field> or human.<task> (lowercase)")
+    if relationship not in RELATIONSHIPS:
+        raise ValueError(f"relationship is one of {RELATIONSHIPS}: a lawful engagement Alfonso makes himself")
+    task, person, acceptance = (" ".join(str(v).split()) for v in (task, person, acceptance))
+    for name, value, limit in (("task", task, 300), ("person", person, 200), ("acceptance", acceptance, 1000)):
+        if not value or len(value) > limit:
+            raise ValueError(f"{name} is required (at most {limit} characters)")
+    name = Path(deliverable).name
+    if not name or name != deliverable or name.startswith(".") or name in SHARED_WORK_FILES:
+        raise ValueError("deliverable is a plain file name placed in the case folder")
+    slug = re.sub(r"[^a-z0-9]+", "-", task.lower()).strip("-")[:40].strip("-")
+    if len(slug) < 3:
+        raise ValueError("task needs at least three letters or digits")
+    mission_id, ref = f"m:shared-{slug}", f"WORK-{slug.upper()}"
+    folder = Path(workspace_root) / mission_id.replace(":", "_")
+
+    def read(check_id, file, description, predicate):
+        return {"check_id": check_id, "description": description,
+                "sensor": {"capability": "fs.read", "params": {"path": str(folder / file)}, "target": f"fs:{file}"},
+                "predicate": predicate}
+    declined = {"sensor": {"capability": "fs.read", "params": {"path": str(folder / "declined.txt")},
+                           "target": "fs:declined.txt"},
+                "predicate": {"op": "contains", "field": "text", "value": ref}}
+    handoff = (f"# Work handoff {ref}\n\nTask: {task}\nFor: {person}, under a {relationship} that Alfonso Lopez "
+               f"arranges and pays directly\nDeliverable: {name}, placed in the case folder\nAcceptance: "
+               f"{acceptance}\n\nYour written agreement to these terms, carrying {ref}, is kept as consent.txt.\n"
+               "You may decline at any time before delivering. If you do, nothing more is asked of you for "
+               "this work.\nGREG, Alfonso's software, wrote this handoff; it contacts and pays no one.\n")
+    target = "person:" + (re.sub(r"[^a-z0-9]+", "-", person.lower()).strip("-")[:60] or "named")
+    return {
+        "mission_id": mission_id,
+        "founder_expression": f"Do {task} with {person} under a {relationship}; {name} is accepted when: {acceptance}",
+        "intended_effect": "the work is agreed, delivered, reviewed by Alfonso and recorded, with the person free to "
+                           "decline; GREG writes only the handoff and the outcome record",
+        "priority": 55, "closure": {"kind": "bounded", "cadence_seconds": 3600},
+        "success_checks": [
+            read("handoff_written", "handoff.md", "GREG's handoff names the task, terms and reference",
+                 {"op": "contains", "field": "text", "value": ref}),
+            read("consent_recorded", "consent.txt", f"{person}'s written agreement carries {ref}",
+                 {"op": "contains", "field": "text", "value": ref}),
+            read("deliverable_received", name, f"{name} is in the case folder",
+                 {"op": "equals", "field": "exists", "value": True}),
+            read("founder_review", "review.txt", f"Alfonso accepted the deliverable: ACCEPT {ref}",
+                 {"op": "contains", "field": "text", "value": f"ACCEPT {ref}"}),
+            read("outcome_recorded", "outcome.md", "GREG recorded the outcome",
+                 {"op": "contains", "field": "text", "value": ref})],
+        "strategies": [
+            {"action_id": "write-handoff", "capability": "fs.write",
+             "params": {"relative_path": "handoff.md", "content": handoff}, "target": "workspace:handoff.md",
+             "advances": ["handoff_written"], "rationale": "the person learns the task, terms and their right to decline"},
+            {"action_id": "agree-terms", "function": "human.agree_terms", "target": target,
+             "advances": ["consent_recorded"], "requires": ["handoff_written"], "declined_if": declined,
+             "rationale": f"Alfonso sends the handoff to {person} and saves their written agreement"},
+            {"action_id": "do-the-work", "function": function, "target": target,
+             "advances": ["deliverable_received"], "requires": ["consent_recorded"], "declined_if": declined,
+             "rationale": f"{person} does {task} and the deliverable is saved to the case folder"},
+            {"action_id": "review", "function": "human.founder_review", "target": "person:alfonso",
+             "advances": ["founder_review"], "requires": ["deliverable_received"],
+             "rationale": f"Alfonso checks {name} against the acceptance terms and writes ACCEPT {ref} or what "
+                          "to revise"},
+            {"action_id": "record-outcome", "capability": "fs.write",
+             "params": {"relative_path": "outcome.md",
+                        "content": f"# Outcome {ref}\n\n{person} delivered {name} for: {task}, under a "
+                                   f"{relationship}. Alfonso reviewed it against: {acceptance}\n"},
+             "target": "workspace:outcome.md", "advances": ["outcome_recorded"],
+             "requires": ["consent_recorded", "deliverable_received", "founder_review"],
+             "rationale": "the agreed, delivered and reviewed work is recorded"}],
+        "light_cone": {"capabilities": ["fs.read", "fs.write"], "targets": ["fs:*", "workspace:*", "person:*"],
+                       "max_consequence_class": "internal_write", "budget_usd": 0, "horizon": _horizon(horizon_days)},
+    }
+
+
+SHARED_WORK_FILES = ("handoff.md", "consent.txt", "review.txt", "outcome.md", "declined.txt")
+
+
+def asks_human_work(function) -> bool:
+    from greg.asks import human_work
+    return human_work(function) is not None
+
+
+def business_case(*, case: str, buyer: str, offer: str, price: str, currency: str, acceptance: str,
+                  workspace_root: Path, statement: str = "statement.csv", columns: dict | None = None,
+                  minor_units: bool = False, horizon_days: float = 45, venture: str | None = None,
+                  approve_writes: bool = False) -> dict:
+    """One customer case through the Kernel's commercial order, as a founder-signed mission (node N3).
+
+    problem -> buyer -> offer -> payment -> delivery -> customer outcome (business/commercial_loop.py).
+    GREG drafts the offer and writes the settlement record inside its workspace; every act that
+    reaches a person outside the body is ``human.*`` work (one costed ask each, no contact, no
+    spend). Payment counts only when ``business.reconcile`` finds exactly one posting of the signed
+    amount and currency carrying the case reference in the statement Alfonso exports. Each stage
+    ``requires`` the one before it, and the settlement record requires payment, delivery and the
+    buyer's confirmation, so nothing is recorded as settled out of order.
+
+    ``venture`` names the business the case serves (books and transfer are measured per venture).
+    ``approve_writes`` keeps GREG's cone read-only, so drafting the offer and writing the settlement
+    each stop for Alfonso's approval; a procedure he later ratifies may pre-approve them.
+    """
+    amount = business_loop_amount(price)
+    if venture is not None and not re.fullmatch(r"[a-z0-9][a-z0-9-]{1,40}", venture):
+        raise ValueError("venture is a short lowercase name (letters, digits, hyphens)")
+    currency = currency.strip().upper()
+    if not re.fullmatch(r"[A-Z]{3}", currency):
+        raise ValueError("currency is a three-letter code such as USD")
+    for name, value in (("buyer", buyer), ("offer", offer), ("acceptance", acceptance)):
+        if not str(value).strip():
+            raise ValueError(f"{name} must be stated before the case is signed")
+    if Path(statement).name != statement or statement.startswith("."):
+        raise ValueError("statement is a plain file name in this mission's folder")
+    slug = re.sub(r"[^a-z0-9]+", "-", case.lower()).strip("-")[:40]
+    if len(slug) < 3:
+        raise ValueError("case needs a short name of at least 3 letters or digits")
+    mission_id = f"m:case-{slug}"
+    ref = f"CASE-{slug.upper()}"
+    folder = Path(workspace_root) / mission_id.replace(":", "_")
+
+    def evidence(check_id, name, description):
+        path = folder / name
+        return {"check_id": check_id, "description": description,
+                "sensor": {"capability": "fs.read", "params": {"path": str(path)}, "target": f"fs:{name}"},
+                "predicate": {"op": "contains", "field": "text", "value": ref}}
+
+    offer_text = (f"# Offer {ref}\n\nFor: {buyer}\nOffer: {offer}\nPrice: {amount} {currency}\n"
+                  f"Accepted when: {acceptance}\nPay with the reference {ref} so the payment can be reconciled.\n")
+    settlement = (f"{ref} settled: {amount} {currency} from {buyer}, reconciled against {statement}; "
+                  "delivered and confirmed by the buyer\n")
+    return {
+        "mission_id": mission_id,
+        "founder_expression": (f"Run case {ref}: offer {offer} to {buyer} at {amount} {currency}; "
+                               f"accepted when {acceptance}."),
+        "intended_effect": (f"{buyer} receives {offer}, confirms it met the acceptance terms, and {amount} {currency} "
+                            "is reconciled to the cent; GREG itself contacts, charges and pays no one"),
+        "priority": 70, "closure": {"kind": "bounded", "cadence_seconds": 3600},
+        "success_checks": [
+            evidence("offer_drafted", "offer.md", "the offer names buyer, price and the precommitted acceptance terms"),
+            evidence("buyer_accepted", "acceptance.txt", f"{buyer}'s written acceptance, carrying {ref}"),
+            {"check_id": "paid", "description": f"exactly one posting of {amount} {currency} carrying {ref}",
+             "sensor": {"capability": "business.reconcile",
+                        "params": {"path": str(folder / statement), "amount": str(amount), "currency": currency,
+                                   "reference": ref, **({"columns": columns} if columns else {}),
+                                   **({"minor_units": True} if minor_units else {})},
+                        "target": f"fs:{statement}"},
+             "predicate": {"op": "equals", "field": "matched", "value": True}},
+            evidence("delivered", "delivery.txt", f"a delivery record for {ref}"),
+            evidence("outcome_confirmed", "outcome.txt", f"{buyer}'s confirmation that the acceptance terms were met"),
+            evidence("settled", "settlement.md", "GREG's settlement record, written only after the stages above"),
+        ],
+        "strategies": [
+            {"action_id": "draft-offer", "capability": "fs.write", "target": "workspace:offer.md",
+             "params": {"relative_path": "offer.md", "content": offer_text}, "advances": ["offer_drafted"],
+             "rationale": "draft the offer inside the workspace; sending it is a person's act"},
+            {"action_id": "send-offer", "function": "human.send_offer", "target": "person:human.send_offer",
+             "requires": ["offer_drafted"], "advances": ["buyer_accepted"],
+             "rationale": f"you send offer.md to {buyer} and save their written acceptance as acceptance.txt"},
+            {"action_id": "collect-payment", "function": "human.collect_payment",
+             "target": "person:human.collect_payment", "requires": ["buyer_accepted"], "advances": ["paid"],
+             "rationale": f"{buyer} pays with the reference {ref}; you export the statement as {statement}"},
+            {"action_id": "deliver", "function": "human.deliver", "target": "person:human.deliver",
+             "requires": ["paid"], "advances": ["delivered"],
+             "rationale": f"deliver {offer} and save a delivery record carrying {ref} as delivery.txt"},
+            {"action_id": "confirm-outcome", "function": "human.confirm_outcome",
+             "target": "person:human.confirm_outcome", "requires": ["delivered"], "advances": ["outcome_confirmed"],
+             "rationale": f"{buyer} confirms the acceptance terms were met; save it carrying {ref} as outcome.txt"},
+            {"action_id": "record-settlement", "capability": "fs.write", "target": "workspace:settlement.md",
+             "params": {"relative_path": "settlement.md", "content": settlement},
+             "requires": ["paid", "delivered", "outcome_confirmed"], "advances": ["settled"],
+             "rationale": "record the settlement only after payment, delivery and confirmation are all observed"},
+        ],
+        "light_cone": {"capabilities": ["fs.read", "business.reconcile"] if approve_writes else
+                       ["fs.read", "fs.write", "business.reconcile"],
+                       "targets": ["fs:*", "workspace:*", "person:*"],
+                       "max_consequence_class": "read_only" if approve_writes else "internal_write",
+                       "budget_usd": 0, "horizon": _horizon(horizon_days)},
+        **({"venture": venture} if venture else {}),
+        "provenance": {"origin": "template:business-case", "planner": "greg.templates/1",
+                       "inputs": {"reference": ref, "buyer": " ".join(buyer.split()), "offer": " ".join(offer.split()),
+                                  "price": str(amount), "currency": currency,
+                                  "acceptance": " ".join(acceptance.split())}},
+    }
+
+
+def business_loop_amount(price) -> str:
+    """A signed price as a plain decimal string with at most two places, never a float."""
+    from decimal import Decimal, InvalidOperation
+    try:
+        value = Decimal(str(price).strip())
+    except InvalidOperation:
+        raise ValueError("price must be a number such as 250 or 249.99") from None
+    if not value.is_finite() or value <= 0 or value.as_tuple().exponent < -2:
+        raise ValueError("price must be positive with at most two decimal places")
+    return f"{value:.2f}"
+
+
 TEMPLATES = {"repo-guardian": repo_guardian, "integration-watch": integration_watch, "workspace-note": workspace_note,
              "engineering-brief": engineering_brief, "venture-assessment": venture_assessment,
-             "verify-download": verify_download, "word-limit": word_limit, "human-work": human_work}
+             "verify-download": verify_download, "word-limit": word_limit, "human-work": human_work,
+             "business-case": business_case, "shared-work": shared_work}
 
 
 def cognitive_problem(problem: dict, *, horizon_days=2) -> dict:
@@ -529,51 +741,133 @@ def browser_task(*, url: str, steps: list[dict], session: str, expect: dict, hor
 
 
 def daleobanks_post(*, daleobanks_root: str, source: str, brief: str, order: str, budget_usd: float = 2.0,
-                    max_chars: int = 280, horizon_days: float = 2, founder_expression: str | None = None) -> dict:
+                    max_chars: int = 280, horizon_days: float = 2, founder_expression: str | None = None,
+                    bound_claims: bool = True, quality: str = "unverified", python: str | None = None) -> dict:
     """GREG -> research/content worker -> DALEOBANKS verification -> publish request through both gates.
 
     The draft is written by a temporary worker from a read-only source; DALEOBANKS's own checks plus
     figure-to-source binding must pass before the publish request may run (``requires``). Publishing is
     external_contact: outside this cone, so it stops for a founder decision; even when approved,
     DALEOBANKS's LIVE kill switch and credentials decide, and a dry-run is reported as a block.
+
+    With ``bound_claims`` (the default), the worker also lists each sentence with the source spans that support
+    it, and the Task Fabric's evaluator (``worker.appraise``) asks the Mind about every sentence against GREG's
+    own copy of the source: the publish request also requires that appraisal. ``quality`` is the signer's
+    declaration about the source. ``bound_claims=False`` keeps the figure-only floor.
     """
     source = str(Path(source).expanduser().resolve())
     root = str(Path(daleobanks_root).expanduser().resolve())
-    draft_name = "post.txt"
+    draft_name, claims_name = "post.txt", "post.claims.json"
+    contract = {"claims": claims_name, "quality": quality, "expires_at": _horizon(horizon_days)}
+    acceptance = {"output": draft_name,
+                  "criteria": f"<= {max_chars} characters; no figures absent from the source; no "
+                              "hype, no calls to buy; not a proposal (no pilot/KPI language)"}
+    objective = (f"{brief} Write the post as plain text, at most {max_chars} characters, "
+                 "stating only facts present in the input; every number must appear in the input.")
+    checks = [{"check_id": "draft_verified", "description": "DALEOBANKS checks and source binding pass",
+               "sensor": {"capability": "daleobanks.verify",
+                          "params": {"daleobanks_root": root, "source": source, "max_chars": max_chars,
+                                     "draft": f"work-orders/{order}/work/{draft_name}",
+                                     **({"python": python} if python else {})},
+                          "target": "daleobanks:verify"},
+               "predicate": {"op": "equals", "field": "verdict", "value": "VERIFIED"}}]
+    if bound_claims:
+        acceptance["bound_claims"] = contract
+        objective += (" Keep the source's hedges, negations, scope, direction and names; list each sentence's "
+                      f"supporting spans in {claims_name}.")
+        checks.append({"check_id": "draft_appraised",
+                       "description": "the Task Fabric's evaluator: every sentence is a claim the Mind answered "
+                                      "as written against GREG's copy of the source",
+                       "sensor": {"capability": "worker.appraise",
+                                  "params": {"order": order, "bound_claims": contract}, "target": f"work:{order}"},
+                       "predicate": {"op": "equals", "field": "verdict", "value": "ACCEPTED"}})
+    gates = [c["check_id"] for c in checks]
+    publish = {"daleobanks_root": root, "draft": f"work-orders/{order}/work/{draft_name}",
+               **({"python": python} if python else {})}
     return {
         "mission_id": f"m:media-{_slug(order)}",
         "founder_expression": founder_expression or f"DALEOBANKS: {brief}",
         "intended_effect": "a source-bound post is drafted, verified by DALEOBANKS and submitted to its publishing "
                            "gate; the truthful outcome (posted or blocked) returns to GREG",
         "priority": 50, "closure": {"kind": "bounded"},
-        "success_checks": [
-            {"check_id": "draft_verified", "description": "DALEOBANKS checks and source binding pass",
-             "sensor": {"capability": "daleobanks.verify",
-                        "params": {"daleobanks_root": root, "source": source, "max_chars": max_chars,
-                                   "draft": f"work-orders/{order}/work/{draft_name}"},
-                        "target": "daleobanks:verify"},
-             "predicate": {"op": "equals", "field": "verdict", "value": "VERIFIED"}},
+        "success_checks": checks + [
             {"check_id": "publish_outcome_known", "description": "DALEOBANKS's ledger holds the request's outcome",
              "sensor": {"capability": "daleobanks.outcome", "params": {}, "target": "daleobanks:outcome"},
              "predicate": {"op": "equals", "field": "requested", "value": True}}],
         "strategies": [
             {"action_id": "draft-post", "capability": "worker.commission", "target": f"work:{order}",
-             "params": {"order": order, "mode": "document", "inputs": [source],
-                        "objective": f"{brief} Write the post as plain text, at most {max_chars} characters, "
-                                     "stating only facts present in the input; every number must appear in the input.",
-                        "acceptance": {"output": draft_name,
-                                       "criteria": f"<= {max_chars} characters; no figures absent from the source; no "
-                                                   "hype, no calls to buy; not a proposal (no pilot/KPI language)"},
-                        "allowed_paths": [draft_name], "max_budget_usd": budget_usd, "timeout_seconds": 600},
-             "cost_usd": budget_usd, "advances": ["draft_verified"],
-             "rationale": "research/content work by a temporary worker; DALEOBANKS verifies it"},
+             "params": {"order": order, "mode": "document", "inputs": [source], "objective": objective,
+                        "acceptance": acceptance,
+                        "allowed_paths": [draft_name] + ([claims_name] if bound_claims else []),
+                        "max_budget_usd": budget_usd, "timeout_seconds": 600},
+             "cost_usd": budget_usd, "advances": gates,
+             "rationale": "research/content work by a temporary worker; DALEOBANKS verifies it"
+                          + ("; the Mind appraises every sentence" if bound_claims else "")},
             {"action_id": "request-publish", "capability": "daleobanks.publish", "target": "daleobanks:publish",
-             "params": {"daleobanks_root": root, "draft": f"work-orders/{order}/work/{draft_name}"},
-             "advances": ["publish_outcome_known"], "requires": ["draft_verified"],
+             "params": publish, "advances": ["publish_outcome_known"], "requires": gates,
              "rationale": "publishing is external contact: founder decision, then DALEOBANKS's own LIVE gate"}],
-        "light_cone": {"capabilities": ["worker.commission", "daleobanks.verify", "daleobanks.outcome"],
+        "light_cone": {"capabilities": ["worker.commission", "daleobanks.verify", "daleobanks.outcome"]
+                                       + (["worker.appraise"] if bound_claims else []),
                        "targets": [f"work:{order}", "daleobanks:*"], "max_consequence_class": "internal_write",
                        "budget_usd": budget_usd, "horizon": _horizon(horizon_days)},
+    }
+
+
+def daleobanks_paraphrase(*, daleobanks_root: str, source: str, draft: str, claims: list,
+                          quality: str = "unverified", python: str | None = None, content_type: str = "reply",
+                          max_chars: int = 600, horizon_days: float = 2, founder_expression: str | None = None) -> dict:
+    """Media case (directive section 16): a DALEOBANKS draft that restates a source, checked claim by claim.
+
+    ``claims`` lists each sentence of the draft with the exact source spans that support it:
+    ``[{"text": sentence, "quotes": [span, ...]}]``. GREG's evidence family answers each claim first
+    (``cognition.solve``, read-only): bound to its spans and showing none of the six detected kinds of change
+    (figures, negation, certainty, scope, direction, named terms). DALEOBANKS's verify then runs its own content
+    checks and requires every sentence of the draft to be a claim the Mind answered as written. Consequence-inert:
+    the light cone holds no publish capability, so nothing can be posted from this mission.
+    """
+    import hashlib
+    from greg.cognition.contracts import digest
+    source_path = Path(source).expanduser().resolve()
+    root = str(Path(daleobanks_root).expanduser().resolve())
+    text = source_path.read_text(encoding="utf-8")
+    thread = hashlib.sha256(Path(draft).expanduser().resolve().read_bytes()).hexdigest()[:12]
+    src = {"id": "source", "text": text, "digest": digest(text), "quality": quality, "expires_at": _horizon(horizon_days),
+           "provenance": f"{source_path} sha256:{hashlib.sha256(text.encode()).hexdigest()}"}
+    ids, checks, strategies = {}, [], []
+    for i, claim in enumerate(claims, 1):
+        if not claim.get("quotes"):
+            raise ValueError(f"claim {i} has no supporting span; every sentence must cite the source")
+        ids[f"c{i}"] = f"media-claim-{thread}-{i}"
+        step = {"capability": "cognition.solve", "target": f"cognition:{ids[f'c{i}']}",
+                "params": {"problem_id": ids[f"c{i}"], "operation": "bind_evidence",
+                           "data": {"claim": claim["text"], "sources": [src],
+                                    "bindings": [{"source_id": "source", "quote": q, "relationship": "supports"}
+                                                 for q in claim["quotes"]]}}}
+        checks.append({"check_id": f"claim_{i}_checked", "description": f"GREG's evidence receipt for claim {i}",
+                       "sensor": step, "predicate": {"op": "equals", "field": "authority_created", "value": False}})
+        strategies.append({"action_id": f"claim-{i}-receipt", **step, "advances": [f"claim_{i}_checked"],
+                           "rationale": "bind the claim to its spans and check what it changes; an abstention is a "
+                                        "truthful answer, not a failure"})
+    verify = {"capability": "daleobanks.verify", "target": "daleobanks:verify",
+              "params": {"daleobanks_root": root, "draft": str(Path(draft).expanduser().resolve()),
+                         "source": str(source_path), "max_chars": max_chars, "content_type": content_type,
+                         "cognition": ids, **({"python": python} if python else {})}}
+    checks.append({"check_id": "paraphrase_verified",
+                   "description": "DALEOBANKS's checks pass and every sentence is a claim answered as written",
+                   "sensor": verify, "predicate": {"op": "equals", "field": "verdict", "value": "VERIFIED"}})
+    strategies.append({"action_id": "verify-paraphrase", **verify, "advances": ["paraphrase_verified"],
+                       "requires": [c["check_id"] for c in checks[:-1]],
+                       "rationale": "DALEOBANKS's own content checks over a draft whose claims GREG has answered"})
+    return {
+        "mission_id": f"m:paraphrase-{thread}",
+        "founder_expression": founder_expression or "DALEOBANKS restates a source without changing what it says",
+        "intended_effect": "a draft that restates its source is checked claim by claim against it; a sentence that "
+                           "changes a figure, a negation, a hedge, a scope, a direction or a name is held back",
+        "priority": 50, "closure": {"kind": "bounded"},
+        "success_checks": checks, "strategies": strategies,
+        "light_cone": {"capabilities": ["cognition.solve", "daleobanks.verify", "fs.read"],
+                       "targets": ["cognition:*", "daleobanks:verify"], "max_consequence_class": "read_only",
+                       "budget_usd": 0, "horizon": _horizon(horizon_days)},
     }
 
 

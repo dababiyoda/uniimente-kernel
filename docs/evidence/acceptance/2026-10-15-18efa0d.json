@@ -1,0 +1,1299 @@
+{
+ "contract": [
+  {
+   "coverage": "partial",
+   "evidence": [
+    "A.R1",
+    "I.I1",
+    "K.K4"
+   ],
+   "evidence_tier": "BODY_VERIFIED",
+   "id": "BODY-AUTHORITY"
+  },
+  {
+   "coverage": "partial",
+   "evidence": [
+    "A.R4",
+    "A.R5",
+    "A.R6",
+    "A.R8",
+    "A.R9"
+   ],
+   "evidence_tier": "BODY_VERIFIED",
+   "id": "BODY-MISSIONS"
+  },
+  {
+   "coverage": "partial",
+   "evidence": [
+    "I.I6",
+    "I.I7",
+    "I.I8",
+    "H.H.4"
+   ],
+   "evidence_tier": "BODY_VERIFIED",
+   "id": "BODY-GATE"
+  },
+  {
+   "coverage": "partial",
+   "evidence": [
+    "I.I2"
+   ],
+   "evidence_tier": "BODY_VERIFIED",
+   "id": "BODY-EVIDENCE"
+  },
+  {
+   "coverage": "partial",
+   "evidence": [
+    "H.H.1a",
+    "H.H.1b",
+    "H.H.2",
+    "H.H.3",
+    "H.H.4",
+    "H.H.5"
+   ],
+   "evidence_tier": "SANDBOX_VERIFIED",
+   "id": "BODY-RECOVERY"
+  },
+  {
+   "coverage": "partial",
+   "evidence": [
+    "K.K1",
+    "K.K2",
+    "K.K3",
+    "K.K4",
+    "K.K5",
+    "K.K6"
+   ],
+   "evidence_tier": "BODY_VERIFIED",
+   "id": "BODY-SHUTDOWN"
+  },
+  {
+   "coverage": "partial",
+   "evidence": [
+    "D.R1b",
+    "D.R3",
+    "D.R6",
+    "I.I5"
+   ],
+   "evidence_tier": "SANDBOX_VERIFIED",
+   "id": "BODY-HANDS"
+  },
+  {
+   "coverage": "partial",
+   "evidence": [
+    "A.R7",
+    "L.L1"
+   ],
+   "evidence_tier": "UNIT_VERIFIED",
+   "id": "BODY-INTERFACE"
+  },
+  {
+   "coverage": "partial",
+   "evidence": [
+    "B.B2"
+   ],
+   "evidence_tier": "SANDBOX_VERIFIED",
+   "id": "MIND-GEOMETRY"
+  },
+  {
+   "coverage": "partial",
+   "evidence": [
+    "B.B3",
+    "B.B4"
+   ],
+   "evidence_tier": "BODY_VERIFIED",
+   "id": "MIND-MECHANISMS"
+  },
+  {
+   "coverage": "partial",
+   "evidence": [
+    "B.B5",
+    "B.B6"
+   ],
+   "evidence_tier": "UNIT_VERIFIED",
+   "id": "MIND-LIMITS"
+  },
+  {
+   "coverage": "partial",
+   "evidence": [
+    "J.J1",
+    "J.J1b",
+    "J.J2",
+    "J.J3",
+    "J.J4"
+   ],
+   "evidence_tier": "IMPLEMENTED",
+   "id": "MIND-LEARNING"
+  },
+  {
+   "coverage": "partial",
+   "evidence": [
+    "E.R1",
+    "E.R2",
+    "E.R3",
+    "E.R4",
+    "E.R5"
+   ],
+   "evidence_tier": "IMPLEMENTED",
+   "id": "ORGANS-CROSS"
+  },
+  {
+   "coverage": "partial",
+   "evidence": [
+    "G.R3",
+    "G.R5",
+    "G.R6",
+    "G.R7",
+    "G.R8"
+   ],
+   "evidence_tier": "SANDBOX_VERIFIED",
+   "id": "ORGANS-FOUNDRY"
+  },
+  {
+   "coverage": "partial",
+   "evidence": [
+    "F.R1",
+    "F.R2",
+    "F.R3",
+    "F.R4",
+    "F.R5",
+    "F.R6",
+    "F.R7"
+   ],
+   "evidence_tier": "SANDBOX_VERIFIED",
+   "id": "LOOP-GOAL-GRAVITY"
+  },
+  {
+   "coverage": "partial",
+   "evidence": [
+    "C.R1",
+    "C.R2",
+    "C.R3",
+    "C.R4",
+    "C.R5",
+    "C.R6",
+    "C.R7",
+    "C.R8",
+    "C.R9"
+   ],
+   "evidence_tier": "SANDBOX_VERIFIED",
+   "id": "LOOP-GENESIS"
+  },
+  {
+   "coverage": "partial",
+   "evidence": [
+    "G.R1",
+    "G.R2",
+    "G.R3",
+    "G.R4",
+    "G.R5",
+    "G.R6",
+    "G.R7",
+    "G.R8",
+    "G.R9",
+    "G.R10",
+    "G.R11",
+    "G.R12"
+   ],
+   "evidence_tier": "IMPLEMENTED",
+   "id": "LOOP-BUSINESS"
+  },
+  {
+   "coverage": "partial",
+   "evidence": [
+    "L.L1",
+    "L.L2",
+    "L.L3"
+   ],
+   "evidence_tier": "UNIT_VERIFIED",
+   "id": "LOOP-COMPREHENSION"
+  }
+ ],
+ "generated_at": "2026-10-15T18:21:12.263912Z",
+ "head": "18efa0dd0897a770ff14adc2dc09a409199513d8",
+ "missions": {
+  "A": {
+   "blocked_beyond_tests": [
+    "G5",
+    "G6"
+   ],
+   "coverage": "partial",
+   "id": "A",
+   "open_gaps": 4,
+   "requirements": {
+    "R1": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "BODY_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "BODY_VERIFIED",
+     "whole_obligation": false
+    },
+    "R2": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "SANDBOX_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "SANDBOX_VERIFIED",
+     "whole_obligation": false
+    },
+    "R3": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "SANDBOX_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "SANDBOX_VERIFIED",
+     "whole_obligation": false
+    },
+    "R4": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "BODY_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "BODY_VERIFIED",
+     "whole_obligation": false
+    },
+    "R5": {
+     "attained": true,
+     "coverage": "covered",
+     "declared_tier": "BODY_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "BODY_VERIFIED",
+     "whole_obligation": true
+    },
+    "R6": {
+     "attained": true,
+     "coverage": "covered",
+     "declared_tier": "BODY_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "BODY_VERIFIED",
+     "whole_obligation": true
+    },
+    "R7": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "BODY_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "BODY_VERIFIED",
+     "whole_obligation": false
+    },
+    "R8": {
+     "attained": true,
+     "coverage": "covered",
+     "declared_tier": "BODY_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "BODY_VERIFIED",
+     "whole_obligation": true
+    },
+    "R9": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "BODY_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "BODY_VERIFIED",
+     "whole_obligation": false
+    }
+   },
+   "status": "SANDBOX_VERIFIED",
+   "title": "Persistent founder-goal execution"
+  },
+  "B": {
+   "blocked_beyond_tests": [
+    "G1",
+    "G7",
+    "G8"
+   ],
+   "coverage": "partial",
+   "id": "B",
+   "open_gaps": 8,
+   "requirements": {
+    "B1": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "BODY_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "BODY_VERIFIED",
+     "whole_obligation": false
+    },
+    "B2": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "SANDBOX_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "SANDBOX_VERIFIED",
+     "whole_obligation": false
+    },
+    "B3": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "BODY_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "BODY_VERIFIED",
+     "whole_obligation": false
+    },
+    "B4": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "BODY_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "BODY_VERIFIED",
+     "whole_obligation": false
+    },
+    "B5": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "SANDBOX_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "SANDBOX_VERIFIED",
+     "whole_obligation": false
+    },
+    "B6": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "UNIT_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "UNIT_VERIFIED",
+     "whole_obligation": false
+    }
+   },
+   "status": "UNIT_VERIFIED",
+   "title": "Multiple forms of intelligence"
+  },
+  "C": {
+   "blocked_beyond_tests": [
+    "G13",
+    "G2"
+   ],
+   "coverage": "partial",
+   "id": "C",
+   "open_gaps": 12,
+   "requirements": {
+    "R1": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "BODY_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "BODY_VERIFIED",
+     "whole_obligation": false
+    },
+    "R2": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "SANDBOX_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "SANDBOX_VERIFIED",
+     "whole_obligation": false
+    },
+    "R3": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "BODY_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "BODY_VERIFIED",
+     "whole_obligation": false
+    },
+    "R4": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "SANDBOX_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "SANDBOX_VERIFIED",
+     "whole_obligation": false
+    },
+    "R5": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "SANDBOX_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "SANDBOX_VERIFIED",
+     "whole_obligation": false
+    },
+    "R6": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "SANDBOX_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "SANDBOX_VERIFIED",
+     "whole_obligation": false
+    },
+    "R7": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "BODY_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "BODY_VERIFIED",
+     "whole_obligation": false
+    },
+    "R8": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "BODY_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "BODY_VERIFIED",
+     "whole_obligation": false
+    },
+    "R9": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "SANDBOX_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "SANDBOX_VERIFIED",
+     "whole_obligation": false
+    }
+   },
+   "status": "SANDBOX_VERIFIED",
+   "title": "Capability Genesis"
+  },
+  "D": {
+   "blocked_beyond_tests": [
+    "G10",
+    "G9"
+   ],
+   "coverage": "partial",
+   "id": "D",
+   "open_gaps": 6,
+   "requirements": {
+    "R1a": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "SANDBOX_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "SANDBOX_VERIFIED",
+     "whole_obligation": false
+    },
+    "R1b": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "SANDBOX_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "SANDBOX_VERIFIED",
+     "whole_obligation": false
+    },
+    "R2": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "SANDBOX_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "SANDBOX_VERIFIED",
+     "whole_obligation": false
+    },
+    "R3": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "SANDBOX_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "SANDBOX_VERIFIED",
+     "whole_obligation": false
+    },
+    "R4": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "SANDBOX_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "SANDBOX_VERIFIED",
+     "whole_obligation": false
+    },
+    "R5": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "SANDBOX_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "SANDBOX_VERIFIED",
+     "whole_obligation": false
+    },
+    "R6": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "SANDBOX_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "SANDBOX_VERIFIED",
+     "whole_obligation": false
+    },
+    "R7": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "SANDBOX_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "SANDBOX_VERIFIED",
+     "whole_obligation": false
+    },
+    "R8": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "SANDBOX_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "SANDBOX_VERIFIED",
+     "whole_obligation": false
+    }
+   },
+   "status": "SANDBOX_VERIFIED",
+   "title": "Multi-worker execution"
+  },
+  "E": {
+   "blocked_beyond_tests": [
+    "G8"
+   ],
+   "coverage": "partial",
+   "id": "E",
+   "open_gaps": 8,
+   "requirements": {
+    "R1": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "SANDBOX_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "SANDBOX_VERIFIED",
+     "whole_obligation": false
+    },
+    "R2": {
+     "attained": false,
+     "coverage": "partial",
+     "declared_tier": "SANDBOX_VERIFIED",
+     "failing": [],
+     "observed": [
+      "tests/unit/test_greg_ventures.py::test_real_organs: skipped: Skipped: set GREG_TEST_RAILSCOUT and GREG_TEST_WMI to real organ checkouts",
+      "tests/unit/test_greg_daleobanks_bridge.py::test_verified_draft_and_publish_request_is_truthfully_blocked_by_daleobanks: skipped: Skipped: DALEOBANKS checkout with .venv not present beside the Kernel",
+      "tests/unit/test_greg_daleobanks_bridge.py::test_figures_absent_from_the_source_are_rejected: skipped: Skipped: DALEOBANKS checkout with .venv not present beside the Kernel",
+      "tests/unit/test_greg_daleobanks_bridge.py::test_live_arming_is_never_forwarded_by_greg: skipped: Skipped: DALEOBANKS checkout with .venv not present beside the Kernel"
+     ],
+     "status": "IMPLEMENTED",
+     "whole_obligation": false
+    },
+    "R3": {
+     "attained": false,
+     "coverage": "partial",
+     "declared_tier": "SANDBOX_VERIFIED",
+     "failing": [],
+     "observed": [
+      "tests/unit/test_greg_daleobanks_bridge.py::test_live_arming_is_never_forwarded_by_greg: skipped: Skipped: DALEOBANKS checkout with .venv not present beside the Kernel"
+     ],
+     "status": "IMPLEMENTED",
+     "whole_obligation": false
+    },
+    "R4": {
+     "attained": false,
+     "coverage": "partial",
+     "declared_tier": "SANDBOX_VERIFIED",
+     "failing": [],
+     "observed": [
+      "tests/unit/test_greg_ventures.py::test_real_organs: skipped: Skipped: set GREG_TEST_RAILSCOUT and GREG_TEST_WMI to real organ checkouts",
+      "tests/unit/test_greg_daleobanks_bridge.py::test_verified_draft_and_publish_request_is_truthfully_blocked_by_daleobanks: skipped: Skipped: DALEOBANKS checkout with .venv not present beside the Kernel"
+     ],
+     "status": "IMPLEMENTED",
+     "whole_obligation": false
+    },
+    "R5": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "UNIT_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "UNIT_VERIFIED",
+     "whole_obligation": false
+    }
+   },
+   "status": "IMPLEMENTED",
+   "title": "Cross-organ work"
+  },
+  "F": {
+   "blocked_beyond_tests": [
+    "G4",
+    "G5"
+   ],
+   "coverage": "partial",
+   "id": "F",
+   "open_gaps": 3,
+   "requirements": {
+    "R1": {
+     "attained": true,
+     "coverage": "covered",
+     "declared_tier": "BODY_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "BODY_VERIFIED",
+     "whole_obligation": true
+    },
+    "R2": {
+     "attained": true,
+     "coverage": "covered",
+     "declared_tier": "SANDBOX_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "SANDBOX_VERIFIED",
+     "whole_obligation": true
+    },
+    "R3": {
+     "attained": true,
+     "coverage": "covered",
+     "declared_tier": "BODY_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "BODY_VERIFIED",
+     "whole_obligation": true
+    },
+    "R4": {
+     "attained": true,
+     "coverage": "covered",
+     "declared_tier": "BODY_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "BODY_VERIFIED",
+     "whole_obligation": true
+    },
+    "R5": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "BODY_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "BODY_VERIFIED",
+     "whole_obligation": false
+    },
+    "R6": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "BODY_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "BODY_VERIFIED",
+     "whole_obligation": false
+    },
+    "R7": {
+     "attained": true,
+     "coverage": "covered",
+     "declared_tier": "BODY_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "BODY_VERIFIED",
+     "whole_obligation": true
+    }
+   },
+   "status": "SANDBOX_VERIFIED",
+   "title": "Goal Gravity"
+  },
+  "G": {
+   "blocked_beyond_tests": [
+    "G6",
+    "G7"
+   ],
+   "coverage": "partial",
+   "id": "G",
+   "open_gaps": 4,
+   "requirements": {
+    "R1": {
+     "attained": true,
+     "coverage": "covered",
+     "declared_tier": "SANDBOX_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "SANDBOX_VERIFIED",
+     "whole_obligation": true
+    },
+    "R10": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "UNIT_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "UNIT_VERIFIED",
+     "whole_obligation": false
+    },
+    "R11": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "SANDBOX_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "SANDBOX_VERIFIED",
+     "whole_obligation": false
+    },
+    "R12": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "SANDBOX_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "SANDBOX_VERIFIED",
+     "whole_obligation": false
+    },
+    "R2": {
+     "attained": false,
+     "coverage": "partial",
+     "declared_tier": "SANDBOX_VERIFIED",
+     "failing": [],
+     "observed": [
+      "tests/unit/test_greg_ventures.py::test_real_organs: skipped: Skipped: set GREG_TEST_RAILSCOUT and GREG_TEST_WMI to real organ checkouts"
+     ],
+     "status": "IMPLEMENTED",
+     "whole_obligation": false
+    },
+    "R3": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "SANDBOX_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "SANDBOX_VERIFIED",
+     "whole_obligation": false
+    },
+    "R4": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "SANDBOX_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "SANDBOX_VERIFIED",
+     "whole_obligation": false
+    },
+    "R5": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "SANDBOX_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "SANDBOX_VERIFIED",
+     "whole_obligation": false
+    },
+    "R6": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "SANDBOX_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "SANDBOX_VERIFIED",
+     "whole_obligation": false
+    },
+    "R7": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "SANDBOX_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "SANDBOX_VERIFIED",
+     "whole_obligation": false
+    },
+    "R8": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "SANDBOX_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "SANDBOX_VERIFIED",
+     "whole_obligation": false
+    },
+    "R9": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "SANDBOX_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "SANDBOX_VERIFIED",
+     "whole_obligation": false
+    }
+   },
+   "status": "IMPLEMENTED",
+   "title": "Business operating loop"
+  },
+  "H": {
+   "blocked_beyond_tests": [
+    "G8",
+    "G9"
+   ],
+   "coverage": "partial",
+   "id": "H",
+   "open_gaps": 5,
+   "requirements": {
+    "H.1a": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "BODY_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "BODY_VERIFIED",
+     "whole_obligation": false
+    },
+    "H.1b": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "BODY_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "BODY_VERIFIED",
+     "whole_obligation": false
+    },
+    "H.2": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "BODY_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "BODY_VERIFIED",
+     "whole_obligation": false
+    },
+    "H.3": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "SANDBOX_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "SANDBOX_VERIFIED",
+     "whole_obligation": false
+    },
+    "H.4": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "BODY_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "BODY_VERIFIED",
+     "whole_obligation": false
+    },
+    "H.5": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "BODY_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "BODY_VERIFIED",
+     "whole_obligation": false
+    }
+   },
+   "status": "SANDBOX_VERIFIED",
+   "title": "Fault recovery"
+  },
+  "I": {
+   "blocked_beyond_tests": [
+    "G1",
+    "G3",
+    "G4"
+   ],
+   "coverage": "partial",
+   "id": "I",
+   "open_gaps": 5,
+   "requirements": {
+    "I1": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "BODY_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "BODY_VERIFIED",
+     "whole_obligation": false
+    },
+    "I2": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "BODY_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "BODY_VERIFIED",
+     "whole_obligation": false
+    },
+    "I3": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "BODY_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "BODY_VERIFIED",
+     "whole_obligation": false
+    },
+    "I4": {
+     "attained": true,
+     "coverage": "covered",
+     "declared_tier": "BODY_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "BODY_VERIFIED",
+     "whole_obligation": true
+    },
+    "I5": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "SANDBOX_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "SANDBOX_VERIFIED",
+     "whole_obligation": false
+    },
+    "I6": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "BODY_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "BODY_VERIFIED",
+     "whole_obligation": false
+    },
+    "I7": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "BODY_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "BODY_VERIFIED",
+     "whole_obligation": false
+    },
+    "I8": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "BODY_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "BODY_VERIFIED",
+     "whole_obligation": false
+    }
+   },
+   "status": "SANDBOX_VERIFIED",
+   "title": "Attack containment"
+  },
+  "J": {
+   "blocked_beyond_tests": [
+    "G11",
+    "G9"
+   ],
+   "coverage": "partial",
+   "id": "J",
+   "open_gaps": 11,
+   "requirements": {
+    "J1": {
+     "attained": true,
+     "coverage": "covered",
+     "declared_tier": "SANDBOX_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "SANDBOX_VERIFIED",
+     "whole_obligation": true
+    },
+    "J1b": {
+     "attained": false,
+     "coverage": "gap",
+     "declared_tier": null,
+     "failing": [],
+     "observed": [
+      "coverage is 'gap': the cited tests do not establish this obligation at any tier"
+     ],
+     "status": "IMPLEMENTED",
+     "whole_obligation": false
+    },
+    "J2": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "SANDBOX_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "SANDBOX_VERIFIED",
+     "whole_obligation": false
+    },
+    "J3": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "SANDBOX_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "SANDBOX_VERIFIED",
+     "whole_obligation": false
+    },
+    "J4": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "SANDBOX_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "SANDBOX_VERIFIED",
+     "whole_obligation": false
+    }
+   },
+   "status": "IMPLEMENTED",
+   "title": "Compounding learning"
+  },
+  "K": {
+   "blocked_beyond_tests": [
+    "G3"
+   ],
+   "coverage": "partial",
+   "id": "K",
+   "open_gaps": 1,
+   "requirements": {
+    "K1": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "BODY_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "BODY_VERIFIED",
+     "whole_obligation": false
+    },
+    "K2": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "BODY_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "BODY_VERIFIED",
+     "whole_obligation": false
+    },
+    "K3": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "BODY_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "BODY_VERIFIED",
+     "whole_obligation": false
+    },
+    "K4": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "BODY_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "BODY_VERIFIED",
+     "whole_obligation": false
+    },
+    "K5": {
+     "attained": true,
+     "coverage": "covered",
+     "declared_tier": "BODY_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "BODY_VERIFIED",
+     "whole_obligation": true
+    },
+    "K6": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "BODY_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "BODY_VERIFIED",
+     "whole_obligation": false
+    }
+   },
+   "status": "BODY_VERIFIED",
+   "title": "Founder shutdown"
+  },
+  "L": {
+   "blocked_beyond_tests": [
+    "G2"
+   ],
+   "coverage": "partial",
+   "id": "L",
+   "open_gaps": 1,
+   "requirements": {
+    "L1": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "BODY_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "BODY_VERIFIED",
+     "whole_obligation": false
+    },
+    "L2": {
+     "attained": true,
+     "coverage": "covered",
+     "declared_tier": "UNIT_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "UNIT_VERIFIED",
+     "whole_obligation": true
+    },
+    "L3": {
+     "attained": true,
+     "coverage": "partial",
+     "declared_tier": "BODY_VERIFIED",
+     "failing": [],
+     "observed": [],
+     "status": "BODY_VERIFIED",
+     "whole_obligation": false
+    }
+   },
+   "status": "UNIT_VERIFIED",
+   "title": "Whole-machine comprehension",
+   "trace": [
+    {
+     "attained": true,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "link": "Goal",
+     "observed": [],
+     "owner": "GREG Goal Gravity binding (ADR-GOAL-GRAVITY-002)",
+     "status": "SANDBOX_VERIFIED"
+    },
+    {
+     "attained": true,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "link": "Mind",
+     "observed": [],
+     "owner": "Cortex routing and GREG cognition (seed path, cortex bridge)",
+     "status": "SANDBOX_VERIFIED"
+    },
+    {
+     "attained": true,
+     "declared_tier": "UNIT_VERIFIED",
+     "link": "Organs",
+     "observed": [],
+     "owner": "RailScout + WMI venture organs through greg.ventures",
+     "status": "UNIT_VERIFIED"
+    },
+    {
+     "attained": true,
+     "declared_tier": "BODY_VERIFIED",
+     "link": "Body",
+     "observed": [],
+     "owner": "GREG Body and mission engine",
+     "status": "BODY_VERIFIED"
+    },
+    {
+     "attained": true,
+     "declared_tier": "BODY_VERIFIED",
+     "link": "Action",
+     "observed": [],
+     "owner": "Authority office and the one Consequence Gate",
+     "status": "BODY_VERIFIED"
+    },
+    {
+     "attained": true,
+     "declared_tier": "UNIT_VERIFIED",
+     "link": "Evidence",
+     "observed": [],
+     "owner": "Evidence ledger and event spine",
+     "status": "UNIT_VERIFIED"
+    },
+    {
+     "attained": true,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "link": "Outcome",
+     "observed": [],
+     "owner": "Independent appraiser (separate process)",
+     "status": "SANDBOX_VERIFIED"
+    },
+    {
+     "attained": true,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "link": "Learning",
+     "observed": [],
+     "owner": "GREG Default Routing: track record weighted by the appraiser's verdict",
+     "status": "SANDBOX_VERIFIED"
+    },
+    {
+     "attained": true,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "link": "Updated Goal",
+     "observed": [],
+     "owner": "Goal Gravity loop (GPS update)",
+     "status": "SANDBOX_VERIFIED"
+    }
+   ]
+  }
+ },
+ "ran": true,
+ "summary": {
+  "attained_declared_tier": 80,
+  "attained_part_obligation": 67,
+  "attained_whole_obligation": 13,
+  "contract_functions": 18,
+  "contract_functions_whole_obligation": 0,
+  "declared_coverage": {
+   "covered": 13,
+   "gap": 1,
+   "partial": 71
+  },
+  "highest_status_any_test_can_establish": "BODY_VERIFIED",
+  "missions": {
+   "A": {
+    "coverage": "partial",
+    "status": "SANDBOX_VERIFIED"
+   },
+   "B": {
+    "coverage": "partial",
+    "status": "UNIT_VERIFIED"
+   },
+   "C": {
+    "coverage": "partial",
+    "status": "SANDBOX_VERIFIED"
+   },
+   "D": {
+    "coverage": "partial",
+    "status": "SANDBOX_VERIFIED"
+   },
+   "E": {
+    "coverage": "partial",
+    "status": "IMPLEMENTED"
+   },
+   "F": {
+    "coverage": "partial",
+    "status": "SANDBOX_VERIFIED"
+   },
+   "G": {
+    "coverage": "partial",
+    "status": "IMPLEMENTED"
+   },
+   "H": {
+    "coverage": "partial",
+    "status": "SANDBOX_VERIFIED"
+   },
+   "I": {
+    "coverage": "partial",
+    "status": "SANDBOX_VERIFIED"
+   },
+   "J": {
+    "coverage": "partial",
+    "status": "IMPLEMENTED"
+   },
+   "K": {
+    "coverage": "partial",
+    "status": "BODY_VERIFIED"
+   },
+   "L": {
+    "coverage": "partial",
+    "status": "UNIT_VERIFIED"
+   }
+  },
+  "requirements": 85,
+  "requirements_citing_failing_tests": 0,
+  "statuses_no_test_can_establish": [
+   "FOUNDER_ACCEPTED",
+   "AUTHORIZED_LIVE",
+   "EXTERNALLY_VERIFIED",
+   "COMMERCIAL_OUTCOME_VERIFIED"
+  ],
+  "trace_links": 9,
+  "trace_links_attained": 9
+ },
+ "version": "acceptance-report/3"
+}

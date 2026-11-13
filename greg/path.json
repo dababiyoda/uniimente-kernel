@@ -68,9 +68,10 @@
         "tests/integration/test_greg_vepmc_path.py",
         "greg/CHROMEBOOK_FIRST_MISSION.md"
       ],
-      "smallest_next_build": "done agent-side: greg/chromebook/install.sh, and the runbook rehearsed as written (tests/integration/test_greg_chromebook_rehearsal.py ends at a structurally complete VEPMC row and greg path moving to N2); only the founder's run remains",
+      "smallest_next_build": "done agent-side: greg/chromebook/install.sh, and the runbook rehearsed as written (tests/integration/test_greg_chromebook_rehearsal.py ends at a structurally complete VEPMC row that stays a STRUCTURAL_CANDIDATE: its --no-passphrase key never reaches the founder tier, so greg path stays at N1, as the kill condition requires; #138 673726a). The path moves only on a closure signed by the enrolled founder key at the founder tier (greg/metrics.py founder_tier; tests/integration/test_greg_vepmc_path.py shows a passphrase-protected key moving it). Remains: the founder's run on Body 1 and his inspection; the ledger cannot prove whose machine or key it is",
       "pivot_condition": "If ChromeOS Linux cannot be enabled (managed device), Alfonso chooses another body he owns or rents; GREG may research candidates only as a read-only mission",
       "kill_condition": "A closure counted with a test key, a fixture or a human manually ticking after interruption",
+      "open_founder_decision": "The founder tier is the key holder's claim of passphrase custody, not verified custody (review of 2026-10-14): the CLI refuses an unprotected key, but anything holding an enrolled key can sign FOUNDER_TIER directly, so this kill condition holds against accidents through the supported tools, not against a deliberate self-attestation. Decide whether N1 counts on that claim plus your inspection and acceptance, or waits for an authenticated external-verification contract (#138) before it moves.",
       "founder_attention": "about one hour on the Chromebook, once"
     },
     {
@@ -99,7 +100,7 @@
       "pivot_condition": "If model-built candidates keep failing verification, prefer installed software or open-source acquisition routes before any new builder",
       "kill_condition": "Ported from PR #68 node 1: if a candidate can read or alter its evaluator, stop; the result would be worthless",
       "founder_attention": "sign one mission and one capability contract",
-      "smallest_next_build": "done agent-side: strategy preconditions (`requires`) and two no-model genesis missions (`verify-download`, `word-limit`), rehearsed on one body to N3 (tests/integration/test_greg_chromebook_rehearsal.py); remains: the founder's run on Body 1"
+      "smallest_next_build": "done agent-side: strategy preconditions (`requires`) and two no-model genesis missions (`verify-download`, `word-limit`), rehearsed on one body as two structural genesis closures on unrelated functions (tests/integration/test_greg_chromebook_rehearsal.py); the rehearsal's test key keeps them STRUCTURAL_CANDIDATEs, and they move the path only when signed at the founder tier (greg/metrics.py founder_tier); remains: the founder's run on Body 1"
     },
     {
       "id": "N3",
@@ -110,17 +111,28 @@
         "name": "clean verified business outcomes",
         "baseline": 0,
         "target": 1,
-        "measured_by": null
+        "measured_by": "greg.path.business_loop_closed"
       },
       "exit_evidence": [
         "named buyer or stakeholder, precommitted acceptance, external evidence, delivery and reconciliation, zero unauthorized effects (PR #68 node 4 definition)"
       ],
       "evidence_source": "ledger",
-      "predicate": null,
-      "evidence_status": "unresolved",
-      "evidence_refs": [],
+      "predicate": "business_loop_closed",
+      "evidence_status": "verified_by_execution",
+      "evidence_refs": [
+        "tests/unit/test_greg_business_case.py",
+        "greg/business_loop.py"
+      ],
       "pivot_condition": "If publication authority is withheld, pick a wedge whose first external effect Alfonso does authorize",
-      "kill_condition": "Engagement or revenue obtained through deception or without consent"
+      "kill_condition": "Engagement or revenue obtained through deception or without consent",
+      "components": [
+        "founder-signed business case naming buyer, price and acceptance terms before anything runs (greg/templates.py business_case)",
+        "people do every outward act through costed HUMAN_WORK asks; GREG contacts, charges and pays no one (greg/missions.py)",
+        "payment reconciled to the cent against an exported statement (business.reconcile, greg/business_loop.py)",
+        "commercial order enforced by strategy preconditions and re-checked by the separate appraiser",
+        "founder acceptance attests that the buyer is real"
+      ],
+      "smallest_next_build": "done agent-side (2026-10-01, full-machine correction): `greg mission new business-case` runs one customer case in commercial order on the body; tests/unit/test_greg_business_case.py closes it end to end; the predicate is structurally met only after founder acceptance, and met (the path moves) only when the case was signed by the enrolled founder key at the founder tier (greg/metrics.py founder_tier), never with a test key or a --no-passphrase rehearsal. Remains founder-only: a real buyer and their consent, the legal operator, and the payment account whose statement GREG reconciles"
     },
     {
       "id": "N4",
@@ -131,16 +143,27 @@
         "name": "founder interventions per verified outcome",
         "baseline": null,
         "target": "falling across 3+ closures",
-        "measured_by": null
+        "measured_by": "greg.path.sop_compounding"
       },
       "exit_evidence": [
         "sop.ratified for a procedure",
         "measured decline in interventions and cost per verified outcome on later closures"
       ],
       "evidence_source": "ledger",
-      "predicate": null,
-      "evidence_status": "unresolved",
-      "evidence_refs": []
+      "predicate": "sop_compounding",
+      "evidence_status": "verified_by_execution",
+      "evidence_refs": [
+        "tests/unit/test_greg_sop_compounding.py",
+        "greg/sop.py"
+      ],
+      "components": [
+        "proposal from three or more verified closures with the same capabilities and the same signed shape (greg/sop.py propose)",
+        "workflow = least general generalization of the signed specs: only parameter positions become slots; checks, operators, capabilities and the light cone must match in every run (greg/sop.py generalize)",
+        "founder-signed SOP_RATIFY; optional pre-approval only for steps approved in every verified run, internal and free",
+        "`greg sop run` instantiates a run with zero model calls; Alfonso signs every run",
+        "per-procedure trend of founder interventions, model calls and model cost per verified outcome, before and after ratification (greg/sop.py trend)"
+      ],
+      "smallest_next_build": "done agent-side: `greg sop show|ratify|run|trend`; tests/unit/test_greg_sop_compounding.py reaches N4's structural exit on a booted, designated body; it moves the path only when every closure it rests on was signed at the founder tier. Remains founder-only: three verified closures of one real procedure on Body 1, your ratification, then three runs from it"
     },
     {
       "id": "N5",
@@ -171,15 +194,27 @@
         "name": "verified human+AI closures",
         "baseline": 0,
         "target": 1,
-        "measured_by": null
+        "measured_by": "greg.path.human_work_shared"
       },
       "exit_evidence": [
         "handoff, review and outcome recorded; human refusal honored as legitimate"
       ],
       "evidence_source": "external",
-      "predicate": null,
-      "evidence_status": "unresolved",
-      "evidence_refs": []
+      "predicate": "human_work_shared",
+      "evidence_status": "verified_by_execution",
+      "evidence_refs": [
+        "tests/unit/test_greg_shared_work.py",
+        "greg/templates.py",
+        "greg/missions.py"
+      ],
+      "components": [
+        "founder-signed shared-work mission naming the person, a contract or employment Alfonso arranges and pays, the deliverable and the acceptance terms (greg/templates.py shared_work)",
+        "GREG writes the handoff, including the person's right to decline, before anyone is asked anything",
+        "the person's agreement and deliverable and Alfonso's review each close one HUMAN_WORK ask only when observed in the case folder",
+        "a refusal observed through declined_if is honored: the ask is withdrawn, the step is never asked again, Alfonso chooses the next move (greg/missions.py)",
+        "GREG records the outcome; its own actions stay internal; Alfonso's acceptance attests the person and the relationship"
+      ],
+      "smallest_next_build": "done agent-side: `greg mission new shared-work`; tests/unit/test_greg_shared_work.py reaches N6's structural exit on a booted, designated body and honors refusals; it moves the path only on a case signed at the founder tier. Remains founder-only: a real person, their consent, and the contract or employment you arrange and pay"
     },
     {
       "id": "N7",
@@ -190,16 +225,27 @@
         "name": "verified surplus available for founder-authorized reinvestment",
         "baseline": 0,
         "target": "> 0",
-        "measured_by": null
+        "measured_by": "greg.path.venture_compounding"
       },
       "exit_evidence": [
         "capability transplant makes the second venture faster or cheaper, measured",
         "revenue reconciled against obligations and reserves"
       ],
       "evidence_source": "external",
-      "predicate": null,
-      "evidence_status": "unresolved",
-      "evidence_refs": []
+      "predicate": "venture_compounding",
+      "evidence_status": "verified_by_execution",
+      "evidence_refs": [
+        "tests/unit/test_greg_venture_books.py",
+        "greg/venture_books.py",
+        "capital/treasury.py"
+      ],
+      "components": [
+        "business cases carry their venture; a procedure ratified from one venture's verified cases runs in another (greg/sop.py instantiate venture)",
+        "transfer measured per verified outcome: founder interventions, model spend and hours to close, against the runs that taught it, on at least two closed N3 cases in the second venture (greg/venture_books.py transfers)",
+        "founder-only TREASURY_REQUIREMENTS signs per-tier obligation and reserve amounts for one venture and currency",
+        "reconciled revenue from closed N3 cases runs through the Kernel's own waterfall (capital/treasury.py over capital/allocation-policy.yaml); surplus exists only after every tier above reinvestment is fully funded; GREG moves no money"
+      ],
+      "smallest_next_build": "done agent-side: `greg mission new business-case --venture --approve-writes`, `greg sop run --venture`, `greg treasury set|books`; tests/unit/test_greg_venture_books.py reaches N7's structural exit on a booted, designated body; it moves the path only when every closure it rests on was signed at the founder tier. Remains founder-only: two real ventures with real buyers, your signed obligations and reserves, and the judgment that the second venture could stand alone"
     },
     {
       "id": "N8",

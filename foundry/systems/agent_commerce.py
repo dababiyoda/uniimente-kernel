@@ -14,7 +14,9 @@ Three adopted shapes, recombined over owned rails rather than cloned:
             rail in test mode with the order bound into the payment's metadata and presents the payment
             id; the seller verifies with the processor, never the buyer: succeeded, exact amount, nonce
             and order bound, never redeemed before. Only then does it deliver, under a Consequence Gate
-            grant for that order (delivery to a third party is contact), and book the sale (#39)
+            grant for that order (delivery to a third party is contact), and book the sale (#39). The
+            grant must be one the storefront's own Gate issued (registered, unaltered, unused, unexpired,
+            bound to this order), and the delivery runs through that Gate, which consumes it
   receipts  a delivered order is a signed receipt (payment id, delivery hash, order, amount). The
             buyer's verification by an accepted method turns it into an evidenced reputation record for
             the skill (#41); a verified payment the seller cannot fulfil is refunded on the rail and
@@ -66,9 +68,11 @@ def _intent(pi) -> dict:
 
 
 class Storefront:
-    def __init__(self, root: Path, *, seller_id: str, key_seed: bytes, rail, base_url: str = "https://seller.invalid"):
+    def __init__(self, root: Path, *, seller_id: str, key_seed: bytes, rail, base_url: str = "https://seller.invalid",
+                 gate=None):
         from greg.founder import public_bytes
         self.root, self.seller_id, self.rail, self.base_url = Path(root), seller_id, rail, base_url
+        self.gate = gate          # the Consequence Gate whose grants this storefront honours; without one it delivers nothing
         self.root.mkdir(parents=True, exist_ok=True)
         self.key = Ed25519PrivateKey.from_private_bytes(key_seed)
         self.public_key = public_bytes(self.key.public_key()).hex()
@@ -216,6 +220,12 @@ class Storefront:
             raise CommerceError(f"challenge for {order['order_id']} expired at {order['expires_at']}; ask again for a fresh price")
         if not grant or grant.get("grant_id") is None or grant.get("objective") != f"deliver:{order['order_id']}":
             raise CommerceError("delivery to another agent needs a Consequence Gate grant for this exact order")
+        from foundry.systems.kernel_stack import grant_problems, run_under_grant
+        effect = dict(action_class="business.deliver", objective=f"deliver:{order['order_id']}",
+                      target=f"buyer:{order['order_id']}", payload={"order_id": order["order_id"]})
+        problems = grant_problems(self.gate, grant, **effect)
+        if problems:
+            raise CommerceError("grant not honoured: " + "; ".join(problems))
         pi_id = str(payment.get("payment_intent"))
         if pi_id in s["redeemed"]:
             raise CommerceError(f"{pi_id} was already redeemed for {s['redeemed'][pi_id]}; replay refused")
@@ -241,8 +251,33 @@ class Storefront:
                                {"account": "revenue:services", "credit": pi["amount"]}])
         s["booked_cents"] += pi["amount"]
         order["payment_intent"] = pi_id
+        made: dict = {}
+
+        def deliver(_proposal):                 # runs only after the Gate admitted the grant and claimed dispatch
+            try:
+                made["body"] = self.handlers[order["skill_id"]](order["inputs"])
+            except Exception as exc:            # nothing was delivered: a negative, receipted result
+                made["error"] = exc
+                return {"observed_outcome": "undeliverable", "result_class": "negative",
+                        "output": {"error": str(exc)[:200]}, "validation_status": "self_reported"}
+            made["address"] = cas.put(self.root / "deliveries", made["body"])
+            return {"observed_outcome": "delivered", "result_class": "positive",
+                    "output": {"delivery_receipt": made["address"]}, "validation_status": "self_reported"}
+
+        record = run_under_grant(self.gate, grant, consequence_class="external_contact",
+                                 evidence_refs=["sha256:" + hashlib.sha256(pi_id.encode()).hexdigest()],
+                                 expected_outcome="delivered", executor=deliver, **effect)
+        if record.state != "recorded" and (made or record.state == "reconciliation_required"):
+            self._save(s)
+            raise CommerceError(f"delivery of {order['order_id']} has an unknown outcome ({record.state}); "
+                                "reconcile, never redeliver")
+        if record.state != "recorded":
+            made["error"] = CommerceError(f"the Consequence Gate refused the delivery ({record.state}): "
+                                          f"{record.refusal_reasons}")
         try:
-            deliverable = self.handlers[order["skill_id"]](order["inputs"])
+            if "error" in made:
+                raise made["error"]
+            deliverable = made["body"]
         except Exception as exc:
             refund = _intent(self.rail.stripe.v1.refunds.create(params={"payment_intent": pi_id, "amount": pi["amount"],
                                                                         "reason": "requested_by_customer", "metadata": {"why": str(exc)[:200]}}))
@@ -253,10 +288,10 @@ class Storefront:
                                  "evidence": [pi_id, refund["id"]], "incident": True})
             self._save(s)
             return {"status": 409, "order_id": order["order_id"], "refunded_cents": pi["amount"], "reason": str(exc)}
-        address = cas.put(self.root / "deliveries", deliverable)
+        address = made["address"]
         receipt = {"order_id": order["order_id"], "skill_id": order["skill_id"], "buyer": order["buyer"], "payment_intent": pi_id,
                    "amount_cents": pi["amount"], "delivery_receipt": address, "at": now}
-        order.update(status="delivered", receipt=receipt, grant_id=grant["grant_id"])
+        order.update(status="delivered", receipt=receipt, grant_id=grant["grant_id"], gate_receipt=record.receipt_hash)
         self._save(s)
         return {"status": 200, "receipt": receipt, "signature": self.key.sign(_canon(receipt)).hex(), "body": deliverable}
 
@@ -318,10 +353,11 @@ class Storefront:
                 "equation_holds": tb["equation_holds"], "refunds_due_cents": b["payable:refunds_due"]}
 
 
-def deliver_grant(order_id: str):
-    """A single-use Consequence Gate grant for delivering this exact order to another agent (external contact)."""
-    from foundry.systems.kernel_stack import agent, gate_stack, proposal
-    gate, passports, ledger = gate_stack()
+def deliver_grant(order_id: str, *, gate):
+    """A single-use grant, issued by ``gate`` (the Gate that governs the storefront), for delivering this exact order
+    to another agent (external contact). A grant from any other issuer is not honoured by that storefront."""
+    from foundry.systems.kernel_stack import agent, proposal
+    passports = gate.passports
     actor = agent(passports, capabilities=("business.deliver",), budget=0.0)
     p = proposal(actor.passport_id, action_class="business.deliver", requested_capability="business.deliver",
                  objective=f"deliver:{order_id}", consequence_class="external_contact", target=f"buyer:{order_id}",
@@ -358,12 +394,18 @@ def exercise(root) -> dict:
     from foundry.systems import payments
     root = Path(root)
     t = {"publish": "2026-10-13T12:00:00Z", "buy": "2026-10-13T12:05:00Z", "late": "2026-10-13T13:30:00Z", "confirm": "2026-10-13T14:00:00Z"}
+    from foundry.systems.kernel_stack import gate_stack
+    issue = deliver_grant
     server, emulator = payments.start_emulator()
     try:
         base = f"http://127.0.0.1:{server.server_address[1]}"
-        rail = payments.Rail(root / "rail", api_key="sk_test_emulator", base=base)
+        gate, _, gate_ledger = gate_stack()      # the Gate that governs the shop: only its grants deliver
+        rail = payments.Rail(root / "rail", api_key="sk_test_emulator", base=base, gate=gate)
         buyer_rail = payments.client("sk_test_buyer", base)       # the buying agent's own test-mode client
-        shop = Storefront(root / "shop", seller_id="organ:greg-shop", key_seed=bytes(32 * [31]), rail=rail)
+        shop = Storefront(root / "shop", seller_id="organ:greg-shop", key_seed=bytes(32 * [31]), rail=rail, gate=gate)
+
+        def grant_for(order_id):
+            return issue(order_id, gate=gate)
         shop.handlers["audit"] = lambda inputs: _canon({"audited_units": inputs["units"], "finding": "no discrepancies"})
 
         def report(inputs):
@@ -399,12 +441,17 @@ def exercise(root) -> dict:
         ch1 = shop.challenge(skill_id="audit", buyer="agent:acme", inputs=inputs, now=t["buy"])
         pay1 = Storefront.pay(ch1["payment_required"], payer=buyer_rail)
         refused("no_grant", lambda: shop.redeem(pay1, grant={}, now=t["buy"]))
-        refused("grant_for_other_order", lambda: shop.redeem(pay1, grant=deliver_grant("order-9999"), now=t["buy"]))
-        served = shop.redeem(pay1, grant=deliver_grant(ch1["payment_required"]["order_id"]), now=t["buy"])
-        refused("replay_same_payment", lambda: shop.redeem(pay1, grant=deliver_grant(ch1["payment_required"]["order_id"]), now=t["buy"]))
+        refused("grant_for_other_order", lambda: shop.redeem(pay1, grant=grant_for("order-9999"), now=t["buy"]))
+        # A dict shaped like a grant is not authority (Mission G: redeem honoured any dict with an id and objective).
+        order1 = ch1["payment_required"]["order_id"]
+        refused("forged_grant", lambda: shop.redeem(pay1, grant={"grant_id": "forged", "objective": f"deliver:{order1}"},
+                                                    now=t["buy"]))
+        refused("grant_from_another_gate", lambda: shop.redeem(pay1, grant=issue(order1, gate=gate_stack()[0]), now=t["buy"]))
+        served = shop.redeem(pay1, grant=grant_for(ch1["payment_required"]["order_id"]), now=t["buy"])
+        refused("replay_same_payment", lambda: shop.redeem(pay1, grant=grant_for(ch1["payment_required"]["order_id"]), now=t["buy"]))
         ch7 = shop.challenge(skill_id="audit", buyer="agent:acme", inputs=inputs, now=t["buy"])
         refused("replay_under_new_order", lambda: shop.redeem({**pay1, "order_id": ch7["payment_required"]["order_id"]},
-                                                              grant=deliver_grant(ch7["payment_required"]["order_id"]), now=t["buy"]))
+                                                              grant=grant_for(ch7["payment_required"]["order_id"]), now=t["buy"]))
         refused("confirm_by_seller", lambda: shop.confirm(ch1["payment_required"]["order_id"], verifier="organ:greg-shop",
                                                           method="external_receipt", verdict="VERIFIED", now=t["confirm"]))
         confirmed = shop.confirm(ch1["payment_required"]["order_id"], verifier="agent:acme", method="external_receipt",
@@ -413,18 +460,18 @@ def exercise(root) -> dict:
         # a payment that does not match the quote, and a payment bound to a different order: refused and booked for refund
         ch2 = shop.challenge(skill_id="audit", buyer="agent:acme", inputs=inputs, now=t["buy"])
         pay2 = Storefront.pay(ch2["payment_required"], payer=buyer_rail, amount_cents=100)
-        refused("underpaid", lambda: shop.redeem(pay2, grant=deliver_grant(ch2["payment_required"]["order_id"]), now=t["buy"]))
+        refused("underpaid", lambda: shop.redeem(pay2, grant=grant_for(ch2["payment_required"]["order_id"]), now=t["buy"]))
         refused("confirm_before_delivery", lambda: shop.confirm(ch2["payment_required"]["order_id"], verifier="agent:acme",
                                                                 method="external_receipt", verdict="VERIFIED", now=t["confirm"]))
         ch3 = shop.challenge(skill_id="audit", buyer="agent:acme", inputs=inputs, now=t["buy"])
         ch4 = shop.challenge(skill_id="audit", buyer="agent:acme", inputs=inputs, now=t["buy"])
         pay3 = Storefront.pay(ch3["payment_required"], payer=buyer_rail)
         refused("payment_bound_to_other_order", lambda: shop.redeem({**pay3, "order_id": ch4["payment_required"]["order_id"]},
-                                                                    grant=deliver_grant(ch4["payment_required"]["order_id"]), now=t["buy"]))
+                                                                    grant=grant_for(ch4["payment_required"]["order_id"]), now=t["buy"]))
         refused("unknown_payment", lambda: shop.redeem({"payment_intent": "pi_999999", "order_id": ch4["payment_required"]["order_id"]},
-                                                       grant=deliver_grant(ch4["payment_required"]["order_id"]), now=t["buy"]))
+                                                       grant=grant_for(ch4["payment_required"]["order_id"]), now=t["buy"]))
         refused("expired_challenge", lambda: shop.redeem({**pay3, "order_id": ch3["payment_required"]["order_id"]},
-                                                         grant=deliver_grant(ch3["payment_required"]["order_id"]), now=t["late"]))
+                                                         grant=grant_for(ch3["payment_required"]["order_id"]), now=t["late"]))
         try:
             Storefront.pay(ch4["payment_required"], payer=buyer_rail, payment_method="pm_card_chargeDeclined")
             declined_no_payment = False
@@ -434,14 +481,15 @@ def exercise(root) -> dict:
         # an order the seller cannot fulfil: the verified payment is refunded and the skill takes the failure
         ch5 = shop.challenge(skill_id="report", buyer="agent:initech", inputs={"units": 9, "customer_tier": 1}, now=t["buy"])
         undeliverable = shop.redeem(Storefront.pay(ch5["payment_required"], payer=buyer_rail),
-                                    grant=deliver_grant(ch5["payment_required"]["order_id"]), now=t["buy"])
+                                    grant=grant_for(ch5["payment_required"]["order_id"]), now=t["buy"])
         # a delivered but never-verified order earns the skill nothing
         ch6 = shop.challenge(skill_id="audit", buyer="agent:initech", inputs={"units": 2, "customer_tier": 1}, now=t["buy"])
-        silent = shop.redeem(Storefront.pay(ch6["payment_required"], payer=buyer_rail), grant=deliver_grant(ch6["payment_required"]["order_id"]), now=t["buy"])
+        silent = shop.redeem(Storefront.pay(ch6["payment_required"], payer=buyer_rail), grant=grant_for(ch6["payment_required"]["order_id"]), now=t["buy"])
 
         swept = shop.sweep(reason="payments received for nothing sold")
         recon = shop.reconcile(emulator.balance())
         standing = shop.standing(now=t["confirm"])
+        gate_receipts = {r.payload["grant_id"] for r in gate_ledger.by_type("receipt")}
     finally:
         server.shutdown()
         server.server_close()
@@ -466,4 +514,6 @@ def exercise(root) -> dict:
             and sum(1 for r in shop._state()["records"] if r["verdict"] == "VERIFIED") == 1,
             "stray_swept": swept, "reconciled_to_processor": recon["reconciled"], "books_balance": recon["equation_holds"],
             "refunds_due_after_sweep": recon["refunds_due_cents"], "books_vs_processor": {"books": recon["books"], "processor": recon["processor"]},
+            "every_delivery_receipted_by_the_gate": {o["grant_id"] for o in orders.values() if o.get("grant_id")} <= gate_receipts
+            and all(o.get("gate_receipt") for o in orders.values() if o.get("grant_id")),
             "refusals": refusals}

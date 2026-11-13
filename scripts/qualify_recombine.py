@@ -78,7 +78,7 @@ def reuse(seed: int = 11) -> dict:
     out = {"engine": {"capability_id": manifest.capability_id, "qualified": passed,
                       "seconds": round(engine_seconds, 2), "oracle_cases": report["cases"],
                       "scale_probe": report["scale_probe"]}, "constructions": []}
-    for function in ("assignment.staffing", "assignment.matching"):
+    for function in ("assignment.staffing", "assignment.matching", "selection.closure"):
         path, _ = recombine.chain(function, genesis.CATALOG)
         composed = g._composed_manifest(function, path, manifest, "deficit-evidence")
         adapter = recombine.composed_adapter(path, registry)

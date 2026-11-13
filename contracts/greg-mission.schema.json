@@ -294,6 +294,46 @@
                 }
               }
             }
+          },
+          "declined_if": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "sensor",
+              "predicate"
+            ],
+            "description": "Only for a person's step (human.* or professional.*): the read-only observation that the person declined. When it holds, GREG records the refusal as legitimate, withdraws its ask, never pursues this step again in the mission and asks the founder how to proceed.",
+            "properties": {
+              "sensor": {
+                "$ref": "#/$defs/invocation"
+              },
+              "predicate": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "op"
+                ],
+                "properties": {
+                  "op": {
+                    "enum": [
+                      "exists",
+                      "absent",
+                      "equals",
+                      "contains",
+                      "not_contains",
+                      "gte",
+                      "lte",
+                      "count_gte"
+                    ]
+                  },
+                  "field": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "value": {}
+                }
+              }
+            }
           }
         }
       }
@@ -381,6 +421,28 @@
       "maximum": 1000000,
       "description": "Founder-stated value of closing one failing check, used only to rank strategies against spend."
     },
+    "venture": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{1,40}$",
+      "description": "The venture this mission serves (a short name). Books and capability transfer are measured per venture (greg/venture_books.py); it grants nothing."
+    },
+    "pre_approved_steps": {
+      "type": "array",
+      "maxItems": 200,
+      "description": "Steps this founder signature approves in advance, one exact strategy each (a run of a ratified SOP, greg/sop.py). Each admits only its own strategy, with this capability, target and consequence class at no cost, past the light cone; it never widens the cone for any other strategy and never answers a constitutional requirement for a human.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["action_id", "capability", "target", "consequence_class", "cost_usd"],
+        "properties": {
+          "action_id": {"type": "string", "pattern": "^[a-z0-9_.-]{1,80}$"},
+          "capability": {"type": "string", "maxLength": 120},
+          "target": {"type": "string", "minLength": 1, "maxLength": 500},
+          "consequence_class": {"enum": ["read_only", "internal_write"]},
+          "cost_usd": {"const": 0}
+        }
+      }
+    },
     "provenance": {
       "type": "object",
       "additionalProperties": false,
@@ -413,6 +475,53 @@
             "maxLength": 300
           },
           "maxItems": 20
+        },
+        "model_calls": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Model calls GREG made to produce this proposal (0 for templates and ratified SOPs)."
+        },
+        "model_cost_usd": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Provider-reported model spend to produce this proposal; absent when the route did not report it."
+        },
+        "procedure_id": {
+          "type": "string",
+          "pattern": "^sop-[0-9a-f]{16}$",
+          "description": "The ratified SOP this mission is one run of (greg/sop.py)."
+        },
+        "ratification": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "description": "Digest of the founder-signed SOP_RATIFY command whose workflow produced this mission."
+        },
+        "inputs": {
+          "type": "object",
+          "maxProperties": 30,
+          "description": "The normalized inputs a template built this mission from; attribution that lets a ratified procedure ask only for them (greg/sop.py).",
+          "additionalProperties": {
+            "type": [
+              "string",
+              "integer",
+              "number",
+              "boolean"
+            ]
+          }
+        },
+        "slots": {
+          "type": "object",
+          "maxProperties": 50,
+          "description": "The values this run gave the ratified workflow's slots.",
+          "additionalProperties": {
+            "type": [
+              "string",
+              "integer",
+              "number",
+              "boolean"
+            ]
+          }
         },
         "rounds": {
           "type": "integer",

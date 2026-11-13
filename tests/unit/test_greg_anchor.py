@@ -237,3 +237,15 @@ def test_status_reports_the_anchor(body_home, tsa, monkeypatch):
         body.tick()
     projection = status(home)["external_anchor"]
     assert projection["configured"] and projection["verified"] == 1 and projection["latest_gen_time"]
+
+
+def test_a_tsa_redirect_is_not_followed_and_the_request_is_not_resent(monkeypatch):
+    """#26: urllib's default handler turns a redirected POST into a GET to any host."""
+    import urllib.error
+    from tests.fake_web import FakeWeb
+    web = FakeWeb({"https://tsa.example/ts": (302, "https://elsewhere.example/ts", b""),
+                   "https://elsewhere.example/ts": (200, None, b"")}).install(monkeypatch)
+    with pytest.raises(urllib.error.HTTPError) as refused:
+        anchor._post("https://tsa.example/ts", b"timestamp-query")
+    assert refused.value.code == 302
+    assert web.hosts() == ["tsa.example"] and web.seen[0]["method"] == "POST"

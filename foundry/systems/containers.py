@@ -35,10 +35,12 @@ import shutil
 import subprocess
 import tarfile
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
 from foundry.systems import cas
+from greg import egress
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE_DATE_EPOCH = 1_788_000_000
@@ -48,6 +50,17 @@ BASE = {"name": "python:3.11-alpine", "platform": "linux/amd64",
 MIRRORS = [("https://mirror.gcr.io", "library/python"), ("https://public.ecr.aws", "docker/library/python"),
            ("https://registry-1.docker.io", "library/python")]
 MANIFEST_TYPES = "application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.v2+json"
+# Egress of the registry client, exact host names (greg/egress.py semantics: https only, every redirect hop
+# re-checked, credentials kept only on their origin). The mirrors serve the registry API; a mirror may
+# redirect a blob to the CDN it fronts (observed 2026-10-14: registry-1.docker.io -> production.cloudfront
+# .docker.com, public.ecr.aws -> d2glxqk2uabbnd.cloudfront.net; mirror.gcr.io redirects on its own host).
+# A redirect anywhere else is refused and the next mirror is tried. Blob bytes are digest-verified anyway;
+# what the allowlist protects is where requests, and the pull token, may go.
+REGISTRY_HOSTS = tuple(urllib.parse.urlsplit(registry).hostname for registry, _ in MIRRORS)
+BLOB_REDIRECT_HOSTS = ("production.cloudfront.docker.com", "d2glxqk2uabbnd.cloudfront.net")
+# Token realms a mirror's Bearer challenge may name. The realm arrives in a response header, so it is a
+# target like any other: https, an exact member of this list, fetched with no credential.
+TOKEN_REALM_HOSTS = ("auth.docker.io", "public.ecr.aws", "mirror.gcr.io")
 CACHE = Path(os.environ.get("UNIIMENTE_OCI_CACHE", Path.home() / ".cache" / "uniimente" / "oci"))
 
 
@@ -58,26 +71,40 @@ class ContainerError(RuntimeError):
 # -- registry client (anonymous pull, bearer-token challenge, digest-verified) ----------
 
 def _bearer(challenge: str) -> str:
+    """Anonymous pull token from the challenge's realm, refused unless the realm is an allowlisted https host.
+
+    urllib.request.urlopen used to open whatever realm the response named, following any redirect."""
     fields = dict(part.split("=", 1) for part in challenge.removeprefix("Bearer ").split(","))
     fields = {k.strip(): v.strip().strip('"') for k, v in fields.items()}
     query = "&".join(f"{k}={fields[k]}" for k in ("service", "scope") if k in fields)
-    with urllib.request.urlopen(f"{fields['realm']}?{query}", timeout=60) as r:
+    request = urllib.request.Request(f"{fields.get('realm', '')}?{query}")
+    with egress.open_checked(request, allowlist=TOKEN_REALM_HOSTS, timeout=60) as r:
         body = json.loads(r.read())
     return body.get("token") or body["access_token"]
 
 
 def _fetch(url: str, accept: str | None = None) -> bytes:
+    """GET through the shared egress opener (greg/egress.py), never urllib's default redirect handler.
+
+    That handler copied ``Authorization`` onto every redirected request, so a registry 3xx handed the pull
+    token to any host. Here each hop is re-checked against REGISTRY_HOSTS + BLOB_REDIRECT_HOSTS and the token
+    stays on the registry's origin. A refusal raises ``egress.EgressRefused``; fetch_blob moves to the next
+    mirror."""
     headers = {"Accept": accept} if accept else {}
+    allowlist = REGISTRY_HOSTS + BLOB_REDIRECT_HOSTS
     try:
-        with urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=120) as r:
+        with egress.open_checked(urllib.request.Request(url, headers=headers), allowlist=allowlist,
+                                 timeout=120) as r:
             return r.read()
     except urllib.error.HTTPError as exc:
         if exc.code != 401 or "Bearer" not in exc.headers.get("WWW-Authenticate", ""):
             raise
-        token = _bearer(exc.headers["WWW-Authenticate"])
-        with urllib.request.urlopen(urllib.request.Request(url, headers={**headers, "Authorization": f"Bearer {token}"}),
-                                    timeout=120) as r:
-            return r.read()
+        challenge = exc.headers["WWW-Authenticate"]
+        exc.close()
+    token = _bearer(challenge)
+    request = urllib.request.Request(url, headers={**headers, "Authorization": f"Bearer {token}"})
+    with egress.open_checked(request, allowlist=allowlist, timeout=120) as r:
+        return r.read()
 
 
 def fetch_blob(digest: str, *, kind: str = "blobs", accept: str | None = None, store: Path = CACHE) -> bytes:

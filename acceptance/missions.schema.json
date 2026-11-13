@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.internal/acceptance/missions.schema.json",
+  "title": "Whole-machine acceptance missions A-L (directive 2026-10-13 section 33)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "source", "tier_reading", "body_process_tests", "missions"],
+  "properties": {
+    "version": {"const": "acceptance-missions/1"},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["directive", "section", "lineage"],
+      "properties": {
+        "directive": {"type": "string", "minLength": 1},
+        "section": {"type": "string", "minLength": 1},
+        "lineage": {"type": "array", "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "tier_reading": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["UNIT_VERIFIED", "SANDBOX_VERIFIED", "BODY_VERIFIED", "beyond_tests"],
+      "properties": {
+        "UNIT_VERIFIED": {"type": "string", "minLength": 1},
+        "SANDBOX_VERIFIED": {"type": "string", "minLength": 1},
+        "BODY_VERIFIED": {"type": "string", "minLength": 1},
+        "beyond_tests": {"type": "string", "minLength": 1}
+      }
+    },
+    "body_process_tests": {
+      "description": "Test files that drive a real Body process. A BODY_VERIFIED requirement or trace link must cite a node in one of them that statically starts the process.",
+      "type": "array", "minItems": 1, "items": {"$ref": "#/$defs/body_process_test"}
+    },
+    "missions": {"type": "array", "minItems": 12, "maxItems": 12, "items": {"$ref": "#/$defs/mission"}}
+  },
+  "$defs": {
+    "status": {
+      "enum": ["INTENDED", "DESIGNED", "IMPLEMENTED", "INTEGRATED", "UNIT_VERIFIED", "SANDBOX_VERIFIED",
+               "BODY_VERIFIED", "FOUNDER_ACCEPTED", "AUTHORIZED_LIVE", "EXTERNALLY_VERIFIED",
+               "COMMERCIAL_OUTCOME_VERIFIED", "BLOCKED_WITH_REASON"]
+    },
+    "mission": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "directive", "requirements", "gaps"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[A-L]$"},
+        "title": {"type": "string", "minLength": 1},
+        "directive": {"type": "string", "minLength": 1},
+        "requirements": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/requirement"}},
+        "gaps": {"type": "array", "items": {"$ref": "#/$defs/gap"}},
+        "trace": {"type": "array", "items": {"$ref": "#/$defs/link"}}
+      }
+    },
+    "requirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "obligation", "coverage"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[A-Za-z0-9.]+$"},
+        "obligation": {"type": "string", "minLength": 1},
+        "tests": {"type": "array", "items": {"type": "string", "pattern": "^tests/"}},
+        "tier": {"$ref": "#/$defs/status"},
+        "implementation": {"enum": ["IMPLEMENTED", "INTEGRATED"]},
+        "status": {"$ref": "#/$defs/status"},
+        "blocked_reason": {"type": "string", "minLength": 1},
+        "coverage": {"enum": ["covered", "partial", "gap"]},
+        "notes": {"type": "string"}
+      }
+    },
+    "gap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "gap", "state", "buildable_now", "dependency", "next"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[A-Za-z0-9.]+$"},
+        "gap": {"type": "string", "minLength": 1},
+        "state": {"enum": ["OPEN", "CLOSED"]},
+        "closed_by": {"type": "string", "minLength": 1},
+        "buildable_now": {"type": "boolean"},
+        "dependency": {"enum": ["none", "founder", "credential", "external", "technical", "legal", "physical"]},
+        "next": {"type": "string", "minLength": 1}
+      }
+    },
+    "body_process_test": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["file", "starts"],
+      "properties": {
+        "file": {"type": "string", "pattern": "^tests/.+\\.py$"},
+        "starts": {"enum": ["greg run", "supervisord", "Body.run driver"]},
+        "note": {"type": "string"}
+      }
+    },
+    "link": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["link", "owner", "code", "proof", "tier", "note"],
+      "properties": {
+        "link": {"type": "string"},
+        "owner": {"type": "string", "minLength": 1},
+        "code": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "proof": {"type": "array", "minItems": 1, "items": {"type": "string", "pattern": "^tests/"}},
+        "tier": {"enum": ["UNIT_VERIFIED", "SANDBOX_VERIFIED", "BODY_VERIFIED"]},
+        "note": {"type": "string"}
+      }
+    }
+  }
+}

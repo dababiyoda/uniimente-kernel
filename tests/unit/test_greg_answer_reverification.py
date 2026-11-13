@@ -620,7 +620,7 @@ def test_the_console_words_each_uncounted_answer_by_its_cause():
     expected = {"pending": "is being applied", "refused_by_body": "was refused when GREG applied it (expired)",
                 "unverifiable_acceptance": "no signed copy of it verifies",
                 "refused_at_acceptance": "does not apply to this ask (expired)",
-                None: "with no signed decision of yours behind"}
+                None: "that no decision this body accepted and verified stands behind"}
     for cause, phrase in expected.items():
         shown = {**base, **({"unsigned_answer_cause": cause} if cause else {}), "unsigned_answer_why": "expired"}
         assert phrase in console._ask_details(shown), cause
@@ -640,7 +640,7 @@ def test_the_operator_scripts_read_counted_answers(tmp_path):
         assert w.rid not in body.engine.book.answers
         requests = [e.payload for e in body.journal.replay("decision.requested") if e.payload["kind"] == "APPROVAL"]
         assert [r["request_id"] for r in requests if r["request_id"] not in set(body.engine.book.answers)] == [w.rid]
-    assert "body.engine.book.answers" in (root / "scripts/greg_hands_proof.py").read_text()
+    assert "body.engine.book.open_requests()" in (root / "scripts/greg_hands_proof.py").read_text()
     trace = (root / "scripts/mission_trace.py").read_text()
     assert "recorded_not_counted" in trace and "body.engine.book.answers" in trace
 

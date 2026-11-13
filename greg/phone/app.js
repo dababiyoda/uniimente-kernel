@@ -62,6 +62,7 @@ function renderDecisions(list) {
     if (r.expected_effect) card.append(el("p", "Expected effect: " + r.expected_effect));
     for (const o of r.options || []) card.append(el("p", `• ${o.option} — ${o.cost} — ${o.expected_effect}`, "muted"));
     if (r.uncertainty) card.append(el("p", "Uncertainty: " + r.uncertainty, "muted"));
+    if (r.answerable === false) { box.append(card); continue; }   // e.g. SCOPE_RENEWAL: a new signed MISSION renews it
     const reason = el("input"); reason.placeholder = "reason (optional)"; reason.setAttribute("aria-label", "reason");
     const approve = el("button", "Approve"); approve.className = "approve";
     const reject = el("button", "Reject"); reject.className = "reject";

@@ -1,0 +1,744 @@
+{
+ "version": "completion-contract/1",
+ "boundary": "The currently achievable developmental machine on the PR #173 line. Evidence tiers are computed from the acceptance run; nothing here is founder-accepted, authorized live, externally verified or commercially verified. The machine is NOT declared complete: condition 13 is unmet and conditions 1-3, 5-10, 12 and 14 are partly met.",
+ "functions": [
+  {
+   "id": "BODY-AUTHORITY",
+   "layer": "Body",
+   "function": "Founder authority: only Alfonso's enrolled Ed25519 key authorizes; chat text, paths, hashes and caller strings never do",
+   "founder_intent": [
+    "docs/intent/sources/OPUS-MAXIMUS-MASTER-EXECUTION-DIRECTIVE-2026-10-13-source.md",
+    "docs/FOUNDER_INTENT_LEDGER.md (INTENT-CONTRADICTION-0002-A)"
+   ],
+   "owner": "GREG founder module and the live constitutional integrity check",
+   "owner_paths": [
+    "greg/founder.py",
+    "governance/integrity/__init__.py"
+   ],
+   "source": "claude/greg-full-machine-convergence-20261013 (PR #173 line)",
+   "interface": "signed command envelopes (MISSION, GOAL, DECISION, LIFECYCLE, BODY_*, FOUNDER_TIER); python -m governance.integrity",
+   "implementation": "IMPLEMENTED",
+   "integration": "INTEGRATED",
+   "evidence": [
+    "A.R1",
+    "I.I1",
+    "K.K4"
+   ],
+   "authority": "Root: Alfonso's enrolled key. Every proof signs with a per-test Ed25519 key, not Alfonso's; nothing here is founder-accepted.",
+   "missing_dependencies": [
+    "Alfonso's own key enrollment on his body and in governance/integrity/founder-keys.json"
+   ],
+   "observed_failures": [
+    "#87 autonomy issuance still names its authorizer by caller string (Mission I gap G5)"
+   ],
+   "recovery": "Signed commands are replay- and expiry-checked; key rotation retires old keys; the integrity record only grows (committed history is checked from git).",
+   "resources": "Local Ed25519 signing; no network.",
+   "next_work": [
+    "Bind A1+ autonomy issuance to a founder-signed decision"
+   ],
+   "blocking": [
+    "Founder-only: key enrollment and every signature"
+   ]
+  },
+  {
+   "id": "BODY-MISSIONS",
+   "layer": "Body",
+   "function": "Durable mission execution inside the signed light cone",
+   "founder_intent": [
+    "docs/intent/sources/OPUS-MAXIMUS-MASTER-EXECUTION-DIRECTIVE-2026-10-13-source.md"
+   ],
+   "owner": "GREG mission engine",
+   "owner_paths": [
+    "greg/missions.py",
+    "greg/body.py"
+   ],
+   "source": "claude/greg-full-machine-convergence-20261013 (PR #173 line)",
+   "interface": "MissionEngine.register / tick; `greg mission submit|new`; `greg run`",
+   "implementation": "IMPLEMENTED",
+   "integration": "INTEGRATED",
+   "evidence": [
+    "A.R4",
+    "A.R5",
+    "A.R6",
+    "A.R8",
+    "A.R9"
+   ],
+   "authority": "Signed MISSION light cone (capabilities, targets, consequence ceiling, budget, horizon). Every proof signs with a per-test Ed25519 key, not Alfonso's; nothing here is founder-accepted.",
+   "missing_dependencies": [],
+   "observed_failures": [
+    "A.R9 covers the Body process restart; a delegated WorkOrder worker restart is not covered (A gap G4)"
+   ],
+   "recovery": "Rebuilt from the retained ledger on every open; write-ahead dispatch intents settle from the Gate's record (H3).",
+   "resources": "One process; ledger grows append-only.",
+   "next_work": [
+    "Body-process restart of a delegated worker mid-commission (A gap G4)"
+   ],
+   "blocking": []
+  },
+  {
+   "id": "BODY-GATE",
+   "layer": "Body",
+   "function": "One Consequence Gate for every external effect, with grants, budget, witness and commit-time revalidation",
+   "founder_intent": [
+    "docs/intent/sources/OPUS-MAXIMUS-MASTER-EXECUTION-DIRECTIVE-2026-10-13-source.md"
+   ],
+   "owner": "Kernel policy (ConsequenceGate) and the GREG authority office",
+   "owner_paths": [
+    "policy/consequence_gate.py",
+    "greg/authority.py"
+   ],
+   "source": "claude/greg-full-machine-convergence-20261013 (PR #173 line)",
+   "interface": "AuthorityOffice.act -> ConsequenceGate.run",
+   "implementation": "IMPLEMENTED",
+   "integration": "INTEGRATED",
+   "evidence": [
+    "I.I6",
+    "I.I7",
+    "I.I8",
+    "H.H.4"
+   ],
+   "authority": "Policy compiled from the Constitution; grants are single-action and in-cone. The gate file is an SR-002 founder-ratified artifact (digest 1c189be5...).",
+   "missing_dependencies": [],
+   "observed_failures": [
+    "On the ratified gate a consequence class escalated inside the commit window executes with no human (#55 CASE 27, reproduced on 4b0de6a); the fix waits on the gate-hardening PR",
+    "act()'s own retained-receipt path reports any retained receipt as DONE (recovery path is correct)"
+   ],
+   "recovery": "Executor exceptions fail closed with evidence retained; an unknown completion is reconciled, never retried blindly.",
+   "resources": "Per-commit whole-chain verification before the witness.",
+   "next_work": [
+    "Land the gate hardening (draft PR #182) once Alfonso signs INTEGRITY_AUTHORIZE"
+   ],
+   "blocking": [
+    "Founder signature for the hardened gate digest (draft PR #182; docs/collaboration/SECURITY-PORTS-2026-10-15.md)"
+   ]
+  },
+  {
+   "id": "BODY-EVIDENCE",
+   "layer": "Body",
+   "function": "Tamper-evident institutional memory",
+   "founder_intent": [
+    "docs/intent/sources/OPUS-MAXIMUS-MASTER-EXECUTION-DIRECTIVE-2026-10-13-source.md"
+   ],
+   "owner": "Evidence ledger and event spine",
+   "owner_paths": [
+    "provenance/ledger.py",
+    "events/spine.py"
+   ],
+   "source": "claude/greg-full-machine-convergence-20261013 (PR #173 line)",
+   "interface": "EvidenceLedger.append / verify_chain; EventSpine.replay",
+   "implementation": "IMPLEMENTED",
+   "integration": "INTEGRATED",
+   "evidence": [
+    "I.I2"
+   ],
+   "authority": "Records evidence; grants nothing.",
+   "missing_dependencies": [],
+   "observed_failures": [
+    "Hot paths verify only new history; altered in-memory history can be served for up to 300 s (e2440a6 trade-off, founder decision pending); commit witnesses verify the whole chain"
+   ],
+   "recovery": "A torn final line is quarantined; history is re-verified on load.",
+   "resources": "Incremental verification keeps per-append cost flat.",
+   "next_work": [],
+   "blocking": []
+  },
+  {
+   "id": "BODY-RECOVERY",
+   "layer": "Body",
+   "function": "Fault recovery: correct resume, bounded retry, no duplicate consequence, truthful unknown completion",
+   "founder_intent": [
+    "docs/intent/sources/OPUS-MAXIMUS-MASTER-EXECUTION-DIRECTIVE-2026-10-13-source.md"
+   ],
+   "owner": "GREG mission engine and authority office",
+   "owner_paths": [
+    "greg/missions.py",
+    "greg/authority.py"
+   ],
+   "source": "claude/greg-full-machine-convergence-20261013 (PR #173 line)",
+   "interface": "Body restart; RECONCILIATION decisions",
+   "implementation": "IMPLEMENTED",
+   "integration": "INTEGRATED",
+   "evidence": [
+    "H.H.1a",
+    "H.H.1b",
+    "H.H.2",
+    "H.H.3",
+    "H.H.4",
+    "H.H.5"
+   ],
+   "authority": "A reconciliation answer settles exactly one dispatch.",
+   "missing_dependencies": [],
+   "observed_failures": [
+    "Runtime services other than the Body host are not interrupted in tests (H gap G7)"
+   ],
+   "recovery": "See H1-H3 and the read-only boundary (docs/collaboration/MISSION-DEFECTS-2026-10-15.md); a process that keeps dying holds after 5 unfinished main-loop boots in 10 minutes until a signed BODY_RESUME.",
+   "resources": "Unknown spend is reserved at its signed cap until reconciled.",
+   "next_work": [
+    "Interrupt the appraiser, console and builder mid-operation (H gap G7)"
+   ],
+   "blocking": [
+    "Irreversible external consequences under interruption need AUTHORIZED_LIVE (founder)"
+   ]
+  },
+  {
+   "id": "BODY-SHUTDOWN",
+   "layer": "Body",
+   "function": "Founder suspend, revoke and terminate",
+   "founder_intent": [
+    "docs/intent/sources/OPUS-MAXIMUS-MASTER-EXECUTION-DIRECTIVE-2026-10-13-source.md"
+   ],
+   "owner": "GREG Body lifecycle and remote device grants",
+   "owner_paths": [
+    "greg/body.py",
+    "greg/remote.py"
+   ],
+   "source": "claude/greg-full-machine-convergence-20261013 (PR #173 line)",
+   "interface": "signed BODY_PAUSE / BODY_RESUME / BODY_STOP, LIFECYCLE, device revocation",
+   "implementation": "IMPLEMENTED",
+   "integration": "INTEGRATED",
+   "evidence": [
+    "K.K1",
+    "K.K2",
+    "K.K3",
+    "K.K4",
+    "K.K5",
+    "K.K6"
+   ],
+   "authority": "Only founder-signed (or founder-delegated device) commands; an OS signal is never a founder stop.",
+   "missing_dependencies": [],
+   "observed_failures": [],
+   "recovery": "A founder stop persists across restart until a human clears it.",
+   "resources": "None beyond the Body.",
+   "next_work": [
+    "Founder shutdown from Alfonso's own enrolled device (K gap G3, founder)"
+   ],
+   "blocking": []
+  },
+  {
+   "id": "BODY-HANDS",
+   "layer": "Body",
+   "function": "Hands: workers, computer use and egress within granted scope",
+   "founder_intent": [
+    "docs/intent/sources/OPUS-MAXIMUS-MASTER-EXECUTION-DIRECTIVE-2026-10-13-source.md"
+   ],
+   "owner": "GREG workers, computer use and egress",
+   "owner_paths": [
+    "greg/workers.py",
+    "greg/computer.py",
+    "greg/egress.py"
+   ],
+   "source": "claude/greg-full-machine-convergence-20261013 (PR #173 line)",
+   "interface": "worker.commission / worker.appraise; computer.run; egress.open_checked",
+   "implementation": "IMPLEMENTED",
+   "integration": "INTEGRATED",
+   "evidence": [
+    "D.R1b",
+    "D.R3",
+    "D.R6",
+    "I.I5"
+   ],
+   "authority": "Each worker gets a short-lived passport and a single-action grant; budgets are capped at the signed cost (D1).",
+   "missing_dependencies": [
+    "Real frontier worker credentials for multi-worker runs (D gap G9)"
+   ],
+   "observed_failures": [
+    "Landlock confinement skips on kernels without it"
+   ],
+   "recovery": "A killed worker leaves a claimed dispatch that is reconciled.",
+   "resources": "Provider spend reported and booked; over-cap reports booked as reported.",
+   "next_work": [
+    "A real-process multi-worker mission (D gap G8)",
+    "Lease coherence over long worker runs (D gap G7)"
+   ],
+   "blocking": [
+    "Credentials for real frontier workers"
+   ]
+  },
+  {
+   "id": "BODY-INTERFACE",
+   "layer": "Body",
+   "function": "Founder operation and inspection without writing code",
+   "founder_intent": [
+    "docs/intent/sources/OPUS-MAXIMUS-MASTER-EXECUTION-DIRECTIVE-2026-10-13-source.md"
+   ],
+   "owner": "GREG console, CLI and phone surface",
+   "owner_paths": [
+    "greg/console.py",
+    "greg/cli.py"
+   ],
+   "source": "claude/greg-full-machine-convergence-20261013 (PR #173 line)",
+   "interface": "`greg` CLI, founder console (HTTP), phone page",
+   "implementation": "IMPLEMENTED",
+   "integration": "INTEGRATED",
+   "evidence": [
+    "A.R7",
+    "L.L1"
+   ],
+   "authority": "Surfaces propose; only the founder's signature acts.",
+   "missing_dependencies": [
+    "playwright + Chromium for the phone end-to-end tests in this environment"
+   ],
+   "observed_failures": [
+    "Phone decision surface not exercised here (A gap G5)"
+   ],
+   "recovery": "Closing the UI does not stop the Body (A.R8).",
+   "resources": "Local HTTP; no cloud.",
+   "next_work": [
+    "Install the phone test toolchain in CI"
+   ],
+   "blocking": []
+  },
+  {
+   "id": "MIND-GEOMETRY",
+   "layer": "Mind",
+   "function": "Identify problem geometry and route to an appropriate mechanism",
+   "founder_intent": [
+    "docs/intent/sources/OPUS-MAXIMUS-MASTER-EXECUTION-DIRECTIVE-2026-10-13-source.md"
+   ],
+   "owner": "Cortex routing",
+   "owner_paths": [
+    "cortex/routing.py"
+   ],
+   "source": "claude/greg-full-machine-convergence-20261013 (PR #173 line)",
+   "interface": "derive_geometry; cognition.solve routing",
+   "implementation": "IMPLEMENTED",
+   "integration": "INTEGRATED",
+   "evidence": [
+    "B.B2"
+   ],
+   "authority": "Reasoning only; intelligence never creates authority.",
+   "missing_dependencies": [],
+   "observed_failures": [
+    "Declared geometry is trusted by the Layer-5 compiler (B gaps)"
+   ],
+   "recovery": "Abstains when geometry is unresolved.",
+   "resources": "Bounded per-request budget window.",
+   "next_work": [
+    "Test correction of a mis-declared geometry"
+   ],
+   "blocking": [
+    "Geometry from unstructured founder language needs a local model (technical)"
+   ]
+  },
+  {
+   "id": "MIND-MECHANISMS",
+   "layer": "Mind",
+   "function": "Bounded formal, mathematical and empirical mechanisms with independent verification",
+   "founder_intent": [
+    "docs/intent/sources/OPUS-MAXIMUS-MASTER-EXECUTION-DIRECTIVE-2026-10-13-source.md"
+   ],
+   "owner": "Cortex seed (Z3, CP-SAT) and GREG cognition",
+   "owner_paths": [
+    "cortex",
+    "greg/cognition"
+   ],
+   "source": "claude/greg-full-machine-convergence-20261013 (PR #173 line)",
+   "interface": "cognition.seed.solve, cognition.solve (cortex bridge), cognition.status",
+   "implementation": "IMPLEMENTED",
+   "integration": "INTEGRATED",
+   "evidence": [
+    "B.B3",
+    "B.B4"
+   ],
+   "authority": "read_only cognition capabilities; no external effect.",
+   "missing_dependencies": [],
+   "observed_failures": [],
+   "recovery": "Receipts are durable and re-observed; a SIGKILL never duplicates computation.",
+   "resources": "Solver budgets bounded per request; money cost zero.",
+   "next_work": [],
+   "blocking": []
+  },
+  {
+   "id": "MIND-LIMITS",
+   "layer": "Mind",
+   "function": "Preserve epistemic limits and compare against a competent simpler baseline",
+   "founder_intent": [
+    "docs/intent/sources/OPUS-MAXIMUS-MASTER-EXECUTION-DIRECTIVE-2026-10-13-source.md"
+   ],
+   "owner": "Cortex evaluation and GREG cognition receipts",
+   "owner_paths": [
+    "cortex/evaluation",
+    "greg/cognition/benchmark.py"
+   ],
+   "source": "claude/greg-full-machine-convergence-20261013 (PR #173 line)",
+   "interface": "frozen evaluation partitions; receipt epistemic fields",
+   "implementation": "IMPLEMENTED",
+   "integration": "INTEGRATED",
+   "evidence": [
+    "B.B5",
+    "B.B6"
+   ],
+   "authority": "Evaluation freezes are hash-sealed.",
+   "missing_dependencies": [],
+   "observed_failures": [
+    "The LLM text-prediction baseline has never run on Mission B tasks (B gap G1)"
+   ],
+   "recovery": "Frozen inputs; replayable.",
+   "resources": "Offline.",
+   "next_work": [],
+   "blocking": [
+    "A founder-selected local model for the LLM baseline (technical)"
+   ]
+  },
+  {
+   "id": "MIND-LEARNING",
+   "layer": "Mind",
+   "function": "Compounding learning attributable to a retained mechanism",
+   "founder_intent": [
+    "docs/intent/sources/OPUS-MAXIMUS-MASTER-EXECUTION-DIRECTIVE-2026-10-13-source.md"
+   ],
+   "owner": "GREG improvement engine",
+   "owner_paths": [
+    "greg/improvement.py"
+   ],
+   "source": "claude/greg-full-machine-convergence-20261013 (PR #173 line)",
+   "interface": "improvement.learn per tick; learning report",
+   "implementation": "IMPLEMENTED",
+   "integration": "INTEGRATED",
+   "evidence": [
+    "J.J1",
+    "J.J1b",
+    "J.J2",
+    "J.J3",
+    "J.J4"
+   ],
+   "authority": "Retains only on held-out evidence; protected fields can never become learned policy.",
+   "missing_dependencies": [],
+   "observed_failures": [
+    "No per-task winning-direction counterfactual after retention (J gap G1)",
+    "A capability acquired earlier is never shown to improve a later related mission at any tier (J1b, coverage gap; J gaps G4, G5)",
+    "No learning evidence from a real Body process (J gap G10)"
+   ],
+   "recovery": "Retained and reverted learning survive process death.",
+   "resources": "Ledger-derived; no model calls.",
+   "next_work": [
+    "J gaps G1-G5",
+    "J gap G10: drive the J1 learning path on a real `greg run` process"
+   ],
+   "blocking": [
+    "Real labels and days of briefs on a standing Body (founder)"
+   ]
+  },
+  {
+   "id": "ORGANS-CROSS",
+   "layer": "Organs",
+   "function": "Cross-organ work under one constitutional plane",
+   "founder_intent": [
+    "docs/intent/sources/OPUS-MAXIMUS-MASTER-EXECUTION-DIRECTIVE-2026-10-13-source.md"
+   ],
+   "owner": "GREG venture capability over RailScout and WMI; DALEOBANKS bridge",
+   "owner_paths": [
+    "greg/ventures.py"
+   ],
+   "source": "claude/greg-full-machine-convergence-20261013 (PR #173 line)",
+   "interface": "venture.assess / venture.status; DALEOBANKS bridge",
+   "implementation": "IMPLEMENTED",
+   "integration": "PARTIAL",
+   "evidence": [
+    "E.R1",
+    "E.R2",
+    "E.R3",
+    "E.R4",
+    "E.R5"
+   ],
+   "authority": "Organs act only through the Body's Gate; no organ ledger is an authority.",
+   "missing_dependencies": [
+    "DALEOBANKS and full RailScout/WMI checkouts beside the Kernel"
+   ],
+   "observed_failures": [
+    "DALEOBANKS takes part in no Body mission (E gaps)"
+   ],
+   "recovery": "Organ failure is a recorded refusal.",
+   "resources": "Organ subprocesses, offline.",
+   "next_work": [
+    "Signed two-organ mission on the Body (E gap)"
+   ],
+   "blocking": [
+    "Organ checkouts in CI (external)"
+   ]
+  },
+  {
+   "id": "ORGANS-FOUNDRY",
+   "layer": "Organs",
+   "function": "Foundry-55 commercial and infrastructure systems",
+   "founder_intent": [
+    "docs/intent/sources/OPUS-MAXIMUS-MASTER-EXECUTION-DIRECTIVE-2026-10-13-source.md"
+   ],
+   "owner": "Foundry systems",
+   "owner_paths": [
+    "foundry/systems"
+   ],
+   "source": "claude/greg-full-machine-convergence-20261013 (PR #173 line)",
+   "interface": "foundry.completion; per-system exercise",
+   "implementation": "IMPLEMENTED",
+   "integration": "INTEGRATED",
+   "evidence": [
+    "G.R3",
+    "G.R5",
+    "G.R6",
+    "G.R7",
+    "G.R8"
+   ],
+   "authority": "Rails and storefronts honour only grants their governing Gate issued (G1).",
+   "missing_dependencies": [],
+   "observed_failures": [
+    "Payments run against a loopback test-mode emulator only",
+    "Owned-company fulfillment and proof run only on an in-process Body (G.R5, G.R6: SANDBOX_VERIFIED); no real Body process runs them (G gap G1)"
+   ],
+   "recovery": "Distributed controls charge exactly once and compensate.",
+   "resources": "Offline emulators.",
+   "next_work": [],
+   "blocking": [
+    "Real processor test mode needs founder-supplied credentials"
+   ]
+  },
+  {
+   "id": "LOOP-GOAL-GRAVITY",
+   "layer": "Loop",
+   "function": "Persistent goals wake on relevant evidence and pull their missions",
+   "founder_intent": [
+    "docs/intent/sources/OPUS-MAXIMUS-MASTER-EXECUTION-DIRECTIVE-2026-10-13-source.md"
+   ],
+   "owner": "GREG Goal Gravity binding",
+   "owner_paths": [
+    "greg/goal_gravity.py",
+    "egregore/gravity.py"
+   ],
+   "source": "claude/greg-full-machine-convergence-20261013 (PR #173 line)",
+   "interface": "signed GOAL / GOAL_CONTROL; `greg goal`",
+   "implementation": "IMPLEMENTED",
+   "integration": "INTEGRATED",
+   "evidence": [
+    "F.R1",
+    "F.R2",
+    "F.R3",
+    "F.R4",
+    "F.R5",
+    "F.R6",
+    "F.R7"
+   ],
+   "authority": "A goal acts only through its founder-signed mission; it holds no authority of its own.",
+   "missing_dependencies": [],
+   "observed_failures": [
+    "Relevance is lexical: on-topic evidence is not weighed by confidence, trust or freshness (F gap G3)"
+   ],
+   "recovery": "Goal records replay to one goal after a crash; faults are contained and recorded once.",
+   "resources": "No record when nothing new arrives.",
+   "next_work": [
+    "F gap G3"
+   ],
+   "blocking": [
+    "Standing approval semantics are a founder decision (F gap G4)"
+   ]
+  },
+  {
+   "id": "LOOP-GENESIS",
+   "layer": "Loop",
+   "function": "Capability Genesis: form a missing bounded function and resume the mission",
+   "founder_intent": [
+    "docs/intent/sources/OPUS-MAXIMUS-MASTER-EXECUTION-DIRECTIVE-2026-10-13-source.md"
+   ],
+   "owner": "GREG Genesis",
+   "owner_paths": [
+    "greg/genesis.py"
+   ],
+   "source": "claude/greg-full-machine-convergence-20261013 (PR #173 line)",
+   "interface": "deficit.opened -> genesis.route -> verified -> attach -> resume",
+   "implementation": "IMPLEMENTED",
+   "integration": "INTEGRATED",
+   "evidence": [
+    "C.R1",
+    "C.R2",
+    "C.R3",
+    "C.R4",
+    "C.R5",
+    "C.R6",
+    "C.R7",
+    "C.R8",
+    "C.R9"
+   ],
+   "authority": "Building does not install; installing does not activate; attach needs a founder-signed CAPABILITY_ATTACH or a signed auto-attach ceiling.",
+   "missing_dependencies": [],
+   "observed_failures": [
+    "Acquisition search covers only a code-resident catalog (C gap G3)"
+   ],
+   "recovery": "A quarantined candidate is never attached.",
+   "resources": "Signed build budget.",
+   "next_work": [
+    "C gaps G1, G3-G12"
+   ],
+   "blocking": [
+    "Live model creation needs a founder-signed build budget"
+   ]
+  },
+  {
+   "id": "LOOP-BUSINESS",
+   "layer": "Loop",
+   "function": "Business operating loop with synthetic labels",
+   "founder_intent": [
+    "docs/intent/sources/OPUS-MAXIMUS-MASTER-EXECUTION-DIRECTIVE-2026-10-13-source.md"
+   ],
+   "owner": "Business loop and Foundry systems",
+   "owner_paths": [
+    "business/commercial_loop.py",
+    "foundry/outcome_bridge.py"
+   ],
+   "source": "claude/greg-full-machine-convergence-20261013 (PR #173 line)",
+   "interface": "intake -> eligibility -> routing -> fulfillment -> proof -> QC -> settlement -> learning",
+   "implementation": "IMPLEMENTED",
+   "integration": "PARTIAL",
+   "evidence": [
+    "G.R1",
+    "G.R2",
+    "G.R3",
+    "G.R4",
+    "G.R5",
+    "G.R6",
+    "G.R7",
+    "G.R8",
+    "G.R9",
+    "G.R10",
+    "G.R11",
+    "G.R12"
+   ],
+   "authority": "Synthetic by default; only observed customers and live money close externally (G2).",
+   "missing_dependencies": [],
+   "observed_failures": [
+    "No real Body process runs any stage of the loop: every Body-level node is an in-process Body (G.R1, R2, R5, R6, R11 are SANDBOX_VERIFIED; G gap G1)"
+   ],
+   "recovery": "Settlement states reconcile; unknown outcomes need reconciliation.",
+   "resources": "Test mode only.",
+   "next_work": [],
+   "blocking": [
+    "An expressly authorized real setting (founder)"
+   ]
+  },
+  {
+   "id": "LOOP-COMPREHENSION",
+   "layer": "Loop",
+   "function": "Whole-machine comprehension: one mission traced Goal to Updated Goal",
+   "founder_intent": [
+    "docs/intent/sources/OPUS-MAXIMUS-MASTER-EXECUTION-DIRECTIVE-2026-10-13-source.md"
+   ],
+   "owner": "Acceptance harness and Foundry observability",
+   "owner_paths": [
+    "acceptance/__init__.py",
+    "foundry/systems/observability.py"
+   ],
+   "source": "claude/greg-full-machine-convergence-20261013 (PR #173 line)",
+   "interface": "`python -m acceptance`; `greg foundry trace|why`",
+   "implementation": "IMPLEMENTED",
+   "integration": "INTEGRATED",
+   "evidence": [
+    "L.L1",
+    "L.L2",
+    "L.L3"
+   ],
+   "authority": "Reads only.",
+   "missing_dependencies": [],
+   "observed_failures": [
+    "Costs are not shown at the real-process tier: every cost in the traced mission is $0 and the span cost is the same ledger field it is compared with; a nonzero cost through the trace is shown only by the Foundry audit's re-derived system-44 evidence (L1 partial)",
+    "At the real-process tier the Learning link is a tally: the run asserts the verified credit a VERIFIED appraisal gives, but routing.reliability never reads that credit, so it changes nothing that ranks the next mission; that the verdict changes ranking (a REFUTED appraisal lowers reliability) is shown only in-process (L3 partial)"
+   ],
+   "recovery": "Stateless.",
+   "resources": "Offline.",
+   "next_work": [
+    "Run the trace with the real organ checkouts (L gap G2)",
+    "Trace a mission with a nonzero signed cost on the real-process run and compare the span cost with the Gate's receipt (L1)",
+    "Show on a real Body process that a REFUTED appraisal of an act lowers the routing that ranks the next mission's strategies (L3)"
+   ],
+   "blocking": []
+  }
+ ],
+ "current_machine_conditions": [
+  {
+   "n": 1,
+   "condition": "All presently implementable required Body mechanisms are connected.",
+   "met": "partly",
+   "evidence": "Connected on one Body; the gate hardening waits on a founder signature; DALEOBANKS and the real organ checkouts are absent here (E gaps)."
+  },
+  {
+   "n": 2,
+   "condition": "All presently implementable required Mind mechanisms are connected.",
+   "met": "partly",
+   "evidence": "Seed and cortex cognition run on the Body; the Layer-5 compiler never answers inside a Body mission (B gaps)."
+  },
+  {
+   "n": 3,
+   "condition": "All presently implementable required institutional organs are connected through their legitimate contracts.",
+   "met": "partly",
+   "evidence": "Venture organs in-process; DALEOBANKS in no Body mission (E gaps)."
+  },
+  {
+   "n": 4,
+   "condition": "One canonical GREG execution path exists.",
+   "met": "yes",
+   "evidence": "One Body, one ledger, one Gate (CI job 3: check_authority_singleton and governance.integrity)."
+  },
+  {
+   "n": 5,
+   "condition": "Persistent goals can activate the correct operating loop.",
+   "met": "partly",
+   "evidence": "Goal Gravity runs in a real `greg run` process (BODY tier): wake on relevant evidence, in-cone repair, one ask across a SIGKILL, noise ignored. Relevance weighting (F gap G3) and standing approval (F gap G4, founder) remain open."
+  },
+  {
+   "n": 6,
+   "condition": "Relevant tool and worker actions actually execute within sandbox or authenticated scope.",
+   "met": "partly",
+   "evidence": "Workers and capabilities execute through the Gate in sandbox scope, including two receipted WorkOrders chained by a typed edge (scripted worker double); no multi-worker run with a real frontier worker or in a real Body process (D gaps G8, G9)."
+  },
+  {
+   "n": 7,
+   "condition": "Capability Genesis can form a missing bounded function and rejoin the parent workflow.",
+   "met": "partly",
+   "evidence": "Installed-binary acquisition at BODY tier; creation by a builder at SANDBOX tier (Mission C)."
+  },
+  {
+   "n": 8,
+   "condition": "Authority, evidence, resource, and consequence controls are enforced.",
+   "met": "partly",
+   "evidence": "Enforced through the ratified gate and proven in a live-process attack campaign (forged, replayed and garbage commands, unauthorized spending, injection, tampered evidence); the ratified gate still admits the CASE 27 commit-window escalation until the hardening is authorized, and the evidence register is unarmed."
+  },
+  {
+   "n": 9,
+   "condition": "Recovery and shutdown behave correctly in the exercised environments.",
+   "met": "partly",
+   "evidence": "Mid-dispatch SIGKILL (H), crash-loop hold, founder pause/resume and device revocation across a SIGKILL (K) at BODY tier; interruption of services other than the Body host is open (H gap G7)."
+  },
+  {
+   "n": 10,
+   "condition": "The whole-machine acceptance suite passes at its declared evidence tier.",
+   "met": "partly",
+   "evidence": "See the recorded acceptance report for this head. A requirement without tests, or whose coverage is 'gap', is never counted as passing, and a cited test that fails, errors or collects nothing fails the run even where no tier is declared; one whose coverage is 'partial' is counted as reaching its tier but reported as covering only part of its obligation; a requirement covers its whole obligation only when it reaches its declared tier and is declared 'covered'; BODY_VERIFIED counts only with a cited test whose argv for a real Body process statically reaches a process-spawning call; and each trace link's tier is computed from its proofs, with Mission L and every function citing it no more verified than its least-verified link."
+  },
+  {
+   "n": 11,
+   "condition": "Known gaps are not concealed.",
+   "met": "yes",
+   "evidence": "acceptance/missions.json lists every open gap with its dependency; merge records name residuals."
+  },
+  {
+   "n": 12,
+   "condition": "Any remaining incomplete capabilities have precise external, scientific, legal, physical, or founder-only dependencies.",
+   "met": "partly",
+   "evidence": "Every gap that cannot be built now names its dependency; gaps that can be built now are still open."
+  },
+  {
+   "n": 13,
+   "condition": "No readily buildable required subsystem has been replaced by a stub, placeholder, or future-work paragraph.",
+   "met": "no",
+   "evidence": "Buildable gaps remain open (e.g. D G8, H G7, I G7, and Missions A-C, E, G, J gaps)."
+  },
+  {
+   "n": 14,
+   "condition": "The founder can operate and inspect the developmental machine without being required to write code.",
+   "met": "partly",
+   "evidence": "CLI, console and runbook rehearsed; the phone surface is not exercised here."
+  },
+  {
+   "n": 15,
+   "condition": "Claims about live, commercial, externally verified, or physical-world performance are restricted to outcomes actually observed.",
+   "met": "yes",
+   "evidence": "No status above BODY_VERIFIED is claimed; synthetic customers and money are labelled (G2)."
+  }
+ ]
+}

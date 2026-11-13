@@ -11,8 +11,12 @@ environment and a live key (``sk_live_``) is refused outright.
 What UNIIMENTE owns above the rail:
 
   trace      a charge is created only against a delivery receipt hash and a
-             Consequence Gate grant for that exact case (#30): no delivery
-             receipt, no charge; no grant, no charge
+             Consequence Gate grant for that exact case and amount (#30): no
+             delivery receipt, no charge; no grant, no charge. A grant is honoured
+             only if the Gate that governs this rail issued it (registered there,
+             unaltered, unrevoked, unused, unexpired, bound to this case and
+             amount), and the charge itself runs through that Gate, which consumes
+             the grant: a forged or borrowed grant dict moves no money
   metering   usage records per customer and metered unit, settled into one
              invoice-sized charge whose line items cite the usage ids
   books      every movement posts a balanced entry to the #39 journal in integer
@@ -173,9 +177,18 @@ def client(api_key: str, base: str | None):
     return stripe.StripeClient(api_key, **kwargs)
 
 
+def money_label(intent: dict) -> dict:
+    """The processor's own word on whether money moved: only a live-mode intent is observed money. This rail
+    runs test mode only (live keys are refused), so every charge on it is labelled synthetic."""
+    live = intent.get("livemode") is True
+    return {"livemode": live, "money": "observed" if live else "synthetic"}
+
+
 class Rail:
-    def __init__(self, root: Path, *, api_key: str, base: str | None, reserve_share: float = RESERVE_SHARE):
+    def __init__(self, root: Path, *, api_key: str, base: str | None, reserve_share: float = RESERVE_SHARE,
+                 gate=None):
         self.root, self.reserve_share = Path(root), reserve_share
+        self.gate = gate          # the Consequence Gate whose grants this rail honours; without one it charges nothing
         self.stripe = client(api_key, base)
         self.books = self.root / "books"
         for account, kind in (("receivable", "asset"), ("cash:processor", "asset"), ("reserve:disputes", "asset"),
@@ -211,6 +224,12 @@ class Rail:
             raise PaymentError("a charge needs the delivery receipt hash it bills for")
         if not grant or grant.get("grant_id") is None or grant.get("objective") != f"charge:{case_id}":
             raise PaymentError("a charge needs a Consequence Gate grant issued for this exact case")
+        from foundry.systems.kernel_stack import grant_problems
+        effect = dict(action_class="business.charge", objective=f"charge:{case_id}", target=f"buyer:{case_id}",
+                      payload={"case_id": case_id, "amount_cents": amount_cents})
+        problems = grant_problems(self.gate, grant, **effect)
+        if problems:
+            raise PaymentError("grant not honoured: " + "; ".join(problems))
         s = self._state()
         if case_id in s["charges"]:
             raise PaymentError(f"case {case_id} is already charged; refunds are the only way back")
@@ -219,16 +238,37 @@ class Rail:
         if usage_ids and usage_total != amount_cents:
             raise PaymentError(f"metered amount {usage_total} does not match charge {amount_cents}")
         idem = "case-" + hashlib.sha256(f"{case_id}:{amount_cents}".encode()).hexdigest()[:24]
-        try:
-            pi = self.stripe.payment_intents.create(
-                params={"amount": amount_cents, "currency": "usd", "payment_method": payment_method, "confirm": True,
-                        "metadata": {"case_id": case_id, "delivery_receipt": delivery_receipt, "grant_id": grant["grant_id"]}},
-                options={"idempotency_key": idem})
-        except stripe.CardError as exc:
-            s["charges"][case_id] = {"status": "declined", "decline_code": exc.code, "amount_cents": amount_cents}
+        from foundry.systems.kernel_stack import run_under_grant
+        moved: dict = {}
+
+        def execute(_proposal):                 # runs only after the Gate admitted the grant and claimed dispatch
+            try:
+                created = self.stripe.payment_intents.create(
+                    params={"amount": amount_cents, "currency": "usd", "payment_method": payment_method,
+                            "confirm": True, "metadata": {"case_id": case_id, "delivery_receipt": delivery_receipt,
+                                                          "grant_id": grant["grant_id"]}},
+                    options={"idempotency_key": idem})
+            except stripe.CardError as exc:
+                moved["declined"] = getattr(exc, "code", None) or str(exc)[:40]
+                return {"observed_outcome": "card declined", "result_class": "negative",
+                        "output": {"decline_code": moved["declined"]}, "validation_status": "processor_reported"}
+            moved["intent"] = created.to_dict() if hasattr(created, "to_dict") else dict(created)
+            return {"observed_outcome": "payment settled", "result_class": "positive",
+                    "output": {"intent": moved["intent"]["id"]}, "validation_status": "processor_reported"}
+
+        record = run_under_grant(self.gate, grant, consequence_class="financial", evidence_refs=[delivery_receipt],
+                                 expected_outcome="payment settled", executor=execute, **effect)
+        if record.state != "recorded":
+            if moved or record.state == "reconciliation_required":
+                raise PaymentError(f"charge outcome unknown ({record.state}); reconcile with the processor, never "
+                                   f"retry: {record.refusal_reasons}")
+            raise PaymentError(f"the Consequence Gate refused the charge ({record.state}): {record.refusal_reasons}")
+        if "declined" in moved:
+            s["charges"][case_id] = {"status": "declined", "decline_code": moved["declined"], "amount_cents": amount_cents,
+                                     "grant_id": grant["grant_id"], "gate_receipt": record.receipt_hash}
             self._save(s)
-            return {"status": "declined", "decline_code": getattr(exc, "code", None) or str(exc)[:40]}
-        pi = pi.to_dict() if hasattr(pi, "to_dict") else dict(pi)
+            return {"status": "declined", "decline_code": moved["declined"]}
+        pi = moved["intent"]
         fee = int(pi.get("fee") or 0)
         accounting.post(self.books, date="charge", memo=f"{case_id} settled {pi['id']}", currency="USD",
                         lines=[{"account": "cash:processor", "debit": amount_cents - fee},
@@ -241,11 +281,12 @@ class Rail:
         for u in s["usage"]:
             if u["id"] in usage_ids:
                 u["billed"] = pi["id"]
+        money = money_label(pi)
         s["charges"][case_id] = {"status": "settled", "intent": pi["id"], "amount_cents": amount_cents, "fee_cents": fee,
                                  "reserve_cents": reserve, "delivery_receipt": delivery_receipt, "grant_id": grant["grant_id"],
-                                 "idempotency_key": idem, "usage": usage_ids}
+                                 "gate_receipt": record.receipt_hash, "idempotency_key": idem, "usage": usage_ids, **money}
         self._save(s)
-        return {"status": "settled", "intent": pi["id"], "fee_cents": fee, "reserve_cents": reserve}
+        return {"status": "settled", "intent": pi["id"], "fee_cents": fee, "reserve_cents": reserve, **money}
 
     def refund(self, *, case_id: str, amount_cents: int, reason: str) -> dict:
         import stripe
@@ -283,10 +324,11 @@ class Rail:
                 "equation_holds": tb["equation_holds"], "reserve_cents": b["reserve:disputes"]}
 
 
-def _grant_for(case_id: str, amount_cents: int):
-    """A single-use Consequence Gate grant for charging this exact case (financial consequence)."""
-    from foundry.systems.kernel_stack import agent, gate_stack, proposal
-    gate, passports, ledger = gate_stack()
+def _grant_for(case_id: str, amount_cents: int, *, gate):
+    """A single-use grant, issued by ``gate`` (the Gate that governs the rail), for charging this exact case and
+    amount (financial consequence). A grant from any other issuer is not honoured by that rail."""
+    from foundry.systems.kernel_stack import agent, proposal
+    passports = gate.passports
     actor = agent(passports, capabilities=("business.charge",), budget=amount_cents / 100 + 1)
     p = proposal(actor.passport_id, action_class="business.charge", requested_capability="business.charge",
                  objective=f"charge:{case_id}", consequence_class="financial", target=f"buyer:{case_id}",
@@ -303,10 +345,15 @@ APPLY_OPS: dict = {}       # charging is a gate-executed act, not a free op: see
 
 def exercise(root) -> dict:
     root = Path(root)
+    from foundry.systems.kernel_stack import gate_stack
     server, emulator = start_emulator()
     try:
         base = f"http://127.0.0.1:{server.server_address[1]}"
-        rail = Rail(root / "rail", api_key="sk_test_emulator", base=base)
+        gate, _, gate_ledger = gate_stack()      # the Gate that governs this rail; only its grants move money
+        rail = Rail(root / "rail", api_key="sk_test_emulator", base=base, gate=gate)
+
+        def _grant_for(case_id, amount_cents):
+            return charge_grant(case_id, amount_cents, gate=gate)
         receipt = "sha256:" + "ab" * 32
         refusals = {}
         def refused(label, fn):
@@ -321,7 +368,23 @@ def exercise(root) -> dict:
         refused("no_grant", lambda: rail.charge(case_id="c0", customer="acme", amount_cents=90000, delivery_receipt=receipt, grant={}))
         refused("grant_for_other_case", lambda: rail.charge(case_id="c0", customer="acme", amount_cents=90000,
                                                             delivery_receipt=receipt, grant=_grant_for("c9", 90000)))
+        # A dict shaped like a grant is not authority: forged, borrowed from another issuer, altered, or bound
+        # to a smaller amount, it moves no money (Mission G probe: a forged dict settled 5000 cents before).
+        refused("forged_grant", lambda: rail.charge(case_id="c0", customer="acme", amount_cents=5000, delivery_receipt=receipt,
+                                                    grant={"grant_id": "forged-not-issued-by-any-gate", "objective": "charge:c0"}))
+        refused("grant_from_another_gate", lambda: rail.charge(case_id="c0", customer="acme", amount_cents=5000,
+                                                               delivery_receipt=receipt,
+                                                               grant=charge_grant("c0", 5000, gate=gate_stack()[0])))
+        refused("altered_grant", lambda: rail.charge(case_id="c0", customer="acme", amount_cents=5000, delivery_receipt=receipt,
+                                                     grant={**_grant_for("c0", 5000), "spending_limit_usd": 1e9}))
+        refused("amount_above_grant", lambda: rail.charge(case_id="c0", customer="acme", amount_cents=90000,
+                                                          delivery_receipt=receipt, grant=_grant_for("c0", 5000)))
         first = rail.charge(case_id="c1", customer="acme", amount_cents=90000, delivery_receipt=receipt, grant=_grant_for("c1", 90000))
+        # The Gate, not the rail's own file, holds single use: a second rail on fresh books under the same Gate
+        # cannot spend the consumed grant again.
+        used = rail._state()["charges"]["c1"]["grant_id"]
+        refused("grant_reused", lambda: Rail(root / "rail-replay", api_key="sk_test_emulator", base=base, gate=gate).charge(
+            case_id="c1", customer="acme", amount_cents=90000, delivery_receipt=receipt, grant=gate.grants.get(used)))
         # the same create, retried after a "timeout": the rail's idempotency key makes it the same intent
         import stripe
         retried = rail.stripe.payment_intents.create(params={"amount": 90000, "currency": "usd", "payment_method": "pm_card_visa",
@@ -340,10 +403,14 @@ def exercise(root) -> dict:
         refused("refund_over_charge", lambda: rail.refund(case_id="c1", amount_cents=90000, reason="x"))
         refused("refund_without_reason", lambda: rail.refund(case_id="c3", amount_cents=100, reason=""))
         recon = rail.reconcile(emulator.balance())
+        receipts = [r.payload for r in gate_ledger.by_type("receipt")]
+        honoured = {c["grant_id"] for c in rail._state()["charges"].values() if c.get("grant_id")}
     finally:
         server.shutdown()
         server.server_close()
     return {"settled": first["status"], "fee_cents": first["fee_cents"], "reserve_cents": first["reserve_cents"],
+            "every_charge_receipted_by_the_gate": honoured == {r["grant_id"] for r in receipts}
+            and len(receipts) == len(honoured) and all(gate.grants.get_meta(g)["used"] for g in honoured),
             "idempotent_retry_same_intent": retried["id"] == rail._state()["charges"]["c1"]["intent"],
             "declined": declined, "metered_settled": metered["status"], "usage_billed": all(u["billed"] for u in rail._state()["usage"]),
             "refund": refund["amount_cents"], "refusals": refusals, "reconciled_to_processor": recon["reconciled"],

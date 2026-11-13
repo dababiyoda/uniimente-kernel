@@ -1,0 +1,890 @@
+{
+ "contract": [
+  {
+   "evidence": [
+    "A.R1",
+    "I.I1",
+    "K.K4"
+   ],
+   "evidence_tier": "BODY_VERIFIED",
+   "id": "BODY-AUTHORITY"
+  },
+  {
+   "evidence": [
+    "A.R4",
+    "A.R5",
+    "A.R6",
+    "A.R8",
+    "A.R9"
+   ],
+   "evidence_tier": "BODY_VERIFIED",
+   "id": "BODY-MISSIONS"
+  },
+  {
+   "evidence": [
+    "I.I6",
+    "I.I7",
+    "I.I8",
+    "H.H.4"
+   ],
+   "evidence_tier": "SANDBOX_VERIFIED",
+   "id": "BODY-GATE"
+  },
+  {
+   "evidence": [
+    "I.I2"
+   ],
+   "evidence_tier": "BODY_VERIFIED",
+   "id": "BODY-EVIDENCE"
+  },
+  {
+   "evidence": [
+    "H.H.1a",
+    "H.H.1b",
+    "H.H.2",
+    "H.H.3",
+    "H.H.4",
+    "H.H.5"
+   ],
+   "evidence_tier": "SANDBOX_VERIFIED",
+   "id": "BODY-RECOVERY"
+  },
+  {
+   "evidence": [
+    "K.K1",
+    "K.K2",
+    "K.K3",
+    "K.K4",
+    "K.K5",
+    "K.K6"
+   ],
+   "evidence_tier": "BODY_VERIFIED",
+   "id": "BODY-SHUTDOWN"
+  },
+  {
+   "evidence": [
+    "D.R1b",
+    "D.R3",
+    "D.R6",
+    "I.I5"
+   ],
+   "evidence_tier": "SANDBOX_VERIFIED",
+   "id": "BODY-HANDS"
+  },
+  {
+   "evidence": [
+    "A.R7",
+    "L.L1"
+   ],
+   "evidence_tier": "SANDBOX_VERIFIED",
+   "id": "BODY-INTERFACE"
+  },
+  {
+   "evidence": [
+    "B.B2"
+   ],
+   "evidence_tier": "SANDBOX_VERIFIED",
+   "id": "MIND-GEOMETRY"
+  },
+  {
+   "evidence": [
+    "B.B3",
+    "B.B4"
+   ],
+   "evidence_tier": "BODY_VERIFIED",
+   "id": "MIND-MECHANISMS"
+  },
+  {
+   "evidence": [
+    "B.B5",
+    "B.B6"
+   ],
+   "evidence_tier": "UNIT_VERIFIED",
+   "id": "MIND-LIMITS"
+  },
+  {
+   "evidence": [
+    "J.J1",
+    "J.J1b",
+    "J.J2",
+    "J.J3",
+    "J.J4"
+   ],
+   "evidence_tier": "SANDBOX_VERIFIED",
+   "id": "MIND-LEARNING"
+  },
+  {
+   "evidence": [
+    "E.R1",
+    "E.R2",
+    "E.R3",
+    "E.R4",
+    "E.R5"
+   ],
+   "evidence_tier": "IMPLEMENTED",
+   "id": "ORGANS-CROSS"
+  },
+  {
+   "evidence": [
+    "G.R3",
+    "G.R5",
+    "G.R6",
+    "G.R7",
+    "G.R8"
+   ],
+   "evidence_tier": "SANDBOX_VERIFIED",
+   "id": "ORGANS-FOUNDRY"
+  },
+  {
+   "evidence": [
+    "F.R1",
+    "F.R2",
+    "F.R3",
+    "F.R4",
+    "F.R5",
+    "F.R6",
+    "F.R7"
+   ],
+   "evidence_tier": "SANDBOX_VERIFIED",
+   "id": "LOOP-GOAL-GRAVITY"
+  },
+  {
+   "evidence": [
+    "C.R1",
+    "C.R2",
+    "C.R3",
+    "C.R4",
+    "C.R5",
+    "C.R6",
+    "C.R7",
+    "C.R8",
+    "C.R9"
+   ],
+   "evidence_tier": "SANDBOX_VERIFIED",
+   "id": "LOOP-GENESIS"
+  },
+  {
+   "evidence": [
+    "G.R1",
+    "G.R2",
+    "G.R3",
+    "G.R4",
+    "G.R5",
+    "G.R6",
+    "G.R7",
+    "G.R8",
+    "G.R9",
+    "G.R10",
+    "G.R11",
+    "G.R12"
+   ],
+   "evidence_tier": "IMPLEMENTED",
+   "id": "LOOP-BUSINESS"
+  },
+  {
+   "evidence": [
+    "L.L1",
+    "L.L2",
+    "L.L3"
+   ],
+   "evidence_tier": "UNIT_VERIFIED",
+   "id": "LOOP-COMPREHENSION"
+  }
+ ],
+ "generated_at": "2026-10-15T12:57:57.793416Z",
+ "head": "7cfa0bcbf53eaf9501c7e47dab0744c97c0b53ec",
+ "missions": {
+  "A": {
+   "blocked_beyond_tests": [
+    "G5",
+    "G6"
+   ],
+   "id": "A",
+   "open_gaps": 5,
+   "requirements": {
+    "R1": {
+     "attained": true,
+     "declared_tier": "BODY_VERIFIED",
+     "observed": [],
+     "status": "BODY_VERIFIED"
+    },
+    "R2": {
+     "attained": true,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "observed": [],
+     "status": "SANDBOX_VERIFIED"
+    },
+    "R3": {
+     "attained": true,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "observed": [],
+     "status": "SANDBOX_VERIFIED"
+    },
+    "R4": {
+     "attained": true,
+     "declared_tier": "BODY_VERIFIED",
+     "observed": [],
+     "status": "BODY_VERIFIED"
+    },
+    "R5": {
+     "attained": true,
+     "declared_tier": "BODY_VERIFIED",
+     "observed": [],
+     "status": "BODY_VERIFIED"
+    },
+    "R6": {
+     "attained": true,
+     "declared_tier": "BODY_VERIFIED",
+     "observed": [],
+     "status": "BODY_VERIFIED"
+    },
+    "R7": {
+     "attained": true,
+     "declared_tier": "BODY_VERIFIED",
+     "observed": [],
+     "status": "BODY_VERIFIED"
+    },
+    "R8": {
+     "attained": true,
+     "declared_tier": "BODY_VERIFIED",
+     "observed": [],
+     "status": "BODY_VERIFIED"
+    },
+    "R9": {
+     "attained": true,
+     "declared_tier": "BODY_VERIFIED",
+     "observed": [],
+     "status": "BODY_VERIFIED"
+    }
+   },
+   "status": "SANDBOX_VERIFIED",
+   "title": "Persistent founder-goal execution"
+  },
+  "B": {
+   "blocked_beyond_tests": [
+    "G1",
+    "G7",
+    "G8"
+   ],
+   "id": "B",
+   "open_gaps": 8,
+   "requirements": {
+    "B1": {
+     "attained": true,
+     "declared_tier": "BODY_VERIFIED",
+     "observed": [],
+     "status": "BODY_VERIFIED"
+    },
+    "B2": {
+     "attained": true,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "observed": [],
+     "status": "SANDBOX_VERIFIED"
+    },
+    "B3": {
+     "attained": true,
+     "declared_tier": "BODY_VERIFIED",
+     "observed": [],
+     "status": "BODY_VERIFIED"
+    },
+    "B4": {
+     "attained": true,
+     "declared_tier": "BODY_VERIFIED",
+     "observed": [],
+     "status": "BODY_VERIFIED"
+    },
+    "B5": {
+     "attained": true,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "observed": [],
+     "status": "SANDBOX_VERIFIED"
+    },
+    "B6": {
+     "attained": true,
+     "declared_tier": "UNIT_VERIFIED",
+     "observed": [],
+     "status": "UNIT_VERIFIED"
+    }
+   },
+   "status": "UNIT_VERIFIED",
+   "title": "Multiple forms of intelligence"
+  },
+  "C": {
+   "blocked_beyond_tests": [
+    "G13",
+    "G2"
+   ],
+   "id": "C",
+   "open_gaps": 13,
+   "requirements": {
+    "R1": {
+     "attained": true,
+     "declared_tier": "BODY_VERIFIED",
+     "observed": [],
+     "status": "BODY_VERIFIED"
+    },
+    "R2": {
+     "attained": true,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "observed": [],
+     "status": "SANDBOX_VERIFIED"
+    },
+    "R3": {
+     "attained": true,
+     "declared_tier": "BODY_VERIFIED",
+     "observed": [],
+     "status": "BODY_VERIFIED"
+    },
+    "R4": {
+     "attained": true,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "observed": [],
+     "status": "SANDBOX_VERIFIED"
+    },
+    "R5": {
+     "attained": true,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "observed": [],
+     "status": "SANDBOX_VERIFIED"
+    },
+    "R6": {
+     "attained": true,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "observed": [],
+     "status": "SANDBOX_VERIFIED"
+    },
+    "R7": {
+     "attained": true,
+     "declared_tier": "BODY_VERIFIED",
+     "observed": [],
+     "status": "BODY_VERIFIED"
+    },
+    "R8": {
+     "attained": true,
+     "declared_tier": "BODY_VERIFIED",
+     "observed": [],
+     "status": "BODY_VERIFIED"
+    },
+    "R9": {
+     "attained": true,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "observed": [],
+     "status": "SANDBOX_VERIFIED"
+    }
+   },
+   "status": "SANDBOX_VERIFIED",
+   "title": "Capability Genesis"
+  },
+  "D": {
+   "blocked_beyond_tests": [
+    "G10",
+    "G9"
+   ],
+   "id": "D",
+   "open_gaps": 6,
+   "requirements": {
+    "R1a": {
+     "attained": true,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "observed": [],
+     "status": "SANDBOX_VERIFIED"
+    },
+    "R1b": {
+     "attained": true,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "observed": [],
+     "status": "SANDBOX_VERIFIED"
+    },
+    "R2": {
+     "attained": true,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "observed": [],
+     "status": "SANDBOX_VERIFIED"
+    },
+    "R3": {
+     "attained": true,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "observed": [],
+     "status": "SANDBOX_VERIFIED"
+    },
+    "R4": {
+     "attained": true,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "observed": [],
+     "status": "SANDBOX_VERIFIED"
+    },
+    "R5": {
+     "attained": true,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "observed": [],
+     "status": "SANDBOX_VERIFIED"
+    },
+    "R6": {
+     "attained": true,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "observed": [],
+     "status": "SANDBOX_VERIFIED"
+    },
+    "R7": {
+     "attained": true,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "observed": [],
+     "status": "SANDBOX_VERIFIED"
+    },
+    "R8": {
+     "attained": true,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "observed": [],
+     "status": "SANDBOX_VERIFIED"
+    }
+   },
+   "status": "SANDBOX_VERIFIED",
+   "title": "Multi-worker execution"
+  },
+  "E": {
+   "blocked_beyond_tests": [
+    "G8"
+   ],
+   "id": "E",
+   "open_gaps": 8,
+   "requirements": {
+    "R1": {
+     "attained": true,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "observed": [],
+     "status": "SANDBOX_VERIFIED"
+    },
+    "R2": {
+     "attained": false,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "observed": [
+      "tests/unit/test_greg_ventures.py::test_real_organs: skipped: Skipped: set GREG_TEST_RAILSCOUT and GREG_TEST_WMI to real organ checkouts",
+      "tests/unit/test_greg_daleobanks_bridge.py::test_verified_draft_and_publish_request_is_truthfully_blocked_by_daleobanks: skipped: Skipped: DALEOBANKS checkout with .venv not present beside the Kernel",
+      "tests/unit/test_greg_daleobanks_bridge.py::test_figures_absent_from_the_source_are_rejected: skipped: Skipped: DALEOBANKS checkout with .venv not present beside the Kernel",
+      "tests/unit/test_greg_daleobanks_bridge.py::test_live_arming_is_never_forwarded_by_greg: skipped: Skipped: DALEOBANKS checkout with .venv not present beside the Kernel"
+     ],
+     "status": "IMPLEMENTED"
+    },
+    "R3": {
+     "attained": false,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "observed": [
+      "tests/unit/test_greg_daleobanks_bridge.py::test_live_arming_is_never_forwarded_by_greg: skipped: Skipped: DALEOBANKS checkout with .venv not present beside the Kernel"
+     ],
+     "status": "IMPLEMENTED"
+    },
+    "R4": {
+     "attained": false,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "observed": [
+      "tests/unit/test_greg_ventures.py::test_real_organs: skipped: Skipped: set GREG_TEST_RAILSCOUT and GREG_TEST_WMI to real organ checkouts",
+      "tests/unit/test_greg_daleobanks_bridge.py::test_verified_draft_and_publish_request_is_truthfully_blocked_by_daleobanks: skipped: Skipped: DALEOBANKS checkout with .venv not present beside the Kernel"
+     ],
+     "status": "IMPLEMENTED"
+    },
+    "R5": {
+     "attained": true,
+     "declared_tier": "UNIT_VERIFIED",
+     "observed": [],
+     "status": "UNIT_VERIFIED"
+    }
+   },
+   "status": "IMPLEMENTED",
+   "title": "Cross-organ work"
+  },
+  "F": {
+   "blocked_beyond_tests": [
+    "G4",
+    "G5"
+   ],
+   "id": "F",
+   "open_gaps": 3,
+   "requirements": {
+    "R1": {
+     "attained": true,
+     "declared_tier": "BODY_VERIFIED",
+     "observed": [],
+     "status": "BODY_VERIFIED"
+    },
+    "R2": {
+     "attained": true,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "observed": [],
+     "status": "SANDBOX_VERIFIED"
+    },
+    "R3": {
+     "attained": true,
+     "declared_tier": "BODY_VERIFIED",
+     "observed": [],
+     "status": "BODY_VERIFIED"
+    },
+    "R4": {
+     "attained": true,
+     "declared_tier": "BODY_VERIFIED",
+     "observed": [],
+     "status": "BODY_VERIFIED"
+    },
+    "R5": {
+     "attained": true,
+     "declared_tier": "BODY_VERIFIED",
+     "observed": [],
+     "status": "BODY_VERIFIED"
+    },
+    "R6": {
+     "attained": true,
+     "declared_tier": "BODY_VERIFIED",
+     "observed": [],
+     "status": "BODY_VERIFIED"
+    },
+    "R7": {
+     "attained": true,
+     "declared_tier": "BODY_VERIFIED",
+     "observed": [],
+     "status": "BODY_VERIFIED"
+    }
+   },
+   "status": "SANDBOX_VERIFIED",
+   "title": "Goal Gravity"
+  },
+  "G": {
+   "blocked_beyond_tests": [
+    "G6",
+    "G7"
+   ],
+   "id": "G",
+   "open_gaps": 5,
+   "requirements": {
+    "R1": {
+     "attained": true,
+     "declared_tier": "BODY_VERIFIED",
+     "observed": [],
+     "status": "BODY_VERIFIED"
+    },
+    "R10": {
+     "attained": true,
+     "declared_tier": "UNIT_VERIFIED",
+     "observed": [],
+     "status": "UNIT_VERIFIED"
+    },
+    "R11": {
+     "attained": true,
+     "declared_tier": "BODY_VERIFIED",
+     "observed": [],
+     "status": "BODY_VERIFIED"
+    },
+    "R12": {
+     "attained": true,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "observed": [],
+     "status": "SANDBOX_VERIFIED"
+    },
+    "R2": {
+     "attained": false,
+     "declared_tier": "BODY_VERIFIED",
+     "observed": [
+      "tests/unit/test_greg_ventures.py::test_real_organs: skipped: Skipped: set GREG_TEST_RAILSCOUT and GREG_TEST_WMI to real organ checkouts"
+     ],
+     "status": "IMPLEMENTED"
+    },
+    "R3": {
+     "attained": true,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "observed": [],
+     "status": "SANDBOX_VERIFIED"
+    },
+    "R4": {
+     "attained": true,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "observed": [],
+     "status": "SANDBOX_VERIFIED"
+    },
+    "R5": {
+     "attained": true,
+     "declared_tier": "BODY_VERIFIED",
+     "observed": [],
+     "status": "BODY_VERIFIED"
+    },
+    "R6": {
+     "attained": true,
+     "declared_tier": "BODY_VERIFIED",
+     "observed": [],
+     "status": "BODY_VERIFIED"
+    },
+    "R7": {
+     "attained": true,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "observed": [],
+     "status": "SANDBOX_VERIFIED"
+    },
+    "R8": {
+     "attained": true,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "observed": [],
+     "status": "SANDBOX_VERIFIED"
+    },
+    "R9": {
+     "attained": true,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "observed": [],
+     "status": "SANDBOX_VERIFIED"
+    }
+   },
+   "status": "IMPLEMENTED",
+   "title": "Business operating loop"
+  },
+  "H": {
+   "blocked_beyond_tests": [
+    "G8",
+    "G9"
+   ],
+   "id": "H",
+   "open_gaps": 6,
+   "requirements": {
+    "H.1a": {
+     "attained": true,
+     "declared_tier": "BODY_VERIFIED",
+     "observed": [],
+     "status": "BODY_VERIFIED"
+    },
+    "H.1b": {
+     "attained": true,
+     "declared_tier": "BODY_VERIFIED",
+     "observed": [],
+     "status": "BODY_VERIFIED"
+    },
+    "H.2": {
+     "attained": true,
+     "declared_tier": "BODY_VERIFIED",
+     "observed": [],
+     "status": "BODY_VERIFIED"
+    },
+    "H.3": {
+     "attained": true,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "observed": [],
+     "status": "SANDBOX_VERIFIED"
+    },
+    "H.4": {
+     "attained": true,
+     "declared_tier": "BODY_VERIFIED",
+     "observed": [],
+     "status": "BODY_VERIFIED"
+    },
+    "H.5": {
+     "attained": true,
+     "declared_tier": "BODY_VERIFIED",
+     "observed": [],
+     "status": "BODY_VERIFIED"
+    }
+   },
+   "status": "SANDBOX_VERIFIED",
+   "title": "Fault recovery"
+  },
+  "I": {
+   "blocked_beyond_tests": [
+    "G1",
+    "G3",
+    "G4"
+   ],
+   "id": "I",
+   "open_gaps": 5,
+   "requirements": {
+    "I1": {
+     "attained": true,
+     "declared_tier": "BODY_VERIFIED",
+     "observed": [],
+     "status": "BODY_VERIFIED"
+    },
+    "I2": {
+     "attained": true,
+     "declared_tier": "BODY_VERIFIED",
+     "observed": [],
+     "status": "BODY_VERIFIED"
+    },
+    "I3": {
+     "attained": true,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "observed": [],
+     "status": "SANDBOX_VERIFIED"
+    },
+    "I4": {
+     "attained": true,
+     "declared_tier": "BODY_VERIFIED",
+     "observed": [],
+     "status": "BODY_VERIFIED"
+    },
+    "I5": {
+     "attained": true,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "observed": [],
+     "status": "SANDBOX_VERIFIED"
+    },
+    "I6": {
+     "attained": true,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "observed": [],
+     "status": "SANDBOX_VERIFIED"
+    },
+    "I7": {
+     "attained": true,
+     "declared_tier": "BODY_VERIFIED",
+     "observed": [],
+     "status": "BODY_VERIFIED"
+    },
+    "I8": {
+     "attained": true,
+     "declared_tier": "BODY_VERIFIED",
+     "observed": [],
+     "status": "BODY_VERIFIED"
+    }
+   },
+   "status": "SANDBOX_VERIFIED",
+   "title": "Attack containment"
+  },
+  "J": {
+   "blocked_beyond_tests": [
+    "G10",
+    "G9"
+   ],
+   "id": "J",
+   "open_gaps": 10,
+   "requirements": {
+    "J1": {
+     "attained": true,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "observed": [],
+     "status": "SANDBOX_VERIFIED"
+    },
+    "J1b": {
+     "attained": true,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "observed": [],
+     "status": "SANDBOX_VERIFIED"
+    },
+    "J2": {
+     "attained": true,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "observed": [],
+     "status": "SANDBOX_VERIFIED"
+    },
+    "J3": {
+     "attained": true,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "observed": [],
+     "status": "SANDBOX_VERIFIED"
+    },
+    "J4": {
+     "attained": true,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "observed": [],
+     "status": "SANDBOX_VERIFIED"
+    }
+   },
+   "status": "SANDBOX_VERIFIED",
+   "title": "Compounding learning"
+  },
+  "K": {
+   "blocked_beyond_tests": [
+    "G3"
+   ],
+   "id": "K",
+   "open_gaps": 1,
+   "requirements": {
+    "K1": {
+     "attained": true,
+     "declared_tier": "BODY_VERIFIED",
+     "observed": [],
+     "status": "BODY_VERIFIED"
+    },
+    "K2": {
+     "attained": true,
+     "declared_tier": "BODY_VERIFIED",
+     "observed": [],
+     "status": "BODY_VERIFIED"
+    },
+    "K3": {
+     "attained": true,
+     "declared_tier": "BODY_VERIFIED",
+     "observed": [],
+     "status": "BODY_VERIFIED"
+    },
+    "K4": {
+     "attained": true,
+     "declared_tier": "BODY_VERIFIED",
+     "observed": [],
+     "status": "BODY_VERIFIED"
+    },
+    "K5": {
+     "attained": true,
+     "declared_tier": "BODY_VERIFIED",
+     "observed": [],
+     "status": "BODY_VERIFIED"
+    },
+    "K6": {
+     "attained": true,
+     "declared_tier": "BODY_VERIFIED",
+     "observed": [],
+     "status": "BODY_VERIFIED"
+    }
+   },
+   "status": "BODY_VERIFIED",
+   "title": "Founder shutdown"
+  },
+  "L": {
+   "blocked_beyond_tests": [
+    "G2"
+   ],
+   "id": "L",
+   "open_gaps": 2,
+   "requirements": {
+    "L1": {
+     "attained": true,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "observed": [],
+     "status": "SANDBOX_VERIFIED"
+    },
+    "L2": {
+     "attained": true,
+     "declared_tier": "UNIT_VERIFIED",
+     "observed": [],
+     "status": "UNIT_VERIFIED"
+    },
+    "L3": {
+     "attained": true,
+     "declared_tier": "SANDBOX_VERIFIED",
+     "observed": [],
+     "status": "SANDBOX_VERIFIED"
+    }
+   },
+   "status": "UNIT_VERIFIED",
+   "title": "Whole-machine comprehension"
+  }
+ },
+ "ran": true,
+ "summary": {
+  "attained_declared_tier": 81,
+  "highest_status_any_test_can_establish": "BODY_VERIFIED",
+  "missions": {
+   "A": "SANDBOX_VERIFIED",
+   "B": "UNIT_VERIFIED",
+   "C": "SANDBOX_VERIFIED",
+   "D": "SANDBOX_VERIFIED",
+   "E": "IMPLEMENTED",
+   "F": "SANDBOX_VERIFIED",
+   "G": "IMPLEMENTED",
+   "H": "SANDBOX_VERIFIED",
+   "I": "SANDBOX_VERIFIED",
+   "J": "SANDBOX_VERIFIED",
+   "K": "BODY_VERIFIED",
+   "L": "UNIT_VERIFIED"
+  },
+  "requirements": 85,
+  "statuses_no_test_can_establish": [
+   "FOUNDER_ACCEPTED",
+   "AUTHORIZED_LIVE",
+   "EXTERNALLY_VERIFIED",
+   "COMMERCIAL_OUTCOME_VERIFIED"
+  ]
+ },
+ "version": "acceptance-report/1"
+}

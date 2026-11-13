@@ -128,7 +128,9 @@ def test_research_post_is_one_mission_with_the_browser_to_worker_edge(tmp_path):
     facts = str((tmp_path / "workspace" / "m_research-z3-note" / "facts.json").resolve())
     assert by_id["record-facts"]["bind"][0]["from"] == {"action_id": "operate-browser", "field": "extracted"}
     assert by_id["draft-post"]["params"]["inputs"] == [facts] and by_id["draft-post"]["requires"] == ["facts_recorded"]
-    assert by_id["request-publish"]["requires"] == ["draft_verified"]
+    # The publish request also waits on the Task Fabric's evaluator asking the Mind about every sentence.
+    assert by_id["request-publish"]["requires"] == ["draft_verified", "draft_appraised"]
+    assert "worker.appraise" in spec["light_cone"]["capabilities"]
     # Publishing stays outside the cone: it stops for a founder decision.
     assert "daleobanks.publish" not in spec["light_cone"]["capabilities"]
     assert spec["light_cone"]["max_consequence_class"] == "internal_write"

@@ -172,6 +172,81 @@ def _native_numeric_checks(family, data, answer):
         dissent.append(str(exc))
     return checks, dissent
 
+_UNITS = {w: i for i, w in enumerate("zero one two three four five six seven eight nine ten eleven twelve thirteen "
+                                     "fourteen fifteen sixteen seventeen eighteen nineteen".split()) if i >= 2}
+_TENS = {w: 10 * i for i, w in enumerate("twenty thirty forty fifty sixty seventy eighty ninety".split(), 2)}
+_NEGATORS = ("not", "no", "never", "none", "nor", "neither", "without", "nobody", "nothing", "cannot")
+_FILLER = frozenset({"the", "a", "an", "and", "but", "or", "of", "in", "on", "at", "to", "for", "by", "with", "from",
+                     "it", "its", "this", "that", "these", "those", "they", "their", "did", "does", "do", "was",
+                     "were", "is", "are", "has", "have", "had", "been", "be", "will", "would", "can", "could", "may",
+                     "might", "should", "shall", "must", "also", "else"})
+
+
+def _restatement_gaps(claim: str, support: list) -> tuple[bool, bool]:
+    """(a figure of the claim is absent from its supporting spans, a claim clause's polarity differs from the span
+    clause it restates). Separate code from the solver's check, read the same way: spelled numbers are figures, and
+    polarity is compared clause against clause, so a negator elsewhere in a span cannot mask a negated claim."""
+    def words(text):
+        return ["".join(ch for ch in w.lower() if ch.isalpha() or ch == "'") for w in text.split()]
+
+    def spelled(text):          # "twelve" -> 12, "twenty-five" / "twenty five" -> 25; "one" is too often not a number
+        out, tokens, i = [], text.replace("-", " ").split(), 0
+        while i < len(tokens):
+            w = tokens[i].lower().strip(".,;:!?")
+            nxt = tokens[i + 1].lower().strip(".,;:!?") if i + 1 < len(tokens) else ""
+            tail = tokens[i][len(tokens[i].rstrip(".,;:!?")):]
+            if w in _TENS and nxt in _UNITS and _UNITS[nxt] < 10:
+                out.append(str(_TENS[w] + _UNITS[nxt]) + tokens[i + 1][len(tokens[i + 1].rstrip(".,;:!?")):])
+                i += 2
+                continue
+            out.append(str(_TENS.get(w, _UNITS.get(w))) + tail if w in _TENS or w in _UNITS else tokens[i])
+            i += 1
+        return " ".join(out)
+
+    def numbers(text):
+        out, token = set(), ""
+        text = spelled(text)
+        for ch in text.replace(" percent", "%").replace(" per cent", "%") + " ":
+            if ch.isdigit() or (token and ch in ",.%"):
+                token += ch
+            elif token:
+                out.add(token.replace(",", "").rstrip(".,"))
+                token = ""
+        return {n for n in out if n and n[0].isdigit()}
+
+    def negative(text):
+        found = words(text)
+        lowered = " ".join(found)
+        return any(w in _NEGATORS or w.endswith("n't") for w in found) or any(
+            p in lowered for p in ("fail to ", "fails to ", "failed to ", "unable to "))
+
+    def clauses(text):
+        out, current = [], ""
+        for i, ch in enumerate(text + " "):
+            if ch in ".;:!?," and (i + 1 >= len(text) or text[i + 1].isspace()):
+                out.append(current)
+                current = ""
+            else:
+                current += ch
+        return [c for c in out + [current] if c.strip()]
+
+    def subject(text):
+        return {w for w in words(text) if len(w) > 2 and w not in _NEGATORS and w not in _FILLER}
+
+    spans = " ".join(support)
+    span_clauses = [c for text in support for c in clauses(text)]
+    polarity = False
+    for clause in clauses(claim):
+        mine = subject(clause)
+        if not mine:
+            continue
+        shared = [len(mine & subject(c)) for c in span_clauses]
+        best = max(shared, default=0)
+        against = [negative(c) for c, n in zip(span_clauses, shared) if n == best] if best else [negative(spans)]
+        polarity = polarity or all(n != negative(clause) for n in against)
+    return bool(numbers(claim) - numbers(spans)), polarity
+
+
 def verify(family, data, answer, proof_class):
     checks, dissent, cross = {}, [], {}
     from .catalog import FAMILIES, NATIVE_QUALIFIED
@@ -221,6 +296,7 @@ def verify(family, data, answer, proof_class):
         checks["artifact_sources_match_input"] = artifact["sources"] == [{k:v for k,v in s.items() if k != "text"} for s in data["sources"]]
         checks["artifact_bindings_match_input"] = artifact["bindings"] == data["bindings"]
         checks["artifact_contradictions_match_input"] = artifact["contradictions"] == [b for b in data["bindings"] if b["relationship"] == "contradicts"]
+        checks["artifact_distortions_match_output"] = artifact.get("distortions") == output.get("distortions")
     if family == "exact" and "polynomial" not in data:
         # A separately parsed Decimal evaluator attacks the Fraction solver.
         import ast
@@ -353,6 +429,14 @@ def verify(family, data, answer, proof_class):
         checks["fresh_sources"] = all(datetime.fromisoformat(s["expires_at"].replace("Z", "+00:00")) > datetime.now(timezone.utc) for s in sources.values())
         checks["span_binding"] = all(b["source_id"] in sources and b["quote"] in sources[b["source_id"]]["text"] for b in data["bindings"])
         checks["contradiction_preserved"] = output["contested"] == any(b["relationship"] == "contradicts" for b in data["bindings"])
+        # Written apart from the solver's tokenizer: a restatement whose figures or polarity differ from its supporting
+        # spans may not be reported as unchanged.
+        support = [b["quote"] for b in data["bindings"] if b["relationship"] == "supports"]
+        if support:
+            reported = {c["class"] for c in output.get("distortions") or []}
+            figure_gap, polarity_gap = _restatement_gaps(data["claim"], support)
+            checks["restatement_rechecked"] = (not figure_gap or "figure" in reported) and \
+                (not polarity_gap or "negation" in reported)
         dissent.append("Declared provenance/quality need separate authentication; quote binding does not prove entailment.")
     elif family == "robust_pattern":
         # Recompute the median and MAD with the standard library and re-derive every flag.

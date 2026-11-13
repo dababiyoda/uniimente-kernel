@@ -2784,6 +2784,12 @@ class MissionEngine:
                 failure_class = outcome.failure_class
                 if self.genesis is not None and is_capability_fault(manifest, detail, failure_class):
                     self.capability_faults[check["check_id"]] = (manifest, detail, sensor.get("params", {}))
+                elif failure_class in ("transient", "budget_exceeded"):
+                    # The host (or a resource ceiling) stopped the sensor call: the world was not measured. As on
+                    # the Mind's path below, the check waits for a re-observation and no strategy is pursued for
+                    # it; before, a completed write was dispatched again beside an unrelated real failure.
+                    detail = f"sensor inconclusive ({failure_class}): {detail}"
+                    inconclusive.add(check["check_id"])
             else:
                 passed, detail = evaluate_receipt(check["predicate"], {"output": outcome.output,
                                                   "output_artifact": outcome.output_artifact}, self.artifact_root)

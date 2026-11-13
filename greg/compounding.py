@@ -128,7 +128,8 @@ def retained_reuse(journal: Journal) -> dict:
     from greg.capabilities import BUILTINS
     seq = {r.payload.get("event_id"): r.seq for r in journal.ledger.by_type("event")}
     verified = {mid: seq[eid] for mid, eid in sop.verified_appraisals(journal).items() if eid in seq}
-    rejected = {e.payload.get("mission_id") for e in journal.replay("mission.appraised")} - set(verified)
+    awaiting = sop.awaiting_appraisal(journal)      # appraised again when the founder attaches what was not run
+    rejected = {e.payload.get("mission_id") for e in journal.replay("mission.appraised")} - set(verified) - awaiting
     registered = {e.payload["mission_id"]: (e.payload.get("spec") or {}, seq[e.event_id])
                   for e in journal.replay("mission.registered") if e.payload.get("mission_id")}
     opened = {e.payload["deficit_id"]: e.payload for e in journal.replay("deficit.opened")
@@ -208,7 +209,9 @@ def retained_reuse(journal: Journal) -> dict:
             elif registered[b][1] < at:
                 why.append("registered before the capability was formed")
             if b not in verified:
-                why.append("not appraised VERIFIED" + (" (appraisal rejected it)" if b in rejected else ""))
+                why.append("not appraised VERIFIED" + (
+                    " (appraisal rejected it)" if b in rejected else
+                    " (not yet appraised: a capability its appraisal needs is not attached)" if b in awaiting else ""))
             else:
                 hits = [s for s in hits if s < verified[b]]   # only uses that could serve B's verdict
                 if not hits:

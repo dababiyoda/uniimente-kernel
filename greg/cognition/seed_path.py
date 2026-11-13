@@ -222,10 +222,17 @@ def settle(params, ctx):
     if not refs or any(ref not in events for ref in refs):
         raise CapabilityError('retained observation evidence required')
     if params['tier'] == 'computation_verified':
-        if not any(events[ref].type == 'greg.mission.appraised' and
-                   events[ref].payload.get('verdict') == 'VERIFIED' and
-                   events[ref].payload.get('mission_id') == ctx.mission_id for ref in refs):
-            raise CapabilityError('independent appraisal of this mission required')
+        # Only the appraisal of the closure that evaluated this computation qualifies it: the receipt's own closure
+        # (greg/appraisal.py ``Standings.judging``, the first closure of the mission recorded after the receipt), whose
+        # appraisal re-checked it through cognition.status. Another closure's VERIFIED, earlier or later, judged
+        # another window (founder ruling of 2026-11-12: "A stale appraisal cannot qualify a different closure").
+        from greg.appraisal import standings
+        book = standings(ctx.journal)
+        closure = book.judging(ctx.mission_id, book.pos.get(receipt.event_id, -1))
+        own = closure.standing if closure is not None and closure.verified() else None
+        if own is None or own.event_id not in refs:    # recorded after its closure, so after the receipt
+            raise CapabilityError('independent appraisal of this mission required: the VERIFIED appraisal of the '
+                                  'closure that evaluated this computation, cited by its event id')
     outcome = {**params, 'authority_ref': ctx.authority_ref, 'authority_created': False,
                'score_status': 'reported assessment; not authenticated performance',
                'verification_scope': 'computational integrity only' if params['tier'] == 'computation_verified' else 'reported observation',

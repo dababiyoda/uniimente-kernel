@@ -8,8 +8,10 @@ Neither part grants anything.
    greg/recovery.py withdraws an approval after a restore: one ``decision.withdrawn`` with ``voids_approval``, which
    the mission fold already reads. The next selection of that scope asks the founder again. Failure evidence is:
 
-   - **refuted:** the independent appraisal REFUTED the closure whose window holds the run (greg/appraisal.py's
-     window: since the registration, or the mission's previous hold, up to the closure);
+   - **refuted:** the independent appraisal REFUTED the run's own closure (greg/appraisal.py
+     ``Standings.judging``: the first closure of the mission recorded after the run, whose window holds it; the one
+     rule routing and settlement read too). A later closure whose window also holds the run (an achievement after a
+     failure closure) never judges it in its own closure's place, so its refutation does not name this run;
    - **ineffective:** the run executed, the world was re-observed and the check it advances still failed, as the
      mission's own loop judged it (the ``routing.outcome`` ``ineffective`` record the engine writes). A run the
      founder reconciled as executed has no receipt, so the engine writes no such record for it; its effect is read
@@ -39,9 +41,10 @@ a body when this code first runs is regressed by the failure evidence already on
 """
 from __future__ import annotations
 
-from bisect import bisect_left, bisect_right
+from bisect import bisect_right
 import math
 
+from greg.appraisal import standings
 from greg.capabilities import BUILTINS
 from greg.journal import fact_id, iso
 from greg.missions import TERMINAL, blames_strategy
@@ -58,31 +61,6 @@ SEVERE = ("refuted", "ineffective")
 TUPLE = ("capability", "action_class", "target_pattern", "budget_band")
 ABOVE_CEILING = ("needs a founder-signed grant for this exact tuple; no such grant exists yet "
                  "(NEEDS_FOUNDER_DECISION), so no evidence reaches it")
-
-
-def _closure_windows(journal, pos) -> dict:
-    """appraisal event id -> (mission id, verdict, window start, closure position, appraisal position), as
-    greg/appraisal.py windows a closure: from the registration or the mission's previous hold to the closure the
-    appraisal names. One pass over the marks in ledger order, so a long standing history costs n log n, not n^2."""
-    marks = sorted((pos.get(e.event_id, -1), e.event_id, kind, e.payload.get("mission_id"))
-                   for kind in ("mission.registered", "mission.held", "mission.achieved", "mission.unmet")
-                   for e in journal.replay(kind))
-    opened, closures, achieved = {}, {}, {}
-    for at, eid, kind, mid in marks:
-        if kind != "mission.registered" and mid in opened:     # a closure: its window opened at the latest start
-            closures[eid] = (mid, opened[mid], at)
-            if kind == "mission.achieved":
-                achieved.setdefault(mid, eid)    # a bounded mission's appraisal names no closure: its achievement
-        if kind in ("mission.registered", "mission.held"):
-            opened[mid] = at
-    windows = {}
-    for e in journal.replay("mission.appraised"):
-        p = e.payload
-        closure = closures.get(p["closure_event"] if p.get("closure_event") else achieved.get(p.get("mission_id")))
-        if closure is not None and closure[0] == p.get("mission_id"):
-            mid, start, at = closure
-            windows[e.event_id] = (mid, p.get("verdict"), start, at, pos.get(e.event_id, -1))
-    return windows
 
 
 def failures(journal) -> list[dict]:
@@ -104,13 +82,14 @@ def failures(journal) -> list[dict]:
             out.append({"kind": "ineffective", "run": run, "evidence": e.event_id, "at": pos.get(e.event_id, -1),
                         "why": f"it executed and the check it advances still failed ({str(p.get('reason'))[:160]})"})
     out += _reconciled_ineffective(journal, pos, runs, own)
-    for appraisal, (mid, verdict, start, closure, at) in _closure_windows(journal, pos).items():
-        if verdict != "REFUTED" or mid not in own:
+    book = standings(journal)           # the run's own closure judges it (greg/appraisal.py ``Standings.judging``)
+    for run in runs:
+        closure = book.judging(run.payload["mission_id"], book.pos.get(run.event_id, -1))
+        refuted = closure.standing if closure is not None else None
+        if refuted is None or refuted.payload.get("verdict") != "REFUTED":
             continue
-        ats, ran = own[mid]             # the runs strictly inside the window: after its start, before its closure
-        for run in ran[bisect_right(ats, start):bisect_left(ats, closure)]:
-            out.append({"kind": "refuted", "run": run, "evidence": appraisal, "at": at,
-                        "why": "the independent appraisal refuted the closure this run belongs to"})
+        out.append({"kind": "refuted", "run": run, "evidence": refuted.event_id, "at": pos.get(refuted.event_id, -1),
+                    "why": "the independent appraisal refuted the closure this run belongs to"})
     return sorted(out, key=lambda f: (f["at"], pos.get(f["run"].event_id, -1)))
 
 
@@ -296,11 +275,7 @@ def report(journal) -> dict:
             r["approved"] += 1
         elif answer == "reject":
             r["rejected"] += 1
-    judging = {}                        # mission id -> (closure positions, windows) of its appraised closures
-    for w in sorted(_closure_windows(journal, pos).values(), key=lambda w: w[3]):
-        at_closure, own = judging.setdefault(w[0], ([], []))
-        at_closure.append(w[3])
-        own.append(w)
+    closures = standings(journal)       # each run's own closure, with that closure's own verdict
     severe = {}                         # run event id -> the failure evidence naming it; ineffective outranks refuted
     for f in failures(journal):
         if severe.get(f["run"].event_id) != "ineffective":
@@ -327,15 +302,13 @@ def report(journal) -> dict:
             continue
         r["runs"] += 1
         # failure evidence first (an ineffective run's closure may still verify: the run itself changed nothing);
-        # otherwise the first appraised closure whose window holds it judges it. Window starts never fall as closures
-        # climb, so that is the first closure after the run, if its window opened before the run. An unmet or
-        # unavailable closure judges nothing.
-        kind, judged = severe.get(e.event_id), None
-        closures, windows = judging.get(p["mission_id"], ((), ()))
+        # otherwise the run's own closure judges it (greg/appraisal.py ``Standings.judging``: the first closure
+        # recorded after the run, whose window holds it), by that closure's standing. An unmet, unavailable or not
+        # yet appraised closure judges nothing, and no later closure judges in its place.
+        kind = severe.get(e.event_id)
         if kind is None:
-            i = bisect_right(closures, at)
-            judged = windows[i] if i < len(windows) and windows[i][2] < at else None
-            kind = "verified" if judged is not None and judged[1] == "VERIFIED" else None
+            closure = closures.judging(p["mission_id"], at)
+            kind = "verified" if closure is not None and closure.verdict == "VERIFIED" else None
         if kind is None:
             r["unappraised"] += 1
             continue

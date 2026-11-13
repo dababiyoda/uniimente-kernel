@@ -21,6 +21,17 @@ import json
 import sqlite3
 from pathlib import Path
 
+# Migration 3's view, kept byte for byte (an applied migration is checksummed): its ``last_verdict`` is the verdict of
+# the mission's latest outcome row, whatever closure that row judged. Migration 4 replaces it with ``current_verdict``.
+V3_LEDGER_VIEW = (
+    "CREATE VIEW mission_ledger AS SELECT d.mission_id, d.expression, "
+    "(SELECT group_concat(a.answer, ',') FROM authority a WHERE a.mission_id = d.mission_id) AS authority, "
+    "(SELECT count(*) FROM actions x WHERE x.mission_id = d.mission_id AND x.status = 'DONE') AS actions_done, "
+    "(SELECT coalesce(sum(x.cost_usd), 0) FROM actions x WHERE x.mission_id = d.mission_id) AS cost_usd, "
+    "(SELECT o.verdict FROM outcomes o WHERE o.mission_id = d.mission_id ORDER BY o.at DESC, o.id DESC LIMIT 1) "
+    "AS last_verdict, "
+    "(SELECT coalesce(sum(m.amount_cents), 0) FROM money m WHERE m.mission_id = d.mission_id) AS revenue_cents "
+    "FROM decisions d")
 MIGRATIONS = [
     (1, "core", [
         "CREATE TABLE signals (id TEXT PRIMARY KEY, at TEXT, source TEXT, content TEXT, evidence TEXT)",
@@ -39,15 +50,23 @@ MIGRATIONS = [
     ], ["DROP TABLE money", "DROP TABLE customers"], ["customers", "money"]),
     (3, "mission ledger view", [
         "CREATE INDEX actions_mission ON actions(mission_id)",
+        V3_LEDGER_VIEW,
+    ], ["DROP VIEW mission_ledger", "DROP INDEX actions_mission"], []),
+    # The outcome that stands for each mission's current closure (greg/appraisal.py ``standings``): an appraisal counts
+    # only for the closure it judged, and a final UNAVAILABLE establishes nothing. ``last_verdict`` read the latest
+    # outcome row, so a late verdict on an earlier closure replaced the standing of a newer one (founder ruling of
+    # 2026-11-12: "A stale appraisal cannot qualify a different closure").
+    (4, "closure standings", [
+        "CREATE TABLE standings (mission_id TEXT PRIMARY KEY, closure TEXT, outcome_id TEXT, verdict TEXT)",
+        "DROP VIEW mission_ledger",
         "CREATE VIEW mission_ledger AS SELECT d.mission_id, d.expression, "
         "(SELECT group_concat(a.answer, ',') FROM authority a WHERE a.mission_id = d.mission_id) AS authority, "
         "(SELECT count(*) FROM actions x WHERE x.mission_id = d.mission_id AND x.status = 'DONE') AS actions_done, "
         "(SELECT coalesce(sum(x.cost_usd), 0) FROM actions x WHERE x.mission_id = d.mission_id) AS cost_usd, "
-        "(SELECT o.verdict FROM outcomes o WHERE o.mission_id = d.mission_id ORDER BY o.at DESC, o.id DESC LIMIT 1) "
-        "AS last_verdict, "
+        "(SELECT s.verdict FROM standings s WHERE s.mission_id = d.mission_id) AS current_verdict, "
         "(SELECT coalesce(sum(m.amount_cents), 0) FROM money m WHERE m.mission_id = d.mission_id) AS revenue_cents "
         "FROM decisions d",
-    ], ["DROP VIEW mission_ledger", "DROP INDEX actions_mission"], []),
+    ], ["DROP VIEW mission_ledger", V3_LEDGER_VIEW, "DROP TABLE standings"], ["standings"]),
 ]
 
 
@@ -114,6 +133,7 @@ def ingest_greg(root: Path, events: list[dict]) -> dict:
     if version(db) < 3:
         db.close()
         raise ModelError("schema is not at the current version; migrate first")
+    events = list(events)
     before = db.total_changes
     requested = {}
     try:
@@ -143,9 +163,28 @@ def ingest_greg(root: Path, events: list[dict]) -> dict:
                     db.execute("INSERT OR IGNORE INTO signals VALUES (?,?,?,?,?)",
                                (eid, e["at"], p.get("source"), json.dumps(p.get("summary") or p.get("content")),
                                 json.dumps(p.get("evidence"))))
+            if version(db) >= 4:
+                _standings(db, events)
         return {"rows_changed": db.total_changes - before}
     finally:
         db.close()
+
+
+def _standings(db, events) -> None:
+    """Each mission's current closure (its achievement, or its newest closure) and the outcome that stands for it,
+    from the events of this ingest in ledger order: pass the whole journal, as ``greg foundry`` reads it. NULL while
+    that closure has no verdict of its own. Re-ingesting the same journal changes nothing."""
+    from greg.appraisal import standings_of_events
+    book = standings_of_events(events)
+    for mid in book.missions():
+        current = book.current(mid)
+        stands = current.standing
+        db.execute("INSERT INTO standings VALUES (?,?,?,?) ON CONFLICT(mission_id) DO UPDATE SET "
+                   "closure = excluded.closure, outcome_id = excluded.outcome_id, verdict = excluded.verdict "
+                   "WHERE closure IS NOT excluded.closure OR outcome_id IS NOT excluded.outcome_id "
+                   "OR verdict IS NOT excluded.verdict",
+                   (mid, current.event_id or "achievement", stands.event_id if stands is not None else None,
+                    current.verdict))
 
 
 def record_money(root: Path, *, id: str, at: str, mission_id: str, customer: dict, amount_cents: int,

@@ -80,18 +80,33 @@ def observe(root: Path, capability: str, *, verified: bool, cost_usd: float, at:
 
 
 def from_greg(events: list[dict]) -> list[dict]:
-    """(capability, verified, cost, at) per appraised closure, in journal order."""
-    cost: dict[str, float] = {}
-    last_cap: dict[str, str] = {}
-    out = []
-    for e in sorted(events, key=lambda e: (e["at"], e["event_id"])):
+    """(capability, verified, cost, at) per closure whose own appraisal established a verdict, for the last run that
+    closure judged, in time order of those appraisals.
+
+    A closure judges the runs whose own closure it is (greg/appraisal.py ``Standings.judging``, the rule every GREG
+    reader shares), so a verdict never reaches a run another closure judged. Only a closure's standing counts (its
+    final appraisal, when that established a verdict): an UNAVAILABLE answer is no observation of the capability."""
+    from greg.appraisal import standings_of_events
+    events = list(events)
+    book = standings_of_events(events)
+    last_run: dict[int, tuple] = {}     # closure -> (capability, cost) of the last run it judged, in ledger order
+    for e in events:
         kind, p = e["type"].removeprefix("greg."), e["payload"]
         if kind == "mission.action" and p.get("status") == "DONE":
-            last_cap[p["mission_id"]] = p.get("capability")
-            cost[p["mission_id"]] = float(p.get("cost_usd") or 0.0)
-        elif kind == "mission.appraised" and p.get("mission_id") in last_cap:
-            out.append({"capability": last_cap[p["mission_id"]], "verified": p.get("verdict") == "VERIFIED",
-                        "cost_usd": cost.get(p["mission_id"], 0.0), "at": e["at"]})
+            closure = book.judging(p.get("mission_id"), book.pos.get(e["event_id"]))
+            if closure is not None:
+                last_run[id(closure)] = (p.get("capability"), float(p.get("cost_usd") or 0.0))
+    out = []
+    for e in sorted(events, key=lambda e: (e["at"], e["event_id"])):
+        if e["type"].removeprefix("greg.") != "mission.appraised":
+            continue
+        closure = book.named_by(e["event_id"])
+        stands = closure.standing if closure is not None else None
+        if stands is None or stands.event_id != e["event_id"] or id(closure) not in last_run:
+            continue
+        capability, cost = last_run[id(closure)]
+        out.append({"capability": capability, "verified": e["payload"].get("verdict") == "VERIFIED",
+                    "cost_usd": cost, "at": e["at"]})
     return out
 
 

@@ -1,6 +1,6 @@
 > **Reading order:** one canonical sequence for every entry file is in [AGENTS.md § Canonical reading order](../AGENTS.md#canonical-reading-order). The lists below are kept as written.
 
-> Before new or resumed UNIIMENTE work, follow `AGENTS.md` and `docs/collaboration/START_HERE.md`; refresh Discussion #89, work board #96 and current claims before editing.
+> Before new or resumed UNIIMENTE work, follow `AGENTS.md` and `docs/collaboration/START_HERE.md`; refresh Discussion #89, work board #96 and current claims before editing. Check in on the board before editing (session, what you were asked, your plan, your files); `python scripts/work_map.py` prints the block and, with `--paths <file>`, who already holds a file.
 
 ## Full-machine completion — controlling correction, October 1, 2026
 

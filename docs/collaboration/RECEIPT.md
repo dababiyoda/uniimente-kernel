@@ -87,6 +87,23 @@ If a source is unavailable, record the failed access in limitations/validation;
 do not fabricate a read_set entry. Choose a real next recheck time, not a copied
 timestamp from a prior receipt.
 
+## Recording the route and the check-in (convention, 2026-11-13)
+
+No field is added and the validator is unchanged. Three existing fields carry what a
+reader needs to place your work on the route and find your check-in:
+
+- `intent_refs`: besides the intent id, name what the work serves. Use
+  `greg/path.json#N3` or `greg/path.json#P5` for a route node,
+  `acceptance/directive-sections.json#WU-11` for a directive unit, and
+  `greg/path.json#process` for coordination work with no product node.
+- `read_set`: already records the guidance you read (AGENTS.md at your head, and the
+  guide's commit). That is the "guidance read" line of the check-in.
+- `coordination.task_ref`: the URL of your check-in comment on the work board.
+
+`python scripts/work_map.py` reads these to show which unit has an owner and which
+files several sessions hold. A check-in is a notice, not a lock; the receipt records a
+declaration, not a verified handoff.
+
 Run the exact validator tests with:
 
 ```sh

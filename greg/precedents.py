@@ -6,9 +6,10 @@ that action. Neither is independent external proof or a causal estimate.
 """
 from __future__ import annotations
 
+from greg import corrections
 from greg.capabilities import BUILTINS, CapabilityError, InvocationContext
 from greg.sop import verified_appraisals
-from memory.causal import CausalMemory
+from memory.causal import POSITIVE, CausalMemory
 
 MAX_EXAMPLES = 10
 
@@ -29,6 +30,15 @@ def precedents(params: dict, ctx: InvocationContext) -> dict:
     if not ok:
         raise CapabilityError(f"institutional history failed integrity check: {why}")
     actions = CausalMemory(ledger).precedents("greg." + capability)
+    # A positive self-report of a run in a mission a standing founder rejection contains is no evidence for the
+    # action: it is left out, and counted. A negative one stays, so a rejection can only lower what is shown.
+    rejected, withheld = corrections.rejected_missions(ctx.journal), set()
+    for event in ctx.journal.replay("mission.action") if rejected else ():
+        record = ledger.find(event.payload["receipt"]) if event.payload.get("receipt") else None
+        if record is not None and event.payload.get("mission_id") in rejected:
+            withheld.add(record.payload.get("action_id"))
+    kept = [a for a in actions if not (a["action_id"] in withheld and a.get("result_class") in POSITIVE)]
+    left_out, actions = len(actions) - len(kept), kept
     counts = {}
     for action in actions:
         status = action.get("validation_status") or "unknown"
@@ -44,11 +54,14 @@ def precedents(params: dict, ctx: InvocationContext) -> dict:
     achieved = {e.payload["mission_id"] for e in ctx.journal.replay("mission.achieved")}
     relevant = {e.payload["mission_id"] for e in ctx.journal.replay("mission.action")
                 if e.payload.get("capability") == capability and e.payload.get("status") == "DONE"}
+    # a mission a correction contains (a founder rejection, a failed replication) is no precedent
+    contained = corrections.contained_missions(ctx.journal)
     local = [{"mission_id": mid, "appraisal_event": appraisals[mid]}
-             for mid in sorted(achieved & relevant & appraisals.keys())]
+             for mid in sorted((achieved & relevant & appraisals.keys()) - contained.keys())]
     return {"capability": capability,
             "action_evidence": {"count": len(actions), "by_validation_and_result": counts,
-                                "recent": examples, "shown": len(examples)},
+                                "recent": examples, "shown": len(examples),
+                                **({"withheld_by_founder_rejection": left_out} if left_out else {})},
             "locally_appraised_missions": local[-MAX_EXAMPLES:],
             "locally_appraised_mission_count": len(local),
             "limitations": "Action outcomes are self-reports unless separately evidenced. "

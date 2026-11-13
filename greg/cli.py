@@ -928,12 +928,14 @@ def main(argv=None) -> int:
                     data = {"calibration": outcome_calibration(journal),
                             "awaiting_realization": awaiting_realization(journal), "authority_created": False}
             elif args.cognition_cmd == "knowledge":
-                from greg.cognition.settlement import competence
+                from greg.cognition.settlement import competence, withheld
                 from greg.cognition.cells import cells
                 with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
                     registry = registry_view(journal)
                     data = {"competence": [{"method": k[0], "version": k[1], "geometry_key": k[2], **v}
                                            for k, v in competence(journal).items()],
+                            # what a correction withholds from the counts above, and why (greg/corrections.py)
+                            "withheld": withheld(journal),
                             "cells": cells(journal, registry), "authority_created": False}
             else:
                 request = json.loads(Path(args.request).read_text())

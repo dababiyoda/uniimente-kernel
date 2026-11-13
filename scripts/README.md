@@ -10,6 +10,7 @@
 | `repo_review.py` | the recurring structural review: map, layering, mutation-gate liveness, lint trend (`docs/REVIEW_CADENCE.md`) | weekly workflow `repository-review.yml`; tests |
 | `docs_catalog.py` | generates `docs/CATALOG.md`: every document and record once, by area, kind and date; `--check` reports staleness | by hand at intake; weekly workflow (report only) |
 | `branch_catalog.py` | classifies every remote branch: finished (on the line), open PR, merged elsewhere, closed, or unclaimed commits | weekly workflow artifact; dated snapshots in `docs/collaboration/BRANCH-CATALOG-*.md` |
+| `compose_rehearsal.py` | rehearses an intake: each head's own tests on its own tree and on the merged tree; reports what passes alone and fails merged, with its cause. Read-only: merges in memory, exports to a scratch directory | by hand before an intake; `tests/unit/test_compose_rehearsal.py`; first runs in `docs/collaboration/COMPOSE-REHEARSAL-2026-11-11.md` |
 | `ci/mutation_harness.py` | the shared loop for mutation gates (scratch copy, STALE check, FAILED-only catch). New gates call `run(MUTANTS, TESTS, prefix=...)` and keep their literal `MUTANTS` list | three gates so far; `tests/unit/test_mutation_harness.py` |
 | `dev_env_check.py` | environment doctor: what will fail because of this machine | by hand before tests; read-only |
 

@@ -5117,17 +5117,26 @@
      "ask": "Each material decision records five roles, two passes, a disposition for every downside and exactly one decision, without manufactured consensus",
      "excerpt": "Then return exactly one:",
      "owner_paths": [
-      "docs/collaboration"
+      "docs/collaboration",
+      "tools/collaboration_protocol",
+      "tests/unit/test_deliberation_records.py"
      ],
-     "evidence": [],
+     "evidence": [
+      "tests/unit/test_deliberation_records.py::test_every_deliberation_record_passes_the_two_pass_protocol",
+      "tests/unit/test_deliberation_records.py::test_the_kept_list_only_shrinks",
+      "tests/unit/test_deliberation_records.py::test_every_record_is_found",
+      "tests/unit/test_deliberation_records.py::test_the_vendored_validator_is_the_founders_bytes",
+      "tests/unit/test_deliberation_records.py::test_each_named_defect_is_refused"
+     ],
      "required_tier": "UNIT_VERIFIED",
-     "tier": "INTENDED",
-     "coverage": "gap",
+     "tier": "UNIT_VERIFIED",
+     "coverage": "partial",
      "blocker": {
       "class": "BUILDABLE_NOT_BUILT",
-      "reason": "Deliberation records are not validated",
+      "reason": "Every deliberation record in the tree is now checked by the founder's two-pass validator, but three earlier records it refuses are listed rather than fixed (their authors' records), a material decision that has no record at all is not detected, and the validator sees manufactured consensus only as declared dissent with its entries erased",
       "unit": "S65-A"
-     }
+     },
+     "tests_tier": "UNIT_VERIFIED"
     }
    ]
   },

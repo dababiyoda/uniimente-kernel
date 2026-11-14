@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/deliberation-record.schema.json",
+  "title": "Recursive Founder-Intent Deliberation Record",
+  "description": "A material decision examined by five roles and exactly two explicit strengthening passes.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "decision_id", "title", "problem", "founder_intent_refs", "baseline", "alternatives",
+    "do_nothing_option", "roles", "evidence", "counterevidence", "pass_1", "pass_2",
+    "dissent", "authority_impact", "migration_plan", "rollback_plan", "kill_criteria",
+    "decision", "decision_owner", "review_trigger"
+  ],
+  "$defs": {
+    "nonempty": {"type": "string", "minLength": 1},
+    "stringList": {"type": "array", "items": {"$ref": "#/$defs/nonempty"}, "uniqueItems": true},
+    "decisionState": {"type": "string", "enum": ["RETAIN", "REGRESS", "KILL", "DEFER", "EXPERIMENT", "NEEDS_FOUNDER_DECISION"]},
+    "evidenceItem": {
+      "type": "object", "additionalProperties": false,
+      "required": ["claim", "tier", "reference", "finding"],
+      "properties": {
+        "claim": {"$ref": "#/$defs/nonempty"},
+        "tier": {"type": "string", "enum": ["readme_claim", "model_output", "deterministic_fixture", "unit_test", "sandbox_execution", "real_external_effect", "independently_verified_outcome", "commercial_result", "primary_source", "historical_artifact", "other"]},
+        "reference": {"$ref": "#/$defs/nonempty"},
+        "finding": {"$ref": "#/$defs/nonempty"}
+      }
+    }
+  },
+  "properties": {
+    "decision_id": {"$ref": "#/$defs/nonempty"},
+    "title": {"$ref": "#/$defs/nonempty"},
+    "problem": {"$ref": "#/$defs/nonempty"},
+    "founder_intent_refs": {"type": "array", "items": {"$ref": "#/$defs/nonempty"}, "minItems": 1, "uniqueItems": true},
+    "baseline": {"$ref": "#/$defs/nonempty"},
+    "alternatives": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["name", "description", "advantages", "disadvantages", "revival_evidence"],
+        "properties": {
+          "name": {"$ref": "#/$defs/nonempty"}, "description": {"$ref": "#/$defs/nonempty"},
+          "advantages": {"$ref": "#/$defs/stringList"}, "disadvantages": {"$ref": "#/$defs/stringList"},
+          "revival_evidence": {"$ref": "#/$defs/nonempty"}
+        }
+      }
+    },
+    "do_nothing_option": {
+      "type": "object", "additionalProperties": false,
+      "required": ["expected_outcome", "advantages", "disadvantages"],
+      "properties": {
+        "expected_outcome": {"$ref": "#/$defs/nonempty"},
+        "advantages": {"$ref": "#/$defs/stringList"},
+        "disadvantages": {"$ref": "#/$defs/stringList"}
+      }
+    },
+    "roles": {
+      "type": "array", "minItems": 5,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["role", "position", "material_concerns", "evidence_refs", "recommendation"],
+        "properties": {
+          "role": {"$ref": "#/$defs/nonempty"}, "position": {"$ref": "#/$defs/nonempty"},
+          "material_concerns": {"$ref": "#/$defs/stringList"}, "evidence_refs": {"$ref": "#/$defs/stringList"},
+          "recommendation": {"$ref": "#/$defs/decisionState"}
+        }
+      }
+    },
+    "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidenceItem"}},
+    "counterevidence": {"type": "array", "items": {"$ref": "#/$defs/evidenceItem"}},
+    "pass_1": {
+      "type": "object", "additionalProperties": false,
+      "required": ["intended_outcome", "advantages", "disadvantages", "comparisons", "rejected_alternatives"],
+      "properties": {
+        "intended_outcome": {"$ref": "#/$defs/nonempty"},
+        "advantages": {"type": "array", "minItems": 1, "items": {"type": "object", "additionalProperties": false, "required": ["id", "statement", "amplified_value"], "properties": {"id": {"$ref": "#/$defs/nonempty"}, "statement": {"$ref": "#/$defs/nonempty"}, "amplified_value": {"$ref": "#/$defs/nonempty"}}}},
+        "disadvantages": {"type": "array", "minItems": 1, "items": {"type": "object", "additionalProperties": false, "required": ["id", "statement", "severity", "response_type", "redesigned_response"], "properties": {"id": {"$ref": "#/$defs/nonempty"}, "statement": {"$ref": "#/$defs/nonempty"}, "severity": {"type": "string", "enum": ["low", "medium", "high", "critical"]}, "response_type": {"type": "string", "enum": ["protective", "learning", "competitive", "modularity", "evidence", "governance", "do_not_proceed"]}, "redesigned_response": {"$ref": "#/$defs/nonempty"}}}},
+        "comparisons": {"type": "object", "additionalProperties": false, "required": ["baseline", "do_nothing", "simplest_viable_alternative", "strongest_competing_architecture", "reversible_experiment"], "properties": {"baseline": {"$ref": "#/$defs/nonempty"}, "do_nothing": {"$ref": "#/$defs/nonempty"}, "simplest_viable_alternative": {"$ref": "#/$defs/nonempty"}, "strongest_competing_architecture": {"$ref": "#/$defs/nonempty"}, "reversible_experiment": {"$ref": "#/$defs/nonempty"}}},
+        "rejected_alternatives": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["name", "rejection_reason", "revival_evidence"], "properties": {"name": {"$ref": "#/$defs/nonempty"}, "rejection_reason": {"$ref": "#/$defs/nonempty"}, "revival_evidence": {"$ref": "#/$defs/nonempty"}}}}
+      }
+    },
+    "pass_2": {
+      "type": "object", "additionalProperties": false,
+      "required": ["attack_summary", "new_weaknesses", "pass_1_disadvantage_dispositions", "final_design", "residual_risks", "recommendation"],
+      "properties": {
+        "attack_summary": {"$ref": "#/$defs/nonempty"},
+        "new_weaknesses": {"type": "array", "minItems": 1, "items": {"type": "object", "additionalProperties": false, "required": ["id", "category", "statement", "strengthening_response"], "properties": {"id": {"$ref": "#/$defs/nonempty"}, "category": {"type": "string", "enum": ["bureaucracy", "centralization", "fragility", "overfit", "expense", "comprehensibility", "reversibility", "gaming", "dependency", "other"]}, "statement": {"$ref": "#/$defs/nonempty"}, "strengthening_response": {"$ref": "#/$defs/nonempty"}}}},
+        "pass_1_disadvantage_dispositions": {"type": "array", "minItems": 1, "items": {"type": "object", "additionalProperties": false, "required": ["disadvantage_id", "outcome", "rationale", "owner", "review_trigger"], "properties": {"disadvantage_id": {"$ref": "#/$defs/nonempty"}, "outcome": {"type": "string", "enum": ["resolved", "accepted", "deferred", "prohibited", "experiment"]}, "rationale": {"$ref": "#/$defs/nonempty"}, "owner": {"$ref": "#/$defs/nonempty"}, "review_trigger": {"$ref": "#/$defs/nonempty"}}}},
+        "final_design": {"$ref": "#/$defs/nonempty"},
+        "residual_risks": {"type": "array", "minItems": 1, "items": {"type": "object", "additionalProperties": false, "required": ["risk", "mitigation", "owner", "review_trigger"], "properties": {"risk": {"$ref": "#/$defs/nonempty"}, "mitigation": {"$ref": "#/$defs/nonempty"}, "owner": {"$ref": "#/$defs/nonempty"}, "review_trigger": {"$ref": "#/$defs/nonempty"}}}},
+        "recommendation": {"$ref": "#/$defs/decisionState"}
+      }
+    },
+    "dissent": {
+      "type": "object", "additionalProperties": false,
+      "required": ["present", "handling", "entries"],
+      "properties": {
+        "present": {"type": "boolean"}, "handling": {"$ref": "#/$defs/nonempty"},
+        "entries": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["role", "position", "rationale", "evidence_threshold", "owner", "review_trigger"], "properties": {"role": {"$ref": "#/$defs/nonempty"}, "position": {"$ref": "#/$defs/nonempty"}, "rationale": {"$ref": "#/$defs/nonempty"}, "evidence_threshold": {"$ref": "#/$defs/nonempty"}, "owner": {"$ref": "#/$defs/nonempty"}, "review_trigger": {"$ref": "#/$defs/nonempty"}}}}
+      }
+    },
+    "authority_impact": {
+      "type": "object", "additionalProperties": false,
+      "required": ["level", "changes_authority", "requires_authorized_human", "approval_status", "approver"],
+      "properties": {
+        "level": {"type": "string", "enum": ["lightweight", "standard", "constitutional"]},
+        "changes_authority": {"type": "boolean"}, "requires_authorized_human": {"type": "boolean"},
+        "approval_status": {"type": "string", "enum": ["not_required", "pending", "approved", "rejected"]},
+        "approver": {"type": ["string", "null"]}
+      }
+    },
+    "migration_plan": {"$ref": "#/$defs/nonempty"},
+    "rollback_plan": {"type": "object", "additionalProperties": false, "required": ["possible", "steps", "reason_impossible"], "properties": {"possible": {"type": "boolean"}, "steps": {"$ref": "#/$defs/stringList"}, "reason_impossible": {"type": ["string", "null"]}}},
+    "kill_criteria": {"type": "array", "items": {"$ref": "#/$defs/nonempty"}, "minItems": 1, "uniqueItems": true},
+    "decision": {"$ref": "#/$defs/decisionState"},
+    "decision_owner": {"$ref": "#/$defs/nonempty"},
+    "review_trigger": {"$ref": "#/$defs/nonempty"}
+  }
+}

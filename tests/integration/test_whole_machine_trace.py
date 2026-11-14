@@ -84,16 +84,31 @@ class Reappraised:
                                          "checks": {**e.payload["checks"], "world_reobserved": False}}) for e in events]
 
 
-def founder_trace(spans: list[dict], rid: str, shipped_receipt: str) -> None:
-    """The founder's decision in the trace: asked, answered approve with a latency, then the approved write."""
+def founder_trace(spans: list[dict], rid: str, shipped_receipt: str, *, blocked: bool | None = True) -> bool:
+    """The founder's decision in the trace: asked (for fs.write), answered approve with a latency, then the approved
+    write. Returns whether the mission recorded a block on the ask.
+
+    The goal asks for this move ahead of the mission loop (MissionEngine.request_decision; one scope, one request,
+    whichever path asks first). When the founder answers before the loop reaches the move, the loop finds the scope
+    approved and never blocks; when the loop gets there first, it blocks on the open ask. ``blocked=True`` requires
+    the block (a ticked body, whose order is fixed), ``None`` accepts either order (a body process racing the
+    founder's answer: 1 run in 10 here, and job 1 on #295 at d0bf3c74), and a block that is recorded must lie
+    between the ask and the answer and name what it awaited."""
     [asked] = [i for i, s in enumerate(spans) if s["kind"] == "decision.requested" and s["request_id"] == rid]
     [answered] = [i for i, s in enumerate(spans) if s["kind"] == "decision.answered" and s["request_id"] == rid]
     [shipped] = [i for i, s in enumerate(spans) if s["kind"] == "mission.action" and s["receipt"] == shipped_receipt]
+    assert spans[asked]["capability"] == "fs.write", spans[asked]                      # what the founder approved
     assert spans[answered]["answer"] == "approve", spans[answered]
     assert spans[answered]["latency_s"] is not None and spans[answered]["latency_s"] >= 0, spans[answered]
     assert asked < answered < shipped, [s["kind"] for s in spans]
-    [blocked] = [s for s in spans if s["kind"] == "mission.blocked"]
-    assert (blocked["capability"], blocked["reason"]) == ("fs.write", "decision"), blocked   # what the block awaited
+    blocks = [i for i, s in enumerate(spans) if s["kind"] == "mission.blocked"]
+    assert len(blocks) <= 1, [s["kind"] for s in spans]
+    if blocked is not None:
+        assert bool(blocks) == blocked, [s["kind"] for s in spans]
+    for i in blocks:
+        assert asked < i < answered, [s["kind"] for s in spans]                         # it waited on this ask
+        assert (spans[i]["capability"], spans[i]["reason"]) == ("fs.write", "decision"), spans[i]  # what it awaited
+    return bool(blocks)
 
 
 def test_one_signed_mission_runs_goal_to_updated_goal_and_the_founder_can_trace_it(tmp_path, organs, capsys):

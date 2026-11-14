@@ -1,0 +1,84 @@
+{
+  "schema": "greg-preregistration/1",
+  "experiment": "P6 converged v1: recipe lifts re-measured on the converged Mind",
+  "directive": "docs/intent/INTENT-20261021-MIND-MAXIMUM-CONTINUATION.json (section 6: bind verification to the actual integrated code; do not transfer old benchmark claims onto changed implementations)",
+  "owner": "#179 session (composition and metacognition lane); #158 notified",
+  "question": "On the converged tree, does routed composition decide more held-out items correctly than the strongest single intelligence available (lineage constituents and admitted exact single genomes), with no added wrong answer?",
+  "why_now": "Every recipe verdict in the evidence index was measured at one lineage's freeze commit. The converged compiler binds recipe code completely (closure, stage genomes, operation families, organs), so all seven recipe verdicts route UNEVALUATED until re-measured.",
+  "families": {
+    "F1": "estimate_then_optimize (v1 generator, scoring and constituents)",
+    "F2R": "identify_then_optimize (v2)",
+    "F3": "graph_then_allocate (v2)",
+    "F4": "bayes_then_voi (v2)"
+  },
+  "not_remeasured": {
+    "F5_M4": "held-out data already looked at; a re-run is diagnostic only",
+    "F6_bank_calls": "same",
+    "F7_SNDlib": "same; also third-party data rights uncleared",
+    "F8_Uber": "same; also third-party data rights uncleared"
+  },
+  "recipes": {
+    "F1": "estimate_then_optimize",
+    "F2R": "identify_then_optimize",
+    "F3": "graph_then_allocate",
+    "F4": "bayes_then_voi"
+  },
+  "seeds": {
+    "F1": [
+      6501,
+      6540
+    ],
+    "F2R": [
+      6601,
+      6664
+    ],
+    "F3": [
+      6701,
+      6740
+    ],
+    "F4": [
+      6801,
+      6840
+    ]
+  },
+  "seed_hygiene": "Fresh ranges: disjoint from spent_seeds() and from #158's reservations (3000-3999, P8_RESERVED 7000-9199 and any extension upward from 9200). Sizes follow v1/v2 (40, 64 for F2R as in v2, 40, 40).",
+  "arms": {
+    "constituents": "each family's lineage constituent arms, unchanged",
+    "exact_single": "F3 only: cognition.flow_expansion_mcf (operation expand_capacity_mcf), DEFAULT_FOR_GEOMETRY in admission v3, evaluation-only attach pin in memory. No other family has an admitted single genome answering its whole question; that is stated, not invented.",
+    "static_composition": "the family's own declared recipe",
+    "routed_composition": "the cortex router's choice, as in v1/v2",
+    "compiled": "the same request through the Competency Compiler; reported only"
+  },
+  "eval_attach": [
+    "cognition.flow_maxflow",
+    "cognition.flow_capacity_plan",
+    "cognition.flow_reinforce_greedy",
+    "cognition.forecast_quantile",
+    "cognition.newsvendor_compile",
+    "cognition.decision_preposterior",
+    "cognition.probabilistic",
+    "cognition.information",
+    "cognition.optimization",
+    "cognition.flow_expansion_mcf"
+  ],
+  "rule": "converged rule: routed correct > best single correct (best of lineage constituents and exact_single, chosen on held-out results), routed wrong <= best single wrong, one-sided exact sign test p < 0.05 over discordant items, routed median latency <= 60 s. Lineage rule (constituents only) reported beside it.",
+  "reported_not_in_rule": [
+    "false (wrong) answers per arm",
+    "abstentions (no_decision) per arm",
+    "translation and composition failure rates of routed composition",
+    "suboptimal answers",
+    "median and p95 latency per arm",
+    "stages",
+    "the compiled arm's state and stages",
+    "which exact single ties routed composition (tied_by)"
+  ],
+  "falsifier": "Any family where the best single matches or beats routed composition on correct answers, or where routed composition adds a wrong answer, has no converged lift, whatever the lineage verdict was.",
+  "development_check": {
+    "seeds": "dev seeds 1-2 of every family; no held-out seed was generated before the freeze",
+    "found": "every arm executed. The compiled arm abstained on F1: the Fermi organ (UNEVALUATED) tied the now-unbound estimate_then_optimize recipe on status, won on the method name, ignored formal_template and abstained.",
+    "action": "compiler._reject_recipe_relaxations: a single method or organ reading a strict subset of a routed recipe's inputs answers a relaxation and is rejected (the fixed-recipe twin of the derived-chain rule; admitted twin genomes still compete). Fixed before the freeze; regression test tests/unit/test_composition_lift_converged.py."
+  },
+  "procedure": "Commit runner and pre-registration; in a clean tree run --freeze to write freeze-converged-v1.json; commit it; run once from a clean detached worktree at the freeze commit under python -I; store results under docs/evidence/greg-composition-lift/2026-10-21-converged/. The run refuses a dirty tree, a missing freeze or any changed input. A failed or interrupted run is reported, not repeated on the same seeds.",
+  "index_effect": "the results file joins P6_RUNS; a verdict binds the recipe code at the freeze commit, so later code changes make it stale again",
+  "authority": "none. No attachment, no adoption, no merge."
+}

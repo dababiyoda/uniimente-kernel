@@ -138,9 +138,10 @@ def test_the_founder_asks_a_registered_service_in_words_and_greg_sees_the_change
     import threading
     from greg.capabilities import BUILTINS
     from greg.console import Console
+    from tests.browser_requirement import no_browser
     manifest, _ = BUILTINS["browser.render"]
-    if not manifest.available()[0]:
-        pytest.skip("no runnable browser here")
+    if not manifest.available()[0]:      # a failure under GREG_REQUIRE_BROWSER=1 (tests/browser_requirement.py)
+        no_browser("no runnable browser here")
 
     class Board(http.server.BaseHTTPRequestHandler):
         def do_GET(self):

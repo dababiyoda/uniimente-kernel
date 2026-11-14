@@ -50,12 +50,15 @@ def _forge(receipt, **output):
 
 # ------------------------------------------------------------------ optimization and feasibility claims
 def test_a_feasible_but_not_optimal_claim_is_refuted_by_a_second_engine(registry):
+    # Since 4430138 the base's Z3 certificate is the second engine (it superseded this branch's own check).
     r = reason(req("optimize", MODEL), registry=registry)
     assert r["output"]["solver_status"] == "OPTIMAL"
-    assert r["evaluator_result"]["checks"]["optimality_cross_engine"] is True
+    assert r["evaluator_result"]["checks"]["no_strictly_better_assignment_found"] is True
     lie = _forge(r, solution={"x": 10, "y": 0}, objective_value=10.0)
+    lie["proof"].update({"bound": 10.0, "optimality_gap": 0.0})   # consistent with itself, so only Z3 can see it
     checked = verify("optimization", MODEL, lie, "optimization_certificate")
-    assert checked["verdict"] == "REFUTED" and checked["checks"]["optimality_cross_engine"] is False
+    assert checked["verdict"] == "REFUTED" and checked["checks"]["no_strictly_better_assignment_found"] is False
+    assert checked["certificate"]["status"] == "REFUTED"
 
 
 def test_an_infeasibility_claim_about_a_feasible_model_is_refuted(registry):
@@ -63,13 +66,14 @@ def test_an_infeasibility_claim_about_a_feasible_model_is_refuted(registry):
     infeasible["constraints"].append({"coefficients": {"x": 1, "y": 1}, "op": "<=", "rhs": 2})
     r = reason(req("optimize", infeasible), registry=registry)
     assert r["output"]["solver_status"] == "INFEASIBLE"
-    assert r["evaluator_result"]["checks"]["infeasibility_cross_engine"] is True
-    assert any("corroborated by Z3" in d for d in r["evaluator_result"]["dissent"])
+    assert r["evaluator_result"]["checks"]["no_feasible_assignment_found"] is True
+    assert any("independently certified" in d for d in r["evaluator_result"]["dissent"])
     feasible = req("optimize", MODEL)
     honest = reason(feasible, registry=registry)
     lie = _forge(honest, solver_status="INFEASIBLE", solution={}, objective_value=None)
     lie["proof"].update({"bound": None, "optimality_gap": None})
-    assert verify("optimization", MODEL, lie, "optimization_certificate")["verdict"] == "REFUTED"
+    forged = verify("optimization", MODEL, lie, "optimization_certificate")
+    assert forged["verdict"] == "REFUTED" and forged["checks"]["no_feasible_assignment_found"] is False
 
 
 def test_unsat_cores_are_rechecked_and_tested_for_minimality(registry):
@@ -97,33 +101,36 @@ def test_the_shared_engine_is_disclosed_not_hidden(registry):
     assert any("same engine" in d for d in r["evaluator_result"]["dissent"])
 
 
-def test_a_missing_second_engine_is_inconclusive_and_said_so_never_a_pass(registry, monkeypatch):
+def test_a_missing_second_engine_is_disclosed_never_a_certificate(registry, monkeypatch):
     import sys
-    from greg.cognition.verification import _z3_integer_check
+    from greg.cognition.verification import _z3_certificate
     fractional = deepcopy(MODEL)
     fractional["constraints"][0]["coefficients"]["x"] = 1.5  # not the integer model CP-SAT accepts
-    assert _z3_integer_check(fractional) is None  # silent, not truncated to 1
+    assert _z3_certificate(fractional, integers=True)["status"] == "NOT_RUN"  # not truncated to 1
     r = reason(req("optimize", MODEL), registry=registry)
     answer = {"output": r["output"], "proof": r["proof_artifact"], "status": "ANSWER",
               "formal_validity": "VALID_CONDITIONAL_ON_MODEL"}
     monkeypatch.setitem(sys.modules, "z3", None)  # import z3 now raises ImportError
     checked = verify("optimization", MODEL, answer, "optimization_certificate")
-    assert "optimality_cross_engine" not in checked["checks"]
-    assert checked["inconclusive"] == ["optimality_cross_engine"]
-    assert any("rests on CP-SAT's report" in d for d in checked["dissent"])
+    assert checked["certificate"]["status"] == "NOT_RUN"
+    assert any("not independently certified" in d for d in checked["dissent"])
 
 
 def test_the_second_engine_stays_inside_the_verifier_budget():
     # verify() runs in the cognition worker under the request's latency limit; an exhausted budget is
     # undecided, and a large core is re-checked without spending one solve per member.
-    from greg.cognition.verification import MINIMALITY_CAP, _z3_core_check, _z3_integer_check
-    assert _z3_integer_check(MODEL, budget_s=0) is None
+    import time
+    from fractions import Fraction
+    from greg.cognition.verification import MINIMALITY_CAP, _z3_certificate, _z3_core_check
+    assert _z3_certificate(MODEL, integers=True, better_than=Fraction(5), sense="min",
+                           deadline=time.monotonic())["status"] == "NOT_RUN"
     model = {"variables": {"x": [0, 10]},
              "constraints": [{"coefficients": {"x": 1}, "op": ">=", "rhs": 8},
                              {"coefficients": {"x": 1}, "op": "<=", "rhs": 3}]
              + [{"coefficients": {"x": 1}, "op": ">=", "rhs": 0}] * MINIMALITY_CAP}
     core = [f"constraint_{i}" for i in range(len(model["constraints"]))]
     assert _z3_core_check(model, core, budget_s=0)["core_unsat"] is None
+    assert _z3_core_check(model, core, deadline=time.monotonic())["core_unsat"] is None   # the caller's deadline binds
     large = _z3_core_check(model, core)
     assert large["core_unsat"] is True and large["minimal"] is None and "not tested" in large["status"]
     assert _z3_core_check(model, core[:2])["minimal"] is True

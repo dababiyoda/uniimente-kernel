@@ -1,0 +1,5 @@
+# tests/unit/test_greg_task_fabric.py at 2f468014, GREG_TEST_DALEOBANKS=/home/user/DALEOBANKS (a8341ba), 2026-10-15T14:31:12Z
+....................................                                     [100%]
+36 passed in 15.05s
+# without GREG_TEST_DALEOBANKS:
+35 passed, 1 skipped in 12.08s

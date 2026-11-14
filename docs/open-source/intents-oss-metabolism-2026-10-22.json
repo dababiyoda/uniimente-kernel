@@ -1,0 +1,44 @@
+[
+  {
+    "intent_id": "INTENT-20261022-OSS-METABOLISM",
+    "title": "Open-source metabolism: acquire, qualify and integrate mature OSS before inventing",
+    "statement": "Accelerate the full Egregore by systematically acquiring, qualifying, adapting, recombining and integrating the best available open-source technologies; distinguish discovered, legally and technically qualified, adapter implemented, installed, registered, attached, exercised and externally verified states; never install a parallel authority; measure success by new verified OSS-derived functions on the canonical GREG mission path.",
+    "source": "Founder directive 'UNIIMENTE / GREG \u2014 OPUS MAXIMUS: OPEN-SOURCE METABOLISM, PARALLEL ENGINEERING AND RECURSIVE CAPABILITY ASCENT', chat, issued twice in session_013k41DnwrjzpXL33r3j9BgB",
+    "source_location": "docs/open-source/OSS-METABOLISM-2026-10-22-excerpts.md (faithful verbatim excerpts; full chat text not exported)",
+    "source_date_or_version": "2026-10-22",
+    "status": "active",
+    "authority_level": "active_requirement",
+    "consequence_class": "material",
+    "intended_outcome": "GREG gains functions from mature OSS with legal and technical qualification, isolated execution, independent verification, founder-governed attach, and competence credit; the anti-n8n acceptance test shows where GREG's institutional mechanisms beat simpler OSS workflows.",
+    "affected_systems": [
+      "uniimente-kernel greg/genesis.py",
+      "greg/mechanisms.py",
+      "greg/licensing.py",
+      "Capability Genesis package route",
+      "Competency Compiler settlement (owned by others)"
+    ],
+    "rationale": "Directive sections 5, 6 and 13: acquisition before invention; legal and technical qualification are distinct states.",
+    "conflicts": [
+      "None with INTENT-20260930-open-source-first; strengthens it. The policy that a founder-command attach of a license-held package should also refuse is unresolved and left to the founder."
+    ],
+    "evidence_refs": [
+      "PR #201",
+      "tests/unit/test_greg_license_qualification.py",
+      "docs/open-source/LICENSE-QUALIFICATION-2026-10-22.md"
+    ],
+    "implementation_refs": [
+      "greg/licensing.py",
+      "greg/genesis.py Genesis._attach and _attach_dependency",
+      "greg/mechanisms.py card()"
+    ],
+    "owner": "Alfonso Lopez (intent); session_013k41DnwrjzpXL33r3j9BgB (Open-Source Metabolism workstream implementation)",
+    "next_review_trigger": "Integrator intake of #201, or the first model-weight acquisition through Genesis",
+    "unresolved_questions": [
+      "Should a founder-command CAPABILITY_ATTACH of a license-held package also refuse, or only show the assessment? (founder decision D-LIC-1)",
+      "Should CLEARED_UP_TO become a founder-signed setting?",
+      "Anti-n8n acceptance test: which mission families and which OSS automation comparator (Activepieces) are pre-registered?"
+    ],
+    "created_at": "2026-10-22T05:40:00Z",
+    "updated_at": "2026-10-22T05:40:00Z"
+  }
+]

@@ -1,0 +1,13 @@
+E       AssertionError: assert [{'receipt': ...ixture', ...}] == []
+E         
+E         Left contains one more item: {'receipt': 'sha256:0000000000000000000000000000000000000000000000000000000000000000', 'recorded_at': 't0', 'kind': 'objective', 'method': 'composed.selection.closure.fixture', ...}
+E         Use -v to get more diff
+E       ValueError: too many values to unpack (expected 1)
+                        if o.payload["passed"] and o.payload["mission_id"] == spec["mission_id"]]
+E           AssertionError: one signed claim offered as 7 pending reports
+E           assert 7 == 1
+E            +  where 7 = len([{'receipt': 'sha256:a930ea6bf219dde79a712d88046c849eeec0502d52c1fa7376895077ed450be8', 'recorded_at': '2026-10-28T16:...26-10-28T16:04:23.928261Z', 'kind': 'objective', 'method': 'composed.selection.closure.networkx.cfac553546', ...}, ...])
+FAILED tests/unit/test_greg_pending_construction_realization.py::test_an_answer_no_signed_check_observed_is_not_offered_because_its_report_would_never_settle
+FAILED tests/unit/test_greg_pending_construction_realization.py::test_one_claim_reobserved_on_many_receipts_is_offered_once_and_leaves_once_any_receipt_is_reported
+FAILED tests/unit/test_greg_pending_construction_realization.py::test_a_persistent_mission_reobserving_one_answer_asks_once_and_one_signed_report_settles_it_once
+3 failed, 24 passed in 21.57s

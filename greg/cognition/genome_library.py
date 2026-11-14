@@ -51,7 +51,7 @@ FAMILY_LAYER = {"micro": 1, "control": 1, "pattern": 1, "robust_pattern": 1, "co
 # Admission-run structural statuses mapped into the directive's vocabulary.
 # Structural labels are not held-out verdicts: they are reported as EXPERIMENTAL (UNEVALUATED for routing) with
 # the raw label kept beside them, never as SUPERSEDED (review of #179, M16).
-STRUCTURAL = {"ALIAS": "EXPERIMENTAL", "SUPERSEDED_BY_CANONICAL_ORGAN": "EXPERIMENTAL",
+STRUCTURAL = {"UNEVALUATED": "EXPERIMENTAL", "ALIAS": "EXPERIMENTAL", "SUPERSEDED_BY_CANONICAL_ORGAN": "EXPERIMENTAL",
               "NOT_BENCHMARKED": "EXPERIMENTAL", "NOT_RUN": "EXPERIMENTAL", "ROUTE_ONLY": "EXPERIMENTAL"}
 # Findings recorded next to a frozen verdict without changing it (see the cited README).
 NOTES = {
@@ -59,7 +59,13 @@ NOTES = {
     "blackbox": "superseded by multistart L-BFGS-B 26/8 (p = 0.0015); acquisition target",
     "crowd": "dense crowds: ties the one-step weighted vote (admission v2); sparse multi-class crowds: loses to it "
              "8/32, p = 9e-5 (pr155-crowd-sparse); the one-step vote is the acquisition target; do not attach as default",
-    "robust_pattern": "beats the rejected z-score 25/5 (reference); not admitted over IQR fences",
+    "robust_pattern": "admission v2: beats the rejected z-score 25/5 (reference), not admitted over IQR fences; "
+                      "operation admission v3 (fresh seeds): beats IQR fences 14/5, ties Rosner's ESD 4/7 - near "
+                      "the rule boundary in both runs",
+    "graph": "operation admission v3: equal-weight paths on 36 of 40 items, 4/0 against fewest-hops BFS "
+             "(p = 0.0625); #155's DEFAULT did not replicate",
+    "collective": "both runs lose to an oracle baseline that knows hidden accuracies (review M3); against the "
+                  "deployable majority it ties; EXPERIMENTAL on every surface",
 }
 # Reserved cortex families whose effect already runs as an operation family or a lab (not as a cortex organ).
 REALIZED_BY = {
@@ -123,7 +129,13 @@ def _cortex() -> list[GenomeEntry]:
             admission, detail, refs = "FRONTIER_HORIZON", f"reserved ({profile.failure_diversity_key}); lifecycle " \
                                                          f"{profile.lifecycle}, disabled", ()
         elif name in ORGAN_ADMISSION:
-            admission, detail, refs = ORGAN_ADMISSION[name]
+            # the compiler's organ status is the admission (round-2 review of #179, N2); the lineage label is a
+            # measurement note, never an admission (review H4)
+            from .compiler import evidence_index, organ_status
+            label, note, refs = ORGAN_ADMISSION[name]
+            status, stale = organ_status(f"cognition.{name}", evidence_index())
+            admission = STRUCTURAL.get(status, status)
+            detail = f"lineage label {label} (not an admission): {note}" + (f"; {stale}" if stale else "")
         elif profile.role == "verifier":
             admission, detail, refs = "COMPOSITION_ONLY", "attacks other organs' outputs; never answers alone", \
                 ("tests/unit/test_cortex_pipeline.py",)
@@ -161,7 +173,9 @@ def admission_of(family: str, index: dict) -> tuple[str, str, str | None]:
         return "EXPERIMENTAL", "UNEVALUATED", None
     if admission["stale"]:
         return "EXPERIMENTAL", f"{raw} (stale: {admission['stale']})", ref
-    return STRUCTURAL.get(raw, raw), raw, ref
+    # the routed status, never the raw label: an erratum (collective) reads the same on every surface (round-2
+    # review of #179, N2); the raw label stays beside it
+    return STRUCTURAL.get(admission["status"], admission["status"]), raw, ref
 
 
 def _families() -> list[GenomeEntry]:
@@ -253,9 +267,10 @@ def _p6v3_status() -> tuple[str, str]:
     single, fixed = summary["vs_best_single"], summary["vs_best_fixed_recipe"]
     detail = (base + f"P6 v3: vs best single {single['wins']}/{single['losses']} (lift {single['lift']}), "
               f"vs best fixed recipe {fixed['wins']}/{fixed['losses']} (lift {fixed['lift']})")
-    if fixed["lift"]:
-        return "DEFAULT_FOR_GEOMETRY", detail
-    return ("NICHE_CAPABILITY" if single["lift"] else "EXPERIMENTAL"), detail
+    measured = "DEFAULT_FOR_GEOMETRY" if fixed["lift"] else "NICHE_CAPABILITY" if single["lift"] else "EXPERIMENTAL"
+    # the compiler routes derived chains as UNEVALUATED until they are re-measured on this tree (round-2 review of
+    # #179, N2): the frozen reading is a measurement note, not this surface's admission
+    return "EXPERIMENTAL", detail + f"; measured {measured} at P6 v3's freeze, routes UNEVALUATED on this tree"
 
 
 def inventory() -> list[GenomeEntry]:
@@ -309,9 +324,12 @@ def matrix(entries: list[GenomeEntry] | None = None) -> dict:
 PROVENANCE = {
     "rule_admitted": "#158 genome admission under the pre-registered rule (git freeze before the run), held-out "
                      "seeds, against a named competitor, bound to the measured version",
-    "operation_readmitted": "#155's operation families re-measured on the merged solvers under the canonical rule, "
-                            "pre-registered in git (freeze committed before the run), held-out seeds, against "
-                            "#155's own arms: not a strongest-competitor admission",
+    # both re-admission harnesses of #155's families (the merged tree's run_operations.py and the converged tree's
+    # operation-admission harness v3) reuse #155's own arms, so neither is summed into rule_admitted
+    "operation_readmitted": "#155's operation families re-measured on the merged or converged solvers (operation "
+                            "re-admission, or operation-admission harness v3) under a pre-registered rule (freeze "
+                            "committed before the run), held-out seeds, against #155's own arms, bound to the "
+                            "measured solver closure: not a strongest-competitor admission",
     "lineage_operation_verdict": "#155 operation-family admission runs: held-out, but not pre-registered in git "
                                  "(freeze, runner and results land in one commit); a DEFAULT with no competitor "
                                  "routes as UNEVALUATED",
@@ -319,8 +337,10 @@ PROVENANCE = {
     "organ_label": "a hand-coded cortex-organ label from router evidence: not an admission",
 }
 LINEAGE_ADMISSION_DIR = "docs/evidence/greg-genome-admission/2026-10-14/"
-# cortex/evaluation/genome_admission/run_operations.py writes each re-admission under <run id>-operations/
-OPERATION_READMISSION = re.compile(r"docs/evidence/greg-genome-admission/[^/]+-operations/")
+# cortex/evaluation/genome_admission/run_operations.py writes each re-admission under <run id>-operations/;
+# run_ops_v3.py (the converged tree's operation-admission harness) writes under greg-operation-admission/<run id>/
+OPERATION_READMISSION = re.compile(r"docs/evidence/(?:greg-genome-admission/[^/]+-operations"
+                                   r"|greg-operation-admission/[^/]+)/")
 
 
 def provenance(e: GenomeEntry) -> str | None:

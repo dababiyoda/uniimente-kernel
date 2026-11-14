@@ -20,12 +20,12 @@ Part of deliverable C. Ten organ and research repositories were inspected read-o
 1. **DALEOBANKS control routes are unauthenticated.** Arming, crisis and mode routes have no dependency check. Publication is still bounded by grants, but anyone who can reach the port can arm or disarm.
 2. **The Kernel's DALEOBANKS publish bridge cannot publish against current DALEOBANKS.** DALEOBANKS now demands its own capability grant and draft id, which GREG never sends. A live-armed request would be dry-run and logged with a false reason ("rate governor or credentials").
 3. **Organ manifests are stale.** The DALEOBANKS manifest lags 32 commits and the WMI manifest 13. RailScout has no manifest at all, so the linker never sees it.
-4. **The shared HMAC key authenticates a key holder, not an organ.** Any holder can sign as DALEOBANKS, WealthMachine or the Kernel. #174 (per-organ keys, merged into #178) is the upgrade path; the organs still pin a boundary package with one key.
-5. **WMI and DALEOBANKS pin the boundary package by an unhashed archive URL** (`4999acff`), and the Kernel already differs from it in three of 28 files.
+4. **The shared HMAC key authenticates a key holder, not an organ.** Any holder can sign as DALEOBANKS, WealthMachine or the Kernel. #174 (per-organ keys, merged into #178) is the upgrade path. **Closed on the organ branches** (upgraded 2026-10-23 by founder decision: DALEOBANKS #96 (`664ac98c`) and WealthMachineIntelligence #44 (`7a45d223`) pin Kernel `e7dc0cbc`, not yet on either organ's `main`): `organ.exchange` gives each organ its own key and refuses a sender identity that is not isolated. Remaining: WealthMachine holds DALEOBANKS's key in order to verify it, and HMAC lets a verifier forge. Asymmetric signatures would remove that.
+5. **WMI and DALEOBANKS pin the boundary package by an unhashed archive URL** (`4999acff`; `e7dc0cbc` on the upgraded branches, still unhashed, because GitHub does not guarantee byte-stable archives), and the Kernel already differs from it in three of 28 files.
 6. **RESEARCH-IN and WMI ship insecure default secrets** (`development-secret`, `change-me-please`) used whenever the environment is unset.
 
 ## Which organ work is next
 
 - **DALEOBANKS publish bridge.** Forward a DALEOBANKS capability grant and draft id from a founder-signed GREG grant, and report `publish_gated` truthfully. Founder authorization is needed before any live post.
-- **Organ pins.** Upgrade both organs to a boundary package with per-organ keys. This is a founder decision, listed by #178.
+- **Organ pins.** Upgrade both organs to a boundary package with per-organ keys: decided by the founder and implemented on the organ branches (upgraded 2026-10-23 by founder decision: DALEOBANKS #96 (`664ac98c`) and WealthMachineIntelligence #44 (`7a45d223`) pin Kernel `e7dc0cbc`, not yet on either organ's `main`). Merging them into the organs' `main` is the founder's.
 - **RailScout.** Land PR #9 on RailScout main so the venture leg does not depend on a draft branch.

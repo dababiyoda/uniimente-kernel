@@ -11,7 +11,10 @@ Proof feeds routing (verification weighting, after memory/causal.py): when the
 independent appraiser REFUTES a closure because its receipts or the re-observed
 world do not hold, every capability that acted for that mission loses reliability.
 A refutation for reasons that are not the capability's (signature, inbox, replay
-boundary) does not move routing. Appraiser-VERIFIED actions are counted apart.
+boundary) does not move routing, and neither does a check the appraiser left open
+because it ran no sensor for it or read the world too late (``not_established`` on
+the appraisal: nothing was measured against the capability). Appraiser-VERIFIED
+actions are counted apart.
 Each dispatched attempt is one outcome: a founder reconciliation of an UNCERTAIN
 dispatch replaces that attempt's outcome and, having no receipt, is counted apart
 (founder_reconciled) and never moves reliability.
@@ -64,7 +67,8 @@ def track_record(journal: Journal) -> dict[str, dict]:
     appraisals = {}
     for event in journal.replay("mission.appraised"):
         data = event.payload
-        effect_ok = all(data.get("checks", {}).get(c, False) for c in EFFECT_CHECKS)
+        left_open = data.get("not_established") or ()     # False without a measurement: not the capability's
+        effect_ok = all(data.get("checks", {}).get(c, False) or c in left_open for c in EFFECT_CHECKS)
         if data["verdict"] == "VERIFIED":
             appraisals[data["mission_id"]] = "verified"
         elif data["verdict"] == "REFUTED" and not effect_ok:
@@ -126,13 +130,20 @@ def cognitive_knowledge(journal: Journal) -> list[dict]:
     Latest corrections supersede, not erase. Missing outcomes stay unscored.
     Benchmark, synthetic and observed tiers cannot lend each other credibility.
     """
+    from greg.cognition.seed_path import claim_ran
     latest = {}
     for event in journal.replay('cognition.outcome'):
         latest[event.payload['receipt_id']] = event.payload
+    receipts = {e.payload['receipt_id']: e.payload for e in journal.replay('cognition.receipt')}
     groups = {}
     import json
     for outcome in latest.values():
-        for method in outcome['methods']:
+        methods = outcome['methods']
+        if 'unexecuted_methods' not in outcome:
+            # An outcome retained before 0.2.2 listed every claim: count only the claims that ran (verified 2026-10-21).
+            claims = (receipts.get(outcome['receipt_id']) or {}).get('claims') or []
+            methods = [m for m, c in zip(methods, claims) if claim_ran(c)]
+        for method in methods:
             key = json.dumps([method, outcome['tier'], outcome['conditions']], sort_keys=True)
             row = groups.setdefault(key, {'method': method, 'tier': outcome['tier'],
                 'conditions': outcome['conditions'], 'observations': 0, 'missing': 0, 'scores': [],
@@ -143,3 +154,45 @@ def cognitive_knowledge(journal: Journal) -> list[dict]:
             else:
                 row['scores'].append(outcome['score'])
     return [groups[k] for k in sorted(groups)]
+
+
+# Sensors and acquired readers. A method that did not measure the world is recorded on
+# mission.observed with a detail the engine prefixes "sensor " (the same marker as
+# greg.missions.measured). Later selection reads this projection. It is recomputed from
+# the journal, bounded to the newest observations, and it never receives or rewrites a
+# signed check.
+OBSERVATION_WINDOW = 64
+
+
+def observation_method_failed(observation: dict) -> bool:
+    """True when this observation's method failed to measure the world.
+
+    A predicate miss is a measurement: its detail does not start with "sensor ". A reading the Mind declined
+    (``declined``: a compile receipt with no answer and no host stop) carries that marker so that nobody is blamed
+    for it, but the method ran and answered as it should: a prohibition or a named deficit is not its failure.
+    """
+    return str(observation.get("detail", "")).startswith("sensor ") and not observation.get("declined")
+
+
+def observation_competence(journal) -> dict[str, dict]:
+    """Latest retained outcome per capability, inside the newest OBSERVATION_WINDOW observations that name one.
+
+    ``method_failed`` is the only fact selection uses. Older than the window, a failure no longer ranks.
+    No journal, no memory. The payloads are not copied back and are not signed checks.
+    """
+    if journal is None:
+        return {}
+    named = [e.payload for e in journal.replay("mission.observed")
+             if isinstance(e.payload, dict) and e.payload.get("capability")]
+    latest = {}
+    for payload in named[-OBSERVATION_WINDOW:]:
+        latest[payload["capability"]] = {"method_failed": observation_method_failed(payload)}
+    return latest
+
+
+def rank_observation_methods(items, competence: dict, capability_id):
+    """Stable order: a method whose latest in-window observation failed sorts after the others.
+
+    Nothing is removed. ``items`` are not signed checks; this does not write into them.
+    """
+    return sorted(items, key=lambda item: 1 if competence.get(capability_id(item), {}).get("method_failed") else 0)

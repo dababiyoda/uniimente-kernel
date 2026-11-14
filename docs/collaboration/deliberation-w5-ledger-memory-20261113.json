@@ -1,0 +1,336 @@
+{
+  "decision_id": "W5-LEDGER-MEMORY-20261113",
+  "title": "Whiteboard W5: what bounds a body's evidence-ledger memory, after option 1 (#211) halved it. Outcome: RETAIN the correction of the finding doc. EXPERIMENT: option 1b in a new draft PR into #196, judged by the kill criteria. DEFER the derived on-disk index until its revival evidence exists. Gate grant growth and option 3 stay founder/governance items (W4 and the 2026-10-14 finding). The seed 'fold into #278' is not adopted: #278 keeps its own scope and its two integrator findings.",
+  "problem": "On #196 f383fd26 a running body still grows 1,240 B of resident memory per retained record (one holding mission observed every minute: about 18,700 records and 23 MB a day; 1 GB in about 43 days). Option 1 of FINDING-LEDGER-APPEND-COST-2026-10-14 (payloads on disk, #211) took it from 2,624 B; it does not bound it. Heap growth by owner at f383fd26: provenance/ledger.py 354 B and provenance/digests.py 205 B per record (record skeletons, their hex hash strings, and the lookup indexes), policy/consequence_gate.py 125 B (in-memory grants), identity/machine_passport.py 43 B, events/spine.py 40 B. The whiteboard seed was to fold W5 into #278. #278 and its parent #240 bound passports, the organ queue, the egress journal and supervisor logs; neither touches provenance/ledger.py.",
+  "founder_intent_refs": [
+    "#96 comment 6852550499 (whiteboard W5) and founder decision 6852618695 (agents decide reversible items after the protocol; a default-branch merge stays the founder's)",
+    "INTENT-GREG-EMBODIED-2026-09-11 (persistent work while the founder is away)",
+    "INTENT-2026-09-22-FIRST-BODY (4-8 GB Chromebook as Body 1)",
+    "INTENT-20261001-FULL-MACHINE-COMPLETION",
+    "docs/collaboration/FINDING-LEDGER-APPEND-COST-2026-10-14.md (options 1-3)"
+  ],
+  "baseline": "f383fd26 (#196): file-backed ledger keeps the newest 1,024 payloads and, for every older record, a slotted skeleton (seq, ts string, type, prev_hash and hash as 64-character hex strings, corrects, hash_version, offset, length, 32-byte line digest) plus by_hash (dict), by_type (array) and lazily built by_field indexes over all history. Measured 1,239.8 B RSS per record over 7,820-23,420 records (docs/evidence/ledger-memory-w5-2026-11-13/f383fd26-rss.json) and 810 B heap per record (f383fd26-heap-attribution.json).",
+  "alternatives": [
+    {
+      "name": "Seed: fold W5 into #278",
+      "description": "Treat #240/#278's store bounds as W5's answer.",
+      "advantages": [
+        "One review instead of two",
+        "#240 does remove the passport share (43 B/record)"
+      ],
+      "disadvantages": [
+        "Does not touch the evidence ledger, the largest remaining share",
+        "Would close W5 while the measured growth continues"
+      ],
+      "revival_evidence": "A measurement showing #278 on #196 bounds the body's RSS per record"
+    },
+    {
+      "name": "Compact skeletons in memory (option 1b)",
+      "description": "Hold dropped-history skeletons in fixed-width arrays (32-byte binary hashes, prev_hash implied by the previous record's hash, ts as an integer, type as a small code, offset/length/digest packed) and replace the by_hash dict with a compact hash-prefix-to-position table verified against the full hash. Same trust model as today: everything stays in process memory, the running digest is unchanged in meaning.",
+      "advantages": [
+        "No new tamper surface and no new dependency",
+        "Reversible; file bytes and hashes untouched",
+        "Targets the 560 B/record ledger+digests share; estimated 4-5x smaller there"
+      ],
+      "disadvantages": [
+        "Still linear: estimated ~700 B/record RSS overall, about 13 MB a day",
+        "More intricate code in the evidence plane's hottest file"
+      ],
+      "revival_evidence": "Not rejected: this is the experiment"
+    },
+    {
+      "name": "Derived on-disk index (option 2 variant, stdlib sqlite3)",
+      "description": "Keep the hash-chained JSONL canonical; move dropped-history skeletons and lookup indexes into a derived SQLite sidecar rebuilt from the file on open.",
+      "advantages": [
+        "Memory bounded to the resident window plus fixed overhead",
+        "Commodity, stdlib-only infrastructure"
+      ],
+      "disadvantages": [
+        "New on-disk tamper surface: a deleted index row makes select() omit a record, a false negative the Gate's double-dispatch check (grant_dispatch select) must never see",
+        "Needs an integrity design for index answers, not only for payloads",
+        "Larger review; touches every ledger reader's latency"
+      ],
+      "revival_evidence": "Option 1b measured and still binding before the founder's planned uptime, plus an integrity design that makes an omitted or altered index row detectable before any absence answer is used"
+    },
+    {
+      "name": "Fewer records per read-only observation (option 3)",
+      "description": "A lighter path for read-only sensors (13 records per observation today).",
+      "advantages": [
+        "Cuts every per-record cost at once, the Gate's included"
+      ],
+      "disadvantages": [
+        "Changes what the Gate records: a governance decision"
+      ],
+      "revival_evidence": "Founder ruling on read-only observation records"
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "A body observing once a minute grows about 23 MB a day; on a 4 GB Chromebook with about 2 GB for the body that binds in roughly three months, inside the founder's months-away destination.",
+    "advantages": [
+      "No evidence-plane change to review",
+      "#211's halving already moved weeks to months"
+    ],
+    "disadvantages": [
+      "Persistent operation still fails on Body 1 on a measured timescale",
+      "The finding doc keeps telling readers 'None is built here', which is false since #211"
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Persistent work while away is active N1-path intent. The seed would close W5 without touching the ledger, which is what still grows. Correct the seed, keep the destination: bounded memory, not merely smaller.",
+      "material_concerns": [
+        "Do not present 1b as 'bounded'",
+        "Gate grant growth and records-per-observation stay founder/governance items"
+      ],
+      "evidence_refs": [
+        "docs/evidence/ledger-memory-w5-2026-11-13/",
+        "#278 body and integrator hold 2026-11-13T02:56Z"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "1b is the smallest change with the same trust model and the largest measured share. The on-disk index is the real bound but needs an index-integrity design first; build 1b, measure, then decide on the index with numbers.",
+      "material_concerns": [
+        "Keep read-API parity with an in-memory ledger",
+        "Do not touch W3's hot-path lines without the #196 integrator"
+      ],
+      "evidence_refs": [
+        "provenance/ledger.py _Retained, _reset_index, _index_new",
+        "f383fd26-heap-attribution.json"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Any index that can omit a row turns the Gate's 'has this grant already been dispatched?' into a forgeable 'no'. That rules out a naive sidecar. 1b keeps the risk where it is today (process memory), so it is acceptable only with parity and running-digest tests that cover the packed form.",
+      "material_concerns": [
+        "Hash-prefix collisions must fall back to full comparison",
+        "Packed fields must still feed the type-strict running digest identically"
+      ],
+      "evidence_refs": [
+        "deliberation-bounded-body-memory-20261028.json pass_2"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Measured, not projected: re-run scripts/measure_body_memory.py on the experiment and record before/after on the same scenario. Rollback must be a plain revert with byte-identical files.",
+      "material_concerns": [
+        "Do not add an unreviewed dependency",
+        "A slower select() on the tick path is a regression"
+      ],
+      "evidence_refs": [
+        "scripts/measure_body_memory.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Nothing written may change; every count acceptance reads must stay (the #278 lesson). Fix the stale 'None is built here' line so readers are not misled. RETAIN the doc correction.",
+      "material_concerns": [
+        "Evidence files are additive under a new dated path"
+      ],
+      "evidence_refs": [
+        "docs/collaboration/FINDING-LEDGER-APPEND-COST-2026-10-14.md"
+      ],
+      "recommendation": "EXPERIMENT"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "Option 1 halved growth",
+      "tier": "sandbox_execution",
+      "reference": "docs/evidence/body-memory-2026-10-28/baseline-190c58fb-rss.json, final-e3c6e723-rss.json",
+      "finding": "2,624 -> 1,373 B RSS per record"
+    },
+    {
+      "claim": "Growth continues on the line today",
+      "tier": "sandbox_execution",
+      "reference": "docs/evidence/ledger-memory-w5-2026-11-13/f383fd26-rss.json",
+      "finding": "1,239.8 B RSS per record, 7,820-23,420 records, 1,800 ticks"
+    },
+    {
+      "claim": "The ledger and its hash strings are the largest remaining share",
+      "tier": "sandbox_execution",
+      "reference": "docs/evidence/ledger-memory-w5-2026-11-13/f383fd26-heap-attribution.json",
+      "finding": "ledger.py 354 + digests.py 205 of 810 B heap per record"
+    },
+    {
+      "claim": "#278 does not touch the ledger",
+      "tier": "primary_source",
+      "reference": "PR #240 and #278 file lists",
+      "finding": "passports, organ queue, egress journal, supervisor logs only"
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "RSS includes allocator fragmentation, so heap savings may not appear fully in RSS",
+      "tier": "other",
+      "reference": "f383fd26 RSS 1,240 vs heap 810 B/record",
+      "finding": "Acceptance is judged on RSS, not heap"
+    },
+    {
+      "claim": "A real founder's mission may write far fewer records than the minutely scenario",
+      "tier": "other",
+      "reference": "scenario definition",
+      "finding": "Founder-device measurement remains pending (N1)"
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "A body's resident memory per retained record falls well below today's, with nothing written changed, and the path to a true bound is stated with its integrity precondition.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "1b targets the largest measured share with no new trust surface",
+        "amplified_value": "Three months becomes roughly six on Body 1 before memory binds"
+      },
+      {
+        "id": "A2",
+        "statement": "Seed corrected before it closed W5 on the wrong PR",
+        "amplified_value": "#278 keeps its own scope; W5 stays open where the growth is"
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "1b is still linear",
+        "severity": "high",
+        "response_type": "evidence",
+        "redesigned_response": "Stated in every artifact's title; the derived on-disk index is DEFERRED with a concrete revival condition, not dropped"
+      },
+      {
+        "id": "D2",
+        "statement": "Packed skeletons add intricacy to provenance/ledger.py",
+        "severity": "medium",
+        "response_type": "modularity",
+        "redesigned_response": "Confined to the dropped-history representation; parity tests against an in-memory ledger on the same file; plain revert"
+      }
+    ],
+    "comparisons": {
+      "baseline": "f383fd26: 1,240 B RSS per record, skeletons as slotted objects with hex-string hashes",
+      "do_nothing": "About 23 MB a day; binds Body 1 in roughly three months",
+      "simplest_viable_alternative": "Option 1b: compact skeletons, same trust model",
+      "strongest_competing_architecture": "Derived on-disk index: the only route to bounded memory, but it adds an omission-forgery surface on the Gate's absence checks",
+      "reversible_experiment": "Option 1b in a draft PR: one revert, no migration, byte-identical files"
+    },
+    "rejected_alternatives": [
+      {
+        "name": "Seed: fold W5 into #278",
+        "rejection_reason": "#278 does not touch provenance/ledger.py; it would close W5 while the ledger keeps growing",
+        "revival_evidence": "A measurement showing #278 on #196 bounds RSS per record"
+      },
+      {
+        "name": "Derived on-disk index now",
+        "rejection_reason": "An omitted index row forges a 'not yet dispatched' answer for the Gate; no detectable-omission design exists",
+        "revival_evidence": "Option 1b measured and still binding, plus an independently reviewed design that detects an omitted or altered index row before any absence answer is used"
+      },
+      {
+        "name": "Option 3 by agents",
+        "rejection_reason": "Changes what the Gate records: governance, not engineering",
+        "revival_evidence": "Founder ruling on read-only observation records"
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Attacked 1b for collision handling, digest equivalence, read-API drift, tick-path latency and overclaiming; attacked the on-disk index for false-negative absence answers.",
+    "new_weaknesses": [
+      {
+        "id": "W1",
+        "category": "fragility",
+        "statement": "A hash-prefix table can map two hashes to one slot",
+        "strengthening_response": "Store the full 32-byte hash per record and compare it on every lookup; collision test with forced equal prefixes"
+      },
+      {
+        "id": "W2",
+        "category": "fragility",
+        "statement": "Packing could change what the running digest covers",
+        "strengthening_response": "The digest is computed from the same logical field values via one unpack function; test that a packed and an unpacked ledger over the same file produce the same digest and detect the same in-memory alteration"
+      },
+      {
+        "id": "W3",
+        "category": "gaming",
+        "statement": "On-disk index can silently omit a dispatch claim",
+        "strengthening_response": "Not built; its revival condition requires a detectable-omission design first"
+      },
+      {
+        "id": "W4",
+        "category": "expense",
+        "statement": "Unpacking on every select could slow the tick",
+        "strengthening_response": "Acceptance includes tick time no worse than f383fd26 on the same scenario"
+      }
+    ],
+    "residual_risks": [
+      {
+        "risk": "Growth remains linear after 1b",
+        "mitigation": "Derived on-disk index deferred with a revival condition; founder-device measurement at N1",
+        "owner": "W5 claimant",
+        "review_trigger": "1b measurement"
+      },
+      {
+        "risk": "Gate grant growth (125 B/record) untouched behind protected Gate bytes",
+        "mitigation": "Left to W4 and the founder",
+        "owner": "Alfonso Lopez",
+        "review_trigger": "W4 outcome"
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "accepted",
+        "rationale": "Constant-factor relief now, with the true bound deferred behind a stated integrity precondition",
+        "owner": "W5 claimant",
+        "review_trigger": "1b measurement shows memory still binds before the founder's planned uptime"
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "accepted",
+        "rationale": "Parity and digest-equivalence tests bound the intricacy; revert is plain",
+        "owner": "Kernel ledger maintainer",
+        "review_trigger": "Any parity or mutation-test failure on the packed form"
+      }
+    ],
+    "final_design": "Option 1b only: dropped-history skeletons packed into fixed-width arrays with full 32-byte hashes (prefix table for lookup, full compare on hit); the running digest computed from the same logical values through one unpack function; every read API and every detection unchanged; judged by the kill criteria on scripts/measure_body_memory.py.",
+    "recommendation": "EXPERIMENT"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Recorded; does not block the experiment.",
+    "entries": [
+      {
+        "role": "Founder-Intent Steward",
+        "position": "Skip 1b and go straight to a true bound.",
+        "rationale": "Constant-factor work can stall the destination.",
+        "evidence_threshold": "An index-integrity design reviewed independently, available before 1b lands",
+        "owner": "W5 claimant",
+        "review_trigger": "An index-integrity design posted on #96 before 1b lands"
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": false,
+    "approval_status": "not_required",
+    "approver": "#196 integrator for intake; Alfonso Lopez for any default-branch merge"
+  },
+  "migration_plan": "None: file format and hashes unchanged; a reopened ledger rebuilds the packed form from the file.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Revert the experiment commit or decline intake into #196",
+      "No data migration"
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "Any read API returns different data than a ledger holding everything in memory",
+    "Any in-memory alteration the current running digest detects goes undetected",
+    "RSS per record falls by less than 25% on the f383fd26 scenario",
+    "Tick time on the same scenario is worse than f383fd26"
+  ],
+  "decision": "EXPERIMENT",
+  "decision_owner": "W5 claimant (session_01Kucyfm6YBHMTjaiC1M9hqD) under the whiteboard authority; #196 integrator for intake",
+  "review_trigger": "The 1b experiment's measurement, an index-integrity design, or a founder ruling on records per observation"
+}

@@ -21,8 +21,10 @@ at <https://support.google.com/chromebook/answer/9145439>.
 In the Linux Terminal, check `python3 --version` (at least 3.11) and
 `git --version`. Debian in the Linux environment ships without the Python venv
 package: install it with `sudo apt install python3-venv` (the doctor below reports
-it as `python_venv_available`). ARM and Intel Chromebooks both work: every compiled dependency publishes Linux ARM64
-and x86-64 wheels for Python 3.11 (checked on PyPI 2026-09-30), so no compiler is needed.
+it as `python_venv_available`). ARM and Intel Chromebooks both work: every required compiled dependency publishes
+Linux ARM64 and x86-64 wheels for Python 3.11 that Debian 12's glibc 2.36 accepts, so no compiler is needed
+(re-checked against PyPI on 2026-10-28). One optional engine is the exception: the pinned Z3's only Linux ARM64
+wheel needs glibc 2.38, so an ARM Chromebook on Debian 12 runs without Z3 (see the engines paragraph below).
 Keep the repository and `~/.uniimente` **inside Linux
 files**, not on a shared ChromeOS mount. After cloning below, before creating
 any key or body, run `python3 -m greg doctor --chromebook` from the repository.
@@ -35,9 +37,9 @@ checks to diagnose the local runtime. The diagnostic creates no key or body.
 
 ```bash
 sudo apt install -y python3 python3-venv git          # once; skip if already installed
-sudo apt install -y bubblewrap   # optional: only coding workers need it; without it worker.commission refuses
+sudo apt install -y bubblewrap libseccomp2   # recommended: without them GREG's network runs unconfined and worker.commission refuses
 mkdir -p ~/src && cd ~/src
-git clone -b claude/uniimente-greg-reconciliation-39syff https://github.com/dababiyoda/uniimente-kernel
+git clone -b claude/greg-full-machine-completion-whgiee https://github.com/dababiyoda/uniimente-kernel
 cd uniimente-kernel && bash greg/chromebook/install.sh
 ```
 
@@ -50,6 +52,12 @@ and accepted designation. It rewrites the command wrapper and default service
 configuration; review any customized service before rerunning. Then skip to step
 2. The manual steps below do the same thing by hand.
 
+Keep the body home inside Linux files (the default is `~/.uniimente/greg`), never in a folder shared with ChromeOS
+(`/mnt/chromeos`) or on a network drive. There, Linux can keep using its cached copy of the evidence ledger after
+the other side replaces or deletes the file, so recorded evidence could vanish without notice. The installer stops
+with code 15 when `--home` or `GREG_HOME` points at such a folder (9p, any FUSE filesystem including virtio-fs, NFS,
+SMB or a cluster filesystem), and `greg init`, `greg run` and `greg foundry restore` refuse it too.
+
 The installer derives the public key from your actual signing key and checks it
 against any companion `.pub` file and the body's current enrollment. A mismatch
 stops before service installation or designation; it keeps existing keys and
@@ -59,19 +67,22 @@ After an authorized key rotation, use the newly enrolled key. An enabled service
 and a queued designation are setup states; inspect `greg status` before a mission.
 
 It also installs GREG's open-source reasoning engines (Z3, OR-Tools, SciPy, NetworkX,
-SymPy; about 550 MB, binary wheels only) and prints how many are present. If your
-Chromebook has no wheel for one, the install still finishes and that engine is listed as
-missing; add `--no-engines` to skip the step. N1 needs none of them.
+SymPy; about 550 MB, binary wheels only), one at a time, and prints how many are present. If your
+Chromebook has no wheel for one, the install still finishes with every other engine, and that one is
+listed as missing with the reason (`greg doctor --chromebook`, `engines.engines[].why_missing`). On an ARM
+Chromebook on Debian 12 that is Z3, whose functions then abstain and GREG asks before one is needed. Add
+`--no-engines` to skip the step. N1 needs none of them.
 
 **Manual install (equivalent):**
 
 ```bash
 mkdir -p ~/src && cd ~/src
 git clone https://github.com/dababiyoda/uniimente-kernel && cd uniimente-kernel
-git checkout claude/uniimente-greg-reconciliation-39syff   # the one converged GREG branch; use main once merged
+git checkout claude/greg-full-machine-completion-whgiee   # the review candidate named in greg/chromebook/REVIEW_BRANCH; use main once merged
 python3 -m venv ~/.uniimente/venv
 ~/.uniimente/venv/bin/pip install -r requirements-dev.txt
-~/.uniimente/venv/bin/pip install --only-binary=:all: -r requirements-cognition.txt   # optional engines
+~/.uniimente/venv/bin/pip install --only-binary=:all: -r requirements-cognition.txt   # optional engines; on an ARM
+# Chromebook this one call fails as a whole (no Z3 wheel for glibc 2.36): install.sh installs them one at a time
 alias greg='~/.uniimente/venv/bin/python -m greg'
 greg doctor --chromebook                            # stop here if not ready
 greg init --read-root ~/src --deliver-root ~/GREG
@@ -129,6 +140,45 @@ behavior remain unverified until this run. The official container lifecycle
 description is at
 <https://www.chromium.org/chromium-os/developer-library/guides/containers/containers-and-vms/>.
 
+### A key you cannot open
+
+The installer asks for your passphrase twice when it creates the key (an empty answer or two different answers are
+refused), then once more to prove the key opens **before** it enrols it. A key that does not open is never enrolled:
+the installer stops with `STOP` and exit 16, and running it again and typing the passphrase you chose continues. A
+key without a passphrase stops it with exit 17 (only `--no-passphrase`, for tests, enrols one). Anywhere a `greg`
+command signs, a wrong passphrase is one line, `greg: incorrect passphrase for the founder key ...; nothing was
+signed`, and exit 2; nothing is signed.
+
+If you cannot recall the passphrase:
+
+A key always moves together with its public companion `~/.greg-founder.pem.pub` when that file exists; the
+installer stops with exit 14, before creating anything, if it finds the companion without its key.
+
+- **The key was never enrolled** (the installer stopped at the check): move it aside, never delete it,
+  `mv ~/.greg-founder.pem ~/.greg-founder.pem.forgotten` (and, if it exists,
+  `mv ~/.greg-founder.pem.pub ~/.greg-founder.pem.forgotten.pub`), and run the installer again to create a new key.
+- **The key is enrolled, and the body holds no mission evidence** (`greg vepmc` lists no missions and `greg status`
+  shows no mission): stop the body (`greg stop --local && systemctl --user stop greg-body.service`), then move the
+  body, the key and its companion aside yourself, `mv ~/.uniimente/greg ~/.uniimente/greg.unusable-key`,
+  `mv ~/.greg-founder.pem ~/.greg-founder.pem.forgotten` and
+  `mv ~/.greg-founder.pem.pub ~/.greg-founder.pem.forgotten.pub`, and run the installer again. This is your
+  explicit act; GREG and the installer never remove a body or a key.
+- **The key is enrolled and the body holds mission evidence**: keep that body and its ledger unchanged. Only the
+  enrolled key can sign a rotation, so this body can no longer take your commands; install a new body beside it
+  by running `bash greg/chromebook/install.sh` with `--home` and `--key` naming a new body folder and a new key
+  file (for example `~/.uniimente/greg-2` and `~/.greg-founder-2.pem`), and keep the old one as evidence.
+- **The key is enrolled but has no passphrase** (an install from before empty passphrases were refused, or one run
+  with `--no-passphrase`): the installer stops with exit 17 and keeps the key and the body. Nothing that key signs
+  reaches the founder tier, but it opens without a passphrase, so it can sign its own replacement. Create a
+  protected key, `greg founder keygen --key ~/.greg-founder.pem.protected` (a new passphrase, twice), have the
+  enrolled key sign the rotation, `greg founder rotate --key ~/.greg-founder.pem --new-key
+  ~/.greg-founder.pem.protected` (the new passphrase once more), and wait until `greg status` lists only the new
+  key under `founder_keys_enrolled` (the running body accepts the rotation on its next tick; with `--no-service`,
+  run `greg run` until it does). Then run the installer again with `--key ~/.greg-founder.pem.protected`: it signs
+  the founder-tier attestation with the new key. Keep the old key file as evidence; it no longer signs.
+- A rerun whose `--key` names a file that does not exist, on a body that already has an enrolled key, stops with
+  exit 14 before creating any key file: point `--key` at the enrolled key.
+
 ## 2. Run and judge one bounded mission
 
 ```bash
@@ -152,7 +202,12 @@ then choose **Accept result** or reject it truthfully. Run:
 greg vepmc
 greg morning
 greg presence --hours 2
+greg vepmc > ~/GREG/vepmc.json
 ```
+
+Keep `vepmc.json` with the brief: its row for this mission is the N1 closure, with its `evidence_level`.
+`greg acceptance` is for after step 4 (section 8): its properties judge the Founder's First Mission, so run
+now it would read NOT_YET for a closure `greg vepmc` already counts (its `n1` field repeats the vepmc result).
 
 If GitHub refused some reads (rate limit, or a private repository), the brief lists
 those gaps and GREG asks **once** for access, with the evidence and a no-cost option.
@@ -204,11 +259,12 @@ greg mission new business-case --case "lease review 01" --buyer "Acme Property L
   --acceptance "summary delivered within 5 business days" --key ~/.greg-founder.pem
 ```
 
-- GREG drafts `offer.md` in the case folder (`greg status` shows the path). It carries a case
+- GREG drafts `offer.md` in the case folder. It carries a case
   reference, for example `CASE-LEASE-REVIEW-01`, which the buyer puts on the payment.
 - **You** send the offer, collect payment, deliver, and ask the buyer to confirm. Each step is
-  one costed ask in the console and on your phone. GREG contacts, charges and pays no one; an
-  answer to these asks is only a record.
+  one costed ask in the console and on your phone, naming the file to save and the folder to
+  save it in. GREG contacts, charges and pays no one. An answer to these asks is only a record,
+  and the ask stays until GREG sees the file, usually within a minute or two.
 - You save the evidence into the case folder:
   - `acceptance.txt`: the buyer's written acceptance;
   - `statement.csv`: an export from your payment account. Its columns default to
@@ -291,8 +347,13 @@ run it for a second venture:
 ```bash
 greg sop ratify <procedure-id> --pre-approve draft-offer --pre-approve record-settlement --key ~/.greg-founder.pem
 greg sop run <procedure-id> --venture audits --set reference=CASE-AUDIT-01 --set buyer="..." \
-  --set offer="..." --set price=300.00 --set acceptance="..." --key ~/.greg-founder.pem
+  --key ~/.greg-founder.pem
 ```
+
+`greg sop list` shows each procedure's inputs. Only what differed between the cases that taught it
+becomes an input. If those three cases shared one price, offer and acceptance, the procedure keeps
+them fixed, and `--set price=...` is refused. Vary them across the teaching cases if the second
+venture needs its own.
 
 Sign what each venture owes before any surplus counts. Tier names come from
 `capital/allocation-policy.yaml`:

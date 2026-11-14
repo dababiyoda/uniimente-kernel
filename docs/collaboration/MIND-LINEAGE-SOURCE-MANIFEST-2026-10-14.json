@@ -232,5 +232,20 @@
     "pr158": "pr158-a832c73/<original path>",
     "added_by": "Track B convergence PR (claude/greg-mind-lineage-convergence)",
     "verified_by": "tests/unit/test_greg_mind_convergence.py (archive bytes = git show <commit>:<path>; tree path = pr158 copy) and tests/unit/test_mind_lineage_manifest.py (digests below)"
+  },
+  "post_decision_2026-10-16": {
+    "note": "Appended 2026-10-16 after the round-2 review of #179 (L1); the decision-time heads and directories above are unchanged.",
+    "pr155_final_head": "ef5f078013b549a51458dc9f6b5f34b324ea70b0",
+    "pr155_evidence_directories_added_after_decision": [
+      "docs/evidence/pr155-crowd-sparse/2026-10-14"
+    ],
+    "pr158_evidence_directories_added_after_decision": [
+      "docs/evidence/greg-composition-lift/2026-10-14-v5",
+      "docs/evidence/greg-genome-admission/2026-10-15-v3",
+      "docs/evidence/greg-protected-evolution/2026-10-15-cr-4",
+      "docs/evidence/greg-composition-lift/2026-10-16-f7-mcf",
+      "docs/evidence/greg-protected-evolution/2026-10-16-cr-5",
+      "docs/evidence/greg-genome-admission/2026-10-16-v4"
+    ]
   }
 }

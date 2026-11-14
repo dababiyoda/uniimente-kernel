@@ -1,0 +1,26 @@
+faithful rewordings (a flag here is a false positive):
+  ok     | 'Delays may fall by 12% with the new routing method.' <- 'the new routing method may reduce delays by 12%'
+  ok     | 'Fuel costs were not lowered.' <- 'It did not lower fuel costs.'
+  ok     | 'Twelve percent fewer delays may follow.' <- 'may reduce delays by 12%'
+  ok     | 'The method may cut delays by 12 percent.' <- 'the new routing method may reduce delays by 12%'
+  ok     | 'Northgate drivers reported fewer missed windows.' <- 'Drivers at Northgate reported fewer missed windows.'
+  ok     | 'Revenue rose 4% in March.' <- 'In March, revenue rose by 4%.'
+  ok     | 'The trial failed to show a benefit.' <- 'The trial did not show a benefit.'
+  ok     | 'Costs went up 3%.' <- 'Costs increased by 3%.'
+  ok     | 'Results suggest the drug might help some patients.' <- 'The results suggest that the drug may help some patients.'
+  ok     | 'Each depot used the method.' <- 'All depots used the method.'
+  ok     | 'The policy is likely to lower emissions.' <- 'The policy will probably lower emissions.'
+  ok     | 'The vote passed 7-2.' <- 'The council approved the measure by a 7-2 vote.'
+distortions (no flag here is a miss):
+  caught ['certainty'] [certainty] | 'Delays fell by 12% with the new routing method.' <- 'the new routing method may reduce delays by 12%'
+  caught ['negation'] [negation] | 'Fuel costs were lowered.' <- 'It did not lower fuel costs.'
+  caught ['figure', 'certainty'] [figure] | 'The method cuts delays by 21%.' <- 'the method may cut delays by 12%'
+  caught ['certainty', 'scope'] [scope/certainty] | 'Every patient benefited.' <- 'The results suggest that the drug may help some patients.'
+  caught ['direction'] [direction] | 'Costs fell 3%.' <- 'Costs increased by 3%.'
+  caught ['named_term'] [named term] | 'Southgate drivers reported fewer missed windows.' <- 'Drivers at Northgate reported fewer missed windows.'
+  caught ['certainty'] [certainty] | 'The drug cured the patients.' <- 'The results suggest that the drug may help some patients.'
+  caught ['figure'] [spelled-out figure (added after the first run)] | 'Twenty percent fewer delays may follow.' <- 'may reduce delays by 12%'
+  MISSED  [magnitude (not a checked class)] | 'The trial showed a large benefit.' <- 'The trial showed a small benefit.'
+  MISSED  [polarity by antonym (not checked)] | 'The city council rejected the measure.' <- 'The council approved the measure by a 7-2 vote.'
+false positives: 0 of 12 faithful; caught: 8 of 10 distorted
+These cases were written by the author of the check, after it was built: a characterization, not a benchmark.

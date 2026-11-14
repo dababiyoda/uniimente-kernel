@@ -44,6 +44,21 @@ P6_RUNS = (
     ("docs/evidence/greg-composition-lift/2026-10-14/results-v2.json", {"F2b": "identify_then_optimize"}),
     ("docs/evidence/greg-composition-lift/2026-10-14/results-v3.json", {}),
     ("docs/evidence/greg-composition-lift/2026-10-14-v5/results-v5.json", {"F8": "track_then_staff"}),
+    # F7 with flow_expansion_mcf (2026-10-16): the admitted single genome against the recipe on v4's held-out
+    # items, a declared re-use. It measures no recipe lift, so it replaces no recipe verdict; it is a listed source.
+    ("docs/evidence/greg-composition-lift/2026-10-16-f7-mcf/results-v6.json", {}),
+    # P6 converged v1 (2026-10-21): the synthetic families re-measured on the converged tree, fresh held-out seeds,
+    # against the strongest single available (constituents plus flow_expansion_mcf on F3). Its verdicts bind the
+    # recipe code at its freeze commit and decide, since it is the latest measurement of these recipes.
+    ("docs/evidence/greg-composition-lift/2026-10-21-converged/results-converged-v1.json",
+     {"F1": "estimate_then_optimize", "F2R": "identify_then_optimize", "F3": "graph_then_allocate",
+      "F4": "bayes_then_voi"}),
+    # P6 joined v1 (2026-10-22): the same procedure on the joined integration tree, where every converged v1 verdict
+    # was stale (the joined cortex.reason and stage solvers changed its recipe closures). Fresh held-out seeds; its
+    # verdicts bind the recipe code at its freeze commit and decide, as the latest measurement of these recipes.
+    ("docs/evidence/greg-composition-lift/2026-10-22-joined/results-joined-v1.json",
+     {"F1": "estimate_then_optimize", "F2R": "identify_then_optimize", "F3": "graph_then_allocate",
+      "F4": "bayes_then_voi"}),
 )
 # In finish order; the last decides. PR #155's decisive retest (NO_GAIN, 2026-10-14) follows #158's (REGRESSION,
 # 2026-10-08); both are kept in ``history`` and neither is a gain, so the default stays shadow.
@@ -68,6 +83,22 @@ def _git(commit: str | None, path: str) -> str | None:
         return None
     out = subprocess.run(["git", "show", f"{commit}:{path}"], cwd=ROOT, capture_output=True, text=True)
     return out.stdout if out.returncode == 0 else None
+
+
+# A run whose report omitted its limits block declares them in a sidecar committed after the run, never by
+# rewriting the frozen report (P6 converged v1, 2026-10-21).
+LIMITS_SIDECARS = {"docs/evidence/greg-composition-lift/2026-10-21-converged/results-converged-v1.json":
+                   "docs/evidence/greg-composition-lift/2026-10-21-converged/limits-converged-v1.json"}
+
+
+def run_limits(rel: str) -> list[str]:
+    """The frozen run's own limits: its report's block, else its declared sidecar's."""
+    data = json.loads((ROOT / rel).read_text())
+    if "limits" in data:
+        return data["limits"]
+    sidecar = json.loads((ROOT / LIMITS_SIDECARS[rel]).read_text())
+    assert sidecar["of"] == rel and sidecar["added_after_run"] is True
+    return sidecar["limits"]
 
 
 def p6_instances(data: dict, family: str) -> set:
@@ -113,14 +144,28 @@ def _decide(rows: dict, key: str, new: dict, keys: set, seen: dict) -> None:
     new["history"] = history
     new["overlap_with_previous"] = overlap
     rows[key], seen[key] = new, keys
-# PR #155 lineage, in run order: (file, key holding the rows, family when the file measures one family).
+# Operation-family runs, in run order: PR #155 lineage, then the converged re-admission harness. (file, key holding
+# the rows, family when the file measures one family).
 OPERATION_RUNS = (
     ("docs/evidence/greg-genome-admission/2026-10-14/results.json", "families", None),
     ("docs/evidence/greg-genome-admission/2026-10-14/results-v2.json", "families", None),
     ("docs/evidence/pr155-crowd-sparse/2026-10-14/results.json", "status", "crowd"),
+    # the converged tree's live re-admission harness (review of #179, M17), pre-registered and frozen: every
+    # family's row, then the sparse-crowd geometry for crowd, in the order the lineage ran them (finished
+    # 2026-10-16 09:05 UTC)
+    ("docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json", "families", None),
+    ("docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json", "crowd_sparse", "crowd"),
     # next-wave item 2: #155's control, game, information and probabilistic re-measured on the merged solvers,
-    # pre-registered at 462bd98 (cortex/evaluation/genome_admission/run_operations.py); last, so it is current
+    # pre-registered at 462bd98 (cortex/evaluation/genome_admission/run_operations.py; finished 2026-10-21 11:20
+    # UTC); last, so it is current for those four families. It recorded no runtime dispatch, so a positive verdict
+    # from it binds only where the static dispatch has no unresolved update (greg.cognition.compiler
+    # .operation_status, round-2 review of #179, N4)
     ("docs/evidence/greg-genome-admission/2026-10-21-operations/results.json", "families", None),
+    # the same four families re-measured on the joined tree, pre-registered at 244b652c and frozen at 3520efe6
+    # (seeds 5920-5949; finished 2026-10-22 05:56 UTC); last, so it is current for them. It recorded the solver
+    # function each family's candidate calls reached (solver_closures), which a positive verdict needs while
+    # SOLVERS takes non-literal updates
+    ("docs/evidence/greg-genome-admission/2026-10-22-joined-operations/results.json", "families", None),
 )
 # Verdicts measured against a competitor on held-out data; any other label is structural and changes no route.
 MEASURED = ("DEFAULT_FOR_GEOMETRY", "NICHE_CAPABILITY", "COMPOSITION_ONLY", "EXPERIMENTAL", "SUPERSEDED", "REJECTED")
@@ -136,7 +181,7 @@ ERRATA = {
 }
 
 
-def _measured_code(family: str, commit: str | None) -> dict | None:
+def _measured_code(family: str, commit: str | None, runtime: dict | None = None) -> dict | None:
     """The family's solver as its run dispatched it: the function ``SOLVERS`` bound the family to at the run's
     source commit (resolved statically, review of #179 B1), the digest of that function's source then, and the
     digest of its static dependency closure then (greg.cognition.code_binding). A positive verdict is bound to that
@@ -152,6 +197,16 @@ def _measured_code(family: str, commit: str | None) -> dict | None:
     if commit:
         read = at_commit(commit)
         then = dispatch("greg/cognition/solvers.py", "SOLVERS", family, read)
+        if then is not None and runtime:
+            if (runtime.get("path"), runtime.get("function")) == (then.get("path"), then.get("function")):
+                # the run recorded the function SOLVERS held at runtime and it agrees with the static binding: a
+                # non-literal update elsewhere in the table did not rebind this key (round-2 review of #179, N4)
+                then = {**then, "verified_at_runtime": True}
+            else:
+                # the run called something else than the static reading says: bind nothing (round-3 review,
+                # finding 2)
+                then = {**then, "runtime_disagrees": {"path": runtime.get("path"),
+                                                      "function": runtime.get("function")}}
         code["dispatched"] = then
         if then is None or then.get("function") is None:
             return code                    # the run's dispatch cannot be resolved: nothing positive is bound
@@ -162,6 +217,7 @@ def _measured_code(family: str, commit: str | None) -> dict | None:
         measured = closure(then["path"], then["function"], read)              # the executable closure measured
         if measured is not None:
             code["closure_sha256"], code["closure_members"] = measured["sha256"], measured["members"]
+            code["closure_unresolved"] = measured.get("unresolved", [])
     return code
 
 
@@ -306,7 +362,8 @@ def build() -> dict:
             index["missing_sources"].append(rel)
             continue
         data = json.loads(path.read_text())
-        index["sources"].append({"path": rel, "sha256": _sha(path), "source_commit": data.get("source_commit")})
+        if all(s["path"] != rel for s in index["sources"]):      # one file may hold several row sets
+            index["sources"].append({"path": rel, "sha256": _sha(path), "source_commit": data.get("source_commit")})
         for family, row in ({single: data[key]} if single else data[key]).items():
             raw = row.get("status")
             if not raw:
@@ -325,7 +382,8 @@ def build() -> dict:
                                            "competitor": row.get("competitor"), "baseline": row.get("baseline"),
                                            # the solver code this verdict measured (greg.cognition.compiler
                                            # .operation_status routes a positive verdict only on that code)
-                                           "code": _measured_code(family, data.get("source_commit"))}
+                                           "code": _measured_code(family, data.get("source_commit"),
+                                                                  (data.get("solver_closures") or {}).get(family))}
     return index
 
 

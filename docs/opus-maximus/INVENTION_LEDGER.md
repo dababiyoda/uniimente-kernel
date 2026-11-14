@@ -61,7 +61,7 @@ Field B is where a real, buildable, measurable gap sits. Field A's residual is a
 | 9 | C | Book the signed cap when spend is unknown (status quo) | Baseline, kept |
 | 10 | C | Reconcile provider-reported spend against a provider invoice | Deferred: needs a real paid route, which is not authorized |
 | 11 | C | Escrow each order's budget and release it only on independent appraisal | Finalist for the first real Venture Cell; needs a real payment rail |
-| 12 | A | Upgrade both organs to a per-organ-key boundary package | Founder decision (pin upgrade) |
+| 12 | A | Upgrade both organs to a per-organ-key boundary package | Decided 2026-10-23; implemented on DALEOBANKS #96 and WealthMachineIntelligence #44 (organ `main` merge open) |
 | 13 | A | One causal trace id across organ messages and mission receipts | Exists: `organ_bridge.bound_facts` binds organ observations to mission receipts |
 | 14 | A | Organ quorum: a second WMI process reproduces each assessment | Exists in #178's exchange |
 
@@ -122,6 +122,6 @@ Unit controls (`tests/unit/test_greg_standing_reconciliation.py`, 21 tests): eac
 
 ## 10. What stays open
 
-- Field A: the per-organ-key pin upgrade (founder decision).
+- Field A: merging the per-organ-key pin upgrade into the organs' `main` (DALEOBANKS #96, WealthMachineIntelligence #44).
 - Field C: a real buyer, a real payment rail and escrowed settlement (external dependency and founder authorization).
 - Configuration 6 as a hard pre-retry gate, if an interruption class ever carries more than local consequence.

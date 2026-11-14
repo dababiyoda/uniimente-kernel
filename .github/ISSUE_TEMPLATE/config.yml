@@ -3,3 +3,6 @@ contact_links:
   - name: UNIIMENTE Project Cognition / cross-agent coordination
     url: https://github.com/dababiyoda/uniimente-kernel/issues/117
     about: Read the Project Cognition SOP/source census and coordinate material cross-project changes here.
+  - name: Work board — claims and handoffs (live)
+    url: https://github.com/dababiyoda/uniimente-kernel/issues/96
+    about: Post a bounded claim before editing and a handoff when you stop (docs/collaboration/START_HERE.md).

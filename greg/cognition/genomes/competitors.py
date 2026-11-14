@@ -20,7 +20,10 @@ with code that shares nothing with the solver it checks.
   dynamic program written here (over capacity or over profit, whichever is smaller).
 * ``grid_dijkstra`` (``grid_dijkstra_route``): SciPy's compiled Dijkstra on the grid's digraph, returning a
   dual certificate: one potential per cell. The verifier checks the potential is feasible on every edge and
-  tight on the route (LP duality for shortest paths); it never searches.
+  tight on the route (LP duality for shortest paths); it never searches. Version 1.1.0 builds the same edges as
+  a fixed-degree CSR (zero-weight self-loops fill the empty slots) with a vectorised input check. It keeps 1.0.0's
+  distances, costs and certificates by construction, and has traced 1.0.0's routes on every grid tested, which is
+  an observation, not a guarantee. 1.0.0's solve is kept as ``grid_dijkstra_solve_v100``, the regression reference.
 * ``game_lp_dual`` (``zero_sum_lp_dual_equilibrium``): one LP (OR-Tools GLOP) whose dual values are the column
   player's strategy, SciPy HiGHS as a fallback, each at tight and then at its default feasibility tolerances. An
   attempt is answered only when it passes the verifier's own conditions at half their tolerances. Verified by exact
@@ -38,6 +41,7 @@ from __future__ import annotations
 
 from bisect import bisect_right
 import hashlib
+from itertools import chain
 import math
 import random
 
@@ -48,6 +52,7 @@ LINEAGE = ("INTENT-20261007-POLYINTELLIGENCE-MIND-CONTINUATION", "INTENT-2026100
            "directive section 15 (competitors are methods) and section 31 item 3")
 V1 = "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json"
 V2 = "docs/evidence/greg-genome-admission/2026-10-14-v2/results.json"
+V3 = "docs/evidence/greg-genome-admission/2026-10-15-v3/results.json"
 _DEV = "development seeds 0-9 only (admission --dev; not admission evidence; latency in a loaded container): "
 _DEV_KX = _DEV + ("DEFAULT_FOR_GEOMETRY: 10 ties with baseline and competitor; median 0.12-0.14 ms vs 0.26-0.28 "
                   "ms (NumPy DP) and 1.5-3.7 ms (CP-SAT) over three runs")
@@ -174,9 +179,104 @@ def knapsack_bnb_verify(data, output, certificate):
 
 # =================================================================== 2. grid shortest path with a dual certificate
 GD_NATIVE = 100          # cells per side; the potential certificate is one integer per cell (<= 10 000)
+GD_METHOD = "SciPy csgraph Dijkstra (compiled) on the digraph whose edge weight is the cost of entering the head cell"
+
+
+def _gd_grid(data):
+    """``solvers_b._grid``'s input contract, returning the costs as a rows x cols int64 array.
+
+    Plain lists of plain ints, rectangular and within [0, CELL_MAX], take a vectorised path: one type pass and one
+    NumPy conversion instead of a checked call per cell. Every other input, valid or not, goes through
+    ``solvers_b._grid`` itself, so a refusal is the same refusal with the same message, and a valid input the fast
+    path does not take (a list subclass, say) still answers."""
+    import numpy as np
+    grid = data.get("grid") if isinstance(data, dict) else None
+    if (type(grid) is list and 1 <= len(grid) <= solvers_b.GRID_MAX and all(type(row) is list for row in grid)
+            and set(map(type, chain.from_iterable(grid))) == {int}):         # bool and int subclasses are not int
+        try:
+            costs = np.array(grid, dtype=np.int64)
+        except (ValueError, OverflowError):                                    # ragged, or beyond int64
+            costs = None
+        if (costs is not None and costs.ndim == 2 and 1 <= costs.shape[1] <= solvers_b.GRID_MAX
+                and costs.min() >= 0 and costs.max() <= solvers_b.CELL_MAX):
+            rows, cols = costs.shape
+            s = solvers_b._cell(data.get("start"), rows, cols, "start")
+            t = solvers_b._cell(data.get("goal"), rows, cols, "goal")
+            if costs.flat[s] and costs.flat[t]:
+                return costs, rows, cols, s, t
+    cells, rows, cols, s, t = solvers_b._grid(data)
+    return np.array(cells, dtype=np.int64).reshape(rows, cols), rows, cols, s, t
 
 
 def grid_dijkstra_solve(data, budget):
+    """SciPy's compiled Dijkstra from the start on the grid's digraph (edge u -> v weighs the cost of entering v), with
+    the potential certificate pi(v) = min(dist(v), dist(goal)).
+
+    1.1.0 builds 1.0.0's edges in fixed-degree CSR form: every cell owns four slots (up, down, left, right), and a
+    slot whose neighbour is off the grid or blocked holds a zero-weight self-loop, so the CSR arrays are written by
+    whole-grid slices with no edge list, no COO-to-CSR sort and no compaction; the input check is vectorised
+    (``_gd_grid``).
+
+    Guaranteed against 1.0.0 (``grid_dijkstra_solve_v100``, the regression reference): the real edges and their
+    weights are 1.0.0's, and a zero-weight self-loop offers a node only its own distance, so every distance is
+    unchanged. Hence so are reachability, the cost, the potential certificate (a function of the distances alone),
+    the settled-cell and component counts, and every abstention and refusal.
+
+    Not guaranteed: the route. The neighbour scan order changed (1.0.0's sorted CSR scans up, left, right, down;
+    1.1.0 scans up, down, left, right, with self-loops in the empty slots), so where several routes are optimal, the
+    one the predecessors trace rests on how SciPy's heap breaks ties, which its documented API does not fix.
+    Identical routes are an observed regularity of that tie-breaking, not a property of the construction: under
+    SciPy 1.18.1 they held on every grid tested (development seeds 0-9, review seeds 3000-3999, 1000 random review
+    grids and the tests' edge grids), and the predecessors did not change under any of the 24 slot orders on 40
+    random review grids (seeds 3000-3039). Another route would still be optimal and still verify, because its cost
+    equals pi(goal). The verifier checks the certificate either way."""
+    import numpy as np
+    from scipy.sparse import csr_matrix
+    from scipy.sparse.csgraph import dijkstra
+    costs, rows, cols, s, t = _gd_grid(data)
+    if rows > GD_NATIVE or cols > GD_NATIVE:
+        return _abstain(f"grid exceeds {GD_NATIVE} x {GD_NATIVE} (the per-cell certificate would exceed its bound)",
+                        rows=rows, cols=cols)
+    n = rows * cols
+    padded = np.zeros((rows + 2, cols + 2))                  # a blocked border: no bounds test per cell
+    padded[1:-1, 1:-1] = costs
+    node = np.arange(n, dtype=np.int32).reshape(rows, cols)
+    weight = np.empty((rows, cols, 4))
+    head = np.empty((rows, cols, 4), dtype=np.int32)
+    for slot, (entry, offset) in enumerate(((padded[:-2, 1:-1], -cols), (padded[2:, 1:-1], cols),
+                                            (padded[1:-1, :-2], -1), (padded[1:-1, 2:], 1))):
+        weight[:, :, slot] = entry                           # the cost of entering that neighbour (0 = no edge)
+        head[:, :, slot] = np.where(entry > 0, node + offset, node)
+    graph = csr_matrix((weight.ravel(), head.ravel(), np.arange(0, 4 * n + 1, 4, dtype=np.int32)), shape=(n, n))
+    dist, pred = dijkstra(graph, directed=True, indices=s, return_predecessors=True)
+    settled = int(np.isfinite(dist).sum())
+    if dist[t] == np.inf:
+        return answer({"reachable": False, "moves": None, "cost": None},
+                      {"method": GD_METHOD, "component_size": settled,
+                       "unreachability": "the start's connected component of passable cells excludes the goal"})
+    total = int(dist[t])                                     # a sum of integer costs below 2^53: exact in float64
+    step = {-1: "L", 1: "R", -cols: "U", cols: "D"}      # one column: +-1 are vertical moves, so they are set last
+    path, u, back = [], t, pred.item
+    while u != s:
+        p = back(u)
+        path.append(step[u - p])
+        u = p
+    moves = "".join(reversed(path))
+    # pi(v) = min(dist(v), dist(goal)), and dist(goal) where unreachable (dist inf): feasible on every edge and tight
+    # on the route
+    potential = np.minimum(dist, dist[t]).astype(np.int64).reshape(rows, cols).tolist()
+    return answer({"reachable": True, "moves": moves, "cost": total, "steps": len(moves)},
+                  {"method": GD_METHOD, "potential": potential, "potential_cap": total,
+                   "dual": "pi(start) = 0 and pi(v) <= pi(u) + cost(v) on every passable edge u -> v, so every route "
+                           "costs at least pi(goal); the returned route costs exactly pi(goal)",
+                   "settled_cells": settled})
+
+
+def grid_dijkstra_solve_v100(data, budget):
+    """grid_dijkstra 1.0.0's solve, kept as the regression reference for 1.1.0 (the same distances, cost and
+    certificate by construction; the same route on every grid tested, by observation) and as the code admission v3
+    measured (EXPERIMENTAL: 1.22x its baseline's median latency, short of 1.25x). It builds the digraph as an edge
+    list (COO -> CSR) and checks every cell through ``solvers_b._grid``. Not routed."""
     import numpy as np
     from scipy.sparse import csr_matrix
     from scipy.sparse.csgraph import dijkstra
@@ -865,7 +965,7 @@ INTELLIGENCES = [
                "dev_projection": _DEV_KX}),
     Executable(
         genome=IntelligenceGenome(
-            intelligence_id="solver.graph.grid_dijkstra", version="1.0.0", family="grid_dijkstra", layer=3,
+            intelligence_id="solver.graph.grid_dijkstra", version="1.1.0", family="grid_dijkstra", layer=3,
             operation="grid_dijkstra_route", epistemic_class="optimization",
             subgeometry="single-pair shortest path on a weighted 4-connected grid (the geometry of search_astar)",
             source_provenance="Dijkstra (1959); SciPy sparse.csgraph; LP duality for shortest paths (node "
@@ -875,8 +975,13 @@ INTELLIGENCES = [
             required_inputs=("grid", "start", "goal"),
             output_contract={"reachable": "bool", "moves": "U/D/L/R string or null", "cost": "int or null",
                              "steps": "int"},
-            algorithm_or_runtime="compiled single-source Dijkstra on a NumPy-built CSR digraph; potentials = "
-                                 "distances capped at the goal's",
+            algorithm_or_runtime="compiled single-source Dijkstra (SciPy csgraph) on a fixed-degree CSR digraph "
+                                 "written by whole-grid slices (four slots per cell; a missing neighbour is a "
+                                 "zero-weight self-loop) after a vectorised input check; potentials = distances "
+                                 "capped at the goal's. 1.1.0 changes how the digraph is built (zero-weight "
+                                 "self-loops, another neighbour scan order), not its distances, the cost or the "
+                                 "certificate; its routes have equalled 1.0.0's on every grid tested, which SciPy's "
+                                 "tie-breaking does not guarantee",
             parameters={"native_side": GD_NATIVE},
             composition_inputs=("terrain cost grid",), composition_outputs=("moves", "cost"),
             evidence_type="optimality_certificate",
@@ -884,11 +989,17 @@ INTELLIGENCES = [
                                 "cell, zero at the start, feasible on every passable edge, tight on the route; "
                                 "unreachability by an independent flood fill",
             confidence_semantics="exact shortest path within the supplied costs, with a checkable optimality proof",
-            resource_profile="O(N log N) compiled for N <= 10 000 cells; certificate one integer per cell",
-            latency_profile="about 0.9-1.5 ms at the benchmark size on development seeds",
+            resource_profile="O(N log N) compiled for N <= 10 000 cells; graph 4N slots; certificate one integer "
+                             "per cell",
+            latency_profile="about 0.65-0.87 ms per instance at the benchmark size on development seeds in "
+                            "admission order (instance generation, then this solve), in a loaded container",
             known_strengths=("exact with a proof the verifier checks in linear time without searching",
-                             "compiled inner loop", "proves unreachability (connected component)"),
-            known_failure_modes=("settles every reachable cell even when the goal is near (no heuristic)",
+                             "compiled inner loop", "proves unreachability (connected component)",
+                             "near-constant cost per cell: unlike A*, its time does not grow with cost spread or "
+                             "detours"),
+            known_failure_modes=("settles every reachable cell even when the goal is near (no heuristic): on "
+                                 "uniform-cost obstacle grids, where Manhattan A* is well informed, A* is close to "
+                                 "it in time",
                                  "certificate size grows with the grid (about 80 KB at 100 x 100)"),
             counterindications=("diagonal or any-angle movement", "time-varying costs",
                                 "many queries on one grid (all-pairs or landmark methods amortise better)"),
@@ -901,19 +1012,52 @@ INTELLIGENCES = [
                        "to goal) and SciPy yen (K = 1) were also measured - the first slower, the second the same "
                        "compiled Dijkstra; no faster different deployable alternative was found installed",
             dependency="scipy",
-            lineage=LINEAGE + ("superseded genome search_astar 1.0.2", V1 + "#genomes.search_astar"), **_common()),
+            lineage=LINEAGE + ("superseded genome search_astar 1.0.2", V1 + "#genomes.search_astar",
+                               "grid_dijkstra 1.0.0 (grid_dijkstra_solve_v100): EXPERIMENTAL in admission v3, 30 ties "
+                               "and 1.22x its baseline's median latency", V3 + "#genomes.grid_dijkstra"), **_common()),
         solve=grid_dijkstra_solve, verify=grid_dijkstra_verify, instance=solvers_b.astar_instance,
         score=solvers_b.astar_score, baseline=_former(solvers_b.astar_solve), competitor=grid_networkx_bidirectional,
         subregion=solvers_b.astar_subregion, tolerance=1e-9, promotes="search_astar",
         notes={"weak_competitor": "the strongest different alternative found is slower than the baseline; an "
                                   "admission will mostly measure this genome against the A* it replaces",
-               "ablation": "the bare SciPy Dijkstra that superseded search_astar (solvers_b.astar_csgraph, no "
-                           "potential certificate) took 0.86-0.87 ms against this genome's 0.92-0.94 ms in the same "
-                           "runs (1.06-1.09x): the certificate costs little to emit, and without it a verifier must "
-                           "search (search_astar's verifier runs a pure-Python Dijkstra)",
-               "dev_projection": _DEV + "EXPERIMENTAL: 10 ties; median 1.3-1.5 ms vs 1.4-1.9 ms (A*) and 10.6-14.4 "
-                                        "ms (NetworkX) over three runs - cheaper than A* but by less than the rule's "
-                                        "1.25x, so no demonstrated edge over the baseline on this suite"}),
+               "version_1_1_0": "same edges, Dijkstra, distances, cost and certificate as 1.0.0 by construction "
+                                "(a zero-weight self-loop changes no distance); identical routes too on development "
+                                "seeds 0-9 and review seeds 3100-3199, an observation about SciPy's heap tie-breaking "
+                                "under the new neighbour scan order, not a guarantee; 1.0.0 spent most "
+                                "of its time outside Dijkstra: building the edge list and its COO -> CSR conversion "
+                                "and checking each cell in Python. Its admission v3 status (EXPERIMENTAL at 1.0.0) "
+                                "is negative evidence that persists until a re-admission at 1.1.0",
+               "ablation": "the bare SciPy Dijkstra that superseded search_astar (solvers_b.astar_csgraph: 1.0.0's "
+                           "graph build, no potential certificate) took a median 0.76 ms against this genome's 0.48 ms "
+                           "and 1.0.0's 0.79 ms, interleaved warm runs on development seeds 0-9 in a loaded container "
+                           "(per seed 1.4-1.9x this genome's time; 1.0.0 1.5-2.5x): the certificate costs little to "
+                           "emit, and without it a verifier must search (search_astar's verifier runs a pure-Python "
+                           "Dijkstra)",
+               "alternatives_measured": "on development seeds 0-9, before choosing: an exact A*-limited compiled "
+                                        "search (Dijkstra on reduced costs c(v) + h(v) - h(u) with a limit, then a "
+                                        "full run if the goal was not settled; its certificate min(dist, f* - h) "
+                                        "clamped at 0 verified) was slower on every seed (median 0.67-0.73 ms against "
+                                        "0.48 ms): the goal-directed region is 74-100% of the reachable cells on open "
+                                        "weighted grids (development seeds and review seeds 3500-3509), and building "
+                                        "the reduced costs costs more than the cells it saves elsewhere; a compacted "
+                                        "CSR (only real edges) gave the same distances and predecessors at a slower "
+                                        "build",
+               "dev_projection": _DEV + "DEFAULT_FOR_GEOMETRY in five of six runs of admission --dev, 10 ties with "
+                                        "baseline and competitor in each: candidate median 0.65-0.87 ms, baseline "
+                                        "1.3-5.2 ms, NetworkX 16-22 ms. The sixth was EXPERIMENTAL: candidate 3.0 ms "
+                                        "against the baseline's 2.5 ms while other processes shared the pinned core. "
+                                        "1.0.0 measured the same way: 1.01-1.08 ms against 1.23-1.35 ms (1.14-1.34x) "
+                                        "over three runs",
+               "review_projection": "review seeds 3000-3099 (not admission evidence), admission.evaluate as admission "
+                                    "runs it, protocol declared before the runs, at load average 5.6-9.5 on 4 cores: "
+                                    "100 ties with baseline and competitor and 100% verifier passes in every run; "
+                                    "median baseline / candidate latency 3.85-7.62 in five single-shot runs and "
+                                    "2.85-3.07 on per-instance minima of five repetitions (95% bootstrap lower bounds "
+                                    "2.24-3.64). The same protocol read 1.0.0 at 1.71-4.02, where admission v3 "
+                                    "measured 1.22, so this load inflates the ratio. Measured together, 1.1.0's own "
+                                    "median is 1.53-1.78x below 1.0.0's; scaled from v3 (1.328 ms against 1.618 ms) "
+                                    "that projects 1.9-2.2x. By subregion the edge is on open weighted and walls-"
+                                    "and-mud grids; on uniform-cost obstacle grids it was 0.96-1.24x A*"}),
     Executable(
         genome=IntelligenceGenome(
             intelligence_id="solver.game.zero_sum_lp_dual", version="1.0.0", family="game_lp_dual", layer=3,

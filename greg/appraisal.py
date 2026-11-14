@@ -8,7 +8,10 @@ appraiser re-derives the result from retained bytes and from the world:
 2. every success check the signed closure rule requires is re-evaluated from the receipt of a fresh
    observation inside the selected closure's window (not the engine's flag), and that receipt is bound
    to this mission's own grant -> witness -> dispatch -> receipt chain for the signed sensor;
-3. read-only built-in sensors are re-run now, so the world must still match;
+3. read-only built-in sensors are re-run now, so the world must still match; a sensor that is not ATTACHED is not
+   run, and the closure is then neither verified nor refuted (``_withheld``, ``_verdict``). When that sensor is
+   attached again the closure is appraised late: a reading that then disagrees is no evidence about the closure
+   and does not refute it (``_waited_on``);
 4. every action completed inside the closure window has exactly one dispatch claim and one receipt,
    bound to its signed strategy through the same Gate chain;
 5. every completed action the founder-signed cone does not admit (re-derived here, not taken from the
@@ -17,6 +20,10 @@ appraiser re-derives the result from retained bytes and from the world:
 
 The closure window runs from the mission's one registration (or, for a standing mission, its previous
 hold) to the selected closure; history outside it neither proves nor refutes this closure.
+
+A failure closure (``mission.unmet``, #189) is verified the same way, in reverse: each check it names must
+fail on a fresh, Gate-bound receipt's bytes and still fail when the world is re-read. Its verdict is
+VERIFIED_UNMET, so no reader of VERIFIED takes it for a success, while settlement hears it.
 
 Mechanism lineage: #101 verifier/local_repository_appraisal.py (separate process,
 head binding, source re-read), #94 protected appraisal (worker success is not
@@ -40,12 +47,13 @@ from greg.capabilities import BUILTINS, CapabilityManifest, InvocationContext
 from greg.founder import _signing_bytes
 from greg.journal import Journal
 from greg.lightcone import LightCone
-from greg.missions import evaluate_predicate, pre_approved
+from greg.missions import INSUFFICIENT, TRUE, evaluate_receipt, judge, judge_receipt, pre_approved, unanswered
+from greg.missions import host_stop, reads_answer
 from provenance.ledger import EvidenceLedger, sha256_json
 
-REOBSERVABLE = {"fs.read", "fs.list", "git.inspect", "repo.pin_audit", "repo.integration_audit", "brief.freshness",
-                "memory.precedents", "artifact.inspect", "cognition.status", "foundry.query", "pipeline.inspect",
-                "worker.appraise", "browser.trace", "daleobanks.outcome", "organs.exchange_status",
+REOBSERVABLE = {"fs.read", "fs.search", "fs.list", "git.inspect", "repo.pin_audit", "repo.integration_audit",
+                "brief.freshness", "memory.precedents", "artifact.inspect", "cognition.status", "foundry.query",
+                "pipeline.inspect", "worker.appraise", "browser.trace", "daleobanks.outcome", "organs.exchange_status",
                 "institution.appraise", "organ.status"}
 REOBSERVABLE.update(cid for cid in BUILTINS if cid.startswith("cognition.") and
                     cid not in ("cognition.semantic", "cognition.compose", "cognition.knowledge"))
@@ -77,7 +85,7 @@ class _AsOf:
         return [e for e in self._journal.replay(prefix) if self._seq.get(e.event_id, 1 << 60) < self._before]
 
 
-def _handed_params(journal: Journal, seq: dict, invocation: dict, mission_id: str, before: int):
+def _handed_params(journal: Journal, seq: dict, invocation: dict, mission_id: str, before: int, artifact_root=None):
     """The params the engine handed the Gate for this signed sensor or strategy, or None.
 
     greg/missions.py resolves a strategy's signed ``bind`` edges (_bind) and then every inline
@@ -86,7 +94,7 @@ def _handed_params(journal: Journal, seq: dict, invocation: dict, mission_id: st
     retained receipts as they stood before the grant, so a legitimate typed handoff verifies and a
     receipt bound for different params does not. Values are never read from the worker's projection.
     """
-    from greg.missions import Unbound, _set_path, bound_value
+    from greg.missions import Unbound, _set_path, artifact_output, bound_value
     from greg.pipeline import BindingError, resolve
     view = _AsOf(journal, seq, before)
     params = json.loads(json.dumps(invocation.get("params", {})))
@@ -107,7 +115,12 @@ def _handed_params(journal: Journal, seq: dict, invocation: dict, mission_id: st
                 record = journal.ledger.find(held or "")
                 if record is None or record.record_type != "receipt" or record.seq >= before:
                     return None
-                _set_path(params, edge["param"], bound_value(edge, record.payload.get("result", {}).get("output")))
+                result = record.payload.get("result", {})
+                # an edge that opted in binds the whole output the receipt kept, as the engine bound it
+                whole = artifact_output(result, artifact_root, source=edge["param"]) if edge.get("by") == "artifact" \
+                    else None
+                _set_path(params, edge["param"], bound_value(edge, result.get("output"), whole,
+                                                             recorded_cut=result.get("output_artifact") is not None))
         bound, _ = resolve(params, view, mission_id, before_seq=before)
     except (Unbound, BindingError, KeyError, TypeError):
         return None
@@ -116,7 +129,7 @@ def _handed_params(journal: Journal, seq: dict, invocation: dict, mission_id: st
 
 def _invocation_receipt_bound(ledger, journal, seq, receipt, invocation, *, mission_id, command_digest,
                               closure_seq, since_seq, observation=True, claimed_scope=None,
-                              claimed_capability=None) -> bool:
+                              claimed_capability=None, artifact_root=None) -> bool:
     """Match a receipt to the exact signed invocation via existing Gate lineage.
 
     Hash-chain integrity alone does not make an unrelated receipt evidence for this check. No signer
@@ -150,7 +163,7 @@ def _invocation_receipt_bound(ledger, journal, seq, receipt, invocation, *, miss
                                                     and invocation.get("function") == manifest.function):
         return False
     target = invocation["target"]
-    params = _handed_params(journal, seq, invocation, mission_id, grant.seq)
+    params = _handed_params(journal, seq, invocation, mission_id, grant.seq, artifact_root)
     if params is None:
         return False
     cost = float(invocation.get("cost_usd", 0.0))
@@ -306,6 +319,33 @@ def _approved_before(journal, ledger, seq, requests, answers, scope_digest, at_s
     return False
 
 
+def _signer_revoked(journal: Journal, ledger, seq: dict, answer: dict, answer_seq: int, dispatched_seq: int) -> bool:
+    """The DECISION behind this answer was signed by a device key that was revoked after the answer and before
+    the dispatch. A founder key's answer is never voided this way."""
+    commands = [e.payload for e in journal.replay("command.accepted")
+                if e.payload.get("digest") == answer.get("command_digest")]
+    env = commands[0].get("envelope") if commands and isinstance(commands[0].get("envelope"), dict) else {}
+    kid = env.get("founder_key_id")
+    if kid is None or kid in _founder_keys(journal, answer_seq, ledger):
+        return False
+    return any(e.type == "greg.device.revoked" and e.payload.get("device_key_id") == kid
+               and answer_seq < seq.get(e.event_id, -1) < dispatched_seq for e in journal.replay("device."))
+
+
+def _approval_in_force(journal, ledger, seq, requests, answers, scope_digest, at_seq, dispatched_seq) -> bool:
+    """Founder policy 2026-11-11: a signature stays valid as history, but an approval a device key signed
+    authorizes no new effect once that key is revoked. An approved action ran honestly only if some approval of
+    its exact scope was still in force when the Gate dispatched it: signed by the founder key, or by a device key
+    not revoked between its answer and that dispatch. An action dispatched before the revocation keeps its
+    approval; one dispatched after it needed a new decision (the body voids the old one and asks again)."""
+    for request in requests:
+        answer = answers.get(request.payload["request_id"])
+        if _approved_before(journal, ledger, seq, [request], answers, scope_digest, at_seq) \
+                and not _signer_revoked(journal, ledger, seq, answer[0], answer[1], dispatched_seq):
+            return True
+    return False
+
+
 def _formed_registry(journal: Journal, workspace) -> object:
     """The body's registry as retained: built-ins plus every capability Genesis formed (constructed,
     acquired, built), re-pinned and re-checked as at restart, with nothing written to the ledger."""
@@ -314,6 +354,89 @@ def _formed_registry(journal: Journal, workspace) -> object:
     registry = registry_view(journal)
     Genesis(journal=journal, registry=registry, workspace_root=Path(workspace)).restore(record=False)
     return registry
+
+
+# Only an ATTACHED capability executes, on any path (founder directive re-issued 2026-11-04, behaviour B: "Grant
+# revocation is separate: the Kernel must deny affected execution immediately. Epistemic requalification cannot
+# restore permission."). The appraiser reaches a capability without the authority office: it re-reads the world with
+# a sensor's own adapter and re-derives a delivery with its capability's own machinery, with no grant and no receipt,
+# because it re-reads and does not act. So it applies the office's rule itself, on its own projection of the registry
+# as retained at the appraised head (built-ins, what Genesis formed, every recorded state change, re-pinned as at a
+# restart, nothing written). It never reads the body's in-memory registry, and nothing it finds changes attach state.
+NOT_RUN_CHECKS = ("world_reobserved", "deliveries_bound_to_evidence")   # what a capability it did not run leaves open
+
+
+def _not_attached(registry, cid: str) -> str | None:
+    """Why nothing runs in this capability's name now, or None when it is ATTACHED."""
+    state = registry.state.get(cid)
+    if state != "ATTACHED":
+        return (f"{cid} is {state or 'not registered on this body'}; only an ATTACHED capability runs, and the "
+                "appraiser runs none that is not")
+    return None
+
+
+def _withheld(registry, cid: str) -> str | None:
+    """Why this body's registry withholds the reviewed built-in sensor now, or None when the appraiser may re-run it.
+
+    Attach state is keyed by id, and what runs is the adapter: the manifest and the adapter the appraiser would run
+    (the built-in's) must be the ones this body holds registered under that id. Something else registered there (a
+    capability formed under a built-in's id, a stand-in) is not run, and neither is the built-in in its place."""
+    manifest, adapter = BUILTINS[cid]
+    why = _not_attached(registry, cid)
+    if why is None and (registry.manifests.get(cid) is not manifest or registry.adapters.get(cid) is not adapter):
+        why = f"the adapter this body holds registered as {cid} is not the reviewed built-in the appraiser re-runs"
+    return why
+
+
+def _waited_on(journal: Journal, mid: str, closure_event: str | None) -> dict:
+    """capability id -> why, for every capability an earlier appraisal of this same closure did not run. Empty when
+    this is the closure's first appraisal.
+
+    A closure that waited is appraised late: the body has it appraised again only after the founder attaches what
+    was not run (greg/body.py ``_reattached_closures``), and nothing bounds how long that takes. The appraiser then
+    reads the world as it is now. A reading that still agrees with the closure is accepted as before. One that
+    disagrees cannot tell a false closure from a world that changed after it (the founder did the work himself; a
+    standing mission's world drifted, which is what it is standing for), so it is no evidence about the closure:
+    the check is left open, not failed (``_verdict``). Read from the ledger at the appraised head, not from the
+    request, so an appraisal asked for on demand is judged the same way."""
+    waited = {}
+    for event in journal.replay("mission.appraised"):
+        data = event.payload
+        if (data.get("mission_id") == mid and data.get("closure_event") == closure_event
+                and data.get("verdict") == "UNAVAILABLE" and isinstance(data.get("not_run"), dict)):
+            waited.update(data["not_run"])
+    return waited
+
+
+def _fresh_appraisal(journal: Journal, seq: dict, mid: str, closure_seq: int, terminal_closure: bool) -> dict:
+    """Where this mission's timely appraisal comes from, after a closure of it was appraised too late to judge.
+
+    A stale closure is not appraised again (the world it closed on is gone), and it is not silently final either:
+    a later closure of the mission that is already on the ledger has its own appraisal; otherwise the mission's next
+    closure is appraised when it is recorded. When the mission has ended and no further closure will be recorded,
+    the record says so: this closure stays unappraised. Nothing here asks the founder or grants anything."""
+    later = [(seq[e.event_id], kind, e.event_id) for kind in ("mission.achieved", "mission.held", "mission.unmet")
+             for e in journal.replay(kind) if e.payload["mission_id"] == mid and seq[e.event_id] > closure_seq]
+    if later:
+        _, kind, event_id = max(later)
+        return {"from": "later_closure", "closure": "achievement" if kind == "mission.achieved" else event_id,
+                "note": "a later closure of this mission is on the ledger; its own appraisal is the timely one"}
+    ended = [e.payload["state"] for e in journal.replay("mission.lifecycle")
+             if e.payload["mission_id"] == mid and e.payload["state"] in ("ABANDONED", "SUPERSEDED")]
+    if ended or terminal_closure:
+        return {"from": "none", "note": f"the mission is {ended[-1] if ended else 'ACHIEVED'}: no further closure "
+                                        "will be recorded, so this closure stays unappraised"}
+    return {"from": "next_closure", "note": "the mission's next closure (an achievement, a hold or a failure "
+                                            "closure) is appraised when it is recorded"}
+
+
+def _never_rerun(cid: str) -> str | None:
+    """Why the appraiser never re-runs this built-in as a sensor, whatever its attach state: it re-reads, it does not
+    act. ``REOBSERVABLE`` is a list of ids (it names ``cognition.settle``, which writes); the manifest decides."""
+    manifest = BUILTINS[cid][0]
+    if manifest.consequence_class != "read_only":
+        return f"{cid} is {manifest.consequence_class}; the appraiser re-runs read-only sensors only"
+    return None
 
 
 def appraise(request: dict) -> dict:
@@ -325,11 +448,24 @@ def appraise(request: dict) -> dict:
         checks["chain_intact"] = ok
         journal = Journal(EventSpine(ledger), actor="spiffe://uniimente.internal/greg/appraiser")
         mid = request["mission_id"]
+        # whole outputs the body kept beside cut receipts: read only by a receipt's recorded address, re-hashed
+        artifacts = Path(request["artifact_root"]) if request.get("artifact_root") else None
         seq = {r.payload.get("event_id"): r.seq for r in ledger.by_type("event")}
+        registry = _formed_registry(journal, request["workspace"])   # attach state as retained at this head
+        not_run = {}        # capability id -> why the appraiser ran nothing in its name
+        unmeasured = []     # the checks whose sensor it therefore did not re-run
+        waited_on = _waited_on(journal, mid, request.get("closure_event"))   # non-empty: this appraisal is late
+        outdated = []       # the checks whose late re-reading disagrees: no evidence about the closure
+        stale = []          # what those readings said; kept apart from the findings, which are reasons
         registered = [e for e in journal.replay("mission.registered") if e.payload["mission_id"] == mid]
-        if request.get("closure_event"):  # a standing mission's hold after new action
+        unmet = False
+        if request.get("closure_event"):  # a standing mission's hold after new action, or a failure closure
             achieved = [e for e in journal.replay("mission.held")
                         if e.event_id == request["closure_event"] and e.payload["mission_id"] == mid]
+            if not achieved:
+                achieved = [e for e in journal.replay("mission.unmet")
+                            if e.event_id == request["closure_event"] and e.payload["mission_id"] == mid]
+                unmet = bool(achieved)
         else:
             achieved = [e for e in journal.replay("mission.achieved") if e.payload["mission_id"] == mid]
         checks["registered_once"] = len(registered) == 1
@@ -338,7 +474,10 @@ def appraise(request: dict) -> dict:
             return _verdict(request, checks, ["mission requires exactly one registration and selected closure"])
         spec, digest = registered[0].payload["spec"], registered[0].payload["command_digest"]
         registered_seq, achieved_seq = seq[registered[0].event_id], seq[achieved[0].event_id]
-        expected_kind = "infinite" if request.get("closure_event") else "bounded"
+        # A failure closure (mission.unmet, #189) may close either kind of mission: every admissible strategy ran
+        # and its named checks still fail. A success closure must be the one the signed rule selects.
+        expected_kind = (spec["closure"]["kind"] if unmet
+                         else "infinite" if request.get("closure_event") else "bounded")
         checks["closure_matches_signed_rule"] = (spec["closure"]["kind"] == expected_kind
                                                  and registered_seq < achieved_seq)
         if not checks["closure_matches_signed_rule"]:
@@ -371,26 +510,43 @@ def appraise(request: dict) -> dict:
         ladder = spec["closure"].get("ladder") or []
         wanted = set().union(*ladder) if expected_kind == "infinite" and ladder else {
             c["check_id"] for c in spec["success_checks"]}
-        required_checks = [c for c in spec["success_checks"] if c["check_id"] in wanted]
+        # A failure closure is verified the same way, in reverse: each check it names must fail on its receipt's
+        # bytes and still fail when the world is re-read; checks it does not name are not part of the claim.
+        failing = set(achieved[0].payload.get("failing_checks") or []) if unmet else set()
+        required_checks = [c for c in spec["success_checks"] if c["check_id"] in (failing if unmet else wanted)]
         previous_holds = [seq[e.event_id] for e in journal.replay("mission.held")
                           if e.payload["mission_id"] == mid and seq[e.event_id] < achieved_seq]
         since = max([registered_seq, *previous_holds]) if expected_kind == "infinite" else registered_seq
         completed = [e for e in journal.replay("mission.action")
                      if e.payload["mission_id"] == mid and e.payload["status"] == "DONE"
                      and since < seq[e.event_id] < achieved_seq]
-        if expected_kind == "infinite" and not completed:
+        if expected_kind == "infinite" and not unmet and not completed:
             checks["closure_matches_signed_rule"] = False
             findings.append("standing closure requires a new completed action since its previous hold")
+        # The engine closes a mission unmet only once something ran (greg/missions.py: actions_done); re-derived here
+        # from the retained actions, not taken from the record: with nothing run there is no outcome to settle.
+        if unmet and not any(e.payload["mission_id"] == mid and e.payload["status"] == "DONE"
+                             and registered_seq < seq[e.event_id] < achieved_seq
+                             for e in journal.replay("mission.action")):
+            checks["closure_matches_signed_rule"] = False
+            findings.append("a failure closure requires a completed action; nothing ran, so there is no outcome")
         after = max([since, *(seq[e.event_id] for e in completed)])
         observations = [e for e in journal.replay("mission.observed")
                         if e.payload["mission_id"] == mid and after < seq[e.event_id] < achieved_seq]
-        evidence = achieved[0].payload.get("evidence", [])
+        # A failure closure records no evidence list (greg/missions.py), so its receipts are bound by the window and
+        # the Gate chain below; any closure that does cite evidence must cite the receipt re-derived here.
+        cited = achieved[0].payload.get("evidence")
+        evidence = cited or []
         rederived, reobserved, bound = True, True, bool(required_checks)
+        if unmet and not failing:
+            rederived = False
+            findings.append("a failure closure names no failing check")
         for check in required_checks:
             latest = [o for o in observations if o.payload["check_id"] == check["check_id"]]
             if not latest:
                 rederived, reobserved, bound = False, False, False
-                findings.append(f"{check['check_id']}: no fresh observation for selected closure")
+                findings.append(f"{check['check_id']}: no fresh observation " + (
+                    "of the claimed failure" if unmet else "for selected closure"))
                 continue
             observation = latest[-1]
             last = observation.payload
@@ -399,19 +555,69 @@ def appraise(request: dict) -> dict:
                 rederived, bound = False, False
                 findings.append(f"{check['check_id']}: no retained receipt")
                 continue
-            if (receipt.hash not in evidence or not after < receipt.seq < seq[observation.event_id]
+            if (((cited is not None or not unmet) and receipt.hash not in evidence)
+                    or not after < receipt.seq < seq[observation.event_id]
                     or not _invocation_receipt_bound(ledger, journal, seq, receipt, check["sensor"],
                                                     mission_id=mid, command_digest=digest,
-                                                    closure_seq=achieved_seq, since_seq=after)):
+                                                    closure_seq=achieved_seq, since_seq=after,
+                                                    artifact_root=artifacts)):
                 bound = False
                 findings.append(f"{check['check_id']}: receipt not bound to this closure and signed sensor")
-            passed, detail = evaluate_predicate(check["predicate"], receipt.payload["result"].get("output"))
-            if not passed or receipt.payload["result"].get("result_class") != "positive":
+            # the receipt's kept output, or the whole output it kept in the body's artifact store, re-hashed here
+            verdict, detail = judge_receipt(check["predicate"], receipt.payload["result"], artifacts)
+            passed = verdict == TRUE
+            if passed == unmet:
                 rederived = False
-                findings.append(f"{check['check_id']}: receipt bytes do not satisfy predicate ({detail})")
-            # 3. re-observe the world now where a reviewed read-only sensor exists
+                findings.append(f"{check['check_id']}: receipt bytes " + (
+                    f"satisfy the predicate the closure says fails ({detail})" if unmet
+                    else f"do not satisfy predicate ({detail})"))
+            elif verdict == INSUFFICIENT:
+                # Bytes that cannot decide the predicate prove no failure (an undecided success closure is refused
+                # just above). Before, an undecided reading counted as a verified failure, and VERIFIED_UNMET
+                # certified a check that was never measured (review of #196, J2).
+                rederived = False
+                findings.append(f"{check['check_id']}: receipt bytes cannot decide the predicate, so they prove "
+                                f"no failure ({detail})")
+            elif not passed and unanswered(receipt.payload["result"].get("output")):
+                # A cognitive receipt that abstained answered nothing: its missing field is no reading of a failure
+                # (the engine labels it "sensor inconclusive" and never blames a strategy for it).
+                rederived = False
+                findings.append(f"{check['check_id']}: the receipt abstained "
+                                f"({unanswered(receipt.payload['result'].get('output'))}), so it proves no failure")
+            elif passed and host_stop(receipt.payload["result"].get("output")):
+                # A receipt the host stopped answered nothing: a predicate it satisfies by being empty (absent, an
+                # equality with None) is no reading of a success (the engine records it "sensor inconclusive").
+                rederived = False
+                findings.append(f"{check['check_id']}: the host stopped the receipt's read "
+                                f"({host_stop(receipt.payload['result'].get('output'))}), so it proves no success")
+            elif passed and unanswered(receipt.payload["result"].get("output")) \
+                    and reads_answer(receipt.payload["result"].get("output"), check["predicate"].get("field", "")):
+                # A receipt that carries no answer, read by a predicate about the answer: what the predicate found
+                # is the answer's absence, which is no reading of a success (the engine records it unmeasured).
+                rederived = False
+                findings.append(f"{check['check_id']}: the receipt carries no answer "
+                                f"({unanswered(receipt.payload['result'].get('output'))}), so a predicate on its "
+                                "answer proves no success")
+            elif receipt.payload["result"].get("result_class") != "positive":
+                # A refused sensor run is no reading of the world: it proves neither a success nor a failure.
+                rederived = False
+                findings.append(f"{check['check_id']}: receipt bytes " + (
+                    f"are a refused observation, not a reading of the claimed failure ({detail})" if unmet
+                    else f"do not satisfy predicate ({detail})"))
+            # 3. re-observe the world now where a reviewed read-only sensor exists and this body leaves it ATTACHED
             cap = check["sensor"].get("capability")
-            if cap in REOBSERVABLE:
+            never = _never_rerun(cap) if cap in REOBSERVABLE else None
+            withheld = _withheld(registry, cap) if cap in REOBSERVABLE else None
+            if never is not None:
+                reobserved = False
+                findings.append(f"{check['check_id']}: the world could not be re-measured ({never})")
+            elif withheld is not None:
+                # Not run. Nothing was re-read, so this decides nothing about the closure either way: the verdict is
+                # UNAVAILABLE unless something else refutes it (``_verdict``).
+                not_run[cap] = withheld
+                unmeasured.append(check["check_id"])
+                findings.append(f"{check['check_id']}: the world could not be re-measured ({withheld})")
+            elif cap in REOBSERVABLE:
                 manifest, adapter = BUILTINS[cap]
                 ctx = InvocationContext(workspace=Path(request["workspace"]),
                                         read_roots=tuple(Path(p) for p in request["read_roots"]),
@@ -431,19 +637,39 @@ def appraise(request: dict) -> dict:
                     from greg.pipeline import resolve
                     bound_params, _ = resolve(check["sensor"].get("params", {}), journal, mid)
                     output = adapter(bound_params, ctx)
-                    now_ok, now_detail = evaluate_predicate(check["predicate"], output)
+                    # a fresh output is never cut: a value shaped like a receipt's record in it is the sensor's data
+                    now_verdict, now_detail = judge(check["predicate"], output, whole=True)
+                    # an undecided re-reading (a list at the item limit, a declared-incomplete output) or an
+                    # abstaining one (no answer) is no measurement of the world, either way
+                    now_ok = None if now_verdict == INSUFFICIENT or (now_verdict != TRUE and unanswered(output)) \
+                        else now_verdict == TRUE
+                    if host_stop(output):      # the host stopped this re-reading: it measured nothing, pass or miss
+                        now_ok = None
+                    if now_ok and unanswered(output) and reads_answer(output, check["predicate"].get("field", "")):
+                        now_ok = None      # a re-reading with no answer, judged on its answer: it measured nothing
                     reasons = output.get("findings") if isinstance(output, dict) else None
                     if not now_ok and isinstance(reasons, list) and reasons:
                         # Say why, in the capability's own words: a forged acceptance and a host that cannot
                         # re-run the acceptance envelope must not read the same on the Proof view.
                         now_detail += "; because: " + "; ".join(str(r)[:200] for r in reasons[:3])
-                except Exception as exc:  # the world could not be re-read: not verified
-                    now_ok, now_detail = False, type(exc).__name__
-                if not now_ok:
+                except Exception as exc:  # the world could not be re-read: not verified, either way
+                    now_ok, now_detail = None, type(exc).__name__
+                if (now_ok is None or now_ok == unmet) and waited_on:
+                    # Read later than the closure, after it waited for a capability to be attached again: this
+                    # reading cannot refute it (``_waited_on``). The check is left open.
+                    outdated.append(check["check_id"])
+                    stale.append(
+                        f"{check['check_id']}: not appraised in time ({', '.join(sorted(waited_on))} was not ATTACHED "
+                        "when this closure was first appraised); the world as read now, later, " + (
+                            "could not be re-measured" if now_ok is None else "no longer matches")
+                        + f" ({now_detail}), which is no evidence about the closure")
+                elif now_ok is None or now_ok == unmet:
                     reobserved = False
-                    findings.append(f"{check['check_id']}: world no longer matches ({now_detail})")
+                    findings.append(f"{check['check_id']}: " + (
+                        "the world could not be re-measured" if now_ok is None else "world no longer matches")
+                        + f" ({now_detail})")
         checks["checks_rederived_from_receipts"] = rederived
-        checks["world_reobserved"] = reobserved
+        checks["world_reobserved"] = reobserved and not unmeasured and not outdated
         checks["closure_evidence_bound"] = bound
 
         # 4. exactly-once consequences, inside this closure's window only: each completed action has
@@ -484,7 +710,8 @@ def appraise(request: dict) -> dict:
                                                     command_digest=digest, closure_seq=achieved_seq,
                                                     since_seq=since if seq[event.event_id] > since else registered_seq,
                                                     observation=False, claimed_scope=action["scope_digest"],
-                                                    claimed_capability=action["capability"])):
+                                                    claimed_capability=action["capability"],
+                                                    artifact_root=artifacts)):
                 once = False
                 findings.append(
                     f"{action['action_id']}: recorded as settled by a founder reconciliation answer, with no Gate "
@@ -511,9 +738,17 @@ def appraise(request: dict) -> dict:
         # time, and their superseded inputs are history, not a present-tense claim.
         window = [e.payload for e in completed] if request.get("closure_event") else actions
         import importlib
-        delivered_ok = True
+        delivered_ok, underived = True, []
         for action in window:
             if action.get("capability") not in DELIVERING:
+                continue
+            withheld = _not_attached(registry, action["capability"])
+            if withheld is not None:
+                # The re-derivation is the capability's own machinery (a render; for a venture or an organ exchange,
+                # a re-run of the organs). None of it runs for a capability that is not ATTACHED.
+                not_run[action["capability"]] = withheld
+                underived.append(action["action_id"])
+                findings.append(f"{action['action_id']}: the delivery could not be re-derived ({withheld})")
                 continue
             receipt = ledger.find(action["receipt"]) if action.get("receipt") else None
             output = receipt.payload["result"].get("output") if receipt else None
@@ -525,7 +760,7 @@ def appraise(request: dict) -> dict:
             if not ok:
                 delivered_ok = False
                 findings.append(f"{action['action_id']}: {detail}")
-        checks["deliveries_bound_to_evidence"] = delivered_ok
+        checks["deliveries_bound_to_evidence"] = delivered_ok and not underived
 
         # 5. approval boundaries honored, inside the closure window. The founder-signed cone decides which
         # completed actions needed approval, not the engine's own asks: every DONE action is re-admitted
@@ -554,6 +789,13 @@ def appraise(request: dict) -> dict:
                              and registered_seq < seq[r.event_id] < achieved_seq)
         grants = {r.payload.get("grant_id"): r.payload for r in ledger.by_type("event")
                   if r.payload.get("type") == "greg.authority.grant_issued" and r.seq < achieved_seq}
+        # where the Gate dispatched each action: its grant's record. A dispatch whose completion was unknown and
+        # that the founder later reconciled as executed has no receipt; its UNCERTAIN record names the grant.
+        grant_seq = {r.payload.get("grant_id"): r.seq for r in ledger.by_type("event")
+                     if r.payload.get("type") == "greg.authority.grant_issued" and r.seq < achieved_seq}
+        uncertain_grant = {(e.payload["action_id"], e.payload.get("attempt")): e.payload.get("grant_id")
+                           for e in journal.replay("mission.action")
+                           if e.payload["mission_id"] == mid and e.payload["status"] == "UNCERTAIN"}
         by_id = {s["action_id"]: s for s in spec["strategies"]}
         spent = 0.0
         for event in journal.replay("mission.action"):
@@ -584,6 +826,14 @@ def appraise(request: dict) -> dict:
                     approvals_ok = False
                     why = "; ".join(outside) if outside else "its grant claims a founder approval"
                     findings.append(f"{action['action_id']}: executed without a prior founder approval ({why})")
+                elif outside or human:
+                    grant_id = receipt.payload.get("grant_id") if receipt is not None else \
+                        uncertain_grant.get((action["action_id"], action.get("attempt")))
+                    if not _approval_in_force(journal, ledger, seq, requests, answers, action.get("scope_digest"),
+                                              at_seq, grant_seq.get(grant_id, at_seq)):
+                        approvals_ok = False
+                        findings.append(f"{action['action_id']}: dispatched under an approval that was void: the "
+                                        "device key that signed it had been revoked before the dispatch")
             spent += float(action.get("cost_usd", 0.0) or 0.0)
         checks["approval_boundaries_honored"] = approvals_ok
         checks["approval_boundary_encountered"] = approvals_seen > 0
@@ -602,8 +852,8 @@ def appraise(request: dict) -> dict:
                           and o.payload["check_id"] == check_id and seq[o.event_id] < seq[e.event_id]]
                 last = before[-1] if before else None
                 receipt = ledger.find(last["receipt"]) if last and last.get("receipt") else None
-                held = bool(last and last.get("passed") and receipt is not None and evaluate_predicate(
-                    predicates[check_id], receipt.payload["result"].get("output"))[0])
+                held = bool(last and last.get("passed") and receipt is not None and evaluate_receipt(
+                    predicates[check_id], receipt.payload["result"], artifacts)[0])
                 if not held:
                     preconditions_ok = False
                     findings.append(f"{action['action_id']}: ran before {check_id} was observed passing")
@@ -612,18 +862,73 @@ def appraise(request: dict) -> dict:
                     "founder_signature_verified", "closure_evidence_bound", "checks_rederived_from_receipts",
                     "world_reobserved", "exactly_once", "deliveries_bound_to_evidence",
                     "approval_boundaries_honored", "preconditions_honored")
-        return _verdict(request, checks, findings, required=required)
+        # A check that is False only because of something not run, or read too late, speaks neither for nor against
+        # the closure. Named here so that no reader has to guess it from the other fields.
+        not_established = [name for name, held, left_open in (
+            ("world_reobserved", reobserved, unmeasured or outdated),
+            ("deliveries_bound_to_evidence", delivered_ok, underived)) if held and left_open]
+        return _verdict(request, checks, findings, required=required, unmet=unmet, not_run=not_run,
+                        unmeasured=unmeasured, otherwise_whole=reobserved and delivered_ok,
+                        late={"waited_on": sorted(waited_on), "checks": sorted(outdated), "stale": stale,
+                              "fresh_appraisal": _fresh_appraisal(
+                                  journal, seq, mid, achieved_seq,
+                                  terminal_closure=expected_kind == "bounded" and not unmet)} if outdated else None,
+                        not_established=not_established)
     finally:
         ledger.close()
 
 
-def _verdict(request, checks, findings, required=()):
+def _verdict(request, checks, findings, required=(), unmet=False, not_run=None, unmeasured=(), otherwise_whole=False,
+             late=None, not_established=()):
+    """VERIFIED is a verified success. A verified failure closure is VERIFIED_UNMET, so no reader of VERIFIED can
+    take it for a success; settlement reads both, to hear failures as well as successes.
+
+    UNAVAILABLE is the word the body already records when the appraiser judged nothing (greg/body.py, acceptance
+    H.G7): never VERIFIED, and not REFUTED either, so no reader takes it for failure evidence (a permission change
+    writes no epistemic mark). It is the verdict when the only thing between this closure and a judgment is a
+    capability the appraiser did not run because this body does not leave it ATTACHED (``not_run``): every other
+    required check holds, and nothing that was re-read or re-derived disagrees (``otherwise_whole``). A closure that
+    something else refutes is REFUTED, and still says what was not run.
+
+    It is also the verdict of a late appraisal (``_waited_on``) whose only disagreement is the world as read now
+    (``late``): the closure was not appraised in time and is neither verified nor refuted (founder ruling of
+    2026-11-12: "classify stale or mismatched evidence accurately. It cannot establish a timely appraisal or grant
+    permission. Preserve any separately valid refutation, and request fresh appraisal when required"). That answer
+    names no capability to wait for, so the body records it once and does not appraise the closure again; it says
+    where the mission's timely appraisal comes from instead (``_fresh_appraisal``). What the record itself refutes
+    (a receipt not bound to the closure, a signature, a delivery that fails its re-derivation) is REFUTED whenever
+    it is appraised.
+
+    A stale reading is never a reason. It is the finding of an UNAVAILABLE verdict (why nothing was judged); under
+    REFUTED it is listed only in ``appraised_late``, and ``refuted_by`` names the checks that did refute.
+
+    ``not_established`` names the checks that are False without evidence against the closure (not run, or read too
+    late). A reader that blames a capability for a False check reads this first (greg/routing.py)."""
     verified = bool(required) and all(checks.get(k) for k in required)
-    return {"mission_id": request["mission_id"], "head": request["head"],
-            "verdict": "VERIFIED" if verified else "REFUTED", "checks": checks, "findings": findings,
+    judged = {"mission_id": request["mission_id"], "head": request["head"],
+            "verdict": ("VERIFIED_UNMET" if unmet else "VERIFIED") if verified else "REFUTED",
+            **({"closure": "unmet"} if unmet else {}), "checks": checks, "findings": findings,
             "appraiser": "separate process over read-only head-pinned ledger; re-derivation + re-observation",
             "limits": "shares reviewed Kernel code; not an independent implementation",
             **({"closure_event": request["closure_event"]} if request.get("closure_event") else {})}
+    if not_run:
+        judged["not_run"] = dict(sorted(not_run.items()))
+        if unmeasured:
+            judged["unmeasured_checks"] = sorted(unmeasured)
+    if not_established:
+        judged["not_established"] = sorted(not_established)
+    if not_run or late:
+        if otherwise_whole and all(checks.get(k) for k in required if k not in NOT_RUN_CHECKS):
+            judged["verdict"] = "UNAVAILABLE"
+    if late:
+        waits = judged["verdict"] == "UNAVAILABLE" and bool(not_run)    # appraised again on an attach: not final yet
+        judged["appraised_late"] = {k: v for k, v in late.items()
+                                    if k != "fresh_appraisal" or (judged["verdict"] == "UNAVAILABLE" and not waits)}
+        if judged["verdict"] == "UNAVAILABLE":
+            judged["findings"] = [*findings, *late["stale"]]
+    if judged["verdict"] == "REFUTED" and not_established:
+        judged["refuted_by"] = sorted(k for k in required if not checks.get(k) and k not in not_established)
+    return judged
 
 
 if __name__ == "__main__":

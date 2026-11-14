@@ -30,6 +30,7 @@ import signal
 import sys
 import tempfile
 
+from greg import licensing
 from greg.capabilities import CapabilityError, run_isolated
 
 REUSE_MODES = ("DISCOVER", "DEPEND", "VENDOR-SLICE", "FORK/SUBTREE", "RECOMBINE")
@@ -121,6 +122,7 @@ def card(candidate: PackageCandidate, function: str, dist) -> dict:
             "package_digest": pinned, "pinned_files": files, "pinned_paths": list(candidate.digest_paths),
             "primitive": candidate.primitive, "competence": candidate.competence,
             "common_mode": shared(candidate.common_mode),
+            "license_assessment": licensing.assess(dist, [installed(name) for name in candidate.common_mode]),
             "runtime": "fixed GREG runner in a separate no-network interpreter; never imported by the body",
             "acquisition": "already installed on this body; GREG did not download or install it",
             "limits": "a change to an unpinned file of the distribution without a RECORD change is not detected; "

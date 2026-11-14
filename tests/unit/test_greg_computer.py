@@ -13,12 +13,20 @@ import pytest
 
 from greg import computer
 from greg.capabilities import BUILTINS, CapabilityError, InvocationContext, SecretBroker
+from tests.browser_requirement import no_browser, playwright_api
 
-pytest.importorskip("playwright")
-try:
-    computer.chromium()
-except CapabilityError:
-    pytest.skip("no Chromium installed", allow_module_level=True)
+
+@pytest.fixture(scope="module", autouse=True)
+def _a_real_browser():
+    """Playwright and the Chromium browser.session itself would launch, or a skip (a failure under
+    GREG_REQUIRE_BROWSER=1, tests/browser_requirement.py)."""
+    if playwright_api() is None:
+        no_browser("browser.session needs Python Playwright")
+    try:
+        computer.chromium()
+    except CapabilityError as exc:
+        no_browser(f"browser.session found no Chromium: {exc}")
+
 
 PAGES = {
     "/": b"""<html><head><title>Orders</title></head><body>

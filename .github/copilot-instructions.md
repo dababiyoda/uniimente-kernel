@@ -1,3 +1,7 @@
+> **Reading order:** one canonical sequence for every entry file is in [AGENTS.md § Canonical reading order](../AGENTS.md#canonical-reading-order). The lists below are kept as written.
+
+> Before new or resumed UNIIMENTE work, follow `AGENTS.md` and `docs/collaboration/START_HERE.md`; refresh Discussion #89, work board #96 and current claims before editing.
+
 ## Full-machine completion — controlling correction, October 1, 2026
 
 **BODY + ORGANS + MIND = GREG / UNIIMENTE** is the fixed completion boundary. Read `docs/intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json` and its verbatim source. Reconstruct the whole boundary, implement the highest-priority unfinished dependency in rigorous increments, prove and integrate each increment, then automatically resume the parent objective and the next unblocked requirement. Seeds, experiments, sandboxes, benchmarks, PRs and VEPMC are intermediate sequencing/evidence units; none may narrow the machine or stop unrelated feasible implementation. A future-family label preserves its obligation. Registered is not implemented; a tested component is not an integrated machine.
@@ -16,7 +20,7 @@ Repository history is feedstock, not a mandate to preserve every executable desi
 
 Every material coding task must identify the product capability it creates and finish by answering: **What can actual GREG do after this change that it could not do before?** A test-only, simulation-only, benchmark-only or documentation-only result is subordinate evidence unless it removes a precise blocker to the next real product capability.
 
-Current bottleneck remains VEPMC 0 -> 1 until verified otherwise.
+Current bottleneck remains VEPMC 0 -> 1 until verified otherwise. (Sequencing since 2026-10-30, `INTENT-20261030-BUILD-BEFORE-DEVICE-RUN`: VEPMC is the device acceptance; it does not gate unrelated building.)
 
 
 Read `AGENTS.md`, `docs/PROJECT_COGNITION_SOP.md`, `docs/PROJECT_SOURCE_CENSUS_2026-09-26.md`, and `docs/FOUNDER_EFFECT_COMPILER.md` before material work.

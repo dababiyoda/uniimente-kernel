@@ -75,6 +75,26 @@ ACTION_COST = 0.05         # quality lost by an arm performing one unit-action p
 WRONG_PENALTY = 1.5        # a false restoration claim is strictly worse than abstaining
 BENCH_STEPS = 120
 CONTROLLER_MODES = ("reliable", "crash", "stale")
+# The local protocol's constants as data (P8 may evolve them inside this closed space; a configuration is never code).
+# The default is the admitted protocol exactly: repair_solve runs repair_solve_with(REPAIR_DEFAULT_CONFIG, data), whose
+# output and certificate are byte-identical to the 1.1.1 code on development seeds 0-9 and on the abstention paths.
+# Evaluation state stays outside the space: ACTION_COST, WRONG_PENALTY (the score) and MAX_LOSS (the validated
+# message-loss range, an abstention rule) are not protocol constants. Every point keeps the settle time
+# (expiry_waves + 1) x wave_period + 2 x (width + height) within the 120-step benchmark (at most 48 + 56 = 104).
+REPAIR_DEFAULT_CONFIG = {"wave_period": WAVE_PERIOD, "expiry_waves": EXPIRY_WAVES, "repeats": REPEATS,
+                         "retract_repeats": RETRACT_REPEATS}
+REPAIR_CONFIG_SPACE = {"wave_period": ("choice", (4, 6, 8, 10, 12)), "expiry_waves": ("choice", (1, 2, 3)),
+                       "repeats": ("choice", (1, 2, 3, 4, 5, 6, 8)), "retract_repeats": ("choice", (1, 2, 3, 4, 5))}
+
+
+def repair_protocol_config(config) -> dict:
+    """A protocol configuration inside REPAIR_CONFIG_SPACE, or GenomeError."""
+    if not isinstance(config, dict) or set(config) != set(REPAIR_CONFIG_SPACE):
+        raise GenomeError(f"protocol configuration sets exactly {sorted(REPAIR_CONFIG_SPACE)}")
+    for key, (_, values) in REPAIR_CONFIG_SPACE.items():
+        if type(config[key]) is not int or config[key] not in values:
+            raise GenomeError(f"{key}={config[key]!r} is outside the declared space")
+    return dict(config)
 
 
 def _key(idx, height):
@@ -196,13 +216,14 @@ def _bfs_pointers(adj, dead, blocked, roots):
     return dist, nh
 
 
-def _settle_steps(width, height):
-    return (EXPIRY_WAVES + 1) * WAVE_PERIOD + 2 * (width + height)
+def _settle_steps(width, height, cfg=REPAIR_DEFAULT_CONFIG):
+    return (cfg["expiry_waves"] + 1) * cfg["wave_period"] + 2 * (width + height)
 
 
-def _local_repair(inp):
+def _local_repair(inp, cfg=REPAIR_DEFAULT_CONFIG):
     """Run the local rules inside the declared world script. Returns (state, statistics)."""
     W, H, N, T = inp["W"], inp["H"], inp["N"], inp["steps"]
+    wave_period, repeats, retract_repeats = cfg["wave_period"], cfg["repeats"], cfg["retract_repeats"]
     adj = _lattice(W, H)
     sinks = set(inp["sinks"])
     rng = random.Random(inp["seed"])
@@ -246,7 +267,7 @@ def _local_repair(inp):
             phi[u], nh[u] = None, None                             # retract: no feasible route under this seq
             stats["retractions"] += 1
         if (seq[u], phi[u]) != old:
-            tx[u] = REPEATS if phi[u] is not None else RETRACT_REPEATS
+            tx[u] = repeats if phi[u] is not None else retract_repeats
             changed.add(u)
 
     changed = set()
@@ -274,11 +295,11 @@ def _local_repair(inp):
                 stats["link_losses"] += 1
             if nh[u] is not None and nh[u] not in live:
                 pending.add(u)
-        if t % WAVE_PERIOD == 0:
+        if t % wave_period == 0:
             for z in sinks:
                 if not dead[z]:
-                    seq[z], phi[z], nh[z] = t // WAVE_PERIOD + 1, 0, None
-                    tx[z] = REPEATS
+                    seq[z], phi[z], nh[z] = t // wave_period + 1, 0, None
+                    tx[z] = repeats
                     changed.add(z)
         for u in sorted(pending):
             if u not in sinks:
@@ -308,41 +329,48 @@ def _local_repair(inp):
     return {"dead": dead, "phi": phi, "nh": nh, "seq": seq}, stats
 
 
-def _vouched(state, u, steps, width, height):
+def _vouched(state, u, steps, width, height, cfg=REPAIR_DEFAULT_CONFIG):
     """A unit vouches for its route only while a sink wave refreshed it within the expiry window."""
     phi = state["phi"][u]
     if state["dead"][u] or phi is None or phi > 2 * (width + height):
         return False
-    emitted = (state["seq"][u] - 1) * WAVE_PERIOD                    # sequence 0 = the pre-damage wave at -period
-    return steps - emitted <= EXPIRY_WAVES * WAVE_PERIOD + phi
+    emitted = (state["seq"][u] - 1) * cfg["wave_period"]            # sequence 0 = the pre-damage wave at -period
+    return steps - emitted <= cfg["expiry_waves"] * cfg["wave_period"] + phi
 
 
 def repair_solve(data, budget):
+    return repair_solve_with(REPAIR_DEFAULT_CONFIG, data)
+
+
+def repair_solve_with(config, data):
+    """The local protocol under one protocol configuration (the P8 sandbox entry)."""
+    cfg = repair_protocol_config(config)
     inp = _repair_inputs(data)
     W, H, N, T = inp["W"], inp["H"], inp["N"], inp["steps"]
     removed = set(inp["removed"])
     if inp["loss"] > MAX_LOSS:
         return answer(None, {"message_loss": inp["loss"], "validated_max": MAX_LOSS}, status="ABSTAIN",
                       missing=["message loss above the local protocol's validated range"])
-    if T < _settle_steps(W, H):
-        return answer(None, {"steps": T, "settle_steps": _settle_steps(W, H)}, status="ABSTAIN",
+    if T < _settle_steps(W, H, cfg):
+        return answer(None, {"steps": T, "settle_steps": _settle_steps(W, H, cfg)}, status="ABSTAIN",
                       missing=["step budget shorter than the protocol's settle time"])
     if all(z in removed for z in inp["sinks"]) or all(s in removed for s in inp["sources"]):
         return answer(None, {"functioning_sinks": sum(z not in removed for z in inp["sinks"])}, status="ABSTAIN",
                       missing=["no functioning source or sink region: no target state to hold"])
-    state, stats = _local_repair(inp)
+    state, stats = _local_repair(inp, cfg)
     next_hop = {_key(u, H): _key(state["nh"][u], H) for u in range(N)
                 if not state["dead"][u] and state["nh"][u] is not None}
-    claimed = sorted(_key(u, H) for u in inp["sources"] if _vouched(state, u, T, W, H))
+    claimed = sorted(_key(u, H) for u in inp["sources"] if _vouched(state, u, T, W, H, cfg))
     actions = sum(stats["messages_per_step"])
     digest = hashlib.sha256(json.dumps(next_hop, sort_keys=True).encode()).hexdigest()
     certificate = {
         "mechanism": "destination-sequenced potential waves from the sink region, Babel feasibility condition, "
                      "local link sensing, retraction on loss, expiry-bounded vouching",
-        "seed": inp["seed"], "message_loss": inp["loss"], "steps": T, "wave_period": WAVE_PERIOD,
-        "expiry_waves": EXPIRY_WAVES, "repeats": REPEATS, "messages_per_step": stats["messages_per_step"],
+        "seed": inp["seed"], "message_loss": inp["loss"], "steps": T, "wave_period": cfg["wave_period"],
+        "expiry_waves": cfg["expiry_waves"], "repeats": cfg["repeats"], "messages_per_step": stats["messages_per_step"],
         "adoptions": stats["adoptions"], "retractions": stats["retractions"],
-        "link_losses_sensed": stats["link_losses"], "final_wave": T // WAVE_PERIOD + (1 if T % WAVE_PERIOD else 0),
+        "link_losses_sensed": stats["link_losses"],
+        "final_wave": T // cfg["wave_period"] + (1 if T % cfg["wave_period"] else 0),
         "source_route_seq": {_key(u, H): state["seq"][u] for u in inp["sources"] if not state["dead"][u]},
         "vouched_sources": len(claimed), "field_digest": "sha256:" + digest,
         "exact_restoration_attempts": 0, "external_effects": 0,
@@ -1268,7 +1296,8 @@ FRONTIER = ("frontier NOT achieved: robust unscripted organ formation",
 INTELLIGENCES = [
     Executable(
         genome=_genome(
-            intelligence_id="developmental.repair.sequenced_local_gradient", family="develop_repair",
+            # 1.1.2: the protocol constants became REPAIR_DEFAULT_CONFIG (P8 target); default outputs byte-identical
+            intelligence_id="developmental.repair.sequenced_local_gradient", version="1.1.2", family="develop_repair",
             operation="target_state_repair",
             # physical, not optimization: the answer is the state a damaged distributed substrate reaches under a
             # disturbance process, judged against the realized world, not the optimum of a declared objective.

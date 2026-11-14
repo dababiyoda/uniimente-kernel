@@ -1,0 +1,1281 @@
+{
+ "schema": "greg-genome-admission/1",
+ "freeze_sha256": "sha256:6082091af5aac13a5e6dd0a3103d52a5b414749108a658495ce838cd4cecaa36",
+ "source_commit": "11a8e318e121c187fe93d4007128b41e1c9e5342",
+ "source_dirty": [],
+ "platform": "Linux-6.18.44-fc-v140-x86_64-with-glibc2.39",
+ "python": "3.13.16",
+ "rule": "COMPOSITION_ONLY if no standalone decision; REJECTED if more wrong than baseline or significantly worse than baseline; EXPERIMENTAL if no significant edge over baseline (nor equal quality at >=1.25x lower median latency); SUPERSEDED if competitor significantly better and candidate wins none, or all ties and competitor >=1.25x cheaper; NICHE_CAPABILITY if beats baseline but significantly worse than competitor with some wins, or more wrong than competitor, or ties competitor at >=1.25x cost; DEFAULT_FOR_GEOMETRY if beats baseline, not significantly worse than competitor, no more wrong, and significantly better or <=1.25x competitor median latency. A competitor declared non-deployable (an oracle upper bound) is a reported reference: it neither supersedes nor demotes, so a candidate that beats its baseline without more wrong answers is DEFAULT_FOR_GEOMETRY. One-sided exact sign tests, alpha 0.05, 30 held-out seeds recorded in the freeze.",
+ "diagnostics": "reported diagnostics, never inputs to the admission decision: the rule decides on wall-clock medians only. cpu_seconds is the calling thread's CPU time per call (time.thread_time; work on other threads or processes is not in it); diagnostics.median_cpu_seconds is its median per arm; host_load is the host's load at the start and end of the run",
+ "host_load": {
+  "start": {
+   "at": "2026-10-22T10:55:16.437866+00:00",
+   "loadavg": {
+    "1m": 1.0,
+    "5m": 0.99,
+    "15m": 1.04,
+    "runnable": 1,
+    "entities": 110
+   },
+   "cpu_affinity": [
+    1
+   ],
+   "cpu_count": 4,
+   "other_python_processes": {
+    "count": 0,
+    "by_state": {},
+    "running_last_on_our_cpus": 0
+   }
+  },
+  "end": {
+   "at": "2026-10-22T10:56:32.740424+00:00",
+   "loadavg": {
+    "1m": 1.0,
+    "5m": 1.0,
+    "15m": 1.04,
+    "runnable": 1,
+    "entities": 106
+   },
+   "cpu_affinity": [
+    1
+   ],
+   "cpu_count": 4,
+   "other_python_processes": {
+    "count": 0,
+    "by_state": {},
+    "running_last_on_our_cpus": 0
+   }
+  }
+ },
+ "genomes": {
+  "convex_qp_dual": {
+   "intelligence_id": "solver.convex.qp_duality_certificate",
+   "layer": 3,
+   "version": "1.0.0",
+   "baseline": "dual projected gradient (clip at zero), step 1/L, 3,000 iterations, primal not repaired",
+   "competitor": "SciPy minimize(method='trust-constr') with exact gradient and Hessian, gtol 1e-10 (OSQP is not installed)",
+   "status": "DEFAULT_FOR_GEOMETRY",
+   "arms": {
+    "candidate": {
+     "correct": 30,
+     "wrong": 0,
+     "abstain": 0,
+     "mean_quality": 0.9997,
+     "median_seconds": 0.002508
+    },
+    "baseline": {
+     "correct": 17,
+     "wrong": 13,
+     "abstain": 0,
+     "mean_quality": 0.133333,
+     "median_seconds": 0.02307
+    },
+    "competitor": {
+     "correct": 28,
+     "wrong": 2,
+     "abstain": 0,
+     "mean_quality": 0.887497,
+     "median_seconds": 0.193948
+    }
+   },
+   "vs_baseline": {
+    "wins": 13,
+    "losses": 1,
+    "ties": 16,
+    "p_better": 0.000916,
+    "p_worse": 0.999939
+   },
+   "vs_competitor": {
+    "wins": 23,
+    "losses": 0,
+    "ties": 7,
+    "p_better": 0.0,
+    "p_worse": 1.0
+   },
+   "subregions": {
+    "ill_conditioned": {
+     "n": 16,
+     "vs_baseline": {
+      "wins": 10,
+      "losses": 1,
+      "ties": 5,
+      "p_better": 0.005859,
+      "p_worse": 0.999512
+     },
+     "vs_competitor": {
+      "wins": 13,
+      "losses": 0,
+      "ties": 3,
+      "p_better": 0.000122,
+      "p_worse": 1.0
+     }
+    },
+    "many_constraints": {
+     "n": 3,
+     "vs_baseline": {
+      "wins": 3,
+      "losses": 0,
+      "ties": 0,
+      "p_better": 0.125,
+      "p_worse": 1.0
+     },
+     "vs_competitor": {
+      "wins": 3,
+      "losses": 0,
+      "ties": 0,
+      "p_better": 0.125,
+      "p_worse": 1.0
+     }
+    },
+    "well_conditioned": {
+     "n": 11,
+     "vs_baseline": {
+      "wins": 0,
+      "losses": 0,
+      "ties": 11,
+      "p_better": 1.0,
+      "p_worse": 1.0
+     },
+     "vs_competitor": {
+      "wins": 7,
+      "losses": 0,
+      "ties": 4,
+      "p_better": 0.007812,
+      "p_worse": 1.0
+     }
+    }
+   },
+   "diagnostics": {
+    "median_cpu_seconds": {
+     "candidate": 0.002512,
+     "baseline": 0.023052,
+     "competitor": 0.191455
+    },
+    "note": "reported diagnostics, never inputs to the admission decision: the rule decides on wall-clock medians only. cpu_seconds is the calling thread's CPU time per call (time.thread_time; work on other threads or processes is not in it); diagnostics.median_cpu_seconds is its median per arm; host_load is the host's load at the start and end of the run"
+   },
+   "canonical_path": {
+    "capability": "cognition.convex_qp_dual",
+    "abstention_state": "NONE",
+    "method": "cognition.convex_qp_dual",
+    "verifier": "STRUCTURALLY_VERIFIED",
+    "proof_type": "genome_certificate",
+    "latency_s": 0.6858,
+    "authority_created": false,
+    "receipt_id": "sha256:82bce6a4c2a68655b62bbce0a7eb3de198d73cce3e658262191fdf370fe33316"
+   },
+   "heldout": [
+    {
+     "seed": 1800,
+     "subregion": "well_conditioned",
+     "arms": {
+      "candidate": {
+       "quality": 0.999997689759902,
+       "category": "correct",
+       "seconds": 0.003591,
+       "cpu_seconds": 0.003598,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "output_shape": true,
+         "dual_certificate_present": true,
+         "primal_feasible": true,
+         "dual_feasible": true,
+         "complementary_slackness": true,
+         "stationarity": true,
+         "duality_gap_closed": true,
+         "objective_recomputed": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 1.0,
+       "category": "correct",
+       "seconds": 0.023423,
+       "cpu_seconds": 0.02332
+      },
+      "competitor": {
+       "quality": 0.8065433964736823,
+       "category": "correct",
+       "seconds": 0.068087,
+       "cpu_seconds": 0.068091
+      }
+     }
+    },
+    {
+     "seed": 1801,
+     "subregion": "well_conditioned",
+     "arms": {
+      "candidate": {
+       "quality": 0.9999552138986839,
+       "category": "correct",
+       "seconds": 0.001602,
+       "cpu_seconds": 0.001574,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "output_shape": true,
+         "dual_certificate_present": true,
+         "primal_feasible": true,
+         "dual_feasible": true,
+         "complementary_slackness": true,
+         "stationarity": true,
+         "duality_gap_closed": true,
+         "objective_recomputed": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 1.0,
+       "category": "correct",
+       "seconds": 0.019769,
+       "cpu_seconds": 0.019655
+      },
+      "competitor": {
+       "quality": 0.7155258339587756,
+       "category": "correct",
+       "seconds": 0.039237,
+       "cpu_seconds": 0.039241
+      }
+     }
+    },
+    {
+     "seed": 1802,
+     "subregion": "well_conditioned",
+     "arms": {
+      "candidate": {
+       "quality": 0.9999999881356859,
+       "category": "correct",
+       "seconds": 0.001007,
+       "cpu_seconds": 0.000971,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "output_shape": true,
+         "dual_certificate_present": true,
+         "primal_feasible": true,
+         "dual_feasible": true,
+         "complementary_slackness": true,
+         "stationarity": true,
+         "duality_gap_closed": true,
+         "objective_recomputed": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 1.0,
+       "category": "correct",
+       "seconds": 0.017653,
+       "cpu_seconds": 0.017656
+      },
+      "competitor": {
+       "quality": 0.9972697276975728,
+       "category": "correct",
+       "seconds": 0.032521,
+       "cpu_seconds": 0.032222
+      }
+     }
+    },
+    {
+     "seed": 1803,
+     "subregion": "many_constraints",
+     "arms": {
+      "candidate": {
+       "quality": 0.9999955487389457,
+       "category": "correct",
+       "seconds": 0.003206,
+       "cpu_seconds": 0.003086,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "output_shape": true,
+         "dual_certificate_present": true,
+         "primal_feasible": true,
+         "dual_feasible": true,
+         "complementary_slackness": true,
+         "stationarity": true,
+         "duality_gap_closed": true,
+         "objective_recomputed": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": -1.0,
+       "category": "wrong",
+       "seconds": 0.035853,
+       "cpu_seconds": 0.032643
+      },
+      "competitor": {
+       "quality": 0.4671127610275546,
+       "category": "wrong",
+       "seconds": 0.093776,
+       "cpu_seconds": 0.092684
+      }
+     }
+    },
+    {
+     "seed": 1804,
+     "subregion": "ill_conditioned",
+     "arms": {
+      "candidate": {
+       "quality": 0.9997451505494419,
+       "category": "correct",
+       "seconds": 0.006375,
+       "cpu_seconds": 0.006347,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "output_shape": true,
+         "dual_certificate_present": true,
+         "primal_feasible": true,
+         "dual_feasible": true,
+         "complementary_slackness": true,
+         "stationarity": true,
+         "duality_gap_closed": true,
+         "objective_recomputed": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": -1.0,
+       "category": "wrong",
+       "seconds": 0.029893,
+       "cpu_seconds": 0.029898
+      },
+      "competitor": {
+       "quality": 0.9999810510659489,
+       "category": "correct",
+       "seconds": 0.510039,
+       "cpu_seconds": 0.478937
+      }
+     }
+    },
+    {
+     "seed": 1805,
+     "subregion": "well_conditioned",
+     "arms": {
+      "candidate": {
+       "quality": 0.999999542987282,
+       "category": "correct",
+       "seconds": 0.00108,
+       "cpu_seconds": 0.001083,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "output_shape": true,
+         "dual_certificate_present": true,
+         "primal_feasible": true,
+         "dual_feasible": true,
+         "complementary_slackness": true,
+         "stationarity": true,
+         "duality_gap_closed": true,
+         "objective_recomputed": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.9999999995045035,
+       "category": "correct",
+       "seconds": 0.016315,
+       "cpu_seconds": 0.016317
+      },
+      "competitor": {
+       "quality": 0.9990999857537171,
+       "category": "correct",
+       "seconds": 0.033321,
+       "cpu_seconds": 0.032978
+      }
+     }
+    },
+    {
+     "seed": 1806,
+     "subregion": "ill_conditioned",
+     "arms": {
+      "candidate": {
+       "quality": 0.9999699151433342,
+       "category": "correct",
+       "seconds": 0.00143,
+       "cpu_seconds": 0.001435,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "output_shape": true,
+         "dual_certificate_present": true,
+         "primal_feasible": true,
+         "dual_feasible": true,
+         "complementary_slackness": true,
+         "stationarity": true,
+         "duality_gap_closed": true,
+         "objective_recomputed": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 1.0,
+       "category": "correct",
+       "seconds": 0.027895,
+       "cpu_seconds": 0.0279
+      },
+      "competitor": {
+       "quality": 0.9956336229479762,
+       "category": "correct",
+       "seconds": 0.105663,
+       "cpu_seconds": 0.105411
+      }
+     }
+    },
+    {
+     "seed": 1807,
+     "subregion": "well_conditioned",
+     "arms": {
+      "candidate": {
+       "quality": 0.9999983687283324,
+       "category": "correct",
+       "seconds": 0.001209,
+       "cpu_seconds": 0.001213,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "output_shape": true,
+         "dual_certificate_present": true,
+         "primal_feasible": true,
+         "dual_feasible": true,
+         "complementary_slackness": true,
+         "stationarity": true,
+         "duality_gap_closed": true,
+         "objective_recomputed": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.9999999969597289,
+       "category": "correct",
+       "seconds": 0.018206,
+       "cpu_seconds": 0.018209
+      },
+      "competitor": {
+       "quality": 0.8665241526379068,
+       "category": "correct",
+       "seconds": 0.029879,
+       "cpu_seconds": 0.029882
+      }
+     }
+    },
+    {
+     "seed": 1808,
+     "subregion": "ill_conditioned",
+     "arms": {
+      "candidate": {
+       "quality": 0.9998551143910924,
+       "category": "correct",
+       "seconds": 0.002542,
+       "cpu_seconds": 0.002547,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "output_shape": true,
+         "dual_certificate_present": true,
+         "primal_feasible": true,
+         "dual_feasible": true,
+         "complementary_slackness": true,
+         "stationarity": true,
+         "duality_gap_closed": true,
+         "objective_recomputed": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 1.0,
+       "category": "correct",
+       "seconds": 0.023296,
+       "cpu_seconds": 0.023258
+      },
+      "competitor": {
+       "quality": 0.7031218125240073,
+       "category": "correct",
+       "seconds": 11.768647,
+       "cpu_seconds": 11.602952
+      }
+     }
+    },
+    {
+     "seed": 1809,
+     "subregion": "ill_conditioned",
+     "arms": {
+      "candidate": {
+       "quality": 0.9999600016352065,
+       "category": "correct",
+       "seconds": 0.002213,
+       "cpu_seconds": 0.002216,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "output_shape": true,
+         "dual_certificate_present": true,
+         "primal_feasible": true,
+         "dual_feasible": true,
+         "complementary_slackness": true,
+         "stationarity": true,
+         "duality_gap_closed": true,
+         "objective_recomputed": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": -1.0,
+       "category": "wrong",
+       "seconds": 0.019122,
+       "cpu_seconds": 0.019106
+      },
+      "competitor": {
+       "quality": 0.997542185604164,
+       "category": "correct",
+       "seconds": 0.147552,
+       "cpu_seconds": 0.147519
+      }
+     }
+    },
+    {
+     "seed": 1810,
+     "subregion": "many_constraints",
+     "arms": {
+      "candidate": {
+       "quality": 0.9999945998134393,
+       "category": "correct",
+       "seconds": 0.006598,
+       "cpu_seconds": 0.006602,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "output_shape": true,
+         "dual_certificate_present": true,
+         "primal_feasible": true,
+         "dual_feasible": true,
+         "complementary_slackness": true,
+         "stationarity": true,
+         "duality_gap_closed": true,
+         "objective_recomputed": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": -1.0,
+       "category": "wrong",
+       "seconds": 0.042275,
+       "cpu_seconds": 0.04228
+      },
+      "competitor": {
+       "quality": 0.9110641546628288,
+       "category": "correct",
+       "seconds": 0.309561,
+       "cpu_seconds": 0.307709
+      }
+     }
+    },
+    {
+     "seed": 1811,
+     "subregion": "ill_conditioned",
+     "arms": {
+      "candidate": {
+       "quality": 0.9989915591228266,
+       "category": "correct",
+       "seconds": 0.00423,
+       "cpu_seconds": 0.004234,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "output_shape": true,
+         "dual_certificate_present": true,
+         "primal_feasible": true,
+         "dual_feasible": true,
+         "complementary_slackness": true,
+         "stationarity": true,
+         "duality_gap_closed": true,
+         "objective_recomputed": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": -1.0,
+       "category": "wrong",
+       "seconds": 0.022844,
+       "cpu_seconds": 0.022846
+      },
+      "competitor": {
+       "quality": 0.9820568887501232,
+       "category": "correct",
+       "seconds": 1.186007,
+       "cpu_seconds": 1.170626
+      }
+     }
+    },
+    {
+     "seed": 1812,
+     "subregion": "ill_conditioned",
+     "arms": {
+      "candidate": {
+       "quality": 0.9995785159224252,
+       "category": "correct",
+       "seconds": 0.003217,
+       "cpu_seconds": 0.003221,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "output_shape": true,
+         "dual_certificate_present": true,
+         "primal_feasible": true,
+         "dual_feasible": true,
+         "complementary_slackness": true,
+         "stationarity": true,
+         "duality_gap_closed": true,
+         "objective_recomputed": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.9999999973559319,
+       "category": "correct",
+       "seconds": 0.030887,
+       "cpu_seconds": 0.030645
+      },
+      "competitor": {
+       "quality": 0.24927766306739596,
+       "category": "wrong",
+       "seconds": 14.332305,
+       "cpu_seconds": 14.154786
+      }
+     }
+    },
+    {
+     "seed": 1813,
+     "subregion": "well_conditioned",
+     "arms": {
+      "candidate": {
+       "quality": 0.9999962256228423,
+       "category": "correct",
+       "seconds": 0.001294,
+       "cpu_seconds": 0.001297,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "output_shape": true,
+         "dual_certificate_present": true,
+         "primal_feasible": true,
+         "dual_feasible": true,
+         "complementary_slackness": true,
+         "stationarity": true,
+         "duality_gap_closed": true,
+         "objective_recomputed": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 1.0,
+       "category": "correct",
+       "seconds": 0.017995,
+       "cpu_seconds": 0.017997
+      },
+      "competitor": {
+       "quality": 0.9976586163315986,
+       "category": "correct",
+       "seconds": 0.052842,
+       "cpu_seconds": 0.051375
+      }
+     }
+    },
+    {
+     "seed": 1814,
+     "subregion": "ill_conditioned",
+     "arms": {
+      "candidate": {
+       "quality": 0.9997164278564094,
+       "category": "correct",
+       "seconds": 0.003755,
+       "cpu_seconds": 0.00376,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "output_shape": true,
+         "dual_certificate_present": true,
+         "primal_feasible": true,
+         "dual_feasible": true,
+         "complementary_slackness": true,
+         "stationarity": true,
+         "duality_gap_closed": true,
+         "objective_recomputed": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 1.0,
+       "category": "correct",
+       "seconds": 0.024516,
+       "cpu_seconds": 0.02445
+      },
+      "competitor": {
+       "quality": 0.9723172838228683,
+       "category": "correct",
+       "seconds": 9.057331,
+       "cpu_seconds": 8.999381
+      }
+     }
+    },
+    {
+     "seed": 1815,
+     "subregion": "well_conditioned",
+     "arms": {
+      "candidate": {
+       "quality": 0.9999951616680854,
+       "category": "correct",
+       "seconds": 0.00205,
+       "cpu_seconds": 0.002055,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "output_shape": true,
+         "dual_certificate_present": true,
+         "primal_feasible": true,
+         "dual_feasible": true,
+         "complementary_slackness": true,
+         "stationarity": true,
+         "duality_gap_closed": true,
+         "objective_recomputed": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 1.0,
+       "category": "correct",
+       "seconds": 0.020201,
+       "cpu_seconds": 0.020204
+      },
+      "competitor": {
+       "quality": 0.9997828899085649,
+       "category": "correct",
+       "seconds": 0.106765,
+       "cpu_seconds": 0.10677
+      }
+     }
+    },
+    {
+     "seed": 1816,
+     "subregion": "ill_conditioned",
+     "arms": {
+      "candidate": {
+       "quality": 0.9997539620334708,
+       "category": "correct",
+       "seconds": 0.00376,
+       "cpu_seconds": 0.003764,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "output_shape": true,
+         "dual_certificate_present": true,
+         "primal_feasible": true,
+         "dual_feasible": true,
+         "complementary_slackness": true,
+         "stationarity": true,
+         "duality_gap_closed": true,
+         "objective_recomputed": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": -1.0,
+       "category": "wrong",
+       "seconds": 0.02496,
+       "cpu_seconds": 0.024797
+      },
+      "competitor": {
+       "quality": 0.9835424956153566,
+       "category": "correct",
+       "seconds": 1.864148,
+       "cpu_seconds": 1.844904
+      }
+     }
+    },
+    {
+     "seed": 1817,
+     "subregion": "ill_conditioned",
+     "arms": {
+      "candidate": {
+       "quality": 0.9995870696821368,
+       "category": "correct",
+       "seconds": 0.002911,
+       "cpu_seconds": 0.002886,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "output_shape": true,
+         "dual_certificate_present": true,
+         "primal_feasible": true,
+         "dual_feasible": true,
+         "complementary_slackness": true,
+         "stationarity": true,
+         "duality_gap_closed": true,
+         "objective_recomputed": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": -1.0,
+       "category": "wrong",
+       "seconds": 0.021667,
+       "cpu_seconds": 0.021659
+      },
+      "competitor": {
+       "quality": 0.9398534860100596,
+       "category": "correct",
+       "seconds": 12.819951,
+       "cpu_seconds": 12.733584
+      }
+     }
+    },
+    {
+     "seed": 1818,
+     "subregion": "ill_conditioned",
+     "arms": {
+      "candidate": {
+       "quality": 0.9940474053394355,
+       "category": "correct",
+       "seconds": 0.002231,
+       "cpu_seconds": 0.002235,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "output_shape": true,
+         "dual_certificate_present": true,
+         "primal_feasible": true,
+         "dual_feasible": true,
+         "complementary_slackness": true,
+         "stationarity": true,
+         "duality_gap_closed": true,
+         "objective_recomputed": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 1.0,
+       "category": "correct",
+       "seconds": 0.021041,
+       "cpu_seconds": 0.021044
+      },
+      "competitor": {
+       "quality": 0.7487745014620056,
+       "category": "correct",
+       "seconds": 6.482572,
+       "cpu_seconds": 6.428877
+      }
+     }
+    },
+    {
+     "seed": 1819,
+     "subregion": "ill_conditioned",
+     "arms": {
+      "candidate": {
+       "quality": 1.0,
+       "category": "correct",
+       "seconds": 0.003951,
+       "cpu_seconds": 0.003956,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "output_shape": true,
+         "dual_certificate_present": true,
+         "primal_feasible": true,
+         "dual_feasible": true,
+         "complementary_slackness": true,
+         "stationarity": true,
+         "duality_gap_closed": true,
+         "objective_recomputed": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": -1.0,
+       "category": "wrong",
+       "seconds": 0.028473,
+       "cpu_seconds": 0.028082
+      },
+      "competitor": {
+       "quality": 0.9952573311932263,
+       "category": "correct",
+       "seconds": 1.441439,
+       "cpu_seconds": 1.43363
+      }
+     }
+    },
+    {
+     "seed": 1820,
+     "subregion": "ill_conditioned",
+     "arms": {
+      "candidate": {
+       "quality": 1.0,
+       "category": "correct",
+       "seconds": 0.002474,
+       "cpu_seconds": 0.002478,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "output_shape": true,
+         "dual_certificate_present": true,
+         "primal_feasible": true,
+         "dual_feasible": true,
+         "complementary_slackness": true,
+         "stationarity": true,
+         "duality_gap_closed": true,
+         "objective_recomputed": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": -1.0,
+       "category": "wrong",
+       "seconds": 0.030877,
+       "cpu_seconds": 0.03088
+      },
+      "competitor": {
+       "quality": 0.997114131433398,
+       "category": "correct",
+       "seconds": 0.194922,
+       "cpu_seconds": 0.189946
+      }
+     }
+    },
+    {
+     "seed": 1821,
+     "subregion": "ill_conditioned",
+     "arms": {
+      "candidate": {
+       "quality": 0.9999952991141886,
+       "category": "correct",
+       "seconds": 0.007584,
+       "cpu_seconds": 0.00704,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "output_shape": true,
+         "dual_certificate_present": true,
+         "primal_feasible": true,
+         "dual_feasible": true,
+         "complementary_slackness": true,
+         "stationarity": true,
+         "duality_gap_closed": true,
+         "objective_recomputed": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": -1.0,
+       "category": "wrong",
+       "seconds": 0.028537,
+       "cpu_seconds": 0.028337
+      },
+      "competitor": {
+       "quality": 0.9997191154523614,
+       "category": "correct",
+       "seconds": 0.475729,
+       "cpu_seconds": 0.46829
+      }
+     }
+    },
+    {
+     "seed": 1822,
+     "subregion": "ill_conditioned",
+     "arms": {
+      "candidate": {
+       "quality": 0.9999812558063406,
+       "category": "correct",
+       "seconds": 0.002017,
+       "cpu_seconds": 0.00202,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "output_shape": true,
+         "dual_certificate_present": true,
+         "primal_feasible": true,
+         "dual_feasible": true,
+         "complementary_slackness": true,
+         "stationarity": true,
+         "duality_gap_closed": true,
+         "objective_recomputed": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": -1.0,
+       "category": "wrong",
+       "seconds": 0.01943,
+       "cpu_seconds": 0.019432
+      },
+      "competitor": {
+       "quality": 0.9735976920848698,
+       "category": "correct",
+       "seconds": 0.330721,
+       "cpu_seconds": 0.330085
+      }
+     }
+    },
+    {
+     "seed": 1823,
+     "subregion": "well_conditioned",
+     "arms": {
+      "candidate": {
+       "quality": 0.9999999701970266,
+       "category": "correct",
+       "seconds": 0.006062,
+       "cpu_seconds": 0.006068,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "output_shape": true,
+         "dual_certificate_present": true,
+         "primal_feasible": true,
+         "dual_feasible": true,
+         "complementary_slackness": true,
+         "stationarity": true,
+         "duality_gap_closed": true,
+         "objective_recomputed": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 1.0,
+       "category": "correct",
+       "seconds": 0.04455,
+       "cpu_seconds": 0.044484
+      },
+      "competitor": {
+       "quality": 0.999974605257148,
+       "category": "correct",
+       "seconds": 0.12128,
+       "cpu_seconds": 0.121286
+      }
+     }
+    },
+    {
+     "seed": 1824,
+     "subregion": "well_conditioned",
+     "arms": {
+      "candidate": {
+       "quality": 0.9999994409195562,
+       "category": "correct",
+       "seconds": 0.001255,
+       "cpu_seconds": 0.001259,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "output_shape": true,
+         "dual_certificate_present": true,
+         "primal_feasible": true,
+         "dual_feasible": true,
+         "complementary_slackness": true,
+         "stationarity": true,
+         "duality_gap_closed": true,
+         "objective_recomputed": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 1.0,
+       "category": "correct",
+       "seconds": 0.017242,
+       "cpu_seconds": 0.017244
+      },
+      "competitor": {
+       "quality": 0.8530461416724832,
+       "category": "correct",
+       "seconds": 0.023526,
+       "cpu_seconds": 0.023498
+      }
+     }
+    },
+    {
+     "seed": 1825,
+     "subregion": "well_conditioned",
+     "arms": {
+      "candidate": {
+       "quality": 0.9999995794139837,
+       "category": "correct",
+       "seconds": 0.001203,
+       "cpu_seconds": 0.001206,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "output_shape": true,
+         "dual_certificate_present": true,
+         "primal_feasible": true,
+         "dual_feasible": true,
+         "complementary_slackness": true,
+         "stationarity": true,
+         "duality_gap_closed": true,
+         "objective_recomputed": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 1.0,
+       "category": "correct",
+       "seconds": 0.018003,
+       "cpu_seconds": 0.018005
+      },
+      "competitor": {
+       "quality": 0.9938927207102793,
+       "category": "correct",
+       "seconds": 0.042412,
+       "cpu_seconds": 0.042367
+      }
+     }
+    },
+    {
+     "seed": 1826,
+     "subregion": "well_conditioned",
+     "arms": {
+      "candidate": {
+       "quality": 0.9999586433367728,
+       "category": "correct",
+       "seconds": 0.004552,
+       "cpu_seconds": 0.004557,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "output_shape": true,
+         "dual_certificate_present": true,
+         "primal_feasible": true,
+         "dual_feasible": true,
+         "complementary_slackness": true,
+         "stationarity": true,
+         "duality_gap_closed": true,
+         "objective_recomputed": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 1.0,
+       "category": "correct",
+       "seconds": 0.029666,
+       "cpu_seconds": 0.02967
+      },
+      "competitor": {
+       "quality": 0.9999557574148871,
+       "category": "correct",
+       "seconds": 0.192974,
+       "cpu_seconds": 0.192964
+      }
+     }
+    },
+    {
+     "seed": 1827,
+     "subregion": "ill_conditioned",
+     "arms": {
+      "candidate": {
+       "quality": 0.9999404922406813,
+       "category": "correct",
+       "seconds": 0.001899,
+       "cpu_seconds": 0.001904,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "output_shape": true,
+         "dual_certificate_present": true,
+         "primal_feasible": true,
+         "dual_feasible": true,
+         "complementary_slackness": true,
+         "stationarity": true,
+         "duality_gap_closed": true,
+         "objective_recomputed": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 1.0,
+       "category": "correct",
+       "seconds": 0.019403,
+       "cpu_seconds": 0.019405
+      },
+      "competitor": {
+       "quality": 0.7606613742281182,
+       "category": "correct",
+       "seconds": 11.405598,
+       "cpu_seconds": 11.267359
+      }
+     }
+    },
+    {
+     "seed": 1828,
+     "subregion": "many_constraints",
+     "arms": {
+      "candidate": {
+       "quality": 0.9999949641599569,
+       "category": "correct",
+       "seconds": 0.011408,
+       "cpu_seconds": 0.011415,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "output_shape": true,
+         "dual_certificate_present": true,
+         "primal_feasible": true,
+         "dual_feasible": true,
+         "complementary_slackness": true,
+         "stationarity": true,
+         "duality_gap_closed": true,
+         "objective_recomputed": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": -1.0,
+       "category": "wrong",
+       "seconds": 0.069319,
+       "cpu_seconds": 0.069226
+      },
+      "competitor": {
+       "quality": 0.7190852035783589,
+       "category": "correct",
+       "seconds": 0.319369,
+       "cpu_seconds": 0.316488
+      }
+     }
+    },
+    {
+     "seed": 1829,
+     "subregion": "ill_conditioned",
+     "arms": {
+      "candidate": {
+       "quality": 0.999993724290703,
+       "category": "correct",
+       "seconds": 0.001669,
+       "cpu_seconds": 0.001673,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "output_shape": true,
+         "dual_certificate_present": true,
+         "primal_feasible": true,
+         "dual_feasible": true,
+         "complementary_slackness": true,
+         "stationarity": true,
+         "duality_gap_closed": true,
+         "objective_recomputed": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": -1.0,
+       "category": "wrong",
+       "seconds": 0.01896,
+       "cpu_seconds": 0.018964
+      },
+      "competitor": {
+       "quality": 0.9999290888991927,
+       "category": "correct",
+       "seconds": 0.133573,
+       "cpu_seconds": 0.133371
+      }
+     }
+    }
+   ]
+  }
+ },
+ "finished_at": "2026-10-22T10:56:32.740389+00:00"
+}

@@ -1,0 +1,99 @@
+{
+  "schema": "greg-preregistration/1",
+  "experiment": "P6 joined v1: recipe lifts re-measured on the joined integration tree",
+  "procedure_source": "P6 converged v1 (prereg-converged-v1.json, run_converged_v1.py, freeze 53d39d76), reused unchanged by import; only identity, paths and held-out seeds differ",
+  "directive": "docs/intent/INTENT-20261021-MIND-MAXIMUM-CONTINUATION.json (section 6: bind verification to the actual integrated code; do not transfer old benchmark claims onto changed implementations)",
+  "owner": "integration session on claude/greg-full-machine-completion-whgiee (joins #192, the portfolio chain, Cortex 0.2.2, Track B #189 with review fixes, #179, #158); work branch wip/p6-joined based on ea90b4b4",
+  "question": "On the joined tree, does routed composition decide more held-out items correctly than the strongest single intelligence available (lineage constituents and admitted exact single genomes), with no added wrong answer?",
+  "why_now": "On the joined tree (ea90b4b4) greg.cognition.compiler.recipe_stale names a changed recipe closure for all seven recipes: the joined cortex.reason (grant-window guard) and the composition and stage solvers changed under the code converged v1 measured. Live VPL on the joined tree is therefore 0. The founder's rule: bind verification to the actual integrated code; do not transfer old claims; preserve NO_LIFT.",
+  "families": {
+    "F1": "estimate_then_optimize (v1 generator, scoring and constituents)",
+    "F2R": "identify_then_optimize (v2)",
+    "F3": "graph_then_allocate (v2)",
+    "F4": "bayes_then_voi (v2)"
+  },
+  "not_remeasured": {
+    "F5_M4": "held-out data already looked at; a re-run is diagnostic only",
+    "F6_bank_calls": "same",
+    "F7_SNDlib": "same; also third-party data rights uncleared",
+    "F8_Uber": "same; also third-party data rights uncleared"
+  },
+  "recipes": {
+    "F1": "estimate_then_optimize",
+    "F2R": "identify_then_optimize",
+    "F3": "graph_then_allocate",
+    "F4": "bayes_then_voi"
+  },
+  "seeds": {
+    "F1": [
+      4717,
+      4756
+    ],
+    "F2R": [
+      4640,
+      4703
+    ],
+    "F3": [
+      4809,
+      4848
+    ],
+    "F4": [
+      4863,
+      4902
+    ]
+  },
+  "seed_hygiene": {
+    "assignment": "this lane may use 4000-4999 only (another agent uses 5100-5999); reservations 3000-3999 and P8_RESERVED 7000-9199 excluded",
+    "checked_against": [
+      "greg.cognition.genomes.admission.spent_seeds()",
+      "DEV_SEEDS 0-9 and every lineage's development seeds 0-199",
+      "P8_RESERVED",
+      "3000-3999",
+      "every integer or [a, b] range under a seed-named key in every tracked *freeze*.json, *prereg*.json and *suite*.json (94 files)",
+      "every exposure record's seed ranges in docs/evidence/greg-data-exposure-ledger.json (443 records)"
+    ],
+    "result": "no overlap with spent_seeds(), development seeds, reservations or any freeze or pre-registration. Disclosed numeric overlaps, none with a P6 generator: (1) the ledger records the #158 immune-8 review pilot over seeds 4000-4999 on generator greg.cognition.genomes.collective:immune_gaussian_instance, so every seed in this lane's assigned range shares a number with it (184 of 184 here); 4000-4639 is also used by the develop_repair_hybrid review pilot (repair_instance), so these ranges are taken from 4640-4999 to touch one exposure, not two. (2) seed 4895 (inside F4) appears as a payload seed in cortex/evaluation/suites/crossgeo-heldout-v0.2.json, a cortex crossgeo item with its own generator; no 40-seed contiguous range in 4640-4999 avoids every crossgeo number once F1, F2R and F3 are placed. No P6 generator (composition_lift run.py f1/f2, run_v2.py f2r/f3/f4) has ever been run on any of these seeds.",
+    "check_command": "python seedcheck.py <worktree> (session scratchpad; output reproduced in the evidence README)"
+  },
+  "arms": {
+    "constituents": "each family's lineage constituent arms, unchanged",
+    "exact_single": "F3 only: cognition.flow_expansion_mcf (operation expand_capacity_mcf), DEFAULT_FOR_GEOMETRY in admission v3, evaluation-only attach pin in memory. No other family has an admitted single genome answering its whole question; that is stated, not invented.",
+    "static_composition": "the family's own declared recipe",
+    "routed_composition": "the cortex router's choice, as in v1/v2",
+    "compiled": "the same request through the Competency Compiler; reported only"
+  },
+  "eval_attach": [
+    "cognition.flow_maxflow",
+    "cognition.flow_capacity_plan",
+    "cognition.flow_reinforce_greedy",
+    "cognition.forecast_quantile",
+    "cognition.newsvendor_compile",
+    "cognition.decision_preposterior",
+    "cognition.probabilistic",
+    "cognition.information",
+    "cognition.optimization",
+    "cognition.flow_expansion_mcf"
+  ],
+  "rule": "converged rule: routed correct > best single correct (best of lineage constituents and exact_single, chosen on held-out results), routed wrong <= best single wrong, one-sided exact sign test p < 0.05 over discordant items, routed median latency <= 60 s. Lineage rule (constituents only) reported beside it.",
+  "reported_not_in_rule": [
+    "false (wrong) answers per arm",
+    "abstentions (no_decision) per arm",
+    "translation and composition failure rates of routed composition",
+    "suboptimal answers",
+    "median and p95 latency per arm",
+    "stages",
+    "the compiled arm's state and stages",
+    "which exact single ties routed composition (tied_by)",
+    "environment: interpreter, isolation flag, CPU affinity, load average at start and end, and the declared contention"
+  ],
+  "falsifier": "Any family where the best single matches or beats routed composition on correct answers, or where routed composition adds a wrong answer, has no converged lift, whatever the lineage verdict was.",
+  "development_check": {
+    "seeds": "dev seeds 1-2 of every family (development seeds, already exposed by v1's own check); no held-out seed was generated before the freeze",
+    "found": "every arm executed on the joined code; routed and static composition and the compiled arm ANSWERED all 8 items correctly; constituent and exact-single arms behaved as in v1's check. No defect found; no code changed.",
+    "action": "none"
+  },
+  "execution": "once, from a clean detached worktree at the freeze commit, python -I, taskset -c 3 (one core). A full test suite runs concurrently on another core; latency is reported under that contention and is not in the rule except the 60 s median budget.",
+  "procedure": "Commit runner and pre-registration; in a clean tree run --freeze to write freeze-joined-v1.json; commit it; run once from a clean detached worktree at the freeze commit under python -I pinned to one core; store results, limits and run.log under docs/evidence/greg-composition-lift/2026-10-22-joined/. The run refuses a dirty tree, a missing freeze, any changed input or a non-isolated interpreter. A failed or interrupted run is reported, not repeated on the same seeds.",
+  "index_effect": "the results file joins P6_RUNS after converged v1; its verdicts bind the recipe code at the freeze commit and decide for the four synthetic recipes, so later code changes make them stale again",
+  "authority": "none. No attachment, no adoption, no merge."
+}

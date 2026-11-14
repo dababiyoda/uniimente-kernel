@@ -44,6 +44,7 @@ COMMAND_KINDS = (
     "BODY_PAUSE", "BODY_RESUME", "BODY_STOP",
     "BODY_DESIGNATE",  # founder names this body as the intended first execution body
     "NODE_ENROLL",        # admit another compute node with its own bounded identity
+    "NODE_REVOKE",        # end one node's current enrollment; founder key only, like NODE_ENROLL
     "SOP_RATIFY",         # promote an observed procedure into a reusable capability
     "MODEL_ROUTE_SET",    # replace cognition routes, not authority; founder key only
     "ROTATE_FOUNDER_KEY",
@@ -55,6 +56,7 @@ COMMAND_KINDS = (
     "REALIZATION",        # bind observed values to one retained forecast receipt: evidence only, no consequence
     "TREASURY_REQUIREMENTS",  # per-tier obligation and reserve amounts for one venture's books; moves no money
     "FOUNDER_TIER",       # the signing key attests passphrase custody; grants nothing (greg/metrics.py founder_tier)
+    "AUTONOMY_GRANT",     # start one exact autonomy tuple above A0 (autonomy/levels.py); founder key only
 )
 # FOUNDER_TIER's only body. The CLI signs it only from a passphrase-encrypted key file (``greg founder attest``,
 # and ``greg body designate`` when the key is protected), so the supported tools never sign it for a
@@ -64,11 +66,12 @@ COMMAND_KINDS = (
 FOUNDER_TIER_BODY = {"key_custody": "passphrase"}
 MAX_TTL = timedelta(days=7)
 # A device key (e.g. Alfonso's phone) is a delegation, never a second founder: it may only
-# answer, criticize, pause, resume or stop. Missions, goals, capabilities, key rotation and
-# device enrollment always need the founder key itself. GOAL_CONTROL is delegable only for
-# narrowing controls (greg/goal_gravity.py DEVICE_GOAL_CONTROLS): stop, lower, never, mute,
-# ask-before, forget, revoke a capability. Resuming, changing or revoking a goal needs the
-# founder key.
+# answer, criticize, pause, resume or stop. Missions, goals, capabilities, nodes (NODE_ENROLL,
+# NODE_REVOKE), key rotation and device enrollment always need the founder key itself, and the
+# verifier refuses a device any kind outside DEVICE_KINDS whatever its delegation record lists.
+# GOAL_CONTROL is delegable only for narrowing controls (greg/goal_gravity.py
+# DEVICE_GOAL_CONTROLS): stop, lower, never, mute, ask-before, forget, revoke a capability.
+# Resuming, changing or revoking a goal needs the founder key.
 DEVICE_KINDS = ("DECISION", "CRITIQUE", "LIFECYCLE", "BODY_PAUSE", "BODY_RESUME", "BODY_STOP", "GOAL_CONTROL")
 DEVICE_MAX_LIFETIME = timedelta(days=90)
 READ_SKEW = timedelta(seconds=60)
@@ -77,6 +80,20 @@ CLOCK_SKEW = timedelta(minutes=5)
 
 class FounderAuthError(ValueError):
     """Unauthenticated, replayed, expired or malformed founder interaction."""
+
+
+def accepted_body(payload):
+    """The signed body of one retained ``command.accepted``: its envelope's ``body``, the bytes the founder signed.
+
+    Records written before 2026-10-23 also carry a top-level ``body`` copy beside the envelope; a new record keeps
+    only the envelope (a 509 KB request was stored once more per copy). Either shape reads here, the envelope
+    first; a bare ``body`` counts only when a record has no envelope. Nothing here verifies a signature."""
+    if not isinstance(payload, dict):
+        return None
+    env = payload.get("envelope")
+    if isinstance(env, dict) and "body" in env:
+        return env["body"]
+    return payload.get("body")
 
 
 def spent_nonce(event_type: str, payload) -> str | None:
@@ -237,7 +254,7 @@ class FounderVerifier:
             raise FounderAuthError("founder key not enrolled or revoked")
         if now >= instant(device["expires_at"]):
             raise FounderAuthError("device delegation expired")
-        if kind is not None and kind not in device["kinds"]:
+        if kind is not None and (kind not in DEVICE_KINDS or kind not in device["kinds"]):
             raise FounderAuthError(f"device key may not sign {kind}; founder key required")
         return device["public_key"], "device:" + device["label"]
 

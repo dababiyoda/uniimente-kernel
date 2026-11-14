@@ -72,6 +72,8 @@
     "note": "mandatory checks are never traded for cost; only optional deeper cognition is gated on its chance of changing the decision",
     "policy": "cortex-thinking-budget/0.1"
   },
+  "capability_deficit": null,
+  "coverage": "complete",
   "created_at": "2026-09-30T00:00:00Z",
   "disposition": {
     "kind": "handoff",
@@ -135,7 +137,7 @@
   "execution_authority": "none",
   "expenditure": {
     "model_calls": 0,
-    "seconds": 0.054734,
+    "seconds": 0.083407,
     "solver_calls": 0,
     "usd": 0.0
   },
@@ -293,7 +295,7 @@
         ],
         "expenditure": {
           "model_calls": 0,
-          "seconds": 0.0528,
+          "seconds": 0.078667,
           "solver_calls": 0,
           "usd": 0.0
         },
@@ -458,12 +460,16 @@
   ],
   "protection": null,
   "ranking": null,
-  "receipt_id": "sha256:64d4d4c91954d0ed36c3c86e3d325abe7da85be09dacbf69bc01ae6930fe0f6f",
+  "receipt_id": "sha256:b36ce74a2b3e36339b636827bb1955c747e94c54ed1b46c1cd5ec009e9a91956",
   "route": {
     "attempts": [],
     "composition": false,
+    "dropped_by_cap": [],
     "formal_plan": null,
-    "policy": "cortex-route-policy/0.2.1",
+    "part_geometries": {
+      "cortex.deterrence.accountability@0.1.0": "strategic"
+    },
+    "policy": "cortex-route-policy/0.2.2",
     "rationale": "structured payload fields select routes by the fixed policy table; eligibility and budget filter first",
     "selected": [
       "cortex.deterrence.accountability@0.1.0"
@@ -503,8 +509,8 @@
     "verifier": "cortex.verifier.adversarial@0.1.0"
   },
   "versions": {
-    "cortex": "0.2.1",
-    "policy": "cortex-route-policy/0.2.1",
+    "cortex": "0.2.2",
+    "policy": "cortex-route-policy/0.2.2",
     "routes": {
       "cortex.deterrence.accountability@0.1.0": "0.1.0"
     }

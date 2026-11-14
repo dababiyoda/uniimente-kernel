@@ -23,6 +23,9 @@ from provenance.ledger import EvidenceLedger
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 NONE_HARM = {d: "none" for d in HARM_DIMENSIONS}
+# 0.2.2 (from seed 0.1.6): a mandate with an expiry is only verifiable against a reference instant, so every gate
+# evaluation in this file states one (the fixture mandate expires on 2026-12-31).
+AS_OF = "2026-09-30T00:00:00Z"
 MANDATE = AuthorityRecord("m1", "founder_mandate", "founder_signed",
                           {"scope": {"action_classes": ["draft.*"], "targets": ["internal://*"],
                                      "max_consequence_class": "internal_write",
@@ -47,7 +50,7 @@ class TestHardGatesBeforeRanking:
     def test_favorable_score_cannot_override_failed_gate(self):
         o1 = opt("O1", {"value": 1e9}, harm={**NONE_HARM, "rights": "high"})
         o2 = opt("O2", {"value": 0.1})
-        reports = {o.option_id: evaluate_gates(o, [allow("O1"), allow("O2"), MANDATE], remaining_budget_usd=1.0)
+        reports = {o.option_id: evaluate_gates(o, [allow("O1"), allow("O2"), MANDATE], remaining_budget_usd=1.0, as_of=AS_OF)
                    for o in (o1, o2)}
         assert reports["O1"].gates["rights"].status == "FAIL"
         ranking = rank_after_gates([o1, o2], reports)
@@ -58,7 +61,7 @@ class TestHardGatesBeforeRanking:
     def test_non_permission_records_never_create_permission(self, kind):
         fake = AuthorityRecord("x", kind, "assistant", {"subject": "O1", "verdict": "allow",
                                                         "scope": MANDATE.body["scope"]})
-        report = evaluate_gates(opt("O1", {"v": 1}), [fake], remaining_budget_usd=1.0)
+        report = evaluate_gates(opt("O1", {"v": 1}), [fake], remaining_budget_usd=1.0, as_of=AS_OF)
         assert report.gates["law"].status == "UNRESOLVED"
         assert report.gates["founder_scope"].status == "UNRESOLVED"
         assert not report.all_pass
@@ -66,7 +69,7 @@ class TestHardGatesBeforeRanking:
 
     def test_forged_origin_on_a_permission_kind_is_rejected(self):
         forged = AuthorityRecord("f", "policy_decision", "assistant", {"subject": "O1", "verdict": "allow"})
-        report = evaluate_gates(opt("O1", {"v": 1}), [forged, MANDATE], remaining_budget_usd=1.0)
+        report = evaluate_gates(opt("O1", {"v": 1}), [forged, MANDATE], remaining_budget_usd=1.0, as_of=AS_OF)
         assert report.gates["law"].status == "UNRESOLVED"
 
     def test_real_policy_engine_decisions_map_to_gates(self):
@@ -82,8 +85,8 @@ class TestHardGatesBeforeRanking:
         r_deny = record_from_policy_decision(denied, subject="O1", action_class="draft.prepare")
         r_human = record_from_policy_decision(human, subject="O2", action_class="material_debt")
         assert r_deny.permission_bearing and r_human.permission_bearing
-        g1 = evaluate_gates(opt("O1", {"v": 1}), [r_deny, MANDATE], remaining_budget_usd=1.0)
-        g2 = evaluate_gates(opt("O2", {"v": 1}), [r_human, MANDATE], remaining_budget_usd=1.0)
+        g1 = evaluate_gates(opt("O1", {"v": 1}), [r_deny, MANDATE], remaining_budget_usd=1.0, as_of=AS_OF)
+        g2 = evaluate_gates(opt("O2", {"v": 1}), [r_human, MANDATE], remaining_budget_usd=1.0, as_of=AS_OF)
         assert g1.gates["law"].status == "FAIL" and g1.resolution == "exclude"
         assert g2.gates["law"].status == "UNRESOLVED" and g2.resolution == "authorized_adjudication"
 
@@ -91,8 +94,8 @@ class TestHardGatesBeforeRanking:
         o = opt("O1", {"v": 1}, requires_consent=True, consent_subject="c-1")
         revoked = AuthorityRecord("c", "consent_record", "consent_capture",
                                   {"subject": "c-1", "purposes": ["draft.*"], "revoked": True})
-        assert evaluate_gates(o, [allow("O1"), MANDATE, revoked], remaining_budget_usd=1).gates["consent"].status == "FAIL"
-        assert evaluate_gates(o, [allow("O1"), MANDATE], remaining_budget_usd=1).gates["consent"].status == "UNRESOLVED"
+        assert evaluate_gates(o, [allow("O1"), MANDATE, revoked], remaining_budget_usd=1, as_of=AS_OF).gates["consent"].status == "FAIL"
+        assert evaluate_gates(o, [allow("O1"), MANDATE], remaining_budget_usd=1, as_of=AS_OF).gates["consent"].status == "UNRESOLVED"
 
     def test_evidence_floor_grows_with_consequence_and_irreversibility(self):
         mandate = AuthorityRecord("m", "founder_mandate", "founder_signed",
@@ -100,29 +103,29 @@ class TestHardGatesBeforeRanking:
                                              "max_consequence_class": "external_contact"}})
         o = opt("O1", {"v": 1}, consequence_class="external_contact", reversibility="irreversible",
                 target="mail:x", evidence_statuses=["externally_verified"])
-        rep = evaluate_gates(o, [allow("O1"), mandate], remaining_budget_usd=1)
+        rep = evaluate_gates(o, [allow("O1"), mandate], remaining_budget_usd=1, as_of=AS_OF)
         assert rep.gates["evidence_sufficiency"].status == "UNRESOLVED"          # needs two strong items
         o2 = opt("O1", {"v": 1}, consequence_class="external_contact", reversibility="irreversible",
                  target="mail:x", evidence_statuses=["externally_verified", "externally_verified"])
-        assert evaluate_gates(o2, [allow("O1"), mandate], remaining_budget_usd=1).gates["evidence_sufficiency"].status == "PASS"
+        assert evaluate_gates(o2, [allow("O1"), mandate], remaining_budget_usd=1, as_of=AS_OF).gates["evidence_sufficiency"].status == "PASS"
 
     def test_financial_is_never_delegated_to_cognition(self):
         o = opt("O1", {"v": 1}, consequence_class="financial")
         # A mandate capped at internal_write puts a financial option outside scope: excluded.
-        capped = evaluate_gates(o, [allow("O1"), MANDATE], remaining_budget_usd=1)
+        capped = evaluate_gates(o, [allow("O1"), MANDATE], remaining_budget_usd=1, as_of=AS_OF)
         assert capped.gates["founder_scope"].status == "FAIL" and capped.resolution == "exclude"
         # Even inside a financial mandate, cognition does not decide: it hands off.
         wide = AuthorityRecord("m2", "founder_mandate", "founder_signed",
                                {"scope": {"action_classes": ["draft.*"], "targets": ["internal://*"],
                                           "max_consequence_class": "financial"}})
-        rep = evaluate_gates(o, [allow("O1"), wide], remaining_budget_usd=1)
+        rep = evaluate_gates(o, [allow("O1"), wide], remaining_budget_usd=1, as_of=AS_OF)
         assert rep.gates["consequence_boundary"].status == "UNRESOLVED"
         assert rep.resolution == "authorized_adjudication"
 
     def test_incomparable_options_preserve_tradeoffs_and_margin_blocks_near_ties(self):
         a, b = opt("A", {"speed": 0.9, "durability": 0.4}), opt("B", {"speed": 0.5, "durability": 0.8})
         recs = [allow("A"), allow("B"), MANDATE]
-        reports = {o.option_id: evaluate_gates(o, recs, remaining_budget_usd=1) for o in (a, b)}
+        reports = {o.option_id: evaluate_gates(o, recs, remaining_budget_usd=1, as_of=AS_OF) for o in (a, b)}
         r = rank_after_gates([a, b], reports)
         assert r["status"] == "incomparable" and r["chosen"] is None and len(r["tradeoffs"]) == 2
         near = rank_after_gates([a, b], reports, founder_weights={"speed": 0.5, "durability": 0.5})

@@ -20,7 +20,7 @@ def test_current_runner_scores_with_the_v3_loss_function():
 
 def test_a_changed_loss_function_is_refused_and_unrelated_edits_are_not():
     text = (ROOT / "cortex/evaluation/seed_genome/run.py").read_text()
-    pointer_moved = text.replace("freeze-v11.json", "freeze-v12.json")
+    pointer_moved = text.replace("freeze-v12.json", "freeze-v13.json")
     assert replay._sealed_loss_sha256(pointer_moved) == replay.LOSS_V3_SHA256
     tampered = text.replace("matched = receipt['answered'] == expected['answered']",
                             "matched = True", 1)

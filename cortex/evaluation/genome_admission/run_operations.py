@@ -79,10 +79,54 @@ def _sha(path: Path) -> str:
     return "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+# family -> {(path, function)} of every solver function SOLVERS actually held when a candidate called it: the run's
+# runtime dispatch, which the evidence index needs when the dispatch table takes non-literal updates (round-2 review
+# of #179, N4; greg.cognition.compiler.operation_status)
+CALLED: dict[str, set] = {}
+
+
+def _where(fn) -> tuple:
+    import inspect
+    try:
+        return Path(inspect.getsourcefile(fn)).resolve().relative_to(ROOT).as_posix(), fn.__name__
+    except (TypeError, ValueError):     # a builtin, or code outside the repository: no binding can be confirmed
+        return None, getattr(fn, "__name__", None)
+
+
 def _call(family, request, calls):
-    answer = SOLVERS[family](request, GEOMETRY)
+    fn = SOLVERS[family]
+    CALLED.setdefault(family, set()).add(_where(fn))
+    answer = fn(request, GEOMETRY)
     calls.append((request, answer))
     return answer
+
+
+def closures() -> dict:
+    """Each family's solver as SOLVERS dispatches it now (greg.cognition.compiler.solver_code), with the digest of
+    its static dependency closure. Frozen in ``inputs``; the run compares it before measuring."""
+    from greg.cognition.compiler import solver_code
+    out = {}
+    for family in FAMILIES:
+        code = solver_code(family)
+        out[family] = None if code is None else {"path": code["path"], "function": code["function"],
+                                                 "closure_sha256": code["closure_sha256"]}
+    return out
+
+
+def runtime_dispatch(family: str, frozen: dict | None) -> dict | None:
+    """The solver function the run's candidate calls actually reached for ``family``: one function, recorded as the
+    index reads it (``solver_closures``). None when the candidate made no call or reached more than one function
+    (nothing can then be confirmed, so a positive verdict stays unbound). A function other than the frozen one is
+    recorded as reached; the index then binds nothing (``runtime_disagrees``)."""
+    seen = CALLED.get(family) or set()
+    if len(seen) != 1:
+        return None
+    path, function = next(iter(seen))
+    if path is None:
+        return None
+    same = frozen is not None and (frozen["path"], frozen["function"]) == (path, function)
+    return {"path": path, "function": function, "closure_sha256": frozen["closure_sha256"] if same else None,
+            "calls_observed": True}
 
 
 # ------------------------------------------------------------------ #155's generators and arms, verbatim, split
@@ -274,7 +318,8 @@ def inputs(heldout) -> dict:
             "heldout_seeds": list(heldout), "families": list(FAMILIES), "operations": dict(OPERATION),
             "geometry": dict(GEOMETRY), "arms": {f: list(ITEMS[f].names) for f in FAMILIES},
             "tolerance": TOLERANCE, "abstain_quality": ABSTAIN_QUALITY,
-            "code": {p: _sha(ROOT / p) for p in files}, "dependencies": dependency_versions()}
+            "code": {p: _sha(ROOT / p) for p in files}, "dependencies": dependency_versions(),
+            "solver_closures": closures()}
 
 
 def smoke(family: str, seed: int) -> dict:
@@ -367,9 +412,12 @@ def run(run_id: str) -> dict:
               **binding, "seed_refusals": clash,
               "platform": platform.platform(), "python": sys.version.split()[0], "rule": admission.RULE,
               "rule_155": RULE_155, "geometry": GEOMETRY, "families": {}}
+    report["solver_closures"] = {}
     for family in frozen["inputs"]["families"]:
         item = ITEMS[family]
+        CALLED.pop(family, None)
         rows = admission.evaluate(item, heldout)
+        report["solver_closures"][family] = runtime_dispatch(family, frozen["inputs"]["solver_closures"].get(family))
         status, detail = admission.decide(item, rows)
         try:
             canonical = smoke(family, heldout[0])

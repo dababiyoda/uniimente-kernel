@@ -1,0 +1,67 @@
+{
+ "head": "d56fed24b6b611c9144313b69902ed40306b5371",
+ "host": {
+  "affinity": [
+   1
+  ],
+  "loadavg": [
+   "2.07",
+   "2.09",
+   "2.48"
+  ],
+  "python": "3.13.16"
+ },
+ "label": "DEVELOPMENT ONLY: exploratory, not confirmatory, not admission; genome dev seeds 0-9 and the natops development part only",
+ "natops_dev_candidate_reason_median_s": 0.341549,
+ "prototype_fork_from_warm_parent_per_request_s": 0.007123,
+ "reason_breakdown": {
+  "flow_maxflow": {
+   "in_process_solve_plus_verify_s": 0.00254,
+   "n": 8,
+   "parent_remainder_s": 0.003277,
+   "reason_total_s": 0.354865,
+   "solver_process_s": 0.224015,
+   "verifier_process_s": 0.111177
+  },
+  "graph_node_cut_exact": {
+   "in_process_solve_plus_verify_s": 0.001639,
+   "n": 10,
+   "parent_remainder_s": 0.003296,
+   "reason_total_s": 0.349956,
+   "solver_process_s": 0.230118,
+   "verifier_process_s": 0.116542
+  }
+ },
+ "spawn_and_import": {
+  "import_networkx_isolated_s": 0.198326,
+  "import_worker_modules_isolated_s": 0.112343,
+  "lazy_prototype_import_one_genome_plus_networkx_s": 0.18761,
+  "python_-I_pass_isolated_s": 0.024248
+ },
+ "worker_import_profile_flow_maxflow": {
+  "by_package_ms": {
+   "_frozen_importlib_external": 1.0,
+   "encodings": 1.4,
+   "greg": 51.5,
+   "json": 6.7,
+   "networkx": 86.8,
+   "pathlib": 3.4,
+   "site": 3.3,
+   "zipimport": 0.4
+  },
+  "total_ms": 155.2
+ },
+ "worker_import_profile_solve": {
+  "by_package_ms": {
+   "_frozen_importlib_external": 1.0,
+   "encodings": 1.5,
+   "greg": 58.9,
+   "io": 0.3,
+   "json": 7.1,
+   "networkx": 87.4,
+   "pathlib": 3.7,
+   "site": 3.5
+  },
+  "total_ms": 164.2
+ }
+}

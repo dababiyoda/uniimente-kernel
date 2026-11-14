@@ -1,0 +1,1233 @@
+{
+ "schema": "greg-protected-evolution/1",
+ "target": "constraint_release",
+ "rule": "trigger: incumbent worse than the simple baseline on >= 25% of train items; candidate advances if its train mean loss beats the incumbent's by > 1%; adversarial: every output verifies and no stress set worsens by > 5%; RETAIN iff on the held-out split the one-sided exact sign test over paired items gives p < 0.05 and the candidate's mean loss is lower; otherwise REJECT. Never applied automatically.",
+ "started_at": "2026-10-21T12:21:33.210608+00:00",
+ "source_commit": "70bb77d20e4c5e0123050307e7adebeaa4bfba56",
+ "source_dirty": [],
+ "freeze": {
+  "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/freeze.json",
+  "sha256": "sha256:9378b56e91ba266fffc37d04097a122e653e8e63f7a86a3eb4daa0095dd70d27",
+  "committed": true,
+  "commit": "unknown: a shallow clone's history may not reach the commit that added it"
+ },
+ "execution": {
+  "recorded": true,
+  "require_confinement": true,
+  "clean_room": "checked: fresh checkout, empty bytecode prefix, executed code inside the freeze",
+  "launcher_stated": "fresh detached checkout of 70bb77d20e4c5e0123050307e7adebeaa4bfba56",
+  "allow_dirty_for_test": false
+ },
+ "evaluator_seals": {
+  "train": "sha256:b8c00aed3043b6c86727af4f331eec1b98d78d51b3d138d107f4b2233fdeca26",
+  "heldout": "sha256:dd0176912db1d6002582abd0fef2f810166dd37e4121d8a5ed5cd8c55836bdbb"
+ },
+ "split": {
+  "train": 120,
+  "heldout": 240,
+  "excluded_admission_items": 770
+ },
+ "incumbent": {
+  "config": {
+   "mu": 4,
+   "offspring": 4,
+   "p_recombine": 0.3,
+   "p_extra_mutation": 0.3,
+   "p_extra_mutation_recombined": 0.5,
+   "p_restart": 0.0,
+   "tournament": 2
+  },
+  "id": "cfg-111751096c0d"
+ },
+ "confinement": {
+  "filesystem": "landlock",
+  "abi": 7,
+  "arbitrary_source": "refused",
+  "scope": "published source/runtime read-only; staged store read/write",
+  "repository_listing": "denied",
+  "signals": "scoped to the domain",
+  "ipc_scopes": [
+   "abstract_unix_socket",
+   "signal"
+  ],
+  "threads": 1
+ },
+ "failure": {
+  "metric": "normalised tardiness gap to the exact optimum on held-out cases vs random-restart search with the same budget and retain rule",
+  "rate": 0.4917,
+  "trigger": 0.25,
+  "incumbent_mean_train_loss": 0.008153
+ },
+ "residual_geometry": {
+  "due_dates": {
+   "loose_due_dates": {
+    "n": 57,
+    "failing": 28
+   },
+   "tight_due_dates": {
+    "n": 63,
+    "failing": 31
+   }
+  },
+  "processing_times": {
+   "uniform": {
+    "n": 58,
+    "failing": 28
+   },
+   "bimodal": {
+    "n": 62,
+    "failing": 31
+   }
+  }
+ },
+ "search": {
+  "generations": 5,
+  "population": 8,
+  "policy": "cover/1",
+  "evaluated": 51,
+  "lineage": [
+   {
+    "id": "cfg-111751096c0d",
+    "generation": 0,
+    "parents": [],
+    "ops": [
+     "incumbent"
+    ],
+    "config": {
+     "mu": 4,
+     "offspring": 4,
+     "p_recombine": 0.3,
+     "p_extra_mutation": 0.3,
+     "p_extra_mutation_recombined": 0.5,
+     "p_restart": 0.0,
+     "tournament": 2
+    },
+    "train_mean_loss": 0.008153
+   },
+   {
+    "id": "cfg-44ec7a3c4a73",
+    "generation": 1,
+    "parents": [
+     "cfg-111751096c0d"
+    ],
+    "ops": [
+     "mutate:p_extra_mutation_recombined",
+     "mutate:p_recombine"
+    ],
+    "config": {
+     "mu": 4,
+     "offspring": 4,
+     "p_extra_mutation": 0.3,
+     "p_extra_mutation_recombined": 0.513,
+     "p_recombine": 0.282,
+     "p_restart": 0.0,
+     "tournament": 2
+    },
+    "train_mean_loss": 0.007085
+   },
+   {
+    "id": "cfg-644f33cfda64",
+    "generation": 1,
+    "parents": [
+     "cfg-111751096c0d"
+    ],
+    "ops": [
+     "mutate:p_extra_mutation_recombined"
+    ],
+    "config": {
+     "mu": 4,
+     "offspring": 4,
+     "p_extra_mutation": 0.3,
+     "p_extra_mutation_recombined": 0.416,
+     "p_recombine": 0.3,
+     "p_restart": 0.0,
+     "tournament": 2
+    },
+    "train_mean_loss": 0.007796
+   },
+   {
+    "id": "cfg-254c4a185caa",
+    "generation": 1,
+    "parents": [
+     "cfg-111751096c0d"
+    ],
+    "ops": [
+     "mutate:p_extra_mutation_recombined"
+    ],
+    "config": {
+     "mu": 4,
+     "offspring": 4,
+     "p_extra_mutation": 0.3,
+     "p_extra_mutation_recombined": 0.698,
+     "p_recombine": 0.3,
+     "p_restart": 0.0,
+     "tournament": 2
+    },
+    "train_mean_loss": 0.007178
+   },
+   {
+    "id": "cfg-3c66dc174fef",
+    "generation": 1,
+    "parents": [
+     "cfg-111751096c0d"
+    ],
+    "ops": [
+     "mutate:mu"
+    ],
+    "config": {
+     "mu": 3,
+     "offspring": 4,
+     "p_extra_mutation": 0.3,
+     "p_extra_mutation_recombined": 0.5,
+     "p_recombine": 0.3,
+     "p_restart": 0.0,
+     "tournament": 2
+    },
+    "train_mean_loss": 0.007327
+   },
+   {
+    "id": "cfg-b52d5222e575",
+    "generation": 1,
+    "parents": [
+     "cfg-111751096c0d"
+    ],
+    "ops": [
+     "mutate:mu"
+    ],
+    "config": {
+     "mu": 2,
+     "offspring": 4,
+     "p_extra_mutation": 0.3,
+     "p_extra_mutation_recombined": 0.5,
+     "p_recombine": 0.3,
+     "p_restart": 0.0,
+     "tournament": 2
+    },
+    "train_mean_loss": 0.006916
+   },
+   {
+    "id": "cfg-ecc7ff11ac90",
+    "generation": 1,
+    "parents": [
+     "cfg-111751096c0d"
+    ],
+    "ops": [
+     "mutate:p_extra_mutation_recombined"
+    ],
+    "config": {
+     "mu": 4,
+     "offspring": 4,
+     "p_extra_mutation": 0.3,
+     "p_extra_mutation_recombined": 0.439,
+     "p_recombine": 0.3,
+     "p_restart": 0.0,
+     "tournament": 2
+    },
+    "train_mean_loss": 0.007683
+   },
+   {
+    "id": "cfg-3c097641cc6d",
+    "generation": 1,
+    "parents": [
+     "cfg-111751096c0d"
+    ],
+    "ops": [
+     "mutate:p_extra_mutation",
+     "mutate:offspring"
+    ],
+    "config": {
+     "mu": 4,
+     "offspring": 2,
+     "p_extra_mutation": 0.339,
+     "p_extra_mutation_recombined": 0.5,
+     "p_recombine": 0.3,
+     "p_restart": 0.0,
+     "tournament": 2
+    },
+    "train_mean_loss": 0.008605
+   },
+   {
+    "id": "cfg-89c3c37f5bf1",
+    "generation": 1,
+    "parents": [],
+    "ops": [
+     "cover:axis"
+    ],
+    "config": {
+     "mu": 6,
+     "offspring": 4,
+     "p_extra_mutation": 0.3,
+     "p_extra_mutation_recombined": 0.5,
+     "p_recombine": 0.3,
+     "p_restart": 0.0,
+     "tournament": 2
+    },
+    "train_mean_loss": 0.006757
+   },
+   {
+    "id": "cfg-2d4a15cf9f87",
+    "generation": 1,
+    "parents": [],
+    "ops": [
+     "cover:axis"
+    ],
+    "config": {
+     "mu": 8,
+     "offspring": 4,
+     "p_extra_mutation": 0.3,
+     "p_extra_mutation_recombined": 0.5,
+     "p_recombine": 0.3,
+     "p_restart": 0.0,
+     "tournament": 2
+    },
+    "train_mean_loss": 0.006124
+   },
+   {
+    "id": "cfg-931e3c4aa0b1",
+    "generation": 1,
+    "parents": [],
+    "ops": [
+     "cover:axis"
+    ],
+    "config": {
+     "mu": 4,
+     "offspring": 2,
+     "p_extra_mutation": 0.3,
+     "p_extra_mutation_recombined": 0.5,
+     "p_recombine": 0.3,
+     "p_restart": 0.0,
+     "tournament": 2
+    },
+    "train_mean_loss": 0.010178
+   },
+   {
+    "id": "cfg-562c6fdf85bc",
+    "generation": 1,
+    "parents": [],
+    "ops": [
+     "cover:axis"
+    ],
+    "config": {
+     "mu": 4,
+     "offspring": 6,
+     "p_extra_mutation": 0.3,
+     "p_extra_mutation_recombined": 0.5,
+     "p_recombine": 0.3,
+     "p_restart": 0.0,
+     "tournament": 2
+    },
+    "train_mean_loss": 0.00615
+   },
+   {
+    "id": "cfg-baaa4a7e37f0",
+    "generation": 1,
+    "parents": [],
+    "ops": [
+     "cover:axis"
+    ],
+    "config": {
+     "mu": 4,
+     "offspring": 8,
+     "p_extra_mutation": 0.3,
+     "p_extra_mutation_recombined": 0.5,
+     "p_recombine": 0.3,
+     "p_restart": 0.0,
+     "tournament": 2
+    },
+    "train_mean_loss": 0.006502
+   },
+   {
+    "id": "cfg-7f97cd51a64d",
+    "generation": 1,
+    "parents": [],
+    "ops": [
+     "cover:axis"
+    ],
+    "config": {
+     "mu": 4,
+     "offspring": 4,
+     "p_extra_mutation": 0.0,
+     "p_extra_mutation_recombined": 0.5,
+     "p_recombine": 0.3,
+     "p_restart": 0.0,
+     "tournament": 2
+    },
+    "train_mean_loss": 0.008385
+   },
+   {
+    "id": "cfg-554aac1da8d1",
+    "generation": 1,
+    "parents": [],
+    "ops": [
+     "cover:axis"
+    ],
+    "config": {
+     "mu": 4,
+     "offspring": 4,
+     "p_extra_mutation": 0.9,
+     "p_extra_mutation_recombined": 0.5,
+     "p_recombine": 0.3,
+     "p_restart": 0.0,
+     "tournament": 2
+    },
+    "train_mean_loss": 0.007985
+   },
+   {
+    "id": "cfg-e917d51bcb66",
+    "generation": 1,
+    "parents": [],
+    "ops": [
+     "cover:axis"
+    ],
+    "config": {
+     "mu": 4,
+     "offspring": 4,
+     "p_extra_mutation": 0.3,
+     "p_extra_mutation_recombined": 0.0,
+     "p_recombine": 0.3,
+     "p_restart": 0.0,
+     "tournament": 2
+    },
+    "train_mean_loss": 0.00733
+   },
+   {
+    "id": "cfg-2fc7cf1e5b52",
+    "generation": 1,
+    "parents": [],
+    "ops": [
+     "cover:axis"
+    ],
+    "config": {
+     "mu": 4,
+     "offspring": 4,
+     "p_extra_mutation": 0.3,
+     "p_extra_mutation_recombined": 0.9,
+     "p_recombine": 0.3,
+     "p_restart": 0.0,
+     "tournament": 2
+    },
+    "train_mean_loss": 0.007779
+   },
+   {
+    "id": "cfg-f3a9b4ccfd74",
+    "generation": 1,
+    "parents": [],
+    "ops": [
+     "cover:axis"
+    ],
+    "config": {
+     "mu": 4,
+     "offspring": 4,
+     "p_extra_mutation": 0.3,
+     "p_extra_mutation_recombined": 0.5,
+     "p_recombine": 0.0,
+     "p_restart": 0.0,
+     "tournament": 2
+    },
+    "train_mean_loss": 0.006562
+   },
+   {
+    "id": "cfg-642ff26b1db9",
+    "generation": 1,
+    "parents": [],
+    "ops": [
+     "cover:axis"
+    ],
+    "config": {
+     "mu": 4,
+     "offspring": 4,
+     "p_extra_mutation": 0.3,
+     "p_extra_mutation_recombined": 0.5,
+     "p_recombine": 0.9,
+     "p_restart": 0.0,
+     "tournament": 2
+    },
+    "train_mean_loss": 0.00804
+   },
+   {
+    "id": "cfg-12b387892289",
+    "generation": 1,
+    "parents": [],
+    "ops": [
+     "cover:axis"
+    ],
+    "config": {
+     "mu": 4,
+     "offspring": 4,
+     "p_extra_mutation": 0.3,
+     "p_extra_mutation_recombined": 0.5,
+     "p_recombine": 0.3,
+     "p_restart": 1.0,
+     "tournament": 2
+    },
+    "train_mean_loss": 0.005543
+   },
+   {
+    "id": "cfg-62e29869efc3",
+    "generation": 1,
+    "parents": [],
+    "ops": [
+     "cover:axis"
+    ],
+    "config": {
+     "mu": 4,
+     "offspring": 4,
+     "p_extra_mutation": 0.3,
+     "p_extra_mutation_recombined": 0.5,
+     "p_recombine": 0.3,
+     "p_restart": 0.0,
+     "tournament": 1
+    },
+    "train_mean_loss": 0.006779
+   },
+   {
+    "id": "cfg-2a647542961b",
+    "generation": 1,
+    "parents": [],
+    "ops": [
+     "cover:axis"
+    ],
+    "config": {
+     "mu": 4,
+     "offspring": 4,
+     "p_extra_mutation": 0.3,
+     "p_extra_mutation_recombined": 0.5,
+     "p_recombine": 0.3,
+     "p_restart": 0.0,
+     "tournament": 3
+    },
+    "train_mean_loss": 0.008636
+   },
+   {
+    "id": "cfg-96bb2e834028",
+    "generation": 2,
+    "parents": [
+     "cfg-12b387892289",
+     "cfg-2d4a15cf9f87"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:tournament"
+    ],
+    "config": {
+     "mu": 8,
+     "offspring": 4,
+     "p_extra_mutation": 0.3,
+     "p_extra_mutation_recombined": 0.5,
+     "p_recombine": 0.3,
+     "p_restart": 1.0,
+     "tournament": 3
+    },
+    "train_mean_loss": 0.005543
+   },
+   {
+    "id": "cfg-e4a66d290a7e",
+    "generation": 2,
+    "parents": [
+     "cfg-2d4a15cf9f87",
+     "cfg-12b387892289"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:tournament"
+    ],
+    "config": {
+     "mu": 8,
+     "offspring": 4,
+     "p_extra_mutation": 0.3,
+     "p_extra_mutation_recombined": 0.5,
+     "p_recombine": 0.3,
+     "p_restart": 0.0,
+     "tournament": 3
+    },
+    "train_mean_loss": 0.007123
+   },
+   {
+    "id": "cfg-3370e610322d",
+    "generation": 2,
+    "parents": [
+     "cfg-2d4a15cf9f87",
+     "cfg-12b387892289"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:p_restart"
+    ],
+    "config": {
+     "mu": 4,
+     "offspring": 4,
+     "p_extra_mutation": 0.3,
+     "p_extra_mutation_recombined": 0.5,
+     "p_recombine": 0.3,
+     "p_restart": 0.99,
+     "tournament": 2
+    },
+    "train_mean_loss": 0.00558
+   },
+   {
+    "id": "cfg-2dd0f3148973",
+    "generation": 2,
+    "parents": [
+     "cfg-2d4a15cf9f87",
+     "cfg-12b387892289"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:p_recombine",
+     "mutate:offspring"
+    ],
+    "config": {
+     "mu": 8,
+     "offspring": 6,
+     "p_extra_mutation": 0.3,
+     "p_extra_mutation_recombined": 0.5,
+     "p_recombine": 0.411,
+     "p_restart": 0.0,
+     "tournament": 2
+    },
+    "train_mean_loss": 0.006884
+   },
+   {
+    "id": "cfg-31ea408e5131",
+    "generation": 2,
+    "parents": [
+     "cfg-12b387892289",
+     "cfg-2d4a15cf9f87"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:p_recombine"
+    ],
+    "config": {
+     "mu": 4,
+     "offspring": 4,
+     "p_extra_mutation": 0.3,
+     "p_extra_mutation_recombined": 0.5,
+     "p_recombine": 0.191,
+     "p_restart": 0.0,
+     "tournament": 2
+    },
+    "train_mean_loss": 0.007235
+   },
+   {
+    "id": "cfg-96a411ae3eeb",
+    "generation": 2,
+    "parents": [
+     "cfg-2d4a15cf9f87",
+     "cfg-12b387892289"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:offspring"
+    ],
+    "config": {
+     "mu": 8,
+     "offspring": 6,
+     "p_extra_mutation": 0.3,
+     "p_extra_mutation_recombined": 0.5,
+     "p_recombine": 0.3,
+     "p_restart": 0.0,
+     "tournament": 2
+    },
+    "train_mean_loss": 0.006903
+   },
+   {
+    "id": "cfg-338ad452b80d",
+    "generation": 2,
+    "parents": [
+     "cfg-2d4a15cf9f87",
+     "cfg-12b387892289"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:p_restart",
+     "mutate:p_extra_mutation"
+    ],
+    "config": {
+     "mu": 8,
+     "offspring": 4,
+     "p_extra_mutation": 0.286,
+     "p_extra_mutation_recombined": 0.5,
+     "p_recombine": 0.3,
+     "p_restart": 0.176,
+     "tournament": 2
+    },
+    "train_mean_loss": 0.006177
+   },
+   {
+    "id": "cfg-ead5617f1447",
+    "generation": 2,
+    "parents": [
+     "cfg-12b387892289",
+     "cfg-2d4a15cf9f87"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:p_recombine"
+    ],
+    "config": {
+     "mu": 4,
+     "offspring": 4,
+     "p_extra_mutation": 0.3,
+     "p_extra_mutation_recombined": 0.5,
+     "p_recombine": 0.298,
+     "p_restart": 1.0,
+     "tournament": 2
+    },
+    "train_mean_loss": 0.005543
+   },
+   {
+    "id": "cfg-7b6d9548bce9",
+    "generation": 3,
+    "parents": [
+     "cfg-96bb2e834028",
+     "cfg-12b387892289"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:offspring"
+    ],
+    "config": {
+     "mu": 8,
+     "offspring": 6,
+     "p_extra_mutation": 0.3,
+     "p_extra_mutation_recombined": 0.5,
+     "p_recombine": 0.3,
+     "p_restart": 1.0,
+     "tournament": 3
+    },
+    "train_mean_loss": 0.005543
+   },
+   {
+    "id": "cfg-539e7b61a8dc",
+    "generation": 3,
+    "parents": [
+     "cfg-96bb2e834028",
+     "cfg-12b387892289"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:offspring",
+     "mutate:mu"
+    ],
+    "config": {
+     "mu": 4,
+     "offspring": 8,
+     "p_extra_mutation": 0.3,
+     "p_extra_mutation_recombined": 0.5,
+     "p_recombine": 0.3,
+     "p_restart": 1.0,
+     "tournament": 3
+    },
+    "train_mean_loss": 0.005543
+   },
+   {
+    "id": "cfg-39d1eea65217",
+    "generation": 3,
+    "parents": [
+     "cfg-96bb2e834028",
+     "cfg-12b387892289"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:offspring"
+    ],
+    "config": {
+     "mu": 4,
+     "offspring": 8,
+     "p_extra_mutation": 0.3,
+     "p_extra_mutation_recombined": 0.5,
+     "p_recombine": 0.3,
+     "p_restart": 1.0,
+     "tournament": 2
+    },
+    "train_mean_loss": 0.005543
+   },
+   {
+    "id": "cfg-37fd3a2f1dfc",
+    "generation": 3,
+    "parents": [
+     "cfg-96bb2e834028",
+     "cfg-12b387892289"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:tournament",
+     "mutate:p_recombine"
+    ],
+    "config": {
+     "mu": 8,
+     "offspring": 4,
+     "p_extra_mutation": 0.3,
+     "p_extra_mutation_recombined": 0.5,
+     "p_recombine": 0.229,
+     "p_restart": 1.0,
+     "tournament": 1
+    },
+    "train_mean_loss": 0.005543
+   },
+   {
+    "id": "cfg-f505c6ca7904",
+    "generation": 3,
+    "parents": [
+     "cfg-12b387892289",
+     "cfg-96bb2e834028"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:p_recombine",
+     "mutate:tournament"
+    ],
+    "config": {
+     "mu": 8,
+     "offspring": 4,
+     "p_extra_mutation": 0.3,
+     "p_extra_mutation_recombined": 0.5,
+     "p_recombine": 0.544,
+     "p_restart": 1.0,
+     "tournament": 1
+    },
+    "train_mean_loss": 0.005543
+   },
+   {
+    "id": "cfg-2596f26b9c83",
+    "generation": 3,
+    "parents": [
+     "cfg-12b387892289",
+     "cfg-96bb2e834028"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:p_recombine"
+    ],
+    "config": {
+     "mu": 4,
+     "offspring": 4,
+     "p_extra_mutation": 0.3,
+     "p_extra_mutation_recombined": 0.5,
+     "p_recombine": 0.179,
+     "p_restart": 1.0,
+     "tournament": 3
+    },
+    "train_mean_loss": 0.005543
+   },
+   {
+    "id": "cfg-5e5afb8d12b4",
+    "generation": 4,
+    "parents": [
+     "cfg-96bb2e834028",
+     "cfg-12b387892289"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:p_recombine"
+    ],
+    "config": {
+     "mu": 8,
+     "offspring": 4,
+     "p_extra_mutation": 0.3,
+     "p_extra_mutation_recombined": 0.5,
+     "p_recombine": 0.22,
+     "p_restart": 1.0,
+     "tournament": 2
+    },
+    "train_mean_loss": 0.005543
+   },
+   {
+    "id": "cfg-e0312026a8d6",
+    "generation": 4,
+    "parents": [
+     "cfg-96bb2e834028",
+     "cfg-12b387892289"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:tournament",
+     "mutate:p_recombine"
+    ],
+    "config": {
+     "mu": 8,
+     "offspring": 4,
+     "p_extra_mutation": 0.3,
+     "p_extra_mutation_recombined": 0.5,
+     "p_recombine": 0.403,
+     "p_restart": 1.0,
+     "tournament": 1
+    },
+    "train_mean_loss": 0.005543
+   },
+   {
+    "id": "cfg-65d934c94568",
+    "generation": 4,
+    "parents": [
+     "cfg-12b387892289",
+     "cfg-96bb2e834028"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:p_extra_mutation"
+    ],
+    "config": {
+     "mu": 8,
+     "offspring": 4,
+     "p_extra_mutation": 0.226,
+     "p_extra_mutation_recombined": 0.5,
+     "p_recombine": 0.3,
+     "p_restart": 1.0,
+     "tournament": 3
+    },
+    "train_mean_loss": 0.005543
+   },
+   {
+    "id": "cfg-ad5bbf158fab",
+    "generation": 4,
+    "parents": [
+     "cfg-12b387892289",
+     "cfg-96bb2e834028"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:p_extra_mutation"
+    ],
+    "config": {
+     "mu": 4,
+     "offspring": 4,
+     "p_extra_mutation": 0.307,
+     "p_extra_mutation_recombined": 0.5,
+     "p_recombine": 0.3,
+     "p_restart": 1.0,
+     "tournament": 3
+    },
+    "train_mean_loss": 0.005543
+   },
+   {
+    "id": "cfg-003cd4590ceb",
+    "generation": 4,
+    "parents": [
+     "cfg-96bb2e834028",
+     "cfg-12b387892289"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:p_restart"
+    ],
+    "config": {
+     "mu": 4,
+     "offspring": 4,
+     "p_extra_mutation": 0.3,
+     "p_extra_mutation_recombined": 0.5,
+     "p_recombine": 0.3,
+     "p_restart": 0.926,
+     "tournament": 3
+    },
+    "train_mean_loss": 0.00516
+   },
+   {
+    "id": "cfg-bc52355b97ba",
+    "generation": 4,
+    "parents": [
+     "cfg-96bb2e834028",
+     "cfg-12b387892289"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:p_extra_mutation_recombined",
+     "mutate:offspring"
+    ],
+    "config": {
+     "mu": 8,
+     "offspring": 2,
+     "p_extra_mutation": 0.3,
+     "p_extra_mutation_recombined": 0.564,
+     "p_recombine": 0.3,
+     "p_restart": 1.0,
+     "tournament": 3
+    },
+    "train_mean_loss": 0.005543
+   },
+   {
+    "id": "cfg-341ae5a594b1",
+    "generation": 4,
+    "parents": [
+     "cfg-12b387892289",
+     "cfg-96bb2e834028"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:p_extra_mutation_recombined"
+    ],
+    "config": {
+     "mu": 4,
+     "offspring": 4,
+     "p_extra_mutation": 0.3,
+     "p_extra_mutation_recombined": 0.345,
+     "p_recombine": 0.3,
+     "p_restart": 1.0,
+     "tournament": 2
+    },
+    "train_mean_loss": 0.005543
+   },
+   {
+    "id": "cfg-0d83f2dad955",
+    "generation": 5,
+    "parents": [
+     "cfg-12b387892289",
+     "cfg-003cd4590ceb"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:p_recombine"
+    ],
+    "config": {
+     "mu": 4,
+     "offspring": 4,
+     "p_extra_mutation": 0.3,
+     "p_extra_mutation_recombined": 0.5,
+     "p_recombine": 0.241,
+     "p_restart": 0.926,
+     "tournament": 2
+    },
+    "train_mean_loss": 0.004654
+   },
+   {
+    "id": "cfg-4398ea71018f",
+    "generation": 5,
+    "parents": [
+     "cfg-003cd4590ceb",
+     "cfg-12b387892289"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:p_restart",
+     "mutate:p_extra_mutation_recombined"
+    ],
+    "config": {
+     "mu": 4,
+     "offspring": 4,
+     "p_extra_mutation": 0.3,
+     "p_extra_mutation_recombined": 0.55,
+     "p_recombine": 0.3,
+     "p_restart": 0.807,
+     "tournament": 2
+    },
+    "train_mean_loss": 0.004205
+   },
+   {
+    "id": "cfg-d80746f5bfb6",
+    "generation": 5,
+    "parents": [
+     "cfg-12b387892289",
+     "cfg-003cd4590ceb"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:p_extra_mutation",
+     "mutate:p_recombine"
+    ],
+    "config": {
+     "mu": 4,
+     "offspring": 4,
+     "p_extra_mutation": 0.397,
+     "p_extra_mutation_recombined": 0.5,
+     "p_recombine": 0.328,
+     "p_restart": 0.926,
+     "tournament": 2
+    },
+    "train_mean_loss": 0.004693
+   },
+   {
+    "id": "cfg-c1f018907380",
+    "generation": 5,
+    "parents": [
+     "cfg-12b387892289",
+     "cfg-003cd4590ceb"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:p_extra_mutation"
+    ],
+    "config": {
+     "mu": 4,
+     "offspring": 4,
+     "p_extra_mutation": 0.327,
+     "p_extra_mutation_recombined": 0.5,
+     "p_recombine": 0.3,
+     "p_restart": 1.0,
+     "tournament": 2
+    },
+    "train_mean_loss": 0.005543
+   },
+   {
+    "id": "cfg-6c89b8566a71",
+    "generation": 5,
+    "parents": [
+     "cfg-12b387892289",
+     "cfg-003cd4590ceb"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:p_extra_mutation_recombined"
+    ],
+    "config": {
+     "mu": 4,
+     "offspring": 4,
+     "p_extra_mutation": 0.3,
+     "p_extra_mutation_recombined": 0.506,
+     "p_recombine": 0.3,
+     "p_restart": 0.926,
+     "tournament": 2
+    },
+    "train_mean_loss": 0.00461
+   },
+   {
+    "id": "cfg-eb3b746e6f84",
+    "generation": 5,
+    "parents": [
+     "cfg-12b387892289",
+     "cfg-003cd4590ceb"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:p_extra_mutation"
+    ],
+    "config": {
+     "mu": 4,
+     "offspring": 4,
+     "p_extra_mutation": 0.436,
+     "p_extra_mutation_recombined": 0.5,
+     "p_recombine": 0.3,
+     "p_restart": 0.926,
+     "tournament": 3
+    },
+    "train_mean_loss": 0.005947
+   },
+   {
+    "id": "cfg-4d529e17b058",
+    "generation": 5,
+    "parents": [
+     "cfg-12b387892289",
+     "cfg-003cd4590ceb"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:p_restart"
+    ],
+    "config": {
+     "mu": 4,
+     "offspring": 4,
+     "p_extra_mutation": 0.3,
+     "p_extra_mutation_recombined": 0.5,
+     "p_recombine": 0.3,
+     "p_restart": 0.902,
+     "tournament": 2
+    },
+    "train_mean_loss": 0.005238
+   },
+   {
+    "id": "cfg-b95d9e5011a8",
+    "generation": 5,
+    "parents": [
+     "cfg-12b387892289",
+     "cfg-003cd4590ceb"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:p_restart"
+    ],
+    "config": {
+     "mu": 4,
+     "offspring": 4,
+     "p_extra_mutation": 0.3,
+     "p_extra_mutation_recombined": 0.5,
+     "p_recombine": 0.3,
+     "p_restart": 0.969,
+     "tournament": 2
+    },
+    "train_mean_loss": 0.005974
+   }
+  ]
+ },
+ "candidate": {
+  "id": "cfg-4398ea71018f",
+  "config": {
+   "mu": 4,
+   "offspring": 4,
+   "p_extra_mutation": 0.3,
+   "p_extra_mutation_recombined": 0.55,
+   "p_recombine": 0.3,
+   "p_restart": 0.807,
+   "tournament": 2
+  },
+  "train_mean_loss": 0.004205
+ },
+ "adversarial": {
+  "fewval": {
+   "incumbent": 0.010704,
+   "candidate": 0.008258
+  },
+  "lean": {
+   "incumbent": 0.009947,
+   "candidate": 0.006105
+  },
+  "all_outputs_verified": true
+ },
+ "heldout": {
+  "n": 240,
+  "candidate_wins": 105,
+  "candidate_losses": 73,
+  "sign_test_p_one_sided": 0.009946,
+  "incumbent_mean_loss": 0.008221,
+  "candidate_mean_loss": 0.005784,
+  "relative_improvement": 0.2964,
+  "candidate_vs_baseline": {
+   "baseline": "normalised tardiness gap to the exact optimum on held-out cases vs random-restart search with the same budget and retain rule",
+   "wins": 80,
+   "losses": 89,
+   "sign_test_p_one_sided": 0.779075,
+   "baseline_mean_loss": 0.00507,
+   "role": "reported; not in the rule"
+  }
+ },
+ "decision": "RETAIN",
+ "proposal": {
+  "state": "PROPOSED_NOT_APPLIED",
+  "change": {
+   "module": "greg/cognition/genomes/developmental.py",
+   "constant": "CR_DEFAULT_CONFIG",
+   "from": {
+    "mu": 4,
+    "offspring": 4,
+    "p_recombine": 0.3,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_restart": 0.0,
+    "tournament": 2
+   },
+   "to": {
+    "mu": 4,
+    "offspring": 4,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.55,
+    "p_recombine": 0.3,
+    "p_restart": 0.807,
+    "tournament": 2
+   }
+  },
+  "activation": "a reviewed change adopting the configuration; founder decision",
+  "rollback": {
+   "to": "cfg-111751096c0d",
+   "config": {
+    "mu": 4,
+    "offspring": 4,
+    "p_recombine": 0.3,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_restart": 0.0,
+    "tournament": 2
+   }
+  },
+  "canary": "re-admit develop_constraint_release with the proposed configuration on fresh seeds before adoption; keep comparing with the incumbent and random restart after adoption"
+ },
+ "finished_at": "2026-10-21T12:30:35.038178+00:00",
+ "authority_created": false
+}

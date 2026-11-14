@@ -138,7 +138,8 @@ def test_every_cited_verdict_matches_the_source_it_cites():
             if cited is None:
                 continue
             exact = _sign_p(cited["routed_wins"], cited["routed_losses"])
-            if round(exact, 6) != cited["sign_test_p_one_sided"]:
+            # harnesses recorded six decimals; P6 converged v1 records twelve (both are its counts' exact p)
+            if cited["sign_test_p_one_sided"] not in (round(exact, 6), round(exact, 12)):
                 problems.append(f"recipe {recipe} ({verdict.get('family')}): the source's p "
                                 f"{cited['sign_test_p_one_sided']} is not its counts' exact p {exact} rounded to six "
                                 f"decimals")

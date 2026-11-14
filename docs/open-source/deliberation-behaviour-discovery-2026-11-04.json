@@ -1,0 +1,300 @@
+{
+ "decision_id": "DELIB-20261104-BEHAVIOUR-DISCOVERY",
+ "title": "Capability Genesis finds an installed tool by its behaviour against a founder-signed contract before it builds",
+ "problem": "A function outside the five-entry CATALOG went straight to the builder, even when a tool already installed on the body does exactly what the founder's contract asks (acceptance C.G3); no test pinned acquire-before-build route order (C.G5).",
+ "founder_intent_refs": [
+  "INTENT-20261022-OSS-METABOLISM",
+  "INTENT-20260930-open-source-first",
+  "INTENT-20261001-open-source-mechanism-harvest",
+  "INTENT-20261019-UPWARD-ASCENT"
+ ],
+ "baseline": "#196 head d35d92a5: an uncatalogued function with a contract routes installed_software:'no catalogued installed tool or oracle for this function' then builder; text.line_count costs one build.",
+ "alternatives": [
+  {
+   "name": "Proposed: fixed auditable template set screened on public examples, qualified on held-out vectors",
+   "description": "19 read-only single-file filters; each runs isolated with no network through the existing binary route; selection is by behaviour, verification through the serving adapter.",
+   "advantages": [
+    "No new dependency or registry",
+    "Reuses run isolation, hash pin, licence read, attach rules and restore"
+   ],
+   "disadvantages": [
+    "Covers only functions a one-file text filter can compute",
+    "Templates are code-resident, so new ones need a review"
+   ],
+   "revival_evidence": "n/a (selected)"
+  },
+  {
+   "name": "Enumerate every executable on PATH and guess argv",
+   "description": "Open-ended probing of installed binaries.",
+   "advantages": [
+    "Broader coverage"
+   ],
+   "disadvantages": [
+    "Runs arbitrary untrusted binaries with guessed flags, including writers and network tools",
+    "Unbounded search cost"
+   ],
+   "revival_evidence": "A sandbox strong enough to run unknown binaries with guessed flags safely, plus a cost bound"
+  },
+  {
+   "name": "Installed Python distributions via importlib.metadata",
+   "description": "Discover packages whose entry points fit the contract.",
+   "advantages": [
+    "Reaches libraries, not only filters"
+   ],
+   "disadvantages": [
+    "Needs a per-package call template; no safe generic signature"
+   ],
+   "revival_evidence": "A recurring deficit an installed package could serve, with a declared call contract (recorded as C.G3 residual)"
+  },
+  {
+   "name": "Ask a model to propose the invocation",
+   "description": "LLM proposes argv for installed tools.",
+   "advantages": [
+    "Flexible"
+   ],
+   "disadvantages": [
+    "Model output would choose what runs; needs the builder's authority posture"
+   ],
+   "revival_evidence": "A model route already confined and budgeted for proposals"
+  }
+ ],
+ "do_nothing_option": {
+  "expected_outcome": "Every uncatalogued function pays for a build even when a commodity tool already does it.",
+  "advantages": [
+   "No change to genesis.py"
+  ],
+  "disadvantages": [
+   "Violates acquire-before-build",
+   "Build spend and founder attention on solved problems"
+  ]
+ },
+ "roles": [
+  {
+   "role": "Founder-Intent Steward",
+   "position": "Acquire before building, at the level of behaviour rather than names.",
+   "material_concerns": [
+    "Do not claim open-ended discovery; the set is fixed"
+   ],
+   "evidence_refs": [
+    "acceptance/missions.json C.G3"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Systems Architect",
+   "position": "One new route inside Genesis.resolve between verified_detached and builder; no second registry.",
+   "material_concerns": [
+    "genesis.py is shared with WU-11 and #244/#250 (adjacent-line conflicts only)"
+   ],
+   "evidence_refs": [
+    "git merge-tree results in the PR"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Adversarial Reviewer",
+   "position": "Public examples screen, held-out vectors decide; detached tools are never re-registered.",
+   "material_concerns": [
+    "A filter that matches by coincidence on few vectors"
+   ],
+   "evidence_refs": [
+    "test_a_tool_that_answers_the_public_examples_but_not_the_held_out_vectors_is_never_acquired",
+    "test_a_tool_the_founder_detached_is_never_rediscovered"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Operator and Maintainer",
+   "position": "Searches are memoized by an installed-binary fingerprint so a failed search does not re-run every tick.",
+   "material_concerns": [
+    "Fingerprint hashing reads each binary once per search"
+   ],
+   "evidence_refs": [
+    "test_a_search_that_found_nothing_is_not_rerun_while_nothing_installed_changes"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Evidence and Welfare Guardian",
+   "position": "No authority change: attach still requires a signed read-only auto_attach or the founder.",
+   "material_concerns": [
+    "A found tool must wait when attach is not pre-authorized"
+   ],
+   "evidence_refs": [
+    "test_a_found_tool_waits_for_the_founder_when_the_mission_does_not_pre_authorize_attach"
+   ],
+   "recommendation": "EXPERIMENT"
+  }
+ ],
+ "evidence": [
+  {
+   "claim": "Uncatalogued text.line_count is served by installed wc -l with no build",
+   "tier": "sandbox_execution",
+   "reference": "tests/unit/test_greg_genesis_discovery.py",
+   "finding": "ACHIEVED, builder.calls == [], ATTACHED after restart; fails on d35d92a5"
+  },
+  {
+   "claim": "Capability dividend is caused by discovery",
+   "tier": "sandbox_execution",
+   "reference": "test_without_discovery_the_same_mission_pays_for_a_build",
+   "finding": "with DISCOVERY_TEMPLATES emptied, the same mission calls the builder once"
+  },
+  {
+   "claim": "Each guard is load-bearing",
+   "tier": "sandbox_execution",
+   "reference": "scripts/ci/check_cortex_mutants.py metabolism group",
+   "finding": "4 new mutants, all caught"
+  }
+ ],
+ "counterevidence": [
+  {
+   "claim": "Discovery generalizes to any uncatalogued function",
+   "tier": "sandbox_execution",
+   "reference": "test_when_nothing_installed_behaves_as_the_contract_says_the_order_is_search_then_build",
+   "finding": "false: markdown.unchecked_count matches no template; 19 of 19 tried, builder still needed"
+  }
+ ],
+ "pass_1": {
+  "intended_outcome": "An uncatalogued function a commodity tool already computes is acquired, verified and attached without a build.",
+  "advantages": [
+   {
+    "id": "A1",
+    "statement": "Build spend avoided whenever an installed filter fits",
+    "amplified_value": "Every recurring text/digest/ordering deficit closes from the body's own software"
+   }
+  ],
+  "disadvantages": [
+   {
+    "id": "D1",
+    "statement": "Narrow coverage (one-file text filters)",
+    "severity": "medium",
+    "response_type": "modularity",
+    "redesigned_response": "Stated in the route text and C.G3 residual; builder remains the next rung"
+   },
+   {
+    "id": "D2",
+    "statement": "Running templates costs time on every resolution",
+    "severity": "low",
+    "response_type": "evidence",
+    "redesigned_response": "Fingerprint memo; screening on public examples before full verification"
+   },
+   {
+    "id": "D3",
+    "statement": "A coincidental match",
+    "severity": "medium",
+    "response_type": "evidence",
+    "redesigned_response": "Held-out vectors through the serving adapter decide; schema requires at least 3"
+   }
+  ],
+  "comparisons": {
+   "baseline": "Baseline builds for every uncatalogued function; proposed builds only when no template behaves as the contract says.",
+   "do_nothing": "Do nothing keeps paying builds for solved problems.",
+   "simplest_viable_alternative": "The proposed fixed set is itself the simplest viable route.",
+   "strongest_competing_architecture": "importlib.metadata package discovery: broader, but no safe generic call contract.",
+   "reversible_experiment": "Empty DISCOVERY_TEMPLATES to disable without touching anything else."
+  },
+  "rejected_alternatives": [
+   {
+    "name": "Enumerate every executable on PATH and guess argv",
+    "rejection_reason": "runs arbitrary binaries with guessed flags",
+    "revival_evidence": "a sandbox and cost bound for unknown binaries"
+   },
+   {
+    "name": "Ask a model to propose the invocation",
+    "rejection_reason": "model output would choose what runs",
+    "revival_evidence": "a confined, budgeted proposal route"
+   }
+  ]
+ },
+ "pass_2": {
+  "attack_summary": "Attack: re-registration of founder-detached tools, re-running failed searches, held-out bypass, unbounded execution.",
+  "new_weaknesses": [
+   {
+    "id": "W1",
+    "category": "reversibility",
+    "statement": "Discovery could re-register a tool the founder detached",
+    "strengthening_response": "DETACHED and QUARANTINED ids are skipped and the skip is recorded; mutant caught"
+   },
+   {
+    "id": "W2",
+    "category": "fragility",
+    "statement": "A failed search re-runs every tick",
+    "strengthening_response": "Memo on installed fingerprint plus unusable ids; mutant caught"
+   },
+   {
+    "id": "W3",
+    "category": "gaming",
+    "statement": "Qualification on public examples only",
+    "strengthening_response": "Verification vectors are public plus held-out; mutant caught"
+   }
+  ],
+  "pass_1_disadvantage_dispositions": [
+   {
+    "disadvantage_id": "D1",
+    "outcome": "accepted",
+    "rationale": "Residual recorded in C.G3 closed_by; owner this workstream",
+    "owner": "session_013k41DnwrjzpXL33r3j9BgB",
+    "review_trigger": "a proposal to widen the template set"
+   },
+   {
+    "disadvantage_id": "D2",
+    "outcome": "resolved",
+    "rationale": "Memo and screening",
+    "owner": "session_013k41DnwrjzpXL33r3j9BgB",
+    "review_trigger": "a proposal to widen the template set"
+   },
+   {
+    "disadvantage_id": "D3",
+    "outcome": "resolved",
+    "rationale": "Held-out decides",
+    "owner": "session_013k41DnwrjzpXL33r3j9BgB",
+    "review_trigger": "a proposal to widen the template set"
+   }
+  ],
+  "residual_risks": [
+   {
+    "risk": "A transient host fault mid-search",
+    "mitigation": "route recorded and the error re-raised; the search resumes on the next resolution",
+    "owner": "session_013k41DnwrjzpXL33r3j9BgB",
+    "review_trigger": "first host outage during discovery"
+   },
+   {
+    "risk": "Narrow template coverage",
+    "mitigation": "builder remains the next rung; C.G3 residual records package discovery",
+    "owner": "session_013k41DnwrjzpXL33r3j9BgB",
+    "review_trigger": "a recurring deficit no template fits"
+   }
+  ],
+  "final_design": "Fixed set of 19 read-only one-file filter templates screened on public examples, qualified on public plus held-out vectors through the serving adapter, DETACHED/QUARANTINED skipped, failed searches memoized by installed fingerprint; builder only when nothing matches.",
+  "recommendation": "EXPERIMENT"
+ },
+ "dissent": {
+  "present": false,
+  "handling": "No dissent recorded.",
+  "entries": []
+ },
+ "authority_impact": {
+  "level": "standard",
+  "changes_authority": false,
+  "requires_authorized_human": false,
+  "approval_status": "not_required",
+  "approver": null
+ },
+ "migration_plan": "None needed; existing catalogued routes are unchanged and restore reads the recorded origin.",
+ "rollback_plan": {
+  "possible": true,
+  "steps": [
+   "Set DISCOVERY_TEMPLATES = () to disable the route",
+   "Or revert the commit"
+  ],
+  "reason_impossible": null
+ },
+ "kill_criteria": [
+  "A discovered tool attaches while failing any held-out vector",
+  "Discovery re-registers a founder-detached capability",
+  "A template writes outside its scratch directory or reaches the network"
+ ],
+ "decision": "EXPERIMENT",
+ "decision_owner": "Alfonso Lopez (merge); this workstream (implementation)",
+ "review_trigger": "First real mission served by a discovered tool, or a proposal to widen the template set"
+}

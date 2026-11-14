@@ -1,13 +1,18 @@
 """Gate liveness and the environment doctor (scripts/repo_review.py, scripts/dev_env_check.py).
 
-Gate liveness: every literal mutation anchor still occurs in its target file, and
-every mutation gate is run by some workflow (shrink-only KEPT list). A stale anchor
-otherwise surfaces only when the gate runs late in Canonical CI job 1.
+Gate liveness: every mutation anchor the static reader can read still occurs in its
+target file, and every mutation gate is named in some workflow, except the gates on
+the KEPT list. That list is compared with the tree, not with what it was, so its
+contents are pinned here: it can lose an entry, and gains one only by an edit to the
+pin. A stale anchor otherwise surfaces only when the gate itself runs in CI, which
+is still how it surfaces for a gate whose anchors are not written as literals.
 
 Environment doctor: names the machine-side causes of test failure before tests run
 (register P-8 and P-14).
 """
 import importlib.util
+import json
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -37,6 +42,27 @@ def test_unwired_gates_match_the_shrink_only_list():
     gates = review.gate_liveness(ROOT)
     unwired = {g for g, r in gates.items() if not r["wired"]}
     assert review.ratchet(unwired, review.KEPT_UNWIRED_GATES) == {"new": [], "gone": []}
+
+
+# The mutation gates no workflow runs. Running check_seed_mutants.py in CI is the founder's or CI owner's decision
+# (register S-3); tolerating another unwired gate is a decision of the same kind, made by editing this set.
+PINNED_UNWIRED = {"check_seed_mutants.py"}
+
+
+def test_the_kept_unwired_list_cannot_grow_past_its_pin():
+    """test_unwired_gates_match_the_shrink_only_list passes when a new gate no workflow names is added to
+    KEPT_UNWIRED_GATES in the same change: ratchet() has no base to compare with. This pin is what refuses that."""
+    assert set(review.KEPT_UNWIRED_GATES) <= PINNED_UNWIRED
+
+
+def test_the_directive_map_calls_unwired_only_a_gate_that_still_is():
+    """Directive ask S69.A6 stays open partly because a gate runs in no workflow, and names it in its blocker's
+    reason. A reason is free text no check reads, so wiring that gate would leave the sentence standing: every gate
+    file the reason names must still be on the kept list. A met ask has no blocker and names none."""
+    doc = json.loads((ROOT / "acceptance" / "directive-sections.json").read_text(encoding="utf-8"))
+    [ask] = [a for s in doc["sections"] for a in s["asks"] if a["id"] == "S69.A6"]
+    named = set(re.findall(r"check_\w*mutants?\w*\.py", (ask.get("blocker") or {}).get("reason", "")))
+    assert named <= set(review.KEPT_UNWIRED_GATES), sorted(named - set(review.KEPT_UNWIRED_GATES))
 
 
 def _mini(tmp_path, target_text, gate_text, workflow_text=""):

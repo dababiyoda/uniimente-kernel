@@ -2520,10 +2520,12 @@
      "ask": "A blocked goal stores blocker, why, reconsideration condition, required evidence, required authority and next move",
      "excerpt": "blocker why blocked reconsideration condition required evidence required authority next possible move",
      "owner_paths": [
-      "greg/missions.py"
+      "greg/missions.py",
+      "greg/blockers.py"
      ],
      "evidence": [
-      "tests/unit/test_greg_missions.py"
+      "tests/unit/test_greg_missions.py",
+      "tests/unit/test_greg_blockers.py::test_each_blocker_type_yields_one_record_with_every_field"
      ],
      "tests_tier": "SANDBOX_VERIFIED",
      "required_tier": "SANDBOX_VERIFIED",
@@ -2531,9 +2533,10 @@
      "coverage": "partial",
      "blocker": {
       "class": "BUILDABLE_NOT_BUILT",
-      "reason": "active_constraint carries some of the six; no typed record carries all",
+      "reason": "greg/blockers.py types every blocker it lists into the six fields, saying 'none required' with the reason where one does not apply. Still open: an unpaused no_strategy blocker is typed but never listed, because the engine's own rule treats it as resolved at every tick although its mission is in effect stuck; listing it needs greg/missions.py to tell re-evaluate from resolved. The six fields are projected on read from the journal's mission.blocked facts, not written as records of their own",
       "unit": "MU-E"
-     }
+     },
+     "note": "Corrected 2026-11-11. The reason recorded on 2026-10-30 ('active_constraint carries some of the six; no typed record carries all') described the tree before greg/blockers.py and tests/unit/test_greg_blockers.py landed on this line (10 blocker cases; mutant gate in Canonical CI job 10). The unlisted case is pinned by test_a_self_clearing_no_strategy_blocker_is_typed_but_not_listed. Limits: docs/evidence/typed-blockers-2026-10-30/README.md."
     },
     {
      "id": "S29.A4",
@@ -3177,17 +3180,21 @@
      "ask": "A consequential worker that can bypass the evidence plane is detected as a security defect",
      "excerpt": "If consequential workers can bypass the evidence plane, treat it as a security defect.",
      "owner_paths": [
-      "greg/capabilities.py"
+      "greg/capabilities.py",
+      "tests/security/effect-call-allowlist.json"
      ],
-     "evidence": [],
+     "evidence": [
+      "tests/unit/test_effect_call_allowlist.py"
+     ],
      "required_tier": "UNIT_VERIFIED",
-     "tier": "INTENDED",
-     "coverage": "gap",
+     "tier": "UNIT_VERIFIED",
+     "coverage": "partial",
      "blocker": {
       "class": "BUILDABLE_NOT_BUILT",
-      "reason": "No bypass detector over effectful call sites",
+      "reason": "The detector is a static inventory, not a run-time check: a process, connection or listener started in greg/, foundry/systems/ or a repository module they import fails a unit test until it is listed with what governs it. Still open: its known_unmediated entries are sites the body reaches on its own schedule with no manifest, Gate or envelope behind them; what governs a listed site is a justification read by hand, so nothing checks that the site's effect reaches the ledger; effects inside third-party libraries, and code a child process runs from a string, are not seen",
       "unit": "MU-D"
-     }
+     },
+     "note": "Corrected 2026-11-11. The reason recorded on 2026-10-30 ('No bypass detector over effectful call sites') described the tree before tests/unit/test_effect_call_allowlist.py landed on this line; its mutant gate runs in Canonical CI job 10. On 2026-11-11 the allowlist holds 6 known_unmediated entries. Limits: docs/evidence/effect-call-allowlist-2026-10-30/README.md."
     }
    ]
   },
@@ -4118,15 +4125,20 @@
       "greg/compute.py",
       "greg/body.py"
      ],
-     "evidence": [],
+     "evidence": [
+      "tests/unit/test_greg_node_revoke.py::test_node_revoke_is_a_founder_only_command_kind",
+      "tests/unit/test_greg_node_revoke.py::test_a_device_key_delegated_every_device_kind_cannot_sign_node_commands",
+      "tests/unit/test_greg_node_revoke.py::test_enrol_revoke_re_enrol_is_allowed"
+     ],
      "required_tier": "SANDBOX_VERIFIED",
-     "tier": "INTENDED",
-     "coverage": "gap",
+     "tier": "UNIT_VERIFIED",
+     "coverage": "partial",
      "blocker": {
       "class": "BUILDABLE_NOT_BUILT",
-      "reason": "No NODE_REVOKE and no node-signed receipts",
+      "reason": "NODE_REVOKE exists: only the founder key enrolls or revokes a node, a revoked node is inactive, and its node_id can be enrolled again. Still open: nothing leases work to a node or verifies anything a node signs, so there are no node-signed receipts and no admission of a node's work inside its cone",
       "unit": "WU-06"
-     }
+     },
+     "note": "Corrected 2026-11-11. Of the reason recorded on 2026-10-30 ('No NODE_REVOKE and no node-signed receipts'), the first half described the tree before NODE_REVOKE (WU-06 part a1) and tests/unit/test_greg_node_revoke.py landed on this line; the second half stands (part a2). The canonical-ci.yml step that runs the mutant gate is named for receipts 'admitted only inside the node's cone', which neither the gate nor its test file mentions. Limits: docs/evidence/node-revoke-2026-10-30/README.md."
     },
     {
      "id": "S49.A3",
@@ -4336,34 +4348,46 @@
      "ask": "Every major mechanism has a record of canonical implementation, alternatives, shims, experiments, benchmarks, history, migration and retirement condition",
      "excerpt": "CANONICAL IMPLEMENTATION ALTERNATIVES SHIMS EXPERIMENTS BENCHMARKS HISTORICAL IMPLEMENTATIONS MIGRATION PATH RETIREMENT CONDITION",
      "owner_paths": [
-      "docs/opus-maximus/REPOSITORY_CONVERGENCE_MAP.md"
+      "docs/opus-maximus/REPOSITORY_CONVERGENCE_MAP.md",
+      "docs/collaboration/ARCHITECTURE-OWNERSHIP-MAP.yaml"
      ],
-     "evidence": [],
+     "evidence": [
+      "tests/unit/test_canonical_owner_guard.py::test_registry_names_an_owner_status_alternates_and_conditions_for_every_required_function",
+      "tests/unit/test_canonical_owner_guard.py::test_the_registry_keeps_every_pinned_record_entry_and_founder_decision",
+      "tests/unit/test_canonical_owner_guard.py::test_every_registered_module_and_qualname_exists"
+     ],
      "required_tier": "UNIT_VERIFIED",
-     "tier": "INTENDED",
-     "coverage": "gap",
+     "tier": "UNIT_VERIFIED",
+     "coverage": "partial",
      "blocker": {
       "class": "BUILDABLE_NOT_BUILT",
-      "reason": "Only a prose convergence map exists",
+      "reason": "A machine-checked registry holds function-owner records (canonical implementation, alternates by status, migration path, retirement or revival condition), but only for the functions found duplicated, not for every major mechanism. Still open: some of its records are NEEDS_FOUNDER_DECISION, with candidates and no owner; benchmarks have no field; the registry is PROPOSED and retires nothing",
       "unit": "MW-C"
-     }
+     },
+     "note": "Corrected 2026-11-11. The reason recorded on 2026-10-30 ('Only a prose convergence map exists') described the tree before function_owner_records in docs/collaboration/ARCHITECTURE-OWNERSHIP-MAP.yaml and tests/unit/test_canonical_owner_guard.py landed on this line (mutant gate in Canonical CI job 10). On 2026-11-11: 8 records, 5 CANONICAL and 3 NEEDS_FOUNDER_DECISION (goal runtime, evidence ladder, autonomy levels). Limits: docs/evidence/canonical-owner-guard-2026-10-30/README.md."
     },
     {
      "id": "S52.A2",
      "ask": "No two generations stay equally canonical: a retired alternate cannot load on the live path",
      "excerpt": "Preserving history does not require preserving active ambiguity.",
      "owner_paths": [
-      "greg/"
+      "greg/",
+      "docs/collaboration/ARCHITECTURE-OWNERSHIP-MAP.yaml"
      ],
-     "evidence": [],
+     "evidence": [
+      "tests/unit/test_canonical_owner_guard.py::test_no_greg_module_imports_a_retired_or_historical_alternate",
+      "tests/unit/test_canonical_owner_guard.py::test_every_dynamic_import_in_greg_resolves_or_is_allowlisted",
+      "tests/unit/test_canonical_owner_guard.py::test_the_registry_has_at_least_one_alternate_the_import_guard_applies_to"
+     ],
      "required_tier": "UNIT_VERIFIED",
-     "tier": "INTENDED",
-     "coverage": "gap",
+     "tier": "UNIT_VERIFIED",
+     "coverage": "partial",
      "blocker": {
       "class": "BUILDABLE_NOT_BUILT",
-      "reason": "No live-import guard",
+      "reason": "A live-import guard exists: no module under greg/ may reach an alternate the owner registry marks HISTORICAL or RETIRED. Still open: where a record is NEEDS_FOUNDER_DECISION its candidates stay equally canonical until the founder rules; nothing has been retired, and the guard binds only what the registry marks; it does not see setattr on a module or a name reached through a function's return value",
       "unit": "MU-H"
-     }
+     },
+     "note": "Corrected 2026-11-11. The reason recorded on 2026-10-30 ('No live-import guard') described the tree before tests/unit/test_canonical_owner_guard.py landed on this line. On 2026-11-11 the registry marks 1 alternate HISTORICAL and none RETIRED. Limits: docs/evidence/canonical-owner-guard-2026-10-30/README.md."
     },
     {
      "id": "S52.A3",
@@ -4502,19 +4526,23 @@
      "excerpt": "STOP HORIZONTAL EXPANSION.",
      "owner_paths": [
       "constitution/constitution.ucl",
-      "compiler/ucl_compiler.py"
+      "compiler/ucl_compiler.py",
+      "greg/cathedral.py"
      ],
      "evidence": [
-      "tests/unit/test_ucl_compiler.py"
+      "tests/unit/test_ucl_compiler.py",
+      "tests/unit/test_cathedral_detector.py::test_activity_rising_while_outcomes_stay_flat_is_cathedral_and_the_detector_writes_nothing",
+      "tests/unit/test_cathedral_detector.py::test_the_build_phase_keeps_the_kill_condition_visible_beside_insufficient_history"
      ],
      "required_tier": "UNIT_VERIFIED",
      "tier": "UNIT_VERIFIED",
      "coverage": "partial",
      "blocker": {
       "class": "BUILDABLE_NOT_BUILT",
-      "reason": "The cathedral kill condition is compiled but never evaluated",
+      "reason": "greg/cathedral.py evaluates the first clause of the cathedral kill condition (git activity against founder-tier outcomes on the founder's designated body); its report says to stop horizontal expansion, and it writes nothing and grants nothing. Still open: it runs only when someone calls greg cathedral; until a founder-designated body exists every real run is INSUFFICIENT_HISTORY, with CATHEDRAL as a conditional beside it; the second clause (the Kernel adds more cost than control) and section 55's outcomes outside the founder's ledger (venture revenue, external effect, founder usability) are not computed",
       "unit": "WU-13"
-     }
+     },
+     "note": "Corrected 2026-11-11. The reason recorded on 2026-10-30 ('The cathedral kill condition is compiled but never evaluated') described the tree before greg/cathedral.py and tests/unit/test_cathedral_detector.py landed on this line (mutant gate in Canonical CI job 10). Limits: docs/evidence/cathedral-detector-2026-10-30/README.md."
     }
    ]
   },
@@ -5139,17 +5167,22 @@
      "ask": "Preserved historical evidence never silently stays on the live path",
      "excerpt": "But preserved historical evidence must not silently remain live production architecture.",
      "owner_paths": [
-      "greg/"
+      "greg/",
+      "docs/collaboration/ARCHITECTURE-OWNERSHIP-MAP.yaml"
      ],
-     "evidence": [],
+     "evidence": [
+      "tests/unit/test_canonical_owner_guard.py::test_no_greg_module_imports_a_retired_or_historical_alternate",
+      "tests/unit/test_canonical_owner_guard.py::test_the_registry_has_at_least_one_alternate_the_import_guard_applies_to"
+     ],
      "required_tier": "UNIT_VERIFIED",
-     "tier": "INTENDED",
-     "coverage": "gap",
+     "tier": "UNIT_VERIFIED",
+     "coverage": "partial",
      "blocker": {
       "class": "BUILDABLE_NOT_BUILT",
-      "reason": "Unclassified packages load with the body; no live-import guard",
+      "reason": "A live-import guard exists, but only for what the owner registry classifies: no module under greg/ may reach an alternate it marks HISTORICAL or RETIRED. Still open: a module or package the registry does not name is not checked, so preserved code outside its function records can still load with the body unseen",
       "unit": "MU-H"
-     }
+     },
+     "note": "Corrected 2026-11-11. Of the reason recorded on 2026-10-30 ('Unclassified packages load with the body; no live-import guard'), the second half described the tree before tests/unit/test_canonical_owner_guard.py landed on this line; the first half was not re-measured. Limits: docs/evidence/canonical-owner-guard-2026-10-30/README.md."
     }
    ]
   },
@@ -5217,19 +5250,22 @@
      "ask": "The kill conditions are evaluated: infrastructure growing faster than outcomes is detected",
      "excerpt": "* increases infrastructure faster than outcomes;",
      "owner_paths": [
-      "constitution/constitution.ucl"
+      "constitution/constitution.ucl",
+      "greg/cathedral.py"
      ],
      "evidence": [
-      "tests/unit/test_ucl_compiler.py"
+      "tests/unit/test_ucl_compiler.py",
+      "tests/unit/test_cathedral_detector.py::test_activity_rising_while_outcomes_stay_flat_is_cathedral_and_the_detector_writes_nothing"
      ],
      "required_tier": "UNIT_VERIFIED",
      "tier": "UNIT_VERIFIED",
      "coverage": "partial",
      "blocker": {
       "class": "BUILDABLE_NOT_BUILT",
-      "reason": "Kill conditions are compiled, never evaluated",
+      "reason": "One clause of one kill condition is evaluated: greg/cathedral.py computes the cathedral condition's first clause (activity rising while founder-tier outcomes stay flat) when someone calls greg cathedral. Still open: its second clause and the self_authorization kill condition are compiled and never evaluated; nothing evaluates a kill condition on a schedule; until a founder-designated body exists every real run is INSUFFICIENT_HISTORY",
       "unit": "WU-13"
-     }
+     },
+     "note": "Corrected 2026-11-11. The reason recorded on 2026-10-30 ('Kill conditions are compiled, never evaluated') described the tree before greg/cathedral.py landed on this line. Limits: docs/evidence/cathedral-detector-2026-10-30/README.md."
     }
    ]
   },
@@ -5367,20 +5403,26 @@
      "ask": "Architectural ownership is reconciled: one canonical owner per function, competing active owners removed",
      "excerpt": "* reconcile architectural ownership;",
      "owner_paths": [
-      "docs/opus-maximus/REPOSITORY_CONVERGENCE_MAP.md"
+      "docs/opus-maximus/REPOSITORY_CONVERGENCE_MAP.md",
+      "docs/collaboration/ARCHITECTURE-OWNERSHIP-MAP.yaml"
      ],
-     "evidence": [],
+     "evidence": [
+      "tests/unit/test_canonical_owner_guard.py::test_registry_names_an_owner_status_alternates_and_conditions_for_every_required_function",
+      "tests/unit/test_canonical_owner_guard.py::test_the_registry_keeps_every_pinned_record_entry_and_founder_decision",
+      "tests/unit/test_canonical_owner_guard.py::test_no_unrecorded_reimplementation_of_a_registered_function"
+     ],
      "required_tier": "UNIT_VERIFIED",
-     "tier": "INTENDED",
-     "coverage": "gap",
+     "tier": "UNIT_VERIFIED",
+     "coverage": "partial",
      "lines": [
       "* remove competing active ownership;"
      ],
      "blocker": {
       "class": "BUILDABLE_NOT_BUILT",
-      "reason": "As S52.A1 and S52.A2: ownership is reconciled in prose; no registry or guard keeps one canonical owner per function",
+      "reason": "As S52.A1 and S52.A2: a registry names one canonical owner for each function it records, and a guard fails an unrecorded re-implementation of a registered function in greg/, foundry/, egregore/, omnimorph/, autonomy/ or governance/. Still open: the records marked NEEDS_FOUNDER_DECISION have competing owners and none is removed; the guard is a name-and-structure heuristic that misses a rewritten copy under an unmarked name, a method inside a class and code outside those packages; a function the registry does not record has no owner check",
       "unit": "MW-C"
-     }
+     },
+     "note": "Corrected 2026-11-11. The reason recorded on 2026-10-30 ('ownership is reconciled in prose; no registry or guard keeps one canonical owner per function') described the tree before docs/collaboration/ARCHITECTURE-OWNERSHIP-MAP.yaml's function_owner_records and tests/unit/test_canonical_owner_guard.py landed on this line. Limits: docs/evidence/canonical-owner-guard-2026-10-30/README.md."
     },
     {
      "id": "S69.A4",
@@ -5431,17 +5473,26 @@
      "excerpt": "* add tests; * attack the implementation; * run CI;",
      "owner_paths": [
       ".github/workflows",
-      "scripts/ci"
+      "scripts/ci",
+      "scripts/repo_review.py"
      ],
-     "evidence": [],
+     "evidence": [
+      "tests/unit/test_repo_health_gates.py::test_unwired_gates_match_the_shrink_only_list",
+      "tests/unit/test_repo_health_gates.py::test_a_gate_no_workflow_runs_is_unwired",
+      "tests/unit/test_repo_health_gates.py::test_the_kept_unwired_list_cannot_grow_past_its_pin",
+      "tests/unit/test_repo_health_gates.py::test_no_mutation_anchor_is_stale",
+      "tests/unit/test_repo_health_gates.py::test_moved_code_makes_the_anchor_stale",
+      "tests/unit/test_mutation_harness.py"
+     ],
      "required_tier": "UNIT_VERIFIED",
-     "tier": "INTENDED",
-     "coverage": "gap",
+     "tier": "UNIT_VERIFIED",
+     "coverage": "partial",
      "blocker": {
       "class": "BUILDABLE_NOT_BUILT",
-      "reason": "No check ties a mutant gate in scripts/ci to a workflow that runs it, or a safeguard to the test that fails without it",
+      "reason": "Nothing requires a safeguard to have a mutant or to name the test that fails without it: a gate proves that only for the safeguards someone listed in it, and a wired gate that lists none passes. What counts as caught is each gate's own rule: tests pin it for the shared runner (scripts/ci/mutation_harness.py), which since 2026-11-12 runs the named tests once in full before any mutant and judges none when one already fails (on a planted tree, when any other than the planted one fails), and for the path-predicate gate (tests/unit/test_path_build_frontier.py); the other gates keep a loop of their own that no test checks. check_seed_mutants.py runs in no workflow until the founder or CI owner decides register item S-3, and is not green where its solver packages are installed. A gate reads as wired when its file name occurs anywhere in a workflow file, a comment or a manual-only workflow included, and a gate file named outside the check_*mutant*.py pattern is not seen. A stale anchor fails a unit test only for a gate whose anchors the static reader can read; for the others only the gate's own CI run reports it. The list of gates kept unwired is pinned by a test, not compared with a base: an edit to the list and to its pin in one change passes every check",
       "unit": "S69-A"
-     }
+     },
+     "note": "Enforced by the cited tests, which Canonical CI job 1 runs in the full suite. (1) A scripts/ci/check_*mutant*.py gate named in no workflow fails unless it is on KEPT_UNWIRED_GATES in scripts/repo_review.py (since 27f03910, 2026-11-05); a listed gate that is wired fails too, and since 2026-11-11 the list cannot gain an entry without an edit to PINNED_UNWIRED in the test file. (2) An anchor the static reader can read must still occur in its target. (3) The shared runner counts a mutant as caught only when pytest exits 1 with a FAILED test in the named file and no collection error; scripts/ci/check_gate_rules_mutants.py removes each clause in Canonical CI job 10. Measured on 2026-11-11 at 8d205324, and to be edited by the change that alters them: the static reader reads anchors in 15 of 27 gates (818 anchors); 3 of 27 gates call the shared runner and one more, check_path_predicate_mutants.py, has tests of its own rule; of the other 23, check_cortex_mutants.py counts any non-zero exit and check_acceptance_mutants.py counts an ERROR (read, not run); check_seed_mutants.py exits 1 with 6 of 7 caught where z3-solver and ortools are installed (the constraint mutant's named test passes, though another test fails with that mutant) and prints 7 of 7 without them, two only because the named test cannot import its solver. A blocker has one class, so the S-3 decision is named in the reason and not as a FOUNDER_ONLY record."
     },
     {
      "id": "S69.A7",
@@ -5487,17 +5538,21 @@
      "excerpt": "Do not respond with another giant architectural document when the required decision is already clear and code can be built.",
      "owner_paths": [
       "constitution/constitution.ucl",
-      "compiler/ucl_compiler.py"
+      "compiler/ucl_compiler.py",
+      "greg/cathedral.py"
      ],
-     "evidence": [],
+     "evidence": [
+      "tests/unit/test_cathedral_detector.py::test_activity_rising_while_outcomes_stay_flat_is_cathedral_and_the_detector_writes_nothing"
+     ],
      "required_tier": "UNIT_VERIFIED",
-     "tier": "INTENDED",
-     "coverage": "gap",
+     "tier": "UNIT_VERIFIED",
+     "coverage": "partial",
      "blocker": {
       "class": "BUILDABLE_NOT_BUILT",
-      "reason": "As S55.A1: the cathedral kill condition is compiled but never evaluated",
+      "reason": "As S55.A1: greg/cathedral.py evaluates the cathedral condition's first clause on request, and counts new documents among the activity it sets against founder-tier outcomes. Still open: nothing compares a document with the code that could have been built in its place; the detector runs only when someone calls greg cathedral; until a founder-designated body exists every real run is INSUFFICIENT_HISTORY",
       "unit": "WU-13"
-     }
+     },
+     "note": "Corrected 2026-11-11. The reason recorded on 2026-10-30 ('As S55.A1: the cathedral kill condition is compiled but never evaluated') described the tree before greg/cathedral.py landed on this line. Limits: docs/evidence/cathedral-detector-2026-10-30/README.md."
     },
     {
      "id": "S69.A10",

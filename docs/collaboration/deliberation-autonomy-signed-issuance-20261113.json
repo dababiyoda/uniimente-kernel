@@ -1,0 +1,300 @@
+{
+ "decision_id": "AUTONOMY-SIGNED-ISSUANCE-20261113",
+ "title": "Autonomy above A0 is issued only on the founder's signed AUTONOMY_GRANT for that exact subject, tuple and level (acceptance I.G5)",
+ "problem": "On #196 f383fd26, AutonomyAuthority.issue(subject, tuple_, level=8, authorized_by='Alfonso Lopez') returned an active A8 license: the authorizer was a caller-supplied string, so any caller could type the founder's name and start an exact tuple at A1-A8, skipping the ten-criterion promotion ladder. The method's own docstring named binding A1+ issuance to a founder-signed envelope (greg/founder.py) as the open step; acceptance/missions.json I.G5 records the same gap as OPEN and buildable now.",
+ "founder_intent_refs": [
+  "acceptance/missions.json I.G5 (section 33, mission I: attack containment)",
+  "docs/FOUNDER_EFFECT_COMPILER.md: intelligence never creates authority; no component may authorize its own promotion",
+  "AGENTS.md: Alfonso is root authority; implementation creates no deployment or consequence authority",
+  "docs/intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json"
+ ],
+ "baseline": "#196 claude/greg-full-machine-completion-whgiee at f383fd26: a name alone issued A8 (reproduced in this session); the existing tests issued A1+ with authorized_by='Alfonso Lopez' and no signature.",
+ "alternatives": [
+  {
+   "name": "Signed AUTONOMY_GRANT checked by the existing FounderVerifier (chosen)",
+   "description": "Add one founder-only command kind; AutonomyAuthority takes a verifier and, above A0, verifies a grant whose body is exactly {subject, tuple, level}, refuses a spent nonce, and records key id, nonce and envelope digest.",
+   "advantages": [
+    "reuses the one founder-signature verifier, so no second authentication path",
+    "binds the exact tuple and level, so a grant for A2 cannot start A5",
+    "fails closed: no verifier, no A1+"
+   ],
+   "disadvantages": [
+    "one more command kind in greg/founder.py",
+    "no Body command path or CLI signer yet: the authority is a library"
+   ],
+   "revival_evidence": "n/a (chosen)"
+  },
+  {
+   "name": "Reuse DECISION envelopes",
+   "description": "Accept a founder-signed DECISION whose body names the tuple.",
+   "advantages": [
+    "no new kind"
+   ],
+   "disadvantages": [
+    "a DECISION answers a pending request on a body; overloading it lets an answer to one ask be replayed as an autonomy grant"
+   ],
+   "revival_evidence": "if command kinds become a scarce, governed resource"
+  },
+  {
+   "name": "Remove issuance above A0 entirely",
+   "description": "Every license starts at A0 and climbs only through promote.",
+   "advantages": [
+    "simplest; no founder key handling"
+   ],
+   "disadvantages": [
+    "removes the founder's stated ability to start a bounded tuple above A0; the docstring and #87 keep it as a founder grant"
+   ],
+   "revival_evidence": "the founder rules that starting levels above A0 should not exist"
+  }
+ ],
+ "do_nothing_option": {
+  "expected_outcome": "Any caller that types a human name starts any exact tuple at up to A8.",
+  "advantages": [
+   "no change"
+  ],
+  "disadvantages": [
+   "I.G5 stays open; the ladder stays optional through its constructor",
+   "the authorizer field claims an authentication it does not perform"
+  ]
+ },
+ "roles": [
+  {
+   "role": "Founder-Intent Steward",
+   "position": "Advances 'no component may authorize its own promotion' and I.G5's next step as written; it narrows who can start autonomy and grants nothing.",
+   "material_concerns": [
+    "the founder still has no CLI command to sign a grant; until one exists he can only sign with sign_command"
+   ],
+   "evidence_refs": [
+    "acceptance/missions.json I.G5",
+    "autonomy/levels.py issue docstring"
+   ],
+   "recommendation": "RETAIN"
+  },
+  {
+   "role": "Systems Architect",
+   "position": "One verifier (greg.founder.FounderVerifier), one new kind, one helper in AutonomyAuthority; the autonomy package gains a lazy import of greg.founder (no new two-way package edge; test_import_layering passes).",
+   "material_concerns": [
+    "autonomy -> greg dependency direction; acceptable because greg owns founder authentication"
+   ],
+   "evidence_refs": [
+    "tests/unit/test_import_layering.py"
+   ],
+   "recommendation": "RETAIN"
+  },
+  {
+   "role": "Adversarial Reviewer",
+   "position": "Attacked with: a name alone, an unenrolled key, a delegated device key, a device that somehow lists the kind, another subject/tuple/level/budget/environment/action, the wrong kind, another body, an expired grant, a grant edited after signing, a replay, junk authorization, UNIIMENTE named with a valid grant, A9 with a grant. Every case is refused before anything is stored and has a test; 8/8 mutants of the safeguards are caught.",
+   "material_concerns": [
+    "replay is checked only against this authority's own ledger: two authorities on two ledgers could each spend one grant"
+   ],
+   "evidence_refs": [
+    "tests/unit/test_autonomy_signed_issuance.py",
+    "scripts/ci/check_autonomy_signed_issuance_mutants.py"
+   ],
+   "recommendation": "RETAIN"
+  },
+  {
+   "role": "Operator and Maintainer",
+   "position": "Callers must now hold a verifier; the only runtime caller is the closure probe set, which uses a per-probe throwaway key labelled as synthetic. One fast mutation gate joins job 10b.",
+   "material_concerns": [
+    "future callers that forget the verifier get a clear refusal, not silent A0"
+   ],
+   "evidence_refs": [
+    "closure/kernel_registry.py",
+    "tests/unit/test_autonomy.py"
+   ],
+   "recommendation": "RETAIN"
+  },
+  {
+   "role": "Evidence and Welfare Guardian",
+   "position": "Evidence tier is UNIT: the library is exercised with real Ed25519 keys in-process; no GREG Body path, no founder device, no founder grant exists. The record says so in I.G5's closed_by.",
+   "material_concerns": [
+    "closing I.G5 at unit tier could be read as body-tier closure"
+   ],
+   "evidence_refs": [
+    "acceptance/missions.json I.G5 closed_by"
+   ],
+   "recommendation": "RETAIN"
+  }
+ ],
+ "evidence": [
+  {
+   "claim": "a name alone issued A8 before the change",
+   "tier": "unit_test",
+   "reference": "this session, f383fd26 worktree",
+   "finding": "issue('agent-1', t, level=8, authorized_by='Alfonso Lopez') -> A8 active"
+  },
+  {
+   "claim": "every refusal path holds",
+   "tier": "unit_test",
+   "reference": "tests/unit/test_autonomy_signed_issuance.py",
+   "finding": "24 passed; the file does not import on f383fd26 (no GRANT_KIND)"
+  },
+  {
+   "claim": "each safeguard is load-bearing",
+   "tier": "unit_test",
+   "reference": "scripts/ci/check_autonomy_signed_issuance_mutants.py",
+   "finding": "8/8 mutants caught"
+  }
+ ],
+ "counterevidence": [
+  {
+   "claim": "replay protection is per ledger",
+   "tier": "unit_test",
+   "reference": "autonomy/levels.py _spent",
+   "finding": "a grant is refused a second time on the same authority's ledger; nothing prevents a second authority on a separate ledger from honouring it once more (the verifier's seen_nonce is the caller's to back)"
+  }
+ ],
+ "pass_1": {
+  "intended_outcome": "No exact tuple starts above A0 unless Alfonso's enrolled key signed that grant; everything else still climbs only through the promotion ladder.",
+  "advantages": [
+   {
+    "id": "A1",
+    "statement": "the authorizer field now records an authentication, not a claim",
+    "amplified_value": "autonomy.issued carries founder_key_id, nonce and envelope digest, so any later reader can re-verify"
+   },
+   {
+    "id": "A2",
+    "statement": "exact binding",
+    "amplified_value": "a grant for one tuple and level cannot be stretched to another"
+   }
+  ],
+  "disadvantages": [
+   {
+    "id": "D1",
+    "statement": "no Body command path or CLI signer: the founder must sign with sign_command",
+    "severity": "medium",
+    "response_type": "governance",
+    "redesigned_response": "recorded as the residual in I.G5's closed_by and in the PR's next requirement; the body refuses an AUTONOMY_GRANT dropped in its inbox as an unsupported kind rather than mis-handling it"
+   },
+   {
+    "id": "D2",
+    "statement": "replay protection is per ledger",
+    "severity": "low",
+    "response_type": "evidence",
+    "redesigned_response": "the verifier's seen_nonce stays caller-backed; a body-integrated authority will back it with the body ledger like every other command"
+   },
+   {
+    "id": "D3",
+    "statement": "existing callers and tests must change",
+    "severity": "low",
+    "response_type": "modularity",
+    "redesigned_response": "one helper per caller; probes use a labelled throwaway key and never the founder's name"
+   }
+  ],
+  "comparisons": {
+   "baseline": "name-only issuance, A8 reachable by any caller",
+   "do_nothing": "I.G5 stays open",
+   "simplest_viable_alternative": "forbid A1+ issuance entirely (rejected: removes a founder power)",
+   "strongest_competing_architecture": "route issuance through a Body command and the MissionBook (deferred: no runtime consumer needs it yet)",
+   "reversible_experiment": "draft PR into #196; revert restores the previous behaviour"
+  },
+  "rejected_alternatives": [
+   {
+    "name": "Reuse DECISION envelopes",
+    "rejection_reason": "an answer to a pending ask must not double as an autonomy grant",
+    "revival_evidence": "a ruling that command kinds must not grow"
+   },
+   {
+    "name": "Forbid A1+ issuance",
+    "rejection_reason": "removes a founder grant the design keeps",
+    "revival_evidence": "the founder rules starting levels above A0 out"
+   }
+  ]
+ },
+ "pass_2": {
+  "attack_summary": "Re-attacked with the signature in place: a device key whose delegation listed the kind (only possible if DEVICE_KINDS were widened) would pass verify, so the explicit founder-principal check is kept and a test widens DEVICE_KINDS to prove it; a grant edited after signing fails verification; the name checks still run first so a valid grant cannot launder 'UNIIMENTE' as authorizer.",
+  "new_weaknesses": [
+   {
+    "id": "W1",
+    "category": "dependency",
+    "statement": "autonomy/ now imports greg.founder lazily",
+    "strengthening_response": "lazy import inside the check; no new two-way package edge (test_import_layering passes)"
+   },
+   {
+    "id": "W2",
+    "category": "comprehensibility",
+    "statement": "two inputs (authorized_by and authorization) for one grant",
+    "strengthening_response": "the docstring states their roles: the name is the human-readable label and still must pass the name checks; the signature is the authentication"
+   }
+  ],
+  "pass_1_disadvantage_dispositions": [
+   {
+    "disadvantage_id": "D1",
+    "outcome": "deferred",
+    "rationale": "no runtime consumer of A1+ licenses exists on the body; a CLI signer is the next requirement",
+    "owner": "next session to take I.G5's body tier",
+    "review_trigger": "the first body or CLI path that issues autonomy above A0"
+   },
+   {
+    "disadvantage_id": "D2",
+    "outcome": "accepted",
+    "rationale": "one authority per ledger is the only shape in the tree",
+    "owner": "session_01Kucyfoabgsg6W8H8xj4qea",
+    "review_trigger": "a second AutonomyAuthority over a different ledger for the same subject"
+   },
+   {
+    "disadvantage_id": "D3",
+    "outcome": "resolved",
+    "rationale": "all callers updated in this change",
+    "owner": "session_01Kucyfoabgsg6W8H8xj4qea",
+    "review_trigger": "a new caller of AutonomyAuthority.issue"
+   }
+  ],
+  "final_design": "AUTONOMY_GRANT in greg.founder.COMMAND_KINDS (not DEVICE_KINDS); AutonomyAuthority(ledger, verifier=None); above A0, issue runs the name checks, then _verified_grant (verifier present, envelope verifies as AUTONOMY_GRANT, principal is the founder key, body equals {subject, tuple, level}, nonce unspent on this ledger), then records the signature summary; refusals store nothing.",
+  "residual_risks": [
+   {
+    "risk": "the founder has no CLI to sign a grant",
+    "mitigation": "documented; sign_command works",
+    "owner": "next session",
+    "review_trigger": "founder asks to issue autonomy"
+   },
+   {
+    "risk": "unit tier only",
+    "mitigation": "closed_by says so",
+    "owner": "#196 integrator",
+    "review_trigger": "a body-tier autonomy path"
+   }
+  ],
+  "recommendation": "NEEDS_FOUNDER_DECISION"
+ },
+ "dissent": {
+  "present": true,
+  "handling": "Kept here and in the PR body; nothing hidden in code.",
+  "entries": [
+   {
+    "role": "Evidence and Welfare Guardian",
+    "position": "I.G5 could stay OPEN until a Body path issues autonomy",
+    "rationale": "the gap as written is about issuance being unsigned, which is now closed at the only issuance point; body integration is a new gap",
+    "evidence_threshold": "any path that issues A1+ without passing through AutonomyAuthority.issue",
+    "owner": "#196 integrator",
+    "review_trigger": "intake review"
+   }
+  ]
+ },
+ "authority_impact": {
+  "level": "constitutional",
+  "changes_authority": true,
+  "requires_authorized_human": true,
+  "approval_status": "pending",
+  "approver": "Alfonso Lopez"
+ },
+ "migration_plan": "None for data: autonomy.issued records written before this change keep their name-only authorized_by; licenses are in-memory. Callers pass verifier= and authorization=.",
+ "rollback_plan": {
+  "possible": true,
+  "steps": [
+   "revert the commit on the branch",
+   "AUTONOMY_GRANT disappears from COMMAND_KINDS; no body ever accepted one"
+  ],
+  "reason_impossible": null
+ },
+ "kill_criteria": [
+  "any path issues A1+ without a verified founder AUTONOMY_GRANT",
+  "a device key's signature issues autonomy",
+  "a refusal leaves a license or an autonomy.issued record",
+  "the change breaks an existing promote/regress/renew behaviour"
+ ],
+ "decision": "NEEDS_FOUNDER_DECISION",
+ "decision_owner": "Alfonso Lopez for adoption onto main; the #196 integrator for intake",
+ "review_trigger": "intake review on #196; the first runtime issuance of autonomy above A0"
+}

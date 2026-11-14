@@ -46,7 +46,10 @@ non-zero):
    The tables are shrink-only.
 3. **Mutation-gate liveness.** Every literal anchor in `scripts/ci/check_*mutant*.py`
    must still occur in its target file. A stale anchor is a hard finding. An anchor
-   at several sites is advisory. Every gate must be run by some workflow (shrink-only).
+   at several sites is advisory. A gate whose anchors are not written as literals is
+   not read: its own run in CI is what reports `STALE`. Every gate must be named in
+   some workflow, except the gates on `KEPT_UNWIRED_GATES`; that list is compared with
+   the tree, not with a base, so `tests/unit/test_repo_health_gates.py` pins its contents.
    On the tree before commit `5ad39868`, this check names the anchor that CI job 6
    reported STALE, in about 3 s instead of after a CI run.
 4. **Lint trend (`--lint`):** a ruff F/E9 finding count by rule. A trend, never a gate.

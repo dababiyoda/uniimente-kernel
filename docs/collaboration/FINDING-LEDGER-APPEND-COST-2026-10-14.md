@@ -281,6 +281,12 @@ Options, each an evidence-plane decision:
 
 None is built here. Two changes to the evidence plane are already waiting for your review.
 
+**Update 2026-11-13 (whiteboard W5):** option 1 has since been built (#211, in #196 from `50cf3f75`;
+`docs/collaboration/FINDING-BODY-MEMORY-2026-10-28.md`). It halved growth (2,624 to 1,373 B of resident memory per
+retained record) but did not bound it: on #196 `f383fd26` a body still grows 1,240 B per record, about 23 MB a day for
+the minutely holding mission (`docs/evidence/ledger-memory-w5-2026-11-13/`). The protocol outcome and the next
+experiment are in `docs/collaboration/deliberation-w5-ledger-memory-20261113.json`.
+
 ## Rollback
 
 Revert the commit. History files are byte-identical either way: the same JSON lines and the same hashes.

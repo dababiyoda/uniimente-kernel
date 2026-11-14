@@ -2047,7 +2047,10 @@
       "tests/unit/test_greg_goal_gravity.py::test_signed_commands_honour_device_revocation_and_founder_rotation",
       "tests/unit/test_greg_goal_gravity_reattack.py::test_an_unverified_record_cannot_hide_a_key_rotation_so_the_retired_key_admits_nothing",
       "tests/unit/test_greg_remote.py::test_expired_and_revoked_delegations_stop_working",
-      "tests/unit/test_mission_g_grants.py"
+      "tests/unit/test_mission_g_grants.py",
+      "tests/unit/test_greg_restore_fold.py::test_a_re_delegated_device_cannot_revive_a_token_signed_before_its_new_delegation",
+      "tests/unit/test_greg_founder_read_redelegation.py::test_a_read_signed_before_the_key_was_delegated_again_is_refused",
+      "tests/unit/test_greg_founder_read_redelegation.py::test_on_a_real_body_the_phone_channel_refuses_a_read_signed_under_the_revoked_delegation"
      ],
      "notes": "Partial (coverage audit 2026-10-15): at BODY_VERIFIED the campaign shows a revoked delegation acting on nothing; expired, consumed (single-use) and rotated-out authority are refused only at UNIT_VERIFIED or SANDBOX_VERIFIED."
     },
@@ -2156,10 +2159,11 @@
     {
      "id": "G9",
      "gap": "G9 greg/goal_gravity.py rebuilds device delegations on its own (founder_facts/_founder_fact) without the body's signed_not_before rule, and _verify_envelope checks only kinds and expiry, so a command.accepted record carrying an old token of a re-delegated device key verifies there. Device keys can only narrow goals, and reaching it needs a forged ledger record. FounderVerifier.verify_read also ignores signed_not_before (reads change nothing; a 60 s window).",
-     "state": "OPEN",
+     "state": "CLOSED",
      "buildable_now": true,
      "dependency": "none",
-     "next": "Apply greg.body.device_delegations' rule in goal_gravity's device map (and verify_read), with a test that an envelope signed before the re-delegation is refused there."
+     "next": "Apply greg.body.device_delegations' rule in goal_gravity's device map (and verify_read), with a test that an envelope signed before the re-delegation is refused there.",
+     "closed_by": "Goal Gravity's verified fold: 6c33c726, tests/unit/test_greg_restore_fold.py::test_a_re_delegated_device_cannot_revive_a_token_signed_before_its_new_delegation. Signed reads: FounderVerifier.verify_read applies signed_not_before, tests/unit/test_greg_founder_read_redelegation.py (fails before the fix; one case runs through the remote channel of a real body)"
     }
    ]
   },

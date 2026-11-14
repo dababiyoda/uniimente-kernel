@@ -88,13 +88,18 @@ def awaiting_appraisal(journal: Journal) -> set[str]:
 
 
 def closed_procedures(journal: Journal) -> dict[str, list]:
-    from greg.missions import reconciled
     """mission_id -> ordered capabilities of receipted DONE actions for locally verified closures.
 
     A founder-reconciled step is excluded whatever its record shape (either lineage's): the appraiser
-    never re-derived it, so it is not part of a procedure the evidence supports."""
+    never re-derived it, so it is not part of a procedure the evidence supports. A mission a correction
+    contains (``corrections.contained_missions``: a founder rejection or a failed replication, not
+    requalified) is excluded too: no procedure is learned from it, and a proposal that rests on it is not
+    ratified (``ratify``)."""
+    from greg import corrections
+    from greg.missions import reconciled
     achieved = {e.payload["mission_id"] for e in journal.replay("mission.achieved")}
     achieved.intersection_update(verified_appraisals(journal))
+    achieved.difference_update(corrections.contained_missions(journal))
     steps = defaultdict(list)
     for event in journal.replay("mission.action"):
         data = event.payload
@@ -471,7 +476,12 @@ def ratify(journal: Journal, body: dict, command_digest: str) -> dict:
     proposal = proposed[0].payload
     current = closed_procedures(journal)
     if any(current.get(mid) != proposal["steps"] for mid in proposal["missions"]):
-        raise ValueError("SOP proposal no longer locally appraised as verified; inspect its evidence")
+        from greg import corrections
+        contained = corrections.contained_missions(journal)
+        held = [f"{mid} is withheld by correction {contained[mid]['cause_id']} ({contained[mid]['cause']}), lifted by "
+                f"{contained[mid]['lifts']}" for mid in proposal["missions"] if mid in contained]
+        raise ValueError("SOP proposal no longer locally appraised as verified; inspect its evidence"
+                         + (": " + "; ".join(held) if held else ""))
     pre = body.get("pre_approve", [])
     if not isinstance(pre, list) or not all(isinstance(a, str) for a in pre) or len(set(pre)) != len(pre):
         raise ValueError("pre_approve is a list of distinct step ids")

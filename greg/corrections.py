@@ -20,7 +20,8 @@ Nothing here is a second ledger. The dependency index is derived each tick from 
   receipt or that approved such an action (its scope digest) and their answers, the settled outcomes on its readings
   (``cognition.settled``) and the procedures proposed from its mission (``sop.proposed``).
 
-A **cause** is found when a later record contradicts a reading a delivered claim rests on:
+A **cause** is found when a later record contradicts a reading a delivered claim rests on (a founder rejection may
+also name a reading no closure cites, or one a failure closure rests on):
 
 - SOURCE_CHANGED: the same source read later with a different digest; SOURCE_RETRACTED: read later as absent (a
   missing file, HTTP 404 or 410);
@@ -30,20 +31,61 @@ A **cause** is found when a later record contradicts a reading a delivered claim
 - MEASUREMENT_EXPIRED: an ``expires_at`` of an evidence source in one of GREG's own cognition receipts has passed
   (an expiry inside other data, an MCP server's for instance, is that data's, not the measurement's);
 - REPLICATION_FAILED: the same signed sensor (instrument, input and predicate) read later fails on the same input
-  (the same source digest, or a computation with no source); APPRAISAL_REFUTED: the closure's independent appraisal is
-  REFUTED; FOUNDER_REJECTED: a founder critique rejects the closure or the reading.
+  (the same source digest, or a computation with no source). A later computation that held no answer (a capability
+  deficit, a timeout, a stopped worker: ``held_no_answer``, which asks the canonical reader
+  ``greg.missions.unanswered``) replicates nothing and requalifies nothing; one that answered and failed the check,
+  or REFUTED the claim, is a real negative;
+- APPRAISAL_REFUTED: the closure's independent appraisal is REFUTED;
+- FOUNDER_REJECTED: a critique the founder signed rejects a reading (``signed_rejections``; a ``critique.recorded``
+  row with no accepted signed command behind it is not his word). What a rejection rejects depends on the event it
+  names (``Index.rejected_by``): a closure, its cited readings; an appraisal, the closure it judged; a reading or a
+  settled outcome, that reading, cited or not; a failure closure (``mission.unmet``), the failing readings it
+  closed on. A rejection of any other event names no reading; the command's result says that it changed no credit
+  (``rejection_effect``).
 
 Each cause is recorded once (``evidence.invalidated``), with the correction it propagates (``evidence.correction``:
 every affected descendant and the edge it was reached by, and how many delivered claims are unaffected). History is
 never edited. Only the causes that impugn the measurement itself (replication on the same input, a refuted appraisal,
-a founder rejection) contain the settled outcomes on it (``contained_receipts``): a source that moved on leaves the
-method that read it as competent as before. Every cause marks its claims NEEDS_REVIEW and names the decisions to
-review; a terminal delivery, or one another mission or a founder decision depended on, is also put to the founder,
-once per triggering record and mission (EVIDENCE_CORRECTION, answer only recorded), from the stored correction.
+a founder rejection) touch what was credited on it. A refuted appraisal already does, wherever the appraisal is read.
+A failed replication and a founder rejection are seen by no appraisal, so they contain (``containment``): the
+settled outcomes on their receipts (``contained_receipts``, read by ``settlement.measured_outcomes``, so by every
+reader of settled competence) and their missions as evidence for a procedure or a precedent (``contained_missions``,
+read by ``sop.closed_procedures`` and ``precedents``); a founder rejection's missions also stop counting as
+successes in routing reliability, the earned-autonomy report and precedent action evidence (``rejected_missions``).
+A source that moved on leaves the method that read it as competent as before. What is contained is scored as neither
+success nor failure: a contained failure (the founder rejected a failure closure) stops counting against its method
+by the same rule.
+
+A founder rejection withholds the answer, not one receipt of it. While it stands, every reading that carries the
+rejected answer is contained with it (``Index.same_answer``): an earlier or later reading of the same signed check in
+the same mission, a standing mission's own next cadence read, and, for one of GREG's own computations, the same
+question (instrument, input, predicate) answered alike by the same method at the same version in another mission.
+A reading with a different answer is a new answer and settles on its own merits. A rejection does not reach a
+different question, different inputs, another version of the method or an unrelated mission (the founder's decision
+of 2026-11-12: "Scope rejection history to the relevant answer, evidence, task conditions, and version").
+
+The founder can requalify what he rejected: a later signed CRITIQUE that accepts the closure, the appraisal, a
+reading or the settled outcome of the rejected answer lifts the withholding for that answer and for no other
+(``Index.rejections``), from the acceptance of that command on. Propagation records it against the cause, with the
+critique and the command it came from. A rejection signed after it stands again. A later passing reading, a critique
+row with no accepted signed command behind it and a bare ``evidence.requalified`` record lift nothing. Wherever
+credit is withheld the reason is stated: the cause, for a founder rejection the critique and the answer it
+withholds, and what lifts it (``_standing``, ``settlement.withheld``, ``rejection_report``).
+
+Containment is derived from the journal each time it is read. A founder rejection counts from the acceptance of
+its signed command, before any tick records its cause, and a dependent that appears after a correction was recorded
+(a mission that binds a contained reading, a later reading of a rejected answer) is contained when it exists. The
+stored ``affected`` list is history and the basis of the ask.
+
+Every cause marks its claims NEEDS_REVIEW and names the decisions to review; a terminal delivery, or one another
+mission or a founder decision depended on, is also put to the founder, once per triggering record and mission
+(EVIDENCE_CORRECTION, answer only recorded), from the stored correction.
 
 A cause is **requalified** by evidence alone (``evidence.requalified``): a later passing reading of the same signed
 sensor, with no expired evidence of its own; a refuted appraisal only by a later
-VERIFIED appraisal of the same closure; a founder rejection never by evidence. The requalifying reading becomes the
+VERIFIED appraisal of the same closure. A founder rejection is never requalified by evidence: only his own signed
+acceptance lifts it, and the record of that is derived from the signed critiques, never trusted on its own. The
+requalifying reading becomes the
 claim's basis, so a later change against it is a new cause. Requalification lifts the epistemic mark only. This
 module writes no grant, approval or capability state, so it can neither deny nor restore permission: a detach, a
 revoked device or a voided approval keeps denying execution through the Kernel's own path, whatever the evidence
@@ -56,7 +98,7 @@ from datetime import datetime, timezone
 import json
 
 from greg import asks
-from greg.journal import Journal, iso
+from greg.journal import Journal, fact_id, iso
 from provenance.ledger import sha256_json
 
 CLASSES = ("SOURCE_CHANGED", "SOURCE_RETRACTED", "API_CHANGED", "MEASUREMENT_EXPIRED", "REPLICATION_FAILED",
@@ -66,7 +108,17 @@ RETRACTED_STATUS = (404, 410)
 # appraisal of the mission's own closure (autonomy, routing and Goal Gravity consume it) and the founder's own
 # rejection. They put an ask only when something beyond that mission rests on the claim.
 SELF_REPORTED = ("APPRAISAL_REFUTED", "FOUNDER_REJECTED")
+# A cause whose credit effect its own readers already have. Settlement and SOP read each closure's appraisal, and a
+# later VERIFIED appraisal of that closure restores what a refuted one withdrew; containment adds nothing to it.
+APPRAISED = ("APPRAISAL_REFUTED",)
 COMPUTATIONS = ("cognition.",)        # sensors whose reading is a computation on its signed input, not the world
+# The states of a compilation that are abstention classes and carry no answer (``contracts.AbstentionClass`` without
+# NONE, REFUTED and WORLD_UNVERIFIED): UNKNOWN after a timeout, ABSTAIN after a stopped worker, a deficit, an
+# incomplete formalization. Used only by the interim half of ``held_no_answer``.
+ABSTAINED = ("ABSTAIN", "PROHIBITED", "HUMAN_REVIEW_REQUIRED", "CAPABILITY_DEFICIT", "EVIDENCE_EXPIRED",
+             "FORMALIZATION_INCOMPLETE", "UNKNOWN", "UNIDENTIFIED", "NO_QUORUM")
+# Fields of a certified answer that say how it was produced, not what it is (``settlement.ANSWER_PROVENANCE_FIELDS``).
+ANSWER_PROVENANCE = ("engine", "composed_of", "authority_created")
 MAX_DEPTH = 6                          # how deep an output is searched for evidence expiries
 
 
@@ -120,6 +172,130 @@ def expiries(output, depth: int = 0) -> list[str]:
     return found
 
 
+def held_no_answer(output) -> bool:
+    """Whether one of GREG's own cognition receipts held no answer. The question, and its answer, are the canonical
+    reader's: ``greg.missions.unanswered`` (None when the receipt answered or refuted, a reason otherwise). A
+    reading that held no answer neither fails nor replicates a claim another reading answered, requalifies nothing
+    and carries no answer to compare: a host that stalls on a later mission says nothing about the method that
+    answered the first. A reading that answered and failed the check, and one that REFUTED the claim, are real
+    negatives.
+
+    One interim addition, to delete when the canonical reader reads a compilation's ``state`` (it is being extended
+    on another branch, and this unit does not edit ``greg/missions.py``). A compile receipt carries ``state`` and
+    no ``abstention_state``, so the reader as it stands here calls every compilation answered: a solver timeout
+    (state UNKNOWN) or a stopped worker (state ABSTAIN) on a later mission then counted as a failed replication of
+    a correct answer (review of b01d319f, F3). Until then a compilation whose state is itself an abstention class
+    (``ABSTAINED``) is put to the same reader as that abstention. Every other state is the canonical reader's
+    alone to decide; nothing here decides it differently."""
+    from greg.missions import unanswered
+    if not isinstance(output, dict):
+        return False
+    if unanswered(output) is not None:
+        return True
+    return "abstention_state" not in output and output.get("state") in ABSTAINED \
+        and unanswered({"abstention_state": output["state"]}) is not None
+
+
+def refuted_own_answer(output) -> bool:
+    """Whether one of GREG's own cognition receipts is a run whose own answer the independent verifier refuted, so
+    that it carries no answer: a compilation in state REFUTED with no ``result``, or a method's receipt in
+    abstention state REFUTED whose verifier says REFUTED. Such a run is no failed replication of an earlier answer
+    to the same question: what it shows is that this run's candidate was wrong, not that the earlier verified answer
+    was (review of 0a9a246f, N6; on 0a9a246f it was booked REPLICATION_FAILED and withheld the earlier credit). A
+    compilation that REFUTED the claim itself names its counterexample in ``result``: that is an answer, and a real
+    negative. Whether the engine counts a REFUTED reading as a measured failure of its check is another question,
+    the canonical reader's (``greg.missions.unanswered``), and is not changed here."""
+    if not isinstance(output, dict):
+        return False
+    if "abstention_state" in output:
+        return output.get("abstention_state") == "REFUTED" \
+            and (output.get("evaluator_result") or {}).get("verdict") == "REFUTED"
+    return output.get("state") == "REFUTED" and output.get("result") is None
+
+
+def answer_digest(output) -> str | None:
+    """A narrower question than ``held_no_answer``, asked only of a reading that answered: WHICH answer does it
+    carry? The digest of the method that ran, its version and its result. None when the receipt held no answer, or
+    names no result to tell from another. A compilation names the method through the receipt of the method it
+    selected; its answer is its ``result`` without the provenance fields. Timing, cost and receipt ids are not part
+    of it, so the same answer delivered again under another receipt has the same digest."""
+    if not isinstance(output, dict) or held_no_answer(output):
+        return None
+    if "abstention_state" in output:                        # a method's own receipt
+        method, version, result = output.get("method"), output.get("method_version"), output.get("output")
+    elif "state" in output:                                 # a compilation
+        inner = output.get("selected_receipt") if isinstance(output.get("selected_receipt"), dict) else {}
+        method = inner.get("method") or output.get("method_or_composition_selected")
+        version, result = inner.get("method_version"), output.get("result")
+        if isinstance(result, dict):
+            result = {k: v for k, v in result.items() if k not in ANSWER_PROVENANCE}
+    else:
+        return None
+    if result is None:
+        return None
+    return sha256_json({"method": method, "method_version": version, "answer": result})
+
+
+# Sensor params that name a question and do not change it. ``problem_id`` is a cognition request's name for its
+# question: the receipt repeats it, nothing computes from it, and the same data, predicate, method and version give
+# the same answer under any name. Read as part of the question, a relabelled re-signing of a rejected answer escaped
+# the rejection (review of 0a9a246f, N5). Every other param is the question.
+LABEL_PARAMS = ("problem_id",)
+
+
+def sensor_key(check: dict) -> str:
+    """What a signed check asks: its instrument, its input and its predicate. Its labels (check id, description, a
+    param in ``LABEL_PARAMS``) and the mission that signed it are not part of the question."""
+    s = check.get("sensor") or {}
+    params = s.get("params", {})
+    if isinstance(params, dict):
+        params = {k: v for k, v in params.items() if k not in LABEL_PARAMS}
+    return sha256_json({"sensor": s.get("capability") or s.get("function"), "params": params,
+                        "predicate": check.get("predicate")})
+
+
+def signed_critiques(journal: Journal, verdicts=("reject", "accept")) -> list:
+    """The founder's critiques of these verdicts, in ledger order: every ``critique.recorded`` event that an accepted
+    signed CRITIQUE command stands behind (a ``command.accepted`` of kind CRITIQUE with the row's command digest,
+    whose signed body names the same target and the same verdict). A row with no such command behind it is not the
+    founder's word and is not followed, whichever way it points."""
+    rows = [e for e in journal.replay("critique.recorded") if e.payload.get("verdict") in verdicts]
+    if not rows:
+        return []
+    from greg.founder import accepted_body         # the body the founder signed, in either retained record shape
+    accepted = {e.payload.get("digest"): accepted_body(e.payload) or {}
+                for e in journal.replay("command.accepted") if e.payload.get("kind") == "CRITIQUE"}
+    out = []
+    for e in rows:
+        signed = accepted.get(e.payload.get("command_digest")) if e.payload.get("command_digest") else None
+        if signed is not None and signed.get("verdict") == e.payload.get("verdict") \
+                and signed.get("target_event_id") == e.payload.get("target_event_id"):
+            out.append(e)
+    return out
+
+
+def critique_signers(journal: Journal) -> dict:
+    """command digest -> who signed that accepted CRITIQUE command: ``founder`` for the founder key, ``device:<label>``
+    for a delegated device key (the principal ``Body.apply`` records with the acceptance). Read, never decided here:
+    which keys may sign a CRITIQUE is ``greg.founder``'s, and every accepted one is followed alike."""
+    return {e.payload.get("digest"): e.payload.get("signer")
+            for e in journal.replay("command.accepted") if e.payload.get("kind") == "CRITIQUE"}
+
+
+def signed_rejections(journal: Journal) -> list:
+    """The signed critiques that reject (``signed_critiques``), standing or since requalified."""
+    return signed_critiques(journal, ("reject",))
+
+
+LIFTS = {"FOUNDER_REJECTED": "a founder-signed CRITIQUE that accepts the rejected closure, reading or answer "
+                             "(greg accept EVENT_ID); no later reading and no other record lifts it",
+         "REPLICATION_FAILED": "a later passing reading of the same signed sensor on the same input"}
+
+
+def _cause_id(cls: str, root: str, on: str) -> str:
+    return "cause-" + sha256_json({"class": cls, "root": root, "on": on})[7:39]
+
+
 def _instant(text: str) -> datetime | None:
     try:
         value = datetime.fromisoformat(text.replace("Z", "+00:00"))
@@ -139,11 +315,8 @@ class Index:
         for e in journal.replay("mission.registered"):
             self.specs[e.payload["mission_id"]] = e.payload["spec"]
             for check in e.payload["spec"].get("success_checks", []):
-                s = check.get("sensor") or {}
-                sensors[(e.payload["mission_id"], check["check_id"])] = sha256_json(   # instrument, input and claim
-                    {"sensor": s.get("capability") or s.get("function"), "params": s.get("params", {}),
-                     "predicate": check.get("predicate")})
-        self.readings, self.by_receipt = [], {}
+                sensors[(e.payload["mission_id"], check["check_id"])] = sensor_key(check)
+        self.readings, self.by_receipt, self.by_event, self._targets, self._rejections = [], {}, {}, None, None
         for e in journal.replay("mission.observed"):
             p = e.payload
             record = ledger.find(p["receipt"]) if p.get("receipt") else None
@@ -151,13 +324,21 @@ class Index:
                 continue
             output = (record.payload.get("result") or {}).get("output")
             own = str(p.get("capability", "")).startswith("cognition.")     # GREG's own receipts carry evidence
+            source = source_of(output)
             reading = {"event_id": e.event_id, "mission_id": p["mission_id"], "check_id": p["check_id"],
                        "receipt": p["receipt"], "seq": record.seq, "capability": p.get("capability"),
                        "passed": bool(p.get("passed")), "inconclusive": str(p.get("detail", "")).startswith("sensor "),
-                       "sensor": sensors.get((p["mission_id"], p["check_id"])), "source": source_of(output),
+                       # only GREG's own receipts are put to the canonical reader of "did this reading answer"
+                       "unanswered": own and held_no_answer(output), "own": own,
+                       # a run whose own answer the verifier refuted: it replicates nothing (``refuted_own_answer``)
+                       "refuted": own and refuted_own_answer(output),
+                       # which answer the reading carries: a computation's method and result, a world reading's bytes
+                       "answer": answer_digest(output) if own else (source or {}).get("digest"),
+                       "sensor": sensors.get((p["mission_id"], p["check_id"])), "source": source,
                        "expires": sorted(expiries(output)) if own else [], "at": p.get("at")}
             self.readings.append(reading)
             self.by_receipt[p["receipt"]] = reading
+            self.by_event[e.event_id] = reading
         self.head_seq = max((r["seq"] for r in self.readings), default=-1)
         self.claims, latest_hold = [], {}
         for e in journal.replay("mission.held"):
@@ -179,6 +360,84 @@ class Index:
         record = self.journal.ledger.find(h) if h else None
         return record.seq if record is not None else -1
 
+    # -- what a founder rejection rejects -----------------------------------------------------------------------
+    def identity(self, reading: dict) -> str | None:
+        """The answer a reading carries, as one digest: what was asked (the signed sensor: instrument, input,
+        predicate) and what was answered (``answer_digest``, or a world reading's bytes). None when either is unknown."""
+        if reading["answer"] is None or reading["sensor"] is None:
+            return None
+        return sha256_json({"asked": reading["sensor"], "answered": reading["answer"]})
+
+    def rejections(self) -> tuple[list, dict]:
+        """(standing, lifted) founder rejections, from the signed critiques in ledger order.
+
+        ``standing`` is a list of (critique event, rejected reading). ``lifted`` maps (critique event id, reading
+        receipt) to the later signed critique that accepted the same answer: the closure, appraisal, reading or
+        settled outcome the acceptance names (``rejected_by``), and every reading that carries the answer of one of
+        them (``same_answer``). The acceptance requalifies exactly those answers and nothing else; a rejection
+        signed after it stands again. Evidence alone never lifts a rejection, and neither does any other record."""
+        if self._rejections is None:
+            standing, lifted = {}, {}
+            for e in signed_critiques(self.journal):
+                readings = self.rejected_by(e.payload.get("target_event_id"))[1]
+                if e.payload["verdict"] == "reject":
+                    for reading in readings:
+                        standing[e.event_id, reading["receipt"]] = (e, reading)
+                    continue
+                accepted = {r["receipt"] for a in readings for r in (a, *self.same_answer(a))}
+                for key in [k for k in standing if k[1] in accepted]:
+                    del standing[key]
+                    lifted[key] = e
+            self._rejections = (list(standing.values()), lifted)
+        return self._rejections
+
+    def same_answer(self, reading: dict) -> list[dict]:
+        """The other readings that carry this reading's answer: the same signed check of the same mission with the
+        same outcome and the same answer digest, whichever receipt each has; and, for one of GREG's own
+        computations, the same question (instrument, input and predicate) answered alike by the same method at the
+        same version in any mission. A reading that names no answer digest is like no other."""
+        if reading["answer"] is None:
+            return []
+        return [r for r in self.readings
+                if r is not reading and r["answer"] == reading["answer"] and r["passed"] == reading["passed"]
+                and ((r["mission_id"], r["check_id"]) == (reading["mission_id"], reading["check_id"])
+                     or (reading["own"] and r["own"] and r["sensor"] is not None and r["sensor"] == reading["sensor"]))]
+
+    def rejected_by(self, target) -> tuple[str, list[dict]]:
+        """(what the event is, the readings a rejection of it rejects).
+
+        A closure (``mission.achieved``, ``mission.held``): the readings it cites. A failure closure
+        (``mission.unmet``): the latest reading, before it, of each check it names as failing. A reading
+        (``mission.observed``): itself, cited by a closure or not. A settled outcome (``cognition.settled``): the
+        reading it settled. An appraisal (``mission.appraised``): what the closure it judged rejects. Any other
+        event names no reading of a signed check: ("other", [])."""
+        if target in self.by_event:
+            return "reading", [self.by_event[target]]
+        if self._targets is None:
+            self._targets = {e.event_id: (kind, e) for kind in ("mission.achieved", "mission.held", "mission.unmet",
+                                                                 "mission.appraised", "cognition.settled")
+                             for e in self.journal.replay(kind)}
+        kind, event = self._targets.get(target, (None, None))
+        if kind in ("mission.achieved", "mission.held"):
+            return "closure", [self.by_receipt[r] for r in event.payload.get("evidence", []) if r in self.by_receipt]
+        if kind == "mission.unmet":
+            at, mid, out = self._event_seq(event), event.payload["mission_id"], []
+            for check in event.payload.get("failing_checks", []):
+                before = [r for r in self.readings if (r["mission_id"], r["check_id"]) == (mid, check) and r["seq"] < at]
+                out += before[-1:]
+            return "failure closure", out
+        if kind == "cognition.settled":
+            reading = self.by_event.get(event.payload.get("observation_event")) \
+                or self.by_receipt.get(event.payload.get("receipt"))
+            return "settled outcome", [reading] if reading else []
+        if kind == "mission.appraised":
+            closure = event.payload.get("closure_event") or next(
+                (eid for eid, (k, e) in self._targets.items() if k == "mission.achieved"
+                 and e.payload["mission_id"] == event.payload.get("mission_id")), None)
+            judged = self._targets.get(closure, (None, None))[0]
+            return "appraisal", self.rejected_by(closure)[1] if judged not in (None, "mission.appraised") else []
+        return "other", []
+
     # -- causes -------------------------------------------------------------------------------------------------
     def causes(self, now: datetime, basis: dict | None = None) -> list[dict]:
         """Every cause against a reading a delivered claim rests on. ``basis`` maps a root receipt to the reading that
@@ -191,9 +450,8 @@ class Index:
         found = {}
 
         def cause(cls, root, base, why, trigger, seq, impugns, detail=None):
-            cid = "cause-" + sha256_json({"class": cls, "root": root["receipt"],
-                                          "on": trigger.get("event_id") if trigger.get("kind") == "event"
-                                          else base["receipt"]})[7:39]
+            cid = _cause_id(cls, root["receipt"], trigger.get("event_id") if trigger.get("kind") == "event"
+                            else base["receipt"])
             if cid not in found:
                 found[cid] = {"cause_id": cid, "class": cls, "why": why[:400], "impugns_measurement": impugns,
                               "root": {k: root[k] for k in ("event_id", "receipt", "mission_id", "check_id",
@@ -248,7 +506,8 @@ class Index:
             if root["sensor"] and base["passed"]:
                 computed = src is None and str(base["capability"]).startswith(COMPUTATIONS)
                 for later in later_by_sensor[root["sensor"]]:
-                    if not counts(later) or later["passed"] or later["inconclusive"]:
+                    if not counts(later) or later["passed"] or later["inconclusive"] or later["unanswered"] \
+                            or later["refuted"]:
                         continue
                     if computed and later["source"] is None or (
                             src is not None and later["source"] is not None and later["source"]["key"] == src["key"]
@@ -260,7 +519,6 @@ class Index:
                         cause("SOURCE_CHANGED", root, base, "the same signed check now fails on a source that names "
                               "no digest", at(later), later["seq"], False)
                         break
-        claim_of = {c["claim"]: c for c in self.claims}
         for e in self.journal.replay("mission.appraised"):
             p = e.payload
             if p.get("verdict") != "REFUTED":
@@ -273,23 +531,21 @@ class Index:
                               True, {"failed_checks": sorted(k for k, v in (p.get("checks") or {}).items() if v is False
                                                              and k not in (p.get("not_established") or ())),
                                      "closure_event": p.get("closure_event")})
-        for e in self.journal.replay("critique.recorded"):
-            p = e.payload
-            if p.get("verdict") != "reject":
-                continue
-            target = p.get("target_event_id")
-            hits = claim_of[target]["receipts"] if target in claim_of else \
-                [r["receipt"] for r in self.readings if r["event_id"] == target and r["receipt"] in roots]
-            for r in hits:
-                cause("FOUNDER_REJECTED", self.by_receipt[r], self.by_receipt[r], "the founder rejected it in a signed "
-                      "critique", {"kind": "event", "event_id": e.event_id}, self._event_seq(e), True,
-                      {"critique": str(p.get("text", ""))[:300]})
+        for e in signed_rejections(self.journal):
+            for reading in self.rejected_by(e.payload.get("target_event_id"))[1]:
+                cause("FOUNDER_REJECTED", reading, reading, "the founder rejected it in a signed critique",
+                      {"kind": "event", "event_id": e.event_id}, self._event_seq(e), True,
+                      {"critique": str(e.payload.get("text", ""))[:300]})
         return sorted(found.values(), key=lambda c: (c["trigger_seq"], c["cause_id"]))
 
     def requalified(self, cause: dict, now: datetime) -> dict | None:
-        """The later record that requalifies a cause by evidence alone, or None."""
+        """The later record that requalifies a cause, or None: evidence alone for every class but a founder
+        rejection, which only the founder's own signed acceptance of the same answer lifts (``rejections``)."""
         if cause["class"] == "FOUNDER_REJECTED":
-            return None
+            by = self.rejections()[1].get((cause["trigger"].get("event_id"), cause["root"]["receipt"]))
+            return None if by is None else {"event_id": by.event_id, "critique_id": by.payload.get("critique_id"),
+                                            "command_digest": by.payload.get("command_digest"),
+                                            "kind": "founder-signed acceptance"}
         if cause["class"] == "APPRAISAL_REFUTED":
             closure = (cause.get("detail") or {}).get("closure_event")
             for e in self.journal.replay("mission.appraised"):
@@ -303,6 +559,7 @@ class Index:
             return None
         for later in self.readings:
             if (later["sensor"] == root["sensor"] and later["passed"] and not later["inconclusive"]
+                    and not later["unanswered"]         # a reading that held no answer requalifies nothing
                     and later["seq"] > root["seq"] and later["seq"] > cause["trigger_seq"]
                     and later["receipt"] != cause["trigger"].get("receipt")
                     and not (later["source"] and later["source"]["absent"])
@@ -315,16 +572,37 @@ class Index:
         """Everything resting on the cause's root reading, each with the edge it was reached by."""
         receipts, acted_at, path = {cause["root"]["receipt"]}, {}, []      # mission -> its first affected action
         claims, actions = [], []
+        # Readings of the rejected answer in another mission. Each is contained itself (its settled competence is
+        # the answer's), and a claim that cites one is under review and is no evidence for a procedure or a
+        # precedent; but that mission did not deliver the rejected closure, and its own runs beside the shared
+        # computation do not rest on it. Its claim is reached "by the answer" only (``answer_only``), and the
+        # readers of run credit (``rejected_missions``: routing reliability, the earned level, precedent action
+        # evidence) leave it out. Before, another mission's unrelated file write lost its reliability and its earned
+        # level because that mission had also asked the computation (review of 0a9a246f, N4). An action that binds
+        # such a reading does rest on the answer, and the claim that follows it is reached in full.
+        shared = set()
+        if cause["class"] == "FOUNDER_REJECTED" and cause["root"]["receipt"] in self.by_receipt:
+            # a rejection withholds the answer, not one receipt of it: every reading that carries it rests on it
+            root = self.by_receipt[cause["root"]["receipt"]]
+            for other in self.same_answer(root):
+                receipts.add(other["receipt"])
+                path.append({"reading": other["event_id"], "by": "carries the answer the founder rejected"})
+                if other["mission_id"] != root["mission_id"]:
+                    shared.add(other["receipt"])
         frontier = True
         while frontier:
             frontier = False
             for claim in self.claims:
-                if claim["claim"] in {c["claim"] for c in claims}:
+                acted = claim["mission_id"] in acted_at and claim["seq"] > acted_at[claim["mission_id"]]
+                known = next((c for c in claims if c["claim"] == claim["claim"]), None)
+                if known is not None:
+                    if known["answer_only"] and acted:      # its mission has since been found to act on it
+                        known["answer_only"] = False
+                        frontier = True
                     continue
                 cited = set(claim["receipts"]) & receipts
-                acted = claim["mission_id"] in acted_at and claim["seq"] > acted_at[claim["mission_id"]]
                 if cited or acted:
-                    claims.append(claim)
+                    claims.append({**claim, "answer_only": not acted and cited <= shared})
                     path.append({"claim": claim["claim"], "by": "cites " + sorted(cited)[0][:16] if cited
                                  else "its mission acted on an affected input"})
                     frontier = True
@@ -365,7 +643,8 @@ class Index:
                           and (e.payload.get("receipt") in receipts or e.payload.get("observation_event") in observed))
         procedures = sorted(e.payload.get("procedure_id") or e.event_id for e in self.journal.replay("sop.proposed")
                             if set(e.payload.get("missions") or []) & affected_missions)
-        return {"claims": [{"claim": c["claim"], "kind": c["kind"], "mission_id": c["mission_id"]} for c in claims],
+        return {"claims": [{"claim": c["claim"], "kind": c["kind"], "mission_id": c["mission_id"],
+                            **({"answer_only": True} if c["answer_only"] else {})} for c in claims],
                 "actions": actions, "decisions": decisions, "outcomes": outcomes, "procedures": procedures,
                 "receipts": sorted(receipts), "path": path,
                 "unaffected_claims": len([c for c in self.claims if c["claim"] not in {x["claim"] for x in claims}])}
@@ -387,32 +666,232 @@ def _basis(index: "Index", requalified: dict) -> dict:
     return out
 
 
-def contained_receipts(journal: Journal) -> dict:
-    """receipt -> {cause, cause_id, event, path} for every recorded cause that impugns the measurement itself
-    (REPLICATION_FAILED, APPRAISAL_REFUTED, FOUNDER_REJECTED) and is not requalified. A reader of settled outcomes
-    withholds those resting on a listed receipt; a source that moved on, a changed API or an expiry lists nothing.
-    ``event`` is the ``evidence.invalidated`` event id; ``path`` the dependency path of the correction. Computed from
-    recorded facts only (deterministic, cheap)."""
+def _standing_ids(index: "Index") -> dict:
+    """cause id -> (critique event, rejected reading) of every founder rejection that stands (``Index.rejections``)."""
+    return {_cause_id("FOUNDER_REJECTED", reading["receipt"], e.event_id): (e, reading)
+            for e, reading in index.rejections()[0]}
+
+
+def _lifted(correction: dict, requalified: dict, standing: dict) -> bool:
+    """Whether a correction no longer holds. Evidence requalifies every class but a founder rejection (the recorded
+    ``evidence.requalified``). A founder rejection is lifted only while no signed rejection of that reading stands
+    (``_standing_ids``): his own signed acceptance lifted it, or no signed critique ever stood behind the record.
+    A requalification record alone lifts none."""
+    if correction["class"] == "FOUNDER_REJECTED":
+        return correction["cause_id"] not in standing
+    return correction["cause_id"] in requalified
+
+
+def _standing(journal: Journal, index: "Index") -> list[tuple]:
+    """(cause id, class, root receipt, what its correction recorded as affected, why) of every cause that withholds
+    credit now, in order: first the recorded causes that impugn the measurement itself, that the readings still
+    produce (so are not requalified) and that are expressed by no appraisal (a REPLICATION_FAILED; a source that moved on, a changed API or an expiry is never
+    among them, and a refuted appraisal is left to the readers of appraisals, ``APPRAISED``); then the founder's
+    rejections that stand, read from the signed critiques themselves (``Index.rejections``), so one counts from the
+    moment its command is accepted, whether or not a tick has recorded its cause, and no recorded row stands in for
+    one or lifts one.
+
+    ``why`` is what a reader is shown wherever the credit is missing: the cause and its class, its
+    ``evidence.invalidated`` record (``event``: the id that record gets when the next propagation writes it, for a
+    rejection accepted since the last tick), what lifts it (``lifts``), and for a founder rejection the critique
+    (``rejection``) and the answer it withholds (``answer``: ``Index.identity``).
+
+    A recorded cause withholds credit only when the readings on the ledger still produce it: ``Index.causes``, the
+    rule ``propagate`` records it by, run again here. An ``evidence.correction`` row nothing on the ledger supports
+    (written by hand, or by anything but that rule) is history and marks its claims for review, but withholds no
+    credit; on 0a9a246f a bare REPLICATION_FAILED row with no failing reading behind it took a mission's credit
+    (review of 0a9a246f). The cost: a cause whose trigger reading has since left the ledger stops withholding.
+
+    The same derivation decides requalification by evidence. A requalifying reading becomes the claim's basis
+    (``_basis``, from the ``evidence.requalified`` records whose reading is on the ledger), the cause is no longer
+    produced against it, and it stops withholding. A bare ``evidence.requalified`` row that names no reading on the
+    ledger moves no basis and lifts nothing, as a founder rejection was already never lifted by such a row."""
     requalified = _recorded(journal, "evidence.requalified")
-    events = {e.payload["cause_id"]: e.event_id for e in journal.replay("evidence.invalidated")}
-    out = {}
-    for cid, correction in _recorded(journal, "evidence.correction").items():
-        if correction.get("impugns_measurement") and cid not in requalified:
-            for r in correction["affected"]["receipts"]:
-                out.setdefault(r, {"cause": correction["class"], "cause_id": cid, "event": events.get(cid),
-                                   "path": correction["affected"]["path"]})
+    derived = {c["cause_id"] for c in index.causes(datetime.max.replace(tzinfo=timezone.utc),
+                                                   _basis(index, requalified))}
+
+    def why(cid, cls, **more):
+        return {"cause": cls, "cause_id": cid, "event": fact_id("evidence.invalidated", [cid]), "lifts": LIFTS[cls],
+                **more}
+    out = [(cid, c["class"], (c.get("root") or {}).get("receipt"), c.get("affected") or {}, why(cid, c["class"]))
+           for cid, c in _recorded(journal, "evidence.correction").items()
+           if c.get("impugns_measurement")
+           and c["class"] not in APPRAISED and c["class"] != "FOUNDER_REJECTED" and cid in derived]
+    for cid, (e, reading) in _standing_ids(index).items():
+        out.append((cid, "FOUNDER_REJECTED", reading["receipt"], {},
+                    why(cid, "FOUNDER_REJECTED", rejection=e.payload.get("critique_id"),
+                        answer=index.identity(reading))))
     return out
 
 
+def containment(journal: Journal) -> dict:
+    """What withholds credit now: {"receipts", "missions", "rejected"} (see the three readers below).
+
+    Dependents are derived from the journal each time this is read, not taken from the ``affected`` list a
+    correction stored when it was recorded: a mission that binds a contained reading after the correction was
+    recorded, and a later reading that carries a rejected answer, are contained as soon as they exist, whatever
+    tick recorded what. What a correction stored stays contained with it (the record is history, and it still
+    names what was affected when a reading has since left the ledger). Every entry says why (``_standing``). The
+    result is kept for the ledger head it was read at; do not change it."""
+    try:
+        head = journal.ledger.head
+    except (AttributeError, IndexError):          # no ledger, or an empty one: there is no receipt to contain
+        return {"receipts": {}, "missions": {}, "rejected": {}}
+    kept = journal.__dict__.get("_containment")
+    if kept is not None and kept[0] == head:
+        return kept[1]
+    out = {"receipts": {}, "missions": {}, "rejected": {}}
+    if journal.replay("evidence.correction") or signed_rejections(journal):   # the usual body has neither
+        index = Index(journal)
+        for cid, cls, root, stored, why in _standing(journal, index):
+            reached = index.descendants({"class": cls, "root": {"receipt": root}}) if root in index.by_receipt else {}
+            path = reached.get("path") or stored.get("path") or []
+            for r in [*reached.get("receipts", []), *(stored.get("receipts") or [])]:
+                out["receipts"].setdefault(r, {**why, "path": path})
+            for claim in [*reached.get("claims", []), *(stored.get("claims") or [])]:
+                out["missions"].setdefault(claim["mission_id"], why)
+                # another mission's claim that only cites the answer: its runs keep their credit (N4)
+                if cls == "FOUNDER_REJECTED" and not claim.get("answer_only"):
+                    out["rejected"].setdefault(claim["mission_id"], why)
+    journal.__dict__["_containment"] = (head, out)
+    return out
+
+
+def contained_receipts(journal: Journal) -> dict:
+    """receipt -> {cause, cause_id, event, path} for every receipt a standing cause reaches (``containment``): the
+    reading itself, for a founder rejection every other reading that carries the rejected answer
+    (``Index.same_answer``), and the receipts of the actions that bound one of them. A reader of settled outcomes
+    withholds those resting on a listed receipt (``settlement.measured_outcomes``). ``path`` is the dependency
+    path."""
+    return containment(journal)["receipts"]
+
+
+def contained_missions(journal: Journal) -> dict:
+    """mission id -> {cause, cause_id, event} for every mission with a delivered claim a standing cause reaches
+    (``containment``): the mission whose reading it is, a mission whose claim cites a reading that carries a
+    rejected answer, and any mission whose claim followed an action that bound one. A reader of verified closures
+    withholds those missions: no procedure is learned from one and it is no precedent (``sop.closed_procedures``,
+    ``precedents``). The appraisal on record is not changed and nothing here touches what the mission may still
+    do. A rejected failure closure contains no mission: it delivered nothing."""
+    return containment(journal)["missions"]
+
+
+def rejected_missions(journal: Journal) -> dict:
+    """The contained missions a standing founder rejection reaches (``contained_missions`` without the failed
+    replications), less those reached only because their claim cites a reading of the rejected answer in another
+    mission (``Index.descendants``, ``answer_only``): those asked the same computation and did not deliver the
+    rejected closure or act on its answer. Routing reliability, the earned-autonomy report and precedent action
+    evidence stop counting what a listed mission did as a success; its failures keep counting."""
+    return containment(journal)["rejected"]
+
+
+def critique_effect(journal: Journal, critique: dict) -> dict | None:
+    """What one founder critique does to credit, for the result of the command that carried it
+    (``tribunal.critique``, which calls this before the command's acceptance is recorded).
+
+    A rejection: what it withholds, and what lifts it. A rejection of an event that names no reading of a signed
+    check (a registration, a command, an ask) is kept on the record and changes no credit; the result says so
+    instead of saying nothing. An acceptance: the standing rejections it lifts, with their causes; None when it
+    lifts none (most acceptances are of deliveries nobody rejected)."""
+    index = Index(journal)
+    what, readings = index.rejected_by(critique.get("target_event_id"))
+    if critique.get("verdict") == "accept":
+        accepted = {r["receipt"] for a in readings for r in (a, *index.same_answer(a))}
+        lifted = sorted(cid for cid, (_, reading) in _standing_ids(index).items() if reading["receipt"] in accepted)
+        if not lifted:
+            return None
+        return {"credit_changed": True, "accepts": what, "requalifies": lifted,
+                "answers": sorted({index.identity(index.by_receipt[r]) or r for r in accepted}),
+                "restores": "the credit these rejections withheld from that answer, from the acceptance of this "
+                            "command on; the rejections stay on the record, and no grant, approval or capability "
+                            "state is changed"}
+    if not readings:
+        return {"credit_changed": False, "rejects": what, "target_type": critique.get("target_type"),
+                "why": "this event names no reading of a signed check, so the rejection is kept on the record and "
+                       "withholds no credit and marks no claim. To withhold what an answer earned, reject its "
+                       "closure, its appraisal, one of its readings or its settled outcome"}
+    missions, runs, receipts = set(), set(), set()
+    for reading in readings:
+        affected = index.descendants({"class": "FOUNDER_REJECTED", "root": {"receipt": reading["receipt"]}})
+        receipts.update(affected["receipts"])
+        missions.update(c["mission_id"] for c in affected["claims"])
+        runs.update(c["mission_id"] for c in affected["claims"] if not c.get("answer_only"))
+    return {"credit_changed": True, "rejects": what, "readings": sorted(r["event_id"] for r in readings),
+            "answers": sorted({index.identity(r) or r["receipt"] for r in readings}),
+            "receipts_withheld": len(receipts), "missions_withheld": sorted(missions),
+            # the missions whose own runs stop counting as successes: not one that only asked the same computation
+            "runs_withheld": sorted(runs),
+            "withholds": "settled competence on every reading that carries a rejected answer (the same question "
+                         "answered alike by the same method at the same version), the listed missions as "
+                         "evidence for a procedure or a precedent, and the runs of the missions in runs_withheld "
+                         "as successes in routing reliability, an earned level or precedent action evidence; "
+                         "no grant, approval or capability state is changed",
+            "lifts": LIFTS["FOUNDER_REJECTED"]}
+
+
+def rejection_report(journal: Journal) -> dict:
+    """The founder's rejections for the morning report: which stand and what each withholds, which a signed
+    acceptance has requalified, and which name no reading of a signed check and so change no credit. Each names who
+    signed it (``signed_by``) and, for a requalification, who signed the acceptance (``requalified_by_signer``):
+    ``founder`` or ``device:<label>``. A delegated device may sign a CRITIQUE today; the report says which did, and
+    changes nothing about whether it may (review of 0a9a246f, N10)."""
+    rejections = signed_rejections(journal)
+    if not rejections:
+        return {"standing": [], "requalified": [], "changed_no_credit": []}
+    index = Index(journal)
+    standing, lifted = index.rejections()
+
+    signers = critique_signers(journal)
+
+    def named(e):
+        return {"critique_id": e.payload.get("critique_id"), "target_event_id": e.payload.get("target_event_id"),
+                "target_type": e.payload.get("target_type"), "signed_by": signers.get(e.payload.get("command_digest"))}
+    by_critique = {}
+    for e, reading in standing:
+        row = by_critique.setdefault(e.event_id, {**named(e), "answers": [], "missions_withheld": set(),
+                                                  "lifts": LIFTS["FOUNDER_REJECTED"]})
+        row["answers"].append(index.identity(reading) or reading["receipt"])
+        row["missions_withheld"].update(c["mission_id"] for c in index.descendants(
+            {"class": "FOUNDER_REJECTED", "root": {"receipt": reading["receipt"]}})["claims"])
+    by_event = {e.event_id: e for e in rejections}
+    requalified = {}
+    for (rejection, _), by in lifted.items():
+        requalified[rejection, by.event_id] = {**named(by_event[rejection]),
+                                               "requalified_by": by.payload.get("critique_id"),
+                                               "command_digest": by.payload.get("command_digest"),
+                                               # who lifted it: the founder key or a delegated device (N10)
+                                               "requalified_by_signer": signers.get(by.payload.get("command_digest"))}
+    return {"standing": [{**row, "answers": sorted(row["answers"]), "missions_withheld": sorted(row["missions_withheld"])}
+                         for row in by_critique.values()],
+            "requalified": list(requalified.values()),
+            "changed_no_credit": [named(e) for e in rejections
+                                  if not index.rejected_by(e.payload.get("target_event_id"))[1]]}
+
+
 def claims(journal: Journal, now: datetime) -> list[dict]:
-    """Every delivered claim with its freshness and its correction state: CURRENT, EXPIRED or NEEDS_REVIEW."""
+    """Every delivered claim with its freshness and its correction state: CURRENT, EXPIRED or NEEDS_REVIEW.
+
+    A claim is NEEDS_REVIEW while a cause that is not lifted reaches it: one a correction recorded for it, or one
+    reached now (a claim that cites a reading carrying a rejected answer, or that followed an action which bound an
+    affected receipt after the correction was recorded). A founder rejection counts from its signed critique, and
+    stops counting from the founder's signed acceptance of the same answer."""
     index = Index(journal)
     corrections, requalified = _recorded(journal, "evidence.correction"), _recorded(journal, "evidence.requalified")
-    marked = defaultdict(list)
+    standing = _standing_ids(index)
+    signed = {cid: reading["receipt"] for cid, (_, reading) in standing.items()}
+    open_causes = []                      # (cause id, class, root receipt, the claims its correction recorded)
     for cid, correction in corrections.items():
-        if cid not in requalified:
-            for c in correction["affected"]["claims"]:
-                marked[c["claim"]].append(cid)
+        if _lifted(correction, requalified, standing):
+            continue
+        open_causes.append((cid, correction["class"], (correction.get("root") or {}).get("receipt"),
+                            [c["claim"] for c in correction["affected"]["claims"]]))
+    open_causes += [(cid, "FOUNDER_REJECTED", root, []) for cid, root in signed.items() if cid not in corrections]
+    marked = defaultdict(list)
+    for cid, cls, root, stored in open_causes:
+        reached = [c["claim"] for c in index.descendants({"class": cls, "root": {"receipt": root}})["claims"]] \
+            if root in index.by_receipt else []
+        for claim in dict.fromkeys(stored + reached):
+            marked[claim].append(cid)
     out, basis = [], _basis(index, requalified)
     for claim in index.claims:
         readings = [index.by_receipt[basis.get(r, r)] for r in claim["receipts"]]
@@ -480,16 +959,24 @@ def _ask(group: list[dict]) -> dict:
             "created_at": first["at"], "reality_status": "RECORDED_LOCAL_MESSAGE"}
 
 
+def _requalification_on_record(index: "Index", record: dict | None) -> bool:
+    """Whether a recorded ``evidence.requalified`` is one ``propagate`` wrote: it names the later reading on the
+    ledger that requalified the cause, or the founder-signed acceptance that lifted his rejection."""
+    by = (record or {}).get("by") or {}
+    return by.get("receipt") in index.by_receipt or by.get("kind") == "founder-signed acceptance"
+
+
 def propagate(journal: Journal, now: datetime) -> list[dict]:
     """Record every new cause with the correction it propagates; ask when the founder has something to review;
     record a requalification found by evidence. Writes no grant, approval or capability state."""
-    if not journal.replay("mission.achieved") and not journal.replay("mission.held"):
-        return []                                    # nothing delivered: no index to build on this tick
+    if not journal.replay("mission.achieved") and not journal.replay("mission.held") \
+            and not signed_rejections(journal):
+        return []                     # nothing delivered and nothing rejected: no index to build on this tick
     index, recorded = Index(journal), []
     corrected, requalified = _recorded(journal, "evidence.correction"), _recorded(journal, "evidence.requalified")
     invalidated = _recorded(journal, "evidence.invalidated")
     answered = {e.payload.get("request_id") for e in journal.replay("decision.answered")}
-    causes = index.causes(now, _basis(index, requalified))
+    causes, standing = index.causes(now, _basis(index, requalified)), _standing_ids(index)
     for cause in causes:                 # 1. each new cause and its correction, written once, before any ask
         cid = cause["cause_id"]
         if cid in corrected:
@@ -512,20 +999,23 @@ def propagate(journal: Journal, now: datetime) -> list[dict]:
         corrected[cid] = correction
     for cause in causes:                 # 2. requalification by evidence alone, against the trigger as recorded
         cid = cause["cause_id"]
-        if cid in requalified:
+        if _requalification_on_record(index, requalified.get(cid)):
             continue
         by = index.requalified(invalidated.get(cid, cause), now)
         if by is not None:
+            # A row already under the usual key that names no reading (written by anything but this loop) does not
+            # stand in for this one, and must not block it: this one is recorded beside it (review of 0a9a246f).
+            key = [cid, "requalified"] if journal.retained("evidence.requalified", [cid, "requalified"]) is None \
+                else [cid, "requalified", by.get("receipt") or by.get("event_id")]
             journal.record("evidence.requalified", {"cause_id": cid, "root": cause["root"]["receipt"], "by": by,
-                                                    "restores_permission": False, "at": iso(now)},
-                           key=[cid, "requalified"])
+                                                    "restores_permission": False, "at": iso(now)}, key=key)
             requalified[cid] = {"by": by}
     groups = defaultdict(list)
     for c in sorted(corrected.values(), key=lambda c: c["cause_id"]):
         if c.get("request_id"):
             groups[c["request_id"]].append(c)
     for rid, group in groups.items():    # 3. one ask per group, from the stored records; withdrawn once all requalify
-        open_causes = [c for c in group if c["cause_id"] not in requalified]
+        open_causes = [c for c in group if not _lifted(c, requalified, standing)]
         asked = journal.retained("decision.requested", rid) is not None
         if open_causes and not asked:
             asks.record(journal, _ask(group), quoted=_quoted(index, group))
@@ -533,7 +1023,8 @@ def propagate(journal: Journal, now: datetime) -> list[dict]:
                 and journal.retained("decision.withdrawn", [rid, "withdrawn"]) is None:
             journal.record("decision.withdrawn", {"request_id": rid, "mission_id": group[0]["root"]["mission_id"],
                                                   "why": "requalified: a later record of the same signed check "
-                                                         "holds again", "at": iso(now)}, key=[rid, "withdrawn"])
+                                                         "holds again, or the founder accepted what he had rejected",
+                                                  "at": iso(now)}, key=[rid, "withdrawn"])
     return recorded
 
 

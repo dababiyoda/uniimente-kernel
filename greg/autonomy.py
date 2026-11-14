@@ -26,7 +26,9 @@ Neither part grants anything.
    retried after an unavailable run lands late). A run the founder reconciled as executed is counted apart and never
    verified (no Gate receipt shows it), but failure evidence naming it counts like any other. A regression always
    names a run that ``failures`` names, which the fold already counts as refuted or ineffective at that run's place,
-   so it is counted but drops nothing a second time. Compensations (``mission.compensation_required``, closed by
+   so it is counted but drops nothing a second time. A run the appraiser verified in a mission a standing founder
+   rejection contains (greg/corrections.py) is counted apart (``founder_rejected``) and never as verified: it earns
+   no level, and it is not failure evidence either, so the rejection can only lower a level. Compensations (``mission.compensation_required``, closed by
    ``mission.compensated``) are counted against the run's tuple, never judged: the mission ended, which does not show
    the run failed. BOUNDED_AUTONOMY and MANAGE_BY_EXCEPTION are never earned from evidence: they would need a
    founder-signed grant, which does not exist (NEEDS_FOUNDER_DECISION). A level changes nothing: every action still
@@ -259,15 +261,18 @@ def earned_level(evidence: dict) -> str:
 
 def _blank(t: dict) -> dict:
     return {"tuple": t, "strategies": 0, "asked": 0, "approved": 0, "rejected": 0, "runs": 0, "reconciled": 0,
-            "verified": 0, "refuted": 0, "ineffective": 0, "failed": 0, "unappraised": 0, "regressed": 0,
+            "verified": 0, "founder_rejected": 0, "refuted": 0, "ineffective": 0, "failed": 0, "unappraised": 0,
+            "regressed": 0,
             "compensation_required": 0, "compensated": 0, "compensation_open": 0, "outcomes": []}
 
 
 def report(journal) -> dict:
     """The earned level of every tuple a signed strategy names, from the journal alone. Writes nothing."""
     from greg.missions import MissionBook
+    from greg import corrections
     book = MissionBook(journal)          # founder answers count only as re-verified from signed DECISIONs
     pos = journal.positions("")
+    rejected = corrections.rejected_missions(journal)    # the founder rejected what these missions delivered
     rows = {}
 
     def row(t: dict) -> dict:
@@ -338,6 +343,9 @@ def report(journal) -> dict:
             kind = "verified" if judged is not None and judged[1] == "VERIFIED" else None
         if kind is None:
             r["unappraised"] += 1
+            continue
+        if kind == "verified" and p["mission_id"] in rejected:
+            r["founder_rejected"] += 1    # the appraiser verified it and the founder rejected it: it earns nothing
             continue
         r[kind] += 1
         r["outcomes"].append((at, kind))  # the run's own place: runs in the order they ran, not their verdicts' order

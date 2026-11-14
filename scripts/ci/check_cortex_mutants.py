@@ -521,6 +521,23 @@ PORTFOLIO_WORDS_MUTANTS = [
      "if PORTFOLIO.search(text) and PORTFOLIO_NEEDS.search(text):", "if False:"),
 ]
 
+# attach authorization (acceptance C.G8): what may make an acquired capability usable, attacked; a group of its own
+ATTACH_AUTH_TESTS = ["tests/unit/test_greg_attach_authorization.py"]
+ATTACH_AUTH_MUTANTS = [
+    ("the founder can attach a quarantined capability", "greg/body.py",
+     'if kind == "CAPABILITY_ATTACH" and self.registry.state[cid] not in ("VERIFIED", "DETACHED", "ATTACHED"):',
+     "if False:"),
+    ("an unregistered capability id reaches the registry", "greg/body.py",
+     "if cid not in self.registry.manifests:", "if False:"),
+    ("auto_attach reaches past the mission's light cone", "greg/genesis.py",
+     '                   and mission.spec.get("auto_attach", {}).get("max_consequence_class") == "read_only"\n'
+     '                   and manifest.consequence_class == "read_only"\n'
+     "                   and mission.cone._capability_inside(manifest.capability_id))",
+     '                   and mission.spec.get("auto_attach", {}).get("max_consequence_class") == "read_only"\n'
+     '                   and manifest.consequence_class == "read_only")'),
+    ("a model draft keeps auto_attach", "greg/planner.py", '    draft.pop("auto_attach", None)\n', ""),
+]
+
 BUDGETED_TESTS = ["tests/unit/test_greg_budgeted_selection.py"]
 BUDGETED_MUTANTS = [
     ("a head that searches in rounds is run as a single call", "greg/recombine.py",
@@ -1219,6 +1236,7 @@ GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),
           ("capability perception", CAPABILITY_PERCEPTION_TESTS, CAPABILITY_PERCEPTION_MUTANTS),
           ("goal-requested formation", GOAL_FORMATION_TESTS, GOAL_FORMATION_MUTANTS),
           ("portfolio words", PORTFOLIO_WORDS_TESTS, PORTFOLIO_WORDS_MUTANTS),
+          ("attach authorization", ATTACH_AUTH_TESTS, ATTACH_AUTH_MUTANTS),
           ("budgeted selection", BUDGETED_TESTS, BUDGETED_MUTANTS),
           ("seed ports", PORT_TESTS, PORT_MUTANTS),
           ("founder key errors", FOUNDER_KEY_TESTS, FOUNDER_KEY_MUTANTS)]

@@ -62,7 +62,7 @@ class _Reader:
 
     def __init__(self, home: Path):
         self.layout = Layout(home)
-        self.config = json.loads(self.layout.config.read_text())
+        self.config = self.layout.read_config()
 
     def __enter__(self):
         self.ledger = EvidenceLedger(self.config["constitution_hash"], str(self.layout.ledger), read_only=True)
@@ -91,7 +91,7 @@ def handle(home: Path, method: str, path: str, headers, body: bytes, *, now: dat
         name, ctype = ASSETS[path]
         return 200, ctype, (PHONE / name).read_bytes()
     if method == "GET" and path == "/api/hello":
-        config = json.loads(layout.config.read_text())
+        config = layout.read_config()
         return _json(200, {"protocol": "greg-remote-v1", "body_id": config["body_id"],
                            "server_time": now.isoformat().replace("+00:00", "Z")})
     if method == "GET" and path in ("/api/status", "/api/decisions", "/api/vepmc", "/api/commands"):

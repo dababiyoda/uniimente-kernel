@@ -32,6 +32,13 @@ evidence, and the same search runs again as a new deficit generation. A rebuilt
 candidate must pass the same frozen oracle *and* run cleanly on the live input
 that broke its predecessor (replayed locally in isolation; never sent to a model).
 
+Failure corpus (directive S17.A1): the input that broke a formed capability is kept,
+by content, in the body's own store when the capability is quarantined
+(``genesis.failure_vector``). Every later candidate for that function, built or
+installed, in any mission and after any restart, must run cleanly on every kept
+input before it is registered. An input that cannot be kept is recorded with the
+reason; one whose stored bytes are damaged is reported unavailable, never dropped.
+
 Cognition deficits (directive 2026-10-07 section 24; section 31 item 14): when the
 Competency Compiler finds no method for a geometry it reports ``cognition.<class>:<sub>``
 with the inputs the request carries. Genesis then searches, simplest first:
@@ -1068,10 +1075,101 @@ class Genesis:
                                                      "mission_id": mission.mission_id, "incident": incident,
                                                      "at": iso(now)},
                                 key=[engine_id, "quarantine", incident])
+        self._record_failure_vector(mission, manifest, failure, params, incident, now)
         return self.resolve(mission=mission, function=manifest.function, now=now,
                             purpose=f"self-repair of {capability_id}",
                             repair={"capability_id": capability_id, "failure": failure[:300],
                                     "replay_path": params.get("path")})
+
+    # -- failure corpus: every input that broke a formed capability binds its later candidates (S17.A1) --------
+    def _record_failure_vector(self, mission, manifest, failure: str, params: dict, incident: str, now) -> None:
+        """Keep the input that broke ``manifest`` as a permanent regression vector for its function.
+
+        The bytes are copied into the body's content-addressed store at quarantine time, so the vector survives the
+        file changing, moving or leaving the read roots, and every later candidate for the function, in any mission
+        and after any restart, must run cleanly on it. Only the address and size enter the journal; the bytes never
+        reach a builder or a model. An input that cannot be kept is recorded with the reason, never silently
+        dropped."""
+        fact = {"function": manifest.function, "capability_id": manifest.capability_id, "incident": incident,
+                "failure": failure[:300], "mission_id": mission.mission_id, "at": iso(now)}
+        raw = (params or {}).get("path")
+        why = None
+        if not isinstance(raw, str) or not raw:
+            why = "the failing call named no input file"
+        else:
+            path = Path(raw).resolve()
+            if not any(path == r or r in path.parents for r in self.read_roots) or not path.is_file():
+                why = "the failing input is not a readable file inside the body's read roots"
+            else:
+                try:
+                    data = ArtifactStore._read_file(path, self.objects.max_object_bytes)
+                    address, _ = self.objects.put(data)
+                except CapabilityError as exc:
+                    why = f"the failing input could not be kept: {exc}"[:200]
+                else:
+                    fact.update({"input": address, "bytes": len(data)})
+        if why is not None:
+            fact.update({"input": None, "why_not_kept": why})
+        self.journal.record("genesis.failure_vector", fact, key=[manifest.function, "failure_vector", incident])
+
+    def failure_corpus(self, function: str) -> list[dict]:
+        """The kept breaking inputs for ``function``, one per distinct input, oldest first.
+
+        Each entry carries ``text`` (the bytes as the built harness reads them) and ``data`` (the raw bytes), or
+        ``unavailable`` with the reason when the stored bytes are missing or disagree with their address."""
+        corpus, seen = [], set()
+        for event in self.journal.replay("genesis.failure_vector"):
+            fact = event.payload
+            if fact.get("function") != function or not fact.get("input") or fact["input"] in seen:
+                continue
+            seen.add(fact["input"])
+            entry = {"input": fact["input"], "capability_id": fact["capability_id"], "incident": fact["incident"]}
+            try:
+                entry["data"] = self.objects.read(fact["input"])
+                entry["text"] = entry["data"].decode("utf-8", errors="replace")
+            except CapabilityError as exc:
+                entry["unavailable"] = str(exc)[:200]
+            corpus.append(entry)
+        return corpus
+
+    @staticmethod
+    def _corpus_report(corpus: list[dict], failures: list[dict]) -> dict:
+        return {"vectors": sum(1 for v in corpus if "unavailable" not in v),
+                "failures": failures,
+                "unavailable": [{"input": v["input"], "why": v["unavailable"]} for v in corpus if "unavailable" in v]}
+
+    def _run_corpus_built(self, path: Path, corpus: list[dict]) -> list[dict]:
+        """Run a built candidate on every kept breaking input; a vector it raises on is a failure."""
+        failures, batch, size = [], [], 0
+        runnable = [v for v in corpus if "text" in v]
+
+        def flush():
+            nonlocal batch, size
+            if not batch:
+                return
+            try:
+                results = builders.execute(path, [v["text"] for v in batch])
+            except subprocess.TimeoutExpired as exc:
+                builders.isolation_ready()      # raises (no verdict) only when the host cannot run either
+                results = [{"ok": False, "error": f"did not finish within {exc.timeout}s on a kept failure input "
+                                                  "while the host was healthy"}] * len(batch)
+            except CapabilityError as exc:
+                if exc.failure_class == "transient":
+                    raise
+                results = [{"ok": False, "error": str(exc)[:200]}] * len(batch)
+            for vector, result in zip(batch, results):
+                if not result.get("ok"):
+                    failures.append({"input": vector["input"], "broke": vector["capability_id"],
+                                     "error": str(result.get("error"))[:200]})
+            batch, size = [], 0
+
+        for vector in runnable:
+            if size + len(vector["text"]) > builders.MAX_INPUT * 2:
+                flush()
+            batch.append(vector)
+            size += len(vector["text"])
+        flush()
+        return failures
 
     # -- recovery: a quarantined capability earns back eligibility, never authority ------------
     def _quarantines(self, capability_id: str) -> list[dict]:
@@ -1969,7 +2067,11 @@ class Genesis:
         # Repair: the builder learns that and how the predecessor failed, never the live input itself.
         feedback = ([f"a previously verified implementation failed in service ({repair['failure'][:160]}); "
                      "it must handle arbitrary real input without raising"] if repair else None)
-        replay = self._replay_text(repair)
+        # Every input that ever broke an implementation of this function binds this candidate (S17.A1). A repair
+        # recorded before the corpus existed still replays its live file, read now, as before.
+        corpus = self.failure_corpus(function)
+        replay = None if repair and any(v["capability_id"] == repair.get("capability_id") and "text" in v
+                                        for v in corpus) else self._replay_text(repair)
         self.store.mkdir(parents=True, exist_ok=True)
         try:
             builders.isolation_ready()          # an outage defers here, before any paid attempt
@@ -2073,7 +2175,17 @@ class Genesis:
                 report["service_replay"] = {"passed": bool(replayed.get("ok")),
                                             "error": None if replayed.get("ok") else str(replayed.get("error"))[:200]}
                 passed = passed and bool(replayed.get("ok"))
-            elif repair:
+            if passed and corpus:
+                corpus_failures = self._run_corpus_built(path, corpus)
+                report["failure_corpus"] = self._corpus_report(corpus, corpus_failures)
+                if repair and replay is None:
+                    mine = [v for v in corpus if v["capability_id"] == repair.get("capability_id") and "text" in v]
+                    if mine:
+                        broke = [f for f in corpus_failures if f["input"] in {v["input"] for v in mine}]
+                        report["service_replay"] = {"passed": not broke,
+                                                    "error": broke[0]["error"] if broke else None}
+                passed = passed and not corpus_failures
+            if repair and "service_replay" not in report:
                 report["service_replay"] = {"passed": None, "error": "live input not replayable inside read roots"}
             self.journal.record("genesis.verified", {"deficit_id": deficit_id, "capability_id": f"built:{digest}",
                                                      "passed": passed, "report": report,
@@ -2097,10 +2209,17 @@ class Genesis:
                                     key=[manifest.capability_id, manifest.digest()])
                 self._route(deficit_id, "builder", "built and verified", manifest.capability_id)
                 return self._attach(mission, manifest, deficit_id, now, offered)
-            if report.get("service_replay", {}).get("passed") is False and not problems and not public.get("failures"):
-                feedback = [f"your candidate passes the examples but raised on real input "
-                            f"({report['service_replay']['error']}); handle arbitrary text without raising"]
-                self._route(deficit_id, "builder", f"attempt {attempt} failed the service replay", None)
+            if (report.get("service_replay", {}).get("passed") is False
+                    or (report.get("failure_corpus") or {}).get("failures")) \
+                    and not problems and not public.get("failures"):
+                kept = (report.get("failure_corpus") or {}).get("failures") or []
+                error = (report.get("service_replay") or {}).get("error") or (kept[0]["error"] if kept else None)
+                # the builder learns the error, never the input itself
+                feedback = [f"your candidate passes the examples but raised on real input ({error}); handle "
+                            "arbitrary text without raising"]
+                self._route(deficit_id, "builder",
+                            f"attempt {attempt} failed the service replay" if not kept else
+                            f"attempt {attempt} failed {len(kept)} kept failure input(s) of this function", None)
                 continue
             feedback = problems or [f"input {json.dumps(contract['examples'][f['case']]['input_text'])[:200]} expected "
                                     f"{json.dumps(contract['examples'][f['case']]['expected'])} but got "
@@ -2214,7 +2333,28 @@ class Genesis:
                     # image); reporting less than it read only costs it proofs of absence, so that is allowed
                     failures.append({"case": case["name"], "complete": output.get("complete"),
                                      "expected_complete": case["complete"]})
+            # Every input that broke an earlier implementation of this function must now run cleanly (S17.A1).
+            # It has no expected answer, only the failure it once caused; raising on it again fails the candidate.
+            corpus = self.failure_corpus(function)
+            corpus_failures = []
+            for index, vector in enumerate(v for v in corpus if "data" in v):
+                path = tmp / f"failure-vector-{index}"
+                path.write_bytes(vector["data"])
+                try:
+                    adapter({"path": str(path)}, ctx)
+                except subprocess.TimeoutExpired:
+                    raise CapabilityError(f"verifying {candidate.binary_name} timed out",
+                                          failure_class="transient") from None
+                except Exception as exc:  # the kept failure again: evidence, not a crash
+                    if isinstance(exc, CapabilityError) and exc.failure_class == "transient":
+                        raise
+                    corpus_failures.append({"input": vector["input"], "broke": vector["capability_id"],
+                                            "error": type(exc).__name__})
+        extra = {"failure_corpus": self._corpus_report(corpus, corpus_failures)} if corpus else {}
+        failures = failures + [{"case": "failure-vector:" + f["input"][7:19], "error": f["error"]}
+                               for f in corpus_failures]
         return (not failures, {"cases": len(vectors), "failures": failures, "isolation": "no-network subprocess",
+                               **extra,
                                "platform": sys.platform, "ceilings": ceilings(),
                                "companions": sorted((manifest.provenance.get("companions") or {}))})
 

@@ -20,6 +20,7 @@ exit evidence, pivot and kill conditions; a claim without evidence refs is
 from __future__ import annotations
 
 import ast
+import fnmatch
 import json
 from pathlib import Path
 import re
@@ -852,3 +853,108 @@ def validate_placements(record: dict, path: dict | None = None) -> None:
             raise PathError(f"{pid}: say what adapts, ports or reroutes")
         if cls != "HISTORICAL_EVIDENCE" and not (p.get("activation_evidence") or p.get("inheritance_test")):
             raise PathError(f"{pid}: say what evidence would activate the next step")
+
+
+# -- section 5: one current disposition per material path ------------------------------------
+
+# Directive section 5, in the directive's order. Tokens, not the prose labels.
+SECTION5_DISPOSITIONS = ("PRODUCTIZE", "EXTRACT", "RECOMBINE", "ADAPT", "RETAIN_AS_ALTERNATIVE",
+                         "EVIDENCE", "ARCHIVE", "KILL_ACTIVE_COMPLEXITY")
+# A path with one of these is accounted substrate. It is not a current authority plane.
+NON_LIVE_DISPOSITIONS = frozenset({"EVIDENCE", "ARCHIVE", "EXTRACT", "KILL_ACTIVE_COMPLEXITY"})
+# The one module that may construct the Gate and the one office that may issue grants.
+KERNEL_AUTHORITY_MODULES = ("policy/consequence_gate.py", "greg/authority.py")
+METABOLISM_FILE = Path(__file__).resolve().parents[1] / "docs/collaboration/REPOSITORY-METABOLISM-2026-09-25.json"
+
+
+def material_path_names(entry_path: str) -> list[str]:
+    """Split one metabolism entry into the paths it names.
+
+    A parenthetical note is not a path. ``+`` and ``,`` separate paths. A trailing
+    word after the path (``integration-v1``, ``_self_repair``) is not a path.
+    """
+    text = re.sub(r"\([^)]*\)", "", entry_path)
+    names = []
+    for part in re.split(r"\s*\+\s*|,\s*", text):
+        token = part.strip().split()[0] if part.strip() else ""
+        token = token.strip(".,;")
+        if not token or token.startswith("("):
+            continue
+        names.append(token)
+    return names
+
+
+def section5_problems(record: dict) -> list[str]:
+    """Every material path has exactly one current disposition in the section-5 vocabulary."""
+    if list(record.get("section5_vocabulary") or []) != list(SECTION5_DISPOSITIONS):
+        return ["section-5 vocabulary is not the directive's eight dispositions"]
+    material = record.get("material_paths")
+    current = record.get("section5_index")
+    if not isinstance(material, list) or not isinstance(current, list):
+        return ["material_paths and section5_index are required"]
+    problems = []
+    counts: dict[str, int] = {}
+    for row in current:
+        path = row.get("path") if isinstance(row, dict) else None
+        disposition = row.get("disposition") if isinstance(row, dict) else None
+        if not isinstance(path, str) or not path:
+            problems.append("a current disposition names no path")
+            continue
+        if disposition not in SECTION5_DISPOSITIONS:
+            problems.append(f"{path}: disposition {disposition!r} is not in the section-5 vocabulary")
+        counts[path] = counts.get(path, 0) + 1
+    known = set(material)
+    for path in material:
+        found = counts.get(path, 0)
+        if found == 0:
+            problems.append(f"{path}: zero current section-5 dispositions")
+        elif found != 1:
+            problems.append(f"{path}: {found} current section-5 dispositions")
+    for path, found in counts.items():
+        if path not in known and found:
+            problems.append(f"{path}: disposition for a path that is not material")
+    return problems
+
+
+def _covers(pattern: str, path: str) -> bool:
+    if any(mark in pattern for mark in "*?["):
+        return fnmatch.fnmatch(path, pattern)
+    if pattern.endswith("/"):
+        return path == pattern[:-1] or path.startswith(pattern)
+    return path == pattern
+
+
+def current_disposition(path: str, record: dict) -> str | None:
+    """The one current disposition of the longest material path that covers ``path``.
+
+    Two equally specific paths covering one file is not one disposition: None.
+    """
+    hits = [row for row in record.get("section5_index") or []
+            if isinstance(row, dict) and _covers(str(row.get("path") or ""), path)]
+    if not hits:
+        return None
+    longest = max(len(str(row.get("path") or "")) for row in hits)
+    best = [row for row in hits if len(str(row.get("path") or "")) == longest]
+    if len(best) != 1:
+        return None
+    disposition = best[0].get("disposition")
+    return disposition if isinstance(disposition, str) else None
+
+
+def authority_plane_problems(root: Path | str, record: dict) -> list[str]:
+    """A ConsequenceGate or GrantIssuer outside the Kernel module, read from the AST.
+
+    A file whose one current section-5 disposition is not live architecture
+    (evidence, archive, extract, or killed complexity) is accounted substrate.
+    A construction there is not a second current authority plane. A live
+    disposition, or none, is.
+    """
+    from governance.integrity import authority_constructions
+    problems = []
+    for rel, kind, name in authority_constructions(str(root)):
+        if rel in KERNEL_AUTHORITY_MODULES:
+            continue
+        if current_disposition(rel, record) in NON_LIVE_DISPOSITIONS:
+            continue
+        problems.append(f"{rel}: {kind} {name} outside the Kernel module")
+    return problems

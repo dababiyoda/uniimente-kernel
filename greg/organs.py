@@ -48,6 +48,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import secrets as _secrets
 import subprocess
 import tempfile
@@ -463,3 +464,42 @@ def status(params: dict, ctx: InvocationContext) -> dict:
 
 __all__ = ["DALEOBANKS_STAGE", "PAIR", "REPRODUCIBLE", "TARGET", "WEALTHMACHINE_STAGE", "exchange", "status",
            "trace_for"]
+
+
+# A Kernel gate decision is the action id the Consequence Gate stamps on the record it opens.
+_GATE_DECISION = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+_APPROVED_LINE = re.compile(r"^approved_effect:\s*(\S+)\s+kernel_gate_decision_id:\s*(\S+)\s*$")
+
+
+def seam_problems(manifest: dict) -> list[str]:
+    """An organ manifest may approve an effect only by citing a Kernel gate decision id.
+
+    Approval is ``authority.approved_effects`` or a note line
+    ``approved_effect: <effect> kernel_gate_decision_id: <uuid>``. The uuid is the Gate's
+    action id. A boolean such as ``external_actions_require_kernel_gate`` does not approve
+    anything and is not read here. Missing approval is not an approval.
+    """
+    effects: list[tuple[str, object]] = []
+    authority = manifest.get("authority") if isinstance(manifest, dict) else None
+    if isinstance(authority, dict):
+        for item in authority.get("approved_effects") or []:
+            if isinstance(item, dict):
+                effects.append((str(item.get("effect") or item.get("name") or "(unnamed)"),
+                                item.get("kernel_gate_decision_id")))
+            else:
+                effects.append((str(item), None))
+    health = manifest.get("health") if isinstance(manifest, dict) else None
+    verified = health.get("last_verified") if isinstance(health, dict) else None
+    notes = verified.get("notes") if isinstance(verified, dict) else None
+    if isinstance(notes, str):
+        for line in notes.splitlines():
+            stripped = line.strip()
+            if not stripped.startswith("approved_effect:"):
+                continue
+            match = _APPROVED_LINE.match(stripped)
+            effects.append((match.group(1), match.group(2)) if match else (stripped, None))
+    problems = []
+    for name, ident in effects:
+        if not isinstance(ident, str) or _GATE_DECISION.fullmatch(ident) is None:
+            problems.append(f"{name}: approved effect has no Kernel gate decision id")
+    return problems

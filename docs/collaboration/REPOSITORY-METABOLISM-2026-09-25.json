@@ -725,5 +725,379 @@
    "reality": "TESTED"
   }
  ],
- "revised": "2026-09-26: reconciliation of PRs #112, #70 and DALEOBANKS #79; phone and browser capabilities"
+ "revised": "2026-09-26: reconciliation of PRs #112, #70 and DALEOBANKS #79; phone and browser capabilities",
+ "section5_vocabulary": [
+  "PRODUCTIZE",
+  "EXTRACT",
+  "RECOMBINE",
+  "ADAPT",
+  "RETAIN_AS_ALTERNATIVE",
+  "EVIDENCE",
+  "ARCHIVE",
+  "KILL_ACTIVE_COMPLEXITY"
+ ],
+ "material_paths": [
+  "adapters/",
+  "affect/",
+  "apps/",
+  "authority/",
+  "autonomy/levels.py",
+  "business/",
+  "capabilities/deficit.py",
+  "capabilities/genome.py",
+  "capital/",
+  "client/",
+  "closure/",
+  "compiler/",
+  "constitution/",
+  "contracts/",
+  "developmental/",
+  "egregore/brief_learning.py",
+  "egregore/development_session.py",
+  "egregore/drift.py",
+  "egregore/goal_chase*.py",
+  "egregore/leverage.py",
+  "egregore/local_console.py",
+  "egregore/local_mission.py",
+  "egregore/morning_review.py",
+  "egregore/repository_audit.py",
+  "egregore/resources.py",
+  "egregore/runtime.py",
+  "embassy/",
+  "events/",
+  "evolution/",
+  "evolution/repair/",
+  "evolution/spider_web.py",
+  "evolution/strategy_tree.py",
+  "foundry/",
+  "foundry/tribunal.py",
+  "greg/",
+  "greg/briefs.py",
+  "greg/builders.py",
+  "greg/capabilities.py",
+  "greg/console.py",
+  "greg/genesis.py",
+  "greg/missions.py",
+  "greg/models.py",
+  "greg/phone/",
+  "greg/planner.py",
+  "greg/remote.py",
+  "historical/",
+  "identity/",
+  "linker/",
+  "loom/",
+  "memory/affect.py",
+  "memory/causal.py",
+  "morphogenesis/",
+  "observability/",
+  "omnimorph/",
+  "organs/",
+  "policy/",
+  "provenance/",
+  "sandbox/",
+  "sdk-python/",
+  "sdk-typescript/",
+  "server/index.js",
+  "services/bandit.py",
+  "services/capability.py",
+  "services/feedback.py",
+  "services/heartbeat.py",
+  "services/ingest",
+  "services/ledger.py",
+  "services/operator_notifications.py",
+  "services/prompt_firewall.py",
+  "src/services/",
+  "twins/",
+  "verifier/"
+ ],
+ "section5_index": [
+  {
+   "path": "adapters/",
+   "disposition": "ADAPT"
+  },
+  {
+   "path": "affect/",
+   "disposition": "EVIDENCE"
+  },
+  {
+   "path": "apps/",
+   "disposition": "EVIDENCE"
+  },
+  {
+   "path": "authority/",
+   "disposition": "ADAPT"
+  },
+  {
+   "path": "autonomy/levels.py",
+   "disposition": "EXTRACT"
+  },
+  {
+   "path": "business/",
+   "disposition": "ARCHIVE"
+  },
+  {
+   "path": "capabilities/deficit.py",
+   "disposition": "EXTRACT"
+  },
+  {
+   "path": "capabilities/genome.py",
+   "disposition": "ADAPT"
+  },
+  {
+   "path": "capital/",
+   "disposition": "ARCHIVE"
+  },
+  {
+   "path": "client/",
+   "disposition": "ARCHIVE"
+  },
+  {
+   "path": "closure/",
+   "disposition": "EVIDENCE"
+  },
+  {
+   "path": "compiler/",
+   "disposition": "ADAPT"
+  },
+  {
+   "path": "constitution/",
+   "disposition": "ADAPT"
+  },
+  {
+   "path": "contracts/",
+   "disposition": "ADAPT"
+  },
+  {
+   "path": "developmental/",
+   "disposition": "EVIDENCE"
+  },
+  {
+   "path": "egregore/brief_learning.py",
+   "disposition": "EVIDENCE"
+  },
+  {
+   "path": "egregore/development_session.py",
+   "disposition": "ARCHIVE"
+  },
+  {
+   "path": "egregore/drift.py",
+   "disposition": "EVIDENCE"
+  },
+  {
+   "path": "egregore/goal_chase*.py",
+   "disposition": "EVIDENCE"
+  },
+  {
+   "path": "egregore/leverage.py",
+   "disposition": "EVIDENCE"
+  },
+  {
+   "path": "egregore/local_console.py",
+   "disposition": "EXTRACT"
+  },
+  {
+   "path": "egregore/local_mission.py",
+   "disposition": "EVIDENCE"
+  },
+  {
+   "path": "egregore/morning_review.py",
+   "disposition": "EVIDENCE"
+  },
+  {
+   "path": "egregore/repository_audit.py",
+   "disposition": "ADAPT"
+  },
+  {
+   "path": "egregore/resources.py",
+   "disposition": "EVIDENCE"
+  },
+  {
+   "path": "egregore/runtime.py",
+   "disposition": "ADAPT"
+  },
+  {
+   "path": "embassy/",
+   "disposition": "ARCHIVE"
+  },
+  {
+   "path": "events/",
+   "disposition": "ADAPT"
+  },
+  {
+   "path": "evolution/",
+   "disposition": "EVIDENCE"
+  },
+  {
+   "path": "evolution/repair/",
+   "disposition": "EXTRACT"
+  },
+  {
+   "path": "evolution/spider_web.py",
+   "disposition": "RETAIN_AS_ALTERNATIVE"
+  },
+  {
+   "path": "evolution/strategy_tree.py",
+   "disposition": "EVIDENCE"
+  },
+  {
+   "path": "foundry/",
+   "disposition": "EVIDENCE"
+  },
+  {
+   "path": "foundry/tribunal.py",
+   "disposition": "RETAIN_AS_ALTERNATIVE"
+  },
+  {
+   "path": "greg/",
+   "disposition": "ADAPT"
+  },
+  {
+   "path": "greg/briefs.py",
+   "disposition": "ADAPT"
+  },
+  {
+   "path": "greg/builders.py",
+   "disposition": "ADAPT"
+  },
+  {
+   "path": "greg/capabilities.py",
+   "disposition": "ADAPT"
+  },
+  {
+   "path": "greg/console.py",
+   "disposition": "ADAPT"
+  },
+  {
+   "path": "greg/genesis.py",
+   "disposition": "PRODUCTIZE"
+  },
+  {
+   "path": "greg/missions.py",
+   "disposition": "PRODUCTIZE"
+  },
+  {
+   "path": "greg/models.py",
+   "disposition": "RECOMBINE"
+  },
+  {
+   "path": "greg/phone/",
+   "disposition": "ADAPT"
+  },
+  {
+   "path": "greg/planner.py",
+   "disposition": "ADAPT"
+  },
+  {
+   "path": "greg/remote.py",
+   "disposition": "ADAPT"
+  },
+  {
+   "path": "historical/",
+   "disposition": "ARCHIVE"
+  },
+  {
+   "path": "identity/",
+   "disposition": "ADAPT"
+  },
+  {
+   "path": "linker/",
+   "disposition": "ADAPT"
+  },
+  {
+   "path": "loom/",
+   "disposition": "EXTRACT"
+  },
+  {
+   "path": "memory/affect.py",
+   "disposition": "EVIDENCE"
+  },
+  {
+   "path": "memory/causal.py",
+   "disposition": "EXTRACT"
+  },
+  {
+   "path": "morphogenesis/",
+   "disposition": "ARCHIVE"
+  },
+  {
+   "path": "observability/",
+   "disposition": "EVIDENCE"
+  },
+  {
+   "path": "omnimorph/",
+   "disposition": "EVIDENCE"
+  },
+  {
+   "path": "organs/",
+   "disposition": "ADAPT"
+  },
+  {
+   "path": "policy/",
+   "disposition": "ADAPT"
+  },
+  {
+   "path": "provenance/",
+   "disposition": "ADAPT"
+  },
+  {
+   "path": "sandbox/",
+   "disposition": "EVIDENCE"
+  },
+  {
+   "path": "sdk-python/",
+   "disposition": "EVIDENCE"
+  },
+  {
+   "path": "sdk-typescript/",
+   "disposition": "EVIDENCE"
+  },
+  {
+   "path": "server/index.js",
+   "disposition": "ARCHIVE"
+  },
+  {
+   "path": "services/bandit.py",
+   "disposition": "EVIDENCE"
+  },
+  {
+   "path": "services/capability.py",
+   "disposition": "ADAPT"
+  },
+  {
+   "path": "services/feedback.py",
+   "disposition": "EVIDENCE"
+  },
+  {
+   "path": "services/heartbeat.py",
+   "disposition": "EVIDENCE"
+  },
+  {
+   "path": "services/ingest",
+   "disposition": "EVIDENCE"
+  },
+  {
+   "path": "services/ledger.py",
+   "disposition": "ADAPT"
+  },
+  {
+   "path": "services/operator_notifications.py",
+   "disposition": "EVIDENCE"
+  },
+  {
+   "path": "services/prompt_firewall.py",
+   "disposition": "RECOMBINE"
+  },
+  {
+   "path": "src/services/",
+   "disposition": "EVIDENCE"
+  },
+  {
+   "path": "twins/",
+   "disposition": "EVIDENCE"
+  },
+  {
+   "path": "verifier/",
+   "disposition": "ADAPT"
+  }
+ ]
 }

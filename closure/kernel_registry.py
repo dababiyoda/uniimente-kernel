@@ -393,17 +393,33 @@ def build_registry() -> ClosureRegistry:
         "regenerative": events_regenerative}))
 
     # ---------------------------------------------------------------- L13 autonomy
+    # A clearly synthetic authorizer and key: these probes are not founder grants. The key is generated per
+    # probe, enrolled only in the probe's own verifier, and discarded; the code never writes Alfonso's name
+    # onto a license he did not sign, and no founder key ever signs a probe.
+    probe = "synthetic closure probe (not a founder grant)"
+    probe_body = "closure-probe-autonomy"
+
     def _aut():
+        from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
         from autonomy.levels import AutonomyAuthority, AutonomyTuple
+        from greg.founder import FounderVerifier, key_id, public_bytes
         from provenance.ledger import EvidenceLedger
         t = AutonomyTuple(capability="draft.publish", domain="comms", action="publish",
                           resource="outbox", target="sandbox", consequence_class="external_contact",
                           environment="production", budget_usd=25.0, duration="30 days")
-        return AutonomyAuthority(EvidenceLedger("sha256:" + "0" * 64)), t
+        key = Ed25519PrivateKey.generate()
+        pub = public_bytes(key.public_key()).hex()
+        verifier = FounderVerifier(body_id=probe_body, enrolled={key_id(pub): pub}, seen_nonce=lambda n: False)
+        auth = AutonomyAuthority(EvidenceLedger("sha256:" + "0" * 64), verifier=verifier)
+        auth.probe_key = key
+        return auth, t
 
-    # A clearly synthetic authorizer: these probes are not founder grants, and the
-    # code must never write Alfonso's name onto a license he did not sign.
-    probe = "synthetic closure probe (not a founder grant)"
+    def _issue(auth, subject, t, level):
+        from dataclasses import asdict
+        from greg.founder import sign_command
+        grant = sign_command(auth.probe_key, "AUTONOMY_GRANT", {"subject": subject, "tuple": asdict(t),
+                                                                "level": level}, body_id=probe_body)
+        return auth.issue(subject, t, level=level, authorized_by=probe, authorization=grant)
 
     def _full_evidence(**kw):
         from autonomy.levels import PromotionEvidence, PROMOTION_CRITERIA
@@ -414,7 +430,7 @@ def build_registry() -> ClosureRegistry:
 
     def autonomy_technical():
         auth, t = _aut()
-        lic = auth.issue("agent-1", t, level=2, authorized_by=probe)
+        lic = _issue(auth, "agent-1", t, 2)
         auth.promote(lic.license_id, _full_evidence())
         return auth.level_of("agent-1", t) == 3, "issue -> promote -> level_of reads back exactly"
 
@@ -422,10 +438,10 @@ def build_registry() -> ClosureRegistry:
         auth, t = _aut()
         a9_refused = False
         try:
-            auth.issue("agent-1", t, level=9, authorized_by=probe)
+            _issue(auth, "agent-1", t, 9)
         except ValueError:
             a9_refused = True
-        lic = auth.issue("agent-2", t, level=1, authorized_by=probe)
+        lic = _issue(auth, "agent-2", t, 1)
         weak = False
         try:
             auth.promote(lic.license_id, _full_evidence(missing_outcome_records=1))
@@ -436,7 +452,7 @@ def build_registry() -> ClosureRegistry:
 
     def autonomy_evidence():
         auth, t = _aut()
-        lic = auth.issue("agent-1", t, level=1, authorized_by=probe)
+        lic = _issue(auth, "agent-1", t, 1)
         auth.promote(lic.license_id, _full_evidence())
         auth.regress(lic.license_id, failure_class="sloppy", detail="late records")
         types = [r.payload["type"] for r in auth.ledger.by_type("event")]
@@ -447,14 +463,14 @@ def build_registry() -> ClosureRegistry:
     def autonomy_economic():
         from autonomy.levels import AutonomyTuple
         auth, t = _aut()
-        auth.issue("agent-1", t, level=5, authorized_by=probe)
+        _issue(auth, "agent-1", t, 5)
         other = AutonomyTuple(**{**t.__dict__, "action": "delete"})
         return auth.level_of("agent-1", t) == 5 and auth.level_of("agent-1", other) == 0, \
             "autonomy is exact per 9-dimension tuple; no broad personality grants to misuse"
 
     def autonomy_regenerative():
         auth, t = _aut()
-        lic = auth.issue("agent-1", t, level=7, authorized_by=probe)
+        lic = _issue(auth, "agent-1", t, 7)
         lic = auth.regress(lic.license_id, failure_class="harm", detail="unforeseen risk")
         immediate = lic.level == 0 and not lic.active and auth.level_of("agent-1", t) == 0
         try:

@@ -432,6 +432,18 @@ FOUNDER_TIER_BODY_MUTANTS = [
 ]
 
 # 2026-10-14 installed-body review: closure integrity. Each guard below was a reproduced defect.
+LIVE_BUILD_TESTS = ["tests/unit/test_greg_genesis_live_evidence.py"]
+LIVE_BUILD_MUTANTS = [
+    # the retained live build is re-verified from its own bytes (acceptance C.G1)
+    ("the oracle no longer compares a built function's output", "greg/builders.py",
+     '        elif result["value"] != vector["expected"]:', "        elif False:"),
+    ("the builder's prompt drops the public examples", "greg/builders.py",
+     "    for example in request[\"examples\"]:\n        lines.append(",
+     "    for example in []:\n        lines.append("),
+    ("the static screen admits any import", "greg/builders.py",
+     "                if name.split(\".\")[0] not in ALLOWED_IMPORTS:", "                if False:"),
+]
+
 CLOSURE_INTEGRITY_TESTS = ["tests/unit/test_greg_closure_integrity.py", "tests/unit/test_greg_human_work_latency.py",
                            "tests/unit/test_greg_capabilities.py"]
 CLOSURE_INTEGRITY_MUTANTS = [
@@ -1215,6 +1227,7 @@ GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),
           ("shared-folder body home", SHARED_HOME_TESTS, SHARED_HOME_MUTANTS),
           ("founder tier", FOUNDER_TIER_TESTS, FOUNDER_TIER_MUTANTS),
           ("founder tier (body)", FOUNDER_TIER_BODY_TESTS, FOUNDER_TIER_BODY_MUTANTS),
+          ("live build evidence", LIVE_BUILD_TESTS, LIVE_BUILD_MUTANTS),
           ("closure integrity", CLOSURE_INTEGRITY_TESTS, CLOSURE_INTEGRITY_MUTANTS),
           ("capability perception", CAPABILITY_PERCEPTION_TESTS, CAPABILITY_PERCEPTION_MUTANTS),
           ("goal-requested formation", GOAL_FORMATION_TESTS, GOAL_FORMATION_MUTANTS),

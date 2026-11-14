@@ -1,0 +1,283 @@
+{
+ "decision_id": "DELIB-20261113-APPRAISAL-FORMED-ATTACH",
+ "title": "The independent appraiser audits the genesis chain and attach authority of formed capabilities (C.G9)",
+ "problem": "The appraiser re-derives a closure from its receipts and re-reads the world, but it accepted any ATTACHED capability as admissible. A formed capability (built, acquired, constructed, composed) has no reviewed code behind it; its only authority is the genesis chain and a founder-authorized attach. An ATTACHED state set in memory and journaled by hand, with no signed command, let a mission close and be appraised VERIFIED.",
+ "founder_intent_refs": [
+  "INTENT-20261022-OSS-METABOLISM",
+  "INTENT-20261030-BUILD-BEFORE-DEVICE-RUN",
+  "docs/FOUNDER_EFFECT_COMPILER.md: a new capability never inherits the authority of the process that requested or built it"
+ ],
+ "baseline": "#196 f383fd26: appraisal checks 1-6 (chain, signature, re-derivation, re-observation, exactly-once, deliveries, approvals, preconditions); attach state read only to decide what the appraiser may re-run.",
+ "alternatives": [
+  {
+   "name": "Proposed: check 7, formed_capabilities_authorized, in the separate-process appraiser",
+   "description": "For every receipt the closure rests on (each required check's latest observation, each completed action), map receipt -> grant -> witness -> capability. Skip built-ins. Require before the receipt: capability.registered whose deficit was opened before it, a passing genesis.verified for that deficit and capability before registration, and an ATTACHED last state change authorized by an accepted CAPABILITY_ATTACH that re-verifies against a founder key and names the capability, or by a MISSION envelope that re-verifies, pre-authorizes read_only auto_attach, holds the capability in its light cone, and a read_only manifest.",
+   "advantages": [
+    "Independent of the body's in-memory registry and its acceptance records: signatures are re-verified",
+    "Covers cross-mission reuse: the authority is the mission whose scope attached, not the appraised one",
+    "No new state or authority; refuses only"
+   ],
+   "disadvantages": [
+    "A legitimate attach path not yet known to the appraiser would be refuted",
+    "Couples to the 'by' strings Genesis and Body record",
+    "Linear scans per receipt"
+   ],
+   "revival_evidence": "n/a (selected)"
+  },
+  {
+   "name": "Trust the body: attach is already gated in Body.apply and Genesis._attach",
+   "description": "Rely on the runtime gates (tested by C.G8).",
+   "advantages": [
+    "No appraiser change"
+   ],
+   "disadvantages": [
+    "The appraiser exists to not trust the body; a journal written around the gates is invisible to it"
+   ],
+   "revival_evidence": "The ledger becomes append-only with per-event signatures from the gates themselves"
+  },
+  {
+   "name": "Sign capability.state events at write time",
+   "description": "Body signs every state change with a body key; appraiser verifies.",
+   "advantages": [
+    "Cheap check at appraisal"
+   ],
+   "disadvantages": [
+    "A body key signing its own state is the body vouching for itself; founder authority still has to be traced"
+   ],
+   "revival_evidence": "A hardware-held body key separate from the runtime"
+  },
+  {
+   "name": "Audit only the appraised mission's own deficits",
+   "description": "Check genesis chains this mission opened.",
+   "advantages": [
+    "Smaller"
+   ],
+   "disadvantages": [
+    "Misses the reuse path (J.G4): a capability another mission formed serves this one"
+   ],
+   "revival_evidence": "none"
+  }
+ ],
+ "do_nothing_option": {
+  "expected_outcome": "A hand-journaled ATTACHED with no command lets a formed capability serve a closure the appraiser calls VERIFIED.",
+  "advantages": [
+   "No change; no risk of refuting a legitimate path"
+  ],
+  "disadvantages": [
+   "The independent appraisal certifies readings from capabilities no founder authorized",
+   "C.G9 stays open"
+  ]
+ },
+ "roles": [
+  {
+   "role": "Founder-Intent Steward",
+   "position": "Acquired capability must never inherit authority; the appraiser is where that is proven after the fact.",
+   "material_concerns": [
+    "Must not refute the founder's own legitimate attaches"
+   ],
+   "evidence_refs": [
+    "test_a_founder_signed_attach_is_verified",
+    "test_honest_auto_attach_and_its_later_reuse_are_verified"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Systems Architect",
+   "position": "One helper and one block after check 6; required tuple gains one name. No edits to the check loop #204 rewrites, nor to the region #310 extends.",
+   "material_concerns": [
+    "Five open PRs edit greg/appraisal.py"
+   ],
+   "evidence_refs": [
+    "git merge-tree against #204, #243, #279, #304, #310"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Adversarial Reviewer",
+   "position": "Forgeries attacked: hand-journaled attach with a fake digest; an auto-attach claimed under a real signed mission whose cone does not cover the capability; a real CAPABILITY_ATTACH of another capability (body capability_id checked); an attach after the receipt or a later detach (last state before the receipt); a registration with no prior deficit or verification.",
+   "material_concerns": [
+    "Body.apply writes the state change before command.accepted: the first draft refuted honest founder attaches; fixed by requiring the accepted command before the receipt"
+   ],
+   "evidence_refs": [
+    "test_an_attach_journaled_by_hand_with_no_command_is_refuted",
+    "test_an_auto_attach_claimed_under_a_scope_that_does_not_cover_it_is_refuted"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Operator and Maintainer",
+   "position": "Cost is a few journal replays per appraisal and one Ed25519 verify per formed attach; built-ins short-circuit.",
+   "material_concerns": [
+    "A new attach path (a new 'by' value) must add itself here or be refuted; that failure is loud, named in the finding"
+   ],
+   "evidence_refs": [
+    "full suite run on the change"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Evidence and Welfare Guardian",
+   "position": "Narrowing only: the appraiser can refute, never grant. Existing appraisal records are not rewritten.",
+   "material_concerns": [
+    "An on-demand re-appraisal of an old closure whose chain is incomplete would now be REFUTED; that is the intended correction, recorded as a new appraisal"
+   ],
+   "evidence_refs": [
+    "greg/appraisal.py _formed_attach_findings"
+   ],
+   "recommendation": "EXPERIMENT"
+  }
+ ],
+ "evidence": [
+  {
+   "claim": "Honest auto-attach, founder attach and cross-mission reuse stay VERIFIED",
+   "tier": "sandbox_execution",
+   "reference": "tests/unit/test_greg_appraiser_formed_attach.py",
+   "finding": "formed_capabilities_authorized True; verdict VERIFIED"
+  },
+  {
+   "claim": "Forged attaches are refuted",
+   "tier": "sandbox_execution",
+   "reference": "tests/unit/test_greg_appraiser_formed_attach.py",
+   "finding": "the body itself closes the mission on the forged state; the appraiser returns REFUTED naming the capability and why"
+  }
+ ],
+ "counterevidence": [
+  {
+   "claim": "The first draft was correct",
+   "tier": "sandbox_execution",
+   "reference": "test_a_founder_signed_attach_is_verified, first run",
+   "finding": "REFUTED an honest founder attach because the command's acceptance is recorded after its state change; corrected before commit"
+  }
+ ],
+ "pass_1": {
+  "intended_outcome": "No closure is appraised VERIFIED on a reading from a formed capability whose genesis chain and founder-authorized attach the ledger does not show.",
+  "advantages": [
+   {
+    "id": "A1",
+    "statement": "The appraiser closes the last unaudited authority in Capability Genesis",
+    "amplified_value": "Every capability dividend (J.G4) is now backed by an audited authority chain"
+   }
+  ],
+  "disadvantages": [
+   {
+    "id": "D1",
+    "statement": "A legitimate attach path unknown to the appraiser is refuted",
+    "severity": "medium",
+    "response_type": "evidence",
+    "redesigned_response": "Full suite run; all producers of ATTACHED enumerated from the code (Body.apply founder command, Genesis._attach, Genesis._attach_dependency)"
+   },
+   {
+    "id": "D2",
+    "statement": "Coupling to recorded 'by' strings",
+    "severity": "low",
+    "response_type": "modularity",
+    "redesigned_response": "Prefix match on the AUTO_ATTACH constant's text, which covers the engine variant; findings name the unknown 'by'"
+   },
+   {
+    "id": "D3",
+    "statement": "Merge risk with five open appraisal PRs",
+    "severity": "low",
+    "response_type": "modularity",
+    "redesigned_response": "Placed apart from every hunk they change; merge-tree checked"
+   }
+  ],
+  "comparisons": {
+   "baseline": "appraisal checks 1-6",
+   "do_nothing": "forged attaches certified",
+   "simplest_viable_alternative": "check 7 as proposed",
+   "strongest_competing_architecture": "per-event signatures by the gates",
+   "reversible_experiment": "remove the name from required"
+  },
+  "rejected_alternatives": [
+   {
+    "name": "Audit only the mission's own deficits",
+    "rejection_reason": "misses cross-mission reuse",
+    "revival_evidence": "none"
+   }
+  ]
+ },
+ "pass_2": {
+  "attack_summary": "Attack the strengthened design: replay another capability's real attach digest, claim an auto-attach under a real mission, attach after the receipt, detach then forge, register without deficit, sign with an unenrolled key.",
+  "new_weaknesses": [
+   {
+    "id": "W1",
+    "category": "gaming",
+    "statement": "A real accepted CAPABILITY_ATTACH digest reused for another capability",
+    "strengthening_response": "The envelope body's capability_id must equal the served capability"
+   },
+   {
+    "id": "W2",
+    "category": "gaming",
+    "statement": "An auto-attach claimed under a real signed mission with a narrow cone",
+    "strengthening_response": "Cone, auto_attach ceiling and manifest class all re-read from the re-verified envelope; tested"
+   },
+   {
+    "id": "W3",
+    "category": "fragility",
+    "statement": "Ordering differences between Body.apply and the journal",
+    "strengthening_response": "Founder command accepted before the receipt; mission accepted before the attach; state and registration before the receipt"
+   }
+  ],
+  "pass_1_disadvantage_dispositions": [
+   {
+    "disadvantage_id": "D1",
+    "outcome": "resolved",
+    "rationale": "attach producers enumerated; full suite run",
+    "owner": "session_013k41DnwrjzpXL33r3j9BgB",
+    "review_trigger": "a new code path records capability.state ATTACHED"
+   },
+   {
+    "disadvantage_id": "D2",
+    "outcome": "accepted",
+    "rationale": "loud, named finding",
+    "owner": "session_013k41DnwrjzpXL33r3j9BgB",
+    "review_trigger": "a new code path records capability.state ATTACHED"
+   },
+   {
+    "disadvantage_id": "D3",
+    "outcome": "resolved",
+    "rationale": "merge-tree clean",
+    "owner": "session_013k41DnwrjzpXL33r3j9BgB",
+    "review_trigger": "an appraisal PR conflicts at intake"
+   }
+  ],
+  "final_design": "Check 7 in the separate-process appraiser, required for VERIFIED, refusing only; signatures re-verified with founder keys as of acceptance; ordering anchored on the receipt.",
+  "residual_risks": [
+   {
+    "risk": "A future attach path not registered in the appraiser",
+    "mitigation": "refuted with a finding that names its 'by'; the next author adds it with a test",
+    "owner": "session_013k41DnwrjzpXL33r3j9BgB",
+    "review_trigger": "a REFUTED appraisal whose finding names an unknown attach"
+   }
+  ],
+  "recommendation": "EXPERIMENT"
+ },
+ "dissent": {
+  "present": false,
+  "handling": "No dissent recorded.",
+  "entries": []
+ },
+ "authority_impact": {
+  "level": "standard",
+  "changes_authority": false,
+  "requires_authorized_human": false,
+  "approval_status": "not_required",
+  "approver": null
+ },
+ "migration_plan": "None; existing appraisal records are not rewritten.",
+ "rollback_plan": {
+  "possible": true,
+  "steps": [
+   "Remove formed_capabilities_authorized from required",
+   "Or revert the commit"
+  ],
+  "reason_impossible": null
+ },
+ "kill_criteria": [
+  "An honest founder attach or signed auto-attach is refuted",
+  "A forged attach is appraised VERIFIED"
+ ],
+ "decision": "EXPERIMENT",
+ "decision_owner": "Alfonso Lopez (merge); this workstream (implementation)",
+ "review_trigger": "First REFUTED appraisal on a real body citing this check"
+}

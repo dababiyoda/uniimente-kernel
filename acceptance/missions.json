@@ -2125,10 +2125,11 @@
     {
      "id": "G5",
      "gap": "Autonomy issuance (#87) names its human authorizer by a caller string, not a founder signature.",
-     "state": "OPEN",
+     "state": "CLOSED",
      "buildable_now": true,
      "dependency": "none",
-     "next": "Bind A1+ issuance to a founder-signed decision envelope (greg/founder.py)."
+     "next": "Bind A1+ issuance to a founder-signed decision envelope (greg/founder.py).",
+     "closed_by": "autonomy/levels.py AutonomyAuthority(verifier=...): above A0, issue needs a greg.founder AUTONOMY_GRANT (founder key only, not in DEVICE_KINDS) signed for exactly that subject, tuple and level, with a nonce the authority's ledger has not spent; a name alone, a forged, device-signed, expired, other-body, other-kind, edited, replayed or mismatched grant, or no verifier is refused before anything is stored, and autonomy.issued keeps the signing key, nonce and envelope digest. tests/unit/test_autonomy_signed_issuance.py (25; on f383fd26 a name alone issued A8); scripts/ci/check_autonomy_signed_issuance_mutants.py (8/8, job 10b). Unit tier: AutonomyAuthority is a library, with no GREG Body command path or CLI signer yet."
     },
     {
      "id": "G6",

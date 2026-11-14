@@ -28,7 +28,8 @@ import time
 from .contracts import CognitionError, canonical, digest, strict_data
 from . import condition_competence
 
-SCHEMA = "greg-competency-compilation/0.2"   # 0.2: selected_receipt (the executed method's own receipt)
+SCHEMA = "greg-competency-compilation/0.3"   # 0.2: selected_receipt (the executed method's own receipt)
+#                                              0.3: host_stop (the host, not the Mind, ended the decision)
 # The confidence label of an answer from a construction whose problem-level certificate GREG checked.
 CERTIFIED = "certified: exact problem-level certificate"
 ROOT = Path(__file__).resolve().parents[2]
@@ -1881,8 +1882,56 @@ def human_packet(g: CompetencyGeometry, body: dict) -> dict:
             "machine_role": "prepare evidence and alternatives only"}
 
 
+def _host_stop(receipt: dict, noted: list, budget) -> dict | None:
+    """Why the host, not the Mind, ended a decision that carries no answer; None when it did not.
+
+    Decided from facts with a type, never from a message, in this order:
+
+    * a worker process its launcher saw time out, exit with a non-zero status, or could not start
+      (``budget.note_host_stop``, which also fixes the class: the solver, the verifier or the cortex worker, on any
+      route, a composition's stages included);
+    * the executed method's own receipt (``selected_receipt``) naming TIMEOUT or BUDGET_EXHAUSTED, as its
+      ``reason_code`` or among its ``outcome.reasons`` (the directive taxonomy, ``cortex.outcomes``): a deadline or
+      a compute ceiling met without any process being killed, an engine that ran out of its signed budget inside
+      the cortex worker included;
+    * a chain that overran its limit (the composition's own state TIMEOUT);
+    * a required step this decision's thinking budget refused (a STOP entry on its ledger), unless the
+      requester's own declared budget is below the minimum step (``budget.never_enough``). That refusal is the
+      same on every repeat, so it names no stop: the Mind declines the request as it was signed.
+
+    ``failure_class`` is the capability vocabulary (``greg.capabilities.CapabilityError``): ``transient`` for the
+    host or infrastructure, ``budget_exceeded`` for a resource ceiling, ``executor_error`` for a worker that died
+    on its own. The mission engine counts a reading that carries it as unmeasured on either side of its predicate
+    and re-observes it with a back-off, as it does a construction the host stopped (``capability_fault``); a
+    missing answer without it is the Mind declining, which no retry changes."""
+    if noted:
+        return dict(noted[0])
+    inner = receipt.get("selected_receipt")
+    named = set()
+    if isinstance(inner, dict):
+        named = {inner.get("reason_code"), *((inner.get("outcome") or {}).get("reasons") or ())}
+    if "TIMEOUT" in named or receipt["state"] == "TIMEOUT":
+        return {"failure_class": "transient", "cause": "timeout"}
+    if "BUDGET_EXHAUSTED" in named:
+        return {"failure_class": "budget_exceeded", "cause": "budget"}
+    refused = [stop["step"] for stop in budget.stops() if stop["required"]]
+    if refused and not budget.never_enough:
+        return {"failure_class": "budget_exceeded", "cause": "budget", "step": refused[-1]}
+    return None
+
+
 def run(params, *, registry, journal=None, model_config=None, caller_window=None, shared_deadline=None,
         shared_compute_limit=None) -> dict:
+    """One compiled decision. Worker processes the host ends while it runs are collected for ``host_stop``."""
+    from .budget import host_stops
+    with host_stops() as noted:
+        return _compile(params, noted, registry=registry, journal=journal, model_config=model_config,
+                        caller_window=caller_window, shared_deadline=shared_deadline,
+                        shared_compute_limit=shared_compute_limit)
+
+
+def _compile(params, noted, *, registry, journal, model_config, caller_window, shared_deadline,
+             shared_compute_limit) -> dict:
     from .cortex import _cpu_delta, _cpu_seconds, reason
     started = time.monotonic()
     pid, body = validate(params)
@@ -1911,11 +1960,13 @@ def run(params, *, registry, journal=None, model_config=None, caller_window=None
                "result": None, "confidence_type": None, "requirements": [],
                "authority_state": "EXISTING_KERNEL_GATE_REQUIRED", "authority_created": False,
                "outcome_link": None, "later_appraisal": None, "state": None, "capability_deficit": None,
-               "selected_receipt": None}
+               "selected_receipt": None, "host_stop": None}
 
     def finish(state, result=None):
         receipt["state"], receipt["result"] = state, result
         receipt["resource_use"]["budget"] = budget.summary()
+        if result is None:
+            receipt["host_stop"] = _host_stop(receipt, noted, budget)
         receipt["requirements"] = list(dict.fromkeys(plan["requirements"]))
         receipt["dissent"] = list(dict.fromkeys(receipt["dissent"] + plan["dissent"]))
         receipt["latency_s"] = round(time.monotonic() - started, 4)

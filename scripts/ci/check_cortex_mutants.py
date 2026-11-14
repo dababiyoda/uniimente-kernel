@@ -691,6 +691,20 @@ PORT_MUTANTS = [
      "    if raised:\n        declared[\"harm\"]", "    if False:\n        declared[\"harm\"]"),
 ]
 
+# an acquired binary's owning package and version (acceptance C.G12): a group of its own, so it touches neither the
+# metabolism lists that open PRs extend nor their tests' run time
+BINARY_PACKAGE_TESTS = ["tests/unit/test_greg_binary_package_provenance.py"]
+BINARY_PACKAGE_MUTANTS = [
+    ("an acquired binary's package version is never recorded", "greg/genesis.py",
+     '"package_version": licensing.installed_package_version(package) or UNRESOLVED,',
+     '"package_version": UNRESOLVED,'),
+    ("a removed package's leftover stanza supplies the version", "greg/licensing.py",
+     'if not fields.get("Status", "").strip().endswith(" installed"):', "if False:"),
+    ("architectures that disagree on a version yield a guess", "greg/licensing.py",
+     "    if len(versions) != 1:\n        return None\n    version = versions.pop()",
+     "    if not versions:\n        return None\n    version = versions.pop()"),
+]
+
 METABOLISM_MUTANTS = [
     # license qualification (directive 2026-10-22, 5.3 and 6): legally qualified is a separate state
     ("an uncleared license still auto-attaches", "greg/genesis.py",
@@ -1221,6 +1235,7 @@ GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),
           ("portfolio words", PORTFOLIO_WORDS_TESTS, PORTFOLIO_WORDS_MUTANTS),
           ("budgeted selection", BUDGETED_TESTS, BUDGETED_MUTANTS),
           ("seed ports", PORT_TESTS, PORT_MUTANTS),
+          ("binary package provenance", BINARY_PACKAGE_TESTS, BINARY_PACKAGE_MUTANTS),
           ("founder key errors", FOUNDER_KEY_TESTS, FOUNDER_KEY_MUTANTS)]
 
 

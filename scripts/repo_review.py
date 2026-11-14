@@ -191,11 +191,18 @@ def ratchet(observed: set, kept: dict) -> dict:
 # ------------------------------------------------------------------ gate liveness
 
 # Mutation-gate scripts that no workflow runs, with the reason each is tolerated.
-# Shrink-only: a new unwired gate fails, and so does a listed gate once it is wired.
+# A new unwired gate fails, and so does a listed gate once it is wired. ratchet() compares this list with the tree,
+# not with what it was, so a gate added here in the same change would pass it: the list's contents are pinned in
+# tests/unit/test_repo_health_gates.py (PINNED_UNWIRED), and growing it takes an edit there too.
 KEPT_UNWIRED_GATES = {
     "check_seed_mutants.py":
-        "7/7 caught locally with requirements installed, but run by no workflow; "
-        "wiring it into CI is a founder/CI-owner decision (register S-3)",
+        "run by no workflow, and not green where its solvers are installed. Executed at 8d205324 (2026-11-11): "
+        "6/7 caught, exit 1, with requirements-dev and requirements-cognition (z3-solver 5.1.0.0, ortools "
+        "9.15.6755): the constraint mutant's named test still passes. With requirements-dev alone it prints 7/7 "
+        "and exits 0, but two named tests (constraint, unknown) fail unmutated on a missing solver and the gate "
+        "runs no baseline: only 5 of the 7 are shown caught. This entry said '7/7 caught locally with requirements "
+        "installed' until then. Wiring it into CI is a founder/CI-owner decision (register S-3); unrepaired, expect "
+        "it red there",
 }
 _PATHLIKE = re.compile(r"^[\w./-]+\.(py|json|md|ya?ml|txt)(::\S+)?$")
 

@@ -383,6 +383,26 @@ DROPPED_PAYLOAD_MUTANTS = [
 ]
 
 # 2026-10-29 shared-folder refusal (#211): a body home where Linux may serve a cached copy of another machine's file.
+DIVIDEND_TESTS = ["tests/unit/test_greg_genesis_capability_dividend.py"]
+DIVIDEND_MUTANTS = [
+    # a capability Genesis formed serves a later mission with no new build (acceptance J.G4)
+    ("an attached, usable capability is never found for its function", "greg/genesis.py",
+     "                  if self.registry.usable(manifest.capability_id)[0]]\n        if not usable:\n            return None",
+     "                  if self.registry.usable(manifest.capability_id)[0]]\n        if True:\n            return None"),
+    ("a built capability restarts VERIFIED, forgetting it was attached", "greg/genesis.py",
+     'self.registry.register(manifest, builders.built_adapter(origin["contract"], path, origin["source_sha256"]),\n'
+     '                                       state=self._restored_state(cid, state, ',
+     'self.registry.register(manifest, builders.built_adapter(origin["contract"], path, origin["source_sha256"]),\n'
+     '                                       state=self._restored_state(cid, "VERIFIED", '),
+    ("a rebuild identical to a founder-detached capability is attached anyway", "greg/genesis.py",
+     'if self.registry.state.get(manifest.capability_id) == "DETACHED":\n'
+     '                    self._route(deficit_id, "builder", "founder-detached; explicit attach required",',
+     'if False:\n'
+     '                    self._route(deficit_id, "builder", "founder-detached; explicit attach required",'),
+    ("a founder CAPABILITY_DETACH leaves the capability attached", "greg/body.py",
+     'state = "ATTACHED" if kind == "CAPABILITY_ATTACH" else "DETACHED"', 'state = "ATTACHED"'),
+]
+
 SHARED_HOME_TESTS = ["tests/unit/test_greg_shared_home.py"]
 SHARED_HOME_MUTANTS = [
     ("greg init creates a body on a shared folder", "greg/body.py",
@@ -1212,6 +1232,7 @@ GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),
           ("recovery", RECOVERY_TESTS, RECOVERY_MUTANTS),
           ("evidence chain at commit", COMMIT_CHAIN_TESTS, COMMIT_CHAIN_MUTANTS),
           ("dropped-payload ledger", DROPPED_PAYLOAD_TESTS, DROPPED_PAYLOAD_MUTANTS),
+          ("capability dividend", DIVIDEND_TESTS, DIVIDEND_MUTANTS),
           ("shared-folder body home", SHARED_HOME_TESTS, SHARED_HOME_MUTANTS),
           ("founder tier", FOUNDER_TIER_TESTS, FOUNDER_TIER_MUTANTS),
           ("founder tier (body)", FOUNDER_TIER_BODY_TESTS, FOUNDER_TIER_BODY_MUTANTS),

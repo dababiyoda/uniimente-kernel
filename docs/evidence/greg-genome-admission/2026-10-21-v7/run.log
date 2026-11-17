@@ -1,0 +1,24 @@
+{"family": "basal_hopfield", "status": "SUPERSEDED", "vs_baseline": {"wins": 15, "losses": 0, "ties": 15, "p_better": 3.1e-05, "p_worse": 1.0}, "vs_competitor": {"wins": 0, "losses": 15, "ties": 15, "p_better": 1.0, "p_worse": 3.1e-05}}
+{"family": "develop_ca_repair", "status": "DEFAULT_FOR_GEOMETRY", "vs_baseline": {"wins": 30, "losses": 0, "ties": 0, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 0, "losses": 2, "ties": 28, "p_better": 1.0, "p_worse": 0.25}}
+{"family": "evo_ga_factored", "status": "EXPERIMENTAL", "vs_baseline": {"wins": 19, "losses": 10, "ties": 1, "p_better": 0.068023, "p_worse": 0.969286}, "vs_competitor": {"wins": 15, "losses": 15, "ties": 0, "p_better": 0.572232, "p_worse": 0.572232}}
+{"family": "evo_map_elites", "status": "DEFAULT_FOR_GEOMETRY", "vs_baseline": {"wins": 30, "losses": 0, "ties": 0, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 30, "losses": 0, "ties": 0, "p_better": 0.0, "p_worse": 1.0}}
+{"family": "formal_property_search", "status": "SUPERSEDED", "vs_baseline": {"wins": 13, "losses": 0, "ties": 17, "p_better": 0.000122, "p_worse": 1.0}, "vs_competitor": {"wins": 0, "losses": 7, "ties": 23, "p_better": 1.0, "p_worse": 0.007812}}
+{"family": "graph_betweenness_topk", "status": "DEFAULT_FOR_GEOMETRY", "vs_baseline": {"wins": 28, "losses": 0, "ties": 2, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 0, "losses": 0, "ties": 30, "p_better": 1.0, "p_worse": 1.0}}
+{"family": "search_beam", "status": "DEFAULT_FOR_GEOMETRY", "vs_baseline": {"wins": 18, "losses": 0, "ties": 12, "p_better": 4e-06, "p_worse": 1.0}, "vs_competitor": {"wins": 14, "losses": 3, "ties": 13, "p_better": 0.006363, "p_worse": 0.998825}}
+{"family": "search_ida_star", "status": "DEFAULT_FOR_GEOMETRY", "vs_baseline": {"wins": 23, "losses": 0, "ties": 7, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 2, "losses": 0, "ties": 28, "p_better": 0.25, "p_worse": 1.0}}
+{"family": "search_mcts", "status": "EXPERIMENTAL", "vs_baseline": {"wins": 1, "losses": 1, "ties": 28, "p_better": 0.75, "p_worse": 0.75}, "vs_competitor": {"wins": 12, "losses": 1, "ties": 17, "p_better": 0.001709, "p_worse": 0.999878}}
+{
+ "basal_hopfield": "SUPERSEDED",
+ "develop_ca_repair": "DEFAULT_FOR_GEOMETRY",
+ "evo_ga_factored": "EXPERIMENTAL",
+ "evo_map_elites": "DEFAULT_FOR_GEOMETRY",
+ "formal_property_search": "SUPERSEDED",
+ "graph_betweenness_topk": "DEFAULT_FOR_GEOMETRY",
+ "search_beam": "DEFAULT_FOR_GEOMETRY",
+ "search_ida_star": "DEFAULT_FOR_GEOMETRY",
+ "search_mcts": "EXPERIMENTAL"
+}
+
+real	28m56.975s
+user	28m25.359s
+sys	0m17.990s

@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 from fractions import Fraction
+import hashlib
 import math
+from pathlib import Path
 import time
 
 from .contracts import CognitionError, ProofArtifact, digest
@@ -132,11 +134,37 @@ def _z3_certificate(data, *, integers, better_than=None, sense="max", deadline=N
     return {**out, "status": "UNKNOWN", "reason": str(solver.reason_unknown())[:200]}
 
 
+# A certificate settles one obligation for one claim about one candidate on one problem, checked by this module's
+# exact source. It binds all five, and a reader that needs certification checks every one (certified_for): a
+# status of CERTIFIED alone may belong to another problem, another answer, another claim or a changed verifier.
+VERIFIER_SOURCE = "sha256:" + hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+OBLIGATIONS = {"OPTIMAL": "no_strictly_better_assignment", "FEASIBLE": "no_assignment_beyond_its_bound",
+               "UNSAT": "no_feasible_assignment", "INFEASIBLE": "no_feasible_assignment"}
+
+
+def certificate_binding(data, proof, claim, bound=None) -> dict:
+    return {"problem": digest(data), "candidate": digest(proof), "claim": claim, "obligation": OBLIGATIONS[claim],
+            "bound": None if bound is None else str(bound),
+            "verifier": {"module": __name__, "source": VERIFIER_SOURCE}}
+
+
+def certified_for(evaluator_result, data, proof, claim) -> bool:
+    """True only for a CERTIFIED certificate bound to exactly this problem, candidate proof artifact, claim and
+    obligation, issued by this verifier's current source. Anything else (NOT_RUN, UNKNOWN, REFUTED, a missing or
+    foreign binding, a stale verifier) is not a certification."""
+    certificate = (evaluator_result or {}).get("certificate") or {}
+    binding = certificate.get("binding") or {}
+    return (certificate.get("status") == "CERTIFIED" and certificate.get("claim") == claim and claim in OBLIGATIONS
+            and binding.get("problem") == digest(data) and binding.get("candidate") == digest(proof)
+            and binding.get("claim") == claim and binding.get("obligation") == OBLIGATIONS[claim]
+            and binding.get("verifier") == {"module": __name__, "source": VERIFIER_SOURCE})
+
+
 def verify(family, data, answer, proof_class, *, deadline=None):
     """``deadline`` (time.monotonic()) bounds the Z3 certificate's time, never the checks; the verifier worker passes
     the end of its caller's budget less a reserve for returning the answer. Without one (an in-process caller) the
     certificate has its fixed backstop."""
-    checks, dissent, beyond, own_report = {}, [], None, None
+    checks, dissent, beyond, own_report, cross = {}, [], None, None, {}
     from .catalog import FAMILIES
     if family not in FAMILIES or proof_class != FAMILIES[family][3]:
         raise CognitionError("false proof type for selected method")
@@ -343,9 +371,21 @@ def verify(family, data, answer, proof_class, *, deadline=None):
                 # defect
                 "independence": "same engine as the solver (Z3), separate encoding and process" if family == "formal"
                 else "different engine from the solver (Z3 against CP-SAT)"}
-            checks["no_feasible_assignment_found" if negative else "no_strictly_better_assignment_found"
-                   if claim == "OPTIMAL" else "no_assignment_beyond_its_bound_found"] = (
-                certificate["status"] != "REFUTED")
+            certificate["binding"] = certificate_binding(data, answer["proof"], claim, beyond)
+            # The check is named for what was found, so it exists only when Z3 decided: True when it certified, False
+            # when it refuted. NOT_RUN or UNKNOWN found nothing either way: the check is inconclusive (below), the
+            # verdict stays structural and the dissent says uncertified, never a pass named as a finding.
+            if certificate["status"] in ("CERTIFIED", "REFUTED"):
+                checks[OBLIGATIONS[claim] + "_found"] = certificate["status"] == "CERTIFIED"
+        if family == "formal" and claim == "UNSAT" and (certificate or {}).get("status") != "REFUTED":
+            # The certificate re-checks the whole model. The reported core is a further claim, that these
+            # constraints alone contradict each other (and minimally), so it is re-checked on its own; once the
+            # model is shown satisfiable every core is too, and the certificate's witness already says so.
+            cross["unsat_core"] = _z3_core_check(data, artifact.get("unsat_core") or [], deadline=deadline)
+            if cross["unsat_core"]["core_unsat"] is not None:
+                checks["unsat_core_recheck"] = cross["unsat_core"]["core_unsat"]
+            if cross["unsat_core"]["minimal"] is False:
+                dissent.append("The reported unsat core is valid but not minimal: a smaller core exists.")
         settled = certificate["status"] if certificate else None
         why = f"Z3: {certificate.get('reason')}" if certificate else "Z3 did not run"
         violated = [k for k in ("solution_variable_set", "bounded_solution", "constraint_substitution",
@@ -380,12 +420,93 @@ def verify(family, data, answer, proof_class, *, deadline=None):
         elif claim == "OPTIMAL":
             dissent.append("Optimality is solver-reported (CP-SAT OPTIMAL; bound equals objective) and not "
                            f"independently certified ({why}).")
+        if claim == "UNSAT" and checks.get("unsat_core_recheck"):
+            dissent.append("The unsat core was re-checked by a fresh Z3 solver: same engine, so a Z3 defect would be "
+                           f"shared ({cross['unsat_core']['status']}).")
     else:
         certificate = None
     return {"verdict": "REFUTED" if not all(checks.values()) else "STRUCTURALLY_VERIFIED",
             "checks": checks, "dissent": dissent, "artifact_digest": digest(answer["proof"]),
             **({"certificate": certificate} if certificate else {}),
+            "cross_checks": cross,
+            "inconclusive": sorted([k for k, v in cross.items() if v["core_unsat"] is None]
+                                   + ([OBLIGATIONS[certificate["claim"]] + "_found"] if certificate and
+                                      certificate["status"] not in ("CERTIFIED", "REFUTED") else [])),
             "independence": "separate verification functions in reviewed Kernel code; no independent external evaluator"}
+
+
+# The core re-check runs inside the verifier worker after the certificate, so it gets a fixed share of the time and
+# never more than the caller's deadline leaves. Running out is "undecided", never a pass or a refutation.
+CROSS_CHECK_BUDGET_S = 1.5
+MINIMALITY_CAP = 16  # cores larger than this are re-checked but not tested for minimality
+
+
+def _remaining_ms(deadline):
+    left = int((deadline - time.monotonic()) * 1000)
+    return left if left >= Z3_MIN_TIMEOUT_MS else None   # a timeout of 0 is no limit to Z3
+
+
+def _z3_core_check(data, core, budget_s=CROSS_CHECK_BUDGET_S, deadline=None):
+    """Re-check a reported unsat core with a fresh solver (and Z3 context), then test it for minimality."""
+    end = time.monotonic() + budget_s
+    deadline = end if deadline is None else min(end, deadline)
+    try:
+        import z3
+    except ImportError:
+        return {"core_unsat": None, "minimal": None, "status": "engine unavailable"}
+
+    def check(indices):
+        left = _remaining_ms(deadline)
+        if left is None:
+            return None
+        ctx = z3.Context()
+        solver = z3.Solver(ctx=ctx)
+        solver.set("timeout", left)
+        vs = {n: z3.Real(n, ctx) for n in data["variables"]}
+        for n, (lo, hi) in data["variables"].items():
+            solver.add(vs[n] >= z3.RealVal(str(lo), ctx), vs[n] <= z3.RealVal(str(hi), ctx))
+        for i in indices:
+            c = data["constraints"][i]
+            lhs = (z3.Sum([z3.RealVal(str(co), ctx) * vs[n] for n, co in c["coefficients"].items()])
+                   if c["coefficients"] else z3.RealVal(0, ctx))
+            try:
+                solver.add(_relation(c["op"], lhs, z3.RealVal(str(c["rhs"]), ctx)))
+            except KeyError:
+                return None  # an operator this re-check cannot pose is undecided, never a crash
+        return _status(z3, solver.check())
+
+    try:
+        indices = sorted({int(str(name).removeprefix("constraint_")) for name in core})
+    except ValueError:
+        return {"core_unsat": False, "minimal": None, "status": "core names do not identify constraints"}
+    if not indices or any(not 0 <= i < len(data["constraints"]) for i in indices):
+        return {"core_unsat": False, "minimal": None, "status": "core is empty or names unknown constraints"}
+    whole = check(indices)
+    if whole != "unsat":
+        return {"core_unsat": None if whole is None else False, "minimal": None,
+                "status": "core re-check undecided" if whole is None else "the reported core is satisfiable"}
+    if len(indices) > MINIMALITY_CAP:
+        return {"core_unsat": True, "minimal": None,
+                "status": f"re-checked; minimality not tested (core of {len(indices)} exceeds {MINIMALITY_CAP})"}
+    drops = []
+    for i in indices:
+        drops.append(check([j for j in indices if j != i]))
+        if drops[-1] == "unsat":
+            break  # one removable member already proves a smaller core exists
+    minimal = False if "unsat" in drops else None if None in drops else True
+    return {"core_unsat": True, "minimal": minimal,
+            "status": ("re-checked; minimal" if minimal else "re-checked; minimality undecided" if minimal is None
+                       else "re-checked; not minimal (a smaller core exists)")}
+
+
+def _relation(op, lhs, rhs):
+    """The constraint operators the solvers accept, strict < and > included (formal models are real-valued)."""
+    return {"<=": lambda: lhs <= rhs, ">=": lambda: lhs >= rhs, "==": lambda: lhs == rhs, "!=": lambda: lhs != rhs,
+            "<": lambda: lhs < rhs, ">": lambda: lhs > rhs}[op]()
+
+
+def _status(z3, result):
+    return "sat" if result == z3.sat else "unsat" if result == z3.unsat else None
 
 
 def metaconsensus(receipts):

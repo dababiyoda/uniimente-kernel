@@ -1,0 +1,8 @@
+{
+ "head": "d57d47eff560f29e6f34a34255d6d83ab5d15cab",
+ "optimal_claim_that_is_only_feasible": "STRUCTURALLY_VERIFIED",
+ "infeasible_claim_about_feasible_model": "STRUCTURALLY_VERIFIED",
+ "unsat_core_naming_satisfiable_subset": "STRUCTURALLY_VERIFIED",
+ "bare_lawful_and_consent_assertion_blocked": false,
+ "note": "protection is registered (VERIFIED) but not attached on this head, so that defect is latent"
+}

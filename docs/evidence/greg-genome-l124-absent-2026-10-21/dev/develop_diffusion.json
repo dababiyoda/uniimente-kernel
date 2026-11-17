@@ -1,0 +1,165 @@
+{
+ "family": "develop_diffusion",
+ "partition": "dev",
+ "status_if_heldout_matched": "EXPERIMENTAL",
+ "arms": {
+  "candidate": {
+   "correct": 10,
+   "wrong": 0,
+   "abstain": 0,
+   "mean_quality": 0.633925,
+   "median_seconds": 0.009994
+  },
+  "baseline": {
+   "correct": 10,
+   "wrong": 0,
+   "abstain": 0,
+   "mean_quality": 0.707532,
+   "median_seconds": 0.000608
+  },
+  "competitor": {
+   "correct": 10,
+   "wrong": 0,
+   "abstain": 0,
+   "mean_quality": 0.785216,
+   "median_seconds": 0.00658
+  }
+ },
+ "vs_baseline": {
+  "wins": 4,
+  "losses": 6,
+  "ties": 0,
+  "p_better": 0.828125,
+  "p_worse": 0.376953
+ },
+ "vs_competitor": {
+  "wins": 1,
+  "losses": 9,
+  "ties": 0,
+  "p_better": 0.999023,
+  "p_worse": 0.010742
+ },
+ "subregions": {
+  "few_seeds_dense": {
+   "n": 3,
+   "vs_baseline": {
+    "wins": 0,
+    "losses": 3,
+    "ties": 0,
+    "p_better": 1.0,
+    "p_worse": 0.125
+   },
+   "vs_competitor": {
+    "wins": 0,
+    "losses": 3,
+    "ties": 0,
+    "p_better": 1.0,
+    "p_worse": 0.125
+   }
+  },
+  "few_seeds_sparse": {
+   "n": 3,
+   "vs_baseline": {
+    "wins": 2,
+    "losses": 1,
+    "ties": 0,
+    "p_better": 0.5,
+    "p_worse": 0.875
+   },
+   "vs_competitor": {
+    "wins": 0,
+    "losses": 3,
+    "ties": 0,
+    "p_better": 1.0,
+    "p_worse": 0.125
+   }
+  },
+  "more_seeds_dense": {
+   "n": 2,
+   "vs_baseline": {
+    "wins": 1,
+    "losses": 1,
+    "ties": 0,
+    "p_better": 0.75,
+    "p_worse": 0.75
+   },
+   "vs_competitor": {
+    "wins": 0,
+    "losses": 2,
+    "ties": 0,
+    "p_better": 1.0,
+    "p_worse": 0.25
+   }
+  },
+  "more_seeds_sparse": {
+   "n": 2,
+   "vs_baseline": {
+    "wins": 1,
+    "losses": 1,
+    "ties": 0,
+    "p_better": 0.75,
+    "p_worse": 0.75
+   },
+   "vs_competitor": {
+    "wins": 1,
+    "losses": 1,
+    "ties": 0,
+    "p_better": 0.75,
+    "p_worse": 0.75
+   }
+  }
+ },
+ "diagnostics": {
+  "median_cpu_seconds": {
+   "candidate": 0.009898,
+   "baseline": 0.000611,
+   "competitor": 0.006457
+  },
+  "note": "reported diagnostics, never inputs to the admission decision: the rule decides on wall-clock medians only. cpu_seconds is the calling thread's CPU time per call (time.thread_time; work on other threads or processes is not in it); diagnostics.median_cpu_seconds is its median per arm; host_load is the host's load at the start and end of the run"
+ },
+ "host_load": {
+  "start": {
+   "at": "2026-10-21T18:06:12.496195+00:00",
+   "loadavg": {
+    "1m": 3.19,
+    "5m": 2.71,
+    "15m": 2.2,
+    "runnable": 3,
+    "entities": 117
+   },
+   "cpu_affinity": [
+    0
+   ],
+   "cpu_count": 4,
+   "other_python_processes": {
+    "count": 3,
+    "by_state": {
+     "R": 2,
+     "S": 1
+    },
+    "running_last_on_our_cpus": 0
+   }
+  },
+  "end": {
+   "at": "2026-10-21T18:06:12.932791+00:00",
+   "loadavg": {
+    "1m": 3.19,
+    "5m": 2.71,
+    "15m": 2.2,
+    "runnable": 3,
+    "entities": 116
+   },
+   "cpu_affinity": [
+    0
+   ],
+   "cpu_count": 4,
+   "other_python_processes": {
+    "count": 2,
+    "by_state": {
+     "R": 2
+    },
+    "running_last_on_our_cpus": 0
+   }
+  }
+ }
+}

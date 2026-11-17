@@ -221,7 +221,8 @@ def immune_split_seeds(name: str = IMMUNE_CURRENT_SPLIT) -> tuple[tuple, tuple, 
     reserved = (set(admission.DEV_SEEDS) | set(admission.HELDOUT_SEEDS) | admission.spent_seeds()
                 | {s for other, seeds in IMMUNE_SPLITS.items() if other != name for part in seeds for s in part}
                 | {s for seeds in CR_SPLITS.values() for part in seeds for s in part}
-                | {s for seeds in CR_CANARY_SEEDS.values() for s in seeds})
+                | {s for seeds in CR_CANARY_SEEDS.values() for s in seeds}
+                | {s for seeds in REPAIR_SPLITS.values() for part in seeds for s in part})
     if (reserved & (set(train_seeds) | set(heldout_seeds)) or set(train_seeds) & set(heldout_seeds)
             or len(set(train_seeds)) != len(train_seeds) or len(set(heldout_seeds)) != len(heldout_seeds)
             or not (set(train_seeds) | set(heldout_seeds)) <= set(admission.P8_RESERVED)):
@@ -305,7 +306,8 @@ def cr_split_seeds(name: str = CR_CURRENT_SPLIT) -> tuple[tuple, tuple, set]:
     reserved = (set(admission.DEV_SEEDS) | set(admission.HELDOUT_SEEDS) | admission.spent_seeds()
                 | {s for seeds in IMMUNE_SPLITS.values() for part in seeds for s in part}
                 | {s for other, seeds in CR_SPLITS.items() if other != name for part in seeds for s in part}
-                | {s for seeds in CR_CANARY_SEEDS.values() for s in seeds})
+                | {s for seeds in CR_CANARY_SEEDS.values() for s in seeds}
+                | {s for seeds in REPAIR_SPLITS.values() for part in seeds for s in part})
     if (reserved & (set(train_seeds) | set(heldout_seeds)) or set(train_seeds) & set(heldout_seeds)
             or len(set(train_seeds)) != len(train_seeds) or len(set(heldout_seeds)) != len(heldout_seeds)
             or not (set(train_seeds) | set(heldout_seeds)) <= set(admission.P8_RESERVED)):
@@ -352,7 +354,142 @@ def _cr_spec() -> TargetSpec:
                             "before adoption; keep comparing with the incumbent and random restart after adoption"})
 
 
-TARGET_SPECS = {"forecast_quantile": _forecasting_spec, "immune_detect": _immune_spec, "constraint_release": _cr_spec}
+# develop_repair (designed 2026-10-21, docs/evidence/greg-protected-evolution/2026-10-21-repair-1): the L4 local
+# repair protocol's constants (wave period, expiry, broadcast repeats) as a closed data space. Admission v2 measured
+# the deficit this target addresses: the genome lost 7-23 to the adaptive centralized replanner, which is reported
+# beside every cycle and is not part of the rule. No split is registered: a pre-registration names one, and until
+# then ``repair_split`` refuses, so no cycle on this target can run.
+REPAIR_SPLITS: dict = {}
+REPAIR_CURRENT_SPLIT = None
+
+
+def repair_target() -> Target:
+    from .genomes import developmental
+    return Target("develop_repair", developmental.REPAIR_CONFIG_SPACE, dict(developmental.REPAIR_DEFAULT_CONFIG))
+
+
+def repair_split_seeds(name: str | None = REPAIR_CURRENT_SPLIT) -> tuple[tuple, tuple, set]:
+    """A named repair split's train and held-out seeds and the seeds it must avoid, or EvolutionError. Generates
+    nothing: a split is checked before any of its instances exists."""
+    from .genomes import admission
+    if name not in REPAIR_SPLITS:
+        raise EvolutionError(f"no develop_repair split {name!r} is registered; a pre-registration names one")
+    train_seeds, heldout_seeds = REPAIR_SPLITS[name]
+    reserved = (set(admission.DEV_SEEDS) | set(admission.HELDOUT_SEEDS) | admission.spent_seeds()
+                | {s for seeds in IMMUNE_SPLITS.values() for part in seeds for s in part}
+                | {s for seeds in CR_SPLITS.values() for part in seeds for s in part}
+                | {s for seeds in CR_CANARY_SEEDS.values() for s in seeds}
+                | {s for other, seeds in REPAIR_SPLITS.items() if other != name for part in seeds for s in part})
+    if (reserved & (set(train_seeds) | set(heldout_seeds)) or set(train_seeds) & set(heldout_seeds)
+            or len(set(train_seeds)) != len(train_seeds) or len(set(heldout_seeds)) != len(heldout_seeds)
+            or not (set(train_seeds) | set(heldout_seeds)) <= set(admission.P8_RESERVED)):
+        raise EvolutionError("P8 develop_repair seeds overlap admission or earlier P8 seeds")
+    return train_seeds, heldout_seeds, reserved
+
+
+def repair_item(seed: int) -> dict:
+    from .genomes import developmental
+    data, truth = developmental.repair_instance(seed)
+    return {"data": data, "truth": truth, "category": developmental.repair_subregion(data)}
+
+
+def repair_split(name: str | None = REPAIR_CURRENT_SPLIT) -> tuple[dict, dict, list[str]]:
+    """Seeded repair instances reserved for P8, disjoint from every admission seed and every other P8 split."""
+    train_seeds, heldout_seeds, reserved = repair_split_seeds(name)
+    return ({f"s{s}": repair_item(s) for s in train_seeds}, {f"s{s}": repair_item(s) for s in heldout_seeds},
+            sorted(f"s{s}" for s in reserved))
+
+
+REPAIR_LOSS_STEP = 0.2          # lossy: message loss raised by this much, capped at the validated maximum
+REPAIR_LATE_UNITS = 2           # late: at most this many load-bearing units fail ...
+                                # ... at step steps - (width + height): after every scripted event, inside the
+                                # default expiry window, with width + height steps left for retractions to travel
+
+
+def repair_truth(data: dict) -> dict:
+    """The benchmark's truth for any world script: coordinate BFS from the sink region on the realized final
+    topology (``developmental.repair_instance``'s own method; its MICA cross-check is not repeated)."""
+    from .genomes import developmental as D
+    dead_xy, blocked_xy, sinks_xy = _repair_world(data)
+    dist = D._reference_distances(data["width"], data["height"], dead_xy, blocked_xy, sinks_xy)
+    sources = [tuple(c) for c in data["sources"]]
+    return {"distances": {f"{x},{y}": dist[(x, y)] for x, y in sorted(sources) if (x, y) in dist},
+            "unreachable_sources": sorted(f"{x},{y}" for x, y in sources if (x, y) not in dist),
+            "method": "coordinate BFS from the sink region on the realized final topology (P8 stress derivation)"}
+
+
+def _repair_world(data: dict) -> tuple[set, set, list]:
+    dead = {tuple(c) for c in data["removed"]} | {tuple(c) for ev in data["events"] for c in ev["fail"]}
+    blocked = {frozenset(tuple(c) for c in edge) for edge in data["blocked"]}
+    return dead, blocked, [tuple(z) for z in data["sinks"]]
+
+
+def _repair_late(key: str, data: dict) -> dict:
+    """``data`` with one more scripted failure: up to REPAIR_LATE_UNITS units on the converged forwarding chains of
+    the connected sources (never a source or sink), at step steps - (width + height), chosen by a stream named for
+    the item; a unit whose loss would leave no source connected is skipped, so the target state stays defined."""
+    from .genomes import developmental as D
+    W, H, T = data["width"], data["height"], data["steps"]
+    dead, blocked, sinks = _repair_world(data)
+    ends = {tuple(c) for c in data["sources"]} | set(sinks)
+    bearing = sorted(D._load_bearing(W, H, dead, blocked, [tuple(c) for c in data["sources"]], sinks) - ends - dead)
+    random.Random(f"p8-repair-late:{key}").shuffle(bearing)
+    fail = []
+    for cell in bearing:
+        if len(fail) == REPAIR_LATE_UNITS:
+            break
+        dist = D._reference_distances(W, H, dead | set(fail) | {cell}, blocked, sinks)
+        if any(tuple(c) in dist for c in data["sources"]):
+            fail.append(cell)
+    events = list(data["events"]) + ([{"step": T - (W + H), "fail": [list(c) for c in sorted(fail)]}] if fail else [])
+    return {**data, "events": events}
+
+
+def _repair_stress(items: dict) -> dict:
+    """Adversarial derivations of train items: more message loss (``lossy``: +0.2, capped at the protocol's validated
+    0.5, so no derived item is outside the range the genome answers); a later failure of load-bearing units inside
+    the expiry window (``late``), which tests the genome's documented failure mode of claiming a route that has just
+    collapsed. Truth is recomputed for every derived world script. Controller loss is not a stress set here: the
+    local rules never read the controller field, so a controller-loss derivation gives byte-identical outputs; it is
+    a condition of the replanner, reported beside the cycle."""
+    from .genomes import developmental as D
+    out = {}
+    for key, item in items.items():
+        d = item["data"]
+        lossy = {**d, "message_loss": round(min(D.MAX_LOSS, d["message_loss"] + REPAIR_LOSS_STEP), 6)}
+        out[f"lossy:{key}"] = {"data": lossy, "truth": repair_truth(lossy)}
+        late = _repair_late(key, d)
+        out[f"late:{key}"] = {"data": late, "truth": repair_truth(late)}
+    return out
+
+
+def _repair_spec() -> TargetSpec:
+    """Wrong-answer semantics (``SealedEvaluator.losses`` with ``developmental.repair_score``):
+
+    - a false restoration claim (a claimed source whose pointer chain does not reach the sink region over functioning
+      units and unblocked links of the realized topology), a malformed or repeated claim, or a malformed action
+      count is category ``wrong``: its loss is +inf. The genome's own score gives it a finite quality - 1.5; the P8
+      evaluator ranks every wrong answer above every finite loss, as it does on every target;
+    - an abstention (no forwarding field: the genome's ABSTAIN, or a sandbox error) scores quality 0, loss 0;
+    - an answer with no false claim has the finite loss -(restored efficiency - action cost), at most 0 + the cost.
+    ``outputs_verified`` verifies every answer independently: one false claim on a stress item fails the gate."""
+    from .genomes import developmental
+
+    def bucket(item):
+        return [("controller", item["category"]), ("message_loss", str(item["data"]["message_loss"]))]
+    return TargetSpec(
+        name="develop_repair", target=repair_target, split=repair_split, score=developmental.repair_score,
+        baseline=developmental.repair_no_repair, verify=developmental.repair_verify, stress=_repair_stress,
+        buckets=bucket,
+        failure_metric="efficiency-weighted restored fraction minus action cost (a false restoration claim is "
+                       "wrong) vs no repair (keep the pre-damage field, act never, claim nothing)",
+        proposal={"module": "greg/cognition/genomes/developmental.py", "constant": "REPAIR_DEFAULT_CONFIG",
+                  "canary": "re-admit develop_repair with the proposed configuration on fresh seeds before adoption; "
+                            "keep comparing with the incumbent and the centralized replanner after adoption"})
+
+
+TARGET_SPECS = {"forecast_quantile": _forecasting_spec, "immune_detect": _immune_spec, "constraint_release": _cr_spec,
+                "develop_repair": _repair_spec}
 # Each evolvable target's shipped configuration, pinned to the genome version its admission evidence measured.
 # Adopting a configuration (a reviewed change; founder decision) must bump the genome's version and this pin
 # together, so evidence measured on the old configuration routes as stale until re-admission.
@@ -363,6 +500,11 @@ EVOLVABLE_CONFIG_PINS = {
                       "sha256:68b55c07dbdc2b44ce47e6644cc47beaa669cca996da0c4ed35ae70fa9366262"),
     "constraint_release": ("develop_constraint_release", "1.2.0",
                            "sha256:111751096c0d4bf7944981c16390f423bfcb196081502df233dd1ac55811ba10"),
+    # 1.1.2 (2026-10-21): the protocol constants became REPAIR_DEFAULT_CONFIG; the default's outputs are byte-identical
+    # to 1.1.1 on development seeds 0-9, but the module's code changed, so admission v2's 1.1.1 verdict is stale
+    # until re-admission.
+    "develop_repair": ("develop_repair", "1.1.2",
+                       "sha256:238c13bfb8a7debbd9ca0d4e698a3ce47681788f285d6e41e22832a1af05f804"),
 }
 
 
@@ -857,6 +999,8 @@ def _registered_heldout(target_name: str) -> set:
         return {f"s{s}" for _, held in CR_SPLITS.values() for s in held}
     if target_name == "immune_detect":
         return {f"s{s}" for _, held in IMMUNE_SPLITS.values() for s in held}
+    if target_name == "develop_repair":
+        return {f"s{s}" for _, held in REPAIR_SPLITS.values() for s in held}
     return set(_FORECASTING_SPLIT()[1]) | PRE_FREEZE_HELDOUT["2026-10-08/cycle-forecast-1"][1]()
 
 

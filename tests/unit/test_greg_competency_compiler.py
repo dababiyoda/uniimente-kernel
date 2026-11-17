@@ -853,7 +853,10 @@ def test_a_flat_request_that_lacks_an_input_no_fitting_method_reads_asks_for_it(
     repair = {**grid, "sources": [[0, 0]], "sinks": [[2, 3]], "removed": [], "blocked": [], "events": [], "steps": 3}
     r = compile_on(mcf, {"treated": [1.0, 2.0], **repair})
     assert r["missing_information"] == [{"method": "cognition.develop_repair", "missing_inputs": ["message_loss",
-                                                                                                  "seed"]}]
+                                                                                                  "seed"]},
+                                        # the recombined hybrid also needs the controller it audits
+                                        {"method": "cognition.develop_repair_hybrid",
+                                         "missing_inputs": ["controller", "message_loss", "seed"]}]
     # a request-level flag and a key no mechanism requires change nothing
     r = compile_on(mcf, {"treated": [1.0, 2.0], "note": "pilot", "formalization_complete": True})
     assert r["missing_information"] == [{"method": "cognition.causal", "missing_inputs": ["control"]}]
@@ -1012,10 +1015,11 @@ def test_a_cortex_organ_reading_one_part_of_a_genome_request_does_not_answer_it(
         r = compile_on(lacking)
         assert r["state"] == "ABSTAIN", shape
         assert [(m["method"], m["missing_inputs"]) for m in r["missing_information"]] == \
-            [("cognition.develop_repair", ["blocked"])], shape
+            [("cognition.develop_repair", ["blocked"]),                # its recombined hybrid reads the same inputs
+             ("cognition.develop_repair_hybrid", ["blocked"])], shape
     why = {m["method"]: m["why"] for m in compile_on(data)["methods_rejected"]}
     assert "answers a relaxation" in why["cognition.cortex.semantic"]
-    assert "['cognition.develop_repair']" in why["cognition.cortex.semantic"]
+    assert "['cognition.develop_repair', 'cognition.develop_repair_hybrid']" in why["cognition.cortex.semantic"]
     # a declaration that excludes the fuller method leaves the organ its question; an organ alone is untouched
     assert compile_on(data, {"geometry": "semantic"})["method_or_composition_selected"] == "cognition.cortex.semantic"
     assert compile_on({"sources": data["sources"]})["method_or_composition_selected"] == "cognition.cortex.semantic"

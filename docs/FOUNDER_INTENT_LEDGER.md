@@ -33,6 +33,66 @@ Progress 2026-10-21 (measured; negative results kept):
 - **Data-exposure ledger across both lineages** ([ledger](evidence/greg-data-exposure-ledger.json)): 352 exposure records at this head.
 - **Six new withheld genomes**, with development numbers only.
 - **Founder decisions prepared:** [D1-D5](collaboration/FOUNDER-DECISIONS-2026-10-21.md).
+- **Genome admission v5** ([evidence](evidence/greg-genome-admission/2026-10-21-v5/README.md)): 11 new families on fresh seeds 1400-1429. It was pre-registered at `2046b744`, frozen at `b8061a21` and run once on a quiet machine.
+  - **DEFAULT (7):** MaxSAT, bin packing, Louvain communities, multistart L-BFGS-B, weighted-vote crowd, exact node cut, token-bucket admission.
+  - **NICHE (2):** QP reconciliation, NLMS.
+  - **SUPERSEDED:** the auction.
+  - **REJECTED:** graph diffusion.
+  - **Caveats:**
+    - Differential evolution wins 15-7 against the DEFAULT multistart genome, not significant under the rule. The proposed routing for multimodal objectives is DE.
+    - The node-cut genome's wins are bounds coverage only.
+  - 44 of 58 genomes are admitted; none is attached.
+- **`develop_repair` as a second P8 target:** a declared pilot was NOT_VIABLE because the trigger can never fire (the genome beats its no-repair baseline on 640 of 640). The measured deficit against the replanner is a mechanism, a hybrid of central plan and local fallback, not a configuration.
+- **`develop_repair_hybrid` 1.0.0** ([evidence](evidence/greg-repair-hybrid/2026-10-21-exploratory/README.md)), registered and withheld. It composes the existing replanner with a local audit and a dormant local standby.
+  - The declared exploratory emergence test (640 fresh items, seeds 4000-4639, one run) is **PARTIAL**: mean quality 0.9835 with 0 false claims, against the replanner's 0.7451 with 37.
+  - It fails E2b, losing 37-126 to the replanner on stale controllers, as its declaration warned: the woken standby's message cost is already paid when the planner recovers.
+  - Ablations show that the audit removes the false claims and that the fallback restores function.
+  - A blocked repair mission resumed on the founder-attached hybrid through Capability Genesis, and its answer was verified (test key). This is exploratory evidence, not admission; admission v6 is drafted for seeds 1500-1529 and not frozen.
+- **Genome admission v6** ([evidence](evidence/greg-genome-admission/2026-10-21-v6/README.md)): pre-registered at `b33fd678`, frozen at `f33cb2a9` and run once on seeds 1500-1529.
+  - `develop_repair` 1.1.2 is NICHE_CAPABILITY and replicates v2: 7-23 against the replanner.
+  - `develop_repair_hybrid` 1.0.0 is NICHE_CAPABILITY:
+    - 23-7 against the local rules;
+    - 7-7, with 16 ties, against the replanner, with 0 wrong answers against the replanner's 3;
+    - not DEFAULT because it is about 92x slower than the replanner;
+    - the stale-controller weakness replicates (3-7).
+  - 45 of 59 genomes are admitted, every one with current-version evidence. None is attached.
+- **Genome admission v7** ([evidence](evidence/greg-genome-admission/2026-10-21-v7/README.md)): nine new genomes from three parallel lanes, each built for an ABSENT coverage item. Pre-registered at `b1ee3f97`, frozen at `568c4b7b`, run once on seeds 1600-1629.
+  - **DEFAULT (5):**
+    - IDA\* (under a declared memory budget);
+    - NEH-insertion beam search (beats warm-started CP-SAT 14-3; Iterated Greedy was not compared);
+    - MAP-Elites (against a competitor weak by construction);
+    - exact top-k betweenness (ties NetworkX, faster);
+    - local-rule CA regeneration (0-2 against Z3 entailment, not significant, at 1/40 the latency).
+  - **EXPERIMENTAL (2):**
+    - the GA: 19-10 against hill climbing, not significant. It wins rugged NK 15-0 and loses deceptive traps 0-15 against CP-SAT.
+    - MCTS: it ties flat Monte Carlo 28 of 30.
+  - **SUPERSEDED (2):**
+    - property-based search: Z3 finds every counterexample;
+    - Hopfield recall: exact nearest neighbour is the ceiling.
+  - 50 of 68 genomes are admitted. None is attached.
+- **Genome admission v8** ([evidence](evidence/greg-genome-admission/2026-10-22-v8/README.md)): fifteen genomes from five parallel lanes, built for the ABSENT coverage items left after v7. Pre-registered at `28e29538`, frozen at `bc966a18`, run once on seeds 1700-1729.
+  - **DEFAULT (8):**
+    - role differentiation (beats a centralised MIS on rounds, 20-8);
+    - novelty search (16-1 against MAP-Elites on deceptive mazes);
+    - scenario fans (29-1 against Monte Carlo);
+    - resolution proofs (Z3 decides as well, and the win is the declared value of a checkable proof);
+    - MDL (ties BIC);
+    - repeated games (ties simulation, faster);
+    - Stackelberg commitment (ties HiGHS multiple LPs);
+    - CUSUM (Shiryaev–Roberts is at least as good).
+  - **NICHE (4):**
+    - convex QP with a duality certificate: 30/30 and 20-0 against SciPy, but demoted because GREG's 64 KiB request limit refused a held-out instance (an integration defect, recorded);
+    - Hamming correction (the Bayes decoder is better on noisy blocks);
+    - the hyper-heuristic (no significant edge over random selection);
+    - isotonic recalibration (superseded in substance, 2-28 against Platt scaling; the rule calls any win NICHE, a policy question).
+  - **EXPERIMENTAL (2):** robust tube MPC; judgmental pooling (14-16 against the mean; dev did not replicate).
+  - **SUPERSEDED:** Nash bargaining (SLSQP ties and is faster).
+  - Merge review before the freeze: replaced a Stackelberg competitor weak by construction, and fixed a CUSUM benchmark that every detector failed.
+  - 62 of 83 genomes are admitted. None is attached.
+- **Request transport fix and genome admission v9** ([evidence](evidence/greg-genome-admission/2026-10-22-v9/README.md)).
+  - **Fix (`93bf43a3`):** cognitive requests reach the solver and verifier on stdin instead of one argv string, which Linux caps at 128 KiB. The request ceiling is now 1 MiB.
+  - **Admission v9:** pre-registered at `ce760f7a`, frozen at `11a8e318` and run once on seeds 1800-1829. It re-admits `convex_qp_dual` 1.0.0 as **DEFAULT** (13-1-16 against the baseline, 23-0-7 against trust-constr). The smoke passes on a 92.5 KB request, which the old limit refused.
+  - 62 of 83 are admitted: 45 DEFAULT and 17 NICHE. None is attached.
 
 ## Convergence of the two Mind lineages — 2026-10-14
 

@@ -252,13 +252,18 @@ OPTIMALITY = ("unproven (feasible plan; the optimiser stopped before proving it 
               "solver-reported (CP-SAT OPTIMAL; bound equals objective); not independently certified", "proven")
 
 
-def _certified(solved: dict) -> bool:
-    return ((solved.get("evaluator_result") or {}).get("certificate") or {}).get("status") == "CERTIFIED"
+def _certified(solved: dict, model: dict) -> bool:
+    # A certificate counts only for this stage's own claim (its solver status), on this model, for this receipt's
+    # proof artifact, from the current verifier (verification.certified_for): a CERTIFIED status alone may belong to
+    # another problem, another answer or another claim.
+    from .verification import certified_for
+    claim = (solved.get("output") or {}).get("solver_status")
+    return certified_for(solved.get("evaluator_result"), model, solved.get("proof_artifact"), claim)
 
 
-def _optimality(solved: dict) -> str:
+def _optimality(solved: dict, model: dict) -> str:
     status = (solved.get("output") or {}).get("solver_status")
-    return OPTIMALITY[0] if status != "OPTIMAL" else OPTIMALITY[2] if _certified(solved) else OPTIMALITY[1]
+    return OPTIMALITY[0] if status != "OPTIMAL" else OPTIMALITY[2] if _certified(solved, model) else OPTIMALITY[1]
 
 
 def _graph_then_allocate(payload, pid, kw, receipt, finish):
@@ -294,11 +299,12 @@ def _graph_then_allocate(payload, pid, kw, receipt, finish):
     # never copied from the proof artifact (fix review r3: a bound and a gap each checked to 1/2 stacked, so a plan 1
     # short answered with gap 0.02). Without the certificate the gap is only the solver's word, so it is omitted
     # (None), never reported as if verified (review r2: a FEASIBLE plan 5 short with a forged bound answered 0.0).
-    gap = float(abs(claimed - solved["evaluator_result"]["certificate"]["bound"])) if _certified(solved) else None
+    gap = float(abs(claimed - solved["evaluator_result"]["certificate"]["bound"])) if _certified(solved, model) \
+        else None
     return finish("ANSWERED", None, {"increments": increments, "flow_value": claimed,
                                      "control_points": check["output"]["cut_edges"],
                                      "solver_status": out["solver_status"], "optimality_gap": gap,
-                                     "optimality": _optimality(solved)})
+                                     "optimality": _optimality(solved, model)})
 
 
 def _bayes_then_voi(payload, pid, kw, receipt, finish):
@@ -363,12 +369,12 @@ def _forecast_then_allocate(payload, pid, kw, receipt, finish):
         if not _answered(solved) or out.get("solver_status") not in ("OPTIMAL", "FEASIBLE"):
             return finish("STAGE_ABSTAINED", f"optimize week {t + 1}: {out.get('solver_status')}")
         allocation.append([out["solution"][f"q{i}"] for i in range(len(products))])
-        weekly.append(solved)
+        weekly.append((solved, compiled["output"]["model"]))
     # each week's solver status and the weakest week's certificate strength, as graph_then_allocate reports its one
     # (review V3): the plan is proven only when every week's is
     return finish("ANSWERED", None, {"plan": allocation, "products": [p["name"] for p in products],
-                                     "solver_status": [solved["output"]["solver_status"] for solved in weekly],
-                                     "optimality": min((_optimality(solved) for solved in weekly),
+                                     "solver_status": [solved["output"]["solver_status"] for solved, _ in weekly],
+                                     "optimality": min((_optimality(solved, model) for solved, model in weekly),
                                                        key=OPTIMALITY.index)})
 
 

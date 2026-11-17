@@ -15,6 +15,7 @@ from __future__ import annotations
 import ast
 import hashlib
 import json
+import re
 from pathlib import Path
 import subprocess
 
@@ -798,7 +799,12 @@ def test_recipe_lifts_bind_the_recipe_code_they_measured():
     # (record section 22): a live lift is one it measured, on the recipe code it measured
     converged = "docs/evidence/greg-composition-lift/2026-10-21-converged/"
     live = {r for r, v in index["recipes"].items() if v.get("lift") and not C.recipe_stale(r, v)}
-    assert live == {"identify_then_optimize", "bayes_then_voi"}
+    # The 2026-11-17 verifier review required composition's certification consumer to check the certificate's
+    # binding (_certified, _optimality and the two compositions that read them). Those sit in identify_then_optimize's
+    # closure, so its P6 converged v1 lift no longer binds today's code and routes UNEVALUATED until a pre-registered
+    # re-measurement: the rule working as designed, not a weakened one.
+    assert live == {"bayes_then_voi"}
+    assert "needs re-measurement" in C.recipe_stale("identify_then_optimize", index["recipes"]["identify_then_optimize"])
     assert all(index["recipes"][r]["evidence"].startswith(converged) for r in live), \
         "a lift routes on code that differs from what it measured"
     assert all(C.recipe_stale(r, v) for r, v in index["recipes"].items()
@@ -840,7 +846,8 @@ def test_admitted_labels_are_reported_by_provenance_and_practitioner_ties_are_vi
     for e in labelled:
         kind = genome_library.provenance(e)
         if kind == "rule_admitted":           # only pre-registered admissions (genome or operation v3) count
-            assert all(("greg-genome-admission/2026-10-1" in r or "greg-operation-admission/" in r)
+            # any dated pre-registered genome admission (v1-v4 on 2026-10-1x, #158's v5 onward on 2026-10-2x)
+            assert all((re.search(r"greg-genome-admission/2026-1\d-\d\d", r) or "greg-operation-admission/" in r)
                        and not r.startswith(genome_library.LINEAGE_ADMISSION_DIR) for r in e.evidence_refs), e
         if e.source in ("composition_recipe", "cortex_organ"):
             assert kind in ("recipe_lift", "organ_label")

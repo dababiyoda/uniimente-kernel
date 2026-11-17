@@ -23,6 +23,8 @@ bounded by the weakest criterion. A9 is never granted by this system.
 from __future__ import annotations
 
 import copy
+import hashlib
+import json
 import re
 import uuid
 from dataclasses import dataclass, field, asdict
@@ -37,6 +39,7 @@ LEVELS = {
     9: "reserved_human_sovereignty",
 }
 MAX_GRANTABLE = 8          # A9 is reserved; this system never grants it
+GRANT_KIND = "AUTONOMY_GRANT"   # greg/founder.py COMMAND_KINDS; founder key only (not in DEVICE_KINDS)
 
 PROMOTION_CRITERIA = (
     "repeated_successful_external_outcomes", "calibrated_prediction",
@@ -130,7 +133,8 @@ class AutonomyAuthority:
     """Grants, promotes, and regresses autonomy licenses.
 
     Itself bounded: it cannot grant A9, cannot waive the promotion criteria,
-    cannot mint autonomy above A0 without a named human authorizer, and records
+    cannot mint autonomy above A0 without the founder's signed AUTONOMY_GRANT
+    for that exact subject, tuple and level (and a named human), and records
     every transition on the ledger with its evidence.
 
     The ledger append comes first: a license is stored, promoted or renewed only
@@ -146,8 +150,11 @@ class AutonomyAuthority:
     a property the code did not have. See `issue`.
     """
 
-    def __init__(self, ledger):
+    def __init__(self, ledger, verifier=None):
+        """``verifier`` is a greg.founder.FounderVerifier holding the enrolled founder key(s). Without one, nothing
+        above A0 can be issued: there is no way to check the founder's signature, and a name is not a signature."""
         self.ledger = ledger
+        self.verifier = verifier
         self._licenses: dict[str, AutonomyLicense] = {}
         self._by_subject_tuple: dict[tuple[str, str], str] = {}
 
@@ -158,7 +165,7 @@ class AutonomyAuthority:
         self.ledger.append("event", {"type": f"autonomy.{kind}", **payload})
 
     def issue(self, subject: str, tuple_: AutonomyTuple, level: int = 0, *,
-              authorized_by: str | None = None) -> AutonomyLicense:
+              authorized_by: str | None = None, authorization: dict | None = None) -> AutonomyLicense:
         """Mint a license. Above A0 this is a founder grant and must say so.
 
         **The hole this closes.** `promote` enforces the weakest-link rule —
@@ -184,13 +191,17 @@ class AutonomyAuthority:
         refused (NaN compared neither above nor below A0, so it needed no
         authorizer and read as a live, unrecorded level).
 
-        Honest limitation, stated rather than overclaimed: `authorized_by` is a
-        caller-supplied string, so this makes a starting grant explicit,
-        attributable and permanent, not unforgeable. It is the same shape as
-        `EvidenceLedger.adopt_constitution` and a caller issuing its own
-        capability grant — process, not cryptography. Only an Ed25519 signature
-        by Alfonso's enrolled founder key (greg/founder.py) authenticates him;
-        binding A1+ issuance to such a signed decision is the open step.
+        **The founder's signature (acceptance I.G5, 2026-11-13).** `authorized_by`
+        is a caller-supplied string: it made a starting grant explicit and
+        attributable, not unforgeable. Above A0 the grant now also needs
+        `authorization`: a greg.founder envelope of kind AUTONOMY_GRANT, signed
+        by an enrolled founder key (a device key may not sign this kind), whose
+        body is exactly ``{"subject", "tuple", "level"}`` of this issue, and
+        whose nonce this authority's ledger has not already spent. The ledger
+        records the signing key, the nonce and the envelope digest beside the
+        name. A signature proves possession of the founder key; it does not make
+        the grant wise, and the license is still bounded by its tuple, by
+        `regress`, and by every gate an action passes.
         """
         if type(level) is not int:
             raise ValueError(f"autonomy level must be an integer A0..A{MAX_GRANTABLE}, not {level!r}")
@@ -198,21 +209,60 @@ class AutonomyAuthority:
             raise ValueError("A9 is reserved human sovereignty; never granted by the system")
         if level < 0:
             raise ValueError("autonomy level may not be negative")
+        signed = None
         if level > 0:
             refusal = _authorizer_refusal(subject, authorized_by, level)
             if refusal:
                 raise ValueError(refusal)
+            signed = self._verified_grant(subject, tuple_, level, authorization)
         entry = {"event": "issued", "level": level, "at": self._now()}
         if authorized_by:
             entry["authorized_by"] = authorized_by
+        if signed:
+            entry["authorization"] = dict(signed)
         lic = AutonomyLicense(license_id=str(uuid.uuid4()), subject=subject, tuple=copy.deepcopy(tuple_),
                               level=level, issued_at=self._now(),
                               history=[entry])
         self._record("issued", {"subject": subject, "tuple": asdict(tuple_),
-                                "level": level, "authorized_by": authorized_by})
+                                "level": level, "authorized_by": authorized_by,
+                                **({"authorization": signed} if signed else {})})
         self._licenses[lic.license_id] = lic                      # only once the ledger holds it
         self._by_subject_tuple[(subject, tuple_.key())] = lic.license_id
         return copy.deepcopy(lic)
+
+    def _spent(self, nonce: str) -> bool:
+        """This authority's ledger already holds an issue under ``nonce``: a signed grant mints one license, once."""
+        return any(r.payload.get("type") == "autonomy.issued"
+                   and (r.payload.get("authorization") or {}).get("nonce") == nonce
+                   for r in self.ledger.by_type("event"))
+
+    def _verified_grant(self, subject: str, tuple_: AutonomyTuple, level: int, authorization) -> dict:
+        """The founder's signed AUTONOMY_GRANT for exactly this issue, checked; or ValueError saying why not.
+
+        Returns what the ledger keeps: the signing key, the nonce and the envelope's digest."""
+        if self.verifier is None:
+            raise ValueError(f"A{level} needs the founder's signature, and this authority has no founder verifier: "
+                             f"a name is not a signature (issue at A0 and earn it)")
+        if not isinstance(authorization, dict):
+            raise ValueError(f"A{level} needs a founder-signed {GRANT_KIND} for this exact subject, tuple and "
+                             f"level; a named authorizer alone does not authenticate the founder")
+        from greg.founder import FounderAuthError       # the one founder-signature verifier (no second one here)
+        try:
+            env = self.verifier.verify(authorization, expected_kind=GRANT_KIND)
+            principal = self.verifier.principal(env)
+        except (FounderAuthError, KeyError, TypeError, ValueError) as exc:
+            raise ValueError(f"the {GRANT_KIND} does not verify: {exc}") from exc
+        if principal != "founder":
+            raise ValueError(f"a {GRANT_KIND} must be signed by the founder key itself, not {principal}")
+        wanted = {"subject": subject, "tuple": asdict(tuple_), "level": level}
+        if env["body"] != wanted:
+            raise ValueError(f"the signed {GRANT_KIND} is for a different grant: it signs {env['body']!r}, "
+                             f"this issue is {wanted!r}")
+        if self._spent(env["nonce"]):
+            raise ValueError(f"this {GRANT_KIND} was already used: one signed grant issues one license")
+        digest = hashlib.sha256(json.dumps(env, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+        return {"kind": GRANT_KIND, "founder_key_id": env["founder_key_id"], "nonce": env["nonce"],
+                "issued_at": env["issued_at"], "envelope_sha256": digest}
 
     def promote(self, license_id: str, evidence: PromotionEvidence) -> AutonomyLicense:
         lic = self._licenses[license_id]

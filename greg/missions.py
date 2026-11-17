@@ -475,7 +475,8 @@ class MissionEngine:
                                  deliver_root=self.deliver_root, learned=improvement.learned(self.journal),
                                  # ledger access: memory, artifacts and cognition; the organ bridge that renders
                                  # the Mind's receipts into a memo gets a reader that cannot write
-                                 journal=self._ledger_reader() if manifest.capability_id == "venture.assess"
+                                 journal=self._ledger_reader() if manifest.capability_id in ("venture.assess",
+                                                                                             "daleobanks.verify")
                                  else self.journal if manifest.capability_id == "memory.precedents"
                                  or manifest.capability_id.startswith(("artifact.", "cognition.")) else None,
                                  artifact_root=self.artifact_root, stop_check=self._stop_check,

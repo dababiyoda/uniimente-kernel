@@ -1,0 +1,50 @@
+kernel head: 9f7dac83374e7ca48c9005a59a15e5a33de9905b
+daleobanks head: a8341ba81622dbd1180583bc6660fa1e7ed707b8 (/home/user/DALEOBANKS)
+source: A study at two depots found the new routing method may reduce delays by 12%. It did not lower fuel costs. Drivers at Northgate reported fewer missed windows.
+
+== faithful
+draft: A two-depot study found the routing method may cut delays by 12%. Fuel costs did not fall.
+mission states: ['ACHIEVED']
+daleobanks.verify: VERIFIED
+DALEOBANKS EthicsGuard approved: True; Critic blocking: []
+Mind's changes found: []
+
+== hedge dropped
+draft: The routing method cuts delays by 12%. Fuel costs did not fall.
+mission states: ['ACTED', 'BLOCKED']
+daleobanks.verify: REJECTED
+DALEOBANKS EthicsGuard approved: True; Critic blocking: []
+Mind's changes found: [('c1', 'certainty')]
+finding: claim c1 is not supported as written: DISTORTION: the claim changes what its supporting spans say (certainty); restate it or bind a span that says it
+
+== negation removed
+draft: A two-depot study found the routing method may cut delays by 12%. It lowered fuel costs.
+mission states: ['ACTED', 'BLOCKED']
+daleobanks.verify: REJECTED
+DALEOBANKS EthicsGuard approved: True; Critic blocking: []
+Mind's changes found: [('c2', 'negation')]
+finding: claim c2 is not supported as written: DISTORTION: the claim changes what its supporting spans say (negation); restate it or bind a span that says it
+
+== scope widened
+draft: All depots may see the routing method reduce delays by 12%.
+mission states: ['ACTED', 'BLOCKED']
+daleobanks.verify: REJECTED
+DALEOBANKS EthicsGuard approved: True; Critic blocking: []
+Mind's changes found: [('c1', 'scope')]
+finding: claim c1 is not supported as written: DISTORTION: the claim changes what its supporting spans say (scope); restate it or bind a span that says it
+
+== direction reversed
+draft: The new routing method may increase delays by 12%.
+mission states: ['ACTED', 'BLOCKED']
+daleobanks.verify: REJECTED
+DALEOBANKS EthicsGuard approved: True; Critic blocking: []
+Mind's changes found: [('c1', 'direction')]
+finding: claim c1 is not supported as written: DISTORTION: the claim changes what its supporting spans say (direction); restate it or bind a span that says it
+
+== name substituted
+draft: Drivers at Southgate reported fewer missed windows.
+mission states: ['ACTED', 'BLOCKED']
+daleobanks.verify: REJECTED
+DALEOBANKS EthicsGuard approved: True; Critic blocking: []
+Mind's changes found: [('c1', 'named_term')]
+finding: claim c1 is not supported as written: DISTORTION: the claim changes what its supporting spans say (named_term); restate it or bind a span that says it

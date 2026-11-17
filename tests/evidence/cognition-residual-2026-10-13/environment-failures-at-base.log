@@ -1,0 +1,10 @@
+# at 0f4bc52cc156c7b630715fc01b6ebb32136db6f0 (base, no changes), same venv
+        assert result["quote"] == 270.0 and result["failed_over_from"] == ["eco-a"]
+5 failed in 12.39s
+>       assert verification["passed"]
+E                       PermissionError: [Errno 13] Permission den
+FAILED tests/unit/test_foundry_systems.py::test_mcp_tools_run_behind_kernel_identity_policy_and_gate
+FAILED tests/unit/test_greg_foundry_worker.py::test_restricted_dsl_verifier_runs_but_ratification_is_still_required
+FAILED tests/unit/test_greg_landlock.py::test_landlock_inherits_into_exact_reviewed_dsl_and_packaging_children
+FAILED tests/unit/test_greg_mcp_worker.py::test_first_party_mcp_reaches_actual_retained_machine_state_without_writes
+FAILED tests/unit/test_greg_packaging.py::test_guarded_owned_bundle_rebuilds_in_fixed_independent_child

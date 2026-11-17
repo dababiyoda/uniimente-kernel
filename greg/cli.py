@@ -111,6 +111,19 @@ def main(argv=None) -> int:
     ca.add_argument("--outcome", required=True, help="outcome node id")
     ca.add_argument("--objective", required=True)
     css.add_parser("destinations", help="founder destinations compiled to effects, with buildability and backcast")
+    pk = css.add_parser("package", help="read-only: selective-disclosure evidence package from retained receipts")
+    pk.add_argument("--mission", help="package every cognitive receipt this mission retained")
+    pk.add_argument("--receipt", action="append", default=[], help="a receipt's ledger hash (repeatable)")
+    pk.add_argument("--recipient", required=True, help="the actor the package is for")
+    pk.add_argument("--purpose", required=True)
+    pk.add_argument("--remedy", help="what you are asking the recipient to do (recorded as a request)")
+    pk.add_argument("--action-ref", help="ledger hash of GREG's record of an authorized action, if any")
+    pk.add_argument("--reveal", action="append", default=[], help="receipt field to reveal beyond the default summary")
+    pk.add_argument("--withhold", action="append", default=[], help="summary field to withhold")
+    pk.add_argument("--decoys", type=int, default=2)
+    pk.add_argument("--out", required=True, help="directory for holder.json (keep) and presentation.json (share)")
+    vp = css.add_parser("verify-package", help="recipient side: check a presentation without any GREG state")
+    vp.add_argument("presentation")
     css.add_parser("calibration", help="read-only: forecast calibration from realized values bound to receipts, "
                                        "and the forecast receipts still awaiting a realization")
     cm = css.add_parser("mission")
@@ -362,6 +375,35 @@ def main(argv=None) -> int:
             elif args.cognition_cmd == "destinations":
                 from greg.cognition.advantage import export as advantage_export
                 data = advantage_export()["destinations"]
+            elif args.cognition_cmd in ("package", "verify-package"):
+                from greg.cognition import disclosure
+                from greg.cognition.contracts import CognitionError
+                if args.cognition_cmd == "verify-package":
+                    data = disclosure.verify_presentation(json.loads(Path(args.presentation).read_text()))
+                    print(json.dumps(data, indent=2))
+                    return 0 if data["valid"] else 1
+                out = Path(args.out).expanduser().resolve()
+                with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                    refs = list(args.receipt) + (disclosure.receipts_for_mission(journal, args.mission) if args.mission else [])
+                    try:
+                        holder = disclosure.build_package(journal, refs, recipient=args.recipient, purpose=args.purpose,
+                                                          requested_remedy=args.remedy, authorized_action_ref=args.action_ref,
+                                                          reveal=args.reveal, withhold=args.withhold, decoys=args.decoys)
+                    except CognitionError as exc:
+                        raise BodyError(str(exc)) from None
+                out.mkdir(parents=True, exist_ok=True)
+                presentation = disclosure.present(holder)
+                for name, content, mode in (("holder.json", holder, 0o600), ("presentation.json", presentation, 0o644)):
+                    tmp = out / (name + ".tmp")
+                    tmp.write_text(json.dumps(content, indent=1) + "\n")
+                    tmp.chmod(mode)
+                    tmp.replace(out / name)
+                checked = disclosure.verify_presentation(presentation)
+                data = {"package_digest": holder["package_digest"], "items": len(holder["package"]["items"]),
+                        "contradictions": holder["package"]["contradictions"], "revealed": holder["default_reveal"],
+                        "holder": str(out / "holder.json"), "presentation": str(out / "presentation.json"),
+                        "presentation_verifies": checked["valid"], "sent": False,
+                        "note": "nothing was sent; share presentation.json yourself, keep holder.json private"}
             elif args.cognition_cmd == "calibration":
                 from greg.cognition.settlement import awaiting_realization, outcome_calibration
                 with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:

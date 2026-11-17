@@ -46,19 +46,31 @@ def assess(data, geometry):
     options = data.get("interventions", [])
     if len(options) > 32:
         raise CognitionError("at most 32 supplied intervention proposals")
+    from .legitimacy import evaluate
     modeled = []
     for option in options:
-        # Legality and consent are assertions requiring human authentication, not model findings.
-        permitted = option.get("lawful") is True and option.get("consent") is True
+        # Legality and consent come from records of decisions made elsewhere (a qualified opinion,
+        # a captured consent, a Kernel policy decision, a founder-signed command), never from a bare
+        # "lawful: true" in the request. A missing prohibition is not permission (directive section 13).
+        records = list(option.get("legitimacy", []))
+        for flag, gate in (("lawful", "law"), ("consent", "consent")):
+            if option.get(flag) is False:
+                records.append({"gate": gate, "state": "prohibited", "origin": "self_asserted",
+                                "scope": "this proposal", "provenance": "supplied flag"})
+        gates = evaluate(records, consequential=True)
         risk = ConsequenceVector(**option.get("consequences", {}))
-        blocked = not permitted or risk.prohibited or consequences.prohibited
+        hard = (option.get("lawful") is False or option.get("consent") is False or risk.prohibited
+                or consequences.prohibited)
+        blocked = hard or gates["verdict"] != "PASS"
+        blocked_by = (["hard constraint"] if hard else []) + [f"{g}: prohibited" for g in gates["prohibited"]] + \
+            [f"{g}: unresolved" for g in gates["unresolved"]]
         benefit = number(option["exploit_payoff"], low=0)
         opportunity = number(option["opportunity"], low=0, high=1)
         detection = number(option["detection_probability"], low=0, high=1)
         durability = number(option["evidence_durability"], low=0, high=1)
         accountability = number(option["accountability_probability"], low=0, high=1)
         restitution = number(option["restitution_cost"], low=0)
-        modeled.append({"id": option["id"], "blocked": blocked,
+        modeled.append({"id": option["id"], "blocked": blocked, "blocked_by": blocked_by, "legitimacy": gates,
                         "conditional_expected_exploit_payoff": benefit * opportunity - detection * durability * accountability * restitution,
                         "consequences": asdict(risk),
                         "limitations": "supplied hypothetical incentives; legality, consent and empirical probabilities unverified"})

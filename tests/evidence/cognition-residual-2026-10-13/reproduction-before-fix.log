@@ -1,0 +1,115 @@
+FFFFFFF                                                                  [100%]
+=================================== FAILURES ===================================
+_____ test_a_feasible_but_not_optimal_claim_is_refuted_by_a_second_engine ______
+
+registry = <greg.capabilities.CapabilityRegistry object at 0x7fbafe2f20d0>
+
+    def test_a_feasible_but_not_optimal_claim_is_refuted_by_a_second_engine(registry):
+        r = reason(req("optimize", MODEL), registry=registry)
+>       assert r["output"]["solver_status"] == "OPTIMAL"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: 'NoneType' object is not subscriptable
+
+tests/unit/test_cognition_residual_safeguards.py:54: TypeError
+________ test_an_infeasibility_claim_about_a_feasible_model_is_refuted _________
+
+registry = <greg.capabilities.CapabilityRegistry object at 0x7fbafe2f20d0>
+
+    def test_an_infeasibility_claim_about_a_feasible_model_is_refuted(registry):
+        infeasible = deepcopy(MODEL)
+        infeasible["constraints"].append({"coefficients": {"x": 1, "y": 1}, "op": "<=", "rhs": 2})
+        r = reason(req("optimize", infeasible), registry=registry)
+>       assert r["output"]["solver_status"] == "INFEASIBLE"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: 'NoneType' object is not subscriptable
+
+tests/unit/test_cognition_residual_safeguards.py:65: TypeError
+___________ test_unsat_cores_are_rechecked_and_tested_for_minimality ___________
+
+registry = <greg.capabilities.CapabilityRegistry object at 0x7fbafe2f20d0>
+
+    def test_unsat_cores_are_rechecked_and_tested_for_minimality(registry):
+        model = {"variables": {"x": [0, 10], "y": [0, 10]},
+                 "constraints": [{"coefficients": {"x": 1}, "op": ">=", "rhs": 8},
+                                 {"coefficients": {"x": 1}, "op": "<=", "rhs": 3},
+                                 {"coefficients": {"y": 1}, "op": ">=", "rhs": 1}]}
+        r = reason(req("constraints", model), registry=registry)
+>       core = r["evaluator_result"]["cross_checks"]["unsat_core"]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'cross_checks'
+
+tests/unit/test_cognition_residual_safeguards.py:81: KeyError
+________________ test_the_shared_engine_is_disclosed_not_hidden ________________
+
+registry = <greg.capabilities.CapabilityRegistry object at 0x7fbafe2f20d0>
+
+    def test_the_shared_engine_is_disclosed_not_hidden(registry):
+        model = {"variables": {"x": [0, 1]}, "constraints": [{"coefficients": {"x": 1}, "op": ">=", "rhs": 2}]}
+        r = reason(req("constraints", model), registry=registry)
+>       assert any("same engine" in d for d in r["evaluator_result"]["dissent"])
+E       assert False
+E        +  where False = any(<generator object test_the_shared_engine_is_disclosed_not_hidden.<locals>.<genexpr> at 0x7fbafe5e4e10>)
+
+tests/unit/test_cognition_residual_safeguards.py:95: AssertionError
+__________ test_a_bare_lawful_and_consent_assertion_no_longer_permits __________
+
+registry = <greg.capabilities.CapabilityRegistry object at 0x7fbafe2f20d0>
+
+    def test_a_bare_lawful_and_consent_assertion_no_longer_permits(registry):
+>       r, modeled = _intervention(registry, lawful=True, consent=True)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/unit/test_cognition_residual_safeguards.py:111: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+registry = <greg.capabilities.CapabilityRegistry object at 0x7fbafe2f20d0>
+option = {'lawful': True, 'consent': True}
+
+    def _intervention(registry, **option):
+        data = {"affected_party": {"affected_party": "pseudonym:1", "immediate_harm": .2},
+                "interventions": [{"id": "audit", **BASE, **option}]}
+        r = reason(req("deterrence_model", data), registry=registry)
+>       return r, r["output"]["interventions"][0]
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: 'NoneType' object is not subscriptable
+
+tests/unit/test_cognition_residual_safeguards.py:107: TypeError
+_____ test_permission_bearing_records_unblock_and_prohibitions_still_block _____
+
+registry = <greg.capabilities.CapabilityRegistry object at 0x7fbafe2f20d0>
+
+    def test_permission_bearing_records_unblock_and_prohibitions_still_block(registry):
+>       _, modeled = _intervention(registry, legitimacy=[LAW, CONSENT, RIGHTS, AUTH])
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/unit/test_cognition_residual_safeguards.py:118: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+registry = <greg.capabilities.CapabilityRegistry object at 0x7fbafe2f20d0>
+option = {'legitimacy': [{'gate': 'law', 'state': 'supported', 'origin': 'qualified_human', 'scope': 'US-NY', ...}, {'gate': 'c... rights impact', ...}, {'gate': 'authority', 'state': 'supported', 'origin': 'founder_signed', 'scope': 'pilot', ...}]}
+
+    def _intervention(registry, **option):
+        data = {"affected_party": {"affected_party": "pseudonym:1", "immediate_harm": .2},
+                "interventions": [{"id": "audit", **BASE, **option}]}
+        r = reason(req("deterrence_model", data), registry=registry)
+>       return r, r["output"]["interventions"][0]
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: 'NoneType' object is not subscriptable
+
+tests/unit/test_cognition_residual_safeguards.py:107: TypeError
+___________ test_records_are_typed_and_context_never_settles_a_gate ____________
+
+    def test_records_are_typed_and_context_never_settles_a_gate():
+>       from greg.cognition.legitimacy import LegitimacyRecord, evaluate
+E       ModuleNotFoundError: No module named 'greg.cognition.legitimacy'
+
+tests/unit/test_cognition_residual_safeguards.py:128: ModuleNotFoundError
+=========================== short test summary info ============================
+FAILED tests/unit/test_cognition_residual_safeguards.py::test_a_feasible_but_not_optimal_claim_is_refuted_by_a_second_engine
+FAILED tests/unit/test_cognition_residual_safeguards.py::test_an_infeasibility_claim_about_a_feasible_model_is_refuted
+FAILED tests/unit/test_cognition_residual_safeguards.py::test_unsat_cores_are_rechecked_and_tested_for_minimality
+FAILED tests/unit/test_cognition_residual_safeguards.py::test_the_shared_engine_is_disclosed_not_hidden
+FAILED tests/unit/test_cognition_residual_safeguards.py::test_a_bare_lawful_and_consent_assertion_no_longer_permits
+FAILED tests/unit/test_cognition_residual_safeguards.py::test_permission_bearing_records_unblock_and_prohibitions_still_block
+FAILED tests/unit/test_cognition_residual_safeguards.py::test_records_are_typed_and_context_never_settles_a_gate
+7 failed in 7.97s

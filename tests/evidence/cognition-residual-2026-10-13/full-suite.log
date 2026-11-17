@@ -1,0 +1,18 @@
+# Full frontier suite at 5a38e0d (venv: Python 3.11, OR-Tools 9.15.6755, Z3 5.1.0.0)
+# command: python -m pytest -q -p no:cacheprovider -o faulthandler_timeout=120
+
+>       assert verification["passed"]
+FAILED tests/unit/test_foundry_systems.py::test_mcp_tools_run_behind_kernel_identity_policy_and_gate
+FAILED tests/unit/test_greg_foundry_worker.py::test_restricted_dsl_verifier_runs_but_ratification_is_still_required
+FAILED tests/unit/test_greg_landlock.py::test_landlock_inherits_into_exact_reviewed_dsl_and_packaging_children
+FAILED tests/unit/test_greg_mcp_worker.py::test_first_party_mcp_reaches_actual_retained_machine_state_without_writes
+FAILED tests/unit/test_greg_packaging.py::test_guarded_owned_bundle_rebuilds_in_fixed_independent_child
+FAILED tests/unit/test_greg_packaging.py::test_inventory_covers_every_current_owned_source_file
+6 failed, 2706 passed, 16 skipped in 693.07s (0:11:33)
+exit=1 head=5a38e0df54bcad06507f337850572ebb2669fcff start=2026-10-13T14:46:30Z end=2026-10-13T14:58:05Z
+
+# After this run: foundry/owned-source.json refreshed with scripts/refresh_owned_source.py (adds greg/cognition/legitimacy.py);
+# test_inventory_covers_every_current_owned_source_file then passes (see inventory-fix.log).
+# The other five failures reproduce identically at the untouched base 0f4bc52 with the same venv (environment-failures-at-base.log):
+# in each, a confined child fails in site.py venv() with PermissionError; most likely the venv (in the session scratchpad)
+# lies outside the read allowance. CI uses its own interpreter.

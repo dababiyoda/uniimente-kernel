@@ -1,0 +1,83 @@
+{
+ "base": {
+  "commit": "0f4bc52cc156c7b630715fc01b6ebb32136db6f0",
+  "exit": "INCONCLUSIVE",
+  "manifest_sha256": "169508f221920bcd9560afd44729ebdab41475aed481d5a516c103292be9f216"
+ },
+ "head": {
+  "commit": "5a38e0df54bcad06507f337850572ebb2669fcff",
+  "exit": "INCONCLUSIVE",
+  "manifest_sha256": "169508f221920bcd9560afd44729ebdab41475aed481d5a516c103292be9f216"
+ },
+ "rows": 240,
+ "rows_in_head": 240,
+ "timing_independent_mismatches": [],
+ "hard_failures": {
+  "base": 0,
+  "head": 0
+ },
+ "p95_latency_ms_all_quality": {
+  "base": {
+   "static_rules/ALL_QUALITY": 603.055,
+   "routed_seed/ALL_QUALITY": 599.578
+  },
+  "head": {
+   "static_rules/ALL_QUALITY": 653.287,
+   "routed_seed/ALL_QUALITY": 660.291
+  }
+ },
+ "compared_fields": "expectation_matched, hard_failure, timing_independent_loss, non-latency loss components, receipt status, verifier verdict",
+ "note": "latency differs run to run (and also between two runs at the same commit), so it is reported, not compared",
+ "latency_ms_by_family": {
+  "routed_seed/estimation": {
+   "base_p50": 155.264,
+   "head_p50": 147.87900000000002,
+   "base_p95": 185.857,
+   "head_p95": 174.506
+  },
+  "routed_seed/formal": {
+   "base_p50": 200.14749999999998,
+   "head_p50": 222.1115,
+   "base_p95": 230.43,
+   "head_p95": 247.978
+  },
+  "routed_seed/optimization": {
+   "base_p50": 567.7529999999999,
+   "head_p50": 622.2760000000001,
+   "base_p95": 649.821,
+   "head_p95": 689.373
+  },
+  "routed_seed/semantic": {
+   "base_p50": 0.014,
+   "head_p50": 0.018,
+   "base_p95": 0.051,
+   "head_p95": 0.033
+  },
+  "static_rules/estimation": {
+   "base_p50": 157.3595,
+   "head_p50": 152.2125,
+   "base_p95": 174.206,
+   "head_p95": 176.154
+  },
+  "static_rules/formal": {
+   "base_p50": 205.5675,
+   "head_p50": 216.8175,
+   "base_p95": 231.51,
+   "head_p95": 249.933
+  },
+  "static_rules/optimization": {
+   "base_p50": 559.3924999999999,
+   "head_p50": 611.0775,
+   "base_p95": 655.907,
+   "head_p95": 686.993
+  },
+  "static_rules/semantic": {
+   "base_p50": 0.014,
+   "head_p50": 0.017,
+   "base_p95": 0.022,
+   "head_p95": 0.026
+  }
+ },
+ "latency_reading": "optimization p50 +52 to +55 ms and formal +11 to +22 ms, where the new Z3 calls run; estimation and semantic unchanged. One run per side, so magnitudes are approximate; the direction matches the added work.",
+ "command": "python -m cortex.evaluation.seed_genome.run --out <file>, base in a clean worktree at 0f4bc52, head at 5a38e0d, run sequentially"
+}

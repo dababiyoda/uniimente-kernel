@@ -1,0 +1,44 @@
+== Cold first solve: the thinking-budget tests assumed a first solve fits a short real deadline
+Observed: first focused run on a freshly restored container (process_api uptime about 9.5 min), port branch,
+carry of 81133d3 applied on ccd38a2. The rerun passed 188, skipped 3.
+
+E       AssertionError: assert ('UNKNOWN' == 'WORLD_UNVERIFIED'
+E
+E         - WORLD_UNVERIFIED
+E         + UNKNOWN)
+E       AssertionError: assert ('unmeasured' == 'unmeasured'
+E
+E           unmeasured and {'objective_value': 5.0, 'solution': {'x': 5, 'y': 0}, 'solver_status': 'OPTIMAL'} == None)
+FAILED tests/unit/test_cognition_thinking_budget.py::test_one_budget_covers_the_whole_compiled_decision
+FAILED tests/unit/test_cognition_thinking_budget.py::test_local_compute_is_measured_not_assumed_free
+2 failed, 186 passed, 3 skipped in 82.97s (0:01:22)
+
+== Simulation: greg/cognition/worker.py temporarily made the first worker start 2.5s slower (never committed)
+-- old tests (81133d3), test_local_compute_is_measured_not_assumed_free alone:
+E       AssertionError: assert ('unmeasured' == 'unmeasured'
+E
+E           unmeasured and {'objective_value': 5.0, 'solution': {'x': 5, 'y': 0}, 'solver_status': 'OPTIMAL'} == None)
+1 failed, 3 deselected in 3.60s
+-- old tests (81133d3), whole file: 4 passed in 11.32s (the slow start landed on the first
+   compile, whose 10s limit gives the solver 4.5s, so a 2.5s delay fitted)
+-- hardened tests, same test alone:
+1 passed, 3 deselected in 5.27s
+-- hardened tests, whole file:
+4 passed in 10.57s
+
+== Simulation: first worker start 5s slower
+-- old tests (81133d3), whole file:
+E       AssertionError: assert ('UNKNOWN' == 'WORLD_UNVERIFIED'
+E         + UNKNOWN)
+FAILED tests/unit/test_zz_coldsim_old_budget.py::test_one_budget_covers_the_whole_compiled_decision
+1 failed, 3 passed in 8.06s
+-- hardened tests, whole file:
+4 passed in 12.67s
+
+The old file ran under a temporary name, tests/unit/test_zz_coldsim_old_budget.py, beside the hardened one.
+Cause, as far as these runs show: each inner run's latency limit is a real solver deadline (45% of it),
+while the tests' budget clock is fake. A short real deadline does not always hold the first solver start
+after a container restore; the cortex then reports UNKNOWN (TIMEOUT), which is the correct result. The
+hardened tests give every inner run a real limit of 20s or more (9s or more for the solver) and
+keep the same budget logic on the fake clock. The restore-time slowness itself was not measured directly: it was gone by the time
+it was looked for (a fresh -I import of ortools and z3 took 0.35s after dropping the page cache).

@@ -80,7 +80,9 @@ async function refresh() {
   try {
     const status = (await api("/api/status")).data;
     const hb = status.background || {};
-    $("state").textContent = `${hb.state || "unknown"} · boots ${status.boots} · chain ${status.security.chain_verified ? "verified" : "BROKEN"}`;
+    $("state").textContent = `${hb.state || "unknown"} · boots ${status.boots} · chain ${status.security.chain_verified ? "verified" : "BROKEN"}` +
+      // the last record is still being written, or a crash tore it: device keys are refused until it is complete
+      (status.security.unacknowledged_tail ? " · last record INCOMPLETE (device keys refused; restart the body if it stays)" : "");
     $("goals").replaceChildren(...(status.missions || status.goals).map((g) => el("li", `${g.mission_id}: ${g.achieved ? "achieved" : g.closure}`)));
     // Persistent Goal Gravity goals (founder-signed GOAL commands): read-only here; the missions act.
     $("gravity").replaceChildren(...(status.gravity?.goals || []).map((g) =>

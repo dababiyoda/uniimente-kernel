@@ -1,15 +1,32 @@
-"""Each NODE_REVOKE / node-enrollment safeguard must fail a behavioral test when removed (scratch copy; live source
-never mutated)."""
+"""Each NODE_REVOKE / node-enrollment safeguard, and each safeguard that keeps a revoked device key from acting, must
+fail a behavioral test when removed (scratch copy; live source never mutated).
+
+The device-revocation mutants (2026-11-13, the review of 7474e937) carry their own test files as a fifth element: a
+revocation waiting in the inbox wins over a backdated device command (B2), greg serve refuses device keys while the
+ledger ends inside an incomplete record and shows that record to the founder (B3, B4), and the proof host's stop
+control gives an incomplete line a real chance to complete before it blocks (B1).
+
+The second fix round (2026-11-13, the re-check of 8f72ceff): a waiting revocation is read under the founder keys a
+waiting rotation ahead of it enrolls (N1), greg serve names an inbox file by when it arrived, not by the signer's own
+clock (N2), and a JSON document nested too deep is malformed input wherever GREG reads input it does not control (N3,
+its own test file). send_signed's arrival name is not mutated: the founder signs at the moment the file arrives, so
+the two names differ at most in width."""
 from pathlib import Path
 import os, shutil, subprocess, sys, tempfile
 ROOT=Path(__file__).resolve().parents[2]
 TESTS=['tests/unit/test_greg_node_revoke.py']
+REVOKING=['tests/unit/test_device_revocation_wins.py']
+LIVE=['tests/unit/test_live_ledger_readers.py']
+NESTED=['tests/unit/test_greg_nested_json_inputs.py']
 F='greg/founder.py'
 C='greg/compute.py'
 B='greg/body.py'
 R='greg/recovery.py'
 L='greg/lightcone.py'
 I='greg/cli.py'
+S='greg/remote.py'
+P='greg/phone/app.js'
+M='egregore/local_mission.py'
 MUTANTS=[
     # founder key only
     ('a device may never be delegated NODE_REVOKE',F,
@@ -93,6 +110,77 @@ MUTANTS=[
      '                    data = {"nodes": list(compute.node_states(b.journal).values())}'),
     ('the same signed revocation applied again returns its record',C,
      '        if event.payload.get("command_digest") == command_digest:\n            return {"node_id"','        if False:\n            return {"node_id"'),
+    # B2: a founder revocation waiting in the inbox wins, whatever order the device's command sorts in
+    ('a key a waiting revocation names still verifies',F,
+     '        if kid in self.revoking:\n            raise FounderAuthError(REVOKING)\n','',REVOKING),
+    ('the inbox pass reads no waiting revocation',B,
+     '        revoking = self.revoking(paths)\n','        revoking = frozenset()\n',REVOKING),
+    ('a direct apply reads no waiting revocation',B,
+     'verifier = self.verifier(revoking=self.revoking() if revoking is None else revoking)',
+     'verifier = self.verifier(revoking=revoking or ())',REVOKING),
+    ('a revocation that does not verify counts',B,
+     '            current.verify(envelope, now=now, expected_kind=kind)\n','',REVOKING),
+    # N1: a revocation signed by the key a waiting rotation enrolls
+    ('a waiting rotation is not read',B,
+     'envelope.get("kind") in ("DEVICE_REVOKE", "ROTATE_FOUNDER_KEY")','envelope.get("kind") in ("DEVICE_REVOKE",)',
+     REVOKING),
+    ('a waiting rotation does not change the keys a later revocation is read under',B,
+     '                keys.pop(next(iter(keys)))\n                keys[new_id] = new_hex\n','                pass\n',REVOKING),
+    ('a rotation to a malformed key raises out of the pre-read',B,
+     '            except (ValueError, FounderAuthError):   # apply refuses a rotation',
+     '            except ZeroDivisionError:   # apply refuses a rotation',REVOKING),
+    # N2: greg serve names a command by when it arrived
+    ("greg serve names a command by the signer's clock",S,
+     'name = f"{arrival_name(now)}-remote-',
+     'name = f"{envelope[\'issued_at\'].replace(\':\', \'\')}-remote-',REVOKING),
+    # N3: a document nested too deep is malformed input
+    ('the revocation pre-read raises on a nested file',B,
+     '        except (ValueError, RecursionError):      # a document nested too deep',
+     '        except ValueError:      # a document nested too deep',NESTED),
+    ('the intake raises on a nested file',B,
+     '                except (ValueError, RecursionError):  # nested too deep',
+     '                except ValueError:  # nested too deep',NESTED),
+    ('applying the inbox raises on a nested file',B,
+     '        except (FounderAuthError, MissionError, ValueError, RecursionError, KeyError, TypeError,',
+     '        except (FounderAuthError, MissionError, ValueError, KeyError, TypeError,',NESTED),
+    ("the morning report's command digests raise on a nested file",B,
+     '        except (OSError, ValueError, RecursionError):\n            continue\n    return out',
+     '        except (OSError, ValueError):\n            continue\n    return out',NESTED),
+    ('greg serve raises on a nested command',S,
+     'except (UnicodeDecodeError, ValueError, RecursionError):','except (UnicodeDecodeError, ValueError):',NESTED),
+    ('a revocation of more than exactly one key counts',B,
+     'if set(body) == {"device_key_id"} and isinstance(body["device_key_id"], str):',
+     'if isinstance(body.get("device_key_id"), str):',REVOKING),
+    # B3/B4: greg serve while the ledger ends inside an incomplete record (it may be the device's revocation)
+    ('greg serve reads no waiting revocation',S,
+     'revoking=pending_revocations(candidates, settled, now=self.now))','revoking=())',REVOKING),
+    ('greg serve never notes an incomplete last record',S,
+     '            self.torn = self.ledger.unacknowledged_tail is not None\n','            self.torn = False\n',REVOKING),
+    ('a device read is served while the last record is incomplete',S,
+     '                raise RemoteError(401, str(exc))\n            if reader.torn and principal != "founder":\n',
+     '                raise RemoteError(401, str(exc))\n            if False:\n',REVOKING),
+    ('a device command is taken while the last record is incomplete',S,
+     '                raise RemoteError(403, str(exc))\n            if reader.torn and principal != "founder":\n',
+     '                raise RemoteError(403, str(exc))\n            if False:\n',REVOKING),
+    ('the founder is refused too while the last record is incomplete',S,
+     '                raise RemoteError(401, str(exc))\n            if reader.torn and principal != "founder":\n',
+     '                raise RemoteError(401, str(exc))\n            if reader.torn:\n',REVOKING),
+    ("the founder's status hides an incomplete last record",B,
+     '"unacknowledged_tail": ledger.unacknowledged_tail and {','"unacknowledged_tail": None and {',REVOKING),
+    ('the phone page hides an incomplete last record',P,
+     '(status.security.unacknowledged_tail ? " · last record INCOMPLETE','(false ? " · last record INCOMPLETE',REVOKING),
+    # B1: the stop control's settle window
+    ('the settle window opens before the first read returns',M,
+     '            line, since = tail["offset"], time.monotonic()\n','            line, since = tail["offset"], began\n',LIVE),
+    ('a read that began inside the window decides the line will not finish',M,
+     '        elif began >= since + settle:','        elif time.monotonic() >= since + settle:',LIVE),
+    ('a new incomplete line gets no window of its own',M,
+     '        if tail["offset"] != line:','        if line is None:',LIVE),
+    ('the wait has no bound',M,'        if began >= first + limit:\n','        if False:\n',LIVE),
+    ('a line that never completes is judged only by the bound',M,
+     '        elif began >= since + settle:','        elif False:',LIVE),
+    ('an incomplete line is read as no stop',M,
+     '        if tail is None:\n            return False\n','        if True:\n            return False\n',LIVE),
 ]
 
 def purge(repo):
@@ -105,18 +193,18 @@ def main():
         repo=Path(temp)/'repo';scratch_tmp=Path(temp)/'tmp';scratch_tmp.mkdir()
         shutil.copytree(ROOT,repo,ignore=shutil.ignore_patterns('.git','__pycache__','.pytest_cache'))
         env={**os.environ,'PYTHONPATH':str(repo),'PYTHONDONTWRITEBYTECODE':'1','TMPDIR':str(scratch_tmp)}
-        for name,rel,old,new in MUTANTS:
+        for name,rel,old,new,*own in MUTANTS:
             path=repo/rel;original=path.read_text()
             if original.count(old)!=1:
                 print('STALE',name,flush=True);invalid+=1;continue
             path.write_text(original.replace(old,new));purge(repo)
-            run=subprocess.run([sys.executable,'-B','-m','pytest','-q','-x','-p','no:cacheprovider',*TESTS],
+            run=subprocess.run([sys.executable,'-B','-m','pytest','-q','-x','-p','no:cacheprovider',*(own[0] if own else TESTS)],
                 cwd=repo,env=env,capture_output=True,text=True,timeout=300)
             caught=run.returncode==1 and 'FAILED tests/' in run.stdout and 'ERROR collecting' not in run.stdout
             print('CAUGHT' if caught else 'SURVIVED_OR_INVALID',name,flush=True)
             invalid+=not caught;caught_count+=caught;path.write_text(original)
         purge(repo)
-        clean=subprocess.run([sys.executable,'-B','-m','pytest','-q','-p','no:cacheprovider',*TESTS],
+        clean=subprocess.run([sys.executable,'-B','-m','pytest','-q','-p','no:cacheprovider',*TESTS,*REVOKING,*LIVE,*NESTED],
             cwd=repo,env=env,capture_output=True,text=True,timeout=300)
         print('UNMUTATED', 'PASS' if clean.returncode==0 else 'FAIL',flush=True)
         invalid+=clean.returncode!=0

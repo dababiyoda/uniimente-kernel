@@ -43,9 +43,15 @@ def main():
     parser.add_argument("--ledger", required=True)
     parser.add_argument("--anchor", required=True)
     args = parser.parse_args()
-    ledger = EvidenceLedger(args.anchor, path=args.ledger, read_only=True)
+    # A research line may be appending to this ledger now, and the file can end inside the line it is writing (the
+    # kernel grows it a page at a time while it copies one write). That line was never acknowledged: it is left out
+    # (its checkpoint is counted on the next report) and named in the output, never read as corruption.
+    ledger = EvidenceLedger(args.anchor, path=args.ledger, read_only=True, tail="ignore")
     try:
-        print(json.dumps(report(ledger), indent=2))
+        out = report(ledger)
+        if ledger.unacknowledged_tail:
+            out["unacknowledged_tail"] = ledger.unacknowledged_tail
+        print(json.dumps(out, indent=2))
     finally:
         ledger.close()
 

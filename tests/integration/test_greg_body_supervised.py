@@ -58,9 +58,11 @@ def greg(home, *args, check=True):
 
 
 def history(home):
+    """Read-only view of a running body's ledger, as greg.body.observe opens it. The body appends each line with one
+    write(), but the kernel grows the file a page at a time, so a reader can find the line the body is still writing
+    cut at a page boundary. That line is not acknowledged yet: it is left out, never a refusal of the whole history
+    (CI job 131435015364 failed on it)."""
     config = json.loads((Path(home) / "body.json").read_text())
-    # The body may be appending while this polls: a line it is still writing (one record can take several writes)
-    # was never acknowledged and is left out, as greg.body.observe does, instead of failing the read.
     ledger = EvidenceLedger(config["constitution_hash"], str(Path(home) / "ledger.jsonl"), read_only=True,
                             tail="ignore")
     journal = Journal(EventSpine(ledger), actor="spiffe://uniimente.internal/greg/test-observer")

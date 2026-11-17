@@ -277,6 +277,97 @@ def device_delegations(journal: Journal) -> dict[str, dict]:
     return devices
 
 
+REVOCATION_FILE_BYTES = 64 * 1024     # a DEVICE_REVOKE envelope is well under 1 KiB; greg serve takes 64 KiB at most
+
+
+def revocation_candidates(paths) -> list[dict]:
+    """The DEVICE_REVOKE and ROTATE_FOUNDER_KEY envelopes among these inbox files, in file order, unverified: read
+    first, verified later by the caller (a rotation decides which founder key a later revocation must be signed by).
+
+    Read without following a link and without waiting on a FIFO; a file that is not one regular, bounded JSON
+    object is passed over (whoever applies the inbox reads it and refuses it)."""
+    found = []
+    for path in paths:
+        try:
+            fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+        except OSError:
+            continue
+        try:
+            if not stat.S_ISREG(os.fstat(fd).st_mode):
+                continue
+            raw = os.read(fd, REVOCATION_FILE_BYTES + 1)
+        except OSError:
+            continue
+        finally:
+            os.close(fd)
+        if len(raw) > REVOCATION_FILE_BYTES:
+            continue
+        try:
+            envelope = json.loads(raw)
+        except (ValueError, RecursionError):      # a document nested too deep raises RecursionError, not ValueError
+            continue
+        if isinstance(envelope, dict) and envelope.get("kind") in ("DEVICE_REVOKE", "ROTATE_FOUNDER_KEY"):
+            found.append(envelope)
+    return found
+
+
+def pending_revocations(candidates, verifier: FounderVerifier, *, now: datetime) -> frozenset[str]:
+    """Device keys revoked by a founder-signed DEVICE_REVOKE still waiting in the inbox: they sign nothing more.
+
+    Revocation wins. The inbox is applied in file-name order. Since 2026-11-13 a name starts with when the file
+    arrived (arrival_name); before, it started with the signer's own ``issued_at``, which a device sets itself, and a
+    file can still be placed in the inbox under any name by whoever writes there. A device being revoked could
+    therefore have its command applied before the founder's revocation, in the same pass over the inbox or on the
+    restart after a crash. So a
+    device key that such a revocation names is refused everywhere a command or a read is verified (the body's
+    ``apply``, greg serve), whatever the order, until the revocation is recorded and the key is simply gone.
+
+    Only a revocation counts, read under the founder keys as a waiting ROTATE_FOUNDER_KEY before it in file order will
+    have left them: those are the founder commands that change who may sign. The other commands that
+    only narrow (BODY_PAUSE, BODY_STOP, NODE_REVOKE, CAPABILITY_DETACH, a narrowing LIFECYCLE or GOAL_CONTROL, a
+    rejecting DECISION) change what the body does, never whether a device's signature verifies: a device command
+    applied before one of them was signed by a key still delegated, and which of the two comes first stays file-name
+    order, that is, arrival order. A device command that arrives after the founder's narrowing command in the same
+    pass is applied after it and can undo it, as it could in the next pass (a founder question: whether, within one
+    pass, the founder's narrowing command should prevail). Moving them ahead of device commands would let a delegated device's BODY_RESUME or LIFECYCLE
+    resume, applied after the founder's pause, undo it. Every founder command keeps file-name order as well: a
+    revocation moved ahead of the founder's own earlier DEVICE_ENROLL of the same key would be refused, or let that
+    enrollment in after it, and leave the key delegated.
+
+    A candidate counts only when it verifies (signature, body, lifetime, unspent nonce), which for DEVICE_REVOKE
+    means signed by the founder key (no device may sign it: DEVICE_KINDS), and names exactly one ``device_key_id``:
+    a file nobody signed changes who may sign nothing. One whose nonce is already spent was recorded, and the key it
+    names is already gone from the delegations."""
+    revoked = set()
+    # The founder keys as they will stand when each candidate is applied in this pass: a ROTATE_FOUNDER_KEY earlier in
+    # file order that verifies is applied first, as apply applies it (the first enrolled key out, the new key in), so
+    # a revocation signed by the key it enrolls verifies then. Read here the same way, or such a revocation counts for
+    # nothing here and a device's command is applied before it (re-check of 8f72ceff, N1).
+    keys = dict(verifier.enrolled)
+    for envelope in candidates:
+        current = FounderVerifier(body_id=verifier.body_id, enrolled=keys, seen_nonce=verifier.seen_nonce,
+                                  devices=verifier.devices)
+        kind = envelope.get("kind")
+        try:
+            current.verify(envelope, now=now, expected_kind=kind)
+            principal = current.principal(envelope, now=now)
+        except Exception:     # untrusted bytes: whatever fails to verify counts for nothing (apply refuses it)
+            continue
+        body = envelope["body"]
+        if kind == "ROTATE_FOUNDER_KEY":
+            new_hex = body.get("new_public_key") if isinstance(body, dict) else None
+            try:
+                new_id = key_id(new_hex) if isinstance(new_hex, str) else None
+            except (ValueError, FounderAuthError):   # apply refuses a rotation to a malformed key; keys stay as they are
+                new_id = None
+            if principal == "founder" and keys and new_id is not None:
+                keys.pop(next(iter(keys)))
+                keys[new_id] = new_hex
+        elif set(body) == {"device_key_id"} and isinstance(body["device_key_id"], str):
+            revoked.add(body["device_key_id"])
+    return frozenset(revoked)
+
+
 # A founder-signed GOAL or GOAL_CONTROL the body verified and then rejected (it would widen authority, it
 # duplicates a goal, ...) consumes its nonce: re-dropping the retained file later, after the state that
 # refused it changed (a revoke, a supersede), must not apply it without a new signature.
@@ -627,13 +718,22 @@ class Body:
     def _seen_nonce(self, nonce: str) -> bool:
         return nonce in consumed_nonces(self.journal)
 
-    def verifier(self) -> FounderVerifier:
+    def verifier(self, *, revoking=()) -> FounderVerifier:
         return FounderVerifier(body_id=self.config["body_id"], enrolled=self.enrolled_keys(),
-                               seen_nonce=self._seen_nonce, devices=self.device_keys())
+                               seen_nonce=self._seen_nonce, devices=self.device_keys(), revoking=revoking)
+
+    def revoking(self, paths=None) -> frozenset[str]:
+        """Device keys a verified founder DEVICE_REVOKE waiting in the inbox revokes (pending_revocations)."""
+        paths = sorted(self.layout.inbox.glob("*.json")) if paths is None else paths
+        candidates = revocation_candidates(paths)
+        return pending_revocations(candidates, self.verifier(), now=self.clock()) if candidates else frozenset()
 
     # -- commands ------------------------------------------------------------------
-    def apply(self, envelope: dict, *, channel: str = "direct") -> dict:
-        """Verify one signed founder command and apply it (idempotent on replay of the same file)."""
+    def apply(self, envelope: dict, *, channel: str = "direct", revoking=None) -> dict:
+        """Verify one signed founder command and apply it (idempotent on replay of the same file).
+
+        ``revoking``: the device keys revoked by founder revocations still waiting in the inbox, as read once for a
+        pass over the inbox; read from the inbox now when not given. A command such a key signed is refused."""
         digest = sha256_json(envelope)
         # Only a record carrying this very envelope and its nonce, as this method writes one, makes a replay of the
         # file a no-op: a bare record naming the digest cannot silently drop the founder's command.
@@ -650,7 +750,7 @@ class Body:
                                        "for it; sign your answer again")
             return {"status": "ALREADY_APPLIED", "digest": digest}
         now = self.clock()
-        verifier = self.verifier()
+        verifier = self.verifier(revoking=self.revoking() if revoking is None else revoking)
         env = verifier.verify(envelope, now=now)
         principal = verifier.principal(env, now=now)
         kind, body = env["kind"], env["body"]
@@ -878,13 +978,20 @@ class Body:
         return bool(state) and state[-1] == "greg.body.paused"
 
     def ingest_inbox(self, *, only_kind: str | None = None) -> list[dict]:
+        """Apply the signed commands waiting in the inbox, in file-name order (``only_kind``: only that kind).
+
+        Revocation wins over that order: the device keys every verified founder DEVICE_REVOKE among these files
+        revokes are read before any file is applied, and a command one of them signed is refused wherever its file
+        sorts, before or after the revocation (pending_revocations says why, and why only a revocation counts)."""
         results = []
         stuck = self.__dict__.setdefault("_stuck", set())   # files this process could neither ingest nor set aside
-        for path in sorted(self.layout.inbox.glob("*.json")):
+        paths = sorted(self.layout.inbox.glob("*.json"))
+        revoking = self.revoking(paths)
+        for path in paths:
             if path.name in stuck:
                 continue
             try:
-                outcome = self._ingest_one(path, only_kind=only_kind)
+                outcome = self._ingest_one(path, only_kind=only_kind, revoking=revoking)
             except Exception as exc:   # anywhere in the file's handling, its rejection path included
                 if not self.paused():
                     raise     # a running body exits on it: its supervisor restarts it and the breaker counts the boot
@@ -921,7 +1028,7 @@ class Body:
             if why is None:
                 try:
                     item = json.loads(raw)
-                except ValueError:
+                except (ValueError, RecursionError):  # nested too deep is not JSON GREG can read either
                     why = "not JSON"
             if why is None:
                 why = _intake_shape(item)
@@ -953,14 +1060,14 @@ class Body:
             pass   # the skip stands even when the ledger cannot take the record; the heartbeat still shows HELD
         return {"status": "SKIPPED", "file": path.name, "reason": error}
 
-    def _ingest_one(self, path: Path, *, only_kind: str | None = None) -> dict | None:
+    def _ingest_one(self, path: Path, *, only_kind: str | None = None, revoking=frozenset()) -> dict | None:
         envelope = None
         try:
             envelope = json.loads(path.read_text())
             if only_kind is not None and (not isinstance(envelope, dict) or envelope.get("kind") != only_kind):
                 return None
-            outcome = self.apply(envelope, channel="inbox")
-        except (FounderAuthError, MissionError, ValueError, KeyError, TypeError,
+            outcome = self.apply(envelope, channel="inbox", revoking=revoking)
+        except (FounderAuthError, MissionError, ValueError, RecursionError, KeyError, TypeError,
                 tribunal.CritiqueError) as exc:
             raw = path.read_bytes()
             consumed = getattr(exc, "consumed", None)
@@ -1484,13 +1591,25 @@ def drop_intake(home: str | Path, *, source: str, content: str, channel: str) ->
     return target
 
 
+def arrival_name(at: datetime) -> str:
+    """The start of an inbox file's name: when it reached the inbox, by this machine's clock, in a fixed width.
+
+    The body applies its inbox in file-name order. Until 2026-11-13 a name started with the signer's own
+    ``issued_at``, which a delegated device sets itself (from seven days back to five minutes ahead), so a device chose
+    its place against the founder's commands: a forward-dated BODY_RESUME was applied after the founder's later
+    BODY_PAUSE, and a backdated approving DECISION before the founder's earlier reject (re-check of 8f72ceff, N2).
+    Named by arrival, commands are applied in the order they reached the body. Microseconds, always written, keep
+    names of one second in order as text."""
+    return at.astimezone(timezone.utc).strftime("%Y-%m-%dT%H%M%S.%fZ")
+
+
 def send_signed(home: str | Path, key, kind: str, body: dict, *, ttl: timedelta = timedelta(hours=24)) -> Path:
     """Sign one founder command and drop it into the body inbox (any interface, then close)."""
     from greg.founder import sign_command
     layout = Layout(home)
     config = json.loads(layout.config.read_text())
     envelope = sign_command(key, kind, body, body_id=config["body_id"], ttl=ttl)
-    target = layout.inbox / f"{envelope['issued_at'].replace(':', '')}-{kind.lower()}-{envelope['nonce'][:8]}.json"
+    target = layout.inbox / f"{arrival_name(datetime.now(timezone.utc))}-{kind.lower()}-{envelope['nonce'][:8]}.json"
     temporary = target.with_suffix(".tmp")
     temporary.write_text(json.dumps(envelope, indent=1))
     temporary.replace(target)
@@ -1504,7 +1623,7 @@ def inbox_digests(layout: "Layout") -> set[str]:
     for path in layout.inbox.glob("*.json"):
         try:
             out.add(sha256_json(json.loads(path.read_text())))
-        except (OSError, ValueError):
+        except (OSError, ValueError, RecursionError):
             continue
     return out
 
@@ -1545,6 +1664,11 @@ def _attach_waiting(journal, achieved: set) -> list[dict]:
                                                           "capability_id": p["capability_id"],
                                                           "mission_id": mission_id, "why": p.get("why")}
     return list(waiting.values())
+
+
+UNACKNOWLEDGED_TAIL = ("history ends with a record that is not complete: one being written now, or one a crash tore "
+                       "(the body sets it aside when it next starts); left out of everything shown here, and until it "
+                       "is complete greg serve refuses device keys")
 
 
 def status(home: str | Path) -> dict:
@@ -1590,6 +1714,11 @@ def status(home: str | Path) -> dict:
             "body_id": config["body_id"], "version": config["version"],
             "background": heartbeat, "boots": len(boots),
             "security": {"founder_keys_enrolled": founder, "chain_verified": ok, "chain": chain,
+                         # History read here ends with a line that was never completed: one the body is writing
+                         # now, or one torn by a crash (the body sets it aside on its next start). Until it is
+                         # complete greg serve refuses every device key: that line may be its revocation.
+                         "unacknowledged_tail": ledger.unacknowledged_tail and {
+                             **ledger.unacknowledged_tail, "meaning": UNACKNOWLEDGED_TAIL},
                          "devices": [{k: d[k] for k in ("device_key_id", "label", "kinds", "expires_at")}
                                      for d in device_delegations(journal).values()],
                          # what each revocation voided, and the review a suspected compromise opened

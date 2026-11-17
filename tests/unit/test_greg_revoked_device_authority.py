@@ -110,16 +110,16 @@ def asked(world, body, mid="m:gated", **extra):
 # -- a. unused authority authorizes nothing from the revocation on --------------------------------------------------
 
 def test_an_approval_from_a_device_revoked_before_the_act_runs_authorizes_nothing(world):
-    """The reproduction. The phone approves; the founder revokes the phone; both reach the body before its next
-    turn. On 8d205324 the write ran, with a grant marked founder-approved."""
+    """The reproduction. The phone approves and its answer is recorded; the founder revokes the phone before the
+    body's next turn acts on it. On 8d205324 the write ran, with a grant marked founder-approved. (The reproduction
+    first dropped both into the inbox together; since #313 a waiting revocation refuses the phone's approval there,
+    test_a_devices_approval_waiting_beside_the_founders_revocation_is_refused, so the answer is applied first here.)"""
     with world.body() as body:
         phone = world.enroll(body, "phone")
         note, ask = asked(world, body)
         decision = world.approve(ask["request_id"], key=phone)
-        drop(world.home, decision, "a-decision.json")
-        drop(world.home, world.revoke("phone"), "b-revoke.json")
-        turn = world.tick(body)
-        assert [c["status"] for c in turn["commands"]] == ["APPLIED", "APPLIED"]
+        assert body.apply(decision)["status"] == "APPLIED"        # recorded; the engine acts on it next turn
+        body.apply(world.revoke("phone"))
         world.tick(body, 3)
         assert not note.exists() and actions(body, "m:gated") == []
         assert not [r for r in body.ledger.by_type("event") if r.payload.get("type") == "greg.authority.grant_issued"
@@ -164,6 +164,22 @@ def test_the_founder_or_another_enrolled_device_answers_the_new_ask(world, who):
         assert [a["status"] for a in actions(body, "m:gated")] == ["DONE"]
         assert body.engine.book.missions["m:gated"].status == "ACHIEVED"
 
+
+
+def test_a_devices_approval_waiting_beside_the_founders_revocation_is_refused(world):
+    """The phone's approval and the founder's revocation of the phone both wait in the inbox. A key that a waiting
+    revocation names verifies nothing (#313): the approval is refused, never recorded, nothing runs and nothing needs
+    voiding; the founder's question stays open."""
+    with world.body() as body:
+        phone = world.enroll(body, "phone")
+        note, ask = asked(world, body)
+        drop(world.home, world.approve(ask["request_id"], key=phone), "a-decision.json")
+        drop(world.home, world.revoke("phone"), "b-revoke.json")
+        turn = world.tick(body)
+        assert [c["status"] for c in turn["commands"]] == ["REJECTED", "APPLIED"]
+        world.tick(body, 3)
+        assert not note.exists() and actions(body, "m:gated") == [] and trail(body) == []
+        assert [r["request_id"] for r in open_asks(body, "m:gated")] == [ask["request_id"]]
 
 def test_the_fold_alone_voids_the_approval_whatever_else_was_written(world, monkeypatch):
     """The rule is derived from the device.revoked record itself: with the trail never written, the scope is gone."""
@@ -604,8 +620,8 @@ def test_an_unrecorded_reconciliation_answer_of_a_revoked_device_settles_nothing
     with world.body() as body:
         phone = world.enroll(body, "phone")
         note, ask, calls = uncertain(world, body)
-        drop(world.home, world.approve(ask["request_id"], key=phone, answer="reconcile_not_executed"), "a.json")
-        drop(world.home, world.revoke("phone"), "b.json")
+        body.apply(world.approve(ask["request_id"], key=phone, answer="reconcile_not_executed"))    # recorded
+        body.apply(world.revoke("phone"))                            # before the engine acts on it
         world.tick(body, 3)
         assert len(calls) == 1 and [a["status"] for a in actions(body, "m:uncertain")] == ["UNCERTAIN"]
         [again] = open_asks(body, "m:uncertain", kind="RECONCILIATION")
@@ -632,8 +648,8 @@ def test_a_voided_reconciliation_is_asked_again_before_the_mission_may_close(wor
         phone = world.enroll(body, "phone")
         note, ask, calls = uncertain(world, body, after_effect=True)
         assert note.read_text() == "ok"
-        drop(world.home, world.approve(ask["request_id"], key=phone, answer="reconcile_executed"), "a.json")
-        drop(world.home, world.revoke("phone"), "b.json")
+        body.apply(world.approve(ask["request_id"], key=phone, answer="reconcile_executed"))        # recorded
+        body.apply(world.revoke("phone"))                            # before the engine acts on it
         world.tick(body, 3)
         m = body.engine.book.missions["m:uncertain"]
         assert m.status == "ACTIVE" and [a["status"] for a in actions(body, "m:uncertain")] == ["UNCERTAIN"]
@@ -651,8 +667,8 @@ def test_a_voided_reconciliation_of_an_ended_mission_is_not_recorded(world):
         phone = world.enroll(body, "phone")
         note, ask, calls = uncertain(world, body)
         body.apply(world.sign("LIFECYCLE", {"mission_id": "m:uncertain", "state": "ABANDONED", "reason": "stop"}))
-        drop(world.home, world.approve(ask["request_id"], key=phone, answer="reconcile_executed"), "a.json")
-        drop(world.home, world.revoke("phone"), "b.json")
+        body.apply(world.approve(ask["request_id"], key=phone, answer="reconcile_executed"))        # recorded
+        body.apply(world.revoke("phone"))                            # before the engine acts on it
         world.tick(body, 3)
         assert [a["status"] for a in actions(body, "m:uncertain")] == ["UNCERTAIN"]
         assert not [a for a in actions(body, "m:uncertain") if a.get("route") == "founder_reconciliation"]

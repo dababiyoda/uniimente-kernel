@@ -971,10 +971,9 @@ def achievement_verified(end: dict) -> dict:
     return own[0]
 
 
-@pytest.mark.xfail(reason="greg/metrics.py:61 takes the mission's latest appraisal whatever closure it judged: the "
-                          "achievement was appraised VERIFIED, and `greg vepmc` reads the failure closure's verdict",
-                   **GAP)
-def test_7_gap_vepmc_reads_the_achievements_own_appraisal(story):
+# This test and four below were strict-xfail gaps until #310, which makes each reader key on the closure it
+# means; the routing gap between them stays open (#310 C4, a founder question).
+def test_7_vepmc_reads_the_achievements_own_appraisal(story):
     end = story.at["end"]
     achievement_verified(end)
     [row] = [m for m in end["vepmc"]["missions"] if m["mission_id"] == MID]
@@ -982,10 +981,7 @@ def test_7_gap_vepmc_reads_the_achievements_own_appraisal(story):
     assert row["appraised_verified"] is True, row
 
 
-@pytest.mark.xfail(reason="greg/acceptance.py:124 takes the mission's latest appraisal whatever closure it judged: "
-                          "the First Mission closed and its own appraisal is VERIFIED, and the report says NOT_YET",
-                   **GAP)
-def test_7_gap_the_acceptance_report_reads_the_achievements_own_appraisal(story):
+def test_7_the_acceptance_report_reads_the_achievements_own_appraisal(story):
     end = story.at["end"]
     achievement_verified(end)
     properties = {p["property"]: p["status"] for p in end["acceptance"]["properties"]}
@@ -1002,25 +998,18 @@ def test_7_gap_routing_credits_actions_under_the_closure_that_covered_them(story
     assert [(rows[c]["verified"], rows[c]["refuted"]) for c in ("artifact.store", "fs.write")] == [(1, 0), (2, 0)], rows
 
 
-@pytest.mark.xfail(reason="greg/sop.py:73 verified_appraisals: 'Latest appraisal wins', whatever closure it judged; "
-                          "the mission's VERIFIED achievement is not a verified outcome for SOP learning", **GAP)
-def test_7_gap_sop_reads_the_achievements_own_appraisal(story):
+def test_7_sop_reads_the_achievements_own_appraisal(story):
     end = story.at["end"]
     require(end["sop_trend"] == {"procedures": []}, "`greg sop trend`: no procedure was learned or run here")
     assert end["functions"]["sop.verified_appraisals"] == achievement_verified(end)["_id"]
 
 
-@pytest.mark.xfail(reason="greg/cognition/settlement.py:193 _settling_appraisals keeps the mission's latest "
-                          "appraisal and drops it on any other verdict, whatever closure that verdict judged", **GAP)
-def test_7_gap_settlement_settling_appraisal_is_the_achievements_own(story):
+def test_7_settlement_settling_appraisal_is_the_achievements_own(story):
     end = story.at["end"]
     assert end["functions"]["settlement._settling_appraisals"] == achievement_verified(end)["_id"]
 
 
-@pytest.mark.xfail(reason="foundry/systems/observability.py:56 gives an appraisal span its verdict and no closure: "
-                          "`greg foundry trace` shows two verdicts for the mission and not which closure each judged",
-                   **GAP)
-def test_7_gap_the_trace_says_which_closure_each_verdict_judged(story):
+def test_7_the_trace_says_which_closure_each_verdict_judged(story):
     end = story.at["end"]
     spans = [s for s in end["trace"]["missions"][MID]["spans"] if s["kind"] == "mission.appraised"]
     require([s["event_id"] for s in spans] == [a["_id"] for a in end["appraised"]], "one span per appraisal record")

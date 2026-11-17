@@ -21,6 +21,7 @@ import time
 # reserve); this reserve timed out none, as did a worker that never runs the certificate.
 STARTED = time.monotonic()
 VERIFY_RESERVE_SECONDS = 0.25
+MAX_STDIN_REQUEST = 4 * 1024 * 1024
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
@@ -96,7 +97,14 @@ class _NoSelectedModel:
 
 def main():
     emit = _result_channel()
-    family, request_json = sys.argv[1:]
+    if len(sys.argv) == 2:
+        # numeric solve or verify: the request arrives on stdin, bounded (data up to 1 MiB plus an answer)
+        family, request_json = sys.argv[1], sys.stdin.read(MAX_STDIN_REQUEST + 1)
+        if len(request_json) > MAX_STDIN_REQUEST:
+            emit(canonical({"error": "MODEL_INVALID", "detail": "request on stdin exceeds 4 MiB"}))
+            return
+    else:
+        family, request_json = sys.argv[1:]
     request = json.loads(request_json)
     if family == "__cortex__":
         try:

@@ -1,0 +1,147 @@
+{
+ "family": "basal_token_bucket",
+ "partition": "dev",
+ "status_if_heldout_matched": "EXPERIMENTAL",
+ "arms": {
+  "candidate": {
+   "correct": 10,
+   "wrong": 0,
+   "abstain": 0,
+   "mean_quality": 0.920363,
+   "median_seconds": 0.000317
+  },
+  "baseline": {
+   "correct": 10,
+   "wrong": 0,
+   "abstain": 0,
+   "mean_quality": 0.667501,
+   "median_seconds": 0.000159
+  },
+  "competitor": {
+   "correct": 10,
+   "wrong": 0,
+   "abstain": 0,
+   "mean_quality": 0.874269,
+   "median_seconds": 0.001031
+  }
+ },
+ "vs_baseline": {
+  "wins": 8,
+  "losses": 2,
+  "ties": 0,
+  "p_better": 0.054688,
+  "p_worse": 0.989258
+ },
+ "vs_competitor": {
+  "wins": 5,
+  "losses": 5,
+  "ties": 0,
+  "p_better": 0.623047,
+  "p_worse": 0.623047
+ },
+ "subregions": {
+  "heavy_overload": {
+   "n": 3,
+   "vs_baseline": {
+    "wins": 3,
+    "losses": 0,
+    "ties": 0,
+    "p_better": 0.125,
+    "p_worse": 1.0
+   },
+   "vs_competitor": {
+    "wins": 1,
+    "losses": 2,
+    "ties": 0,
+    "p_better": 0.875,
+    "p_worse": 0.5
+   }
+  },
+  "overload": {
+   "n": 5,
+   "vs_baseline": {
+    "wins": 5,
+    "losses": 0,
+    "ties": 0,
+    "p_better": 0.03125,
+    "p_worse": 1.0
+   },
+   "vs_competitor": {
+    "wins": 4,
+    "losses": 1,
+    "ties": 0,
+    "p_better": 0.1875,
+    "p_worse": 0.96875
+   }
+  },
+  "underload": {
+   "n": 2,
+   "vs_baseline": {
+    "wins": 0,
+    "losses": 2,
+    "ties": 0,
+    "p_better": 1.0,
+    "p_worse": 0.25
+   },
+   "vs_competitor": {
+    "wins": 0,
+    "losses": 2,
+    "ties": 0,
+    "p_better": 1.0,
+    "p_worse": 0.25
+   }
+  }
+ },
+ "diagnostics": {
+  "median_cpu_seconds": {
+   "candidate": 0.000321,
+   "baseline": 0.000158,
+   "competitor": 0.001007
+  },
+  "note": "reported diagnostics, never inputs to the admission decision: the rule decides on wall-clock medians only. cpu_seconds is the calling thread's CPU time per call (time.thread_time; work on other threads or processes is not in it); diagnostics.median_cpu_seconds is its median per arm; host_load is the host's load at the start and end of the run"
+ },
+ "host_load": {
+  "start": {
+   "at": "2026-10-21T18:06:00.241614+00:00",
+   "loadavg": {
+    "1m": 3.16,
+    "5m": 2.68,
+    "15m": 2.18,
+    "runnable": 3,
+    "entities": 120
+   },
+   "cpu_affinity": [
+    0
+   ],
+   "cpu_count": 4,
+   "other_python_processes": {
+    "count": 2,
+    "by_state": {
+     "R": 2
+    },
+    "running_last_on_our_cpus": 0
+   }
+  },
+  "end": {
+   "at": "2026-10-21T18:06:11.194363+00:00",
+   "loadavg": {
+    "1m": 3.19,
+    "5m": 2.71,
+    "15m": 2.2,
+    "runnable": 3,
+    "entities": 117
+   },
+   "cpu_affinity": [
+    0
+   ],
+   "cpu_count": 4,
+   "other_python_processes": {
+    "count": 2,
+    "by_state": {
+     "R": 2
+    },
+    "running_last_on_our_cpus": 0
+   }
+  }
+ }
+}

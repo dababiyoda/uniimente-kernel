@@ -1,0 +1,166 @@
+=== latency_budget=1.5
+{
+ "journal_record": {
+  "seq": 13,
+  "type": "receipt"
+ },
+ "state": "WORLD_UNVERIFIED",
+ "declared_latency_budget_s": 1.5,
+ "compile_latency_s": 1.0411,
+ "sensitivity_run": [
+  "constraints"
+ ],
+ "sensitivity_not_run": {
+  "objective": "STOP: the slowest measured step (0.603s) exceeds the remaining budget (0.459s); an optional step is not started without room to finish",
+  "variables": "STOP: the slowest measured step (0.603s) exceeds the remaining budget (0.459s); an optional step is not started without room to finish"
+ },
+ "budget": {
+  "total_s": 1.5,
+  "total_source": "declared latency_budget",
+  "spent_s": 1.0407,
+  "measured_step_s": {
+   "count": 2,
+   "p50": 0.6034,
+   "max": 0.6034,
+   "note": "wall time per inner run, solver and verifier included"
+  },
+  "cpu_s": 1.0148,
+  "stopped": [
+   {
+    "step": "sensitivity:objective",
+    "reason": "STOP: the slowest measured step (0.603s) exceeds the remaining budget (0.459s); an optional step is not started without room to finish"
+   },
+   {
+    "step": "sensitivity:variables",
+    "reason": "STOP: the slowest measured step (0.603s) exceeds the remaining budget (0.459s); an optional step is not started without room to finish"
+   }
+  ]
+ },
+ "steps": [
+  {
+   "step": "answer",
+   "required": true,
+   "decision": "RUN",
+   "remaining_s": 1.4834,
+   "limit_s": 1.4834,
+   "spent_s": 0.6034,
+   "cost_range_s": null
+  },
+  {
+   "step": "sensitivity:constraints",
+   "required": false,
+   "decision": "RUN",
+   "remaining_s": 0.8799,
+   "limit_s": 0.8799,
+   "spent_s": 0.4205,
+   "cost_range_s": [
+    0.6034,
+    0.6034
+   ]
+  },
+  {
+   "step": "sensitivity:objective",
+   "required": false,
+   "decision": "STOP",
+   "remaining_s": 0.4593,
+   "cost_range_s": [
+    0.4205,
+    0.6034
+   ],
+   "reason": "STOP: the slowest measured step (0.603s) exceeds the remaining budget (0.459s); an optional step is not started without room to finish"
+  },
+  {
+   "step": "sensitivity:variables",
+   "required": false,
+   "decision": "STOP",
+   "remaining_s": 0.4593,
+   "cost_range_s": [
+    0.4205,
+    0.6034
+   ],
+   "reason": "STOP: the slowest measured step (0.603s) exceeds the remaining budget (0.459s); an optional step is not started without room to finish"
+  }
+ ],
+ "dissent_about_budget": [
+  "sensitivity: objective, variables not tested within the thinking budget; the answer's robustness to them is unknown"
+ ],
+ "authority_created": false
+}
+=== latency_budget=30
+{
+ "journal_record": {
+  "seq": 13,
+  "type": "receipt"
+ },
+ "state": "WORLD_UNVERIFIED",
+ "declared_latency_budget_s": 30.0,
+ "compile_latency_s": 2.704,
+ "sensitivity_run": [
+  "constraints",
+  "objective",
+  "variables"
+ ],
+ "sensitivity_not_run": {},
+ "budget": {
+  "total_s": 30.0,
+  "total_source": "declared latency_budget",
+  "spent_s": 2.7036,
+  "measured_step_s": {
+   "count": 4,
+   "p50": 0.6813,
+   "max": 0.711,
+   "note": "wall time per inner run, solver and verifier included"
+  },
+  "cpu_s": 2.6231,
+  "stopped": []
+ },
+ "steps": [
+  {
+   "step": "answer",
+   "required": true,
+   "decision": "RUN",
+   "remaining_s": 29.9759,
+   "limit_s": 29.9759,
+   "spent_s": 0.711,
+   "cost_range_s": null
+  },
+  {
+   "step": "sensitivity:constraints",
+   "required": false,
+   "decision": "RUN",
+   "remaining_s": 29.2648,
+   "limit_s": 29.2648,
+   "spent_s": 0.6813,
+   "cost_range_s": [
+    0.711,
+    0.711
+   ]
+  },
+  {
+   "step": "sensitivity:objective",
+   "required": false,
+   "decision": "RUN",
+   "remaining_s": 28.5834,
+   "limit_s": 28.5834,
+   "spent_s": 0.654,
+   "cost_range_s": [
+    0.6813,
+    0.711
+   ]
+  },
+  {
+   "step": "sensitivity:variables",
+   "required": false,
+   "decision": "RUN",
+   "remaining_s": 27.9293,
+   "limit_s": 27.9293,
+   "spent_s": 0.6328,
+   "cost_range_s": [
+    0.654,
+    0.711
+   ]
+  }
+ ],
+ "dissent_about_budget": [],
+ "authority_created": false
+}

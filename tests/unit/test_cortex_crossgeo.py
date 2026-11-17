@@ -203,9 +203,16 @@ def test_adversarial_suite_covers_the_directive_list():
                 "non_identifiable", "missing_human_authority", "unavailable_model", "resource_exhaustion",
                 "scalar_score_harms_protected_party"}
     assert required <= codes, sorted(required - codes)
+    import ast
     for name, ref in SYSTEM_LEVEL.items():
-        path = ref.split("::")[0]
+        path, *nodes = ref.split("::")
         assert (ROOT / path).exists(), (name, ref)
+        # Resolve the named test itself, so a renamed or deleted test cannot leave a case silently uncovered.
+        scope = ast.parse((ROOT / path).read_text()).body
+        for node in nodes:
+            match = [n for n in scope if isinstance(n, (ast.FunctionDef, ast.ClassDef)) and n.name == node]
+            assert match, (name, ref)
+            scope = match[0].body
 
 
 def test_arms_never_receive_gold_stratum_or_family(monkeypatch):

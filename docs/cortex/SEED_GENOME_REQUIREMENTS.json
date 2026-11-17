@@ -14,9 +14,10 @@
       "section": 1,
       "status": "active",
       "implementation_refs": [
-        "greg/path.json"
+        "greg/path.json",
+        "docs/intent/sources/GREG-SEED-GENOME-DIRECTIVE-REISSUE-2026-10-13-source.md"
       ],
-      "unresolved": "Kernel and PR137/141 inspected. Organs, raw Project originals and real devices not refreshed."
+      "unresolved": "Kernel and PR137/141 inspected. Organs, raw Project originals and real devices not refreshed. Re-issued byte-identically on 2026-10-13 with one new opening line; position refreshed against #158 at 5c8dd23 and #161."
     },
     {
       "section": 2,
@@ -50,9 +51,11 @@
       "implementation_refs": [
         "cortex/seed/contracts.py",
         "cortex/seed/projections.py",
-        "capabilities/genome.py"
+        "capabilities/genome.py",
+        "greg/cognition/characterize.py",
+        "tests/unit/test_cognition_characterize.py"
       ],
-      "unresolved": "Strict wire/profile extensions and canonical rich geometry projections exist. Missing harm likelihood, parties and calibration stay unknown; independent assessment remains unavailable."
+      "unresolved": "Strict wire/profile extensions and canonical rich geometry projections exist. The characterization harness measures responsiveness, error correction against self-consistent corruptions, a problem-space size ladder and rename/reorder invariance per family on synthetic native workloads, with Wilson intervals and verifier-independence evidence read from receipts; memory depth, persistence, prediction horizon, adaptability, cooperation and higher-scale coherence are declared not applicable with pointers. Missing harm likelihood, parties and calibration stay unknown; independent assessment remains unavailable."
     },
     {
       "section": 6,
@@ -83,9 +86,11 @@
       "status": "active",
       "implementation_refs": [
         "cortex/seed/verify.py",
-        "greg/cognition/seed_path.py"
+        "greg/cognition/seed_path.py",
+        "greg/cognition/disclosure.py",
+        "tests/unit/test_cognition_disclosure.py"
       ],
-      "unresolved": "Rich typed computation receipts carry evidence, geometry, assumptions, uncertainty, calibration limits and contribution. External acceptance/appeal and unimplemented proof jurisdictions remain partial."
+      "unresolved": "Rich typed computation receipts carry evidence, geometry, assumptions, uncertainty, calibration limits and contribution. Selective-disclosure evidence packages (RFC 9901 salted-hash disclosures, same-input completeness, custody statement, real action references, appended institutional responses) are built from retained receipts and exported read-only by `greg cognition package`; none was sent and no external acceptance is claimed. Packages are unsigned (no issuer key; attribution rests on the channel) and do not prove ledger inclusion: record hashes in the linear chain cover whole payloads, so membership needs the records themselves. Recipient-checkable inclusion without disclosure needs write-time field commitments plus an anchored Merkle accumulator. Unimplemented proof jurisdictions remain partial."
     },
     {
       "section": 10,
@@ -109,9 +114,13 @@
       "section": 12,
       "status": "active",
       "implementation_refs": [
-        "greg/cognition/seed_path.py"
+        "greg/cognition/seed_path.py",
+        "greg/cognition/budget.py",
+        "greg/cognition/compiler.py",
+        "greg/cognition/cortex.py",
+        "tests/unit/test_cognition_thinking_budget.py"
       ],
-      "unresolved": "Wall deadline and mandatory verifier reserve implemented; decision-specific VOI and measured energy are not implemented."
+      "unresolved": "A thinking-budget controller (budget.Controller) governs the compile path. One declared latency_budget, or a labelled 20 s default, covers every inner run: the answer, the premises check and each sensitivity re-run. Each inner run keeps its own mandatory verification reserve. Required steps are never value-gated; below the minimum step a required step is refused with BUDGET_EXHAUSTED, and the result narrows (ABSTAIN, or premises UNDECIDED). An optional re-run starts only when the slowest measured step fits in what remains, and an input it cannot afford is reported as untested. Every run and stop, with its reason, remaining budget and measured cost range, is kept in resource_use.budget. Cortex receipts record measured CPU seconds (the calling thread plus the solver and verifier processes). Open: peak memory per run and energy stay unmeasured; budget.optional_step, the value-priced variant, still has no runtime caller, because no optional step yet states its decision value in the unit of its cost; the cortex-problem and composition routes take the declared budget as their own ceiling but are not split into steps; founder-attention escalation keeps the existing ask contract. Value of information also exists as the information-family method and a Competency Compiler operator. The frozen evaluations run at their freeze commits, so this change alters no recorded result."
     },
     {
       "section": 13,
@@ -135,9 +144,10 @@
       "status": "active",
       "implementation_refs": [
         "cortex/evaluation/seed_genome/freeze-v3.json",
-        "docs/cortex/evidence/seed-genome/results-v3.json"
+        "docs/cortex/evidence/seed-genome/results-v3.json",
+        "tests/unit/test_cortex_crossgeo.py"
       ],
-      "unresolved": "120 structured engineering cases frozen/run; semantic availability only, all model quality baselines unavailable; negative static-equivalent gain."
+      "unresolved": "120 structured engineering cases frozen/run; semantic availability only, all model quality baselines unavailable; negative static-equivalent gain. The directive's mandatory adversarial list is covered by 17 suite families plus 6 system-level tests, each now resolved to its test node."
     },
     {
       "section": 16,

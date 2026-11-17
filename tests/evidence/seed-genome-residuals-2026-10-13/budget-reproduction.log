@@ -1,0 +1,51 @@
+== 8ad86ca (before)
+{
+ "declared_latency_budget_s": 10,
+ "inner_runs": 4,
+ "latency_limit_given_to_each_inner_run_s": [
+  10.0,
+  10.0,
+  10.0,
+  10.0
+ ],
+ "sum_of_limits_s": 40.0,
+ "sensitivity_inputs_run": [
+  "constraints",
+  "objective",
+  "variables"
+ ],
+ "budget_ledger_in_receipt": false,
+ "cortex_receipt_compute_cost_keys": [
+  "energy",
+  "memory_ceiling_bytes",
+  "model_calls",
+  "operation_ceiling"
+ ]
+}
+== 8ad86ca + working tree change
+{
+ "declared_latency_budget_s": 10,
+ "inner_runs": 4,
+ "latency_limit_given_to_each_inner_run_s": [
+  9.935510346000001,
+  9.237187826999957,
+  8.600198579999983,
+  7.941355631999954
+ ],
+ "sum_of_limits_s": 35.7143,
+ "sensitivity_inputs_run": [
+  "constraints",
+  "objective",
+  "variables"
+ ],
+ "budget_ledger_in_receipt": true,
+ "cortex_receipt_compute_cost_keys": [
+  "cpu_scope",
+  "cpu_seconds",
+  "energy",
+  "memory_ceiling_bytes",
+  "model_calls",
+  "operation_ceiling",
+  "peak_memory"
+ ]
+}

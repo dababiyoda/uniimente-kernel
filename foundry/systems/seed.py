@@ -5,10 +5,13 @@ deliveries) into a content-addressed seed (#36) with a manifest of hashes.
 Private keys are never packed: the seed records which key files were excluded,
 so recovery demands the founder's own key backup. ``restore`` rebuilds the home
 on a fresh machine, re-verifies every byte and reports whether the restored
-ledger chain equals the original head.
+ledger chain equals the original head. The seed records its recovery point
+(when it was taken and the ledger head then); ``greg.recovery.restore_body``
+completes a GREG body restore on top of ``restore``.
 """
 from __future__ import annotations
 
+from datetime import datetime, timezone
 import json
 from pathlib import Path
 
@@ -32,8 +35,12 @@ def make_seed(home: Path, store: Path) -> dict:
             excluded.append(rel)
             continue
         files[rel] = cas.put(store, path.read_bytes())
-    seed = {"format": "uniimente-seed/1", "files": files, "excluded_secrets": excluded}
-    return {"seed": cas.put(store, json.dumps(seed, sort_keys=True).encode()), "files": len(files), "excluded": excluded}
+    # The recovery point: anything the body records after this instant is not in the seed.
+    seed = {"format": "uniimente-seed/1", "files": files, "excluded_secrets": excluded,
+            "backed_up_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            "ledger_head": ledger_head(home / "ledger.jsonl")}
+    return {"seed": cas.put(store, json.dumps(seed, sort_keys=True).encode()), "files": len(files), "excluded": excluded,
+            "backed_up_at": seed["backed_up_at"], "ledger_head": seed["ledger_head"]}
 
 
 def restore(store: Path, seed_address: str, target: Path) -> dict:
@@ -41,6 +48,14 @@ def restore(store: Path, seed_address: str, target: Path) -> dict:
     if target.exists() and any(target.iterdir()):
         raise FileExistsError("restore target must be empty; the seed never overwrites a living body")
     seed = json.loads(cas.get(store, seed_address))  # refuses a tampered seed manifest
+    root = target.resolve()
+    for rel in seed["files"]:
+        # Integrity proves the files are the manifest's, not that the manifest is benign: a seed someone else
+        # built may name a path outside the target, or carry key material no seed of a body ever holds.
+        if Path(rel).is_absolute() or root not in (root / rel).resolve().parents:
+            raise ValueError(f"seed path {rel!r} leaves the restore target")
+        if _excluded(rel):
+            raise ValueError(f"seed carries {rel!r}; a seed never holds key material")
     for rel, address in seed["files"].items():
         out = target / rel
         out.parent.mkdir(parents=True, exist_ok=True)

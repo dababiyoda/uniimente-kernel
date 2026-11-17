@@ -135,9 +135,11 @@
       "section": 14,
       "status": "active",
       "implementation_refs": [
-        "tests/integration/test_greg_cognition_process.py"
+        "tests/integration/test_greg_cognition_process.py",
+        "greg/recovery.py",
+        "tests/unit/test_greg_restore.py"
       ],
-      "unresolved": "Linux SIGKILL/restart/STOP and replay tested. No multi-body convergence, backup restore, physical disturbance or antifragility improvement proof."
+      "unresolved": "Linux SIGKILL/restart/STOP and replay tested. Restoration from a tested backup: with thresholds declared before the drill (tests/evidence/restore-drill-2026-10-15/THRESHOLDS.md), greg foundry restore brings a body back from its Institutional Seed with a fresh witness key, its ledger verified against the head the seed recorded, and held: no action until a founder-key command issued after the restore; commands issued before the restore are refused, every earlier device delegation is void and every approval a live mission held is asked again, so a stale backup cannot resurrect a revoked device, replay a consumed command or repeat an approved action. Before it, a restored body could not boot, and with its key copied by hand it did all three. Open: a second living copy is not detectable without an external anchor (the founder's resume declares the original gone), a founder-key rotation after the recovery point is unknown to the restored body, external consequences after the recovery point are re-asked rather than reconciled with the external system, and no multi-body convergence, physical disturbance or antifragility improvement proof."
     },
     {
       "section": 15,

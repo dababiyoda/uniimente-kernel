@@ -1,0 +1,304 @@
+{
+  "decision_id": "CONTEXT-SOURCE-EXPORT-20261112-APPROVED",
+  "title": "Publish the eleven exact project source originals after explicit founder approval",
+  "problem": "Repository-only workers lack the current attachment bytes. The former publication boundary has now been resolved by explicit approval of the prepared eleven-text payload to the public repository.",
+  "founder_intent_refs": [
+    "https://github.com/dababiyoda/uniimente-kernel/pull/315#issuecomment-6841834495",
+    "docs/collaboration/CONTEXT-ROUTE-2026-11-12.md#source-access",
+    "CONTEXT-ROUTE-20261112-NAVIGATION-ONLY"
+  ],
+  "baseline": "Initial navigation-only decision remains in deliberation-context-route-20261112.json. Its rejected source upload created no tree/commit. Eleven originals were privately prepared and checked; explicit founder approval now permits their ordinary public publication on existing #315.",
+  "alternatives": [
+    {
+      "name": "Publish the approved exact originals with provenance",
+      "description": "Use the existing context branch, original bytes, index, hashes and source-access routes.",
+      "advantages": [
+        "Repo-only workers can read the actual supplied text",
+        "One discoverable source packet",
+        "No runtime or contract changes"
+      ],
+      "disadvantages": [
+        "Mixed historical/model claims require interpretation boundaries",
+        "Source access does not establish client adoption"
+      ],
+      "revival_evidence": "Selected after explicit approval; retain only while provenance and source boundaries remain correct."
+    },
+    {
+      "name": "Keep links and private archive only",
+      "description": "Retain the navigation-only state.",
+      "advantages": [
+        "Smallest public surface"
+      ],
+      "disadvantages": [
+        "Leaves raw attachment access unresolved despite approval"
+      ],
+      "revival_evidence": "A source contains material outside the approved project packet or the founder revokes publication before release."
+    },
+    {
+      "name": "Rewrite or merge sources into one authoritative summary",
+      "description": "Substitute a normalized interpretation for originals.",
+      "advantages": [
+        "Shorter reading"
+      ],
+      "disadvantages": [
+        "Loses original wording and failure evidence",
+        "Can silently change intent or elevate model claims"
+      ],
+      "revival_evidence": "Only as a separately labelled derivative with the originals retained and explicit source-to-claim references."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "The eleven raw texts remain unavailable to repo-only workers.",
+    "advantages": [
+      "No new publication"
+    ],
+    "disadvantages": [
+      "Does not fulfill the explicit approved source-sharing request"
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Implementer self-review perspective: publish the approved project context without shrinking the complete founder destination.",
+      "material_concerns": [
+        "Do not replace N0–N10/P0–P13 or retire any Foundry obligation"
+      ],
+      "evidence_refs": [
+        "docs/collaboration/CONTEXT-ROUTE-2026-11-12.md#source-access",
+        "https://github.com/dababiyoda/uniimente-kernel/pull/315#issuecomment-6841834495",
+        "docs/intent/sources/project-context-2026-11-12/manifest.json"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Implementer self-review perspective: use the existing source/entry architecture and existing draft; do not create a new registry or runtime.",
+      "material_concerns": [
+        "Canonical contracts and current coverage remain untouched"
+      ],
+      "evidence_refs": [
+        "docs/collaboration/CONTEXT-ROUTE-2026-11-12.md#source-access",
+        "https://github.com/dababiyoda/uniimente-kernel/pull/315#issuecomment-6841834495",
+        "docs/intent/sources/project-context-2026-11-12/manifest.json"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Implementer self-review perspective: distinguish original bytes, historical/model claims, permission to publish and runtime authority.",
+      "material_concerns": [
+        "Main and consumer adoption pending",
+        "Historical source instructions can be misread",
+        "Claims are not locks"
+      ],
+      "evidence_refs": [
+        "docs/collaboration/CONTEXT-ROUTE-2026-11-12.md#source-access",
+        "https://github.com/dababiyoda/uniimente-kernel/pull/315#issuecomment-6841834495",
+        "docs/intent/sources/project-context-2026-11-12/manifest.json"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Implementer self-review perspective: preserve #295/#206/default-entry ownership, exact source pins and normal handoff.",
+      "material_concerns": [
+        "Do not touch #206 START_HERE or duplicate #152/#193 entry work"
+      ],
+      "evidence_refs": [
+        "docs/collaboration/CONTEXT-ROUTE-2026-11-12.md#source-access",
+        "https://github.com/dababiyoda/uniimente-kernel/pull/315#issuecomment-6841834495",
+        "docs/intent/sources/project-context-2026-11-12/manifest.json"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Implementer self-review perspective: preserve provenance, explicit public approval, unknown source authorship/dates and remaining context gaps.",
+      "material_concerns": [
+        "No false scientific, economic, device or runtime claim"
+      ],
+      "evidence_refs": [
+        "docs/collaboration/CONTEXT-ROUTE-2026-11-12.md#source-access",
+        "https://github.com/dababiyoda/uniimente-kernel/pull/315#issuecomment-6841834495",
+        "docs/intent/sources/project-context-2026-11-12/manifest.json"
+      ],
+      "recommendation": "RETAIN"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "The missing public-export permission was supplied",
+      "tier": "primary_source",
+      "reference": "https://github.com/dababiyoda/uniimente-kernel/pull/315#issuecomment-6841834495",
+      "finding": "After a specific question naming the eleven original texts and public repository, Alfonso answered: Yes all context and should be availble for workeees. This authorizes this bounded publication, not runtime authority."
+    },
+    {
+      "claim": "The intended payload is the original approved set",
+      "tier": "other",
+      "reference": "docs/intent/sources/project-context-2026-11-12/manifest.json",
+      "finding": "Eleven original source files, 142659 bytes, verified against original attachment bytes and declared SHA256 before publication; remote checks are recorded in the final PR handoff."
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "The earlier broad context request alone established this public payload approval",
+      "tier": "other",
+      "reference": "docs/collaboration/CONTEXT-ROUTE-2026-11-12.md#source-access",
+      "finding": "Automatic review rejected that initial attempt. The rejection is preserved; no alternative upload route was used before the explicit approval."
+    },
+    {
+      "claim": "This packet supplies every historical chat",
+      "tier": "primary_source",
+      "reference": "docs/PROJECT_SOURCE_CENSUS_2026-09-26.md",
+      "finding": "False: the eleven current attachments are a bounded source set, not the raw archive of every census item or prior conversation."
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "All eleven approved originals become directly readable by repository workers through the existing route, with exact provenance and no authority expansion.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "Actual source access replaces opaque attachment titles",
+        "amplified_value": "Later workers can inspect original reasoning, counterexamples and intended effects without founder reconstruction."
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "Historical embedded prompts and model claims may be mistaken for current instructions or facts",
+        "severity": "high",
+        "response_type": "evidence",
+        "redesigned_response": "Label the packet as passive source data; later explicit founder corrections and canonical contracts control."
+      },
+      {
+        "id": "D2",
+        "statement": "Normalization could corrupt provenance",
+        "severity": "medium",
+        "response_type": "evidence",
+        "redesigned_response": "Copy bytes exactly; retain original trailing whitespace and verify sizes/SHA256 locally and from the published tree."
+      },
+      {
+        "id": "D3",
+        "statement": "Publishing sources could be confused with universal client adoption or runtime completion",
+        "severity": "medium",
+        "response_type": "governance",
+        "redesigned_response": "Keep branch availability, protected adoption, actual worker use and external results separately reported."
+      },
+      {
+        "id": "D4",
+        "statement": "An apparent full-context claim could hide missing historical conversations",
+        "severity": "medium",
+        "response_type": "modularity",
+        "redesigned_response": "Name the eleven current attachments precisely; preserve the historical census and remaining inaccessible raw conversations as separate coverage."
+      }
+    ],
+    "comparisons": {
+      "baseline": "Navigation-only #315 at c88e49a3; raw packet private.",
+      "do_nothing": "Fails the explicit approved sharing request.",
+      "simplest_viable_alternative": "Publish the existing exact originals and index/hash metadata; no new service or hook.",
+      "strongest_competing_architecture": "A rewritten master summary is shorter but loses faithful source evidence.",
+      "reversible_experiment": "Add only this source packet and existing navigation updates to the same draft; verify direct retrieval before handoff."
+    },
+    "rejected_alternatives": [
+      {
+        "name": "Silently rewrite source claims into current law",
+        "rejection_reason": "Source text and runtime authority are distinct.",
+        "revival_evidence": "A new explicit founder decision may adopt a specific mechanism through normal canonical review."
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Attack the exact-source design for instruction-shaped data, misleading completeness, mutable source references and privacy scope. Approval names this prepared project packet, so unrelated personal context is excluded.",
+    "new_weaknesses": [
+      {
+        "id": "W1",
+        "category": "gaming",
+        "statement": "A file count or hash success could be sold as institutional competence",
+        "strengthening_response": "Claim only byte integrity and readable access; performance and adoption remain unproven."
+      },
+      {
+        "id": "W2",
+        "category": "comprehensibility",
+        "statement": "The earlier rejection record could falsely look like a current prohibition after approval",
+        "strengthening_response": "Preserve the initial rejection under a historical heading, add the exact approval and current source link, refresh PR/board handoffs."
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "resolved",
+        "rationale": "Index/manifest explicitly classify original prompts as source data and later corrections as controlling.",
+        "owner": "source-route maintainer and each reader",
+        "review_trigger": "A worker treats historical source text as executable authority."
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "resolved",
+        "rationale": "Original bytes are retained and compared with hashes; metadata/index are separately authored.",
+        "owner": "publisher and reviewer",
+        "review_trigger": "Any byte/hash mismatch."
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "accepted",
+        "rationale": "Default/client adoption remains separate and requires actual evidence.",
+        "owner": "existing entry/integration owners",
+        "review_trigger": "Protected adoption or observed worker entry."
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "resolved",
+        "rationale": "Scope is explicitly the eleven current attachments; the complete historical archive is still unavailable.",
+        "owner": "source-route maintainer",
+        "review_trigger": "A new source export or missing decision-critical context."
+      }
+    ],
+    "final_design": "Publish the approved eleven originals, index and manifest on existing #315; update AGENTS/BACKCAST/access record and generated catalog; preserve earlier decisions/rejection and all existing owners; verify remote bytes and hand off exact revision.",
+    "residual_risks": [
+      {
+        "risk": "Public content can be copied even if later removed",
+        "mitigation": "Publish only the exact project packet explicitly approved for this public repository; unrelated personal material is excluded.",
+        "owner": "Alfonso as approving publisher; implementer within that scope",
+        "review_trigger": "A file lies outside the prepared approved set."
+      },
+      {
+        "risk": "Not every client or organ follows a draft branch",
+        "mitigation": "Provide immutable links on the live board and hand them to existing adoption owners without claiming compliance.",
+        "owner": "#196/#152/#193/#206 owners",
+        "review_trigger": "Actual adoption and receiver acknowledgment."
+      }
+    ],
+    "recommendation": "RETAIN"
+  },
+  "dissent": {
+    "present": false,
+    "handling": "The implementer explicitly considered all five perspectives above as labelled self-review. Publication permission is now explicit; the remaining adoption/completeness concerns are retained as risks. Separate peer review is recorded in the PR, not fabricated as five independent reviewers.",
+    "entries": []
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": true,
+    "approval_status": "approved",
+    "approver": "Alfonso Lopez, explicit answer to the specific public packet/destination question, recorded in #315 comment 6841834495; no protected-merge/runtime authority implied"
+  },
+  "migration_plan": "Add exact approved packet to existing #315 branch; refresh existing source links and current access status; update PR receipt and board handoff; leave protected integration and client adoption with existing owners.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Close the unmerged draft or revert only source-packet/navigation commits while retaining provenance and the approval/rejection history",
+      "Do not claim removal can recall copies already downloaded from a public repository",
+      "Preserve unrelated worker branches, source history and evidence"
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "A file differs from the approved eleven originals",
+    "A source byte/hash mismatch remains",
+    "Unrelated personal context or credentials enter the payload",
+    "Runtime authority, protected merge or client compliance is inferred from source publication"
+  ],
+  "decision": "RETAIN",
+  "decision_owner": "Alfonso approves this source publication; implementer publishes within that exact scope; existing integrator retains protected intake.",
+  "review_trigger": "Source mismatch, owner objection, new context export, moved source/destination head or actual worker adoption"
+}

@@ -715,6 +715,65 @@ def cognitive_problem(problem: dict, *, horizon_days=2) -> dict:
 TEMPLATES['cognition'] = cognitive_problem
 
 
+def intake_recommendation(*, repository: str, base: str, units: list[dict], union: list[str] | None = None,
+                          claims: dict | None = None, timeout_seconds: int = 300,
+                          preauthorize_delivery: bool = False, horizon_days: float = 2,
+                          max_age_hours: float = 48) -> dict:
+    """GREG's first mission for its own development: an intake recommendation for selected open changes.
+
+    For one repository inside a read root, a base revision and an ordered list of units ``{name, sha}`` (full
+    40-character SHAs; a branch name is refused, because the recommendation is about exact revisions), GREG composes
+    the heads in memory, runs each head's changed tests on its own tree and on the merged tree inside the worker
+    envelope, matches the author's ``claims`` (supplied here as data; nothing is fetched) to what ran, and delivers one
+    Markdown recommendation and its JSON twin into the delivery root. It merges nothing and approves nothing.
+
+    Like the engineering brief, the delivery is an internal_write outside the read-only cone, so by default the
+    mission stops at a real founder approval; ``preauthorize_delivery`` signs it into the cone.
+
+    The one success check is satisfied only by a recommendation for these exact inputs: the sensor compares the
+    delivered file's request digest with this mission's, so a recommendation about other heads, however recent,
+    closes nothing here. The mission id carries the same digest, so a different selection is a different mission.
+    """
+    from greg import intake
+    params = {"repository": str(Path(repository).expanduser().resolve()), "base": base, "units": units,
+              "union": list(union or []), "claims": claims or {}, "timeout_seconds": timeout_seconds}
+    asked = intake.request(params)                 # refuses a short SHA, a branch name or a malformed record here
+    digest = intake.digest(asked)
+    delivery = {"action_id": "deliver-intake-recommendation", "capability": "brief.intake", "params": asked,
+                "target": "deliver:briefs", "advances": ["intake-recommendation-for-these-inputs"],
+                "expected_outcome": "one new intake recommendation and its JSON twin in the delivery root",
+                "rationale": "Git objects are read and composed in scratch; the heads' tests run inside the worker "
+                             "envelope; one founder-visible file; nothing in the repository changes"}
+    capabilities = ["brief.intake_status", "fs.read"] + (["brief.intake"] if preauthorize_delivery else [])
+    return {
+        "mission_id": f"m:intake-{digest.split(':')[1][:16]}",
+        "founder_expression": "Given selected open changes, produce an evidence-backed intake recommendation, "
+                              "identify behavioral conflicts, prepare a reversible composition, execute the "
+                              "relevant checks, and explain what remains unproven.",
+        "intended_effect": "an intake recommendation for exactly these revisions is waiting in the delivery folder",
+        "beneficiaries": ["Alfonso", "the integrator"],
+        "unacceptable_outcomes": ["merging, pushing or editing anything in the repository",
+                                  "a check that did not run reported as passed",
+                                  "reading the recommendation as an approval",
+                                  "overwriting a previous recommendation"],
+        "priority": 60,
+        "closure": {"kind": "bounded"},
+        "success_checks": [{"check_id": "intake-recommendation-for-these-inputs",
+                            "description": "an intact intake recommendation for exactly these inputs was delivered",
+                            "sensor": {"capability": "brief.intake_status",
+                                       "params": {"request_digest": digest, "max_age_hours": max_age_hours},
+                                       "target": "deliver:briefs"},
+                            "predicate": {"op": "gte", "field": "matching", "value": 1}}],
+        "strategies": [delivery],
+        "light_cone": {"capabilities": capabilities, "targets": ["deliver:*", "fs:*"],
+                       "max_consequence_class": "internal_write" if preauthorize_delivery else "read_only",
+                       "budget_usd": 0, "horizon": _horizon(horizon_days)},
+    }
+
+
+TEMPLATES["intake-recommendation"] = intake_recommendation
+
+
 # -- execution fabric: work orders, computer use, DALEOBANKS ----------------------------------
 
 def _slug(text: str, limit: int = 40) -> str:

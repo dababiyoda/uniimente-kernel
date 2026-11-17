@@ -149,6 +149,12 @@
    "finding": "a gate outside CI can be silently environment-broken; recorded as S-3"
   },
   {
+   "claim": "Correction of 2026-11-11 to the entry above, which is kept as written: '7/7 caught with the dependencies installed'",
+   "tier": "sandbox_execution",
+   "reference": "scripts/ci/check_seed_mutants.py at #196 head 8d205324: 6/7 caught, exit 1, with requirements-dev and requirements-cognition (z3-solver 5.1.0.0, ortools 9.15.6755); 7/7 printed, exit 0, with requirements-dev alone, where two named tests (constraint, unknown) fail unmutated with ModuleNotFoundError and the gate runs no baseline",
+   "finding": "the 7/7 is reached only where two named tests cannot run; the constraint mutant's named test no longer discriminates. Strengthens S-3: the gate is unwired and would not pass if wired unrepaired"
+  },
+  {
    "claim": "A docs index ends orientation drift",
    "tier": "model_output",
    "reference": "docs/collaboration/INDEX.md is pattern-based",

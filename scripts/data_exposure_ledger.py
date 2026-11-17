@@ -1230,9 +1230,23 @@ def _collisions(src158: Source) -> list[tuple[str, str]]:
     return sorted(out)
 
 
-def build() -> dict:
+CONVERGED_MAP = "docs/collaboration/MIND-LINEAGE-RECONCILIATION-MAP-2026-10-14.json"
+
+
+def _trees() -> tuple[str | None, str | None]:
+    """(#158 tree, #179 tree). On #158's line: HEAD and PIN_179. On #179's converged tree, which merges #158, HEAD is
+    #179's own tree and #158's is the commit the reconciliation map pins, an ancestor of HEAD; otherwise every
+    #179 artifact would read as #158's and #179's newer runs would be missed (adopted from #179 54278f2f)."""
     head = REF_158 if resolve(REF_158) else None          # symbolic, so a rebuild after a commit is identical
-    pin = resolve(PIN_179["commit"])
+    pinned = (load_json(head, CONVERGED_MAP) or {}).get("pr158") if head else None
+    if pinned and resolve(pinned) and resolve(pinned) != resolve(head) and is_ancestor(pinned, head) \
+            and resolve(PIN_179["commit"]) and is_ancestor(PIN_179["commit"], head):
+        return pinned, head
+    return head, resolve(PIN_179["commit"])
+
+
+def build() -> dict:
+    head, pin = _trees()
     if pin is None:
         raise RuntimeError(f"PR #179's pinned commit {PIN_179['commit']} is not in this clone; fetch "
                            f"{PIN_179['branch']}")

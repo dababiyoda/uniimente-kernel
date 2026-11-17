@@ -42,6 +42,17 @@ MODULES = (
     "greg.cognition.genomes.collective_b",  # L2 batch B: ecology bidding as a priced task auction (Bertsekas)
     "greg.cognition.genomes.developmental_b",  # L4 batch B: graph diffusion (harmonic label propagation)
     "greg.cognition.genomes.developmental_hybrid",  # L4 recombined: central plan audited by the local repair rules
+    "greg.cognition.genomes.formal",        # L3 property-based testing (counterexample search)
+    "greg.cognition.genomes.basal_memory",  # L1 associative memory (Hebbian Hopfield recall)
+    "greg.cognition.genomes.developmental_ca",  # L4 cellular-automaton pattern regeneration
+    "greg.cognition.genomes.evolutionary",  # L3 genetic algorithm (factored binary) and MAP-Elites quality-diversity
+    "greg.cognition.genomes.centrality",    # L3 exact top-k betweenness-critical nodes (batched sparse Brandes)
+    "greg.cognition.genomes.search",        # L3 search: IDA* (memory-bounded optimal), beam (flow shop), MCTS (Hex)
+    "greg.cognition.genomes.strategic_b",   # L3 strategic pack B: repeated games, Nash bargaining, Stackelberg
+    "greg.cognition.genomes.formal_b",      # L3 batch B: resolution proofs, MDL model selection, convex QP duality
+    "greg.cognition.genomes.control_b",     # L3 robust tube MPC; L1 CUSUM signal sensing, Hamming/SECDED correction
+    "greg.cognition.genomes.forecasting_b",  # L5 judgmental forecast pooling; L3 scenario fans by scenario reduction
+    "greg.cognition.genomes.search_b",      # L3 novelty search, L3 selection hyper-heuristic, L4 role differentiation
 )
 PROOF_CLASS = "genome_certificate"
 PROOF_FIELDS = ("intelligence_id", "version", "evidence_type", "inputs_digest", "certificate", "limits")

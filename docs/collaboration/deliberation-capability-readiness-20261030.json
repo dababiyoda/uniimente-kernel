@@ -1,0 +1,565 @@
+{
+  "decision_id": "CAPABILITY-READINESS-LADDER-20261030",
+  "title": "Read each capability's readiness, KNOWN to VERIFIED, from the facts GREG already keeps, and report where its readers disagree",
+  "problem": "Directive section 32 asks GREG to distinguish KNOWN, INSTALLED, CREDENTIALLED, GRANTED, EXERCISED and VERIFIED for every capability, and not to count raw tools as success. Section 70 asks after every session what real GREG can now reliably do. At b1950be2 (#196 head) no reader separated those rungs: `greg readiness` was an argparse 'invalid choice', and the unit's 26 tests fail there (21 on `cannot import name 'readiness'`, 5 on the missing subcommand). The readers that did exist answered different questions and disagreed without saying so: Mission Control's classify_capability marks every capability that declares a credential BLOCKED 'needs credentials' even when the secret store holds every declared handle; body.status, and so Mission Control's capability list, holds only built-ins and omits capabilities Genesis registered; routing.track_record reads completed actions only, so a capability verified only as a closure's sensor has no verified count there, and it credits every completed action of a verified mission, including one whose receipt routing itself ruled ineffective.",
+  "founder_intent_refs": [
+    "INTENT-20261028-OPUS-MAXIMUS-REISSUE (directive sections 32 CAPABILITY BROKER, 26 INSTALLABLE PRODUCT EXPERIENCE and 70 REQUIRED QUESTION; recorded on #227)",
+    "INTENT-20261030-BUILD-BEFORE-DEVICE-RUN (build the whole directive first; the founder-device run comes after, as its acceptance; recorded on #227)",
+    "INTENT-20261001-FULL-MACHINE-COMPLETION",
+    "INTENT-20261019-UPWARD-ASCENT",
+    "INTENT-2026-09-25-SPIDER-WEB-COMPOUNDING (optimize for verified outcomes, not the number of tools; greg/routing.py is its enforcement)"
+  ],
+  "baseline": "b1950be2: greg.capabilities.BUILTINS declares 163 manifests; CapabilityManifest.available() checks platforms and binaries; SecretBroker.names() lists handle names; MissionBook holds founder-signed missions and their cones; greg.missions.pre_approved decides signed pre-approvals; Gate receipts record each act; the separate appraiser records mission.appraised verdicts; routing.track_record and routing.reliability score capabilities from completed actions; mission_control.classify_capability gives Mission Control's class; body.status lists the built-in inventory. `greg routing` prints routing knowledge. Nothing reads these together per capability.",
+  "alternatives": [
+    {
+      "name": "Proposed: a read-only ladder over the existing readers, printed by `greg readiness`",
+      "description": "New greg/readiness.py and one subcommand in greg/cli.py. For every capability in the registry the body uses (the 163 built-ins and every capability Genesis registered on the journal, as Genesis.restore re-registers them), each rung is read from the reader that already computes it: KNOWN from BUILTINS or capability.registered events of a formed provider; INSTALLED from CapabilityManifest.available() and, for an installed:python: provider, the pinned distribution version through importlib.metadata (nothing imported); CREDENTIALLED from SecretBroker.names() only, never a value; GRANTED from an ACTIVE, unpaused MissionBook mission whose signed cone admits the capability (pattern, ceiling, targets, horizon), or a signed pre-approval that greg.missions.pre_approved admits for the step's own strategy, with the capability ATTACHED; EXERCISED from a positive Gate receipt whose witness names it; VERIFIED from a VERIFIED mission.appraised of a closure that judged one of its receipts, with no later REFUTED appraisal or ineffective routing.outcome, and never crediting a receipt the body blamed. Each row carries Mission Control's class and routing's track record, names its first missing rung and why, and the readout lists where readers disagree.",
+      "advantages": [
+        "One per-capability answer to section 32's six rungs, each with evidence references and the first missing rung's reason",
+        "Reuses existing readers only: manifests, SecretBroker names, MissionBook, missions.pre_approved, Gate receipts, the separate appraiser's verdicts, routing verdicts; no new store and no new authority",
+        "Reports four kinds of disagreement between existing readers instead of smoothing them over",
+        "Writes nothing and never resolves a secret value: hash probes of two bodies before and after showed no change, and a planted secret value never reaches the output"
+      ],
+      "disadvantages": [
+        "Mission Control does not show the counts: greg/mission_control.py is edited by open draft PR #178 (head e410977d), and the unit's scope allows the change only when no open PR edits it",
+        "GRANTED does not read the body-wide PAUSE or STOP, the cone's remaining budget, its data classes or the constitution's policy, so it can read reached where a step would still wait",
+        "Couples to the shapes of many records (receipts, mission.action, mission.appraised, routing.outcome, capability.registered and capability.state) and to two names in greg/mission_control.py (_providers, classify_capability)",
+        "Covers section 32's six-rung distinction, not its full capability contract (permissions, network and filesystem access, data classes, budget, health, provenance, attach, detach, rollback and authority ceiling are not printed)"
+      ],
+      "revival_evidence": "Retained as proposed; revisit when Mission Control can carry it (#178 no longer edits greg/mission_control.py) or when a founder-body readout shows a rung misread."
+    },
+    {
+      "name": "Simplest viable: derive the rungs from the existing inventory and track record",
+      "description": "Take KNOWN and INSTALLED from body.status, EXERCISED from track_record's done count and VERIFIED from its verified count; add one column to `greg status` or `greg routing`. No new module.",
+      "advantages": [
+        "A few lines over two readers that already exist and are already printed",
+        "No new reader to maintain"
+      ],
+      "disadvantages": [
+        "body.status lists only built-ins, so capabilities Genesis registered would be missing (shown in the unit's tests)",
+        "track_record counts no verified action for a capability verified only as a closure's sensor: foundry.query and institution.appraise on the rehearsal body would read not verified",
+        "track_record credits every completed action of a verified mission, including one whose receipt routing ruled ineffective (review finding F1's class), so a strategy that changed nothing would read VERIFIED",
+        "Neither reader knows CREDENTIALLED or GRANTED; Mission Control's class reads BLOCKED for a declared credential even when the store holds the handle"
+      ],
+      "revival_evidence": "If the founder rules that routing's semantics are the intended ones, the ladder's VERIFIED can be re-pointed at track_record and this alternative becomes the implementation."
+    },
+    {
+      "name": "Strongest competing design: a full section-32 capability contract registry",
+      "description": "Give every capability a persisted contract record with all of section 32's fields (ID, version, provider, function, permissions, inputs, outputs, credentials, targets, network and filesystem access, data classes, budget, consequence class, health, failure state, provenance, tests, limitations, attach, detach, rollback, authority ceiling) and the six rungs, maintained as a materialized view updated from events.",
+      "advantages": [
+        "Covers section 32's whole contract, not only the rungs",
+        "Cheap to query once materialized; a natural feed for Mission Control's founder mode (section 26)"
+      ],
+      "disadvantages": [
+        "A second, written record of capability state that can drift from the journal it is derived from",
+        "Needs edits to greg/capabilities.py and greg/missions.py, which six open PRs hold (#178, #201, #209, #214, #228, #229)",
+        "Much larger; nothing about it was built or measured here"
+      ],
+      "revival_evidence": "When the founder's surfaces need the full contract; build it first as a read-only projection like this one, not as a written store."
+    },
+    {
+      "name": "Staged, reversible experiment: ship the ladder as a draft child of #196, CLI only",
+      "description": "This branch. The ladder runs only when someone types `greg readiness`; it reads the journal through observe() and writes nothing. Mission Control parity, GRANTED's missing conditions and the reader rulings come later; the founder-device readout is the acceptance under INTENT-20261030-BUILD-BEFORE-DEVICE-RUN.",
+      "advantages": [
+        "Nothing in the body changes until someone runs the command, and running it changes nothing",
+        "One revert removes it; there is no state to migrate"
+      ],
+      "disadvantages": [
+        "The founder's main surface, Mission Control, does not show it yet",
+        "Every result so far is from local test bodies and a rehearsal body with a REHEARSAL key"
+      ],
+      "revival_evidence": "This is how the proposed design is meant to be adopted; it is the review trigger for the decision below."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "No reader says which capabilities GREG has installed, credentialled, been granted, exercised or had independently verified. Mission Control's credential class, body.status's built-in-only list and track_record's action-only counts keep disagreeing silently, and section 70's question has no instrument except counting tools, which section 32 forbids.",
+    "advantages": [
+      "No new module and no new subcommand",
+      "No coupling to the shapes of six kinds of record"
+    ],
+    "disadvantages": [
+      "Section 32's distinction stays unimplemented",
+      "The founder cannot see why a capability is unusable (not installed, missing a named credential, no live grant) without reading the journal",
+      "Reader disagreements stay invisible"
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Section 32 names the six rungs and says not to count raw tools; section 70 asks what real GREG can now reliably do. The ladder makes both executable on the canonical path: per capability, the rungs reached with evidence, and per rung a count, where only VERIFIED is the rung an independent appraiser stands behind. Section 26's founder mode should expose capabilities, permissions and blockers; the first-missing reason ('no stored credential named github_token', 'no open founder-signed mission's light cone admits it') is that blocker.",
+      "material_concerns": [
+        "The unit's own acceptance item 'mission_control shows the same counts' is not met; a carried class and a parity test stand in for it",
+        "Rehearsal counts (8 of 163 VERIFIED) are from a REHEARSAL key and must never be read as VEPMC or founder-device evidence"
+      ],
+      "evidence_refs": [
+        "docs/evidence/capability-readiness-2026-10-30/README.md",
+        "docs/evidence/capability-readiness-2026-10-30/rehearsal-readout.json"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "One new read-only module and one subcommand. Every rung is read through an existing reader; the module owns no state, adds no store and changes no other module. greg/mission_control.py, greg/routing.py, greg/missions.py, greg/body.py, greg/capabilities.py, greg/appraisal.py and canonical-ci.yml are untouched.",
+      "material_concerns": [
+        "readiness.ladder imports mission_control._providers, a private name, and classify_capability; both exist at b1950be2 and at #178's head e410977d",
+        "greg/cli.py is shared with #178, #235 and #236: the merge with #235's head aee286ee conflicts (both add a read-only subcommand at the same two places); the merge with #236's head 44b3df96 is clean",
+        "The ladder covers the six rungs, not section 32's full contract fields"
+      ],
+      "evidence_refs": [
+        "greg/readiness.py",
+        "greg/cli.py"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Two attack reviews by separate agents of this same session found that the first-round ladder credited success and authority more generously than the body does: a strategy routing ruled ineffective read VERIFIED through a sibling's verified closure (F1), and a pre-approval the engine refuses to run read GRANTED (F2 / MUB-F1). Both are fixed and pinned by tests that drive the real engine and the separate appraiser. Nine safeguards survived mutation (MUB-F2); each now has a test and a caught mutant (38 of 38).",
+      "material_concerns": [
+        "GRANTED still reads reached while the body-wide PAUSE or STOP stands, or when the cone's budget is spent; the readout's own 'limits' field says so, but the rung does not",
+        "`greg readiness --capability fs.wrte` exits 0 with an empty list (F6, not addressed)",
+        "The mutant gate is not run by any workflow (MUB-F7); a later change to a record shape could break a rung without CI noticing"
+      ],
+      "evidence_refs": [
+        "scripts/ci/check_capability_readiness_mutants.py",
+        "tests/unit/test_greg_readiness.py"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "The command is safe to run on a live body: it reads through observe(), never takes the writer lock, and re-reading the rehearsal body left its hash and its 141 files and directories unchanged. On the rehearsal body it ran in 2.4 s. Reverting is one branch revert with nothing to migrate.",
+      "material_concerns": [
+        "The integrator must wire the mutant gate into canonical-ci.yml and resolve the greg/cli.py conflict with #235 by keeping both subcommands",
+        "A malformed secret store no longer crashes `greg readiness`, but `greg status` still crashes the same way (greg/body.py is held by #178, #221 and #235)"
+      ],
+      "evidence_refs": [
+        "docs/evidence/capability-readiness-2026-10-30/rehearsal-readout.json",
+        "scripts/ci/check_capability_readiness_mutants.py"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "The ladder makes evidence harder to overstate: it counts per rung, names VERIFIED as the only rung an appraiser stands behind, and refuses to credit a receipt the body blamed. No secret value can reach its output (the planted-value test catches the leak mutant on its own). The records were corrected where review found them wrong.",
+      "material_concerns": [
+        "Tests record seven kinds of fact directly in their writers' fields (mission.action DONE records, mission.achieved and mission.unmet claims, VERIFIED_UNMET and UNAVAILABLE appraisals, routing.outcome rows, capability.registered, capability.state); every VERIFIED and REFUTED verdict still comes from the body's separate appraiser",
+        "The evidence README misdescribed browser.render's missing INSTALLED rung twice; fbf1e231 corrected it. Its heading calls the reviewers 'independent': they were separate agents of this session",
+        "rehearsal-readout.json is a curated digest of the readout, not its raw output (MUB-F6); its numbers reproduce exactly"
+      ],
+      "evidence_refs": [
+        "tests/unit/test_greg_readiness.py",
+        "docs/evidence/capability-readiness-2026-10-30/README.md"
+      ],
+      "recommendation": "RETAIN"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "The command does not exist before this change",
+      "tier": "unit_test",
+      "reference": "tests/unit/test_greg_readiness.py run in a detached worktree of b1950be2 (README 'Commands and results'; re-run by the final verifier)",
+      "finding": "26 failed: 21 on `cannot import name 'readiness'`, 5 CLI tests on argparse `invalid choice: 'readiness'`"
+    },
+    {
+      "claim": "All 26 tests pass at the reviewed head; HEAD's code is identical to it",
+      "tier": "unit_test",
+      "reference": "tests/unit/test_greg_readiness.py at a2585021; fbf1e231 and the deliberation commit change documentation only",
+      "finding": "26 passed (22 test functions with parametrize; 14 first-round tests and 12 added after review)"
+    },
+    {
+      "claim": "The review-round fixes change behaviour where the reviews found defects",
+      "tier": "unit_test",
+      "reference": "the final test file in a detached worktree of the first-round head 3f0d54d3",
+      "finding": "6 failed, 20 passed: the two unreadable-store cases (null crashed with TypeError, [1, 2] read as names), the mismatched pre-approval (GRANTED reached), F1 (fs.list VERIFIED reached), the plant mission (3 receipts credited instead of 1), F3 (reason did not name a failure closure)"
+    },
+    {
+      "claim": "Every pinned safeguard is caught when removed",
+      "tier": "sandbox_execution",
+      "reference": "scripts/ci/check_capability_readiness_mutants.py, re-run by the final verifier at a2585021",
+      "finding": "Baseline passes; 38 of 38 mutants caught (19 first-round, 19 review-round); no STALE, no SURVIVED"
+    },
+    {
+      "claim": "On a credential-free rehearsal body the ladder gives a measured per-rung readout",
+      "tier": "sandbox_execution",
+      "reference": "docs/evidence/capability-readiness-2026-10-30/rehearsal-readout.json (`python -m greg rehearse`, then `python -m greg --home <body> readiness`; reproduced by a reviewer at 3f0d54d3 and re-read by the final verifier at a2585021)",
+      "finding": "163 capabilities: KNOWN 163, INSTALLED 159, CREDENTIALLED 0 (161 not applicable), GRANTED 0, EXERCISED 8, VERIFIED 8; first missing INSTALLED 4, CREDENTIALLED 2, GRANTED 157; 2 track-record disagreements (foundry.query, institution.appraise)"
+    },
+    {
+      "claim": "The ladder writes nothing",
+      "tier": "sandbox_execution",
+      "reference": "attack review probes test_probe_readiness_writes_nothing and test_probe_never_started_body_writes_nothing; final verifier's body hash before and after the re-read",
+      "finding": "No file under either body home changed or appeared (content, mtime_ns, mode); the rehearsal body's sha256 and its 141 files and directories were unchanged"
+    },
+    {
+      "claim": "No secret value reaches the output",
+      "tier": "unit_test",
+      "reference": "test_a_secret_value_never_appears_in_the_output; the credential-leak mutant",
+      "finding": "The planted-value test alone fails on the leak mutant at `assert PLANTED not in out`"
+    },
+    {
+      "claim": "A strategy that changed nothing is no longer verified by a sibling's success, through the real engine and appraiser",
+      "tier": "unit_test",
+      "reference": "test_a_strategy_routing_ruled_ineffective_is_not_verified_by_a_sibling_s_success",
+      "finding": "fs.list, ruled ineffective by routing, reads not VERIFIED (an UNCREDITED row) while fs.write achieves the mission; fails at 3f0d54d3"
+    },
+    {
+      "claim": "Related suites still pass",
+      "tier": "unit_test",
+      "reference": "38 unit files that drive greg.cli or `python -m greg`, plus the README's related set (final verifier, at a2585021)",
+      "finding": "680 passed, 15 skipped, 0 failed; the README's related set (165 tests) passed at d4302f0e"
+    },
+    {
+      "claim": "Authority and schema checks hold",
+      "tier": "sandbox_execution",
+      "reference": "scripts/ci/check_authority_singleton.py, scripts/ci/check_schema_refs.py (final verifier)",
+      "finding": "One source of authority for each of 6 governed artifacts; 27 schemas and 130 local references resolve"
+    },
+    {
+      "claim": "With a browser named, browser.render reads INSTALLED on Linux",
+      "tier": "sandbox_execution",
+      "reference": "final verifier: GREG_CHROMIUM=/opt/pw-browsers/chromium-1243/chrome-linux64/chrome, BUILTINS['browser.render'][0].available()",
+      "finding": "(True, 'available'); without it chrome_binary() misses the chrome-linux64 build and falls back to the macOS path (README corrected in fbf1e231)"
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "The first-round ladder read VERIFIED for a capability whose only receipt routing ruled ineffective",
+      "tier": "sandbox_execution",
+      "reference": "attack review F1, probe test_probe_ineffective_capability_reads_verified_via_sibling_success at 3f0d54d3",
+      "finding": "fs.list VERIFIED reached, citing the very receipt routing ruled ineffective, with no disagreement row; fixed in d4302f0e"
+    },
+    {
+      "claim": "The first-round ladder read GRANTED for a pre-approval the engine refuses to run",
+      "tier": "sandbox_execution",
+      "reference": "attack review F2 and fidelity review MUB-F1 probes at 3f0d54d3",
+      "finding": "Step class read_only against manifest internal_write: missions.pre_approved False and the engine raised an APPROVAL ask, yet GRANTED read reached; fixed by deciding through missions.pre_approved"
+    },
+    {
+      "claim": "A malformed secret store crashed the command",
+      "tier": "sandbox_execution",
+      "reference": "attack review F4",
+      "finding": "A 0600 store holding `null` made `greg readiness` exit 1 with TypeError; fixed. `greg status` crashes the same way and is unchanged (greg/body.py)"
+    },
+    {
+      "claim": "Nine safeguards survived mutation in the first round",
+      "tier": "sandbox_execution",
+      "reference": "fidelity review MUB-F2, extra_mutants.py at 3f0d54d3",
+      "finding": "Including the closure window bound, the routing verdict filter, the Genesis formed-provider filter, both _may_target directions, the unreadable store and both track-record branches; each now has a test and a caught mutant"
+    },
+    {
+      "claim": "Mission Control does not show the same counts",
+      "tier": "other",
+      "reference": "greg/mission_control.py unchanged in b1950be2..HEAD; `gh api repos/dababiyoda/uniimente-kernel/pulls/178/files` (open draft, head e410977d) lists it",
+      "finding": "The unit's parity acceptance item is incomplete (F5 / MUB-F5, deferred); each row carries Mission Control's class and a test checks it matches the body.status row's class"
+    },
+    {
+      "claim": "An unknown capability id reads like nothing to report",
+      "tier": "unit_test",
+      "reference": "attack review F6, probe test_probe_cli_unknown_capability_is_silent",
+      "finding": "`greg readiness --capability fs.wrte` exits 0 with an empty capabilities list; not addressed"
+    },
+    {
+      "claim": "The evidence README misdescribed browser.render twice",
+      "tier": "readme_claim",
+      "reference": "fidelity review MUB-F4; final verification; fbf1e231",
+      "finding": "First 'no Chromium', then 'cannot be INSTALLED on any Linux body whatever browser is present'; both wrong. fbf1e231 states that chrome_binary() globs chrome-linux/ while the Playwright build here is chrome-linux64/, and that GREG_CHROMIUM makes it INSTALLED"
+    },
+    {
+      "claim": "The mutant gate runs in no workflow",
+      "tier": "other",
+      "reference": "fidelity review MUB-F7; grep of .github/workflows for check_capability_readiness_mutants",
+      "finding": "Not wired; canonical-ci.yml is held by #178, #201, #209, #214, #215 and #232, so wiring is left to the #196 integrator"
+    },
+    {
+      "claim": "One integration test fails on the PR base itself",
+      "tier": "sandbox_execution",
+      "reference": "tests/integration/test_greg_goal_gravity_process.py::test_a_goal_on_a_real_body_process_wakes_on_meaning_not_noise_and_asks_once_across_a_kill (final verifier)",
+      "finding": "Fails deterministically with 'noise wakes nothing', assert 2 == 1, twice at a2585021 and once at b1950be2; this unit does not touch gravity, missions or the body loop"
+    },
+    {
+      "claim": "Some facts the tests judge are recorded directly, not produced by the engine",
+      "tier": "unit_test",
+      "reference": "tests/unit/test_greg_readiness.py docstring; fidelity review MUB-F3",
+      "finding": "Seven kinds: mission.action DONE records (written by _act_through_gate after a real Gate act), mission.achieved and mission.unmet claims, VERIFIED_UNMET and UNAVAILABLE appraisals, routing.outcome rows (one with a verdict no writer gives), capability.registered, capability.state"
+    },
+    {
+      "claim": "greg/cli.py conflicts with an open PR",
+      "tier": "other",
+      "reference": "git merge-tree --write-tree HEAD aee286ee (#235 head)",
+      "finding": "CONFLICT (content) in greg/cli.py: #235 adds a read-only `autonomy` subcommand at the same two places; both sides are additive"
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "For any capability, GREG says which of KNOWN, INSTALLED, CREDENTIALLED, GRANTED, EXERCISED and VERIFIED it has reached, on what evidence, and what its next use needs, crediting success and authority only as the body's own readers do, writing nothing and revealing no secret value.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "One per-capability answer to section 32's six rungs, with evidence references and the first missing rung's reason",
+        "amplified_value": "The first-missing reason is the founder's blocker list for section 26 (a named credential, a platform, a live grant); it reverses into a liability if a rung reads reached where the body would still refuse, which is why GRANTED and VERIFIED are decided by the engine's and appraiser's own tests"
+      },
+      {
+        "id": "A2",
+        "statement": "Reader disagreements are reported, not smoothed",
+        "amplified_value": "Four disagreements between existing readers became visible (Mission Control's credential class, body.status's built-in-only list, track_record's sensor gap and its crediting of ineffective receipts); each is a decision the founder or a maintainer can now make on evidence"
+      },
+      {
+        "id": "A3",
+        "statement": "Read-only and value-free",
+        "amplified_value": "Safe to run on a live body at any time; it can feed founder surfaces without a new authority or write path"
+      },
+      {
+        "id": "A4",
+        "statement": "Counts per rung, with VERIFIED named as the only appraiser-backed rung",
+        "amplified_value": "Section 70's question gets an instrument that cannot be satisfied by adding tools: on the rehearsal body 8 of 163 are VERIFIED, not 163"
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "Mission Control, the founder's main surface, does not show the ladder; the unit's parity acceptance item is incomplete",
+        "severity": "medium",
+        "response_type": "modularity",
+        "redesigned_response": "Each row carries Mission Control's own class, and a test checks that class equals what classify_capability gives the body.status row; the panel waits until #178 no longer edits greg/mission_control.py"
+      },
+      {
+        "id": "D2",
+        "statement": "GRANTED does not read the body-wide PAUSE or STOP, the cone's remaining budget, its data classes or constitutional policy",
+        "severity": "medium",
+        "response_type": "evidence",
+        "redesigned_response": "Every readout carries a 'limits' field that states this; GRANTED through a pre-approval is decided by missions.pre_approved, the engine's own test"
+      },
+      {
+        "id": "D3",
+        "statement": "VERIFIED is more conservative than routing: any REFUTED of a closure that judged the capability's receipts demotes it, a failure closure's included, and a VERIFIED closure credits no receipt the body blamed",
+        "severity": "low",
+        "response_type": "evidence",
+        "redesigned_response": "Where routing differs, the ladder reports a disagreement; the demotion rule follows the scope's binding sentence 'a REFUTED latest outcome never reads VERIFIED', and the reason names a failure closure"
+      },
+      {
+        "id": "D4",
+        "statement": "CREDENTIALLED reads handle names in the body's file store only",
+        "severity": "low",
+        "response_type": "evidence",
+        "redesigned_response": "Stated in the readout's limits: a macOS Keychain item reads missing until a capability resolves it; a store that is a JSON list of strings is read as names, as the broker reads it"
+      },
+      {
+        "id": "D5",
+        "statement": "The ladder couples to the shapes of six kinds of record and to two names in greg/mission_control.py",
+        "severity": "medium",
+        "response_type": "protective",
+        "redesigned_response": "26 tests and 38 mutants pin each reading; the imported mission_control names exist at the base and at #178's head"
+      },
+      {
+        "id": "D6",
+        "statement": "Seven kinds of fact the tests judge are recorded directly in their writers' fields",
+        "severity": "low",
+        "response_type": "evidence",
+        "redesigned_response": "Listed in the test docstring and the README; every VERIFIED and REFUTED verdict comes from the body's separate appraiser, and F1's test drives the real engine tick"
+      }
+    ],
+    "comparisons": {
+      "baseline": "b1950be2: no reader separates the six rungs; `greg readiness` is an invalid choice; the existing readers disagree silently",
+      "do_nothing": "Section 32's distinction stays unimplemented and section 70 has no instrument but counting tools",
+      "simplest_viable_alternative": "Derive the rungs from body.status and track_record: misses Genesis-registered capabilities and sensor-verified ones, and credits receipts routing ruled ineffective; rejected",
+      "strongest_competing_architecture": "A persisted section-32 contract registry: covers every field but writes a second record that can drift, needs files six open PRs hold, and was not built",
+      "reversible_experiment": "This change: CLI only, read-only, one revert, nothing to migrate"
+    },
+    "rejected_alternatives": [
+      {
+        "name": "Derive the rungs from body.status and routing.track_record",
+        "rejection_reason": "body.status omits Genesis-registered capabilities; track_record misses capabilities verified as a closure's sensor (foundry.query, institution.appraise on the rehearsal body) and credits receipts routing ruled ineffective",
+        "revival_evidence": "A founder ruling that routing's semantics are the intended ones"
+      },
+      {
+        "name": "Add the ladder to Mission Control now",
+        "rejection_reason": "greg/mission_control.py is edited by open draft PR #178, and the unit's scope allows the change only when no open PR edits it",
+        "revival_evidence": "#178 lands or no longer edits greg/mission_control.py"
+      },
+      {
+        "name": "A persisted section-32 contract registry",
+        "rejection_reason": "A written second record of capability state, larger, touching files held by six open PRs, with no measured benefit over a read-only projection",
+        "revival_evidence": "The founder's surfaces need section 32's full contract fields"
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Two reviews by separate agents of this same session attacked the first-round head 3f0d54d3 (one attack, one fidelity), reproducing each finding with probes; a final verification by another agent of this session re-ran the fail-before, the mutants, the rehearsal readout, related suites and the merge at a2585021.",
+    "new_weaknesses": [
+      {
+        "id": "W1",
+        "category": "gaming",
+        "statement": "F1: a VERIFIED closure credited every completed action of its mission, so a strategy routing ruled ineffective read VERIFIED through a sibling strategy's success",
+        "strengthening_response": "verdict_timeline no longer credits a receipt the body blamed (routing ineffective, or MissionBook blaming its action for breaking a passing check); such a capability gets an UNCREDITED row and a track-record disagreement; tested through the real engine and appraiser"
+      },
+      {
+        "id": "W2",
+        "category": "fragility",
+        "statement": "F2 / MUB-F1: GRANTED accepted any signed pre-approved step naming the capability, without the engine's pre_approved test",
+        "strengthening_response": "Pre-approval GRANTED is decided by greg.missions.pre_approved on the step's own strategy, with its target under the prefix; a matching and a mismatched class are both tested"
+      },
+      {
+        "id": "W3",
+        "category": "fragility",
+        "statement": "F4: a secret store holding `null` or a list of non-names crashed or was misread",
+        "strengthening_response": "TypeError and non-string names read as an unreadable store, reporting only the error's type; two parametrized tests"
+      },
+      {
+        "id": "W4",
+        "category": "overfit",
+        "statement": "MUB-F2: nine safeguards were untested and survived mutation",
+        "strengthening_response": "A test pins each, and 19 new mutants are in the script: 38 of 38 caught"
+      },
+      {
+        "id": "W5",
+        "category": "comprehensibility",
+        "statement": "F3: a REFUTED of a failure closure demoted VERIFIED while a code comment called such verdicts neutral",
+        "strengthening_response": "Kept the binding scope ('a REFUTED latest outcome never reads VERIFIED'); the comment and docstring are corrected and the reason names a failure closure"
+      },
+      {
+        "id": "W6",
+        "category": "comprehensibility",
+        "statement": "MUB-F3 and MUB-F4: the records under-listed the facts tests record directly and gave a wrong reason for browser.render, twice",
+        "strengthening_response": "The docstring and README list all seven kinds; fbf1e231 gives the right browser.render reason, verified with GREG_CHROMIUM"
+      },
+      {
+        "id": "W7",
+        "category": "dependency",
+        "statement": "MUB-F7: the mutant gate runs in no workflow, and canonical-ci.yml is held by six open PRs",
+        "strengthening_response": "Named for the #196 integrator to wire; until then the gate is run by hand"
+      },
+      {
+        "id": "W8",
+        "category": "other",
+        "statement": "F6: an unknown --capability id exits 0 with an empty list",
+        "strengthening_response": "Not addressed; recorded as an open item and a dissent"
+      },
+      {
+        "id": "W9",
+        "category": "dependency",
+        "statement": "greg/cli.py conflicts textually with #235, whose `autonomy` subcommand is added at the same two places",
+        "strengthening_response": "Both sides are additive; the integrator keeps both subcommands and both dispatch branches"
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "deferred",
+        "rationale": "The scope allows the Mission Control change only when no open PR edits greg/mission_control.py; #178 (open draft, head e410977d) does. The carried class and parity test keep the readers aligned meanwhile",
+        "owner": "#196 integrator",
+        "review_trigger": "#178 lands or no longer edits greg/mission_control.py"
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "deferred",
+        "rationale": "Reading PAUSE/STOP, remaining budget and policy is a bounded extension of _granted; until then every readout states the limit",
+        "owner": "GREG maintainers",
+        "review_trigger": "Any founder ask or decision that relies on GRANTED, or the founder asking for it"
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "accepted",
+        "rationale": "The conservative rule follows the scope's binding sentence and routing also counts such a REFUTED as refuted; differences are reported as disagreements",
+        "owner": "Alfonso Lopez (semantics)",
+        "review_trigger": "A founder ruling on VERIFIED semantics, or a change to routing.track_record"
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "accepted",
+        "rationale": "Names in the file store are what the broker reads without resolving a value; resolving Keychain items would mean reading secrets",
+        "owner": "GREG maintainers",
+        "review_trigger": "A macOS founder body with Keychain-held credentials"
+      },
+      {
+        "disadvantage_id": "D5",
+        "outcome": "accepted",
+        "rationale": "26 tests and 38 caught mutants pin every reading, but the gate is run by hand until wired into CI (W7)",
+        "owner": "#196 integrator (CI wiring); GREG maintainers (record shapes)",
+        "review_trigger": "Any change to the shapes of receipts, mission.action, mission.appraised, routing.outcome or capability events, or to mission_control._providers or classify_capability"
+      },
+      {
+        "disadvantage_id": "D6",
+        "outcome": "accepted",
+        "rationale": "The recorded shapes match the fields the writers produce and readiness reads (fidelity review); the decisive verdicts are real",
+        "owner": "GREG maintainers",
+        "review_trigger": "A test that drives one of the seven fact kinds through the engine and disagrees with the recorded shape"
+      }
+    ],
+    "final_design": "greg/readiness.py: a read-only fold over the registry the body uses (163 built-ins plus formed Genesis registrations), with KNOWN, INSTALLED, CREDENTIALLED (names only), GRANTED (live signed cone or missions.pre_approved, ATTACHED), EXERCISED (positive Gate receipt) and VERIFIED (appraiser VERIFIED of a judging closure, no later REFUTED or ineffective verdict, blamed receipts never credited); each row carries Mission Control's class and routing's track record; disagreements, a per-rung summary and stated limits are printed by `greg readiness [--capability ID]`. 26 tests and 38 mutants.",
+    "residual_risks": [
+      {
+        "risk": "GRANTED reads reached while PAUSE or STOP stands, or the cone's budget is spent",
+        "mitigation": "Stated in every readout's limits; read before acting on it",
+        "owner": "GREG maintainers",
+        "review_trigger": "A founder decision or ask that relies on GRANTED"
+      },
+      {
+        "risk": "A record-shape change silently misreads a rung while the gate is not in CI",
+        "mitigation": "38 mutants and 26 tests; wire the gate into canonical-ci.yml",
+        "owner": "#196 integrator",
+        "review_trigger": "Intake into #196"
+      },
+      {
+        "risk": "Rehearsal or test-key counts are read as capability or VEPMC evidence",
+        "mitigation": "The rehearsal record names its REHEARSAL key and says counts_toward_vepmc false, and every readout's scope field says counting capabilities per rung is not success",
+        "owner": "Evidence and Welfare Guardian; every agent quoting the readout",
+        "review_trigger": "Any record that quotes readiness counts"
+      },
+      {
+        "risk": "The integration branch carries a red test unrelated to this unit",
+        "mitigation": "Flagged for the #196 integrator with its exact assertion; it fails identically at b1950be2",
+        "owner": "#196 integrator",
+        "review_trigger": "Intake into #196"
+      }
+    ],
+    "recommendation": "NEEDS_FOUNDER_DECISION"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Recorded with thresholds; neither blocks the draft.",
+    "entries": [
+      {
+        "role": "Adversarial Reviewer",
+        "position": "GRANTED should not read reached while the body-wide PAUSE or STOP stands or the cone's budget is spent; until it reads them it should say 'admitted by a live cone', not 'granted'. An unknown --capability id should be reported, not answered with an empty list.",
+        "rationale": "A rung that reads reached where the body would still refuse overstates readiness, the defect class the review round fixed for VERIFIED and pre-approval",
+        "evidence_threshold": "A body under PAUSE or STOP, or with a spent cone, whose readout shows GRANTED reached for a step the engine refuses",
+        "owner": "GREG maintainers",
+        "review_trigger": "Before any founder surface (Mission Control) shows GRANTED"
+      },
+      {
+        "role": "Evidence and Welfare Guardian",
+        "position": "A REFUTED appraisal of a failure closure can mean the capability worked (the claimed failure could not be verified); demoting VERIFIED for it may hide a success.",
+        "rationale": "Attack review F3: the appraiser returns REFUTED for an unmet closure when the receipts or a re-observation satisfy the check",
+        "evidence_threshold": "A founder ruling that failure-closure refutations should not demote, or a real body where such a refutation hid a verified capability",
+        "owner": "Alfonso Lopez",
+        "review_trigger": "The founder's ruling on VERIFIED semantics"
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": true,
+    "approval_status": "pending",
+    "approver": "Alfonso Lopez (merge, and the rulings on Mission Control's credential class, body.status listing Genesis capabilities and VERIFIED's demotion rule); #196 integrator for intake"
+  },
+  "migration_plan": "None required: a new read-only module and one subcommand; no state is written and no record format changes. At intake the integrator resolves the greg/cli.py conflict with #235 by keeping both subcommands, and wires scripts/ci/check_capability_readiness_mutants.py into canonical-ci.yml. Mission Control parity follows once #178 no longer edits greg/mission_control.py.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Revert this branch's commits on the child branch, or decline intake into #196",
+      "Nothing to migrate or clean up: the ladder never wrote to any body"
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "`greg readiness` writes any byte under a body home or takes the writer lock",
+    "Any secret value appears in its output",
+    "A capability reads VERIFIED whose latest judging outcome is REFUTED or ineffective, or whose only credited receipt the body blamed",
+    "A capability reads GRANTED through a pre-approval that greg.missions.pre_approved rejects, or with no live signed cone",
+    "Readiness counts are used as VEPMC, founder-device or success evidence",
+    "The ladder becomes an input to any grant, attach, promotion or routing decision"
+  ],
+  "decision": "NEEDS_FOUNDER_DECISION",
+  "decision_owner": "Alfonso Lopez decides merge and the three reader rulings (Mission Control's credential class, body.status listing Genesis-registered capabilities, VERIFIED's demotion rule); the #196 integrator decides intake, wires the mutant gate into canonical-ci.yml and resolves the greg/cli.py conflict with #235; session_01Kucyfm6YBHMTjaiC1M9hqD owns the reversible draft. The five role positions are recorded by the implementing session; the two adversarial reviews and the final verification were done by separate agents of this same session. All five roles recommend RETAIN.",
+  "review_trigger": "#178 no longer editing greg/mission_control.py (Mission Control parity); a founder ruling on any of the three reader disagreements; the first readout on a founder body; any change to the record shapes the ladder reads"
+}

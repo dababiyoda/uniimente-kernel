@@ -473,7 +473,7 @@ def _parse_claim(text: str) -> dict | None:
             try:
                 value = json.loads(line.split(REPORT_MARK, 1)[1].strip())
                 return value if isinstance(value, dict) else None
-            except json.JSONDecodeError:
+            except (json.JSONDecodeError, RecursionError):   # nested too deep is not a claim either
                 return None
     return None
 

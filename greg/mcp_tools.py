@@ -424,7 +424,7 @@ def _remote_act(params: dict, ctx: InvocationContext) -> dict:
         answer = json.loads(done.stdout.strip().splitlines()[-1])
         if answer.get("renewed") and login:          # the renewed login goes back to the broker, never the record
             mcp_login.store_renewal(ctx.secrets, str(bearer), login, answer.pop("renewed"))
-    except (ValueError, IndexError):
+    except (ValueError, IndexError, RecursionError):
         tail = " ".join(done.stderr.split())[-300:].replace(token, "[credential]") if token else done.stderr[-300:]
         raise CapabilityError(f"MCP server {server}: GREG's client failed (exit {done.returncode}): {tail}") from None
     if "error" in answer:

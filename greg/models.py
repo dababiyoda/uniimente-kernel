@@ -507,7 +507,7 @@ class OllamaRoute:
                 raise RouteError("Ollama response exceeds size limit", kind=BAD_OUTPUT)
             try:
                 result = json.loads(raw)
-            except (UnicodeError, ValueError) as exc:
+            except (UnicodeError, ValueError, RecursionError) as exc:
                 raise RouteError("Ollama returned invalid JSON", kind=BAD_OUTPUT) from exc
             if not isinstance(result, dict):
                 raise RouteError("Ollama returned an invalid response", kind=BAD_OUTPUT)

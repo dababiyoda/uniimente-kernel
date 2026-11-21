@@ -262,7 +262,7 @@ def _signal(path: Path) -> tuple[dict, str]:
     raw = path.read_bytes()
     try:
         signal = json.loads(raw.decode("utf-8"))
-    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+    except (UnicodeDecodeError, json.JSONDecodeError, RecursionError) as exc:   # nested too deep: not JSON either
         raise CapabilityError(f"signal is not JSON: {exc}") from None
     if not isinstance(signal, dict) or not isinstance(signal.get("text"), str) or not signal["text"].strip():
         raise CapabilityError("signal needs a non-empty 'text'")

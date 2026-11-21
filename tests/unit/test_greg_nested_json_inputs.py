@@ -80,3 +80,54 @@ def test_a_nested_intake_file_is_refused_as_not_json_and_the_body_keeps_ticking(
         refused = [e.payload for e in body.journal.replay("external.intake_refused")]
     assert [(r["file"], r["why"]) for r in refused] == [("deep.json", "not JSON")]
     assert not (layout.intake / "deep.json").exists()
+
+
+# ---------------------------------------------- re-check of 48d66f5f, F2: the same class in four more readers
+def test_a_worker_report_nested_too_deep_is_no_claim():
+    from greg import workers
+    assert workers._parse_claim(f"{workers.REPORT_MARK} {NESTED}") is None
+
+
+def test_an_organ_signal_nested_too_deep_is_refused_as_not_json(tmp_path):
+    import pytest
+    from greg import organ_exchange
+    from greg.capabilities import CapabilityError
+    path = tmp_path / "signal.json"
+    path.write_text(NESTED)
+    with pytest.raises(CapabilityError, match="not JSON"):
+        organ_exchange._signal(path)
+
+
+def test_the_readers_of_model_and_mcp_answers_name_recursion_error_as_malformed():
+    """greg/models.py (Ollama) and greg/mcp_tools.py read an answer GREG does not control; both catch RecursionError
+    with the JSON errors, so a nested answer is a bad output or a refusal, never an unknown outcome."""
+    import inspect
+    from greg import mcp_tools, models
+    assert "except (UnicodeError, ValueError, RecursionError)" in inspect.getsource(models.OllamaRoute._request)
+    assert "except (ValueError, IndexError, RecursionError)" in inspect.getsource(mcp_tools)
+
+
+# ---------------------------------------------- re-check of 48d66f5f, F3: an inbox entry that is not a regular file
+def test_a_fifo_in_the_inbox_never_holds_the_tick(tmp_path):
+    """A FIFO named *.json with no writer held a plain read forever: the tick never ended and the BODY_STOP or
+    BODY_RESUME behind it was never read. It now raises at once, as a directory named *.json always did: a running
+    body exits on it for the crash-loop breaker to count, and a paused body sets it aside and reads on."""
+    import os
+    import threading
+    home, key, body_id, _ = make_body(tmp_path)
+    with Body(home) as body:
+        body.apply(sign_command(key, "BODY_PAUSE", {}, body_id=body_id))
+    os.mkfifo(home / "inbox" / "0000-fifo.json")
+    send_signed(home, key, "BODY_RESUME", {})
+    done = {}
+
+    def run():
+        with Body(home) as body:
+            body.tick()
+            done["paused"] = body.paused()
+    worker = threading.Thread(target=run, daemon=True)
+    worker.start()
+    worker.join(30)
+    assert not worker.is_alive(), "the tick waited on the FIFO"
+    assert done == {"paused": False}
+    assert (home / "inbox" / "faulted" / "0000-fifo.json").exists()

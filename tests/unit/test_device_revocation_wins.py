@@ -419,3 +419,31 @@ def test_a_backdated_device_approve_that_arrived_after_the_founders_reject_does_
             clock.advance(1)
         assert [e.payload["answer"] for e in body.journal.replay("decision.answered")] == ["reject"]
     assert not note.exists()
+
+
+# ------------------------------------------- re-check of 48d66f5f, F1: a revocation that names a suspected compromise
+def test_a_suspected_compromise_revocation_waiting_in_the_inbox_wins_too(tmp_path):
+    """`greg device revoke --suspected-compromise` signs {"device_key_id", "suspected_compromise": true}. The pre-read
+    counted only a body that was exactly {"device_key_id"}, so the phone's backdated pause was applied before such a
+    revocation and greg serve kept serving the phone (re-check probe p_suspected.py, on 7474e937 through 48d66f5f)."""
+    home, key, body_id, devices = _delegated(tmp_path, "phone")
+    phone, kid = devices["phone"]
+    send_signed(home, key, "DEVICE_REVOKE", {"device_key_id": kid, "suspected_compromise": True})
+    code, data = _post(home, sign_command(phone, "BODY_PAUSE", {}, body_id=body_id, now=_now() - BACK))
+    assert code == 403 and "revocation is waiting" in data["error"]
+    assert _read(home, phone, body_id)[0] == 401
+    pause = _drop(home, sign_command(phone, "BODY_PAUSE", {}, body_id=body_id, now=_now() - BACK), "remote-body_pause")
+    with Body(home) as body:
+        body.tick()
+        assert ("BODY_PAUSE", "device:phone") not in _accepted(body) and not body.paused()
+        assert ("DEVICE_REVOKE", "founder") in _accepted(body) and kid not in body.device_keys()
+        assert [e.payload["file"] for e in body.journal.replay("command.rejected")] == [pause.name]
+
+
+def test_a_revocation_body_apply_refuses_holds_no_device(tmp_path):
+    """Only a body DEVICE_REVOKE accepts counts: `suspected_compromise: false` or an extra field is refused by apply,
+    so it voids nothing ahead of it either."""
+    home, key, body_id, devices = _delegated(tmp_path, "phone")
+    phone, kid = devices["phone"]
+    send_signed(home, key, "DEVICE_REVOKE", {"device_key_id": kid, "suspected_compromise": False})
+    assert _read(home, phone, body_id)[0] == 200

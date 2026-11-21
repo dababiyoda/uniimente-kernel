@@ -21,6 +21,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
+import errno
 import hashlib
 import json
 import os
@@ -363,8 +364,14 @@ def pending_revocations(candidates, verifier: FounderVerifier, *, now: datetime)
             if principal == "founder" and keys and new_id is not None:
                 keys.pop(next(iter(keys)))
                 keys[new_id] = new_hex
-        elif set(body) == {"device_key_id"} and isinstance(body["device_key_id"], str):
-            revoked.add(body["device_key_id"])
+        else:
+            # every body DEVICE_REVOKE accepts, a suspected compromise included (re-check of 48d66f5f, F1: only
+            # an exact {"device_key_id"} counted, so `greg device revoke --suspected-compromise` did not win)
+            try:
+                kid, _ = revocation.revoke_fields(body)
+            except MissionError:
+                continue          # apply refuses it too
+            revoked.add(kid)
     return frozenset(revoked)
 
 
@@ -516,6 +523,23 @@ def egress_relay(home: Path, config: dict):
         proxy_from_environment
     return Relay(policy_from_manifests(), EgressJournal(Path(home) / "egress-journal.jsonl"),
                  proxy=proxy_from_environment())
+
+
+def _read_inbox_file(path: Path) -> bytes:
+    """The text of one inbox file, opened without waiting: an entry that is not a regular file (a FIFO, a directory,
+    a device) raises at once, as a directory always did, so a running body exits on it for the crash-loop breaker
+    to count and a held body sets it aside. Read with a plain open, a FIFO with no writer held the tick forever,
+    and the BODY_STOP or BODY_RESUME behind it was never read (re-check of 48d66f5f, F3)."""
+    fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK)
+    try:
+        if not stat.S_ISREG(os.fstat(fd).st_mode):
+            raise OSError(errno.EINVAL, "inbox entry is not a regular file", str(path))
+        chunks = []
+        while chunk := os.read(fd, 1 << 16):
+            chunks.append(chunk)
+        return b"".join(chunks)
+    finally:
+        os.close(fd)
 
 
 class Body:
@@ -1063,7 +1087,7 @@ class Body:
     def _ingest_one(self, path: Path, *, only_kind: str | None = None, revoking=frozenset()) -> dict | None:
         envelope = None
         try:
-            envelope = json.loads(path.read_text())
+            envelope = json.loads(_read_inbox_file(path).decode("utf-8"))
             if only_kind is not None and (not isinstance(envelope, dict) or envelope.get("kind") != only_kind):
                 return None
             outcome = self.apply(envelope, channel="inbox", revoking=revoking)
@@ -1102,7 +1126,7 @@ class Body:
         for byte (never deleted, never accepted as a command) and recorded once with its digest and error, and the
         turn goes on to the next file. Setting a file aside lifts nothing; only a valid signed command does."""
         try:
-            raw = path.read_bytes()
+            raw = _read_inbox_file(path)      # never waits on a FIFO: one is kept unread, with no digest
         except OSError:
             raw = None
         recorded = {e.payload["kept_as"] for e in self.journal.replay("command.faulted")}

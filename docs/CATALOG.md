@@ -25,7 +25,7 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 | [`release`](#release-records) | 15 | Release records |
 | [`mechanisms`](#mechanism-cards) | 3 | Mechanism Cards |
 | [`developmental`](#developmental-mechanism-research) | 1 | Developmental mechanism research |
-| Elsewhere (`*.md`) | 82 | READMEs and notes beside code |
+| Elsewhere (`*.md`) | 83 | READMEs and notes beside code |
 
 ## Doctrine, orders and top-level references
 
@@ -1008,6 +1008,7 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 | [`tests/evidence/antifragility-v3b-2026-10-22/README.md`](../tests/evidence/antifragility-v3b-2026-10-22/README.md) | Antifragility v3b: result |
 | [`tests/evidence/append-only-witness-20261014/results.md`](../tests/evidence/append-only-witness-20261014/results.md) | Append-only witness — evidence (2026-10-14) |
 | [`tests/evidence/cognition-residual-2026-10-13/README.md`](../tests/evidence/cognition-residual-2026-10-13/README.md) | Residual cognition safeguards — 2026-10-13 |
+| [`tests/evidence/cortex-seed-v0.2.3/README.md`](../tests/evidence/cortex-seed-v0.2.3/README.md) | Cortex 0.2.3: optimality proofs are bound, and only a conclusive engine confirms |
 | [`tests/evidence/cross-organ-mission-20261014/results.md`](../tests/evidence/cross-organ-mission-20261014/results.md) | Cross-organ mission — evidence (2026-10-14) |
 | [`tests/evidence/goal-gravity-20261013/README.md`](../tests/evidence/goal-gravity-20261013/README.md) | Evidence bundle: Goal Gravity (INTENT-20261013-GOAL-GRAVITY) |
 | [`tests/evidence/greg-body/README.md`](../tests/evidence/greg-body/README.md) | GREG body evidence — 2026-09-25 (refreshed 2026-09-26: Spider-Web; then reconciliation, phone, browser) |

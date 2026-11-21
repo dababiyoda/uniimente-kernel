@@ -30,6 +30,27 @@ from provenance.ledger import sha256_json
 from tests.greg_fixtures import Clock, drop, make_body, mission, note_check, signed, workspace, write_strategy
 
 
+POISON = b"poison: a file whose ingestion raises (IngestionFault)"
+
+
+class IngestionFault(Exception):
+    """Raised while a POISON file is ingested. JSON nested past the parser's recursion limit was the poison until
+    #313, which made it malformed input that is rejected like any other; no file GREG reads raises by its content now,
+    so the fault is injected where a real one would surface, inside Body._ingest_one."""
+
+
+@pytest.fixture(autouse=True)
+def poisoned_ingestion(monkeypatch):
+    original = Body._ingest_one
+
+    def ingest(self, path, **kwargs):
+        if path.read_bytes().startswith(POISON):
+            raise IngestionFault(f"{path.name} cannot be ingested")
+        return original(self, path, **kwargs)
+
+    monkeypatch.setattr(Body, "_ingest_one", ingest)
+
+
 def crash(home, clock, n=1, step=60.0):
     """n main-loop lifetimes that end without a clean stop (the process died after booting)."""
     for _ in range(n):
@@ -407,19 +428,19 @@ def test_a_hold_without_its_ask_gets_exactly_one_at_the_next_boot(tmp_path, monk
 
 
 def test_a_file_a_held_body_cannot_ingest_is_set_aside_and_never_keeps_it_from_a_signed_resume(tmp_path, monkeypatch):
-    """The inbox is read in name order (greg send_signed names files by issue time, so a later resume sorts after an
-    earlier file). A file whose ingestion raised (here JSON nested past the parser's recursion limit) failed every
+    """The inbox is read in name order (greg send_signed and greg serve name files by arrival, so a later resume
+    sorts after an earlier file). A file whose ingestion raised (here an injected IngestionFault) failed every
     turn of the held body, so the founder's signed BODY_RESUME behind it was never read, and greg status showed
     nothing. A running body still exits on such a file, so the breaker counts it; a held body sets it aside under
     inbox/faulted byte for byte, records it once, reads on, and status names it with how to clear it. Setting it
     aside lifts nothing, nor does a forged resume behind it: only the signed one does."""
     home, key, body_id, _ = make_body(tmp_path)
     inbox = Layout(home).inbox
-    poison = ("[" * 100_000 + "]" * 100_000).encode()
+    poison = POISON
     (inbox / "0-poison.json").write_bytes(poison)
     clock = Clock()
     for _ in range(CRASH_LOOP_BOOTS):                     # a running body exits on it, and the breaker counts it
-        with pytest.raises(RecursionError):
+        with pytest.raises(IngestionFault):
             run_for(monkeypatch, home, clock, seconds=30)
         clock.advance(60)
     assert (inbox / "0-poison.json").read_bytes() == poison
@@ -433,7 +454,7 @@ def test_a_file_a_held_body_cannot_ingest_is_set_aside_and_never_keeps_it_from_a
         [record] = [e.payload for e in b.journal.replay("command.faulted")]
         assert record["file"] == "0-poison.json" and record["kept_as"] == "inbox/faulted/0-poison.json"
         assert record["state"] == "HELD" and record["instruction_status"] == "data_only" and "applied" not in record
-        assert record["error"].startswith("RecursionError") and record["sha256"] == sha256_json(poison.hex())
+        assert record["error"].startswith("IngestionFault") and record["sha256"] == sha256_json(poison.hex())
         assert [e.payload["file"] for e in b.journal.replay("command.rejected")] == ["1-forged.json"]
     [shown] = status(home)["security"]["contained_faults"]
     assert shown == {"fault": "inbox file set aside", "file": "inbox/faulted/0-poison.json", "sha256": record["sha256"],
@@ -522,7 +543,7 @@ def test_a_set_aside_never_overwrites_and_works_when_inbox_faulted_cannot_take_t
     set aside in place, outside the *.json read, so the signed resume behind it is still read."""
     home, key, body_id, clock = held(tmp_path)
     inbox = Layout(home).inbox
-    poison = ("[" * 100_000 + "]" * 100_000).encode()
+    poison = POISON
     for _ in range(2):                                     # the same name twice: two kept files, never one overwritten
         (inbox / "0-poison.json").write_bytes(poison)
         with Body(home, clock=clock) as b:
@@ -557,7 +578,7 @@ def test_a_file_that_can_be_neither_read_nor_set_aside_is_skipped_and_never_bloc
     now skipped for the life of the process and recorded; it is tried again after a restart."""
     home, key, body_id, clock = held(tmp_path)
     inbox = Layout(home).inbox
-    (inbox / "0-poison.json").write_bytes(("[" * 100_000 + "]" * 100_000).encode())
+    (inbox / "0-poison.json").write_bytes(POISON)
     drop(home, signed(key, body_id, "BODY_RESUME", {"reason": "fixed the cause"}), "1-resume.json")
     real_move, real_rename = body_module.shutil.move, Path.rename
 
@@ -601,7 +622,7 @@ def test_status_still_answers_when_inbox_faulted_cannot_be_listed(tmp_path, monk
 def test_a_set_aside_never_reuses_the_name_of_one_recorded_and_since_removed(tmp_path):
     home, key, body_id, clock = held(tmp_path)
     inbox = Layout(home).inbox
-    poison = ("[" * 100_000 + "]" * 100_000).encode()
+    poison = POISON
     (inbox / "0-poison.json").write_bytes(poison)
     with Body(home, clock=clock) as b:
         b.boot()

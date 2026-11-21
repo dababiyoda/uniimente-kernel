@@ -1006,9 +1006,22 @@ def test_line_bound_prs_without_a_local_diff_are_listed(quick):
     m = w.build([_pr(1, "a/one", body=_receipt(A, ["greg/missions.py"])),
                  _pr(2, "b/two", base="main", body=_receipt(B, ["greg/body.py"]))], [], now=NOW, use_git=False)
     assert m["gaps"]["line_bound_prs_without_diff"] == [1]
-    assert "1 of 1 PRs headed for the line have no local diff (#1); their file lists rest on the receipt alone" in (
-        w.markdown(m))
+    assert ("1 of 1 PRs headed for the line have neither a local diff nor a file list from the GitHub API (#1); their "
+            "file lists rest on the receipt alone") in w.markdown(m)
     assert w._answer_sources(m)["line_bound_prs_without_diff"] == [1]
+
+
+def test_a_file_list_from_the_api_is_counted_and_described_as_from_the_api(quick, tmp_path):
+    pr = dict(_pr(505, "a/api", body=_receipt(A, ["greg/body.py"])), _api_files=["greg/body.py"])
+    m = w.build([pr], [], now=NOW, use_git=False)
+    assert (m["sources"]["git_diffs"], m["sources"]["api_file_lists"]) == (0, 1)
+    text = w.markdown(m)
+    assert "0 of them with their commits in this clone, 1 with file lists read from the GitHub API" in text
+    assert "0 of 1 PRs headed for the line have neither a local diff nor a file list from the GitHub API." in text
+    assert "from the GitHub API for the open PRs into the line" in text.split("Sources:")[0]
+    assert "``changed_via``" in w.__doc__ and "GitHub API" in w.__doc__
+    gitless = w.build([pr], [], root=tmp_path, now=NOW)
+    assert "Git was not read: declared files only, and file lists read from the GitHub API." in w.markdown(gitless)
 
 
 # ------------------------------------------------------------------ who wrote a board comment

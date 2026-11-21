@@ -111,10 +111,10 @@ banner on `main`; the entrance is the default branch.
 
 ### Recorded state (for rollback)
 
-| | Branch | Commit when prepared |
-|---|---|---|
-| Default branch today | `main` | `d64a6c931bb05aba4e3454847b665e73384bbdfa` (2026-10-14) |
-| Proposed default | `claude/greg-full-machine-completion-whgiee` (draft #196) | `8d20532464b1533b28d71d8331ca3412a90dbb11` (it moves at every intake) |
+| | Branch | Commit when prepared (2026-11-13) | Commit re-checked 2026-11-21 |
+|---|---|---|---|
+| Default branch today | `main` | `d64a6c931bb05aba4e3454847b665e73384bbdfa` (2026-10-14) | unchanged |
+| Proposed default | `claude/greg-full-machine-completion-whgiee` (draft #196) | `8d20532464b1533b28d71d8331ca3412a90dbb11` | `121195907fff261bb8610ed03488ef4461b59f73` (it moves at every intake; record the head at the moment of the switch) |
 
 ### What the switch does, verified 2026-11-13 from the public API and this tree
 
@@ -124,11 +124,13 @@ banner on `main`; the entrance is the default branch.
 | The integration branch has no rule | It can be force-pushed or deleted today | `GET /repos/.../rules/branches/<branch>` returns `[]` |
 | `canonical-ci.yml` and `directive-completion.yml` run on `push` to `main` only | The line is checked only through #196's `pull_request` runs. If #196 is closed, pushes to the line run no check | workflow `on:` blocks |
 | `repository-review.yml` is the only scheduled workflow | It starts running weekly (Monday 06:17 UTC), read-only, with an artifact and no gate | workflow `on:` blocks |
-| A merge into the default branch closes issues named with a closing phrase ("closes #N") | One open pull request into the line does this: #218 says "closes #217", an open issue it fixes, so the automatic close is what it intends. No other open pull request into the line names an issue that way (#311 says "close #293", which is a pull request and is not closed by keyword) | scan of open PR bodies against the open issues |
+| A merge into the default branch closes issues named with a closing phrase ("closes #N") | One open pull request into the line does this: #218 says "closes #217", an open issue it fixes, so the automatic close is what it intends. No other open pull request into the line names an issue that way (#311 names #293 and asks to be closed once #322 is taken, with no closing keyword; re-checked 2026-11-21) | scan of open PR bodies against the open issues |
 | New pull requests default to the default branch | Wanted. The 49 open pull requests into `main` keep their base; #196 stays open (a PR whose head is the default branch is allowed) | GitHub behaviour; PR list |
 | `greg/briefs.py`, `greg/capabilities.py` and `egregore/repository_audit.py` read `refs/remotes/origin/main` | Unchanged and intended: they audit the founder-merged line of each repository | grep; `tests/security/effect-call-allowlist.json` |
 | No consumer default branch refers to the Kernel by a floating `main` | No consumer breaks at the switch | grep of the 12 default-branch checkouts |
 | Merge, squash and rebase are all allowed; auto-merge is off; branches are not deleted on merge | Unchanged | `GET /repos/...` |
+| #196's base is `claude/greg-integration-178-184-20261021`, not `main` | #196's pull-request runs, the only checks the line gets today, compare against that branch. The switch does not change this | `GET /repos/.../pulls/196` (re-checked 2026-11-21) |
+| `main` is an ancestor of the line, which is 1,877 commits ahead with 401 merge commits. The gate requires linear history | The switch is the only route that does not rewrite the line. A later landing of the line on `main` through the gate could only be a squash or a rebase, and neither keeps the merge commits; that is a separate founder decision | `git rev-list --count [--merges] d64a6c93..12119590` (2026-11-21) |
 
 ### The settings, in order (the founder's; no session can make them)
 
@@ -142,6 +144,12 @@ banner on `main`; the entrance is the default branch.
    (CLI: `gh repo edit dababiyoda/uniimente-kernel --default-branch claude/greg-full-machine-completion-whgiee`.)
 
 Do 1 and 2 before 3. In the other order `main` is unprotected and intake is blocked until 1 is done.
+
+**Founder actions still needed (the plan's single bottleneck metric), counted 2026-11-21: 15**, after the integrator
+takes #316 into the line: the three settings above, then the twelve consumer merges in the adoption package below.
+Two decisions sit beside the count and change it: whether the full gate also applies to the line (setting 2 as
+written leaves it off), and whether a session started only in a consumer repository may be given access to the
+Kernel's board (`VALIDATION.md`, 2026-11-13 limits). The banner on `main` is optional and not counted.
 
 ### After the switch: verify by normal discovery
 
@@ -161,52 +169,54 @@ No commit, branch, pull request or issue moves in either direction.
 ### Check coverage of the line (prepared for the integrator; not applied)
 
 `.github/workflows/canonical-ci.yml` is the integrator's file and the most contended file on the line, so this change is
-handed over, not made here. It keeps one run per change:
+handed over, not made here. Corrected on 2026-11-21 after the integrator's review of #316 (comment 6864550187): the
+first version replaced the whole `on:` block, which dropped `tags: ["*"]` (the trigger that runs the release-exclusion
+check on a tag) and `workflow_dispatch`, and its per-job `if:` made #196's pull-request jobs report as skipped, which
+satisfies a required check. Both are withdrawn. The change is now one word in the existing block:
 
 ```yaml
 on:
   pull_request:
   push:
-    branches: [main, claude/greg-full-machine-completion-whgiee]
+    branches: [main, claude/greg-full-machine-completion-whgiee]   # was [main]
+    tags: ["*"]          # unchanged
+  workflow_dispatch:     # unchanged
 ```
 
-and on each job:
+No job gets an `if:`, so no required check can be satisfied by a skipped job. The cost: while #196 is open, a commit
+pushed to the line runs the checks twice, once for the push and once as #196's pull-request run, which breaks the
+file's own "exactly one run per change" comment for that one branch. That comment should then say so. The duplicate
+ends when #196 is closed after the default switch (the line's push runs then carry its checks). Until the change is
+made, a commit on the line is checked only through #196's pull-request runs. `directive-completion.yml` can stay as it
+is while #196 is open: its pull-request run does more than a push run (the ratchet against a base).
 
-```yaml
-    if: github.event_name != 'pull_request' || github.head_ref != 'claude/greg-full-machine-completion-whgiee'
-```
+### Adoption package (status on 2026-11-13, heads re-checked 2026-11-21; every row is pending the founder)
 
-A push to the line then runs the checks once; #196's own pull-request run of the same commit is skipped, and the push
-run's results still show on #196 because checks attach to the commit. `directive-completion.yml` can stay as it is while
-#196 is open: its pull-request run does more than a push run (the ratchet against a base). Until the change is made, the
-work map reports whether an open pull request still has the line as its head.
-
-### Adoption package (status on 2026-11-13; every row is pending the founder)
-
-One table for the Kernel and the 12 consumer drafts. "Before → after" is the draft's head before and after this
-session's single forward commit; the receipt in each pull request description declares the new head and keeps the
-old receipt verbatim under it. Every consumer pointer names the Kernel's one guide (`AGENTS.md` § Canonical reading
+One table for the Kernel and the 12 consumer drafts. "Before → after" is the draft's head before this session's
+two forward commits and after them: the pointer refresh, then the stop rule from the entry trial (#319; record in
+`VALIDATION.md`). The receipt in each pull request description declares the new head and keeps the old receipt
+verbatim under it. Every consumer pointer names the Kernel's one guide (`AGENTS.md` § Canonical reading
 order) on the integration branch, work board #96 and Discussion #89, and asks for the check-in. The route itself
 (`docs/BACKCAST_GPS.md`, `greg/path.json`) is reached through that guide, not copied.
 
 | # | Repository | Draft | Before → after | Repository-specific validation | Known blockers | Status |
 |---|---|---|---|---|---|---|
-| 1 | uniimente-kernel | #316 into the line | `91aaeca0` (base) → `da99b8b4` | Unit tests, `repo_review --check`, `governance.integrity --check`, receipt check green; Canonical CI on the PR | Integrator intake (#196 owner); then settings 1–3 above | pending |
-| 2 | DALEOBANKS | #76 | `f4e15b8f` → `f173ce05` | Pointer-only diff; whitespace clean; pins unchanged | Siblings #83–#85 untouched; adopt after the Kernel | pending |
-| 3 | WealthMachineIntelligence | #34 | `070b3355` → `02ddd784` | As above | Siblings #40–#42 untouched | pending |
-| 4 | PumpStation | #17 | `e91ccbb5` → `312515ae` | As above | None found | pending |
-| 5 | RAILSCOUT | #6 | `924f0bd0` → `646c7e9b` | As above | Organ code is in draft #9, not on `main` | pending |
-| 6 | RESEARCH-IN | #23 | `90ab4552` → `ba4ec858` | As above | `build` fails on the old head too (inherited) | pending |
-| 7 | build-your-own-x | #4 | `8a5a4bda` → `a391dbc6` | As above (base `master`) | None found | pending |
-| 8 | agent-skills | #1 | `38f84836` → `580855a0` | `node scripts/run-evals.js` passes | Fork: no Actions runs on this branch | pending |
-| 9 | knowledge-work-plugins | #1 | `0cf52de7` → `4ad77b49` | Nested plugin instructions untouched | Fork: no Actions runs | pending |
-| 10 | hyperframes | #1 | `4abe2f7c` → `cf98a638` | commitlint (conventional) and `oxfmt --check` pass; `_shared` templates untouched | Fork: no Actions runs | pending |
-| 11 | REA-Reverse-Engineering-Anything | #1 | `e8fd2701` → `65ca4722` | `oxfmt --check` passes; text below the pointer byte-identical to `main` | Fork: no Actions runs | pending |
-| 12 | VoiceStudio | #1 | `bf6286dc` → `5c6ab2a6` | `check_commit_identities.py` clean; no agent attribution in commit or description | Fork: no Actions runs | pending |
-| 13 | gods-eye-view-EGGREGORE-TOOL | #3 | `f43cfc97` → `d8052076` | As row 2 | Node jobs fail on the old head too (two files untouched here; patch proposed in the PR) | pending |
+| 1 | uniimente-kernel | #316 into the line | `91aaeca0` (base) → the head named in #316's receipt | Unit tests, `repo_review --check`, `governance.integrity --check`, receipt check green; Canonical CI on the PR | Integrator intake (#196 owner); then settings 1–3 above | pending |
+| 2 | DALEOBANKS | #76 | `f4e15b8f` → `f173ce05` → `7d71fe40` | Pointer-only diff; whitespace clean; pins unchanged | Siblings #83–#85 untouched; adopt after the Kernel | pending |
+| 3 | WealthMachineIntelligence | #34 | `070b3355` → `02ddd784` → `e3f26de5` | As above | Siblings #40–#42 untouched | pending |
+| 4 | PumpStation | #17 | `e91ccbb5` → `312515ae` → `f37d7d70` | As above | None found | pending |
+| 5 | RAILSCOUT | #6 | `924f0bd0` → `646c7e9b` → `adcf90f8` | As above | Organ code is in draft #9, not on `main` | pending |
+| 6 | RESEARCH-IN | #23 | `90ab4552` → `ba4ec858` → `66728d2d` | As above | `build` fails on the old head too (inherited) | pending |
+| 7 | build-your-own-x | #4 | `8a5a4bda` → `a391dbc6` → `325ff3d1` | As above (base `master`) | None found | pending |
+| 8 | agent-skills | #1 | `38f84836` → `580855a0` → `2cbf7c0e` | `node scripts/run-evals.js` passes | Fork: no Actions runs on this branch | pending |
+| 9 | knowledge-work-plugins | #1 | `0cf52de7` → `4ad77b49` → `49e7ed4c` | Nested plugin instructions untouched | Fork: no Actions runs | pending |
+| 10 | hyperframes | #1 | `4abe2f7c` → `cf98a638` → `97906fa1` | commitlint (conventional) and `oxfmt --check` pass; `_shared` templates untouched | Fork: no Actions runs | pending |
+| 11 | REA-Reverse-Engineering-Anything | #1 | `e8fd2701` → `65ca4722` → `082a75b6` | `oxfmt --check` passes; text below the pointer byte-identical to `main` | Fork: no Actions runs | pending |
+| 12 | VoiceStudio | #1 | `bf6286dc` → `5c6ab2a6` → `fafdebd3` | `check_commit_identities.py` clean; no agent attribution in commit or description | Fork: no Actions runs | pending |
+| 13 | gods-eye-view-EGGREGORE-TOOL | #3 | `f43cfc97` → `d8052076` → `c0608233` | As row 2 | Node jobs fail on the old head too (two files untouched here; patch proposed in the PR) | pending |
 
-**Rollback, every consumer row:** revert the one 2026-11-13 commit (named in its receipt); the earlier pointer and
-history remain. Closing an unadopted draft is also safe. **Kernel row:** revert the PR's commits; the settings have
+**Rollback, every consumer row:** revert the two 2026-11-13 commits, newest first (both named in its receipt), or
+only the stop-rule commit to keep the refresh; the earlier pointer and history remain. Closing an unadopted draft is also safe. **Kernel row:** revert the PR's commits; the settings have
 their own rollback above.
 
 **Recommended merge order.**

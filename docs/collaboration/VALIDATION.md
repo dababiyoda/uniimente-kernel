@@ -71,6 +71,72 @@ Limits:
 - Two sessions are one data point for the five-PR pilot.
 - No client outside Claude Code cloud sessions was tested.
 
+## 2026-11-13: three cloud sessions against the prepared one-entrance instructions (#319, draft #316)
+
+Status: **prepared instructions tested; entry by default-branch discovery not tested** (the default branch is still
+`main`). Issue #319 holds two real fixes to `scripts/README.md` from the entry audit. Each session was given only
+"Do Task X of #319. Follow the repository's own entry instructions." Three independent scorers, an adjudicator and a
+skeptic read the full event logs (workflow `wf_372a2fca-9b4`); the observer's first notes had four errors, corrected
+below.
+
+- **A** (`session_01KucyfniBpkBo8sonG3iuJB`), started in the Kernel on #316's branch at `da99b8b4`, Task A.
+- **B** (`session_01KucyfkNkDU5AhXbYNJvLhm`), started in RESEARCH-IN on its entry draft at `ba4ec858`, Task B,
+  concurrently with A.
+- **C** (`session_01KucyfornmpcogcwSAf5Fhk`), started in the Kernel on #316's branch at `edbe8963`, Task B, launched by
+  the observer after B stopped.
+
+| Measure | A | B | C |
+|---|---|---|---|
+| Found the integration branch and board #96 | yes (AGENTS.md and START_HERE read, newest #96 page read, line fetched) | branch from the organ pointer; never read #96 | yes |
+| Check-in with the new fields, before editing | **no**: all fields, but posted at 11:12:46, after its edit (11:10:56), push and PR #320 | **no**: none posted; it edited first | partly: posted 11:31:00, before its first edit (11:31:15); no `Depends on`, overlap status, head or handoff condition |
+| Overlap detected and split recorded | partly: detected #316 before editing; split recorded only after | **no** | yes, against A's posted claim (sequential, not concurrent); no acknowledgment sought |
+| Handoff resumed by another session | none was due | **no**: B's work never left its container | **no**: C redid Task B from scratch |
+| Founder interventions needed | 0 | **1, not given** | 0 |
+
+What happened to B: the session's GitHub scope was RESEARCH-IN only (`issue_read` on the Kernel refused at 11:10:07),
+the automatic permission check refused adding the Kernel with push (11:10:10), and the proxy refused the public REST
+read (11:10:25). B still edited and committed locally (a tested fix and a coverage test), then stopped asking the
+founder for access. Its work is invisible to everyone else; C duplicated it, and B's coverage test was lost. B was told
+afterwards that #321 holds the task and not to push.
+
+The only concurrent pair, A and B, editing the same file between 11:10:56 and 11:11:30, never saw each other. A and C
+produced draft PRs #320 and #321, which merge cleanly with each other and with #316. Totals: found branch and board
+2 of 3; check-in before editing 0 of 3 fully; overlap and split 1 of 3; handoff resumed 0; founder interventions 1.
+Under identical entry files, A posted late and C on time with A's posted check-in in front of it: the example on the
+board, more than the instructions, carried the protocol.
+
+Root causes and the fixes in this PR:
+- **The check-in asked for facts that exist only after the edit** (head, PR number, results), and `--paths`, the only
+  command A ran before editing, never printed the block. Now: entry lines say "before any edit, commit or push" with
+  `pending` for head and PR; the block is fillable before the edit; `--paths` and `--unit` end their answer with it (the `checkin` key).
+- **The map missed PRs it had not fetched** (#307 and #268 change the file; A's map did not list them). Now: with
+  `--github` it reads each open PR's changed files from the API and says when it cannot.
+- **An organ-started session had no stop rule.** A one-sentence stop rule goes on the 12 consumer drafts as a second
+  forward commit: "Do not edit files in dababiyoda/uniimente-kernel unless this session can read and post on the
+  Kernel's work board (dababiyoda/uniimente-kernel#96), read the open pull requests that touch those files, and open a
+  pull request to that repository; if it cannot, stop before editing and say what is missing (for example, a session
+  started in the Kernel)." The board is named in full because DALEOBANKS has a pull request #96 of its own. An
+  independent review (workflow `wf_f4d14d72-2c0`) rejected a second sentence that would have moved the claim into a
+  consumer pull request: it placed the claim after the first commit and, in VoiceStudio, would have put session
+  identifiers into pull request descriptions, which that repository's attribution rule forbids.
+- Hand-overs, not edits: START_HERE (#206) for where a claim goes, when an acknowledgment is needed and what a session
+  that cannot publish does; AGENTS.md step 1 (integrator) for a line of its own for the before-edit rule.
+
+Limits:
+- The observer wrote the tasks and holds a claim on the same file; the trial tests the prepared instructions only.
+- A and C started on #316's own branch, the only place the new lines, block and map exist. Entry from `main` or the
+  line was not tested.
+- Three sessions on one model; one concurrent pair; C's overlap test was sequential.
+- The fixes above are untested. Falsifier for a re-run: a Kernel-started session whose first #96 comment is later than
+  its first edit or commit, or an organ-started session that edits Kernel files without having posted on #96.
+- Whether an organ-started session may be given Kernel push access is a founder permission decision.
+- Open, not fixed: a cloud session started only in a consumer repository may be unable to read or post on #96 at all,
+  even for work on that repository's own files, so the pointer's "post a bounded claim on that board" cannot always be
+  followed. Where such a session's claim should go is handed to START_HERE's owner (#206) and the founder. No session
+  in this trial did consumer-repository work, but the gap was observed the same day outside it: a session working on
+  WealthMachineIntelligence #43 (`session_012idQXWUrVAMHPo3iZpSfmv`) could not reach #96 and asked this session to
+  relay its claim (relayed as #96 comment 6853656353, verified against GitHub).
+
 ## What the evidence proves
 
 Unit tests demonstrate metadata parsing and refusal behavior: exact event refs,

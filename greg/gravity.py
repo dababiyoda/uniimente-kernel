@@ -269,7 +269,8 @@ def _measured_trust(journal) -> dict:
     if journal is None or getattr(journal, "ledger", None) is None:
         return {"source": "no body ledger here: no retained receipts to measure", "forecast_calibration": "unmeasured",
                 "settled_outcomes": 0}
-    from greg.cognition.settlement import awaiting_realization, competence, decisions_to_recheck, outcome_calibration
+    from greg.cognition.settlement import awaiting_realization, community_outcome_claims, competence, \
+        decisions_to_recheck, outcome_calibration
     calibration = outcome_calibration(journal)
     by_method = {}
     for row in calibration.get("levels", []):
@@ -291,7 +292,15 @@ def _measured_trust(journal) -> dict:
             # founder-signed resolution later rejected: work the founder can act on, never acted on here
             "disputes_to_investigate": sum(1 for row in waiting if row.get("kind") == "objective_conflict"
                                            and row.get("priority") == "investigate"),
+            # of those disputes, the ones an attached read-only observer can decide: a bounded verification mission
+            # is prepared for the founder to sign; it runs nothing here
+            "verifications_prepared": sum(1 for row in waiting if row.get("kind") == "objective_conflict"
+                                          and "prepared_verification" in row),
             "decisions_to_recheck": len(decisions_to_recheck(journal)),
+            # community outcome claims that contradict the record with enough independent support (section 42):
+            # each names the deciding observation; none moves competence until a signed settlement does
+            "community_challenges": sum(1 for row in community_outcome_claims(journal)["claims"]
+                                        if "challenge" in row),
             "settled_outcomes": sum(r["count"] for r in rows.values()),
             "settled_correct": sum(r["correct"] for r in rows.values()),
             "note": "competence and calibration are evidence about methods, never authority"}

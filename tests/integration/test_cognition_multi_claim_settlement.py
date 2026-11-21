@@ -73,7 +73,14 @@ def test_same_geometry_claims_settle_separately_and_corrections_replay(tmp_path)
         assert competence(body.journal) == {}
         # This is a correction-contract test, not new external outcome evidence.
         body.journal.record("mission.appraised", appraisal, key="test-later-supported-correction")
+        # The refutation is a recorded correction (greg.corrections, APPRAISAL_REFUTED): a rejected answer earns no
+        # credit until a requalification is recorded (founder answer 4, INTENT-20261112-CONVERGENCE-USEFUL-PATH).
+        # The body records it on its tick, from the later VERIFIED appraisal of the same closure, before it settles.
         reconcile(body.journal)
+        assert competence(body.journal) == {}
+        assert len(body.journal.replay("cognition.settled")) == 4
+        body.tick()
+        assert body.journal.replay("evidence.requalified")
         restored = _latest_settlements(body.journal)
         assert all(not e.payload["invalidated"] for e in restored.values())
         assert {e.payload["supersedes"] for e in restored.values()} == {e.event_id for e in invalidations.values()}

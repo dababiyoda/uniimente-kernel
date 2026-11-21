@@ -1,17 +1,243 @@
-Mutants of the review fixes (mutants-review.py); tests: test_greg_outcome_resolution, test_greg_pending_construction_realization, test_greg_outcome_resolution_signed (py3.11, -x).
-N2 is equivalent: a second resolution under one signed digest must carry the identical signed body (S1 body binding), so it can only repeat the same ruling; the one-per-digest guard is kept as defence in depth.
+Mutants of the review fixes, re-recorded 2026-10-30 after round 5's fixes on #221 (#221 comment 6515476874; fix d7cf7b5a) and #196's 4ec00605, a6c29bbd and b1950be2 (merged at 488bf841, a83fcd5e and 9571ac90), at #221's branch 9571ac90 (mutants-review.py at the commit below; N10 retargeted, N65-N79 added, the review-6, closure-scoped settlement and closure-scoped claims test files added, and a range argument added). The run is in eight parts at the same commit, each in its own worktree; their raw outputs follow in order, and the note after them was added by hand.
+git rev-parse HEAD: 5c0475e3dcd6855e87431e7f32664666a10a8425; greg/, tests/ and docs/evidence/outcome-correction-2026-10-28/mutants-review.py unmodified
+part N1-N10 only: 10 of the 78 mutants
+python 3.11.17; command: python -B -m pytest -q -x -p no:cacheprovider tests/unit/test_greg_outcome_resolution.py tests/unit/test_greg_pending_construction_realization.py tests/unit/test_greg_outcome_resolution_signed.py tests/unit/test_greg_outcome_resolution_review2.py tests/unit/test_greg_outcome_resolution_review3.py tests/unit/test_greg_outcome_resolution_review4.py tests/unit/test_greg_outcome_resolution_review5.py tests/unit/test_greg_achievement_after_unmet.py tests/unit/test_greg_outcome_resolution_review6.py tests/unit/test_greg_closure_scoped_settlement.py tests/unit/test_greg_closure_scoped_claims.py
+sha256 greg/cognition/settlement.py: 13b04b2883578fca475ccc08bef127b3467609cb30484873463dcb9fcaf3cdd9
+sha256 tests/unit/test_greg_outcome_resolution.py: 469e2e991e32d3e086d821838ffc5838da75cc3ab85b28678d0042c20897dc3b
+sha256 tests/unit/test_greg_pending_construction_realization.py: 770b57c54945227f4279ee8d5c88009bb31076ca37a1c3c97af8ff190d0b2ea9
+sha256 tests/unit/test_greg_outcome_resolution_signed.py: 13a0448e5f8864dfcba4fb9efa88fafe51fa5bc43d980e355813316868585420
+sha256 tests/unit/test_greg_outcome_resolution_review2.py: 78d0d194eb89e700b5238a15823c31bdbe032e0ffccbfbee06a527f16983b061
+sha256 tests/unit/test_greg_outcome_resolution_review3.py: 2290b849eefff7035665148ec4cc1f7eab0de9e8d16c5076d165335738b0e385
+sha256 tests/unit/test_greg_outcome_resolution_review4.py: 12a24516998d2b271840b9fd1994953ea5d9ab4c29e74aa7f8c045d787e59ff0
+sha256 tests/unit/test_greg_outcome_resolution_review5.py: b7e1194357b719305ebed6225246dee08845a73a359049b12ab4643980a1e0a4
+sha256 tests/unit/test_greg_achievement_after_unmet.py: 560e5edde914fac0899eba48e6fa95d545e1df28dcea763dffae1b95234f1960
+sha256 tests/unit/test_greg_outcome_resolution_review6.py: 618654057d915c7612ee7015af0b7248c88558dd39e2b0b65581f75ae5516b31
+sha256 tests/unit/test_greg_closure_scoped_settlement.py: 4d4f8e6ce45333ae46161835adfd31fc3ff72f76b194c206b06a322a37de7400
+sha256 tests/unit/test_greg_closure_scoped_claims.py: 4cef0a2c37808a099cc4a71b2e945adf6fa90f986f6a1dbcba8daf023959eb5e
+baseline (no mutant): rc=0 139 passed in 449.13s (0:07:29)
 CAUGHT  N1 S1 signed body not compared: ['test_s1_a_resolution_carrying_another_signed_commands_digest_resolves_nothing']
-MISSED  N2 S1 one signed command reused: []
+CAUGHT  N2 S1 one signed command reused: ['test_n2_a_verbatim_copy_of_a_signed_resolution_changes_nothing']
 CAUGHT  N3 S2 any resolution adjudicates: ['test_s2_an_invalidation_must_name_every_live_report_and_never_adjudicates_the_founders_own']
 CAUGHT  N4 S2 partial invalidation accepted: ['test_s2_an_invalidation_must_name_every_live_report_and_never_adjudicates_the_founders_own']
 CAUGHT  N5 S3 dedupe against rejected facts: ['test_s3_a_re_report_after_an_invalidation_is_a_new_fact_not_a_duplicate_of_a_rejected_one']
-CAUGHT  N6 S3 one fact per receipt and value: ['test_s3_on_a_body_an_independent_report_matching_a_conflicting_value_is_recorded']
+MISSED  N6 S3 one fact per receipt and value: []
 CAUGHT  N7 S4 journal order wins: ['test_s4_an_older_signed_resolution_delivered_later_never_overrides_a_newer_one']
 CAUGHT  N8 S5 succeeded only when prior is None: ['test_s5_reconcile_supersedes_a_legacy_settlement_once_and_never_invalidates_it_later']
-CAUGHT  N9 S6 failed check hidden by dispute: []
+CAUGHT  N9 S6 failed check hidden by dispute: ['test_s6_a_dispute_on_an_answer_whose_check_failed_is_scored_wrong_and_has_no_decision_value']
 CAUGHT  N10 S7 unsettleable dispute weighed: ['test_s7_a_dispute_whose_mission_cannot_settle_is_held_and_names_the_appraisal']
+9 of 10 valid mutants caught; 0 invalid; 1 missed (part N1-N10)
+git rev-parse HEAD: 5c0475e3dcd6855e87431e7f32664666a10a8425; greg/, tests/ and docs/evidence/outcome-correction-2026-10-28/mutants-review.py unmodified
+part N11-N20 only: 10 of the 78 mutants
+python 3.11.17; command: python -B -m pytest -q -x -p no:cacheprovider tests/unit/test_greg_outcome_resolution.py tests/unit/test_greg_pending_construction_realization.py tests/unit/test_greg_outcome_resolution_signed.py tests/unit/test_greg_outcome_resolution_review2.py tests/unit/test_greg_outcome_resolution_review3.py tests/unit/test_greg_outcome_resolution_review4.py tests/unit/test_greg_outcome_resolution_review5.py tests/unit/test_greg_achievement_after_unmet.py tests/unit/test_greg_outcome_resolution_review6.py tests/unit/test_greg_closure_scoped_settlement.py tests/unit/test_greg_closure_scoped_claims.py
+sha256 greg/cognition/settlement.py: 13b04b2883578fca475ccc08bef127b3467609cb30484873463dcb9fcaf3cdd9
+sha256 tests/unit/test_greg_outcome_resolution.py: 469e2e991e32d3e086d821838ffc5838da75cc3ab85b28678d0042c20897dc3b
+sha256 tests/unit/test_greg_pending_construction_realization.py: 770b57c54945227f4279ee8d5c88009bb31076ca37a1c3c97af8ff190d0b2ea9
+sha256 tests/unit/test_greg_outcome_resolution_signed.py: 13a0448e5f8864dfcba4fb9efa88fafe51fa5bc43d980e355813316868585420
+sha256 tests/unit/test_greg_outcome_resolution_review2.py: 78d0d194eb89e700b5238a15823c31bdbe032e0ffccbfbee06a527f16983b061
+sha256 tests/unit/test_greg_outcome_resolution_review3.py: 2290b849eefff7035665148ec4cc1f7eab0de9e8d16c5076d165335738b0e385
+sha256 tests/unit/test_greg_outcome_resolution_review4.py: 12a24516998d2b271840b9fd1994953ea5d9ab4c29e74aa7f8c045d787e59ff0
+sha256 tests/unit/test_greg_outcome_resolution_review5.py: b7e1194357b719305ebed6225246dee08845a73a359049b12ab4643980a1e0a4
+sha256 tests/unit/test_greg_achievement_after_unmet.py: 560e5edde914fac0899eba48e6fa95d545e1df28dcea763dffae1b95234f1960
+sha256 tests/unit/test_greg_outcome_resolution_review6.py: 618654057d915c7612ee7015af0b7248c88558dd39e2b0b65581f75ae5516b31
+sha256 tests/unit/test_greg_closure_scoped_settlement.py: 4d4f8e6ce45333ae46161835adfd31fc3ff72f76b194c206b06a322a37de7400
+sha256 tests/unit/test_greg_closure_scoped_claims.py: 4cef0a2c37808a099cc4a71b2e945adf6fa90f986f6a1dbcba8daf023959eb5e
+baseline (no mutant): rc=0 139 passed in 449.13s (0:07:29)
 CAUGHT  N11 S8 Laplace flips ignored: ['test_s8_a_laplace_rank_flip_between_the_two_resolutions_is_investigated']
 CAUGHT  N12 S9 unsigned fact eligible (replay): ['test_s9_settlement_itself_refuses_a_signed_resolution_accepting_an_unsigned_report']
 CAUGHT  N13 S9 unsigned fact eligible (row): ['test_s9_an_unsigned_report_is_never_eligible_to_be_accepted']
 CAUGHT  N14 S10 engine label hashed: ['test_s10_the_answer_version_ignores_the_engine_label']
-13 of 14 caught
+CAUGHT  N15 F1 old answer version not re-derived: ['test_f1_rows_written_under_the_old_answer_version_rule_are_revised_never_invalidated']
+CAUGHT  N16 F2 Holm over pairs only: ['test_f2_a_change_only_the_three_way_holm_family_shows_is_investigated']
+CAUGHT  N17 F3 unsettled fit not compared: ['test_f3_on_the_public_path_a_laplace_rank_flip_is_investigated']
+CAUGHT  N18 F3 a tie at a bound ignored: ['test_f3_on_the_public_path_a_laplace_rank_flip_is_investigated']
+CAUGHT  N19 F4 string order of issued_at: ['test_f4_a_later_resolution_signed_half_a_second_after_a_whole_second_takes_effect']
+CAUGHT  N20 F4 older-signed overlap not refused: ['test_f4_a_resolution_signed_before_one_already_ruling_on_its_facts_is_refused_with_the_reason']
+10 of 10 valid mutants caught; 0 invalid; 0 missed (part N11-N20)
+git rev-parse HEAD: 5c0475e3dcd6855e87431e7f32664666a10a8425; greg/, tests/ and docs/evidence/outcome-correction-2026-10-28/mutants-review.py unmodified
+part N21-N30 only: 10 of the 78 mutants
+python 3.11.17; command: python -B -m pytest -q -x -p no:cacheprovider tests/unit/test_greg_outcome_resolution.py tests/unit/test_greg_pending_construction_realization.py tests/unit/test_greg_outcome_resolution_signed.py tests/unit/test_greg_outcome_resolution_review2.py tests/unit/test_greg_outcome_resolution_review3.py tests/unit/test_greg_outcome_resolution_review4.py tests/unit/test_greg_outcome_resolution_review5.py tests/unit/test_greg_achievement_after_unmet.py tests/unit/test_greg_outcome_resolution_review6.py tests/unit/test_greg_closure_scoped_settlement.py tests/unit/test_greg_closure_scoped_claims.py
+sha256 greg/cognition/settlement.py: 13b04b2883578fca475ccc08bef127b3467609cb30484873463dcb9fcaf3cdd9
+sha256 tests/unit/test_greg_outcome_resolution.py: 469e2e991e32d3e086d821838ffc5838da75cc3ab85b28678d0042c20897dc3b
+sha256 tests/unit/test_greg_pending_construction_realization.py: 770b57c54945227f4279ee8d5c88009bb31076ca37a1c3c97af8ff190d0b2ea9
+sha256 tests/unit/test_greg_outcome_resolution_signed.py: 13a0448e5f8864dfcba4fb9efa88fafe51fa5bc43d980e355813316868585420
+sha256 tests/unit/test_greg_outcome_resolution_review2.py: 78d0d194eb89e700b5238a15823c31bdbe032e0ffccbfbee06a527f16983b061
+sha256 tests/unit/test_greg_outcome_resolution_review3.py: 2290b849eefff7035665148ec4cc1f7eab0de9e8d16c5076d165335738b0e385
+sha256 tests/unit/test_greg_outcome_resolution_review4.py: 12a24516998d2b271840b9fd1994953ea5d9ab4c29e74aa7f8c045d787e59ff0
+sha256 tests/unit/test_greg_outcome_resolution_review5.py: b7e1194357b719305ebed6225246dee08845a73a359049b12ab4643980a1e0a4
+sha256 tests/unit/test_greg_achievement_after_unmet.py: 560e5edde914fac0899eba48e6fa95d545e1df28dcea763dffae1b95234f1960
+sha256 tests/unit/test_greg_outcome_resolution_review6.py: 618654057d915c7612ee7015af0b7248c88558dd39e2b0b65581f75ae5516b31
+sha256 tests/unit/test_greg_closure_scoped_settlement.py: 4d4f8e6ce45333ae46161835adfd31fc3ff72f76b194c206b06a322a37de7400
+sha256 tests/unit/test_greg_closure_scoped_claims.py: 4cef0a2c37808a099cc4a71b2e945adf6fa90f986f6a1dbcba8daf023959eb5e
+baseline (no mutant): rc=0 139 passed in 450.87s (0:07:30)
+CAUGHT  N21 F5 unsigned fact absorbs a signed report: ['test_f5_a_signed_report_matching_an_unsigned_fact_is_kept_and_can_be_accepted']
+CAUGHT  N22 F6 any principal resolves: ['test_f6_a_verified_realization_a_device_signed_is_not_founder_evidence']
+CAUGHT  N23 F7 omitted source not defaulted: ['test_f7_a_signed_report_without_a_source_is_shown_as_signed']
+CAUGHT  N24 F8 memo misses a new founder record: ['test_only_a_resolution_the_founder_actually_signed_resolves_a_dispute']
+CAUGHT  N25 F2-a a walk limit read as a hold: ['test_f2r_3_a_cut_short_walk_reads_investigate_without_claiming_a_change']
+CAUGHT  N26 F2-b the two extremes only: ['test_f2_b_a_non_monotone_pick_between_the_extremes_is_investigated']
+CAUGHT  N27 F2-c other disputed methods held (preference): ['test_f2r_1_another_disputed_method_is_walked_over_every_count_it_can_reach']
+CAUGHT  N28 F2-c other disputed methods held (Laplace): ['test_f2_c_joint_disputes_of_two_methods_are_weighed_together']
+CAUGHT  N29 F2-d a demoted fit tested as first: ['test_n29_a_method_demoted_at_every_reachable_count_is_never_walked_as_first']
+CAUGHT  N30 F2-f the raw preferred value: ['test_f2_f_the_reason_names_the_selected_fit_never_none']
+10 of 10 valid mutants caught; 0 invalid; 0 missed (part N21-N30)
+git rev-parse HEAD: 5c0475e3dcd6855e87431e7f32664666a10a8425; greg/, tests/ and docs/evidence/outcome-correction-2026-10-28/mutants-review.py unmodified
+part N31-N41 only: 11 of the 78 mutants
+python 3.11.17; command: python -B -m pytest -q -x -p no:cacheprovider tests/unit/test_greg_outcome_resolution.py tests/unit/test_greg_pending_construction_realization.py tests/unit/test_greg_outcome_resolution_signed.py tests/unit/test_greg_outcome_resolution_review2.py tests/unit/test_greg_outcome_resolution_review3.py tests/unit/test_greg_outcome_resolution_review4.py tests/unit/test_greg_outcome_resolution_review5.py tests/unit/test_greg_achievement_after_unmet.py tests/unit/test_greg_outcome_resolution_review6.py tests/unit/test_greg_closure_scoped_settlement.py tests/unit/test_greg_closure_scoped_claims.py
+sha256 greg/body.py: 04dacb591c31eccb159d45d294d54fd1d7c13b1f32dce1a09ec76b9c3ee4d4ad
+sha256 greg/cognition/settlement.py: 13b04b2883578fca475ccc08bef127b3467609cb30484873463dcb9fcaf3cdd9
+sha256 tests/unit/test_greg_outcome_resolution.py: 469e2e991e32d3e086d821838ffc5838da75cc3ab85b28678d0042c20897dc3b
+sha256 tests/unit/test_greg_pending_construction_realization.py: 770b57c54945227f4279ee8d5c88009bb31076ca37a1c3c97af8ff190d0b2ea9
+sha256 tests/unit/test_greg_outcome_resolution_signed.py: 13a0448e5f8864dfcba4fb9efa88fafe51fa5bc43d980e355813316868585420
+sha256 tests/unit/test_greg_outcome_resolution_review2.py: 78d0d194eb89e700b5238a15823c31bdbe032e0ffccbfbee06a527f16983b061
+sha256 tests/unit/test_greg_outcome_resolution_review3.py: 2290b849eefff7035665148ec4cc1f7eab0de9e8d16c5076d165335738b0e385
+sha256 tests/unit/test_greg_outcome_resolution_review4.py: 12a24516998d2b271840b9fd1994953ea5d9ab4c29e74aa7f8c045d787e59ff0
+sha256 tests/unit/test_greg_outcome_resolution_review5.py: b7e1194357b719305ebed6225246dee08845a73a359049b12ab4643980a1e0a4
+sha256 tests/unit/test_greg_achievement_after_unmet.py: 560e5edde914fac0899eba48e6fa95d545e1df28dcea763dffae1b95234f1960
+sha256 tests/unit/test_greg_outcome_resolution_review6.py: 618654057d915c7612ee7015af0b7248c88558dd39e2b0b65581f75ae5516b31
+sha256 tests/unit/test_greg_closure_scoped_settlement.py: 4d4f8e6ce45333ae46161835adfd31fc3ff72f76b194c206b06a322a37de7400
+sha256 tests/unit/test_greg_closure_scoped_claims.py: 4cef0a2c37808a099cc4a71b2e945adf6fa90f986f6a1dbcba8daf023959eb5e
+baseline (no mutant): rc=0 139 passed in 401.42s (0:06:41)
+CAUGHT  N31 F1-a shadowed chain heads left live: ['test_f1_a_two_old_rule_chains_of_one_answer_leave_one_live_head_and_none_after_a_withdrawal']
+CAUGHT  N32 F1-a merge closures not counted as superseding: ['test_n32_no_settlement_is_superseded_twice_after_a_merge_then_a_withdrawal']
+CAUGHT  N33 F1-a merged rows read as links: ['test_r3_n33_a_merged_chains_own_receipt_links_the_claims_current_settlement']
+CAUGHT  N34 G4-d an equal stamp refused: ['test_g4_d_an_equal_stamp_is_accepted_and_takes_effect']
+CAUGHT  N35 F7-a a closed mission read as pending a closure: ['test_g4f7_3_the_unsettled_texts_follow_closures_awaiting_appraisal']
+CAUGHT  N36 G4-a raw stamp as the inbox name: ['test_g4_a_the_inbox_reads_a_whole_second_command_before_one_signed_half_a_second_later']
+CAUGHT  N37 F2R-1 other disputed methods at three states: ['test_f2r_1_another_disputed_method_is_walked_over_every_count_it_can_reach']
+CAUGHT  N38 F2R-1 the joint state limit ignored: ['test_n38_the_joint_state_limit_applies_per_family_and_is_named']
+CAUGHT  N39 F2R-2 the Laplace hull: ['test_f2r_2_a_gap_between_another_methods_reachable_values_is_not_a_tie']
+CAUGHT  N40 F2R-3 a walk limit read as a change found: ['test_f2r_3_a_cut_short_walk_reads_investigate_without_claiming_a_change']
+CAUGHT  N41 F2R-3 a walk limit's own text: ['test_f2r_3_a_cut_short_walk_reads_investigate_without_claiming_a_change']
+11 of 11 valid mutants caught; 0 invalid; 0 missed (part N31-N41)
+git rev-parse HEAD: 5c0475e3dcd6855e87431e7f32664666a10a8425; greg/, tests/ and docs/evidence/outcome-correction-2026-10-28/mutants-review.py unmodified
+part N43-N52 only: 10 of the 78 mutants
+python 3.11.17; command: python -B -m pytest -q -x -p no:cacheprovider tests/unit/test_greg_outcome_resolution.py tests/unit/test_greg_pending_construction_realization.py tests/unit/test_greg_outcome_resolution_signed.py tests/unit/test_greg_outcome_resolution_review2.py tests/unit/test_greg_outcome_resolution_review3.py tests/unit/test_greg_outcome_resolution_review4.py tests/unit/test_greg_outcome_resolution_review5.py tests/unit/test_greg_achievement_after_unmet.py tests/unit/test_greg_outcome_resolution_review6.py tests/unit/test_greg_closure_scoped_settlement.py tests/unit/test_greg_closure_scoped_claims.py
+sha256 greg/cognition/settlement.py: 13b04b2883578fca475ccc08bef127b3467609cb30484873463dcb9fcaf3cdd9
+sha256 tests/unit/test_greg_outcome_resolution.py: 469e2e991e32d3e086d821838ffc5838da75cc3ab85b28678d0042c20897dc3b
+sha256 tests/unit/test_greg_pending_construction_realization.py: 770b57c54945227f4279ee8d5c88009bb31076ca37a1c3c97af8ff190d0b2ea9
+sha256 tests/unit/test_greg_outcome_resolution_signed.py: 13a0448e5f8864dfcba4fb9efa88fafe51fa5bc43d980e355813316868585420
+sha256 tests/unit/test_greg_outcome_resolution_review2.py: 78d0d194eb89e700b5238a15823c31bdbe032e0ffccbfbee06a527f16983b061
+sha256 tests/unit/test_greg_outcome_resolution_review3.py: 2290b849eefff7035665148ec4cc1f7eab0de9e8d16c5076d165335738b0e385
+sha256 tests/unit/test_greg_outcome_resolution_review4.py: 12a24516998d2b271840b9fd1994953ea5d9ab4c29e74aa7f8c045d787e59ff0
+sha256 tests/unit/test_greg_outcome_resolution_review5.py: b7e1194357b719305ebed6225246dee08845a73a359049b12ab4643980a1e0a4
+sha256 tests/unit/test_greg_achievement_after_unmet.py: 560e5edde914fac0899eba48e6fa95d545e1df28dcea763dffae1b95234f1960
+sha256 tests/unit/test_greg_outcome_resolution_review6.py: 618654057d915c7612ee7015af0b7248c88558dd39e2b0b65581f75ae5516b31
+sha256 tests/unit/test_greg_closure_scoped_settlement.py: 4d4f8e6ce45333ae46161835adfd31fc3ff72f76b194c206b06a322a37de7400
+sha256 tests/unit/test_greg_closure_scoped_claims.py: 4cef0a2c37808a099cc4a71b2e945adf6fa90f986f6a1dbcba8daf023959eb5e
+baseline (no mutant): rc=0 139 passed in 398.48s (0:06:38)
+CAUGHT  N43 F2R-5 the named first fit, not the ranked one: ['test_n43_the_reason_names_the_fit_ranked_first_when_the_methods_demotion_moves_it']
+CAUGHT  N44 F1-r3-1 only the older heads closed: ['test_f1_r3_1_a_body_reconciled_by_8e91315c_converges_in_one_pass']
+CAUGHT  N45 F1-r3-2 merged into a row this pass supersedes: ['test_f1_r3_1_a_body_reconciled_by_8e91315c_converges_in_one_pass']
+CAUGHT  N46 F1-r3-1 an unmeasured duplicate merged: ['test_n46_an_unmeasured_duplicate_is_invalidated_not_merged']
+CAUGHT  N47 R3-N33 a merge closure linked to its target as written: ['test_r3_n33_a_merged_chains_own_receipt_links_the_claims_current_settlement']
+CAUGHT  N48 G4F7-3 a closure awaiting appraisal ignored: ['test_g4f7_3_the_unsettled_texts_follow_closures_awaiting_appraisal']
+CAUGHT  N49 G4F7-3 an appraised held closure read as awaiting: ['test_txt_r4_1_an_achievement_after_an_appraised_failure_reads_pending_until_its_own_appraisal']
+CAUGHT  N50 G4F7-6 every rejected fact listed: ['test_g4f7_6_the_evidence_request_lists_only_rejected_independent_signed_reports']
+CAUGHT  N51 G4F7-4 the old scored_as text: ['test_t_b_a_mission_whose_appraisal_settles_nothing_says_so_whatever_the_check[True]']
+CAUGHT  N52 W4-4 an unsettled disputed method left out of the walk: ['test_w4_4_a_disputed_method_with_no_settled_outcome_is_in_the_walk']
+10 of 10 valid mutants caught; 0 invalid; 0 missed (part N43-N52)
+git rev-parse HEAD: 5c0475e3dcd6855e87431e7f32664666a10a8425; greg/, tests/ and docs/evidence/outcome-correction-2026-10-28/mutants-review.py unmodified
+part N53-N62 only: 10 of the 78 mutants
+python 3.11.17; command: python -B -m pytest -q -x -p no:cacheprovider tests/unit/test_greg_outcome_resolution.py tests/unit/test_greg_pending_construction_realization.py tests/unit/test_greg_outcome_resolution_signed.py tests/unit/test_greg_outcome_resolution_review2.py tests/unit/test_greg_outcome_resolution_review3.py tests/unit/test_greg_outcome_resolution_review4.py tests/unit/test_greg_outcome_resolution_review5.py tests/unit/test_greg_achievement_after_unmet.py tests/unit/test_greg_outcome_resolution_review6.py tests/unit/test_greg_closure_scoped_settlement.py tests/unit/test_greg_closure_scoped_claims.py
+sha256 greg/body.py: 04dacb591c31eccb159d45d294d54fd1d7c13b1f32dce1a09ec76b9c3ee4d4ad
+sha256 greg/cognition/settlement.py: 13b04b2883578fca475ccc08bef127b3467609cb30484873463dcb9fcaf3cdd9
+sha256 tests/unit/test_greg_outcome_resolution.py: 469e2e991e32d3e086d821838ffc5838da75cc3ab85b28678d0042c20897dc3b
+sha256 tests/unit/test_greg_pending_construction_realization.py: 770b57c54945227f4279ee8d5c88009bb31076ca37a1c3c97af8ff190d0b2ea9
+sha256 tests/unit/test_greg_outcome_resolution_signed.py: 13a0448e5f8864dfcba4fb9efa88fafe51fa5bc43d980e355813316868585420
+sha256 tests/unit/test_greg_outcome_resolution_review2.py: 78d0d194eb89e700b5238a15823c31bdbe032e0ffccbfbee06a527f16983b061
+sha256 tests/unit/test_greg_outcome_resolution_review3.py: 2290b849eefff7035665148ec4cc1f7eab0de9e8d16c5076d165335738b0e385
+sha256 tests/unit/test_greg_outcome_resolution_review4.py: 12a24516998d2b271840b9fd1994953ea5d9ab4c29e74aa7f8c045d787e59ff0
+sha256 tests/unit/test_greg_outcome_resolution_review5.py: b7e1194357b719305ebed6225246dee08845a73a359049b12ab4643980a1e0a4
+sha256 tests/unit/test_greg_achievement_after_unmet.py: 560e5edde914fac0899eba48e6fa95d545e1df28dcea763dffae1b95234f1960
+sha256 tests/unit/test_greg_outcome_resolution_review6.py: 618654057d915c7612ee7015af0b7248c88558dd39e2b0b65581f75ae5516b31
+sha256 tests/unit/test_greg_closure_scoped_settlement.py: 4d4f8e6ce45333ae46161835adfd31fc3ff72f76b194c206b06a322a37de7400
+sha256 tests/unit/test_greg_closure_scoped_claims.py: 4cef0a2c37808a099cc4a71b2e945adf6fa90f986f6a1dbcba8daf023959eb5e
+baseline (no mutant): rc=0 139 passed in 363.87s (0:06:03)
+CAUGHT  N53 W4-1 a fit demoted at every count kept in the walk: ['test_f2_a_above_the_subset_limit_the_row_is_never_a_clean_hold']
+CAUGHT  N54 W4-7 the state limit over every other method: ['test_n54_a_family_inside_the_state_limit_is_walked_while_all_the_others_exceed_it']
+CAUGHT  N55 W4-7 a cut family not stated: ['test_n38_the_joint_state_limit_applies_per_family_and_is_named']
+CAUGHT  N56 W4-3 the demotion texts compared: ['test_w4_3_a_method_demoted_at_every_reachable_count_is_not_an_inhibition_change[counts0-disputes0]']
+CAUGHT  N57 W4-5 a settled fit of the other demotion class compared: ['test_w4_5_laplace_is_not_compared_across_demotion_classes']
+CAUGHT  N58 W4-5 another disputed method's other-class values compared: ['test_n58_another_disputed_methods_values_of_the_other_demotion_class_are_not_a_laplace_tie']
+MISSED  N59 W4-5 the unsettled fit compared with a demoted method: []
+CAUGHT  N60 W4-9 a demoted first fit walked: ['test_n60_a_demoted_first_fit_does_not_repeat_a_found_change']
+CAUGHT  N61 TXT-R4-3 the old ended-without-appraisal text: ['test_g4f7_3_the_unsettled_texts_follow_closures_awaiting_appraisal']
+CAUGHT  N62 TXT-R4-1 a failure's appraisal stands in for the achievement's: ['test_an_achievement_after_an_appraised_unmet_closure_is_appraised']
+9 of 10 valid mutants caught; 0 invalid; 1 missed (part N53-N62)
+git rev-parse HEAD: 5c0475e3dcd6855e87431e7f32664666a10a8425; greg/, tests/ and docs/evidence/outcome-correction-2026-10-28/mutants-review.py unmodified
+part N63-N70 only: 8 of the 78 mutants
+python 3.11.17; command: python -B -m pytest -q -x -p no:cacheprovider tests/unit/test_greg_outcome_resolution.py tests/unit/test_greg_pending_construction_realization.py tests/unit/test_greg_outcome_resolution_signed.py tests/unit/test_greg_outcome_resolution_review2.py tests/unit/test_greg_outcome_resolution_review3.py tests/unit/test_greg_outcome_resolution_review4.py tests/unit/test_greg_outcome_resolution_review5.py tests/unit/test_greg_achievement_after_unmet.py tests/unit/test_greg_outcome_resolution_review6.py tests/unit/test_greg_closure_scoped_settlement.py tests/unit/test_greg_closure_scoped_claims.py
+sha256 greg/cognition/settlement.py: 13b04b2883578fca475ccc08bef127b3467609cb30484873463dcb9fcaf3cdd9
+sha256 tests/unit/test_greg_outcome_resolution.py: 469e2e991e32d3e086d821838ffc5838da75cc3ab85b28678d0042c20897dc3b
+sha256 tests/unit/test_greg_pending_construction_realization.py: 770b57c54945227f4279ee8d5c88009bb31076ca37a1c3c97af8ff190d0b2ea9
+sha256 tests/unit/test_greg_outcome_resolution_signed.py: 13a0448e5f8864dfcba4fb9efa88fafe51fa5bc43d980e355813316868585420
+sha256 tests/unit/test_greg_outcome_resolution_review2.py: 78d0d194eb89e700b5238a15823c31bdbe032e0ffccbfbee06a527f16983b061
+sha256 tests/unit/test_greg_outcome_resolution_review3.py: 2290b849eefff7035665148ec4cc1f7eab0de9e8d16c5076d165335738b0e385
+sha256 tests/unit/test_greg_outcome_resolution_review4.py: 12a24516998d2b271840b9fd1994953ea5d9ab4c29e74aa7f8c045d787e59ff0
+sha256 tests/unit/test_greg_outcome_resolution_review5.py: b7e1194357b719305ebed6225246dee08845a73a359049b12ab4643980a1e0a4
+sha256 tests/unit/test_greg_achievement_after_unmet.py: 560e5edde914fac0899eba48e6fa95d545e1df28dcea763dffae1b95234f1960
+sha256 tests/unit/test_greg_outcome_resolution_review6.py: 618654057d915c7612ee7015af0b7248c88558dd39e2b0b65581f75ae5516b31
+sha256 tests/unit/test_greg_closure_scoped_settlement.py: 4d4f8e6ce45333ae46161835adfd31fc3ff72f76b194c206b06a322a37de7400
+sha256 tests/unit/test_greg_closure_scoped_claims.py: 4cef0a2c37808a099cc4a71b2e945adf6fa90f986f6a1dbcba8daf023959eb5e
+baseline (no mutant): rc=0 139 passed in 459.13s (0:07:39)
+CAUGHT  N63 TXT-R4-1 VERIFIED_UNMET still settles an achieved mission: ['test_a_failure_appraisal_does_not_settle_a_mission_achieved_after_it']
+CAUGHT  N64 TXT-R4-1 an achievement read as appraised by a failure's appraisal: ['test_txt_r4_1_an_achievement_after_an_appraised_failure_reads_pending_until_its_own_appraisal']
+CAUGHT  N65 W4-1 the evaluation limit ignored: ['test_w4_1_the_walk_stops_at_the_evaluation_limit_and_says_so']
+CAUGHT  N66 W4-1 the evaluation limit not stated: ['test_w4_1_the_walk_stops_at_the_evaluation_limit_and_says_so']
+CAUGHT  N67 TXT-R5-1 no closure scoping: ['test_a_refuted_success_claim_does_not_erase_a_verified_failure']
+CAUGHT  N68 TXT-R5-1 an appraisal naming no closure not given to the achievement: ['test_an_observation_after_a_failure_closure_settles_under_the_achievements_own_verified']
+CAUGHT  N69 TXT-R5-1 a closure's appraisal without the required checks: ['test_a_failure_closure_whose_appraisal_misses_a_required_check_settles_nothing']
+CAUGHT  N70 TXT-R5-1 the achievement settles under VERIFIED_UNMET: ['test_an_observation_after_a_failure_closure_settles_under_the_achievements_own_verified']
+8 of 8 valid mutants caught; 0 invalid; 0 missed (part N63-N70)
+git rev-parse HEAD: 5c0475e3dcd6855e87431e7f32664666a10a8425; greg/, tests/ and docs/evidence/outcome-correction-2026-10-28/mutants-review.py unmodified
+part N71-N79 only: 9 of the 78 mutants
+python 3.11.17; command: python -B -m pytest -q -x -p no:cacheprovider tests/unit/test_greg_outcome_resolution.py tests/unit/test_greg_pending_construction_realization.py tests/unit/test_greg_outcome_resolution_signed.py tests/unit/test_greg_outcome_resolution_review2.py tests/unit/test_greg_outcome_resolution_review3.py tests/unit/test_greg_outcome_resolution_review4.py tests/unit/test_greg_outcome_resolution_review5.py tests/unit/test_greg_achievement_after_unmet.py tests/unit/test_greg_outcome_resolution_review6.py tests/unit/test_greg_closure_scoped_settlement.py tests/unit/test_greg_closure_scoped_claims.py
+sha256 greg/cognition/settlement.py: 13b04b2883578fca475ccc08bef127b3467609cb30484873463dcb9fcaf3cdd9
+sha256 tests/unit/test_greg_outcome_resolution.py: 469e2e991e32d3e086d821838ffc5838da75cc3ab85b28678d0042c20897dc3b
+sha256 tests/unit/test_greg_pending_construction_realization.py: 770b57c54945227f4279ee8d5c88009bb31076ca37a1c3c97af8ff190d0b2ea9
+sha256 tests/unit/test_greg_outcome_resolution_signed.py: 13a0448e5f8864dfcba4fb9efa88fafe51fa5bc43d980e355813316868585420
+sha256 tests/unit/test_greg_outcome_resolution_review2.py: 78d0d194eb89e700b5238a15823c31bdbe032e0ffccbfbee06a527f16983b061
+sha256 tests/unit/test_greg_outcome_resolution_review3.py: 2290b849eefff7035665148ec4cc1f7eab0de9e8d16c5076d165335738b0e385
+sha256 tests/unit/test_greg_outcome_resolution_review4.py: 12a24516998d2b271840b9fd1994953ea5d9ab4c29e74aa7f8c045d787e59ff0
+sha256 tests/unit/test_greg_outcome_resolution_review5.py: b7e1194357b719305ebed6225246dee08845a73a359049b12ab4643980a1e0a4
+sha256 tests/unit/test_greg_achievement_after_unmet.py: 560e5edde914fac0899eba48e6fa95d545e1df28dcea763dffae1b95234f1960
+sha256 tests/unit/test_greg_outcome_resolution_review6.py: 618654057d915c7612ee7015af0b7248c88558dd39e2b0b65581f75ae5516b31
+sha256 tests/unit/test_greg_closure_scoped_settlement.py: 4d4f8e6ce45333ae46161835adfd31fc3ff72f76b194c206b06a322a37de7400
+sha256 tests/unit/test_greg_closure_scoped_claims.py: 4cef0a2c37808a099cc4a71b2e945adf6fa90f986f6a1dbcba8daf023959eb5e
+baseline (no mutant): rc=0 139 passed in 357.74s (0:05:57)
+MISSED  N71 TXT-R5-1 an observation after every closure unsettled: []
+CAUGHT  N72 TXT-R5-1 the last closure decides every observation: ['test_a_refuted_success_claim_does_not_erase_a_verified_failure']
+CAUGHT  N73 TXT-R5-1 a failure closure settles under VERIFIED: ['test_a_refuted_success_claim_does_not_erase_a_verified_failure']
+CAUGHT  N74 TXT-R6-1 the offered row reads the mission-level rule: ['test_the_row_of_a_claim_observed_before_a_failure_closure_still_settles_once_the_mission_is_achieved']
+CAUGHT  N75 TXT-R6-1 the weighing reads the mission-level rule: ['test_a_dispute_on_a_claim_observed_before_a_failure_closure_is_weighed_after_a_refuted_achievement']
+CAUGHT  N76 TXT-R6-1 every observation of a claim must settle: ['test_a_claim_observed_on_both_sides_of_a_verified_failure_closure_settles_under_its_first_observation']
+CAUGHT  N77 TXT-R6-1 only a claim's latest observation decides: ['test_a_claim_observed_on_both_sides_of_a_verified_failure_closure_settles_under_its_first_observation']
+CAUGHT  N78 TXT-R6-1 only a claim's first observation decides: ['test_a_claim_observed_on_both_sides_of_an_unsettling_failure_closure_settles_under_its_later_observation']
+CAUGHT  N79 TXT-R6-1 the dispute row carries no claim_settles: ['test_a_dispute_on_a_claim_observed_before_a_failure_closure_is_weighed_after_a_refuted_achievement']
+8 of 9 valid mutants caught; 0 invalid; 1 missed (part N71-N79)
+
+Note (by hand): the eight parts together: 75 of 78 valid mutants caught; 0 invalid; 3 missed. Each part ran at the
+same commit in its own worktree, four at a time. Every header binds the same HEAD and the same sha256 of every file
+it names; the two parts that hold mutants of greg/body.py also name it. A first, unsplit run at 7989e24f (the same
+tree, before the range argument was added) was cut at N65 by a container restart. Its 63 rows, N1 to N64 (N42 is
+retired), give the same verdict and the same first failing test as the parts.
+Three mutants are MISSED. None changes what a body writes or says.
+- N6 (S3's fact key without source and count) is harmless on the production path, not equivalent: since F5 the key
+  also carries the command digest, and Body.apply, the only production caller of record_realization, always passes
+  one.
+- N59 (the unsettled fit compared whatever the method's demotion class) is equivalent. A count is demoted only when
+  its 95% Wilson upper bound is below 1/2, and that bound is never below k/n, so k < n/2 and the Laplace value
+  (k+1)/(n+2) is below 1/2: the unsettled fit, read at 1/2, never falls between the values of a method demoted at
+  every count. Checked at 7f99b96b for every count with n <= 3,000 (2,144,863 demoted counts; the largest Laplace
+  value 0.482) and on 400 random maps (no row differs). It is kept so that a change to the demotion threshold that
+  makes the guard matter is seen.
+- N71 (an observation after every closure left unsettled) is harmless on the production path, not equivalent: a
+  body records no observation after mission.achieved. _step returns for an achieved mission (greg/missions.py:1784-
+  1785) before it observes; observe_now refuses a terminal mission (:1375); mission.achieved is the only event that
+  sets ACHIEVED (:1155), lifecycle refuses a terminal mission (:1322) and nothing sets the status back; :2250 is the
+  only writer of mission.observed. It is kept so that a change letting an achieved mission be observed is seen.
+Round 5's six MISSED mutants (N29, N32, N43, N54, N58 and N60) are caught by d7cf7b5a's tests in
+test_greg_outcome_resolution_review6.py. N68 to N70 were MISSED in a run at #221's 488bf841, not recorded as a file
+(66 of 72 caught, 0 invalid; N6 and N71 harmless, N59 equivalent): their cases arrived with a6c29bbd's
+test_greg_closure_scoped_claims.py. N10 now mutates settles(row), the claim's own appraisal since a6c29bbd. The
+previous record (b4bc837f, settlement.py at #221 7f99b96b: 55 of 63) is in git history at 33c2b8ef.

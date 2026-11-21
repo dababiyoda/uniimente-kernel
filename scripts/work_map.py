@@ -698,32 +698,65 @@ def route_drift(root: Path, route: dict) -> dict:
     return {"section": True, "missing": [n for n in wanted if n not in named]}
 
 
-def _filter_pattern(pattern: str) -> re.Pattern:
-    """A GitHub Actions filter pattern as a regular expression (the workflow syntax's filter pattern cheat sheet):
-    ``*`` matches anything but ``/``, ``**`` anything; ``?`` makes the character before it optional and ``+`` repeats
-    it; ``[...]`` is one letter or digit of a class; ``\\`` escapes; everything else is literal."""
-    out: list[str] = []
+_REPEAT = {"": {"?": "?", "+": "+"}, "?": {"?": "?", "+": "*"}, "+": {"?": "*", "+": "+"}, "*": {"?": "*", "+": "*"}}
+
+
+def _filter_pattern(pattern: str) -> list[tuple[re.Pattern, str]]:
+    """A GitHub Actions filter pattern (the workflow syntax's filter pattern cheat sheet) as a list of (one-character
+    test, repetition): ``*`` is any character but ``/`` repeated, ``**`` any character repeated; ``?`` makes the
+    character before it optional and ``+`` repeats it; ``[...]`` is one letter or digit of a class; ``\\`` escapes;
+    everything else is literal. A repetition applied to a repetition is folded into one (``*+`` is ``*``, ``a+?`` is
+    ``a*``), so no quantifier is ever nested."""
+    out: list[tuple[re.Pattern, str]] = []
     i = 0
     while i < len(pattern):
         ch = pattern[i]
         if pattern.startswith("**", i):
-            out.append(".*")
+            out.append((re.compile("."), "*"))
             i += 1
         elif ch == "*":
-            out.append("[^/]*")
+            out.append((re.compile("[^/]"), "*"))
         elif ch in "?+" and out:
-            out[-1] = f"(?:{out[-1]}){ch}"
+            out[-1] = (out[-1][0], _REPEAT[out[-1][1]][ch])
         elif ch == "[" and "]" in pattern[i + 2:]:
             end = pattern.index("]", i + 2)
-            out.append("[" + "".join(c if c.isalnum() or c == "-" else "\\" + c for c in pattern[i + 1:end]) + "]")
+            out.append((re.compile("[" + "".join(c if c.isalnum() or c == "-" else "\\" + c
+                                                 for c in pattern[i + 1:end]) + "]"), ""))
             i = end
         elif ch == "\\" and i + 1 < len(pattern):
-            out.append(re.escape(pattern[i + 1]))
+            out.append((re.compile(re.escape(pattern[i + 1])), ""))
             i += 1
         else:
-            out.append(re.escape(ch))
+            out.append((re.compile(re.escape(ch)), ""))
         i += 1
-    return re.compile("".join(out))
+    return out
+
+
+def _filter_matches(pattern: str, text: str) -> bool:
+    """Whether a GitHub filter pattern matches the whole of ``text``. The pattern is run as a set of positions over
+    ``text``, one character at a time, so the time grows with the length of the pattern times the length of the text,
+    whatever the pattern: no backtracking, so no pattern can make the map hang."""
+    steps = _filter_pattern(pattern)
+
+    def closure(states: set[int]) -> set[int]:          # a "?" or "*" step may match nothing
+        out, todo = set(), list(states)
+        while todo:
+            s = todo.pop()
+            if s not in out:
+                out.add(s)
+                if s < len(steps) and steps[s][1] in ("?", "*"):
+                    todo.append(s + 1)
+        return out
+    states = closure({0})
+    for ch in text:
+        moved = set()
+        for s in states:
+            if s < len(steps) and steps[s][0].fullmatch(ch):
+                moved |= {s, s + 1} if steps[s][1] in ("+", "*") else {s + 1}
+        states = closure(moved)
+        if not states:
+            return False
+    return len(steps) in states
 
 
 def _push_covers(on, line: str) -> tuple[str, list[str], bool]:
@@ -742,7 +775,7 @@ def _push_covers(on, line: str) -> tuple[str, list[str], bool]:
             patterns = [push[kind]] if isinstance(push[kind], str) else _texts(push[kind])
             hit = False
             for pattern in patterns:                     # GitHub: the last matching pattern wins; "!" negates
-                if _filter_pattern(pattern[1:] if pattern.startswith("!") else pattern).fullmatch(line):
+                if _filter_matches(pattern[1:] if pattern.startswith("!") else pattern, line):
                     hit = not pattern.startswith("!")
             matched = hit if kind == "branches" else not hit
             return kind + (paths if matched else ""), patterns, matched and not paths

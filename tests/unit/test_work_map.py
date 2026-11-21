@@ -1053,6 +1053,61 @@ def test_line_checks_read_block_lists_missing_filters_and_patterns(tmp_path, mon
     assert w.line_checks([], tmp_path) == {"not_run": "PyYAML not importable"}
 
 
+def _filter_regex(pattern: str) -> re.Pattern:
+    """Round 1's translation of a GitHub filter pattern into a regular expression: right on what a pattern means,
+    but a quantifier applied to a star nests (``*+`` became ``(?:[^/]*)+``) and backtracks without end."""
+    out: list[str] = []
+    i = 0
+    while i < len(pattern):
+        ch = pattern[i]
+        if pattern.startswith("**", i):
+            out.append(".*")
+            i += 1
+        elif ch == "*":
+            out.append("[^/]*")
+        elif ch in "?+" and out:
+            out[-1] = f"(?:{out[-1]}){ch}"
+        elif ch == "[" and "]" in pattern[i + 2:]:
+            end = pattern.index("]", i + 2)
+            out.append("[" + "".join(c if c.isalnum() or c == "-" else "\\" + c for c in pattern[i + 1:end]) + "]")
+            i = end
+        elif ch == "\\" and i + 1 < len(pattern):
+            out.append(re.escape(pattern[i + 1]))
+            i += 1
+        else:
+            out.append(re.escape(ch))
+        i += 1
+    return re.compile("".join(out))
+
+
+def test_a_filter_pattern_means_what_it_meant_and_folds_a_repeated_repetition():
+    import random
+    rng = random.Random(20261121)
+    pieces = ["a", "b", "/", "-", "*", "**", "?", "+", "[ab]", "[a-b]", "\\*", "\\?"]
+    for _ in range(4000):
+        pattern = "".join(rng.choice(pieces) for _ in range(rng.randint(1, 6)))
+        text = "".join(rng.choice("ab/-*?") for _ in range(rng.randint(0, 7)))
+        assert w._filter_matches(pattern, text) == bool(_filter_regex(pattern).fullmatch(text)), (pattern, text)
+    assert [q for _test, q in w._filter_pattern("a*+b+?c?+d++**+")] == ["", "*", "*", "*", "+", "*"]
+
+
+def test_a_pathological_filter_pattern_finishes_at_once_against_a_long_branch_name():
+    # A pattern is read from canonical-ci.yml, which any PR can change, and the line from --line: neither may make
+    # the map hang, since _try catches an exception, never a hang.
+    code = ("import sys, time; sys.path.insert(0, sys.argv[1]); import work_map as w; t = time.perf_counter(); "
+            "[w._push_covers({'push': {'branches': [p]}}, sys.argv[2]) for p in sys.argv[3:]]; "
+            "print(time.perf_counter() - t)")
+    patterns = ["claude/gr*+x", "claude/gr**+x", "claude/gre+++x", "claude/gre?+?+?+x", "claude/*e*e*e*e*e*e*x",
+                "claude/**e**e**e**e**x"]
+    try:
+        run = subprocess.run([sys.executable, "-B", "-c", code, str(ROOT / "scripts"), "claude/gr" + "e" * 3000,
+                              *patterns], capture_output=True, text=True, timeout=30, check=False)
+    except subprocess.TimeoutExpired:
+        pytest.fail("a filter pattern backtracked for 30 seconds")
+    assert run.returncode == 0, run.stderr[-400:]
+    assert float(run.stdout) < 1.0
+
+
 def test_line_checks_never_say_false_where_the_pull_requests_were_not_read(quick):
     checks = w.build(None, None, now=NOW, use_git=False)["line_checks"]
     assert (checks["push_covers_line"], checks["pull_requests_with_line_as_head"], checks["covered"]) == (

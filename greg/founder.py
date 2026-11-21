@@ -56,6 +56,7 @@ COMMAND_KINDS = (
     "REALIZATION",        # bind observed values to one retained forecast receipt: evidence only, no consequence
     "TREASURY_REQUIREMENTS",  # per-tier obligation and reserve amounts for one venture's books; moves no money
     "FOUNDER_TIER",       # the signing key attests passphrase custody; grants nothing (greg/metrics.py founder_tier)
+    "AUTONOMY_GRANT",     # start one exact autonomy tuple above A0 (autonomy/levels.py); founder key only
 )
 # FOUNDER_TIER's only body. The CLI signs it only from a passphrase-encrypted key file (``greg founder attest``,
 # and ``greg body designate`` when the key is protected), so the supported tools never sign it for a

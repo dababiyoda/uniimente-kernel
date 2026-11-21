@@ -524,10 +524,24 @@ def run_isolated(argv: list, *, cwd: Path, isolate_network: bool = True, timeout
     return proc
 
 
+# What the host lacks when it cannot start a process: process slots (EAGAIN from fork), memory (ENOMEM), file
+# descriptors for the child's pipes (EMFILE for this process, ENFILE for the system). Each is the host's state at
+# that moment, not the command's fault, and a later launch may succeed.
+HOST_EXHAUSTED = (errno.EAGAIN, errno.ENOMEM, errno.EMFILE, errno.ENFILE)
+
+
 def _spawn(argv, *, cwd, env, timeout, input_bytes, stop_check, preexec, refused):
     try:
         return _launch(argv, cwd=cwd, env=env, timeout=timeout, input_bytes=input_bytes, stop_check=stop_check,
                        preexec=preexec)
+    except OSError as exc:
+        if exc.errno not in HOST_EXHAUSTED:
+            raise               # a missing or forbidden executable is the command's, not the host's
+        # The host could not start the process: the launcher refuses, typed transient, as it does when isolation
+        # is unavailable. Before, the raw OSError reached the caller untyped, and a compiled question whose solver
+        # could not be forked read as the Mind declining: NO_STRATEGY asked at once (review of 1c4a758c, N3).
+        raise CapabilityError(f"the host could not start the process ({errno.errorcode.get(exc.errno, exc.errno)}): "
+                              f"{exc.strerror}", failure_class="transient") from None
     except subprocess.SubprocessError as exc:
         if refused is None or isinstance(exc, subprocess.TimeoutExpired):
             raise

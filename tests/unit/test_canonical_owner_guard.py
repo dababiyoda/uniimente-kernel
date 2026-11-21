@@ -42,6 +42,7 @@ from __future__ import annotations
 import ast
 import copy
 from functools import lru_cache
+import os
 from pathlib import Path
 import re
 import warnings
@@ -211,7 +212,7 @@ def _parse(path: Path, stamp: float) -> ast.Module:
     with warnings.catch_warnings():
         for category in QUIET:
             warnings.simplefilter("ignore", category)
-        return ast.parse(path.read_text(), str(path))
+        return ast.parse(path.read_bytes(), str(path))        # bytes: a UTF-8 BOM or a coding line decodes as Python does
 
 
 def parse(path: Path) -> ast.Module:
@@ -219,10 +220,32 @@ def parse(path: Path) -> ast.Module:
     return _parse(path, path.stat().st_mtime_ns)
 
 
-def python_files(root: Path, package: str):
-    for path in sorted(Path(root, package).rglob("*.py")):
-        if "__pycache__" not in path.parts:
+def _walk(directory: Path, root: Path, skip=lambda path: False, _on_path: frozenset = frozenset()):
+    """Every .py file under ``directory``, in name order. A directory symlink is followed only when its target
+    resolves inside ``root`` and is not already on the walk's own path (a loop ends there); a link that leaves the
+    repository (a venv/ pointing at site-packages) is never followed. ``Path.rglob`` would follow a link only at the
+    directory it starts from and never below it, on 3.11 and 3.13 alike: a top-level venv/ link was walked in full
+    and greg/vendor -> docs/vendor was not. Nothing is skipped by name: a .py file under __pycache__/ is importable."""
+    inside, real = Path(root).resolve(), Path(directory).resolve()
+    if not real.is_relative_to(inside) or real in _on_path:
+        return
+    on_path = _on_path | {real}
+    try:
+        with os.scandir(directory) as listing:
+            listed = sorted(listing, key=lambda entry: entry.name)
+    except OSError:
+        return
+    for entry in listed:
+        path = Path(directory, entry.name)
+        if entry.is_dir():
+            if not skip(path):
+                yield from _walk(path, root, skip, on_path)
+        elif entry.name.endswith(".py") and entry.is_file():
             yield path
+
+
+def python_files(root: Path, package: str):
+    yield from _walk(Path(root, package), root)
 
 
 # -- module-level bindings (guards 1 and 3) ----------------------------------------------------------------------
@@ -1026,14 +1049,16 @@ def fingerprint(fn) -> tuple[int, str]:
 
 def runtime_files(root: Path = ROOT):
     """Every runtime .py file as the filesystem lists it (no git: the mutant gate's copy of the tree has none), by
-    guard 3's rule (``python_files``), without NOT_RUNTIME, FROZEN and top-level hidden directories (.git, tool
-    caches, an agent's worktree: none is tracked runtime code)."""
-    for top in sorted(Path(root).iterdir()):
-        if top.name.startswith(".") or f"{top.name}/" in NOT_RUNTIME:
-            continue
-        for path in python_files(root, top.name) if top.is_dir() else [top] if top.suffix == ".py" else []:
-            if not path.relative_to(root).as_posix().startswith(FROZEN):
-                yield path
+    guard 3's rule (``_walk``: directory symlinks followed only inside the repository), without NOT_RUNTIME, FROZEN
+    and top-level hidden entries (.git, tool caches, an agent's worktree: none is tracked runtime code)."""
+    def skip(path: Path) -> bool:
+        relative = path.relative_to(root)
+        return len(relative.parts) == 1 and (relative.name.startswith(".") or f"{relative.name}/" in NOT_RUNTIME)
+
+    for path in _walk(Path(root), root, skip):
+        relative = path.relative_to(root).as_posix()
+        if not relative.startswith(".") and not relative.startswith(FROZEN):
+            yield path
 
 
 def _functions(tree: ast.Module):
@@ -1784,3 +1809,28 @@ def test_a_file_with_an_invalid_escape_parses_without_a_warning_on_any_python(tm
         warnings.simplefilter("always")
         parse(root / "tests/both.py")                              # not scanned by guard 4, so not yet parsed
     assert leaked() == []
+
+
+def test_the_body_scan_reads_bom_files_follows_links_inside_the_repository_only_and_sees_pycache(tmp_path):
+    # A UTF-8 BOM file imports fine, so it parses; a directory symlink is followed when it resolves inside the
+    # repository (greg/vendor -> docs/vendor is importable as greg.vendor), never when it leaves it (a venv/ link to
+    # an installed site-packages), and a symlink loop ends; a .py file under __pycache__/ is still a file Python can
+    # import (pkg.__pycache__.m), so it is scanned like any other.
+    copied = _disguised("greg.business_loop", "reconcile", "settle_case")
+    outside = tmp_path / "site-packages"
+    root = tmp_path / "repo"
+    _tree(outside, {"pkg/settle.py": copied})
+    _tree(root, {**_real("greg.business_loop"), "tools/win_helper.py": "﻿" + copied,
+                 "docs/vendor/settle.py": copied, "pkg/__pycache__/m.py": copied})
+    (root / "greg/vendor").symlink_to(root / "docs/vendor", target_is_directory=True)
+    (root / "venv").symlink_to(outside, target_is_directory=True)
+    (root / "greg/loop").symlink_to(root / "greg", target_is_directory=True)
+    (root / "pkg/up").symlink_to(root, target_is_directory=True)
+    commerce = next(r for r in load()["function_owner_records"] if r["record_id"] == "OWN-FN-COMMERCE-CLOSURE")
+    found = body_copy_problems([commerce], root)
+    assert sorted(line.split(":")[0] for line in found) == ["greg/vendor/settle.py", "pkg/__pycache__/m.py",
+                                                            "tools/win_helper.py"], found
+    listed = [p.relative_to(root).as_posix() for p in runtime_files(root)]
+    assert not any(p.startswith(("venv/", "greg/loop/", "pkg/up/")) for p in listed), listed
+    # guards 2 and 3 list their packages by the same rule
+    assert "greg/vendor/settle.py" in [p.relative_to(root).as_posix() for p in python_files(root, "greg")]

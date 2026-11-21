@@ -44,6 +44,7 @@ FRESH = "test_the_fingerprint_erases_a_fresh_copy_once_and_leaves_the_parsed_tre
 VOUCH = "test_a_distinct_entry_cannot_vouch_for_a_module_that_holds_a_copy"
 UNDECIDED = "test_an_undecided_record_takes_no_new_candidate_without_a_pin_change"
 QUIET = "test_a_file_with_an_invalid_escape_parses_without_a_warning_on_any_python"
+LINKS = "test_the_body_scan_reads_bom_files_follows_links_inside_the_repository_only_and_sees_pycache"
 REALITY_KEPT = "        kept_for: {consumer: acceptance.claims.crosswalk_problems}\n"
 # A copy of greg.organs.exchange recorded as 'distinct' in the organ-exchange record.
 DISTINCT_COPY = [("copy_body", "greg/organs.py", "exchange", "greg/organ_relay2.py", "function"),
@@ -277,12 +278,13 @@ MUTANTS = [
      [("replace", TESTS, "                    out.append((name, child))\n                visit(child, name)\n",
        "                    out.append((name, child))\n")], CATCHES),
     ("MW-C: the scan narrowed to the six guarded packages",
-     [("replace", TESTS, '        if top.name.startswith(".") or f"{top.name}/" in NOT_RUNTIME:\n',
-       '        if top.name.startswith(".") or f"{top.name}/" in NOT_RUNTIME or top.name not in GUARDED:\n')],
+     [("replace", TESTS, '(relative.name.startswith(".") or f"{relative.name}/" in NOT_RUNTIME)\n',
+       '(relative.name.startswith(".") or f"{relative.name}/" in NOT_RUNTIME\n'
+       '                                         or relative.name not in GUARDED)\n')],
      CATCHES),
     ("MW-C: a frozen directory skipped by path segment instead of full prefix",
-     [("replace", TESTS, "            if not path.relative_to(root).as_posix().startswith(FROZEN):\n",
-       "            if \"/evaluation/\" not in \"/\" + path.relative_to(root).as_posix():\n")], CATCHES),
+     [("replace", TESTS, 'if not relative.startswith(".") and not relative.startswith(FROZEN):\n',
+       'if not relative.startswith(".") and "/evaluation/" not in "/" + relative:\n')], CATCHES),
     # -- MW-C: the candidates of an undecided record are pinned exactly ---------------------------------------------
     ("MW-C: a third candidate added to the undecided goal runtime (side C)",
      [("replace", MAP, "      - side: B\n        module: greg.gravity\n",
@@ -305,6 +307,21 @@ MUTANTS = [
      [("replace", TESTS, "QUIET = (SyntaxWarning, DeprecationWarning)\n", "QUIET = (SyntaxWarning,)\n")], QUIET),
     ("MW-C: the parse hides only DeprecationWarning",
      [("replace", TESTS, "QUIET = (SyntaxWarning, DeprecationWarning)\n", "QUIET = (DeprecationWarning,)\n")], QUIET),
+    # -- MW-C round 3: what the filesystem walk reads and follows ---------------------------------------------------
+    ("MW-C: the parse reads decoded text again (a UTF-8 BOM file is unparseable)",
+     [("replace", TESTS, "ast.parse(path.read_bytes(), str(path))", "ast.parse(path.read_text(), str(path))")], LINKS),
+    ("MW-C: a directory symlink followed out of the repository",
+     [("replace", TESTS, "    if not real.is_relative_to(inside) or real in _on_path:\n",
+       "    if real in _on_path:\n")], LINKS),
+    ("MW-C: the symlink loop check removed",
+     [("replace", TESTS, "    if not real.is_relative_to(inside) or real in _on_path:\n",
+       "    if not real.is_relative_to(inside):\n")], LINKS),
+    ("MW-C: directory symlinks never followed",
+     [("replace", TESTS, "        if entry.is_dir():\n            if not skip(path):\n",
+       "        if entry.is_dir(follow_symlinks=False):\n            if not skip(path):\n")], LINKS),
+    ("MW-C: __pycache__ skipped by path segment",
+     [("replace", TESTS, '        elif entry.name.endswith(".py") and entry.is_file():\n',
+       '        elif entry.name.endswith(".py") and entry.is_file() and "__pycache__" not in path.parts:\n')], LINKS),
 ]
 
 

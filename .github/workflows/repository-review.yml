@@ -42,7 +42,9 @@ jobs:
           git fetch --quiet origin '+refs/heads/*:refs/remotes/origin/*'
           python scripts/branch_catalog.py --github "${{ github.repository }}" --markdown branches.md --json branches.json
           python scripts/docs_catalog.py --check docs/CATALOG.md || echo "docs/CATALOG.md is stale: regenerate at the next intake" >> review.md
-          python scripts/work_map.py --github "${{ github.repository }}" --markdown work-map.md --json work-map.json || echo "work map not built: run scripts/work_map.py locally" >> review.md
+          # The work map exits 0 when it cannot build or save the map (it says why on stderr), so test its files.
+          python scripts/work_map.py --github "${{ github.repository }}" --markdown work-map.md --json work-map.json || :
+          [ -s work-map.md ] && [ -s work-map.json ] || echo "work map not built: run scripts/work_map.py locally" >> review.md
           cat review.md >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         with:

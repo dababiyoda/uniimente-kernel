@@ -39,7 +39,9 @@ line that this clone cannot diff), None when neither said; ``line_bound`` and ``
 A snapshot, not a lock. A claim coordinates work; an expired one never permits
 overwriting someone's files (``docs/collaboration/START_HERE.md``). What the
 parser cannot resolve is listed as unresolved, never guessed. Text from pull
-requests and comments is printed as code, so it cannot format the map. It always exits 0.
+requests and comments is printed as code, so it cannot format the map. It exits 0 whatever it reads, also when it
+cannot build the map or write a file (it says so on stderr, so check the files you named, not the exit code); a
+malformed command line is a usage error (exit 2).
 """
 from __future__ import annotations
 
@@ -1905,14 +1907,38 @@ def _load(paths: list[Path] | None, kind: str, key: str) -> tuple[list | None, l
     return (None if notes else out), notes
 
 
+def _descriptor(path: Path) -> int | None:
+    """The descriptor of this process that ``path`` names, when it is or links to one (``/dev/stdout``, ``/dev/fd/1``,
+    ``/proc/self/fd/1``, or a link to any of them); else None. Such a path resolves to whatever the descriptor has open,
+    so it is written through the descriptor, never renamed over."""
+    fds = re.compile(rf"/dev/fd|/proc/{os.getpid()}(?:/task/\d+)?/fd")
+    p = Path(os.path.abspath(path))
+    for _hop in range(40):
+        if p.name.isdigit() and fds.fullmatch(os.path.realpath(p.parent)):
+            return int(p.name)
+        if not p.is_symlink():
+            return None
+        p = Path(os.path.normpath(p.parent / os.readlink(p)))
+    return None
+
+
 def _write(path: Path, text: str) -> str | None:
     """Write ``text`` in UTF-8 with unencodable characters escaped. A new or regular file, or the regular file a
     symbolic link points to, is written through a temporary file beside it and an atomic rename, so a failed write
-    leaves it as it was and the link stays a link; anything else (``/dev/stdout``, a pipe, a device) is written
-    through as it is. Returns why it failed, or None."""
+    leaves it as it was and the link stays a link. A descriptor of this process (``/dev/stdout``, also when it is
+    redirected to a file) is written through that descriptor, so a file opened for append keeps what it held and
+    what is printed later follows; anything else (a pipe, a device) is written through as it is. Returns why it
+    failed, or None."""
     path, tmp = Path(path), None
     asked = path.name
     try:
+        fd = _descriptor(path)
+        if fd is not None:
+            for stream in (sys.stdout, sys.stderr):
+                stream.flush()
+            with open(os.dup(fd), "w", encoding="utf-8", errors="backslashreplace", newline="\n") as fh:
+                fh.write(text)
+            return None
         if path.is_symlink() or (path.exists() and not path.is_file()):
             target = Path(os.path.realpath(path))
             if not (target.is_file() and not target.is_symlink()):
@@ -1959,7 +1985,7 @@ def main(argv: list[str] | None = None) -> int:
             stream.reconfigure(encoding="utf-8", errors="backslashreplace")
         except (AttributeError, ValueError, OSError):
             pass
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser(description=(__doc__ or "Work map.").strip().splitlines()[0])   # -OO drops __doc__
     ap.add_argument("--github", metavar="OWNER/REPO")
     ap.add_argument("--board", type=int, default=96)
     ap.add_argument("--prs-json", type=Path, action="append")
@@ -1968,9 +1994,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--now", help="UTC time to judge activity against: YYYY-MM-DDTHH:MM:SSZ or ISO with an offset")
     ap.add_argument("--markdown", type=Path)
     ap.add_argument("--json", type=Path)
-    ap.add_argument("--paths", nargs="+", metavar="FILE", help="who touches these files?")
+    ap.add_argument("--paths", nargs="*", metavar="FILE", help="who touches these files? (none still gets an answer)")
     ap.add_argument("--unit", help="is this unit taken?")
-    a = ap.parse_args(argv)
+    a = ap.parse_args(argv)          # a malformed command line is a usage error: argparse exits 2
     try:
         prs, notes = _load(a.prs_json, "pull request", "number")
         comments, more = _load(a.comments_json, "comment", "id")
@@ -1999,7 +2025,7 @@ def main(argv: list[str] | None = None) -> int:
         outputs = [(a.json, lambda: json.dumps(m, indent=1, default=sorted, allow_nan=False) + "\n"),
                    (a.markdown, lambda: markdown(m) + "\n")]
         failed = [_write(path, render()) for path, render in outputs if path]
-        if a.paths:
+        if a.paths is not None:
             tracked, _ = _tracked(ROOT)
             print(json.dumps({"sources": _answer_sources(m), "paths": who_touches(
                 a.paths, m["prs"] if m["sources"]["prs_read"] else None, m["claims"], tracked, a.line,

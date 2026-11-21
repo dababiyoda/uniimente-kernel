@@ -1768,6 +1768,26 @@ def test_an_output_path_that_is_a_link_or_a_pipe_is_written_through(quick, tmp_p
     assert sorted(p.name for p in tmp_path.iterdir()) == ["link.json", "pipe.md", "target.json"]
 
 
+@pytest.mark.parametrize("mode", ["a", "w"])
+def test_dev_stdout_is_written_through_its_descriptor_never_replaced(tmp_path, mode):
+    log = tmp_path / "log.txt"
+    log.write_text("earlier CI log line\n")
+    inode = log.stat().st_ino
+    with open(log, mode) as out:                                 # ">>" and ">" in a shell
+        if mode == "w":
+            out.write("earlier CI log line\n")
+            out.flush()
+        run = subprocess.run([sys.executable, "-B", str(ROOT / "scripts" / "work_map.py"), "--now",
+                              "2026-11-13T01:45:00Z", "--markdown", "/dev/stdout", "--paths", "greg/missions.py"],
+                             stdout=out, stderr=subprocess.PIPE, timeout=180)
+    assert run.returncode == 0, run.stderr[-400:]
+    text = log.read_text(encoding="utf-8")
+    assert log.stat().st_ino == inode and text.startswith("earlier CI log line\n# Work map\n")
+    assert "## 6. Route drift" in text
+    answer = json.loads(text[text.index("\n{\n") + 1:])
+    assert list(answer)[-1] == "checkin" and answer["paths"][0]["path"] == "greg/missions.py"
+
+
 def test_a_regular_output_is_replaced_whole_or_left_as_it_was(quick, tmp_path, monkeypatch):
     out = tmp_path / "map.md"
     out.write_text("previous map")
@@ -1789,6 +1809,57 @@ def test_an_internal_failure_is_reported_and_exits_zero(quick, monkeypatch, caps
     monkeypatch.setattr(w, "build", broken)
     assert w.main([]) == 0
     assert "work map not built (RuntimeError)" in capsys.readouterr().err
+
+
+def test_an_empty_paths_list_still_gets_an_answer_and_a_bad_command_line_is_a_usage_error(quick, capsys):
+    assert w.main(["--paths"]) == 0                              # `--paths $(git diff --name-only)` on no change
+    answer = json.loads(capsys.readouterr().out)
+    assert answer["paths"] == [] and list(answer)[-1] == "checkin"
+    for bad in (["--board", "x"], ["--bogus"], ["--unit"]):
+        with pytest.raises(SystemExit) as stop:
+            w.main(bad)
+        assert stop.value.code == 2, bad
+    assert "a malformed command line is a usage error (exit 2)" in " ".join(w.__doc__.split())
+
+
+def test_the_script_runs_without_docstrings(tmp_path):
+    run = subprocess.run([sys.executable, "-B", "-OO", str(ROOT / "scripts" / "work_map.py"), "--now",
+                          "2026-11-13T01:45:00Z", "--json", str(tmp_path / "m.json")], capture_output=True, text=True,
+                         timeout=180)
+    assert run.returncode == 0 and "not built" not in run.stderr, run.stderr[-400:]
+    assert json.loads((tmp_path / "m.json").read_text())["authority"] == "none"
+
+
+# What the stand-in for the map does with each file it is given (--markdown F, --json F), its exit code, and whether
+# the weekly review must then say the map was not built.
+_STUBS = {"exits 0 and builds nothing": (":", 0, True), "is killed": (":", 137, True),
+          "leaves empty files": (': > "$a"', 0, True), "builds both": ('echo map > "$a"', 0, False)}
+
+
+@pytest.mark.parametrize("case", list(_STUBS))
+def test_the_weekly_review_says_when_the_work_map_was_not_produced(tmp_path, case):
+    # The map exits 0 when it cannot build or write (it says so on stderr), so an exit-status test never fires.
+    import shutil
+    import yaml
+    bash = shutil.which("bash")
+    if not bash:
+        pytest.skip("no bash")
+    steps = yaml.safe_load((ROOT / ".github/workflows/repository-review.yml").read_text())["jobs"]["review"]["steps"]
+    run = next(s["run"] for s in steps if "work_map.py" in s.get("run", ""))
+    lines = [x for x in run.splitlines() if re.search(r"work[-_ ]map", x)]
+    each, code, reported = _STUBS[case]
+    (tmp_path / "bin").mkdir()
+    fake = tmp_path / "bin" / "python"
+    fake.write_text(f'#!/bin/sh\nprev=\nfor a do\n  case "$prev" in --markdown|--json) {each} ;; esac\n  prev=$a\n'
+                    f"done\nexit {code}\n")
+    fake.chmod(0o755)
+    (tmp_path / "review.md").write_text("# review\n")
+    script = "\n".join(lines).replace("${{ github.repository }}", "owner/repo")
+    env = {**os.environ, "PATH": f"{tmp_path / 'bin'}{os.pathsep}{os.environ.get('PATH', '')}"}
+    done = subprocess.run([bash, "--noprofile", "--norc", "-eo", "pipefail", "-c", script], cwd=tmp_path, env=env,
+                          capture_output=True, text=True, timeout=60)
+    assert done.returncode == 0, done.stderr                     # never fails the job
+    assert ("work map not built" in (tmp_path / "review.md").read_text()) is reported
 
 
 def test_an_overlap_status_is_one_code_span_and_invisible_characters_are_gone(quick):

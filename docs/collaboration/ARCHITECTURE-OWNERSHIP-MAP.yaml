@@ -247,6 +247,10 @@ function_owner_records:
         mission path: the foundry.apply and foundry.query builtins (greg/capabilities.py BUILTINS) call
         greg/foundry_bridge.py _call, which resolves foundry.systems.implementation_for(48, op) to teams.APPLY_OPS
         form/act/dissolve and QUERY_OPS report
+      - >-
+        GREG's team runner, greg/teams.py field (the worker.team builtin, WU-03), is a caller, not a second
+        implementation: it compiles, forms, records, dissolves and reports every team through #48 on foundry.apply /
+        foundry.query, and runs each member as an ordinary worker.commission WorkOrder
       - "omnimorph is imported by foundry/pipeline.py and closure/advantage_registry.py only; no module under greg/ imports it"
       - "OWN-SR-001 above: organization_design is omnimorph/ (subordinate, not activated)"
     alternates:
@@ -265,6 +269,11 @@ function_owner_records:
       - module: greg.mcp_tools
         qualnames: [act]
         why: "the mcp.act capability: one MCP tool call inside exactly what the founder signed for that use, not a team's act"
+      - module: greg.teams
+        qualnames: [TeamRefused]
+        why: >-
+          the worker.team adapter's refusal before any team forms (unmetered paid role, caps above the signed cap,
+          shared role or order); every team itself is formed, acted and dissolved by #48 through foundry.apply
     migration_path: >-
       a GREG-level team runner (the program's WU-03 greg/teams.py) forms its teams through #48 on foundry.apply, or is
       recorded here as an ALTERNATE with its retirement condition; the guard refuses it otherwise

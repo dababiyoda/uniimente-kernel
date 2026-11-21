@@ -14,11 +14,11 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 | Area | Files | What it holds |
 |---|---:|---|
 | [`(top)`](#doctrine-orders-and-top-level-references) | 31 | Doctrine, orders and top-level references |
-| [`intent`](#founder-intent-records-and-their-verbatim-sources) | 87 | Founder intent records and their verbatim sources |
-| [`collaboration`](#collaboration-records-handoffs-deliberations-reviews-reconciliations) | 197 | Collaboration records: handoffs, deliberations, reviews, reconciliations |
+| [`intent`](#founder-intent-records-and-their-verbatim-sources) | 88 | Founder intent records and their verbatim sources |
+| [`collaboration`](#collaboration-records-handoffs-deliberations-reviews-reconciliations) | 198 | Collaboration records: handoffs, deliberations, reviews, reconciliations |
 | [`decisions`](#architecture-decision-records) | 6 | Architecture decision records |
 | [`deliberations`](#founder-rulings) | 1 | Founder rulings |
-| [`evidence`](#measured-evidence-frozen-runs-admissions-proofs) | 513 | Measured evidence (frozen runs, admissions, proofs) |
+| [`evidence`](#measured-evidence-frozen-runs-admissions-proofs) | 546 | Measured evidence (frozen runs, admissions, proofs) |
 | [`cortex`](#cortex-and-seed-genome-specifications-and-evidence) | 79 | Cortex and Seed Genome specifications and evidence |
 | [`opus-maximus`](#opus-maximus-deliverables-al) | 13 | OPUS MAXIMUS deliverables A–L |
 | [`open-source`](#open-source-mechanism-harvest-records) | 23 | Open-source mechanism harvest records |
@@ -87,10 +87,11 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 
 ## Founder intent records and their verbatim sources
 
-### Intent record (37)
+### Intent record (38)
 
 | File | Date | Title |
 |---|---|---|
+| [`intent/INTENT-20261113-ABSTENTION-RESOLUTION.json`](intent/INTENT-20261113-ABSTENTION-RESOLUTION.json) | 2026-11-13 | An abstaining cognition step asks the one founder decision that would let it answer |
 | [`intent/INTENT-20261112-CONVERGENCE-USEFUL-PATH.json`](intent/INTENT-20261112-CONVERGENCE-USEFUL-PATH.json) | 2026-11-12 | Convergence is the next engineering outcome; then one useful operational path, a second case, and review findings turned |
 | [`intent/INTENT-20261111-REVOKED-DEVICE-AUTHORITY.json`](intent/INTENT-20261111-REVOKED-DEVICE-AUTHORITY.json) | 2026-11-11 | Revoking a device voids its unused authority; completed effects and history stay; a suspected compromise opens a review |
 | [`intent/INTENT-20261111-ABSOLUTE-OPUS-MAXIMUS.json`](intent/INTENT-20261111-ABSOLUTE-OPUS-MAXIMUS.json) | 2026-11-11 | Complete-machine execution on two tracks: engineering never waits for acceptance, and acceptance is never manufactured |
@@ -186,13 +187,14 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 
 ## Collaboration records: handoffs, deliberations, reviews, reconciliations
 
-### Deliberation (five lenses, two passes) (49)
+### Deliberation (five lenses, two passes) (50)
 
 | File | Date | Title |
 |---|---|---|
 | [`collaboration/deliberation-w5-ledger-memory-20261113.json`](collaboration/deliberation-w5-ledger-memory-20261113.json) | 2026-11-13 | Whiteboard W5: what bounds a body's evidence-ledger memory, after option 1 (#211) halved it. Outcome: RETAIN the correct |
 | [`collaboration/deliberation-w3-ledger-hot-path-20261113.json`](collaboration/deliberation-w3-ledger-hot-path-20261113.json) | 2026-11-13 | Whiteboard W3: keep or revert the ledger hot-path changes e2440a6, bd0c17d and 3884493 on the #196 line |
 | [`collaboration/deliberation-autonomy-signed-issuance-20261113.json`](collaboration/deliberation-autonomy-signed-issuance-20261113.json) | 2026-11-13 | Autonomy above A0 is issued only on the founder's signed AUTONOMY_GRANT for that exact subject, tuple and level (accepta |
+| [`collaboration/deliberation-abstention-resolution-20261113.json`](collaboration/deliberation-abstention-resolution-20261113.json) | 2026-11-13 | Abstention-to-resolution routing on GREG's mission path |
 | [`collaboration/deliberation-context-source-export-20261112.json`](collaboration/deliberation-context-source-export-20261112.json) | 2026-11-12 | Publish the eleven exact project source originals after explicit founder approval |
 | [`collaboration/deliberation-context-route-20261112.json`](collaboration/deliberation-context-route-20261112.json) | 2026-11-12 | Expose existing GitHub context while keeping unapproved attachment publication blocked |
 | [`collaboration/deliberation-revoked-device-authority-20261111.json`](collaboration/deliberation-revoked-device-authority-20261111.json) | 2026-11-11 | A revoked device's unused authority authorizes no new effect; completed effects and history stay; a suspected compromise |
@@ -475,6 +477,7 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 |---|---:|---|---|
 | [`evidence/ledger-memory-w5-2026-11-13/f383fd26-rss.json`](evidence/ledger-memory-w5-2026-11-13/f383fd26-rss.json) | 1 | 2026-11-13 |  |
 | [`evidence/ledger-memory-w5-2026-11-13/f383fd26-heap-attribution.json`](evidence/ledger-memory-w5-2026-11-13/f383fd26-heap-attribution.json) | 1 | 2026-11-13 |  |
+| [`evidence/greg-abstention-resolution/2026-11-13`](evidence/greg-abstention-resolution/2026-11-13/README.md) | 33 | 2026-11-13 | Abstention-to-resolution routing: results (runs v1 and v2) |
 | [`evidence/greg-browser-binary/2026-11-11`](evidence/greg-browser-binary/2026-11-11/README.md) | 1 | 2026-11-11 | browser.render: which installed browser, and what the check adds over a four-line change |
 | [`evidence/retained-capability-compounding/2026-11-05`](evidence/retained-capability-compounding/2026-11-05/README.md) | 2 | 2026-11-05 | Retained-capability compounding, 2026-11-05 |
 | [`evidence/greg-genome-admission/2026-11-05-v10`](evidence/greg-genome-admission/2026-11-05-v10/README.md) | 5 | 2026-11-05 | Genome admission v10: the meta wave (2026-11-05) |

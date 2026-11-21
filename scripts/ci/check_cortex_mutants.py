@@ -418,7 +418,8 @@ SIGNAL_SCOPE_MUTANTS = [
     ("GREG's confined acceptance run may signal the body", "greg/capabilities.py",
      "restrict(grants, libc, scope=scope)   # precomputed", "restrict(grants, libc)   # precomputed"),
     ("a timed-out supervised acceptance run keeps an unconfined record", "greg/workers.py",
-     "                    mode = _supervised_acceptance(landlock)\n                    raise",
+     "                    mode, evidence = _supervised_acceptance(landlock), {\"mode\": \"supervised\", \"landlock\": landlock}\n"
+     "                    raise",
      "                    raise"),
 ]
 _RECON = "tests/unit/test_greg_mission_reconciliation.py::"

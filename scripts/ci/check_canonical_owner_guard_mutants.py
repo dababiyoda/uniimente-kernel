@@ -43,6 +43,7 @@ CATCHES = "test_the_body_guard_catches_renamed_nested_relocated_and_one_line_cop
 FRESH = "test_the_fingerprint_erases_a_fresh_copy_once_and_leaves_the_parsed_tree_alone"
 VOUCH = "test_a_distinct_entry_cannot_vouch_for_a_module_that_holds_a_copy"
 UNDECIDED = "test_an_undecided_record_takes_no_new_candidate_without_a_pin_change"
+QUIET = "test_a_file_with_an_invalid_escape_parses_without_a_warning_on_any_python"
 REALITY_KEPT = "        kept_for: {consumer: acceptance.claims.crosswalk_problems}\n"
 # A copy of greg.organs.exchange recorded as 'distinct' in the organ-exchange record.
 DISTINCT_COPY = [("copy_body", "greg/organs.py", "exchange", "greg/organ_relay2.py", "function"),
@@ -299,6 +300,11 @@ MUTANTS = [
     ("MW-C: REALITY kept for a consumer under greg/ (greg.console.main)",
      [("replace", MAP, REALITY_KEPT, REALITY_KEPT.replace("acceptance.claims.crosswalk_problems", "greg.console.main"))],
      HISTORY),
+    # -- MW-C round 3: parse warnings hidden on every Python (3.11 reports an invalid escape as a DeprecationWarning)
+    ("MW-C: the parse hides only SyntaxWarning",
+     [("replace", TESTS, "QUIET = (SyntaxWarning, DeprecationWarning)\n", "QUIET = (SyntaxWarning,)\n")], QUIET),
+    ("MW-C: the parse hides only DeprecationWarning",
+     [("replace", TESTS, "QUIET = (SyntaxWarning, DeprecationWarning)\n", "QUIET = (DeprecationWarning,)\n")], QUIET),
 ]
 
 

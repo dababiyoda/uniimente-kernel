@@ -201,9 +201,17 @@ def module_name(path: Path, root: Path = ROOT) -> str:
     return ".".join(relative.parts[:-1] if relative.name == "__init__" else relative.parts)
 
 
+# An invalid escape in a string is a SyntaxWarning on Python 3.12 and later and a DeprecationWarning on 3.11 (CI's
+# version); tracked scripts that have one still parse, and neither may leak into the test summary.
+QUIET = (SyntaxWarning, DeprecationWarning)
+
+
 @lru_cache(maxsize=None)
 def _parse(path: Path, stamp: float) -> ast.Module:
-    return ast.parse(path.read_text(), str(path))
+    with warnings.catch_warnings():
+        for category in QUIET:
+            warnings.simplefilter("ignore", category)
+        return ast.parse(path.read_text(), str(path))
 
 
 def parse(path: Path) -> ast.Module:
@@ -1093,9 +1101,7 @@ def body_copies(records: list[dict], root: Path = ROOT) -> tuple[list[dict], lis
     for path in runtime_files(root):
         relative = path.relative_to(root).as_posix()
         try:
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", SyntaxWarning)    # tracked scripts with invalid escapes still parse
-                prints = _prints(path, path.stat().st_mtime_ns, sizes)
+            prints = _prints(path, path.stat().st_mtime_ns, sizes)
         except (SyntaxError, UnicodeDecodeError, ValueError) as exc:
             unreadable.append(f"{relative} cannot be parsed ({type(exc).__name__}), so guard 4 cannot show that it "
                               f"holds no copy of a registered function")
@@ -1745,3 +1751,36 @@ def test_the_history_guard_refuses_a_kept_alternate_with_no_live_reason(tmp_path
         found = problems(kept_for)
         assert len(found) == 1 and said in found[0], (kept_for, found)
     assert "not a NEEDS_FOUNDER_DECISION record" in problems({"open_decision": "OWN-FN-OPEN"}, decided="CANONICAL")[0]
+
+
+INBOX_RECORD = {"record_id": "OWN-FN-X", "function": "x", "owner_status": "CANONICAL", "markers": ["Inbox"],
+                "canonical": [{"module": "greg.body", "qualnames": ["send_signed"]}]}
+
+
+def test_a_file_with_an_invalid_escape_parses_without_a_warning_on_any_python(tmp_path, monkeypatch):
+    # Python 3.12+ reports an invalid escape as a SyntaxWarning, 3.11 (CI's version) as a DeprecationWarning; the
+    # guards parse tracked scripts that have one, and neither category may leak into the test summary.
+    root = _tree(tmp_path, {"greg/body.py": OWNER_BODY, "scripts/escape.py": "PATTERN = '\\d+'\n",
+                            "greg/escape.py": "PATTERN = '\\w+'\n", "tests/both.py": "X = 1\n"})
+
+    def leaked() -> list[str]:
+        return [str(w.message) for w in seen if issubclass(w.category, (SyntaxWarning, DeprecationWarning))]
+
+    with warnings.catch_warnings(record=True) as seen:
+        warnings.simplefilter("always")
+        parse(root / "greg/escape.py")                             # the parse guards 1-3 read
+        found = body_copy_problems([INBOX_RECORD], root)          # guard 4's scan
+    assert found == [] and leaked() == []
+    # whichever category this interpreter uses, the other one is hidden too
+    real_parse = ast.parse
+
+    def both_categories(source, *args, **kwargs):
+        warnings.warn("invalid escape sequence (as 3.12+ reports it)", SyntaxWarning)
+        warnings.warn("invalid escape sequence (as 3.11 reports it)", DeprecationWarning)
+        return real_parse(source, *args, **kwargs)
+
+    monkeypatch.setattr(ast, "parse", both_categories)
+    with warnings.catch_warnings(record=True) as seen:
+        warnings.simplefilter("always")
+        parse(root / "tests/both.py")                              # not scanned by guard 4, so not yet parsed
+    assert leaked() == []

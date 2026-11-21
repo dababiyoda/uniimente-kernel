@@ -33,6 +33,13 @@ runner exists for it, is reported as skipped with the reason: NOT RUN, never pas
   after a SIGKILL restart and not after the founder re-delegates the same key; nor does one it signed after a
   re-delegation envelope the founder prepared in advance but before the revocation, or one signed while the key
   stood revoked. A new short-lived device identity is honoured.
+* black_start_environment: the primary is gone. A real body ran (a delegated phone, an enrolled node, one mission)
+  and stopped on a signed BODY_STOP; its home is copied and the original deleted. `greg black-start` over the copy
+  (greg/black_start.py) verifies the chain, the constitution and the published head, shows the body down, lists the
+  revocations the founder would sign and writes the notification for Alfonso outside the copy, marked NOT_SENT. The
+  copy is byte-identical afterwards. The listed revocations are the real commands: signed by the founder key and
+  dropped into another copy, the body applies them. A copy taken while the body runs is not shown down; a tampered
+  head, a rolled-back ledger and another constitution each exit 3 with nothing derived from the history.
 """
 from __future__ import annotations
 
@@ -41,8 +48,10 @@ from datetime import datetime, timedelta, timezone
 import json
 import os
 from pathlib import Path
+import hashlib
 import random
 import re
+import shutil
 import signal
 import subprocess
 import sys
@@ -53,10 +62,11 @@ import yaml
 
 from events.spine import EventSpine
 from greg.body import observe
-from greg.founder import generate_founder_key, instant, key_id, load_founder_key, sign_command, stamp
+from greg.founder import (generate_founder_key, instant, key_id, load_founder_key, public_bytes, sign_command,
+                          stamp)
 from greg.journal import Journal
 from provenance.ledger import EvidenceLedger
-from tests.greg_fixtures import make_body, mission, note_check, signed, workspace, write_strategy
+from tests.greg_fixtures import horizon, make_body, mission, note_check, signed, workspace, write_strategy
 
 ROOT = Path(__file__).resolve().parents[2]
 SCENARIOS = yaml.safe_load((ROOT / "tests" / "recovery" / "recovery-tests.yaml").read_text())["tests"]
@@ -76,12 +86,7 @@ CONSEQUENTIAL = {"fs.write": "note", "brief.engineering": "deliver"}
 # Where a window trial holds the adapter inside its dispatch, and what a truthful founder then answers.
 WINDOW = {"before": "reconcile_not_executed", "after": "reconcile_executed"}
 
-NOT_RUN = {
-    "black_start_environment": "needs the primary cloud to be unavailable and a separate read-only recovery core "
-                               "(read ledger and constitution, assert shutdown, revoke credentials, notify Alfonso; "
-                               "workflows/shutdown-recovery.yaml stage 1). No such core exists in this repository and "
-                               "a GREG body has no primary cloud, so nothing here can exercise it.",
-}
+NOT_RUN: dict[str, str] = {}
 
 
 # -- process plumbing -------------------------------------------------------------------------------------------------
@@ -691,12 +696,146 @@ def old_tokens(scenario: dict, tmp_path: Path) -> None:
     assert all(notes[m].read_text() == "approved" for m in notes)
 
 
+# -- black_start_environment ------------------------------------------------------------------------------------------
+
+NODE_CONE = {"capabilities": ["fs.read"], "targets": ["fs:node2/*"], "max_consequence_class": "read_only",
+             "budget_usd": 0}
+
+def snapshot(home: Path) -> dict:
+    """Every path under a home with its bytes' digest (directories as None): what 'writes nothing' is checked on."""
+    return {str(p.relative_to(home)): (hashlib.sha256(p.read_bytes()).hexdigest() if p.is_file() else None)
+            for p in sorted(Path(home).rglob("*"))}
+
+
+def black_start_cli(home: Path, *args: str) -> tuple[int, dict | None, str]:
+    """`greg --home HOME black-start` from a directory that is not the home, as the recovery operator runs it."""
+    ran = subprocess.run([sys.executable, "-m", "greg", "--home", str(home), "black-start", *args], cwd=ROOT,
+                         env=ENV, capture_output=True, text=True, timeout=120)
+    try:
+        report = json.loads(ran.stdout)
+    except ValueError:
+        report = None
+    return ran.returncode, report, ran.stderr
+
+
+def black_start(scenario: dict, tmp_path: Path) -> None:
+    """The yaml's stage-1 core (workflows/shutdown-recovery.yaml), run on a copy of a stopped body's home."""
+    node_cone = {**NODE_CONE, "horizon": horizon(30)}
+    home, key, body_id, _ = make_body(tmp_path)
+    log = tmp_path / "body.log"
+    phone_public = generate_founder_key(tmp_path / "phone.pem", None)
+    phone_kid = key_id(phone_public)
+    node_public = generate_founder_key(tmp_path / "node.pem", None)
+    month = stamp(datetime.now(timezone.utc) + timedelta(days=30))
+    drop(home, sign_command(key, "DEVICE_ENROLL", {"public_key": phone_public, "label": "phone",
+                                                   "kinds": ["DECISION", "BODY_STOP"], "expires_at": month},
+                            body_id=body_id), "a-phone.json")
+    drop(home, sign_command(key, "NODE_ENROLL", {"node_id": "node-a", "node_public_key": node_public,
+                                                 "light_cone": node_cone, "expires_at": month}, body_id=body_id),
+         "b-node.json")
+    note = workspace(home, "m:black-start") / "n.txt"
+    drop(home, signed(key, body_id, "MISSION", mission(
+        "m:black-start", checks=[note_check("n", note, "before the outage")],
+        strategies=[write_strategy("w", "n.txt", "before the outage", ["n"])], capabilities=["fs.read", "fs.write"])),
+         "c-mission.json")
+    body = start(home, log)
+    try:
+        wait_for(lambda: events(home, "mission.achieved") and events(home, "device.enrolled"),
+                 what="the mission's closure and the phone's delegation")
+        wait_for(lambda: events(home, "node.enrolled"), what="the node's enrollment")
+        # While it runs, a copy is not shown down: its last boot recorded no clean stop.
+        wait_for(lambda: json.loads((home / "heartbeat.json").read_text())["state"] == "RUNNING",
+                 what="a RUNNING heartbeat")
+        live_copy = tmp_path / "live-copy"
+        shutil.copytree(home, live_copy, ignore=shutil.ignore_patterns("*.sock", "*.lock"))
+        code, report, err = black_start_cli(live_copy)
+        assert code == 1 and report["outcome"] == "not_shown_down" and report["verified"], (code, report, err[-800:])
+        assert "recorded no clean stop" in report["shutdown"]["why"]
+        drop(home, sign_command(key, "BODY_STOP", {}, body_id=body_id), "z-stop.json")
+        assert body.wait(timeout=60) == 0, "a signed BODY_STOP exits 0: the supervisor does not restart it"
+    finally:
+        stop(body)
+
+    # The primary becomes unavailable: only a copy of its home survives, read on another machine.
+    copy = tmp_path / "recovered-copy"
+    shutil.copytree(home, copy)
+    shutil.rmtree(home)
+    before = snapshot(copy)
+    out = tmp_path / "outbox" / "notify-alfonso.json"
+    out.parent.mkdir()
+    code, report, err = black_start_cli(copy, "--out", str(out))
+    assert code == 0, (code, report, err[-1500:])
+    assert snapshot(copy) == before, "the read-only core wrote nothing inside the copied home"
+    # read ledger and constitution
+    integrity = report["integrity"]
+    assert report["verified"] and integrity["chain_verified"] and integrity["constitution_matches"]
+    assert integrity["published_head_in_ledger"] is True and integrity["published_head"] == integrity["ledger_head"]
+    # assert shutdown
+    assert report["outcome"] == "shown_down" and report["shutdown"]["shown_down"], report["shutdown"]
+    assert report["shutdown"]["heartbeat_state"] == "STOPPED" and "BODY_STOP" in report["shutdown"]["stop"]["reason"]
+    # revoke credentials: listed as the founder-signed commands, nothing signed here
+    creds = report["credentials"]
+    assert creds["signed"] is False
+    assert [d["device_key_id"] for d in creds["device_delegations"]] == [phone_kid]
+    assert creds["device_delegations"][0]["command"] == {
+        "kind": "DEVICE_REVOKE", "body": {"device_key_id": phone_kid, "suspected_compromise": True}}
+    assert [n["node_id"] for n in creds["nodes"]] == ["node-a"]
+    assert creds["founder_keys"] == [key_id(public_bytes(key.public_key()).hex())]
+    # notify Alfonso: written outside the copy, and not sent
+    sent = json.loads(out.read_text())
+    assert sent["reality_status"].startswith("NOT_SENT") and sent["report"]["outcome"] == "shown_down"
+    assert "1 device delegation(s)" in sent["text"] and report["notification_written"] == str(out.resolve())
+    # A second run refuses to overwrite the notification, and refuses to write one inside the home.
+    assert black_start_cli(copy, "--out", str(out))[0] != 0 and json.loads(out.read_text()) == sent
+    code, _, err = black_start_cli(copy, "--out", str(copy / "notify.json"))
+    assert code != 0 and "outside the assessed home" in err and snapshot(copy) == before
+
+    # The listed commands are the real ones: signed by the founder and dropped into another copy, the body applies
+    # every one of them and the phone is no longer delegated.
+    applied = tmp_path / "applied-copy"
+    shutil.copytree(copy, applied)
+    for i, entry in enumerate(creds["device_delegations"] + creds["nodes"]):
+        drop(applied, sign_command(key, entry["command"]["kind"], entry["command"]["body"], body_id=body_id),
+             f"r{i}.json")
+    assert report["shutdown"]["stop_file_present"]       # the signed stop persists; local authority clears it
+    subprocess.run([sys.executable, "-m", "greg", "--home", str(applied), "start", "--local"], cwd=ROOT, env=ENV,
+                   check=True, capture_output=True, timeout=60)
+    resumed = start(applied, tmp_path / "applied.log")
+    try:
+        wait_for(lambda: len(events(applied, "device.revoked")) == 1
+                 and len(events(applied, "node.revoked")) == len(creds["nodes"]),
+                 what="the revocations the core listed")
+    finally:
+        stop(resumed)
+    code, after, _ = black_start_cli(applied)
+    assert after["credentials"]["device_delegations"] == [] and after["credentials"]["nodes"] == []
+
+    # Damaged copies: nothing is derived from history that does not verify, and each exits 3, unwritten.
+    lines = (copy / "ledger.jsonl").read_text().splitlines(keepends=True)
+    record = json.loads(lines[-1])
+    record["payload"]["tampered"] = True
+    damages = {"head_fails_verification": lambda h: (h / "ledger.jsonl").write_text(
+                   "".join(lines[:-1]) + json.dumps(record) + "\n"),
+               "head_rolled_back": lambda h: (h / "ledger.jsonl").write_text("".join(lines[:-3])),
+               "other_constitution": lambda h: (h / "body.json").write_text(json.dumps(
+                   {**json.loads((copy / "body.json").read_text()), "constitution_hash": "sha256:" + "0" * 64}))}
+    for name, damage in damages.items():
+        damaged = tmp_path / f"damaged-{name}"
+        shutil.copytree(copy, damaged)
+        damage(damaged)
+        kept = snapshot(damaged)
+        code, report, err = black_start_cli(damaged)
+        assert code == 3 and report["outcome"] == "remain_read_only_and_escalate", (name, code, report, err[-800:])
+        assert report["credentials"] is None and report["shutdown"] is None, name
+        assert snapshot(damaged) == kept, name
+
+
 # -- the harness ------------------------------------------------------------------------------------------------------
 # One test per scenario this harness can exercise, each calling its runner directly (so the static reader in
 # acceptance/ sees which process each starts); every other scenario the YAML declares is reported NOT RUN.
 
 RUNNERS = {"mid_execution_kill_resume": kill_resume, "corrupted_ledger_head": corrupted_head,
-           "old_token_reactivation": old_tokens}
+           "old_token_reactivation": old_tokens, "black_start_environment": black_start}
 
 
 def test_the_harness_reads_the_scenarios_the_yaml_declares():
@@ -717,6 +856,10 @@ def test_corrupted_ledger_head(tmp_path):
 
 def test_old_token_reactivation(tmp_path):
     old_tokens(SCENARIOS["old_token_reactivation"], tmp_path)
+
+
+def test_black_start_environment(tmp_path):
+    black_start(SCENARIOS["black_start_environment"], tmp_path)
 
 
 @pytest.mark.parametrize("name", sorted(set(SCENARIOS) - set(RUNNERS)))

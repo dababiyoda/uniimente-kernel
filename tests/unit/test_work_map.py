@@ -1777,6 +1777,67 @@ def test_a_failed_api_read_leaves_the_pr_without_a_diff_never_as_touching_nothin
     assert 9 in w._answer_sources(m)["open_prs_without_diff"]
 
 
+def _files_api(monkeypatch, pages: list[list]) -> None:
+    """The files API answering ``pages`` (page 1 first), then empty pages."""
+    def get(url, _token):
+        page = int(url.rsplit("page=", 1)[1])
+        return pages[page - 1] if page <= len(pages) else []
+    monkeypatch.setattr(w, "_get", get)
+
+
+def test_a_pr_that_renames_a_file_away_touches_its_old_name(quick, monkeypatch):
+    pr = _pr(502, "g/rename", body=_receipt(C, ["docs/other.md"]))
+    _files_api(monkeypatch, [[{"filename": "greg/mission_book.py", "previous_filename": "greg/missions.py",
+                               "status": "renamed"}, {"filename": "greg/body.py", "previous_filename": None}]])
+    assert w.attach_api_files(REPO, [pr], None, LINE) == (1, [])
+    assert pr[w.API_FILES] == ["greg/mission_book.py", "greg/missions.py", "greg/body.py"]
+    m = w.build([pr], [], now=NOW, use_git=False)
+    hits = w.who_touches(["greg/missions.py", "greg/mission_book.py"], m["prs"], m["claims"], None, LINE)
+    assert [[(p["pr"], p["via"]) for p in h["prs"]] for h in hits] == [[(502, ["api"])], [(502, ["api"])]]
+
+
+def test_a_rename_in_local_git_counts_both_names(tmp_path):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _git(repo, "init", "-q", "-b", "line")
+    _git(repo, "config", "diff.renames", "true")
+    (repo / "old.py").write_text("x = 1\n" * 40)
+    _git(repo, "add", "old.py")
+    _git(repo, "commit", "-q", "-m", "old")
+    line_tip = _git(repo, "rev-parse", "HEAD")
+    _git(repo, "checkout", "-q", "-b", "parent")
+    _commit(repo, "a.py")
+    _git(repo, "checkout", "-q", "-b", "child")
+    _git(repo, "mv", "old.py", "new.py")
+    _git(repo, "commit", "-q", "-m", "rename")
+    child = _git(repo, "rev-parse", "HEAD")
+    for name, sha in (("line", line_tip), ("parent", _git(repo, "rev-parse", "parent"))):
+        _git(repo, "update-ref", f"refs/remotes/origin/{name}", sha)
+    assert sorted(w.own_files({"base": "line", "head_sha": child}, repo, line="line")) == ["a.py", "new.py", "old.py"]
+    assert sorted(w.own_files({"base": "parent", "head_sha": child}, repo, line="line")) == ["new.py", "old.py"]
+
+
+@pytest.mark.parametrize("batch", [[{"name": "greg/missions.py", "status": "modified"}],
+                                   [{"filename": "greg/body.py"}, {"name": "greg/missions.py"}],
+                                   [{"filename": "greg/body.py"}, "greg/missions.py"],
+                                   [{"filename": "greg/body.py", "previous_filename": 7}]])
+def test_a_file_list_with_an_entry_it_cannot_read_is_not_read(quick, monkeypatch, batch):
+    pr = _pr(501, "g/odd", body=_receipt(C, ["docs/other.md"]))
+    _files_api(monkeypatch, [batch])
+    assert w.attach_api_files(REPO, [pr], None, LINE) == (0, [501])
+    m = w.build([pr], [], now=NOW, use_git=False)
+    assert 501 in w._answer_sources(m)["open_prs_without_diff"]
+
+
+def test_a_file_list_the_api_may_have_cut_at_3000_is_not_read(quick, monkeypatch):
+    pr = _pr(503, "g/huge", body=_receipt(C, ["docs/other.md"]))
+    files = [{"filename": f"gen/f{i:04d}.py"} for i in range(3000)]
+    _files_api(monkeypatch, [files[i:i + 100] for i in range(0, 3000, 100)])
+    assert w.attach_api_files(REPO, [pr], None, LINE) == (0, [503])
+    _files_api(monkeypatch, [files[i:min(i + 100, 2950)] for i in range(0, 2950, 100)])   # 29 full pages, one short
+    assert w.attach_api_files(REPO, [pr], None, LINE) == (1, []) and len(pr[w.API_FILES]) == 2950
+
+
 def test_a_local_diff_wins_over_the_api_files(quick, monkeypatch):
     pr = dict(_pr(10, "f/local", body=_receipt(B, ["greg/a.py"])), _api_files=["greg/api.py"])
     monkeypatch.setattr(w, "own_files", lambda *_a, **_k: ["greg/local.py"])

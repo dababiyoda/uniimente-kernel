@@ -514,15 +514,23 @@ def issue_comments(repo: str, issue: int, token: str | None) -> list[dict]:
 
 
 def pr_files(repo: str, number: int, token: str | None) -> list[str]:
-    """The files a pull request changes against its base, from the GitHub API, every page (the API stops at 3,000)."""
+    """The files a pull request changes against its base, from the GitHub API, every page; a renamed file counts under
+    its old name too. Raises when an entry has no readable name, or when the list reaches the API's cap of 3,000 files
+    and may be cut: a list that may be incomplete is not read, never taken as whole."""
     out, page = [], 1
     while True:
         batch = _get(f"https://api.github.com/repos/{repo}/pulls/{number}/files?per_page=100&page={page}", token)
         if not isinstance(batch, list):
             raise ValueError("the files API answered with something other than a list")
-        out += [f["filename"] for f in batch if isinstance(f, dict) and isinstance(f.get("filename"), str)]
-        if len(batch) < 100 or page >= 30:
+        for f in batch:
+            if not (isinstance(f, dict) and isinstance(f.get("filename"), str)
+                    and (f.get("previous_filename") is None or isinstance(f["previous_filename"], str))):
+                raise ValueError("the files API answered with an entry that has no file name")
+            out += [f["filename"]] + ([f["previous_filename"]] if f.get("previous_filename") else [])
+        if len(batch) < 100:
             return out
+        if page >= 30:
+            raise ValueError("the files API stops at 3,000 files, so this list may be cut")
         page += 1
 
 
@@ -722,10 +730,11 @@ def activity(last: str | None, now: datetime) -> str:
 
 
 def changed_files(pr: dict, root: Path, against: str | None = None) -> list[str] | None:
-    """Files the PR changes against its base (or ``against``), from local git; None when the refs are not here or git
-    is not."""
+    """Files the PR changes against its base (or ``against``), from local git, a renamed file under both names; None
+    when the refs are not here or git is not."""
     try:
-        r = subprocess.run(["git", "diff", "--name-only", f"origin/{against or pr['base']}...{pr['head_sha']}"],
+        r = subprocess.run(["git", "diff", "--no-renames", "--name-only",
+                            f"origin/{against or pr['base']}...{pr['head_sha']}"],
                            cwd=root, capture_output=True, text=True, timeout=60, check=False)
     except (OSError, ValueError, subprocess.SubprocessError):
         return None
@@ -733,9 +742,10 @@ def changed_files(pr: dict, root: Path, against: str | None = None) -> list[str]
 
 
 def _own_commit_files(pr: dict, root: Path, line: str = LINE) -> set[str] | None:
-    """Files touched by the PR's own commits: non-merge commits of its head on neither its base nor the line."""
+    """Files touched by the PR's own commits: non-merge commits of its head on neither its base nor the line (a renamed
+    file under both names)."""
     try:
-        r = subprocess.run(["git", "log", "--no-merges", "--name-only", "--format=", pr["head_sha"],
+        r = subprocess.run(["git", "log", "--no-merges", "--no-renames", "--name-only", "--format=", pr["head_sha"],
                             f"^origin/{pr['base']}", f"^origin/{line}"], cwd=root, capture_output=True, text=True,
                            timeout=60, check=False)
     except (OSError, ValueError, subprocess.SubprocessError):

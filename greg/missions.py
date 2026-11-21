@@ -207,7 +207,7 @@ def params_view(params) -> dict:
 # that decides its own confinement from ``ctx.egress`` (the organ exchange runs its organs with no network at all)
 # must be listed, or a confined body hands it None and it runs with the body's network.
 CONFINED_EGRESS = frozenset({"http.get", "github.pulls", "brief.engineering", "browser.render",
-                             "browser.session", "worker.commission", "daleobanks.verify", "daleobanks.publish",
+                             "browser.session", "worker.commission", "worker.team", "daleobanks.verify", "daleobanks.publish",
                              "venture.assess", "mcp.act", "organs.exchange"})
 
 
@@ -404,7 +404,10 @@ def bound_value(edge: dict, output, whole=None, *, recorded_cut: bool = True):
 
 # Capabilities whose own adapter measures provider spend (not a worker's self-claim):
 # capability -> field of the adapter output holding the provider-reported USD.
-METERED_SPEND = {"worker.commission": "worker.cost_usd"}
+# Producers whose output reports an interrupted worker as status UNCERTAIN (reconciled, never booked as done).
+WORKER_PRODUCERS = ("worker.commission", "worker.team")
+
+METERED_SPEND = {"worker.commission": "worker.cost_usd", "worker.team": "team.spent_usd"}
 
 # ``mission.compensated`` statuses after which nothing is owed for the effect: undone through the Gate (DONE), or
 # decided by the founder (their answer to its COMPENSATION ask, or their rejection of the compensating action).
@@ -4006,7 +4009,7 @@ class MissionEngine:
                 outcome.status = "UNCERTAIN"
                 outcome.reasons = ["interrupted by the founder while it ran; it finished before it saw the stop, "
                                    "so its outcome and spend require reconciliation"]
-            if (manifest.capability_id == "worker.commission" and outcome.status == "DONE"
+            if (manifest.capability_id in WORKER_PRODUCERS and outcome.status == "DONE"
                     and isinstance(outcome.output, dict) and outcome.output.get("status") == "UNCERTAIN"):
                 # Extracted from #157 (#184): the Gate completed collection, but the cancellable worker stopped
                 # after possible partial effects and spend. Keep its receipt and route it through the same
@@ -4072,7 +4075,7 @@ class MissionEngine:
         scope the dispatch bound (its mcp.act reach and an ask's move digest are read from it)."""
         bound_params = bound_params if bound_params is not None else dict(s.get("params") or {})
         aid = s["action_id"]
-        if (manifest.capability_id == "worker.commission" and outcome.status == "DONE"
+        if (manifest.capability_id in WORKER_PRODUCERS and outcome.status == "DONE"
                 and isinstance(outcome.output, dict) and outcome.output.get("status") == "UNCERTAIN"):
             # Extracted from #157 (#184): the Gate completed collection, but the cancellable worker stopped after
             # possible partial effects and spend. Keep its receipt and route it through the same no-blind-retry

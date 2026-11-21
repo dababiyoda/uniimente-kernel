@@ -5,7 +5,10 @@ tests/unit/test_canonical_owner_guard.py. A mutant here is a change a contributo
 entry or a field, import a historical alternate from greg/, add a re-implementation or a copy, add a second owner,
 resolve a founder decision alone, narrow the markers, rename what the registry names, or weaken a guard. Each names
 the test that must fail on it. The mutants added after the 2026-10-30 review of 77deac50 name the finding they
-replay (F1-F8, MUH-F1-MUH-F5); those added when #196 was merged in on 2026-11-04 are marked MERGE-196.
+replay (F1-F8, MUH-F1-MUH-F5); those added when #196 was merged in on 2026-11-04 are marked MERGE-196; those for
+guard 4 (copies of a registered body), the exact candidate pin and the history guard (2026-11-21) are marked MW-C.
+A ``copy_body`` edit writes a disguised copy of a registered function at run time (every name and literal changed),
+so the mutant follows the function as it is today instead of a frozen text that would stop being a copy.
 
 Every mutant runs in one scratch copy of the repository with ``python -B`` and PYTHONDONTWRITEBYTECODE=1, after every
 ``__pycache__`` in the copy is purged, and the copy is restored after each. The unmutated copy must pass the whole
@@ -14,6 +17,7 @@ new file already exists, is STALE.
 """
 from pathlib import Path
 import ast
+import copy
 import os
 import shutil
 import subprocess
@@ -32,6 +36,20 @@ DYNAMIC = "test_every_dynamic_import_in_greg_resolves_or_is_allowlisted"
 DEFINES = "test_no_unrecorded_reimplementation_of_a_registered_function"
 VACUOUS = "test_the_registry_has_at_least_one_alternate_the_import_guard_applies_to"
 AUTONOMY_B = "test_the_adopted_autonomy_ladder_is_candidate_side_b_and_only_a_founder_ruling_promotes_it"
+BODIES = "test_no_copy_of_a_registered_function_body_outside_its_record"
+DISTINCT = "test_no_distinct_entry_names_a_module_that_holds_a_copy_of_a_registered_body"
+HISTORY = "test_every_historical_or_retired_alternate_still_in_the_tree_says_what_keeps_it"
+CATCHES = "test_the_body_guard_catches_renamed_nested_relocated_and_one_line_copies"
+FRESH = "test_the_fingerprint_erases_a_fresh_copy_once_and_leaves_the_parsed_tree_alone"
+VOUCH = "test_a_distinct_entry_cannot_vouch_for_a_module_that_holds_a_copy"
+UNDECIDED = "test_an_undecided_record_takes_no_new_candidate_without_a_pin_change"
+REALITY_KEPT = "        kept_for: {consumer: acceptance.claims.crosswalk_problems}\n"
+# A copy of greg.organs.exchange recorded as 'distinct' in the organ-exchange record.
+DISTINCT_COPY = [("copy_body", "greg/organs.py", "exchange", "greg/organ_relay2.py", "function"),
+                 ("replace", MAP, "    migration_path: >-\n      the organ-exchange template signs organ.exchange;",
+                  "      - module: greg.organ_relay2\n        qualnames: [exchange_copy]\n"
+                  "        why: \"a different exchange\"\n"
+                  "    migration_path: >-\n      the organ-exchange template signs organ.exchange;")]
 REHEARSAL = ("        status: ALTERNATE\n        reason: >-\n"
              "          a FIXTURE rehearsal of the Foundry company loop")
 ORGAN_ALT = "        status: ALTERNATE\n        reason: >-\n          the organs.exchange capability"
@@ -61,7 +79,9 @@ def _flip(ruling: str = "") -> list:
 
 # (name, edits, test that must fail). An edit is ("replace", path, old, new), ("cut", path, start, end): remove from
 # the unique ``start`` up to the next ``end`` (None: to the end of the file), ("append", path, text),
-# ("create", path, text) or ("copy_def", path, name, new_name, new_path): a top-level def copied under a new name.
+# ("create", path, text), ("copy_def", path, name, new_name, new_path): a top-level def copied under a new name, or
+# ("copy_body", path, name, new_path, form): a top-level def copied with every name and literal changed, as a
+# function, a method ("method") or a nested def ("nested") (``_copy_body``).
 MUTANTS = [
     ("a registry entry removed: temporary teams",
      [("cut", MAP, "  - record_id: OWN-FN-TEMPORARY-TEAMS\n", "  - record_id: OWN-FN-COMMERCE-CLOSURE\n")], SHAPE),
@@ -233,7 +253,102 @@ MUTANTS = [
      [("create", "greg/earned_walrus.py", "if (LEVELS := ('SHADOW', 'RECOMMENDER')):\n    pass\n")], DEFINES),
     ("F8: a ladder imported under a marked alias (greg/earned_alias.py)",
      [("create", "greg/earned_alias.py", "from json import loads as EARNED_CEILING\n")], DEFINES),
+    # -- MW-C: guard 4, copies of a registered body anywhere in the runtime tree ------------------------------------
+    ("MW-C: a method copy of greg.business_loop.reconcile in business/ (names and literals changed)",
+     [("copy_body", "greg/business_loop.py", "reconcile", "business/case_copy.py", "method")], BODIES),
+    ("MW-C: a copy of foundry.systems.teams.form in its own directory (foundry/systems/team_copy.py)",
+     [("copy_body", "foundry/systems/teams.py", "form", "foundry/systems/team_copy.py", "function")], BODIES),
+    ("MW-C: a nested-def copy of greg.body.send_signed outside the six packages (acceptance/relay_copy.py)",
+     [("copy_body", "greg/body.py", "send_signed", "acceptance/relay_copy.py", "nested")], BODIES),
+    ("MW-C: a copy of greg.remote.handle in scripts/ (scripts/remote_copy.py)",
+     [("copy_body", "greg/remote.py", "handle", "scripts/remote_copy.py", "function")], BODIES),
+    ("MW-C: a copy of greg.organs.exchange recorded as distinct", DISTINCT_COPY, DISTINCT),
+    ("MW-C: guard 4 exempts a record's distinct modules",
+     [("replace", TESTS, "                if module not in owned_modules(r):\n",
+       "                if module not in owned_modules(r) | {e['module'] for e in r.get('distinct') or []}:\n")],
+     VOUCH),
+    ("MW-C: constant erasure removed from the anonymiser",
+     [("replace", TESTS, "        node.value, node.kind = ERASED, None\n", "        node.kind = None\n")], CATCHES),
+    ("MW-C: the fingerprint erases the parsed tree in place (no fresh copy)",
+     [("replace", TESTS, "_Erase().visit(ast.Module(body=copy.deepcopy(_function_body(fn)), type_ignores=[]))",
+       "_Erase().visit(ast.Module(body=_function_body(fn), type_ignores=[]))")], FRESH),
+    ("MW-C: methods and nested defs no longer scanned",
+     [("replace", TESTS, "                    out.append((name, child))\n                visit(child, name)\n",
+       "                    out.append((name, child))\n")], CATCHES),
+    ("MW-C: the scan narrowed to the six guarded packages",
+     [("replace", TESTS, '        if top.name.startswith(".") or f"{top.name}/" in NOT_RUNTIME:\n',
+       '        if top.name.startswith(".") or f"{top.name}/" in NOT_RUNTIME or top.name not in GUARDED:\n')],
+     CATCHES),
+    ("MW-C: a frozen directory skipped by path segment instead of full prefix",
+     [("replace", TESTS, "            if not path.relative_to(root).as_posix().startswith(FROZEN):\n",
+       "            if \"/evaluation/\" not in \"/\" + path.relative_to(root).as_posix():\n")], CATCHES),
+    # -- MW-C: the candidates of an undecided record are pinned exactly ---------------------------------------------
+    ("MW-C: a third candidate added to the undecided goal runtime (side C)",
+     [("replace", MAP, "      - side: B\n        module: greg.gravity\n",
+       "      - side: C\n        module: egregore.local_mission\n        qualnames: [run_once]\n"
+       "        evidence: [\"added by an agent\"]\n      - side: B\n        module: greg.gravity\n")], PINS),
+    ("MW-C: a qualname added to an undecided record's candidate (greg.gravity rederive)",
+     [("replace", MAP, "qualnames: [select, step]", "qualnames: [select, step, rederive]")], PINS),
+    ("MW-C: the exact candidate pin removed from pin_problems",
+     [("replace", TESTS, '        if r.get("owner_status") == "NEEDS_FOUNDER_DECISION":\n            # An undecided',
+       '        if False:\n            # An undecided')], UNDECIDED),
+    # -- MW-C: history kept only with a live reason (section 76) ----------------------------------------------------
+    ("MW-C: REALITY's kept_for deleted", [("replace", MAP, REALITY_KEPT, "")], HISTORY),
+    ("MW-C: REALITY kept for a consumer that does not read it (acceptance.claims.directive_levels)",
+     [("replace", MAP, REALITY_KEPT, REALITY_KEPT.replace("crosswalk_problems", "directive_levels"))], HISTORY),
+    ("MW-C: REALITY kept for a consumer under greg/ (greg.console.main)",
+     [("replace", MAP, REALITY_KEPT, REALITY_KEPT.replace("acceptance.claims.crosswalk_problems", "greg.console.main"))],
+     HISTORY),
 ]
+
+
+class _Disguise(ast.NodeTransformer):
+    """What a copier changes to hide a copy: every variable and argument name, every string and number literal
+    (inside an f-string only the names, so the copy still parses)."""
+
+    def __init__(self):
+        self.fstring = 0
+
+    def visit_Name(self, node):
+        node.id += "_v"
+        return node
+
+    def visit_arg(self, node):
+        node.arg += "_v"
+        return node
+
+    def visit_JoinedStr(self, node):
+        self.fstring += 1
+        self.generic_visit(node)
+        self.fstring -= 1
+        return node
+
+    def visit_Constant(self, node):
+        if not self.fstring and isinstance(node.value, str):
+            node.value += " (copy)"
+        elif not self.fstring and isinstance(node.value, (int, float)) and not isinstance(node.value, bool):
+            node.value += 1
+        return node
+
+
+def _copy_body(text: str, name: str, form: str) -> str | None:
+    """A disguised copy of the top-level def ``name`` as a function, a method of a class, or a def nested in one."""
+    node = next((n for n in ast.parse(text).body if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))
+                 and n.name == name), None)
+    if node is None:
+        return None
+    clone = copy.deepcopy(node)
+    clone.name, clone.decorator_list = f"{name}_copy", []
+    _Disguise().visit(clone)
+    if form == "method":
+        clone.args.args.insert(0, ast.arg("self"))
+    ast.fix_missing_locations(clone)
+    source = ast.unparse(clone)
+    if form == "function":
+        return source + "\n"
+    indented = "".join(f"    {line}\n" for line in source.splitlines())
+    return ("class CaseCopy:\n" + indented) if form == "method" else (
+        "def outer_copy():\n" + indented + f"    return {name}_copy\n")
 
 
 def _purge(repo: Path) -> None:
@@ -269,6 +384,16 @@ def _apply(repo: Path, edits) -> tuple[dict, list[Path]] | None:
                 return _restore(originals, created)
             created.append(target)
             target.write_text(ast.get_source_segment(text, node).replace(f"def {name}(", f"def {new_name}(", 1) + "\n")
+            continue
+        if kind == "copy_body":
+            name, new_relative, form = args
+            target = repo / new_relative
+            body = _copy_body(path.read_text(), name, form) if path.is_file() else None
+            if body is None or target.exists():
+                return _restore(originals, created)
+            created.append(target)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(body)
             continue
         if path not in originals:
             originals[path] = path.read_text()

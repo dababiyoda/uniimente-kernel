@@ -1763,17 +1763,39 @@ def test_the_body_guard_catches_renamed_nested_relocated_and_one_line_copies(tmp
         "greg/reader.py": different,
         # a directory named evaluation is not skipped (cortex/evaluation/: the next test but one)
         "greg/evaluation/team_copy.py": _disguised("foundry.systems.teams", "form", "convene"),
+        # positive controls for each part of the scan and of the eraser (verifier, MW-C review 2026-11-21: a code
+        # mutant that drops any one of them survived this file): an async def, a top-level file, cortex/ outside
+        # the sealed instruments, and copies of DEEP_BODY with only an except-as name, an import alias or a nested
+        # def's name renamed; an unparseable file is reported, never dropped
+        "acceptance/async_copy.py": _disguised("foundry.systems.teams", "form", "convene").replace(
+            "def convene(", "async def convene(", 1),
+        "toplevel_copy.py": _disguised("greg.business_loop", "reconcile", "settle_case"),
+        "cortex/other_copy.py": _disguised("foundry.systems.teams", "form", "convene"),
+        "greg/collect.py": DEEP_BODY,
+        "greg/except_renamed.py": _variant(("as error:", "as failure:"), ("str(error)", "str(failure)")),
+        "greg/alias_renamed.py": _variant(("import json as codec", "import json as parser"),
+                                          ("codec.loads", "parser.loads")),
+        "greg/nested_renamed.py": _variant(("    def load(name):", "    def fetch(name):"),
+                                           ("= load(name)", "= fetch(name)")),
+        "greg/broken.py": "def settle(:\n",
     })
-    found = body_copy_problems([commerce, teams, inbox], root)
+    found = body_copy_problems([commerce, teams, inbox, DEEP_RECORD], root)
     expected = {"business/case_copy.py": ("'Case.settle'", "greg.business_loop.reconcile (greg/business_loop.py:"),
                 "greg/wrapped.py": ("'outer.inner'", "greg.business_loop.reconcile (greg/business_loop.py:"),
                 "closure/settle_copy.py": ("'settle_case'", "greg.business_loop.reconcile (greg/business_loop.py:"),
                 "foundry/systems/team_copy.py": ("'convene'", "foundry.systems.teams.form (foundry/systems/teams.py:"),
                 "greg/evaluation/team_copy.py": ("'convene'", "foundry.systems.teams.form (foundry/systems/teams.py:"),
-                "greg/oneline.py": ("'relay'", "greg.body.send_signed (greg/body.py:1)")}
+                "greg/oneline.py": ("'relay'", "greg.body.send_signed (greg/body.py:1)"),
+                "acceptance/async_copy.py": ("'convene'", "foundry.systems.teams.form (foundry/systems/teams.py:"),
+                "toplevel_copy.py": ("'settle_case'", "greg.business_loop.reconcile (greg/business_loop.py:"),
+                "cortex/other_copy.py": ("'convene'", "foundry.systems.teams.form (foundry/systems/teams.py:"),
+                "greg/except_renamed.py": ("'gather'", "greg.collect.collect (greg/collect.py:1)"),
+                "greg/alias_renamed.py": ("'gather'", "greg.collect.collect (greg/collect.py:1)"),
+                "greg/nested_renamed.py": ("'gather'", "greg.collect.collect (greg/collect.py:1)")}
     for path, (copied, registered) in expected.items():
         assert any(line.startswith(f"{path}:") and copied in line and registered in line for line in found), path
-    assert len(found) == len(expected), found
+    assert "greg/broken.py cannot be parsed (SyntaxError)" in " ".join(found), found
+    assert len(found) == len(expected) + 1, found
     # the control: a genuinely different function of similar size (within a fifth of the registered body's)
     size, registered_size = _erased_size(ast.parse(different).body[0]), fingerprint(ast.parse(OWNER_BODY).body[0])[0]
     assert abs(size - registered_size) <= registered_size / 5
@@ -1840,6 +1862,14 @@ def test_a_distinct_entry_cannot_vouch_for_a_module_that_holds_a_copy(tmp_path):
     assert "greg.organs.exchange" in found[0] and "greg/organs2.py:1" in found[0]
     # a distinct entry exempts nothing: the copy itself is still reported
     assert [line.split(":")[0] for line in body_copy_problems([record], root)] == ["greg/organs2.py"]
+    # across records too: another record's distinct entry may not name a module that holds this record's copy
+    other = {"record_id": "OWN-FN-OTHER", "function": "o", "owner_status": "CANONICAL", "markers": ["Other"],
+             "canonical": [{"module": "greg.body", "qualnames": ["send_signed"]}],
+             "distinct": [{"module": "greg.organs2", "qualnames": ["exchange"], "why": "a different exchange"}]}
+    plain = {**record, "distinct": [e for e in record["distinct"] if e["module"] != "greg.organs2"]}
+    found = distinct_copy_problems([plain, other], root)
+    assert len(found) == 1 and found[0].startswith("OWN-FN-OTHER: distinct entry greg.organs2 "), found
+    assert "registered in OWN-FN-ORGAN-EXCHANGE" in found[0]
 
 
 def test_an_undecided_record_takes_no_new_candidate_without_a_pin_change():

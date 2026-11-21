@@ -135,9 +135,9 @@ def main(argv=None) -> int:
             print(f"no directive map at {args.since}: nothing to compare with")
             return 2
         head = directive.defaults()
-        found = directive.directive_problems(*head)
-        if found:
-            print("directive map is unsound:", *found, sep="\n  ")
+        unsound = directive.directive_problems(*head)
+        if unsound:
+            print("directive map is unsound:", *unsound, sep="\n  ")
             return 2
         read = {k: json.loads(Path(v).read_text()) if v else None
                 for k, v in (("head", args.outcomes), ("base", args.base_outcomes))}

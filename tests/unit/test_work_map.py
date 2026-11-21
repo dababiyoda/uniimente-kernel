@@ -767,6 +767,29 @@ def test_a_timestamp_that_is_not_one_is_read_as_unknown_and_cannot_format_the_ma
     assert not re.search(r"<|\]\(|@x", outside)
 
 
+def test_a_time_in_other_digits_or_on_no_calendar_is_read_as_unknown(quick):
+    # On a str pattern \d is any Unicode digit, and strptime reads such digits: these would sort after every real
+    # time, win the newest copy of a PR given twice and a session's last update, and hide real activity.
+    arabic = "".join(chr(0x0660 + int(c)) if c.isdigit() else c for c in "2029-12-31T23:59:59Z")
+    wide = "".join(chr(0xFF10 + int(c)) if c.isdigit() else c for c in "2029-12-31T23:59:59Z")
+    for forged in (arabic, wide, "2026-99-99T99:99:99Z", "2026-02-30T00:00:00Z", "2026-11-12T24:00:00Z",
+                   "2026-11-12T23:59:60Z"):
+        assert (w._stamp(forged), w.parse_now(forged), w.activity(forged, NOW)) == ("", None, "UNKNOWN"), forged
+        prs = [_pr(8, "x/eight", body=_receipt(A, ["greg/b.py"]), updated=forged),
+               _pr(7, "x/seven", body=_receipt(A, ["greg/a.py"])),
+               _pr(9, "x/nine", body=_receipt(B, ["greg/c.py"]), title="real"),
+               _pr(9, "x/nine", body=_receipt(B, ["greg/c.py"]), title="forged copy", updated=forged)]
+        comments = [_comment(6000000301, f"## Claim · `{C}`\n- **Files:** `greg/d.py`\n"),
+                    _comment(6000000302, f"## Note · `{C}`\n\nStill here.\n", at=forged)]
+        m = w.build(prs, comments, now=NOW, use_git=False)
+        sessions = {s["session"]: s for s in m["sessions"]}
+        assert (sessions[A]["last"], sessions[A]["activity"]) == ("2026-11-12T10:00:00Z", "ACTIVE"), forged
+        assert sessions[C]["last"] == "2026-11-12T12:00:00Z", forged
+        assert next(r for r in m["prs"] if r["pr"] == 9)["title"] == "real", forged
+    assert w._stamp("2028-02-29T23:59:59Z") == "2028-02-29T23:59:59Z" and w.parse_now(f"{arabic[:-1]}+00:00") is None
+    assert w.parse_comment(_comment(1, f"## Claim\n\nRecheck (UTC): {arabic}\n"), set(), set())["recheck"] is None
+
+
 def test_a_fork_branch_named_like_a_base_or_the_line_stacks_nothing():
     fork = "outsider/uniimente-kernel"
     rows = w.pr_rows([_pr(1, "a/one", body=_body(_coord())),

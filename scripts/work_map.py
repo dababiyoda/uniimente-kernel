@@ -213,7 +213,8 @@ _KINDS = [
 ]
 _ANNOUNCES = ("claim+handoff", "handoff", "claim")
 _CLAIM_ID = re.compile(r"(?i)\bclaims?[\s:]*(?:comment\s+)?`?\d{6,}`?|\b(?:no|not a|without)\s+claims?\b")
-_RECHECK = re.compile(r"(?i)\br[^\w\n]{0,2}e-?check[^\n]{0,24}?(20\d{2}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?Z)")
+_RECHECK = re.compile(r"(?i)\br[^\w\n]{0,2}e-?check[^\n]{0,24}?"
+                      r"(20[0-9]{2}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}(?::[0-9]{2})?Z)")
 _RELEASE = re.compile(r"(?i)releases?\s+(the \w+ half of\s+)?claims?\s+`?(\d{10})"
                       r"|claim\s+`?(\d{10})`?\s+(?:is\s+|was\s+|now\s+)?released\b"
                       r"|\bclos(?:e|es|ing)\s+(?:the\s+|my\s+)?claims?\s+(?:in\s+|at\s+)?"
@@ -811,10 +812,16 @@ def position(root: Path = ROOT) -> dict:
 
 # ------------------------------------------------------------------ the join
 
-_NOW = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2})")
+# Times are read only in ASCII digits: on a str pattern \d matches any Unicode digit, and strptime and int() read
+# them too, so a time in Arabic-Indic or full-width digits would sort after every real time.
+_NOW = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]{1,6})?(?:Z|[+-][0-9]{2}:[0-9]{2})")
+_TIME = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}")
 
 
 def _when(stamp: str | None) -> datetime | None:
+    """A ``YYYY-MM-DDTHH:MM:SS`` prefix in ASCII digits that is a real time, in UTC; None for anything else."""
+    if not _TIME.fullmatch(_text(stamp)[:19]):
+        return None
     try:
         return datetime.strptime(_text(stamp)[:19], "%Y-%m-%dT%H:%M:%S").replace(tzinfo=timezone.utc)
     except ValueError:
@@ -924,13 +931,15 @@ def _covers(declared: str, path: str) -> bool:
 
 
 _SHA = re.compile(r"[0-9a-f]{40}")
-_STAMP = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z")
+_STAMP = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z")
 
 
 def _stamp(value) -> str:
-    """A GitHub timestamp (``YYYY-MM-DDTHH:MM:SSZ``) as given; anything else is the empty string, which reads as
-    unknown, sorts before every real time and shows as nothing."""
-    return value if isinstance(value, str) and _STAMP.fullmatch(value) else ""
+    """A GitHub timestamp (``YYYY-MM-DDTHH:MM:SSZ`` in ASCII digits, and a real date and time) as given; anything
+    else is the empty string, which reads as unknown, sorts before every real time and shows as nothing. Only such a
+    stamp is ever compared, so none can sort after every real time and win the newest copy of a PR or a session's
+    last update."""
+    return value if isinstance(value, str) and _STAMP.fullmatch(value) and _when(value) else ""
 
 
 def _pull(p) -> dict | None:

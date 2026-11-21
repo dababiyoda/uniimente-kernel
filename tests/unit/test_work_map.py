@@ -1746,6 +1746,43 @@ def test_the_paths_answer_names_open_prs_without_a_diff_and_ends_with_the_check_
     assert list(answer)[-1] == "checkin" and answer["checkin"] == w.CHECKIN_BLOCK
 
 
+def _paths_answer(tmp_path, capsys, prs: list, *paths: str) -> dict:
+    src = tmp_path / "prs.json"
+    src.write_text(json.dumps(prs))
+    capsys.readouterr()
+    assert w.main(["--prs-json", str(src), "--paths", *paths]) == 0
+    answer = json.loads(capsys.readouterr().out)
+    assert list(answer)[-1] == "checkin"
+    return answer
+
+
+def test_a_pull_request_that_could_not_be_read_is_unknown_for_every_path(quick, tmp_path, capsys):
+    bad = _pr(504, "g/odd", body=_receipt(C, ["greg/missions.py"]))
+    bad["title"] = 504
+    answer = _paths_answer(tmp_path, capsys, [bad, _pr(1, "a/one", body=_receipt(A, ["docs/x.md"]))],
+                           "greg/missions.py")
+    assert answer["sources"]["unreadable_prs"] == [504]
+    assert (answer["paths"][0]["prs"], answer["paths"][0]["unknown_prs"]) == ([], [504])
+
+
+def test_a_receipt_cut_or_unreadable_is_never_the_whole_answer(quick, tmp_path, capsys):
+    big = _pr(505, "g/big", base="main", body=_receipt(C, [f"gen/f{i:03d}.py" for i in range(600)]))
+    raw = json.loads(_coord(files="greg/missions.py"))                       # a string, which the check refuses
+    odd = _pr(602, "g/odd", base="main", body=_body(json.dumps(raw)))
+    bare = _pr(603, "g/bare", base="main", body="no receipt")
+    plain = _pr(604, "g/plain", base="main", body=_receipt(B, ["docs/x.md"]))
+    answer = _paths_answer(tmp_path, capsys, [big, odd, bare, plain], "gen/f550.py", "gen/f100.py")
+    src = answer["sources"]
+    assert (src["receipts_with_files_cut"], src["receipts_with_unreadable_fields"]) == ([505], [602])
+    assert src["open_prs_without_diff"] == [505, 602, 603, 604] and "#505, #602, #603" in src["files_of_those"]
+    far, near = answer["paths"]
+    assert (far["prs"], far["unknown_prs"]) == ([], [505, 602, 603])         # #604's whole receipt was read
+    assert ([p["pr"] for p in near["prs"]], near["unknown_prs"]) == ([505], [602, 603])
+    capsys.readouterr()
+    assert w.main(["--prs-json", str(tmp_path / "prs.json"), "--unit", "WU-11"]) == 0
+    assert json.loads(capsys.readouterr().out)["sources"]["receipts_with_files_cut"] == [505]
+
+
 def test_a_pr_into_the_line_that_declares_nothing_is_found_through_the_api_files(quick):
     # The 2026-11-13 entry trial: --paths missed #307 and #268, which change scripts/README.md without declaring it,
     # because their heads were not fetched in a fresh clone (docs/collaboration/VALIDATION.md, 2026-11-13).

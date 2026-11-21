@@ -1118,10 +1118,19 @@ def query_path(path: str, root: Path = ROOT) -> str:
     return posixpath.normpath(p.as_posix())
 
 
+def _files_unknown(r: dict) -> bool:
+    """A PR whose changed files were not read and whose receipt gives no whole readable file list: it has none, its
+    list was cut, or its list could not be read."""
+    return r["changed"] is None and (not r["receipt"] or r["files_cut"] > 0
+                                     or bool({"files", "coordination"} & set(r["receipt_problems"])))
+
+
 def who_touches(paths: list[str], rows: list[dict] | None, claims: list[dict] | None,
-                tracked: set[str] | None = None, line: str = LINE) -> list[dict]:
-    """For each path: the open PRs and the claims that cover it. ``prs`` or ``claims`` is None when its source was not
-    read; ``tracked`` is None when the tracked files were not given. The integration PR is left out."""
+                tracked: set[str] | None = None, line: str = LINE, unread: list | None = None) -> list[dict]:
+    """For each path: the open PRs and the claims that cover it, and ``unknown_prs``, the PRs for which nobody can say:
+    those in ``unread`` (PRs that could not be read) and those whose files are known neither from a diff nor from a
+    whole receipt (``_files_unknown``). ``prs``, ``unknown_prs`` or ``claims`` is None when its source was not read;
+    ``tracked`` is None when the tracked files were not given. The integration PR is left out."""
     dirs = {"/".join(f.split("/")[:i]) for f in tracked for i in range(1, f.count("/") + 1)} if tracked else set()
     bound = {r["pr"] for r in line_bound(rows or [], line)}
     hits = []
@@ -1132,11 +1141,14 @@ def who_touches(paths: list[str], rows: list[dict] | None, claims: list[dict] | 
              "updated": r["updated"], "line_bound": r.get("line_bound", r["pr"] in bound),
              "carried_by_line": r.get("carried"),
              "via": [v for v, fs in (("receipt", r["files"]), (r.get("changed_via") or "diff", r["changed"] or []))
-                     if any(_covers(f, path) for f in fs)]}
+                     if any(_covers(f, path) for f in fs)], "unknown": _files_unknown(r)}
             for r in rows if not (r["same_repo"] and r["head"] == line)]
         hits.append({"path": path, **({"asked": asked} if asked != path else {}),
                      "tracked": (path in tracked or path in dirs) if tracked is not None else None,
-                     "prs": None if prs is None else [p for p in prs if p["via"]],
+                     "prs": None if prs is None else [{k: v for k, v in p.items() if k != "unknown"}
+                                                      for p in prs if p["via"]],
+                     "unknown_prs": None if prs is None else sorted(p["pr"] for p in prs if p["unknown"]
+                                                                    and not p["via"]) + list(unread or []),
                      "claims": None if claims is None else [
                          {"comment": c["comment"], "session": c["session"], "inferred_session": c["inferred_session"],
                           "how": c["how"], "at": c["at"], "state": c["state"], "posted": c["posted"],
@@ -1871,15 +1883,21 @@ def _write(path: Path, text: str) -> str | None:
 
 
 def _answer_sources(m: dict) -> dict:
-    """What a ``--paths`` or ``--unit`` answer rests on: an empty list means nobody only when its source was read."""
-    src = m["sources"]
+    """What a ``--paths`` or ``--unit`` answer rests on: an empty list means nobody only when its source was read, and
+    every pull request the map could not read whole is named here."""
+    src, g = m["sources"], m["gaps"]
+    unknown = sorted(r["pr"] for r in m["prs"] if _files_unknown(r))
     return {"pull_requests_read": src["prs_read"], "comments_read": src["comments_read"],
             "git_read": src["git_read"], "note": src["note"], "not_read": _not_read(m),
-            "line_bound_prs_without_diff": m["gaps"]["line_bound_prs_without_diff"],
+            "unreadable_prs": g["unreadable_prs"], "receipts_with_files_cut": g["receipts_with_files_cut"],
+            "receipts_with_unreadable_fields": g["receipts_with_unreadable_fields"],
+            "line_bound_prs_without_diff": g["line_bound_prs_without_diff"],
             "open_prs_without_diff": sorted(r["pr"] for r in m["prs"] if r["changed"] is None)
             if src["prs_read"] else None,
             "files_of_those": "declared in the receipt alone: their diffs were neither in local git nor read from "
-                              "the API (a PR stacked on another branch is never read from the API)"}
+                              "the API (a PR stacked on another branch is never read from the API)"
+                              + (f"; {', '.join('#%d' % n for n in unknown)} have no receipt, a cut one or one whose "
+                                 "files could not be read, so a path lists them under unknown_prs" if unknown else "")}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -1931,7 +1949,8 @@ def main(argv: list[str] | None = None) -> int:
         if a.paths:
             tracked, _ = _tracked(ROOT)
             print(json.dumps({"sources": _answer_sources(m), "paths": who_touches(
-                a.paths, m["prs"] if m["sources"]["prs_read"] else None, m["claims"], tracked, a.line),
+                a.paths, m["prs"] if m["sources"]["prs_read"] else None, m["claims"], tracked, a.line,
+                m["gaps"]["unreadable_prs"]),
                 "checkin": CHECKIN_BLOCK}, indent=1))
         elif a.unit:
             rows = [u for u in m["units"] if u["unit"] == a.unit]

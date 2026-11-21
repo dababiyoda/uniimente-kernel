@@ -114,7 +114,7 @@ banner on `main`; the entrance is the default branch.
 | | Branch | Commit when prepared (2026-11-13) | Commit re-checked 2026-11-21 |
 |---|---|---|---|
 | Default branch today | `main` | `d64a6c931bb05aba4e3454847b665e73384bbdfa` (2026-10-14) | unchanged |
-| Proposed default | `claude/greg-full-machine-completion-whgiee` (draft #196) | `8d20532464b1533b28d71d8331ca3412a90dbb11` | `121195907fff261bb8610ed03488ef4461b59f73` (it moves at every intake; record the head at the moment of the switch) |
+| Proposed default | `claude/greg-full-machine-completion-whgiee` (draft #196) | `8d20532464b1533b28d71d8331ca3412a90dbb11` | `121195907fff261bb8610ed03488ef4461b59f73` (read before 20:26Z; from 20:40:38Z, the intake of #336, `86f9600f1a222f43a78c3a84ce5c9f9a5de380f9`. It moves at every intake; record the head at the moment of the switch) |
 
 ### What the switch does, verified 2026-11-13 from the public API and this tree
 
@@ -219,12 +219,15 @@ does not label the author as staff), [discussion 26325](https://github.com/orgs/
 [discussion 24872](https://github.com/orgs/community/discussions/24872) (lee-dohm: the state of a PR is determined by
 the check suites on the last commit). Seen only as search-engine snippets, not opened:
 <https://docs.github.com/en/enterprise-server@2.20/rest/reference/checks> and
-<https://www.kenmuse.com/blog/creating-github-checks/>. This repository, from the GitHub API: #196's `head.sha` is
-`121195907fff261bb8610ed03488ef4461b59f73`; its `pull_request` run
-[43538095376](https://github.com/dababiyoda/uniimente-kernel/actions/runs/43538095376) has that head SHA, and its check
-runs (for example id 132297031436, "1 · Kernel and organ tests") are listed on the PR's head commit.
-`.github/workflows/canonical-ci.yml` runs on `pull_request` and on `push` to `branches: [main]` and tags, with the
-concurrency group `canonical-ci-${{ github.ref }}` and `cancel-in-progress: false`.
+<https://www.kenmuse.com/blog/creating-github-checks/>. This repository, from the GitHub API as read on 2026-11-21
+before this paragraph was written (20:26Z): #196's `head.sha` was `121195907fff261bb8610ed03488ef4461b59f73`; its
+`pull_request` run [43538095376](https://github.com/dababiyoda/uniimente-kernel/actions/runs/43538095376) had that
+head SHA, and its check runs (for example id 132297031436, "1 · Kernel and organ tests") were then listed on the PR's
+head commit. The head moves at every intake: at 2026-11-21T20:40:38Z it became
+`86f9600f1a222f43a78c3a84ce5c9f9a5de380f9` (the intake of #336), which has runs of its own, so read the head and its
+check runs again before relying on them. In this tree, `.github/workflows/canonical-ci.yml` runs on `pull_request` and
+on `push` to `branches: [main]` and tags, with the concurrency group `canonical-ci-${{ github.ref }}` and
+`cancel-in-progress: false`.
 
 ### Adoption package (status on 2026-11-13, heads re-checked 2026-11-21; every row is pending the founder)
 

@@ -23,11 +23,13 @@ The registry is ``function_owner_records`` in docs/collaboration/ARCHITECTURE-OW
    packages passes;
 4. (MW-C, 2026-11-21) the body of every canonical, candidate and alternate FUNCTION a record names, with every name
    and every constant erased (``fingerprint``, from a fresh copy) and at least ``MIN_COPY_NODES`` nodes, is compared
-   with every function and method at any depth of every runtime file the filesystem lists (``runtime_files``: tests/,
-   docs/ and the frozen cortex/evaluation/ skipped by path prefix). A copy outside the record's canonical, candidate
-   and alternate modules fails, wherever it is and whatever it is called; a ``distinct`` entry never exempts one
-   (``distinct_copy_problems``: and may not name a module that holds one). It still misses a rewrite that changes
-   structure, an attribute rename (``row['x']`` to ``row.x``) and a function the registry does not record.
+   with every function and method at any depth of every runtime file the filesystem lists (``runtime_files``: every
+   .py file under the repository root, directory links followed only inside it, except tests/, docs/, top-level
+   hidden entries and the cortex/evaluation/ files whose bytes a freeze manifest there hashes). A copy outside the
+   record's canonical, candidate and alternate modules fails, wherever it is and whatever it is called; a
+   ``distinct`` entry never exempts one (``distinct_copy_problems``: and may not name a module that holds one). It
+   still misses a rewrite that changes structure, an attribute rename (``row['x']`` to ``row.x``) and a function the
+   registry does not record.
 
 The registry itself is pinned (``PINNED``, ``FOUNDER_DECISIONS``, ``MUST_FLAG``): removing a record or an entry,
 adding a second canonical module, adding a candidate to a record that is still NEEDS_FOUNDER_DECISION, resolving a
@@ -42,6 +44,8 @@ from __future__ import annotations
 import ast
 import copy
 from functools import lru_cache
+import hashlib
+import json
 import os
 from pathlib import Path
 import re
@@ -936,11 +940,14 @@ def unrecorded(records: list[dict], root: Path = ROOT, packages=GUARDED) -> list
 
 # -- guard 4: a registered function's body anywhere in the runtime tree (MW-C, 2026-11-21) --------------------------
 
-# Not runtime code: tests and documents. FROZEN: instruments kept exactly as written (the evaluation runners
-# tests/unit/test_no_structural_duplicates.py also skips). Both by full path prefix, never by a path segment, so a copy
-# cannot hide in a new directory that shares one of these names.
+# Not runtime code: tests (fixtures may copy a body on purpose) and documents, by full top-level path prefix, never by
+# a path segment, so a copy cannot hide in a new directory that shares one of these names. SEALED_UNDER: the only
+# other files not scanned are the frozen instruments there, each a file whose current bytes a ``MANIFESTS`` file hashes
+# (``sealed_files``); every other file under it (new files, edited ones, subdirectories) is scanned, because GREG
+# imports from it (cortex.evaluation.closure).
 NOT_RUNTIME = ("tests/", "docs/")
-FROZEN = ("cortex/evaluation/",)
+SEALED_UNDER = "cortex/evaluation/"
+MANIFESTS = "freeze-*.json"
 ERASED = "_"                     # every name and every constant of a fingerprinted body becomes this one sentinel
 FIX_COPY = ("Import the owner's function instead. If this copy must stay, record its module in {record} in "
             "docs/collaboration/ARCHITECTURE-OWNERSHIP-MAP.yaml as an ALTERNATE (with its status and its retirement "
@@ -1047,17 +1054,41 @@ def fingerprint(fn) -> tuple[int, str]:
     return sum(1 for _ in ast.walk(module)) - 1, ast.dump(module)
 
 
+def sealed_files(root: Path = ROOT) -> frozenset[str]:
+    """The files under SEALED_UNDER that a SEALED_UNDER/freeze-*.json manifest hashes (``inputs.code``: path ->
+    "sha256:<hex>"), as repository-relative paths, when the file's bytes still have a hash some manifest records for
+    it. A manifest that does not parse seals nothing."""
+    digests: dict[str, set[str]] = {}
+    for manifest in sorted(Path(root, SEALED_UNDER).glob(MANIFESTS)):
+        try:
+            code = (json.loads(manifest.read_bytes()).get("inputs") or {}).get("code") or {}
+        except (OSError, ValueError, AttributeError):
+            continue
+        for relative, digest in code.items() if isinstance(code, dict) else ():
+            if isinstance(relative, str) and isinstance(digest, str) and relative.startswith(SEALED_UNDER):
+                digests.setdefault(relative, set()).add(digest)
+    sealed = set()
+    for relative, recorded in digests.items():
+        path = Path(root, relative)
+        if path.is_file() and f"sha256:{hashlib.sha256(path.read_bytes()).hexdigest()}" in recorded:
+            sealed.add(relative)
+    return frozenset(sealed)
+
+
 def runtime_files(root: Path = ROOT):
     """Every runtime .py file as the filesystem lists it (no git: the mutant gate's copy of the tree has none), by
-    guard 3's rule (``_walk``: directory symlinks followed only inside the repository), without NOT_RUNTIME, FROZEN
-    and top-level hidden entries (.git, tool caches, an agent's worktree: none is tracked runtime code)."""
+    guard 3's rule (``_walk``: directory symlinks followed only inside the repository), without NOT_RUNTIME, the
+    sealed files under SEALED_UNDER and top-level hidden entries (.git, tool caches, an agent's worktree: none is
+    tracked runtime code)."""
+    sealed = sealed_files(root)
+
     def skip(path: Path) -> bool:
         relative = path.relative_to(root)
         return len(relative.parts) == 1 and (relative.name.startswith(".") or f"{relative.name}/" in NOT_RUNTIME)
 
     for path in _walk(Path(root), root, skip):
         relative = path.relative_to(root).as_posix()
-        if not relative.startswith(".") and not relative.startswith(FROZEN):
+        if not relative.startswith(".") and relative not in sealed:
             yield path
 
 
@@ -1633,9 +1664,8 @@ def test_the_body_guard_catches_renamed_nested_relocated_and_one_line_copies(tmp
         "foundry/systems/team_copy.py": _disguised("foundry.systems.teams", "form", "convene"),
         "greg/oneline.py": one_line,
         "greg/reader.py": different,
-        # a directory named evaluation is skipped only where it is the frozen cortex/evaluation/
+        # a directory named evaluation is not skipped (cortex/evaluation/: the next test but one)
         "greg/evaluation/team_copy.py": _disguised("foundry.systems.teams", "form", "convene"),
-        "cortex/evaluation/team_copy.py": _disguised("foundry.systems.teams", "form", "convene"),
     })
     found = body_copy_problems([commerce, teams, inbox], root)
     expected = {"business/case_copy.py": ("'Case.settle'", "greg.business_loop.reconcile (greg/business_loop.py:"),
@@ -1834,3 +1864,34 @@ def test_the_body_scan_reads_bom_files_follows_links_inside_the_repository_only_
     assert not any(p.startswith(("venv/", "greg/loop/", "pkg/up/")) for p in listed), listed
     # guards 2 and 3 list their packages by the same rule
     assert "greg/vendor/settle.py" in [p.relative_to(root).as_posix() for p in python_files(root, "greg")]
+
+
+def test_the_body_scan_reads_cortex_evaluation_except_the_files_a_freeze_manifest_seals(tmp_path):
+    # GREG imports cortex.evaluation.closure, and new files there are sealed by nothing: only a file whose bytes a
+    # cortex/evaluation/freeze-*.json manifest hashes (inputs.code) is a frozen instrument, and only under
+    # cortex/evaluation/. A file the manifest names with another hash was edited after the freeze and is scanned.
+    copied = _disguised("foundry.systems.teams", "form", "convene")
+    sealed = _disguised("foundry.systems.teams", "form", "sealed_convene")
+
+    def digest(text: str) -> str:
+        return "sha256:" + hashlib.sha256(text.encode()).hexdigest()
+
+    root = _tree(tmp_path, {
+        **_real("foundry.systems.teams"),
+        "cortex/evaluation/settle.py": copied,                 # new since every freeze
+        "cortex/evaluation/sealed.py": sealed,                 # the bytes a manifest hashes
+        "cortex/evaluation/edited.py": copied,                 # named by a manifest, hashed when it held other text
+        "cortex/evaluation/suites/runner.py": copied,          # below it, named by no top-level manifest
+        "cortex/other.py": copied,
+        "foundry/systems/team_copy.py": copied,                # a manifest seals nothing outside cortex/evaluation/
+        "cortex/evaluation/freeze-v9.json": json.dumps({"inputs": {"code": {
+            "cortex/evaluation/sealed.py": digest(sealed), "cortex/evaluation/edited.py": digest("X = 1\n"),
+            "foundry/systems/team_copy.py": digest(copied)}}}),
+        "cortex/evaluation/freeze-broken.json": "{not json",
+    })
+    teams = next(r for r in load()["function_owner_records"] if r["record_id"] == "OWN-FN-TEMPORARY-TEAMS")
+    found = body_copy_problems([teams], root)
+    assert sorted(line.split(":")[0] for line in found) == [
+        "cortex/evaluation/edited.py", "cortex/evaluation/settle.py", "cortex/evaluation/suites/runner.py",
+        "cortex/other.py", "foundry/systems/team_copy.py"], found
+    assert sealed_files(root) == {"cortex/evaluation/sealed.py"}

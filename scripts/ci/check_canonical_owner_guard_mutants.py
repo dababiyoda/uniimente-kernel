@@ -44,6 +44,7 @@ FRESH = "test_the_fingerprint_erases_a_fresh_copy_once_and_leaves_the_parsed_tre
 VOUCH = "test_a_distinct_entry_cannot_vouch_for_a_module_that_holds_a_copy"
 UNDECIDED = "test_an_undecided_record_takes_no_new_candidate_without_a_pin_change"
 QUIET = "test_a_file_with_an_invalid_escape_parses_without_a_warning_on_any_python"
+SEALED = "test_the_body_scan_reads_cortex_evaluation_except_the_files_a_freeze_manifest_seals"
 LINKS = "test_the_body_scan_reads_bom_files_follows_links_inside_the_repository_only_and_sees_pycache"
 REALITY_KEPT = "        kept_for: {consumer: acceptance.claims.crosswalk_problems}\n"
 # A copy of greg.organs.exchange recorded as 'distinct' in the organ-exchange record.
@@ -282,8 +283,8 @@ MUTANTS = [
        '(relative.name.startswith(".") or f"{relative.name}/" in NOT_RUNTIME\n'
        '                                         or relative.name not in GUARDED)\n')],
      CATCHES),
-    ("MW-C: a frozen directory skipped by path segment instead of full prefix",
-     [("replace", TESTS, 'if not relative.startswith(".") and not relative.startswith(FROZEN):\n',
+    ("MW-C: files skipped by a path segment (any evaluation/ directory) instead of the sealed set",
+     [("replace", TESTS, 'if not relative.startswith(".") and relative not in sealed:\n',
        'if not relative.startswith(".") and "/evaluation/" not in "/" + relative:\n')], CATCHES),
     # -- MW-C: the candidates of an undecided record are pinned exactly ---------------------------------------------
     ("MW-C: a third candidate added to the undecided goal runtime (side C)",
@@ -322,6 +323,16 @@ MUTANTS = [
     ("MW-C: __pycache__ skipped by path segment",
      [("replace", TESTS, '        elif entry.name.endswith(".py") and entry.is_file():\n',
        '        elif entry.name.endswith(".py") and entry.is_file() and "__pycache__" not in path.parts:\n')], LINKS),
+    # -- MW-C round 3: cortex/evaluation/ is scanned except the files a freeze manifest seals ----------------------
+    ("MW-C: cortex/evaluation/ skipped wholesale again",
+     [("replace", TESTS, 'if not relative.startswith(".") and relative not in sealed:\n',
+       'if not relative.startswith(".") and not relative.startswith(SEALED_UNDER):\n')], SEALED),
+    ("MW-C: a manifest seals a file by name, whatever its bytes",
+     [("replace", TESTS, '        if path.is_file() and f"sha256:{hashlib.sha256(path.read_bytes()).hexdigest()}" in recorded:\n',
+       '        if path.is_file():\n')], SEALED),
+    ("MW-C: a manifest seals files outside cortex/evaluation/",
+     [("replace", TESTS, " and isinstance(digest, str) and relative.startswith(SEALED_UNDER):\n",
+       " and isinstance(digest, str):\n")], SEALED),
 ]
 
 

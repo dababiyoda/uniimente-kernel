@@ -496,6 +496,16 @@ def test_e9_every_visit_through_a_link_counts_toward_the_cap_a_revisit_too(tmp_p
         os.symlink(big, repo / ".git" / "objects" / "links" / f"l{index}")
     with pytest.raises(CapabilityError, match="more than 100 directory links"):
         pinned(tmp_path, repo)
+    # The same links inside the directory they lead to: it is listed before any of them is seen, whatever order the
+    # file system lists entries in, so a count that skips a revisit stops at one (CI 2026-11-17: in the case above the
+    # links may all be seen before their target is listed, and such a count refused too).
+    loop = tiny(tmp_path / "roots" / "loop")
+    inner = loop / ".git" / "objects" / "big"
+    inner.mkdir()
+    for index in range(150):
+        os.symlink(inner, inner / f"l{index}")
+    with pytest.raises(CapabilityError, match="more than 100 directory links"):
+        pinned(tmp_path, loop)
 
 
 def test_p3_the_pre_check_s_walk_is_bounded_in_directories_and_in_time(tmp_path, monkeypatch):

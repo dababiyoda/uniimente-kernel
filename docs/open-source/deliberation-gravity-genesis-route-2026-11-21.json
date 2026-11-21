@@ -1,0 +1,105 @@
+{
+ "decision_id": "DELIB-20261121-GRAVITY-GENESIS-ROUTE",
+ "title": "Route egregore Goal Gravity capability deficits into GREG Capability Genesis (C.G11)",
+ "problem": "An egregore GoalGravityLoop goal whose active plan node requires a function the repertoire lacks records an egregore.capability_deficit and WAITs. Nothing read that record, so the goal stayed goal_blocked_not_closed for good, even when GREG's Capability Genesis could form the function from installed software. GREG's own Goal Gravity (greg/goal_gravity.py, _form_requested) already asks Genesis for GREG goals; the egregore runtime had no route.",
+ "founder_intent_refs": [
+  "INTENT-20261022-OSS-METABOLISM",
+  "INTENT-20261013-GOAL-GRAVITY",
+  "INTENT-20261019-UPWARD-ASCENT",
+  "docs/FOUNDER_EFFECT_COMPILER.md: a new capability never inherits the authority of the process that requested or built it"
+ ],
+ "baseline": "#196 12119590: egregore deficits recorded and never consumed; GREG goal formation for GREG goals only.",
+ "alternatives": [
+  {
+   "name": "Proposed: an adapter that drafts an unsigned GREG mission and settles the egregore deficit from GREG's journal",
+   "description": "draft_missions reads open egregore deficits, skips halted goals and functions Genesis cannot form without a builder, and returns an unsigned read-only, zero-budget mission with no auto_attach whose signed provenance names the deficit; the caller supplies the check that senses the function. settle reads GREG's closure of the mission's deficit (deficit.resolved, or the founder's signed CAPABILITY_ATTACH of the capability Genesis verified for it), confirms the capability still serves ATTACHED, registers a read-only <function>@function genome and closes the egregore deficit with resolved_by linking the GREG record.",
+   "advantages": [
+    "Reuses Genesis, its frozen oracle and the founder attach; builds only the missing seam",
+    "Holds no key and grants nothing: the founder signs the mission and attaches the capability",
+    "The egregore goal resumes through its own repertoire check (capability_present), unchanged"
+   ],
+   "disadvantages": [
+    "The founder must supply the check (the egregore goal carries no function inputs)",
+    "Two ledgers: the egregore runtime's and the Body's, linked by digests, not one",
+    "Couples to the capability.state 'by' string for founder attaches"
+   ],
+   "revival_evidence": "n/a (selected)"
+  },
+  {
+   "name": "Host the egregore goal on the Body's own ledger",
+   "description": "Run GoalGravityLoop on body.ledger so one ledger holds both.",
+   "advantages": ["One ledger, as the gap text proposed"],
+   "disadvantages": ["The Body's admission check pauses (stop_pushing) every egregore goal no founder-signed GOAL authorizes; such a goal is GREG's own and greg/goal_gravity.py already serves it"],
+   "revival_evidence": "test_an_unsigned_egregore_goal_on_the_body_ledger_is_quarantined_and_never_drafted shows the quarantine; revive only if the founder wants unsigned egregore goals on a Body"
+  },
+  {
+   "name": "Let the adapter call Genesis.form_for_goal directly",
+   "description": "Skip the mission: form the function on the egregore goal's behalf under any open mission.",
+   "advantages": ["No founder check needed"],
+   "disadvantages": ["An unsigned egregore goal would spend a signed mission's scope; formation would run with no founder signature on the egregore side"],
+   "revival_evidence": "a founder-signed egregore goal binding to a GREG mission"
+  },
+  {
+   "name": "Write deficit.resolved on founder attach in greg/body.py",
+   "description": "Fix GREG so a founder CAPABILITY_ATTACH resolves the mission's deficit, then settle on deficit.resolved only.",
+   "advantages": ["One closing record for both attach paths"],
+   "disadvantages": ["Changes greg/body.py and greg/genesis.py outside this claim; touches several consumers (compounding, path, appraisal)"],
+   "revival_evidence": "the Genesis owner takes the reported gap; settle then needs only the first branch"
+  }
+ ],
+ "do_nothing_option": {
+  "expected_outcome": "An egregore goal blocked on a formable function stays blocked forever.",
+  "advantages": ["No new code"],
+  "disadvantages": ["C.G11 stays open", "The two Goal Gravity runtimes stay disconnected from Genesis on one side"]
+ },
+ "roles": [
+  {"role": "Founder-Intent Steward", "position": "A blocked goal should reach the capability it needs without the founder hand-relaying it, and without any authority moving.", "material_concerns": ["The draft must never be signed by GREG"], "evidence_refs": ["test_a_gravity_deficit_becomes_an_unsigned_draft_genesis_forms_it_and_the_goal_resumes", "test_the_adapter_holds_no_signing_path"], "recommendation": "EXPERIMENT"},
+  {"role": "Systems Architect", "position": "Integration, not invention: two unchanged mechanisms (egregore deficits, GREG Genesis) joined by a typed adapter; no second genesis, ledger or router.", "material_concerns": ["Do not choose the canonical Goal Gravity runtime (open founder decision)"], "evidence_refs": ["greg/gravity_genesis.py"], "recommendation": "EXPERIMENT"},
+  {"role": "Adversarial Reviewer", "position": "Attack settle with a detached, revoked or unformed capability and with halted goals; attack draft with unsigned inbox drops.", "material_concerns": ["A stopped goal must not be resumed by a later settle"], "evidence_refs": ["test_a_detached_capability_does_not_settle", "test_a_revoked_goal_is_neither_drafted_for_nor_settled", "test_a_stopped_goal_is_not_settled_even_after_greg_formed_the_function"], "recommendation": "EXPERIMENT"},
+  {"role": "Operator and Maintainer", "position": "Small module, idempotent records, no new process; the ablation shows what is lost without it.", "material_concerns": ["Horizon is computed at drafting time; drafts made from an old clock expire"], "evidence_refs": ["test_ablation_without_settle_the_goal_stays_blocked"], "recommendation": "EXPERIMENT"},
+  {"role": "Evidence and Welfare Guardian", "position": "Every closure names the GREG record it rests on; the original goal is never edited.", "material_concerns": ["Two ledgers mean the link is a digest, not a shared record"], "evidence_refs": ["resolved_by greg:deficit.resolved / greg:founder_attach"], "recommendation": "EXPERIMENT"}
+ ],
+ "evidence": [
+  {"claim": "A blocked egregore goal resumes after Genesis forms the function and the founder attaches it", "tier": "sandbox_execution", "reference": "tests/unit/test_greg_gravity_genesis.py", "finding": "next gravity turn classifies the move; without settle it still WAITs"},
+  {"claim": "Each guard is load-bearing", "tier": "sandbox_execution", "reference": "manual guard-removal mutants", "finding": "halted status, serving capability, settle idempotence, draft once, formable and sensor match each caught; function match (founder-edited drafts only) and the founder-command 'by' check (backed by the command digest requirement) survive"}
+ ],
+ "counterevidence": [
+  {"claim": "The adapter can run on the Body's ledger", "tier": "sandbox_execution", "reference": "first test run", "finding": "the Body's admission check paused the unsigned egregore goal; design changed to bridge two ledgers"},
+  {"claim": "GREG writes deficit.resolved whenever a deficit closes", "tier": "sandbox_execution", "reference": "first test run", "finding": "a founder CAPABILITY_ATTACH writes none; settle links the signed attach instead and the gap is reported on #96"}
+ ],
+ "pass_1": {
+  "intended_outcome": "An egregore goal blocked on a function GREG can form resumes once the founder signs the drafted mission and attaches the result, with every step linked.",
+  "advantages": [{"id": "A1", "statement": "A second Goal Gravity runtime now reaches Capability Genesis", "amplified_value": "Both runtimes gain the same formation path while the canonical one is undecided; settle feeds the egregore repertoire so later egregore goals needing the function are unblocked too"}],
+  "disadvantages": [
+   {"id": "D1", "statement": "The founder must supply the sensing check", "severity": "low", "response_type": "governance", "redesigned_response": "Unrouted functions are reported with a reason instead of guessed"},
+   {"id": "D2", "statement": "Two ledgers linked by digests", "severity": "medium", "response_type": "evidence", "redesigned_response": "The quarantine on the Body ledger is tested as the reason; resolved_by names the exact GREG record"},
+   {"id": "D3", "statement": "Founder-attach closures depend on the 'by' string", "severity": "medium", "response_type": "protective", "redesigned_response": "Also require command_digest; report the missing deficit.resolved upstream"}
+  ],
+  "comparisons": {"baseline": "deficits never consumed", "do_nothing": "goal blocked forever", "simplest_viable_alternative": "the proposed adapter", "strongest_competing_architecture": "fix deficit.resolved in GREG and host the goal as a founder-signed GREG GOAL", "reversible_experiment": "delete the module; records it wrote stay as history"},
+  "rejected_alternatives": [{"name": "form_for_goal from the adapter", "rejection_reason": "spends a signed mission's scope for an unsigned goal", "revival_evidence": "founder-signed egregore goals"}]
+ },
+ "pass_2": {
+  "attack_summary": "Attack the strengthened design: settle after the founder stops or revokes the goal, after a detach, twice on a partly formed deficit; drop the unsigned draft in the inbox; supply a check that does not sense the function.",
+  "new_weaknesses": [
+   {"id": "W1", "category": "other", "statement": "A stopped or revoked goal resumed by a later settle", "strengthening_response": "settle and draft both refuse halted goals (tested)"},
+   {"id": "W2", "category": "gaming", "statement": "A check naming the function but sensing something else", "strengthening_response": "the sensor's function must equal the drafted function (tested)"},
+   {"id": "W3", "category": "fragility", "statement": "Partial settle repeated", "strengthening_response": "one settled record per mission (tested)"}
+  ],
+  "pass_1_disadvantage_dispositions": [
+   {"disadvantage_id": "D1", "outcome": "accepted", "rationale": "the founder's check is the honest source of inputs", "owner": "session_013k41DnwrjzpXL33r3j9BgB", "review_trigger": "an egregore goal that carries function inputs"},
+   {"disadvantage_id": "D2", "outcome": "accepted", "rationale": "the Body ledger is GREG's; unsigned egregore goals are quarantined there by design", "owner": "session_013k41DnwrjzpXL33r3j9BgB", "review_trigger": "founder decides the canonical Goal Gravity runtime"},
+   {"disadvantage_id": "D3", "outcome": "accepted", "rationale": "command digest required; upstream gap reported", "owner": "session_013k41DnwrjzpXL33r3j9BgB", "review_trigger": "GREG writes deficit.resolved on founder attach"}
+  ],
+  "final_design": "greg/gravity_genesis.py: draft_missions and settle, refusing halted goals, unformable functions and mismatched checks; settle requires the capability to still serve ATTACHED and links the closing GREG record.",
+  "residual_risks": [{"risk": "A new GREG attach path not recognized by settle", "mitigation": "the goal simply stays blocked; nothing is granted", "owner": "session_013k41DnwrjzpXL33r3j9BgB", "review_trigger": "a drafted mission ACHIEVED whose egregore deficit stays open"}],
+  "recommendation": "EXPERIMENT"
+ },
+ "dissent": {"present": false, "handling": "No dissent recorded.", "entries": []},
+ "authority_impact": {"level": "standard", "changes_authority": false, "requires_authorized_human": false, "approval_status": "not_required", "approver": null},
+ "migration_plan": "None; existing records are not rewritten.",
+ "rollback_plan": {"possible": true, "steps": ["Stop calling draft_missions/settle", "Or revert the commit; the records it wrote stay as history"], "reason_impossible": null},
+ "kill_criteria": ["A drafted mission is applied without a founder signature", "A halted goal is resumed by settle"],
+ "decision": "EXPERIMENT",
+ "decision_owner": "Alfonso Lopez (merge); this workstream (implementation)",
+ "review_trigger": "Founder decision on the canonical Goal Gravity runtime, or GREG writing deficit.resolved on founder attach"
+}

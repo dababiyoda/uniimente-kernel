@@ -93,14 +93,15 @@
   },
   {
    "role": "adversarial reviewer",
-   "position": "Attacked: a result taken after the founder ended the mission; two missions sharing one builder object; a finished result blocked by its own reservation; a need served by another mission's build.",
+   "position": "An independent review found two more (W4, W5), both fixed and tested. Attacked: a result taken after the founder ended the mission; two missions sharing one builder object; a finished result blocked by its own reservation; a need served by another mission's build.",
    "material_concerns": [
     "Each attack is a test; the reservation-blocks-itself and served-meanwhile defects were found and fixed while writing them"
    ],
    "recommendation": "EXPERIMENT",
    "evidence_refs": [
     "tests/unit/test_greg_genesis_build_off_turn.py::test_two_missions_building_at_once_each_run_under_their_own_signed_ceiling",
-    "tests/unit/test_greg_genesis_build_off_turn.py::test_a_mission_the_founder_ends_while_it_builds_never_gets_its_late_result"
+    "tests/unit/test_greg_genesis_build_off_turn.py::test_a_mission_the_founder_ends_while_it_builds_never_gets_its_late_result",
+    "tests/unit/test_greg_genesis_build_off_turn.py::test_a_model_router_build_writes_its_routing_evidence_on_the_turn_and_books_only_its_own_spend"
    ]
   },
   {
@@ -130,7 +131,7 @@
  "evidence": [
   {
    "claim": "Fail before, pass after",
-   "finding": "On #196 12119590 all 5 tests fail (163 s, each waiting out its 30 s timeout); with the change all 5 pass in about 9 s",
+   "finding": "On #196 12119590 the first 5 tests fail (163 s, each waiting out its 30 s timeout); with the change all 5 pass in about 9 s",
    "reference": "tests/unit/test_greg_genesis_build_off_turn.py",
    "tier": "unit_test"
   },
@@ -238,6 +239,18 @@
     "category": "dependency",
     "statement": "copy.copy of a builder that keeps per-instance counters would lose them",
     "strengthening_response": "Only used off the turn; the shipped builders keep no counters; recorded as a residual risk"
+   },
+   {
+    "id": "W4",
+    "category": "fragility",
+    "statement": "Independent review (#336 comment 7068679898): the production ModelBuilder's router record callback (greg.model_keys.attach) wrote model.route to the journal from the build thread, off the turn",
+    "strengthening_response": "Each off-turn call gets a private router whose record only buffers; the step that takes the result replays the events into the shared router on the turn (journal write and key bench as inline). Pinned by a ModelBuilder test that fails on df2455ea"
+   },
+   {
+    "id": "W5",
+    "category": "gaming",
+    "statement": "Independent review: builder copies shared one router, so a RouteError could book another mission's router.last cost",
+    "strengthening_response": "The private router has its own health, routes and last; the shared router's last stays None while calls are in flight, and each failure books its own billed cost (tested)"
    }
   ],
   "residual_risks": [

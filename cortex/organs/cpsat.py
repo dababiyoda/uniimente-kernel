@@ -31,7 +31,7 @@ import importlib.util
 import time
 from typing import Any, Mapping
 
-from ..contracts import Expenditure, OrganResult
+from ..contracts import Expenditure, OrganResult, digest
 from . import formal_eval
 from .formal import FormalModelError, Spec, review
 
@@ -487,11 +487,16 @@ def z3_optimality_certificate(model: Mapping[str, Any], value, timeout_ms: int =
     """Fault-diverse certificate for a CP-SAT optimum: ask Z3 for a strictly better feasible assignment.
 
     UNSAT from a *different* engine is an independent check of the optimality
-    claim (both share only the parser). Returns {"status": ..., "engine": "z3"}."""
+    claim (both share only the parser). Returns {"status": ..., "engine": "z3", "binding": ...}.
+
+    ``binding`` names the claim the certificate is about: the model's digest, the objective value and the sense.
+    The adversarial verifier accepts a certificate only for the answer it binds (0.2.3; review finding 4 on #196)."""
+    binding = {"model_digest": digest(model), "value": value,
+               "sense": ((model.get("query") or {}).get("sense") if isinstance(model, Mapping) else None)}
     try:
         import z3
     except ImportError:
-        return {"status": "NOT_RUN", "why": "z3-solver is not installed", "engine": "z3"}
+        return {"status": "NOT_RUN", "why": "z3-solver is not installed", "engine": "z3", "binding": binding}
     from .formal import FormalOrgan
     spec = Spec(model)
     organ = FormalOrgan()
@@ -506,13 +511,13 @@ def z3_optimality_certificate(model: Mapping[str, Any], value, timeout_ms: int =
     s.add(objective < value if spec.query["sense"] == "minimize" else objective > value)
     res = s.check()
     if res == z3.unsat:
-        return {"status": "CERTIFIED", "engine": "z3", "version": z3.get_version_string(),
+        return {"status": "CERTIFIED", "engine": "z3", "version": z3.get_version_string(), "binding": binding,
                 "claim": f"no feasible assignment has objective {'<' if spec.query['sense'] == 'minimize' else '>'} "
                          f"{value}"}
     if res == z3.sat:
         better = s.model()
-        return {"status": "REFUTED", "engine": "z3", "version": z3.get_version_string(),
+        return {"status": "REFUTED", "engine": "z3", "version": z3.get_version_string(), "binding": binding,
                 "better_assignment": {k: organ._value(z3, better.eval(env[k], model_completion=True))
                                       for k in spec.variables}}
-    return {"status": "UNKNOWN", "engine": "z3", "version": z3.get_version_string(),
+    return {"status": "UNKNOWN", "engine": "z3", "version": z3.get_version_string(), "binding": binding,
             "why": str(s.reason_unknown())}

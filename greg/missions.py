@@ -2720,6 +2720,10 @@ class MissionEngine:
         record = ledger.find(receipt)
         output = (record.payload.get("result") or {}).get("output") if record is not None else None
         instances = appraised_instances(strategy.get("capability"), output=output if isinstance(output, dict) else {})
+        if record is not None and strategy.get("capability") == "worker.team":
+            # Every member order the founder signed, not only those the receipt lists: a member that errored has no
+            # entry in the receipt's ``members``, and its absence must hold the team's output, never skip it.
+            instances = sorted(set(instances) | set(appraised_instances("worker.team", params=strategy.get("params", {}))))
         if record is None or not instances:
             return f"{producer}'s output has no independent appraisal ({appraiser}) in this mission"
         for instance in instances:               # a team: every member order, each judged alone

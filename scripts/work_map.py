@@ -814,6 +814,13 @@ def _covers(declared: str, path: str) -> bool:
 
 
 _SHA = re.compile(r"[0-9a-f]{40}")
+_STAMP = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z")
+
+
+def _stamp(value) -> str:
+    """A GitHub timestamp (``YYYY-MM-DDTHH:MM:SSZ``) as given; anything else is the empty string, which reads as
+    unknown, sorts before every real time and shows as nothing."""
+    return value if isinstance(value, str) and _STAMP.fullmatch(value) else ""
 
 
 def _pull(p) -> dict | None:
@@ -829,7 +836,7 @@ def _pull(p) -> dict | None:
     def repo(side: dict) -> str | None:
         return _text(side["repo"].get("full_name")) or None if isinstance(side.get("repo"), dict) else None
     return {"number": p["number"], "state": _text(p.get("state")), "draft": p.get("draft") is True,
-            "title": _text(p.get("title")), "body": _text(p.get("body")), "updated_at": _text(p.get("updated_at")),
+            "title": _text(p.get("title")), "body": _text(p.get("body")), "updated_at": _stamp(p.get("updated_at")),
             "head": head["ref"], "head_sha": head["sha"], "head_repo": repo(head),
             "base": base["ref"], "base_repo": repo(base),
             "api_files": [f for f in p[API_FILES] if isinstance(f, str)] if isinstance(p.get(API_FILES), list)
@@ -1175,7 +1182,7 @@ def _comment(c) -> dict | None:
         return None
     if not (c.get("body") is None or isinstance(c["body"], str)):
         return None
-    return {"id": c["id"], "created_at": _text(c.get("created_at")), "body": _text(c.get("body"))}
+    return {"id": c["id"], "created_at": _stamp(c.get("created_at")), "body": _text(c.get("body"))}
 
 
 def _tracked(root: Path) -> tuple[set[str], str | None]:

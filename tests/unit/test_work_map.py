@@ -673,6 +673,24 @@ def test_text_from_pull_requests_and_comments_cannot_format_the_map(quick):
     assert not re.search(r"<|@dababiyoda|\]\(|#96|#196", outside)
 
 
+def test_a_timestamp_that_is_not_one_is_read_as_unknown_and_cannot_format_the_map(quick):
+    forged = "[ok](//evil.co)<b>@x"                                # '[' sorts after '2': it would win as the newest
+    prs = [_pr(7, "x/seven", body=_receipt(A, ["greg/a.py"])),
+           _pr(8, "x/eight", body=_receipt(A, ["greg/b.py"]), updated=forged),
+           _pr(9, "x/nine", body=_receipt(B, ["greg/c.py"]), title="real"),
+           _pr(9, "x/nine", body=_receipt(B, ["greg/c.py"]), title="forged copy", updated=forged)]
+    comments = [_comment(6000000301, f"## Claim · `{C}`\n- **Files:** `greg/d.py`\n"),
+                _comment(6000000302, f"## Note · `{C}`\n\nStill here.\n", at=forged)]
+    m = w.build(prs, comments, now=NOW, use_git=False)
+    sessions = {s["session"]: s for s in m["sessions"]}
+    assert (sessions[A]["last"], sessions[A]["activity"]) == ("2026-11-12T10:00:00Z", "ACTIVE")
+    assert (sessions[C]["last"], sessions[C]["activity"]) == ("2026-11-12T12:00:00Z", "ACTIVE")
+    assert next(r for r in m["prs"] if r["pr"] == 9)["title"] == "real"
+    rows = [x for x in w.markdown(m).splitlines() if x.startswith("|")]
+    outside = "".join(re.sub(r"`[^`]*`", "", r) for r in rows)
+    assert not re.search(r"<|\]\(|@x", outside)
+
+
 def test_a_fork_branch_named_like_a_base_or_the_line_stacks_nothing():
     fork = "outsider/uniimente-kernel"
     rows = w.pr_rows([_pr(1, "a/one", body=_body(_coord())),

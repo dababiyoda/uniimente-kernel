@@ -156,14 +156,14 @@
     {
       "claim": "Every confirmed review finding is fixed",
       "tier": "deterministic_fixture",
-      "reference": "tests/evidence/goal-gravity-20261013/review-probes-increment-5.log; review-increment-5.json; review2-probes-increment-5.log",
+      "reference": "tests/evidence/goal-gravity-20261013/review-probes-increment-5.log; review-increment-5.json; review2-probes-increment-5.log; review3-probes-increment-5.log",
       "finding": "26 first-review probes replayed against the first fixed tree: 19 complete with no reproduction, 7 end in a deliberate refusal; the second review's probes replayed against the final tree: see review2-probes-increment-5.log"
     },
     {
       "claim": "The full suite passes with the increment",
       "tier": "unit_test",
       "reference": "tests/evidence/goal-gravity-20261013/pytest-full-suite-increment-5.log; pytest-full-suite-py311-increment-5.log",
-      "finding": "see logs"
+      "finding": "909 passed, 4 skipped on Python 3.13 and on Python 3.11; verifier V1-V5 PASS; the three CI scripts pass"
     },
     {
       "claim": "Backup-then-truncate of a torn WAL tail is established practice, and tolerant modes cannot distinguish torn tails from corruption",
@@ -184,6 +184,12 @@
       "tier": "other",
       "reference": "docs/founder-loop-entry-gate.json (G5 DECISION_REQUIRED_BEFORE_NEW_ARCHITECTURE)",
       "finding": "No supervisor restarts the process; recovery is called by tests only"
+    },
+    {
+      "claim": "Some power-loss states of an interrupted application are treated as a new tear, not a resume",
+      "tier": "deterministic_fixture",
+      "reference": "tests/evidence/goal-gravity-20261013/review3-probes-increment-5.log (adv-protocol/p2_powerloss_mixes, fix-apply/p7_apply_states)",
+      "finding": "When none of the plan's distinguishing bytes reached the disk (only bytes it shares with the torn record, or zeros), the retry quarantines the bytes as they stand and chains its own accurate event; the first plan's quarantine is reported as unrecorded. Nothing is lost or misattributed, but the two quarantines are not linked in the chain."
     }
   ],
   "pass_1": {
@@ -273,7 +279,7 @@
     ]
   },
   "pass_2": {
-    "attack_summary": "An independent review attacked the first design on three lenses and reproduced 13 real defects (partial-bypass of the complete-record guard, a lock gap, non-atomic copies, identical-tear collisions, glob over-match, symlink alias, stale proof, misattribution); the replay of its probes found a fourth class (a stale checkpoint excusing a complete record). A second review of the fixed tree reproduced 15 more, the decisive one being that truncate-then-append left an openable, unrecorded ledger when the recovery was killed between the two, plus founder revocations and capability detaches missing from the stop rule and foreign quarantines chained into this chain. The design was changed to an in-place plan applied behind a durable sidecar, in-memory verification and a content-aware stop rule; a third verification round checks the fixes and attacks the new protocol.",
+    "attack_summary": "An independent review attacked the first design on three lenses and reproduced 13 real defects (partial-bypass of the complete-record guard, a lock gap, non-atomic copies, identical-tear collisions, glob over-match, symlink alias, stale proof, misattribution); the replay of its probes found a fourth class (a stale checkpoint excusing a complete record). A second review of the fixed tree reproduced 15 more, the decisive one being that truncate-then-append left an openable, unrecorded ledger when the recovery was killed between the two; the design became an in-place plan behind a durable sidecar with in-memory verification. A third round confirmed the second review's fixes on its own probes and found 18 more in the new protocol and the stop rule: a completed or foreign plan resumed on a later tear, a lost final newline, unchecked short writes, a supersede whose first append was not a stop, stops written as events with no stop word in their names, and tails outside the writer's template; all are fixed, and supersede now writes its stop first.",
     "new_weaknesses": [
       {
         "id": "W1",
@@ -310,6 +316,12 @@
         "category": "fragility",
         "statement": "The in-place plan's resume recognizes an interrupted application from the tail bytes and the sidecar; a wrong recognition would write a stale event",
         "strengthening_response": "Resume requires the sidecar's prior head and cut to match, the quarantine's bytes to match its name, the tail to differ from the original and to be a byte-for-byte mix of the plan's event line and the original; the result is verified end to end, and a plan whose application never began is replaced"
+      },
+      {
+        "id": "W7",
+        "category": "fragility",
+        "statement": "The stop rule depends on registries of record and event types that must keep pace with the code",
+        "strengthening_response": "Unknown types are warned about, never treated as non-stops; tests scan the egregore record constants and every event type literal the code writes and fail when one is unclassified"
       }
     ],
     "pass_1_disadvantage_dispositions": [

@@ -48,41 +48,63 @@ Holding the ledger's single-writer lock for the whole procedure, it:
 2. **Verifies history in memory.** Every complete line must verify as a chain anchored to the expected constitution,
    parsed with the same checks `EvidenceLedger._load` applies; no copy of history is written. A supplied
    `expected_head` must equal the head before the torn line.
-3. **Accepts only what one interrupted append can leave.** That is a byte prefix of the next record's line as the
-   writer serializes it, optionally NUL-padded, or a run of NULs:
-   - printable ASCII JSON;
-   - the writer's fields in its order, starting `{"seq": <n>, "ts_utc": "`;
-   - once written, a `prev_hash` equal to this chain's head;
-   - once written, a hash and closing fields that are this record's own.
+3. **Accepts only what one interrupted append can leave.** That is a byte prefix of the next record's line exactly
+   as the writer serializes it, optionally NUL-padded, or a run of NULs. The checks run as far as the bytes go:
+   - the header `{"seq": <n>, "ts_utc": "<time>", "record_type": "<type>", "payload": {`;
+   - after the payload's closing brace (found by a string-aware scan), exactly `, "prev_hash": `, and the fields
+     before it re-serialize to exactly the visible bytes;
+   - a `prev_hash` equal to this chain's head;
+   - hash digits that begin the hash these fields give, with `corrects` null or a hash of this chain; otherwise the
+     tail is `partial_unverified`;
+   - once the hash is complete, the record's own closing fields and `hash_version` 2.
 
-   The tail is classified `partial`, `zero_fill`, `content_complete`, `content_complete_unverified` or
-   `complete_unterminated`. Anything else is refused, even with every risk acknowledged: a fork, a foreign field,
-   control bytes, a mismatched hash or a complete object followed by more bytes. So is a NUL hole inside the content,
-   which a reordering storage stack and the zeroing of an acknowledged record can both leave.
+   The tail is classified `partial`, `partial_unverified`, `zero_fill`, `content_complete`,
+   `content_complete_unverified` or `complete_unterminated`. Anything else is refused, even with every risk
+   acknowledged:
+   - a fork, a foreign or misplaced field, other separators, control bytes, a mismatched hash, or a complete object
+     followed by more bytes;
+   - a NUL hole inside the content, which a reordering storage stack and the zeroing of an acknowledged record can
+     both leave.
+
+   Damage inside a field still being written, before any hash digit is visible, cannot be seen in the bytes; that is
+   the residual `unanchored` names.
 4. **Requires named acknowledgment of the risks a byte check cannot exclude:**
    - `unanchored`: no `expected_head` was given.
-   - `complete_record`: the record's 64-digit hash was written, so its identity is fixed. This applies with or
-     without `expected_head` (R1b) and for records with `corrects` set (second review, classifier:0).
-   - `stop_record`: the torn bytes show a stop. That covers a seal, a suspension, a founder preference or answer, a
-     capability detach, a goal revocation, supersession or pause, and an event whose type or status names a stop
-     (second review, classifier:1 and honesty:0). A tail that cannot exclude a stop, such as an unknown record type
-     or a cut before the deciding field, is warned about without a required acknowledgment.
+   - `complete_record`: the record's 64-digit hash was written, so its identity is fixed, or its visible hash digits
+     match no record this chain can hold. This applies with or without `expected_head` (R1b) and for records with
+     `corrects` set (second review, classifier:0).
+   - `stop_record`: the torn bytes show a stop that never took effect. Record and event types are judged against
+     explicit registries, and tests require every type the code writes to be in one; names are never searched for
+     stop words. The stops are:
+     - a seal, a suspension, a founder preference or answer, a capability detach;
+     - a goal revocation or supersession, including the replacement's authorization, which is supersede's first
+       append;
+     - an evolution capsule deciding kill or regress;
+     - an action revoked, an autonomy regression, a business termination, a provider withdrawn, a component
+       disabled, or a node or organ retired.
+
+     An unknown record or event type, or a cut before the deciding field, is warned about without a required
+     acknowledgment.
 5. **Writes the plan before touching the ledger.**
    - The torn bytes are copied byte for byte to `<ledger>.torn-<16 hex of the prior head>-<sha256>` (temporary
      file, fsync, link).
    - A `.json` sidecar is written by temporary file, fsync and replace. It records what was found, who is recovering
-     it, and the exact `ledger.torn_tail_quarantined` event line to write (the plan).
+     it, and the plan: the exact `ledger.torn_tail_quarantined` event line, the offset, and the digest of the
+     verified prefix bytes.
 6. **Applies the plan in place, so the ledger never opens before its repair is recorded.**
-   - The event line is written over the torn bytes, the file is cut to its length, then the newline is written,
-     with an fsync after each step.
+   - The event line is written over the torn bytes; every byte is written, and checked by reading it back.
+   - The file is cut to the event's length, then the newline is written, with an fsync after each step.
    - Until the newline the file never ends with a newline, so `EvidenceLedger` keeps refusing to open it and no
      restarting writer can append.
-   - A call that finds a plan part-way applied (the tail is a byte mix of the plan's event line and the torn bytes)
-     completes that plan. The plan's caller remains `recovered_by` and the new caller is returned as
-     `completed_by`.
+   - The plan is then marked applied, and quarantine files this chain does not record are reported, never chained.
+   - A call that finds a plan part-way applied completes it. The plan must be unapplied and written for exactly
+     these prefix bytes and offset. The tail must show at least one of its event bytes in place of a torn byte;
+     every other byte must be the event's, the torn byte, the newline or a zero.
+   - The completing caller is written to the sidecar first. The plan's caller remains `recovered_by` and the new
+     caller is returned as `completed_by`.
    - A plan whose application never began is replaced by the new caller's own.
-   - The result is verified end to end.
-   - Quarantine files this chain does not record are reported, never chained.
+   - On a clean ledger, a last record that is a recovery event is returned as `last_recovery`, so its stop warning
+     reaches a caller whose first call was cut off.
 
 The torn record is never re-admitted: an append that never returned took no effect. Opening a torn ledger still
 fails closed. Nothing calls recovery automatically.
@@ -135,6 +157,7 @@ real child halfway through writing `grant_dispatch`. It then checks the followin
 - **Falsification.** Any one of these would falsify the effect:
   - an acknowledged record dropped without the caller naming a risk that admits it;
   - a ledger that opens with its torn bytes removed but no recovery event;
+  - a completed or foreign plan replayed on a later tear;
   - a torn record admitted to the chain;
   - a tail accepted that one interrupted append cannot produce;
   - a second dispatch after recovery;
@@ -198,7 +221,7 @@ finding) raised 18 findings. Fifteen were confirmed real and three were judged n
 |---|---|---|
 | crash:0 (major) | a recovery killed after truncating and before its event left an openable ledger; a restarting body appended onto the unrecorded truncation (about half of a long call is in that window) | the in-place plan: the ledger never ends with a newline until the event is durable; real-SIGKILL test at each apply step |
 | crash:1, honesty:2 (major) | an altered, unrecorded quarantine made recovery refuse after it had truncated, and blocked recording | quarantines without an event in this chain are reported, never chained, so nothing can fail after a change |
-| classifier:1, honesty:0 (major) | a torn goal revocation, supersession or capability detach was recovered as "not a stop" and the revoked goal acted again | detach added to the stop types; goal transitions and events are stops when their visible payload shows one; wake/sleep reasons exclude a stop; unknown types warned; a test classifies every declared record type |
+| classifier:1, honesty:0 (major) | a torn goal revocation, supersession or capability detach was recovered as "not a stop" and the revoked goal acted again | detach added to the stop types; goal transitions and events are stops when their visible payload shows one; wake/sleep reasons exclude a stop; unknown types warned (completed in the third round: registries, not stop words, and tests covering every egregore record type and every event type the code writes) |
 | classifier:0 (major claimed; verifier: minor) | a cut just before the hash's closing quote, or inside a correction record's closing fields, was `partial`, so `complete_record` was not demanded | complete once the 64-digit hash is written; `corrects` rebuilt and the hash recomputed; every-offset sweep of six record kinds |
 | classifier:2 (minor) | tails the writer cannot produce (a fork, control bytes, a foreign field) were accepted as `partial` | refused |
 | crash:2, honesty:1 (minor) | quarantines from an earlier ledger at the same path were chained as recoveries of this one | reported, never chained |
@@ -207,6 +230,26 @@ finding) raised 18 findings. Fifteen were confirmed real and three were judged n
 | crash:5 (minor) | `..` through a symlinked directory made recovery act on a different file | directories resolved physically |
 | honesty:6 (nit) | a fallback attribution text named the wrong cause | moot: events are never built from a sidecar now |
 | classifier:3, classifier:4, honesty:3 (verifier: not defects) | a NUL hole inside a record and a torn genesis line are refused; sidecar fields could reach the event | the refusals are deliberate and now documented, and a person decides; the sidecar path is gone |
+
+### Third verification round (of `621d2de`)
+
+A third workflow (`wf_67cbe503-425`) ran four fix-checkers and two fresh adversaries, with one skeptic per finding. The
+fix-checkers re-ran the second review's own probes on `621d2de`. All second-review dispositions held except three that
+were partly fixed (classifier:2, honesty:0, crash:2/honesty:1). Those three are completed below. Twenty-two findings were
+raised: 18 confirmed, 4 judged not defects. Records: `review-increment-5.json` (`third_review`),
+`review2-probes-increment-5.log` (fix-checks) and `review3-probes-increment-5.log` (the round's probes replayed against
+the fixed tree).
+
+| Finding(s) | Issue at `621d2de` | Disposition |
+|---|---|---|
+| fix-apply:0, fix-space:1, adv-protocol:1 (major) | a completed plan, or one left by another ledger at the same path, was resumed on a later tear at the same prior head and offset; a zero-filled tail matched any plan | plans are marked applied; a plan must be written for exactly these prefix bytes; the tail must show positive evidence of its application; the resumed line must chain |
+| fix-space:0, adv-protocol:2, adv-semantics:4 (major) | a short `pwrite` was ignored, so a newline could terminate a damaged event, and every later call refused | every byte is written and read back before the newline; a mismatch rolls the file back to the resumable state |
+| adv-protocol:0, fix-apply:1 (major, minor) | a lost final newline (the event plus a NUL) was not recognized as a plan in progress | that state is resumed; a recovery event whose plan is missing is refused, never quarantined as a record |
+| fix-stops:0 (major) | a torn first append of a supersede (the replacement's `goal_authorized`) was not a stop, and the restarted loop acted on the goal the founder had superseded | `goal_authorized` naming a goal it supersedes is a stop; `GoalRegistry.supersede` now writes the old goal's superseded transition first, so a crash between its two appends leaves the old goal stopped |
+| fix-stops:1, adv-semantics:0 (minor, major) | stops written as events whose names avoid the stop words (autonomy regression, business termination, provider withdrawal, organ retirement, kill capsules) were not stops | explicit stop and non-stop registries, enforced by a test that scans every event type the code writes |
+| fix-classifier:0, adv-semantics:1, adv-semantics:2 (minor) | tails outside the writer's template were accepted before their hash was visible, and one flipped delimiter byte hid a complete record | header template, payload-end scan, exact re-serialization, hash digits checked against the recomputed hash, and `hash_version` 2 |
+| fix-space:2, fix-space:3, adv-protocol:5, adv-semantics:5 (nits) | a failed copy left its `.tmp-` file; one refusal named the wrong file; repeated full-chain hashing; stale doc statements | removed on failure; distinct messages; lazy candidates and no post-apply reload; docs corrected |
+| fix-stops:2, adv-semantics:3, adv-protocol:3, adv-protocol:4 (verifier: not defects) | over-refusal by stop words; no channel for a cut-off caller; completing caller not durable | improved anyway: registries replace stop words; `last_recovery`; completions written to the sidecar |
 
 **Root cause referred to the ledger owner.** `EvidenceLedger` keys its single-writer lock on `<path>.lock`. A
 symlink, hard link or bind mount of the ledger file therefore has its own lock file, and two writers can append to the
@@ -252,6 +295,7 @@ from its file and never needs to be restored.
 
 - any recovery drops an acknowledged record without a named risk that admits it;
 - a ledger ever opens with its torn bytes removed and no recovery event;
+- a completed or foreign plan is ever replayed;
 - a torn record is ever admitted;
 - recovery is ever cited as authority to act;
 - the founder rules that ledger repair must be impossible rather than explicit.

@@ -130,8 +130,8 @@ both records now carry the new implementation and evidence references (validator
 `provenance/recovery.py` makes a torn ledger reopenable only through an explicit, accountable call:
 
 - the torn bytes are quarantined beside the ledger and never re-admitted;
-- the ledger is truncated to its last complete record;
-- the repair is recorded in the chain;
+- they are replaced in place by a chained record of the recovery, applied behind a durable plan so the ledger never opens
+  before that record is durable;
 - every risk a byte check cannot exclude must be named by the caller: `unanchored`, `complete_record` or `stop_record`.
 
 Decision record: `docs/decisions/ADR-GOAL-GRAVITY-004.md`. Deliberation:
@@ -145,14 +145,17 @@ killed between its truncation and its event left an openable ledger with no reco
 confirmed findings were torn founder revocations and capability detaches recovered as "not a stop", and stale
 quarantine files chained as recoveries of this chain. The repair is now applied in place behind a durable plan, so
 the ledger cannot open before its recovery is recorded. Verification is in memory, and the stop rule covers goal and
-capability controls. Records: `tests/evidence/goal-gravity-20261013/review-increment-5.json`, `review-probes-increment-5.log`
-and `review2-probes-increment-5.log`.
+capability controls. A third verification round confirmed 18 more findings in the new protocol and its stop rule, and
+all of them are fixed. The main ones: a completed or foreign plan resumed on a later tear, a lost final newline, short
+writes, and stops written as events. Records: `tests/evidence/goal-gravity-20261013/review-increment-5.json`
+(`second_review`, `third_review`), `review-probes-increment-5.log`, `review2-probes-increment-5.log` and
+`review3-probes-increment-5.log`.
 
 **P2 remains incomplete.** It needs a supervisor (G5) that calls recovery on restart. Whether such a supervisor may
 acknowledge `unanchored` on the founder's behalf is part of that decision, not of this module.
 
-Evidence tier: IMPLEMENTED / UNIT-TESTED / INTEGRATION-TESTED (real SIGKILL inside the dispatch-claim append); not
-externally verified; not founder-accepted.
+Evidence tier: IMPLEMENTED / UNIT-TESTED / INTEGRATION-TESTED (real SIGKILL inside the dispatch-claim append and inside
+each step of applying a recovery); not externally verified; not founder-accepted.
 
 UNIIMENTE must never silently lose a founder intention, contributor objection, negative result, or superseded design.
 

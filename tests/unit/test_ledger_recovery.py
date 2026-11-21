@@ -71,7 +71,7 @@ def _events(path):
 def test_a_clean_ledger_is_left_exactly_as_it_was(tmp_path):
     path, _ = _ledger(tmp_path)
     before = _bytes(path)
-    assert _recover(path) == {"torn": False, "quarantined": None, "recorded": [], "resumed": False, "unrecorded_quarantines": []}
+    assert _recover(path) == {**{"torn": False, "quarantined": None, "recorded": [], "resumed": False, "unrecorded_quarantines": []}, "last_recovery": None}
     assert _bytes(path) == before and glob.glob(path + ".torn-*") == []
 
 
@@ -95,7 +95,9 @@ def test_a_torn_tail_is_quarantined_byte_for_byte_and_the_recovery_is_chained(tm
     [event] = _events(path)
     assert event["prior_head"] == head and event["recovered_by"] == "ops:test" and "not chained" in event["disposition"]
     after = _bytes(path)
-    assert _recover(path) == {"torn": False, "quarantined": None, "recorded": [], "resumed": False, "unrecorded_quarantines": []}   # idempotent
+    again = _recover(path)   # idempotent; the last recovery is shown to the next caller
+    assert {k: v for k, v in again.items() if k != "last_recovery"} == {"torn": False, "quarantined": None, "recorded": [], "resumed": False, "unrecorded_quarantines": []}
+    assert again["last_recovery"]["quarantine_file"] == q["quarantine_file"]
     assert _bytes(path) == after
 
 
@@ -383,8 +385,12 @@ def test_a_tail_cut_before_its_type_is_warned_about_without_an_acknowledgment(tm
     q = _recover(path)["quarantined"]
     assert q["torn_record_type"] is None and q["may_have_been_a_stop"]
     assert _events(path)[0]["stop_warning"]
-    path2, _ = _ledger(tmp_path / "b" if (tmp_path / "b").mkdir() is None else tmp_path)
-    _tear_next(path2, lambda line: len(line) // 2)   # an ordinary event's type is visible: no warning
+    (tmp_path / "b").mkdir()
+    path2 = str(tmp_path / "b" / "ledger.jsonl")
+    ledger = EvidenceLedger(ANCHOR, path=path2)
+    ledger.append("event", {"type": "action.committed", "action_id": "A"})   # a known, ordinary event type
+    ledger.close()
+    _tear_last(path2, lambda line: len(line) // 2)
     _recover(path2)
     assert _events(path2)[0]["stop_warning"] is None
 
@@ -643,7 +649,8 @@ def _serialized_next(path, **changes):
     return json.loads(line), rec
 
 
-@pytest.mark.parametrize("kind", ["fork", "control_byte", "extra_field", "hash_version_3", "wrong_order"])
+@pytest.mark.parametrize("kind", ["fork", "control_byte", "extra_field", "hash_version_3", "wrong_order",
+                                  "compact_complete", "version_1_complete"])
 def test_a_tail_the_writer_cannot_produce_is_refused_even_with_every_risk_acknowledged(tmp_path, kind):
     path, _ = _ledger(tmp_path)
     obj, rec = _serialized_next(path)
@@ -656,6 +663,13 @@ def test_a_tail_the_writer_cannot_produce_is_refused_even_with_every_risk_acknow
         line = line.replace(', "prev_hash"', ', "extra": 1, "prev_hash"')[:-1]
     elif kind == "hash_version_3":
         line = line.replace('"hash_version": 2', '"hash_version": 3')[:-1]
+    elif kind == "compact_complete":
+        line = json.dumps(obj, separators=(",", ":"))   # the same record, serialized as the writer never does
+    elif kind == "version_1_complete":
+        from provenance.ledger import sha256_json
+        v1 = {**obj, "hash_version": 1}
+        v1["hash"] = sha256_json({k: v1[k] for k in ("seq", "record_type", "payload", "prev_hash", "corrects")})
+        line = json.dumps(v1)   # the writer only writes version 2
     else:
         line = json.dumps({k: obj[k] for k in ("seq", "ts_utc", "payload", "record_type", "prev_hash", "hash",
                                                 "corrects", "hash_version")})[:-1]
@@ -690,11 +704,13 @@ def _goal_ledger(tmp_path):
     from egregore.goals import GoalRegistry, GoalSpec
     path = str(tmp_path / "ledger.jsonl")
     ledger = EvidenceLedger(ANCHOR, path=path)
-    registry = GoalRegistry(ledger)
+    registry = GoalRegistry(ledger=ledger)
     return path, ledger, registry
 
 
-@pytest.mark.parametrize("control", ["revoke", "supersede", "detach", "suspend_event"])
+@pytest.mark.parametrize("control", ["revoke", "supersede", "supersede_authorization", "detach", "kill_capsule",
+                                     "autonomy.regressed", "business.terminated", "repair.provider_withdrawn",
+                                     "omnimorph.organ_retired", "foundry.node_retired"])
 def test_a_torn_founder_control_needs_stop_record_and_the_event_warns(tmp_path, control):
     path = str(tmp_path / "ledger.jsonl")
     ledger = EvidenceLedger(ANCHOR, path=path)
@@ -704,10 +720,17 @@ def test_a_torn_founder_control_needs_stop_record_and_the_event_warns(tmp_path, 
     elif control == "supersede":
         ledger.append("egregore.goal_transition", {"source": "s", "goal_id": "g", "reason": "superseded by goal:x (alfonso)",
                                                    "state": {"status": "superseded"}})
+    elif control == "supersede_authorization":   # supersede's first append: the replacement goal
+        ledger.append("egregore.goal_authorized", {"source": "s", "goal": {"title": "new", "supersedes": "goal:old"},
+                                                   "authorized_at": "2026-11-21T00:00:00Z"})
     elif control == "detach":
         ledger.append("egregore.capability_detached", {"genome_id": "x", "reason": "founder detach"})
+    elif control == "kill_capsule":
+        ledger.append("capsule", {"capsule_id": "c", "decision": {"decision": "kill", "reason": "harm"}})
+    elif control == "omnimorph.organ_retired":
+        ledger.append("event", {"type": control, "organ": "o", "status": "RETIRED"})
     else:
-        ledger.append("event", {"type": "autonomy.demoted", "to": "A0"})
+        ledger.append("event", {"type": control, "subject": "x"})
     head = ledger.records[-2].hash
     ledger.close()
     _tear_last(path, lambda line: len(line) - 3)
@@ -841,6 +864,7 @@ def test_every_cut_of_a_real_record_is_recovered_and_classified_by_what_was_writ
     hash_written = text.index('"hash": "%s' % record.hash) + len('"hash": "%s' % record.hash)
     type_written = text.index('"record_type": "%s"' % record.record_type) + len('"record_type": "%s"' % record.record_type)
     corrects_written = text.index('"corrects": ') + len('"corrects": ') + len(json.dumps(record.corrects))
+    digits_visible = text.index('"hash": "') + len('"hash": "sha256:')
     stop = record.record_type in STOP_TYPES
     boundaries = {1, type_written - 1, type_written, hash_written - 1, hash_written, len(line) - 1, len(line)}
     for keep in range(1, len(line) + 1):
@@ -858,6 +882,8 @@ def test_every_cut_of_a_real_record_is_recovered_and_classified_by_what_was_writ
             elif keep >= hash_written:
                 want = ("content_complete_unverified" if kind == "correction_free_text" and keep < corrects_written
                         else "content_complete")
+            elif kind == "correction_free_text" and keep > digits_visible:
+                want = "partial_unverified"   # its hash digits match no record this chain can hold
             else:
                 want = "partial"
             assert q["classification"] == want, (kind, keep, len(pad), q["classification"])
@@ -871,3 +897,282 @@ def test_every_cut_of_a_real_record_is_recovered_and_classified_by_what_was_writ
             assert ledger.find(record.hash) is None   # never admitted
             assert ledger.records[-1].payload["prior_head"] == head
             assert ledger.verify_chain()[0]
+
+
+# --- third verification round -------------------------------------------------------------------------------------
+
+@pytest.mark.parametrize("record_type,payload", [
+    ("event", {"type": "treasury.waterfall_stopped", "amount": 1}),   # a routine treasury event, not a stop
+    ("event", {"type": "advantage.genome_sealed", "genome": {"id": "g"}}),   # the foundry's normal final step
+    ("egregore.goal_transition", {"source": "s", "goal_id": "g", "reason": "review: noted",
+                                  "state": {"status": "paused"}}),   # a routine transition of an already-paused goal
+    ("egregore.goal_authorized", {"source": "s", "goal": {"title": "t", "supersedes": None}}),
+    ("capsule", {"capsule_id": "c", "decision": {"decision": "retain"}}),
+])
+def test_ordinary_records_that_mention_stop_words_are_not_refused(tmp_path, record_type, payload):
+    path = str(tmp_path / "ledger.jsonl")
+    ledger = EvidenceLedger(ANCHOR, path=path)
+    ledger.append(record_type, payload)
+    head = ledger.records[-2].hash
+    ledger.close()
+    _tear_last(path, lambda line: len(line) - 3)
+    q = _recover(path, expected_head=head, acknowledged_risks=("complete_record",))["quarantined"]
+    assert "stop_record" not in q["acknowledged_risks"] and q["may_have_been_a_stop"] is False
+
+
+def test_a_completed_plan_is_never_resumed_for_a_later_tear(tmp_path):
+    """Round 3 (fix-space:1, adv-protocol:1): a restore puts the ledger back to the state the plan was made for, and a
+    zero-filled tear of the same length lands at the same cut; the applied plan must not be replayed."""
+    path, head = _ledger(tmp_path)
+    before_tear = _bytes(path)
+    _tear_next(path, lambda line: 30)
+    first = _recover(path)
+    _write(path, before_tear + b"\x00" * 200)   # restored, then a zero-filled extent after a power loss
+    second = _recover(path)
+    assert second["resumed"] is False and second["quarantined"]["classification"] == "zero_fill"
+    assert second["quarantined"]["quarantine_file"] != first["quarantined"]["quarantine_file"]
+
+
+def test_a_plan_written_for_another_ledger_at_the_same_path_is_never_resumed(tmp_path, monkeypatch):
+    path, _ = _ledger(tmp_path, n=0)   # genesis only: every ledger of this constitution shares this head
+    _tear_next(path, lambda line: 30)
+    monkeypatch.setattr(recovery, "_apply", lambda *a, **k: (_ for _ in ()).throw(_Killed()))
+    with pytest.raises(_Killed):
+        _recover(path)
+    monkeypatch.undo()
+    os.unlink(path)
+    os.unlink(path + ".lock")
+    _ledger(tmp_path, n=0)   # a new ledger at the same path: same genesis hash, different genesis bytes
+    with open(path, "ab") as fh:
+        fh.write(b"\x00" * 120)
+    out = _recover(path)
+    assert out["resumed"] is False and out["quarantined"]["classification"] == "zero_fill"
+
+
+def test_a_lost_final_newline_read_back_as_zero_is_completed_from_the_plan(tmp_path, monkeypatch):
+    """Round 3 (adv-protocol:0, fix-apply:1): power loss in the newline step can leave the event line plus a NUL."""
+    path, head = _ledger(tmp_path)
+    _tear_next(path, lambda line: 30)
+    real = recovery._apply
+
+    def newline_lost(p, cut, line):
+        real(p, cut, line)
+        with open(p, "r+b") as fh:
+            fh.seek(cut + len(line))
+            fh.write(b"\x00")   # the grown byte reads back as zero
+        raise _Killed()
+    monkeypatch.setattr(recovery, "_apply", newline_lost)
+    with pytest.raises(_Killed):
+        recover_torn_tail(path, ANCHOR, recovered_by="supervisor:A", reason="r", acknowledged_risks=("unanchored",))
+    monkeypatch.undo()
+    out = recover_torn_tail(path, ANCHOR, recovered_by="supervisor:B", reason="r2", acknowledged_risks=("unanchored",))
+    assert out["resumed"] and len(_events(path)) == 1
+    sidecar = json.loads(_bytes(glob.glob(path + ".torn-*.json")[0]))
+    assert sidecar["plan"]["applied"] and sidecar["plan"]["completions"][0]["completed_by"] == "supervisor:B"
+
+
+def test_a_short_write_is_completed_and_never_terminates_a_damaged_event(tmp_path, monkeypatch):
+    """Round 3 (fix-space:0, adv-protocol:2): os.pwrite may write fewer bytes than asked."""
+    path, _ = _ledger(tmp_path)
+    _tear_next(path, lambda line: 30)
+    real = os.pwrite
+    monkeypatch.setattr(recovery.os, "pwrite", lambda fd, data, off: real(fd, bytes(data)[: max(1, len(data) // 3)], off))
+    out = _recover(path)
+    monkeypatch.undo()
+    assert out["torn"] and len(_events(path)) == 1
+
+
+def test_an_event_that_reads_back_wrong_is_never_terminated_and_the_retry_completes_it(tmp_path, monkeypatch):
+    path, _ = _ledger(tmp_path)
+    _tear_next(path, lambda line: 30)
+    real = os.pread
+    calls = {"n": 0}
+
+    def flaky(fd, n, off):
+        calls["n"] += 1
+        data = real(fd, n, off)
+        return data[:-1] + b"#" if calls["n"] == 1 else data
+    monkeypatch.setattr(recovery.os, "pread", flaky)
+    with pytest.raises(RecoveryInterrupted):
+        _recover(path)
+    monkeypatch.undo()
+    with pytest.raises(ValueError):
+        EvidenceLedger(ANCHOR, path=path)
+    assert _recover(path)["resumed"] and len(_events(path)) == 1
+
+
+def test_a_recovery_event_whose_plan_is_missing_is_refused_not_quarantined_as_a_record(tmp_path, monkeypatch):
+    path, _ = _ledger(tmp_path)
+    _tear_next(path, lambda line: 30)
+    real = recovery._apply
+
+    def without_newline(p, cut, line):
+        fd = os.open(p, os.O_RDWR)
+        try:
+            os.pwrite(fd, line, cut)
+            os.ftruncate(fd, cut + len(line))
+        finally:
+            os.close(fd)
+        raise _Killed()
+    monkeypatch.setattr(recovery, "_apply", without_newline)
+    with pytest.raises(_Killed):
+        _recover(path)
+    monkeypatch.undo()
+    for sidecar in glob.glob(path + ".torn-*.json"):
+        os.unlink(sidecar)   # the plan is lost
+    data = _bytes(path)
+    with pytest.raises(RecoveryRefused, match="plan is missing"):
+        _recover(path, acknowledged_risks=RISKS)
+    assert _bytes(path) == data
+
+
+def test_a_recovery_cut_off_after_its_event_still_reaches_the_next_caller(tmp_path):
+    """Round 3 (adv-protocol:3): the stop warning is not lost if the first caller never sees its return value."""
+    path, _ = _ledger(tmp_path)
+    _tear_a_seal(path)
+    _recover(path, acknowledged_risks=("unanchored", "stop_record"))
+    out = _recover(path)
+    assert out["torn"] is False and "re-issue it" in out["last_recovery"]["stop_warning"]
+
+
+@pytest.mark.parametrize("kind", ["foreign_field_first", "reordered", "list_payload", "compact_separators",
+                                  "not_a_time"])
+def test_a_tail_out_of_the_writers_template_is_refused_before_its_hash_is_visible(tmp_path, kind):
+    """Round 3 (fix-classifier:0): the header and the fields before prev_hash are checked as far as they go."""
+    path, _ = _ledger(tmp_path)
+    obj, _ = _serialized_next(path)
+    if kind == "foreign_field_first":
+        text = '{"seq": %d, "extra": 1, "ts_utc": "%s"' % (obj["seq"], obj["ts_utc"])
+    elif kind == "reordered":
+        text = '{"seq": %d, "ts_utc": "%s", "payload": {"a": 1}' % (obj["seq"], obj["ts_utc"])
+    elif kind == "list_payload":
+        text = json.dumps({**obj, "payload": [1]})
+        text = text[: text.index(', "hash"') + 20]
+    elif kind == "compact_separators":
+        text = json.dumps({**obj, "payload": {"a": 1}}, separators=(",", ":"))
+        text = '{"seq": %d, "ts_utc": "%s", "record_type": "x", "payload": {"a":1}, "prev_hash": "' % (
+            obj["seq"], obj["ts_utc"])
+    else:
+        text = '{"seq": %d, "ts_utc": "yesterday' % obj["seq"]
+    with open(path, "ab") as fh:
+        fh.write(text.encode("ascii"))
+    data = _bytes(path)
+    with pytest.raises(RecoveryRefused):
+        _recover(path, acknowledged_risks=RISKS)
+    assert _bytes(path) == data
+
+
+def test_hash_digits_that_match_no_record_of_this_chain_demand_complete_record(tmp_path):
+    """Round 3 (fix-classifier:0): a payload byte flipped in an acknowledged record cut inside its hash."""
+    path = str(tmp_path / "ledger.jsonl")
+    ledger = EvidenceLedger(ANCHOR, path=path)
+    ledger.append("event", {"type": "probe"})
+    checkpoint = ledger.head
+    ledger.append("grant_dispatch", {"proposal_id": "P", "grant_id": "G"})
+    ledger.close()
+    data = _bytes(path)
+    body, line = data[:-1].rsplit(b"\n", 1)
+    line = line.replace(b'"grant_id": "G"', b'"grant_id": "F"')   # damage
+    cut = line.index(b'"hash": "') + len(b'"hash": "sha256:') + 20
+    _write(path, body + b"\n" + line[:cut])
+    with pytest.raises(RecoveryRefused, match="complete_record"):
+        _recover(path, expected_head=checkpoint)
+    q = _recover(path, expected_head=checkpoint, acknowledged_risks=("complete_record",))["quarantined"]
+    assert q["classification"] == "partial_unverified"
+
+
+def test_every_event_type_the_code_writes_is_classified_as_a_stop_or_not():
+    """A new stop written as an event cannot fall outside the stop rule unnoticed (round 3, fix-stops:1)."""
+    import pathlib
+    import re as _re
+    root = pathlib.Path(__file__).resolve().parents[2]
+    found = set()
+    for source in root.rglob("*.py"):
+        rel = source.relative_to(root).parts
+        if rel[0] in ("tests", ".venv", "venv") or "sandbox" in rel:
+            continue
+        text = source.read_text(errors="ignore")
+        if 'append("event"' not in text and "append('event'" not in text:
+            continue
+        found |= set(_re.findall(r'"type": "([a-z_]+\.[a-z_]+)"', text))
+        found |= set(_re.findall(r'(?:_record|_log|_emit|_event)\("([a-z_]+\.[a-z_]+)"', text))
+        found |= set(_re.findall(r'event_type ?=+ ?"([a-z_]+\.[a-z_]+)"', text))
+    families = {"action": ("proposed", "evaluating", "pending_human", "granted", "executing", "committed", "recorded",
+                           "refused", "failed", "reconciled", "revoked"),
+                "autonomy": ("issued", "promoted", "promotion_refused", "regressed", "renewed")}
+    found |= {f"{f}.{k}" for f, kinds in families.items() for k in kinds}
+    classified = recovery.STOP_EVENT_TYPES | recovery.NON_STOP_EVENT_TYPES
+    assert found and found <= classified, sorted(found - classified)
+
+
+def test_a_damaged_delimiter_cannot_hide_a_complete_record(tmp_path):
+    """Round 3 (adv-semantics:1): one flipped byte in ', "prev_hash": ' must not turn a complete, acknowledged record
+    into a 'partial' one that a stale checkpoint drops with no risk named."""
+    path = str(tmp_path / "ledger.jsonl")
+    ledger = EvidenceLedger(ANCHOR, path=path)
+    ledger.append("event", {"type": "probe"})
+    checkpoint = ledger.head
+    ledger.append("grant_dispatch", {"proposal_id": "P", "grant_id": "G"})
+    ledger.close()
+    data = _bytes(path)
+    body, line = data[:-1].rsplit(b"\n", 1)
+    line = line.replace(b', "prev_hash": ', b', "prev_hash"; ')[:-1]   # the closing brace is lost too
+    _write(path, body + b"\n" + line)
+    damaged = _bytes(path)
+    for kwargs in ({"expected_head": checkpoint}, {"expected_head": checkpoint, "acknowledged_risks": RISKS}):
+        with pytest.raises(RecoveryRefused):
+            _recover(path, **kwargs)
+    assert _bytes(path) == damaged
+
+
+def test_a_closed_payload_is_checked_before_prev_hash_is_visible(tmp_path):
+    """Replay of round 3: compact separators inside a payload that has closed, with prev_hash not yet written."""
+    path, _ = _ledger(tmp_path)
+    obj, _ = _serialized_next(path)
+    text = '{"seq": %d, "ts_utc": "%s", "record_type": "grant_dispatch", "payload": {"proposal_id":"P"}' % (
+        obj["seq"], obj["ts_utc"])
+    with open(path, "ab") as fh:
+        fh.write(text.encode("ascii"))
+    data = _bytes(path)
+    with pytest.raises(RecoveryRefused):
+        _recover(path, acknowledged_risks=RISKS)
+    assert _bytes(path) == data
+
+
+def test_an_applied_plan_whose_newline_was_lost_is_completed_not_refused(tmp_path):
+    """Replay of round 3 (fix-apply p8): the event line is exactly in place and only its newline reads back as zero."""
+    path, _ = _ledger(tmp_path)
+    _tear_next(path, lambda line: 30)
+    out = _recover(path)
+    data = _bytes(path)
+    _write(path, data[:-1] + b"\x00")
+    again = _recover(path)
+    assert again["resumed"] and _bytes(path) == data and len(_events(path)) == 1
+    assert again["quarantined"]["quarantine_file"] == out["quarantined"]["quarantine_file"]
+
+
+def test_a_founder_supersede_writes_its_stop_first(tmp_path):
+    """Round 3 (fix-stops:0): a crash between supersede's two appends leaves the old goal stopped, never live, and a
+    tear of its first append is a stop that needs stop_record."""
+    from egregore.goals import GoalRegistry
+    from tests.unit.test_goal_gravity import robotics_goal
+    from tests.unit.test_goal_gravity_seams import variant
+    path = str(tmp_path / "ledger.jsonl")
+    ledger = EvidenceLedger(ANCHOR, path=path)
+    registry = GoalRegistry(ledger=ledger)
+    old_id = registry.authorize(robotics_goal(), now="2026-11-21T00:00:00Z")
+    head = ledger.head
+    replacement = variant(robotics_goal(second_node=False), supersedes=old_id, desired_state="an inspection-drone plan")
+    order = []
+    real = ledger.append
+    ledger.append = lambda record_type, payload, **kw: (order.append(record_type), real(record_type, payload, **kw))[1]
+    registry.supersede(old_id, replacement, actor="alfonso_lopez", reason="narrowed", now="2026-11-21T01:00:00Z")
+    ledger.append = real
+    ledger.close()
+    assert order[:2] == ["egregore.goal_transition", "egregore.goal_authorized"]
+    data = _bytes(path)
+    lines = data.split(b"\n")
+    first = next(i for i, l in enumerate(lines) if b'"superseded by' in l)
+    _write(path, b"\n".join(lines[:first]) + b"\n" + lines[first][: len(lines[first]) - 3])   # torn: the stop
+    with pytest.raises(RecoveryRefused, match="stop_record"):
+        _recover(path, expected_head=head, acknowledged_risks=("complete_record",))

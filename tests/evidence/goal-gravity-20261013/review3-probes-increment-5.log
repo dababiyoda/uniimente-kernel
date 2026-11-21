@@ -1,0 +1,470 @@
+# Third-round probes replayed against the final tree (this commit)
+#
+# Every finder probe of workflow wf_67cbe503-425 run unchanged against the fixed provenance/recovery.py and
+# egregore/goals.py. Last 22 lines of each, cut at 260 columns.
+#
+# Reading the results:
+#  - fix-apply p1_kill_matrix: 54 SIGKILL points, openable-and-unrecorded=0, exactly-one-correct-event=54/54.
+#  - stale or foreign plans: never resumed (resumed=False; the new tear is quarantined as itself).
+#  - lost newline (event + NUL), short writes, read-back failures: resumed or RecoveryInterrupted then completed.
+#  - stops: torn autonomy.regressed, business.terminated, repair.provider_withdrawn, omnimorph.organ_retired, a
+#    supersede, a kill capsule: refused until stop_record (or warned when cut before the deciding field); a
+#    supersede torn in its second append leaves the old goal superseded (executor calls on it: 0).
+#  - over-refusal probes: ordinary records accepted without stop_record.
+#  - template probes: refused, except a payload bit flip with no hash digit visible (the documented residual) and
+#    partial_unverified / content_complete_unverified cases, which demand complete_record.
+#  - power-loss mixes reported 'NOT RECOGNIZED' are states in which none of the plan's distinguishing bytes
+#    reached the disk: the retry quarantines the bytes as they stand and reports the first quarantine as
+#    unrecorded (deliberate; see the deliberation record's counterevidence).
+#  - the two EXIT 1 runs (fix-space/p8b, adv-protocol/p3) call recovery with no acknowledgments expecting a stale
+#    plan to be resumed; it is not, so the fresh tear needs 'unanchored' and is refused.
+
+===== fix-apply/p5_foreign_plan_resumed.py
+V1 rotation; new tail = 431 zero bytes: torn=True resumed=False recovered_by='supervisor:2026-11' reason='power loss' completed_by=None
+     chained event claims: classification=zero_fill torn_record_type=None torn_bytes=431 may_have_been_a_stop=True quarantine_file=ledger.jsonl.torn-0dd72f78b19de185...
+     chained record is byte-identical to the OLD ledger's recovery event: False; its ts_utc 2026-11-21T22:08:55.516042Z is older than this ledger's genesis ts 2026-11-21T22:08:55.514427Z: False
+     the zero-filled tail actually overwritten is quarantined anywhere: True
+V1 rotation (control: old files moved away); new tail = 431 zero bytes: torn=True resumed=False recovered_by='supervisor:2026-11' reason='power loss' completed_by=None
+     chained event claims: classification=zero_fill torn_record_type=None torn_bytes=431 may_have_been_a_stop=True quarantine_file=ledger.jsonl.torn-0dd72f78b19de185...
+     the zero-filled tail actually overwritten is quarantined anywhere: True
+V2 restore; new tail = 431 zero bytes: torn=True resumed=False recovered_by='supervisor:after-restore' reason='power loss' completed_by=None
+     chained event claims: classification=zero_fill torn_record_type=None torn_bytes=431 may_have_been_a_stop=True quarantine_file=ledger.jsonl.torn-0d9a09763cee5657...
+     chained record is byte-identical to the OLD ledger's recovery event: False; its ts_utc 2026-11-21T22:08:55.549215Z is older than this ledger's genesis ts 2026-11-21T22:08:55.537493Z: False
+     the zero-filled tail actually overwritten is quarantined anywhere: True
+V2 restore (control: old files moved away); new tail = 431 zero bytes: torn=True resumed=False recovered_by='supervisor:after-restore' reason='power loss' completed_by=None
+     chained event claims: classification=zero_fill torn_record_type=None torn_bytes=431 may_have_been_a_stop=True quarantine_file=ledger.jsonl.torn-0a4cefd62dd2bba4...
+     the zero-filled tail actually overwritten is quarantined anywhere: True
+EXIT 0
+===== fix-apply/p8_newline_zero.py
+state: tail == event line + NUL: True | ledger opens: False
+B acks=('unanchored',): torn=True resumed=True unrecorded=[]
+   events in chain=1; chained event: classification=partial torn_record_type=None quarantine_file names the original incident's file: True; acknowledged_risks=['unanchored']
+   the original torn record's quarantine (ledger.jsonl.torn-97c1ac...) is named by any chained event: True
+B acks=('unanchored', 'complete_record'): torn=False resumed=False unrecorded=[]
+   events in chain=1; chained event: classification=partial torn_record_type=None quarantine_file names the original incident's file: True; acknowledged_risks=['unanchored']
+   the original torn record's quarantine (ledger.jsonl.torn-97c1ac...) is named by any chained event: True
+EXIT 0
+===== fix-apply/p7_apply_states.py
+   XX  partial write k=661, grown part zero                 -> resumed=False events=1 classification=partial unrecorded=1
+   ok  partial event write k=1321                           -> resumed=True events=1 classification=partial unrecorded=0
+   XX  partial write k=1321, grown part zero                -> resumed=False events=1 classification=partial unrecorded=1
+   ok  partial event write k=1322                           -> resumed=True events=1 classification=partial unrecorded=0
+   XX  partial write k=1322, grown part zero                -> resumed=False events=1 classification=partial unrecorded=1
+   ok  event written, cut not done                          -> resumed=True events=1 classification=partial unrecorded=0
+   ok  event written, cut done                              -> resumed=True events=1 classification=partial unrecorded=0
+   ok  newline written, its data lost (zero, size kept)     -> resumed=True events=1 classification=partial unrecorded=0
+   summary short: ok=7 other=10
+== long: torn 5000 bytes, event line 1162 bytes
+   XX  partial event write k=0                              -> resumed=False events=1 classification=partial unrecorded=0
+   XX  partial event write k=1                              -> resumed=False events=1 classification=partial unrecorded=0
+   XX  partial event write k=2                              -> resumed=False events=1 classification=partial unrecorded=0
+   ok  partial event write k=581                            -> resumed=True events=1 classification=partial unrecorded=0
+   ok  partial event write k=1161                           -> resumed=True events=1 classification=partial unrecorded=0
+   ok  partial event write k=1162                           -> resumed=True events=1 classification=partial unrecorded=0
+   ok  event written, cut not done                          -> resumed=True events=1 classification=partial unrecorded=0
+   ok  event written, cut done                              -> resumed=True events=1 classification=partial unrecorded=0
+   ok  newline written, its data lost (zero, size kept)     -> resumed=True events=1 classification=partial unrecorded=0
+   XX  event lost, cut done (old bytes remain)              -> resumed=False events=1 classification=partial unrecorded=1
+   summary long: ok=6 other=4
+EXIT 0
+===== fix-apply/p1_kill_matrix.py
+                         retry: torn=True resumed=False recovered_by=supervisor:B completed_by=None unrecorded=[]
+                         events=1 [('supervisor:B', True)] chain_ok=True quarantine_ok=True debris=[]
+long  partial:pwrite#1   killed=True  changed=True  refuses(ValueError)      events_on_open=None
+                         retry: torn=True resumed=True recovered_by=supervisor:A completed_by=supervisor:B unrecorded=[]
+                         events=1 [('supervisor:A', True)] chain_ok=True quarantine_ok=True debris=[]
+long  after:pwrite#1     killed=True  changed=True  refuses(ValueError)      events_on_open=None
+                         retry: torn=True resumed=True recovered_by=supervisor:A completed_by=supervisor:B unrecorded=[]
+                         events=1 [('supervisor:A', True)] chain_ok=True quarantine_ok=True debris=[]
+long  before:ftruncate#1 killed=True  changed=True  refuses(ValueError)      events_on_open=None
+                         retry: torn=True resumed=True recovered_by=supervisor:A completed_by=supervisor:B unrecorded=[]
+                         events=1 [('supervisor:A', True)] chain_ok=True quarantine_ok=True debris=[]
+long  after:ftruncate#1  killed=True  changed=True  refuses(ValueError)      events_on_open=None
+                         retry: torn=True resumed=True recovered_by=supervisor:A completed_by=supervisor:B unrecorded=[]
+                         events=1 [('supervisor:A', True)] chain_ok=True quarantine_ok=True debris=[]
+long  before:pwrite#2    killed=True  changed=True  refuses(ValueError)      events_on_open=None
+                         retry: torn=True resumed=True recovered_by=supervisor:A completed_by=supervisor:B unrecorded=[]
+                         events=1 [('supervisor:A', True)] chain_ok=True quarantine_ok=True debris=[]
+long  after:pwrite#2     killed=True  changed=True  OPENS                    events_on_open=1
+                         retry: torn=False resumed=False recovered_by=None completed_by=None unrecorded=[]
+                         events=1 [('supervisor:A', True)] chain_ok=True quarantine_ok=True debris=[]
+SUMMARY: 54 kill points; openable-and-unrecorded=0; exactly-one-correct-event=54/54
+EXIT 0
+===== fix-apply/p3_altered_unrecorded.py
+   tear 9: returned torn=True unrecorded=1; ledger opens: True; events now 8
+   tear 10: returned torn=True unrecorded=1; ledger opens: True; events now 9
+   tear 11: returned torn=True unrecorded=1; ledger opens: True; events now 10
+[a] SUMMARY: refused-after-change=0; events=10 (route b adds 0 for the archived one); altered q1 chained into this ledger: False; sort orders seen: ['q1 after']
+[b] old ledger archived, new ledger at the same path
+[b] vim :wq on ledger.jsonl.torn-ffc96f838e7da5e1-e3073...: ends with newline=True; digest in name matches=False
+   tear 2: returned torn=True unrecorded=1; ledger opens: True; events now 1
+   tear 3: returned torn=True unrecorded=1; ledger opens: True; events now 2
+   tear 4: returned torn=True unrecorded=1; ledger opens: True; events now 3
+   tear 5: returned torn=True unrecorded=1; ledger opens: True; events now 4
+   tear 6: returned torn=True unrecorded=1; ledger opens: True; events now 5
+   tear 7: returned torn=True unrecorded=1; ledger opens: True; events now 6
+   tear 8: returned torn=True unrecorded=1; ledger opens: True; events now 7
+   tear 9: returned torn=True unrecorded=1; ledger opens: True; events now 8
+   tear 10: returned torn=True unrecorded=1; ledger opens: True; events now 9
+   tear 11: returned torn=True unrecorded=1; ledger opens: True; events now 10
+[b] SUMMARY: refused-after-change=0; events=10 (route b adds 0 for the archived one); altered q1 chained into this ledger: False; sort orders seen: ['q1 after']
+[same:never_applied] attempt 1: RecoveryRefused(ledger.jsonl.torn-62e4fdcf7e6b82c1-e30734cde6bae82d9f2845bcc1be9407c8bf611b7d9f4f527589c61165e0a4f3 exists wit); ledger unchanged by the call: True; opens: False
+[same:never_applied] attempt 2: RecoveryRefused(ledger.jsonl.torn-62e4fdcf7e6b82c1-e30734cde6bae82d9f2845bcc1be9407c8bf611b7d9f4f527589c61165e0a4f3 exists wit); ledger unchanged by the call: True; opens: False
+[same:mid_apply] attempt 1: RecoveryRefused(the tail is a recovery event whose plan is missing; restore its sidecar or investigate before recovering); ledger unchanged by the call: True; opens: False
+[same:mid_apply] attempt 2: RecoveryRefused(the tail is a recovery event whose plan is missing; restore its sidecar or investigate before recovering); ledger unchanged by the call: True; opens: False
+EXIT 0
+===== fix-apply/p4_foreign_quarantines.py
+R1 rotation: torn=False recorded=[] unrecorded=['ledger.jsonl.torn-5269f7806363f96b...'] ledger bytes unchanged=True recovery events in this chain=0
+R2 rotation, tear after genesis: torn=False recorded=[] unrecorded=['ledger.jsonl.torn-0dd72f78b19de185...'] ledger bytes unchanged=True recovery events in this chain=0
+R3 rotation, sidecar removed: torn=False recorded=[] unrecorded=['ledger.jsonl.torn-ca775833c3a96db6...'] ledger bytes unchanged=True recovery events in this chain=0
+R4 restore from older backup: torn=False recorded=[] unrecorded=['ledger.jsonl.torn-aa037d52228a6f6c...'] ledger bytes unchanged=True recovery events in this chain=0
+R5 kept record (A rc=-9): torn=False recorded=[] unrecorded=['ledger.jsonl.torn-fee474cc293e964a...'] ledger bytes unchanged=True recovery events in this chain=0
+    kept record still the head: True
+EXIT 0
+===== fix-apply/p6_identical_retear.py
+zero  kill@pwrite#1     rc=-9: body opens before any retry: False; B resumed=True
+       identical bytes=True; repairs that changed the ledger: 2; events=2 by ['supervisor:A', 'supervisor:C']; prior heads distinct=True; quarantine files=2; sidecars name ['supervisor:C', 'supervisor:A']; first event prior_head==head0: True
+zero  kill@ftruncate#1  rc=-9: body opens before any retry: False; B resumed=True
+       identical bytes=True; repairs that changed the ledger: 2; events=2 by ['supervisor:A', 'supervisor:C']; prior heads distinct=True; quarantine files=2; sidecars name ['supervisor:C', 'supervisor:A']; first event prior_head==head0: True
+zero  kill@fsync#6      rc=-9: body opens before any retry: False; B resumed=True
+       identical bytes=True; repairs that changed the ledger: 2; events=2 by ['supervisor:A', 'supervisor:C']; prior heads distinct=True; quarantine files=2; sidecars name ['supervisor:C', 'supervisor:A']; first event prior_head==head0: True
+prefix kill@pwrite#1     rc=-9: body opens before any retry: False; B resumed=True
+       identical bytes=False; repairs that changed the ledger: 2; events=2 by ['supervisor:A', 'supervisor:C']; prior heads distinct=True; quarantine files=2; sidecars name ['supervisor:C', 'supervisor:A']; first event prior_head==head0: True
+prefix kill@ftruncate#1  rc=-9: body opens before any retry: False; B resumed=True
+       identical bytes=False; repairs that changed the ledger: 2; events=2 by ['supervisor:A', 'supervisor:C']; prior heads distinct=True; quarantine files=2; sidecars name ['supervisor:A', 'supervisor:C']; first event prior_head==head0: True
+prefix kill@fsync#6      rc=-9: body opens before any retry: False; B resumed=True
+       identical bytes=False; repairs that changed the ledger: 2; events=2 by ['supervisor:A', 'supervisor:C']; prior heads distinct=True; quarantine files=2; sidecars name ['supervisor:C', 'supervisor:A']; first event prior_head==head0: True
+zero  kill@pwrite#1     (never applied, power loss) rc=-9: body opens before any retry: True
+       identical bytes=True; repairs that changed the ledger: 1; events=1 by ['supervisor:C']; prior heads distinct=True; quarantine files=1; sidecars name ['supervisor:C']; first event prior_head==head0: True
+prefix kill@pwrite#1     (never applied, power loss) rc=-9: body opens before any retry: True
+       identical bytes=True; repairs that changed the ledger: 1; events=1 by ['supervisor:C']; prior heads distinct=True; quarantine files=1; sidecars name ['supervisor:C']; first event prior_head==head0: True
+EXIT 0
+===== fix-classifier/not_producible_prev_visible.py
+payload is a list, not an object               -> refused: the tail does not begin the way the writer serializes a record: not a torn appen
+ts_utc is not a timestamp                      -> refused: the tail does not begin the way the writer serializes a record: not a torn appen
+payload separators not the writer's (compact)  -> refused: the tail's fields are not the ones the writer serializes, as it serializes them:
+payload bit flip ('G' -> 'F'), hash prefix kept -> refused: acknowledge these risks to proceed, or supply expected_head where it applies: co
+control: genuine cut at the same point         -> ACCEPTED classification=partial risks=[]
+EXIT 0
+===== fix-classifier/not_producible_early_cut.py
+foreign field before record_type                     tail=b'roposal_id": "P", "grant_id": "G"}'
+    -> refused: the tail does not begin the way the writer serializes a record: not a torn appen
+fields reordered (payload before record_type)        tail=b'}, "record_type": "grant_dispatch"'
+    -> refused: the tail does not begin the way the writer serializes a record: not a torn appen
+payload is a list, not an object                     tail=b'roposal_id", "P", "grant_id", "G"]'
+    -> refused: the tail does not begin the way the writer serializes a record: not a torn appen
+ts_utc is not a timestamp                            tail=b'roposal_id": "P", "grant_id": "G"}'
+    -> refused: the tail does not begin the way the writer serializes a record: not a torn appen
+payload separators not the writer's (compact)        tail=b'{"proposal_id":"P","grant_id":"G"}'
+    -> refused: the tail's fields are not the ones the writer serializes, as it serializes them:
+control: genuine cut at the same point               tail=b'roposal_id": "P", "grant_id": "G"}'
+    -> ACCEPTED classification=partial torn_record_type=grant_dispatch risks=[]
+EXIT 0
+===== fix-classifier/bitflip_hash_cut.py
+flip=True  lost= 36 visible hash digits=64  class=content_complete_unverified  refused: acknowledge these risks to proceed, or supply expected_head where it applies: complete_record: 
+flip=True  lost= 38 visible hash digits=64  class=content_complete_unverified  refused: acknowledge these risks to proceed, or supply expected_head where it applies: complete_record: 
+flip=True  lost= 39 visible hash digits=64  class=content_complete_unverified  refused: acknowledge these risks to proceed, or supply expected_head where it applies: complete_record: 
+flip=True  lost= 40 visible hash digits=64  class=content_complete_unverified  refused: acknowledge these risks to proceed, or supply expected_head where it applies: complete_record: 
+flip=True  lost= 41 visible hash digits=63  class=partial_unverified           refused: acknowledge these risks to proceed, or supply expected_head where it applies: complete_record: 
+flip=True  lost= 42 visible hash digits=62  class=partial_unverified           refused: acknowledge these risks to proceed, or supply expected_head where it applies: complete_record: 
+flip=True  lost= 60 visible hash digits=44  class=partial_unverified           refused: acknowledge these risks to proceed, or supply expected_head where it applies: complete_record: 
+flip=True  lost=103 visible hash digits= 1  class=partial_unverified           refused: acknowledge these risks to proceed, or supply expected_head where it applies: complete_record: 
+flip=True  lost=104 visible hash digits= 0  class=partial                      ACCEPTED risks=[] event.classification=partial acked_still_in_chain=False
+flip=True  lost=105 visible hash digits= 0  class=partial                      ACCEPTED risks=[] event.classification=partial acked_still_in_chain=False
+flip=True  lost=106 visible hash digits= 0  class=partial                      ACCEPTED risks=[] event.classification=partial acked_still_in_chain=False
+-- control without the flip --
+flip=False lost= 41 visible hash digits=63  class=partial                      ACCEPTED risks=[] event.classification=partial acked_still_in_chain=False
+flip=False lost=104 visible hash digits= 0  class=partial                      ACCEPTED risks=[] event.classification=partial acked_still_in_chain=False
+EXIT 0
+===== fix-classifier/seal_typeflip.py
+flip=False: refused: acknowledge these risks to proceed, or supply expected_head where it applies: stop_record: the torn record is a seal tha
+flip=True: refused: acknowledge these risks to proceed, or supply expected_head where it applies: complete_record: the tail holds a complete
+EXIT 0
+===== fix-stops/p2_supersede_first_append.py
+=== SIGKILL at 0.30 inside supersede's first append (torn 1339 bytes)
+  torn bytes name the old goal in supersedes: False | torn bytes show the founder's changed desired_state: True
+  recovery anchored on the writer's true head, acknowledged_risks=(): ACCEPTED
+  chained event: classification=partial torn_record_type=egregore.goal_authorized may_have_been_a_stop=True stop_warning='the torn record may have been a stop (a seal, suspension, founder control, revocation, supersession, detach or kill) that never took effec
+=== SIGKILL at 0.50 inside supersede's first append (torn 2232 bytes)
+  torn bytes name the old goal in supersedes: False | torn bytes show the founder's changed desired_state: True
+  recovery anchored on the writer's true head, acknowledged_risks=(): ACCEPTED
+  chained event: classification=partial torn_record_type=egregore.goal_authorized may_have_been_a_stop=True stop_warning='the torn record may have been a stop (a seal, suspension, founder control, revocation, supersession, detach or kill) that never took effec
+  old goal status after restart: superseded | goals: 1
+  executor calls on the goal the founder superseded: 0 | old goal status after the turn: superseded
+=== SIGKILL at 0.80 inside supersede's first append (torn 3571 bytes)
+  torn bytes name the old goal in supersedes: False | torn bytes show the founder's changed desired_state: True
+  recovery anchored on the writer's true head, acknowledged_risks=(): ACCEPTED
+  chained event: classification=partial torn_record_type=egregore.goal_authorized may_have_been_a_stop=True stop_warning='the torn record may have been a stop (a seal, suspension, founder control, revocation, supersession, detach or kill) that never took effec
+=== SIGKILL at 0.95 inside supersede's first append (torn 4240 bytes)
+  torn bytes name the old goal in supersedes: True | torn bytes show the founder's changed desired_state: True
+  recovery anchored on the writer's true head, acknowledged_risks=(): REFUSED -> acknowledge these risks to proceed, or supply expected_head where it applies: stop_record: the torn record is a egregore.goal_authorized that shows a stop which
+  demanded: ['stop_record']
+  chained event: classification=partial torn_record_type=egregore.goal_authorized may_have_been_a_stop=True stop_warning='the torn record may have been a stop (a seal, suspension, founder control, revocation, supersession, detach or kill) that never took effec
+=== every byte offset of the real goal_authorized line: {('partial', 'possible'): 3974, ('partial', 'stop'): 449, ('content_complete', 'stop'): 39, ('complete_unterminated', 'stop'): 1}
+EXIT 0
+===== fix-stops/p3_event_stops.py
+=== autonomy.regressed (severe: harm)
+  SIGKILL at 0.50 (torn 233/467 bytes): acknowledged_risks=() -> REFUSED, demanded ['stop_record']; chained event: classification=partial may_have_been_a_stop=True stop_warning='the torn record may have been a stop (a seal, suspension, founder control, revocat
+  SIGKILL at 0.80 (torn 373/467 bytes): acknowledged_risks=() -> REFUSED, demanded ['stop_record']; chained event: classification=partial may_have_been_a_stop=True stop_warning='the torn record may have been a stop (a seal, suspension, founder control, revocat
+  SIGKILL at 0.95 (torn 443/467 bytes): acknowledged_risks=() -> REFUSED, demanded ['complete_record', 'stop_record']; chained event: classification=content_complete may_have_been_a_stop=True stop_warning='the torn record may have been a stop (a seal, suspensi
+  every offset: {('partial', 'possible'): 115, ('partial', 'stop'): 311, ('content_complete', 'stop'): 39, ('complete_unterminated', 'stop'): 1}; not-a-stop at 0/466 offsets
+=== business.terminated (trigger_kill)
+  SIGKILL at 0.50 (torn 305/611 bytes): acknowledged_risks=() -> REFUSED, demanded ['stop_record']; chained event: classification=partial may_have_been_a_stop=True stop_warning='the torn record may have been a stop (a seal, suspension, founder control, revocat
+  SIGKILL at 0.80 (torn 488/611 bytes): acknowledged_risks=() -> REFUSED, demanded ['stop_record']; chained event: classification=partial may_have_been_a_stop=True stop_warning='the torn record may have been a stop (a seal, suspension, founder control, revocat
+  SIGKILL at 0.95 (torn 580/611 bytes): acknowledged_risks=() -> REFUSED, demanded ['complete_record', 'stop_record']; chained event: classification=content_complete may_have_been_a_stop=True stop_warning='the torn record may have been a stop (a seal, suspensi
+  every offset: {('partial', 'possible'): 116, ('partial', 'stop'): 454, ('content_complete', 'stop'): 39, ('complete_unterminated', 'stop'): 1}; not-a-stop at 0/610 offsets
+=== repair.provider_withdrawn
+  SIGKILL at 0.50 (torn 228/456 bytes): acknowledged_risks=() -> REFUSED, demanded ['stop_record']; chained event: classification=partial may_have_been_a_stop=True stop_warning='the torn record may have been a stop (a seal, suspension, founder control, revocat
+  SIGKILL at 0.80 (torn 364/456 bytes): acknowledged_risks=() -> REFUSED, demanded ['stop_record']; chained event: classification=partial may_have_been_a_stop=True stop_warning='the torn record may have been a stop (a seal, suspension, founder control, revocat
+  SIGKILL at 0.95 (torn 433/456 bytes): acknowledged_risks=() -> REFUSED, demanded ['complete_record', 'stop_record']; chained event: classification=content_complete may_have_been_a_stop=True stop_warning='the torn record may have been a stop (a seal, suspensi
+  every offset: {('partial', 'possible'): 122, ('partial', 'stop'): 293, ('content_complete', 'stop'): 39, ('complete_unterminated', 'stop'): 1}; not-a-stop at 0/455 offsets
+=== CONTROL repair.component_disabled
+  SIGKILL at 0.50 (torn 233/466 bytes): acknowledged_risks=() -> REFUSED, demanded ['stop_record']; chained event: classification=partial may_have_been_a_stop=True stop_warning='the torn record may have been a stop (a seal, suspension, founder control, revocat
+  SIGKILL at 0.80 (torn 372/466 bytes): acknowledged_risks=() -> REFUSED, demanded ['stop_record']; chained event: classification=partial may_have_been_a_stop=True stop_warning='the torn record may have been a stop (a seal, suspension, founder control, revocat
+  SIGKILL at 0.95 (torn 442/466 bytes): acknowledged_risks=() -> REFUSED, demanded ['complete_record', 'stop_record']; chained event: classification=content_complete may_have_been_a_stop=True stop_warning='the torn record may have been a stop (a seal, suspensi
+  every offset: {('partial', 'possible'): 122, ('partial', 'stop'): 303, ('content_complete', 'stop'): 39, ('complete_unterminated', 'stop'): 1}; not-a-stop at 0/465 offsets
+EXIT 0
+===== fix-stops/p3b_organ_retired.py
+SIGKILL at 0.50 (torn 373/747): acknowledged_risks=() -> REFUSED, demanded ['stop_record']; classification=partial may_have_been_a_stop=True stop_warning='the torn record may have been a stop (a seal, suspension, founder control, revocation, supersession, deta
+SIGKILL at 0.80 (torn 597/747): acknowledged_risks=() -> REFUSED, demanded ['stop_record']; classification=partial may_have_been_a_stop=True stop_warning='the torn record may have been a stop (a seal, suspension, founder control, revocation, supersession, deta
+SIGKILL at 0.95 (torn 709/747): acknowledged_risks=() -> REFUSED, demanded ['complete_record', 'stop_record']; classification=content_complete may_have_been_a_stop=True stop_warning='the torn record may have been a stop (a seal, suspension, founder control, re
+every offset: {('partial', 'possible'): 120, ('partial', 'stop'): 586, ('content_complete', 'stop'): 39, ('complete_unterminated', 'stop'): 1}; not-a-stop at 0/746
+EXIT 0
+===== fix-stops/p3c_kill_capsule.py
+capsule line holds the kill decision: True | reason: experiment produced harm; kill and repair
+SIGKILL at 0.50 (torn 8645/17291): acknowledged_risks=() -> ACCEPTED; may_have_been_a_stop=True stop_warning='the torn record may have been a stop (a seal, suspension, founder control, revocation, supersession, detach or kill) that never took effect; re-issue 
+capsule line holds the kill decision: True | reason: experiment produced harm; kill and repair
+SIGKILL at 0.90 (torn 15561/17291): acknowledged_risks=() -> ACCEPTED; may_have_been_a_stop=True stop_warning='the torn record may have been a stop (a seal, suspension, founder control, revocation, supersession, detach or kill) that never took effect; re-issue
+every offset: {('partial', 'possible'): 16563, ('partial', 'stop'): 687, ('content_complete', 'stop'): 39, ('complete_unterminated', 'stop'): 1}
+EXIT 0
+===== fix-stops/p5_overrefusal_specific.py
+=== treasury.waterfall_stopped
+  SIGKILL at 0.50 (torn 0/470), anchored, acknowledged_risks=(): ACCEPTED
+  SIGKILL at 0.90 (torn 0/470), anchored, acknowledged_risks=(): ACCEPTED
+  every offset: {('partial', 'possible'): 123, ('partial', 'no'): 306, ('content_complete', 'no'): 39, ('complete_unterminated', 'no'): 1}; refused-until-stop_record at 0/469 offsets
+=== retention transition, goal already paused
+  SIGKILL at 0.50 (torn 0/1258), anchored, acknowledged_risks=(): ACCEPTED
+  SIGKILL at 0.90 (torn 0/1258), anchored, acknowledged_risks=(): ACCEPTED
+  every offset: {('partial', 'possible'): 1047, ('partial', 'no'): 170, ('content_complete', 'no'): 39, ('complete_unterminated', 'no'): 1}; refused-until-stop_record at 0/1257 offsets
+=== CONTROL retention transition, goal dormant
+  SIGKILL at 0.50 (torn 0/1260), anchored, acknowledged_risks=(): ACCEPTED
+  SIGKILL at 0.90 (torn 0/1260), anchored, acknowledged_risks=(): ACCEPTED
+  every offset: {('partial', 'possible'): 1049, ('partial', 'no'): 170, ('content_complete', 'no'): 39, ('complete_unterminated', 'no'): 1}; refused-until-stop_record at 0/1259 offsets
+EXIT 0
+===== fix-stops/p4_overrefusal_turn.py
+records written by the real turn: 26
+  egregore.goal_authorized                      offsets= 4389 stop=    0 possible= 3972 no=  417
+  egregore.experience_integrated                offsets=12010 stop=    0 possible=  196 no=11814
+  egregore.goal_transition                      offsets= 2957 stop=    0 possible= 1662 no= 1295
+  egregore.gps_fix                              offsets= 2283 stop=    0 possible=   84 no= 2199
+  egregore.intervention_classified              offsets= 2245 stop=    0 possible=  201 no= 2044
+  egregore.intervention                         offsets= 4040 stop=    0 possible=  269 no= 3771
+  event:action.proposed                         offsets=  575 stop=    0 possible=  112 no=  463
+  event:action.evaluating                       offsets=  478 stop=    0 possible=  114 no=  364
+  event:action.granted                          offsets=  508 stop=    0 possible=  112 no=  396
+  witness                                       offsets= 1243 stop=    0 possible=   76 no= 1167
+  grant_dispatch                                offsets=  584 stop=    0 possible=   83 no=  501
+  event:action.executing                        offsets=  512 stop=    0 possible=  114 no=  398
+  event:action.committed                        offsets=  590 stop=    0 possible=  114 no=  476
+  receipt                                       offsets=  751 stop=    0 possible=   76 no=  675
+  outcome                                       offsets=  994 stop=    0 possible=   76 no=  918
+  event:action.recorded                         offsets=  531 stop=    0 possible=  113 no=  418
+  egregore.asset_retained                       offsets= 1087 stop=    0 possible=   92 no=  995
+  egregore.prepared_work                        offsets= 1487 stop=    0 possible=   91 no= 1396
+  egregore.founder_ask                          offsets= 2066 stop=    0 possible=   89 no= 1977
+  egregore.gravity_turn                         offsets= 5483 stop=    0 possible=   90 no= 5393
+EXIT 0
+===== fix-space/p7_short_pwrite.py
+== norace: torn 45 B ends at page offset 2972
+RESULT RecoveryInterrupted | applying the recovery failed part way ([Errno 28] No space left on device); the plan is durable and the ledger still refuses to open; call recover_torn_tail aga | [('pwrite', 1253, 1169)]
+ledger ends with newline: False | tail len 1169 | NULs in tail: 0 | first NUL at -1
+ledger does not open: partial or blank history record
+later call by supervisor:B: torn=True resumed=True events=1
+later call by ops:C: torn=False resumed=False events=1
+free now 4067328 | dir: [('ledger.jsonl', 114773), ('ledger.jsonl.lock', 0), ('d58597d9b6ea797ee568712c596332', 45), ('7d9b6ea797ee568712c596332.json', 2673)]
+== race: torn 45 B ends at page offset 2972
+RESULT RecoveryInterrupted | applying the recovery failed part way ([Errno 28] No space left on device); the plan is durable and the ledger still refuses to open; call recover_torn_tail aga | [('pwrite', 1253, 1169)]
+ledger ends with newline: False | tail len 1169 | NULs in tail: 0 | first NUL at -1
+ledger does not open: partial or blank history record
+later call by supervisor:B: torn=True resumed=True events=1
+later call by ops:C: torn=False resumed=False events=1
+free now 4067328 | dir: [('ledger.jsonl', 114773), ('ledger.jsonl.lock', 0), ('d58597d9b6ea797ee568712c596332', 45), ('7d9b6ea797ee568712c596332.json', 2673)]
+EXIT 0
+===== fix-space/p8b_stale_plan_no_ack.py
+gen1: partial grant_dispatch stop: False
+control (same bytes, no stale sidecar), no acks: RecoveryRefused acknowledge these risks to proceed, or supply expected_head where it applies: unanchored: no expected_head, so an acknow
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user/0daa8e65-910e-5099-a9b8-614ba7e0376d/scratchpad/review3/fix-space/p8b_stale_plan_no_ack.py", line 27, in <module>
+    o2 = R.recover_torn_tail(path, ANCHOR, recovered_by="ops:new-gen", reason="gen2 crash")
+  File "/home/user/uniimente-kernel/provenance/recovery.py", line 644, in recover_torn_tail
+    qpath, side, line = _plan(path, constitution_hash, cut, torn, prefix_ledger, prefix_digest,
+                        ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                              recovered_by=recovered_by, reason=reason, expected_head=expected_head,
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                              acknowledged=acknowledged)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/uniimente-kernel/provenance/recovery.py", line 691, in _plan
+    raise RecoveryRefused("acknowledge these risks to proceed, or supply expected_head where it applies: "
+                          + "; ".join(f"{r}: {why[r]}" for r in missing))
+provenance.recovery.RecoveryRefused: acknowledge these risks to proceed, or supply expected_head where it applies: unanchored: no expected_head, so an acknowledged record cut back to look torn cannot be excluded
+EXIT 1
+===== fix-space/p8_stale_plan_resumed.py
+gen1 recovered: True partial | event sha256:716220a76e278
+== R-zero-300: gen2 tail 300 B; quarantines before: ['5471bc4.json', '270db5471bc4']
+   returned: resumed=False recovered_by=ops:new-gen completed_by=None unrecorded=['ledger.jsonl.torn-25843190f6f7c74d-33d4f6bf810a93749abca3a8702d54a25e60625066646fc7302e270db5471bc4']
+   chained event: ts_utc of record = 2026-11-21T22:09:49.035776Z recovered_by=ops:new-gen reason='gen2 first boot crash' classification=zero_fill torn_bytes=300 may_have_been_a_stop=True
+   event's torn_sha256 is gen1's torn bytes: False | is gen2's: True
+   gen2's torn bytes quarantined anywhere: True | dir: [('ledger.jsonl', 1680), ('onl.2026-11-20', 1990), ('ger.jsonl.lock', 0), ('2e270db5471bc4', 44), ('db5471bc4.json', 2618), ('156523f7069b66', 300), ('3f7069b66.json', 2634)]
+   control, _classify(gen2 tail): {'classification': 'zero_fill', 'torn_record_type': None, 'stop': 'possible'}
+gen1 recovered: True partial | event sha256:11cab3ea3d0e9
+== R-zero-1000: gen2 tail 1000 B; quarantines before: ['5471bc4.json', '270db5471bc4']
+   returned: resumed=False recovered_by=ops:new-gen completed_by=None unrecorded=['ledger.jsonl.torn-25843190f6f7c74d-33d4f6bf810a93749abca3a8702d54a25e60625066646fc7302e270db5471bc4']
+   chained event: ts_utc of record = 2026-11-21T22:09:49.046682Z recovered_by=ops:new-gen reason='gen2 first boot crash' classification=zero_fill torn_bytes=1000 may_have_been_a_stop=True
+   event's torn_sha256 is gen1's torn bytes: False | is gen2's: True
+   gen2's torn bytes quarantined anywhere: True | dir: [('ledger.jsonl', 1681), ('onl.2026-11-20', 1990), ('ger.jsonl.lock', 0), ('2e270db5471bc4', 44), ('db5471bc4.json', 2618), ('87742b70138a53', 1000), ('b70138a53.json', 2636)]
+   control, _classify(gen2 tail): {'classification': 'zero_fill', 'torn_record_type': None, 'stop': 'possible'}
+gen1 recovered: True partial | event sha256:78ecf9e81c99e
+== R2-short-tear: gen2 tail 31 B; quarantines before: ['5471bc4.json', '270db5471bc4']
+   returned: resumed=False recovered_by=ops:new-gen completed_by=None unrecorded=['ledger.jsonl.torn-25843190f6f7c74d-33d4f6bf810a93749abca3a8702d54a25e60625066646fc7302e270db5471bc4']
+   chained event: ts_utc of record = 2026-11-21T22:09:49.057253Z recovered_by=ops:new-gen reason='gen2 first boot crash' classification=partial torn_bytes=31 may_have_been_a_stop=True
+   event's torn_sha256 is gen1's torn bytes: False | is gen2's: True
+   gen2's torn bytes quarantined anywhere: True | dir: [('ledger.jsonl', 1677), ('onl.2026-11-20', 1990), ('ger.jsonl.lock', 0), ('2e270db5471bc4', 44), ('db5471bc4.json', 2618), ('c7f25aab71d8e4', 31), ('aab71d8e4.json', 2628)]
+   control, _classify(gen2 tail): {'classification': 'partial', 'torn_record_type': None, 'stop': 'possible'}
+EXIT 0
+===== fix-space/p8c_restore_variant.py
+resumed: False | chained recovered_by: ops:second reason: crash 2 torn_bytes: 400 classification: zero_fill | 400 NULs quarantined: True
+EXIT 0
+===== fix-space/p10_enospc_debris_retained.py
+[copy fails part way] RecoveryRefused: the quarantine copy could not be written ([Errno 28] No space left on device); the ledger is unchanged
+[copy fails part way] beside the ledger: []
+[copy ok, sidecar fails] RecoveryRefused: the quarantine copy was written but its sidecar (the plan) could not be ([Errno 28] No space left on device); the ledger is unchanged; a retry reuses the copy
+[copy ok, sidecar fails] beside the ledger: [('594e617b7fa200478df20e', 10165, 12288)]
+later call: True False | left after success: []
+EXIT 0
+===== adv-protocol/p1_newline_nul.py
+--- pad=1: child rc=-9
+file ends with newline: False | last bytes: b'version": 2}'
+ledger opens before retry: False partial or blank history record
+retry acks=(): resumed=True classification=partial torn_record_type=grant_dispatch unrecorded=[]
+chained recovery events: 1
+  event seq 6 recovered_by supervisor:A classification partial torn_record_type grant_dispatch quarantine 24e867a698cccfd5882d
+files: ['ledger.jsonl', 'ledger.jsonl.lock', 'ledger.jsonl.torn-f08e531919d7ba1e-4e2343f1dac542b370d39418bc97cced4262c5391b7624e867a698cccfd5882d', 'ledger.jsonl.torn-f08e531919d7ba1e-4e2343f1dac542b370d39418bc97cced4262c5391b7624e867a698cccfd5882d.json']
+--- pad=0: child rc=-9
+file ends with newline: False | last bytes: b'version": 2}'
+ledger opens before retry: False partial or blank history record
+retry acks=(): resumed=True classification=partial torn_record_type=grant_dispatch unrecorded=[]
+chained recovery events: 1
+  event seq 6 recovered_by supervisor:A classification partial torn_record_type grant_dispatch quarantine 3d87246bc387239eabd7
+files: ['ledger.jsonl', 'ledger.jsonl.lock', 'ledger.jsonl.torn-5957ee77a7ee735c-460e8fe7d47cde004b473eddab7a501d20b0fdfbef413d87246bc387239eabd7', 'ledger.jsonl.torn-5957ee77a7ee735c-460e8fe7d47cde004b473eddab7a501d20b0fdfbef413d87246bc387239eabd7.json']
+EXIT 0
+===== adv-protocol/p1b_newline_nul_stop.py
+child A rc: -9 
+A's plan (never chained): torn_record_type=seal may_have_been_a_stop=True acknowledged_risks=['stop_record']
+B with complete_record: resumed=False unrecorded=0
+CHAINED event: recovered_by=supervisor:A classification=partial torn_record_type=seal may_have_been_a_stop=True stop_warning=the torn record may have been a stop (a seal, suspension, founder control, revocation, supersession, detach or kill) that never took ef
+EXIT 0
+===== adv-protocol/p2_powerloss_mixes.py
+== short_torn: cut=2024 len(T)=171 len(L)=1090
+      20  untouched tail: replaced by B's plan
+     134  resumed A's plan
+      46  NOT RECOGNIZED: new plan over a mixed tail
+       1  torn False (already complete)
+   BAD: step1 size=+536 new=0/4 -> NOT RECOGNIZED: new plan over a mixed tail
+   BAD: step1 size=+536 new=1/4 -> NOT RECOGNIZED: new plan over a mixed tail
+   BAD: step1 size=+536 new=2/4 -> NOT RECOGNIZED: new plan over a mixed tail
+   BAD: step1 size=+536 new=1/4 -> NOT RECOGNIZED: new plan over a mixed tail
+   BAD: step1 size=+536 new=0/4 -> NOT RECOGNIZED: new plan over a mixed tail
+   BAD: step1 size=+536 new=0/4 -> NOT RECOGNIZED: new plan over a mixed tail
+   BAD: step1 size=+536 new=0/4 -> NOT RECOGNIZED: new plan over a mixed tail
+   BAD: step1 size=+536 new=0/4 -> NOT RECOGNIZED: new plan over a mixed tail
+   BAD: step1 size=+536 new=3/4 -> NOT RECOGNIZED: new plan over a mixed tail
+   BAD: step1 size=+536 new=0/4 -> NOT RECOGNIZED: new plan over a mixed tail
+== long_torn: cut=2024 len(T)=5685 len(L)=1091
+      18  untouched tail: replaced by B's plan
+      53  resumed A's plan
+       1  torn False (already complete)
+EXIT 0
+===== adv-protocol/p3_stale_sidecar_resume.py
+A: old ledger recovered; torn bytes 175
+A: new ledger's first append (a suspension) left as a zero-filled extent of 357 bytes
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user/0daa8e65-910e-5099-a9b8-614ba7e0376d/scratchpad/review3/adv-protocol/p3_stale_sidecar_resume.py", line 57, in <module>
+    out = recover_torn_tail(path, ANCHOR, recovered_by="supervisor:new-run", reason="power loss", acknowledged_risks=())
+  File "/home/user/uniimente-kernel/provenance/recovery.py", line 644, in recover_torn_tail
+    qpath, side, line = _plan(path, constitution_hash, cut, torn, prefix_ledger, prefix_digest,
+                        ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                              recovered_by=recovered_by, reason=reason, expected_head=expected_head,
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                              acknowledged=acknowledged)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/uniimente-kernel/provenance/recovery.py", line 691, in _plan
+    raise RecoveryRefused("acknowledge these risks to proceed, or supply expected_head where it applies: "
+                          + "; ".join(f"{r}: {why[r]}" for r in missing))
+provenance.recovery.RecoveryRefused: acknowledge these risks to proceed, or supply expected_head where it applies: unanchored: no expected_head, so an acknowledged record cut back to look torn cannot be excluded
+EXIT 1
+===== adv-protocol/p4_short_pwrite.py
+pwrite asked 1094 bytes at 2024 -> kernel wrote 235
+A raised RecoveryInterrupted : applying the recovery failed part way ([Errno 27] File too large); the plan is durable and the ledger still refuses to open; call recover_torn_tail again to complete it 
+file ends with newline: False | NUL bytes in last line: 0
+body opens: False -> partial or blank history record
+supervisor:B -> True True
+operator:C -> False False
+EXIT 0
+===== adv-protocol/p8_kill_in_postverify.py
+A rc: -9 | A printed: (nothing)
+B (restart supervisor) gets: {'torn': False, 'quarantined': None, 'recorded': [], 'resumed': False, 'unrecorded_quarantines': [], 'last_recovery': {'type': 'ledger.torn_tail_quarantined', 'quarantine_file': 'ledger.jsonl.torn-49f5331ee2b6af8a-babc24b92e1942724
+chain holds: [('supervisor:A', 'the torn record may have been a stop (a ')]
+EXIT 0
+===== adv-protocol/p9_resume_attribution.py
+A rc: -9
+B with a different expected_head: REFUSED: the head before the torn line is not the expected acknowledged head: truncation,
+B with no expected_head and no acknowledgments: resumed=True completed_by=ops:B-unique-name anchor_in_event='expected_head matched'
+files on disk that name B or its reason: ['ledger.jsonl.torn-eddf22e3f2b1e8e0-b49c1e8852bb882086c29c0122eee45b4fab78ee14b751bba839001b42433431.json']
+EXIT 0
+===== adv-semantics/missed_stops.py
+before the tear, a rebuilt engine has the organ retired: True
+[omnimorph.organ_retired] torn tail shows: True True True
+[omnimorph.organ_retired] REFUSED: acknowledge these risks to proceed, or supply expected_head where it applies: stop_record: the torn record is a event that shows a stop which never took effect;
+[omnimorph.organ_retired] after recovery, rebuilt engine: retired = False | activation status = None
+[autonomy.regressed] torn tail shows: True True
+[autonomy.regressed] REFUSED: acknowledge these risks to proceed, or supply expected_head where it applies: stop_record: the torn record is a event that shows a stop which never took effect;
+[business.terminated] REFUSED: acknowledge these risks to proceed, or supply expected_head where it applies: stop_record: the torn record is a event that shows a stop which never took effect;
+[control repair.component_disabled] REFUSED: acknowledge these risks to proceed, or supply expected_head where it applies: stop_record: the torn record is a event that shows a stop which never took effect;
+EXIT 0
+===== adv-semantics/r1b_evasion.py
+damaged=False: tail holds the full 64-digit hash of the acknowledged record: True
+  refused: acknowledge these risks to proceed, or supply expected_head where it applies: complete_record: the tail holds a complete record (its hash was written)
+damaged=True: tail holds the full 64-digit hash of the acknowledged record: True
+  refused: the bytes after the tail's payload are not the writer's prev_hash field: not a torn append
+EXIT 0
+===== adv-semantics/false_accept.py
+refused   foreign field before prev_hash                             the bytes after the tail's payload are not the writer's prev_hash field: not a torn append
+refused   payload before record_type (wrong field order)             the tail does not begin the way the writer serializes a record: not a torn append
+refused   ts_utc followed by non-JSON bytes                          the tail does not begin the way the writer serializes a record: not a torn append
+refused   control: foreign field once prev_hash is visible           the bytes after the tail's payload are not the writer's prev_hash field: not a torn append
+    (flipped content's own hash begins sha256:f2bbef8bed09ea18aa74a007d5387643f; visible hash digits 128c498c8e7f8f5cf156a36b1c6a84774)
+ACCEPTED  bit-flipped payload, cut inside a hash that is not its own classification=partial_unverified torn_record_type=grant_dispatch
+refused   complete object with hash_version 1 (the writer writes 2)  the tail is a complete object that is not the next record of this chain as the writer seri
+refused   complete object, fields reordered and compact separators   the tail does not begin the way the writer serializes a record: not a torn append
+ACCEPTED  hash of no content, then garbage where corrects goes       classification=content_complete_unverified torn_record_type=event
+EXIT 0
+===== adv-semantics/over_refusal.py
+[advantage.genome_sealed] accepted without stop_record
+[treasury.waterfall_stopped] accepted without stop_record
+[goal_transition 'reconciliation' of a paused goal] accepted without stop_record
+EXIT 0
+===== adv-semantics/short_pwrite.py
+first call returned normally
+file ends with a newline: True | NUL bytes in the last line: 0
+ledger opens
+retry 1: completed False
+retry 2: completed False
+EXIT 0
+===== adv-protocol/p5_perf.py 100000 correction_unknown_after_hash
+build 1.6s; file 40.6 MB; case=correction_unknown_after_hash payload=0
+total 2.88s; torn=True classification=content_complete_unverified
+      1.21s  verify_chain calls (all)
+      1.47s  verify prefix in memory
+      0.57s  classify (incl. corrects candidates)
+peak RSS 201 MB
+EXIT 0

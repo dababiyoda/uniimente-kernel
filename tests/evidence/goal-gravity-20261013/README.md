@@ -28,6 +28,14 @@ EXTERNALLY VERIFIED, not FOUNDER-ACCEPTED).
 | `pdf-extraction-increment-4.json` | the three founder-supplied PDFs read page by page: intent candidates, cross-document conflicts, mechanism status table, effect translations and evidence-tier warnings (all three PDFs are AI-generated documents the founder forwarded; treated as mechanism sources, not as founder authority) |
 | `review-probes-increment-4.log` | the fourth increment's new and changed tests run against the implementation commit `eae807d` (before the review fixes): the regression tests fail there and pass on the fixed tree |
 | `review-increment-4.json` | the independent adversarial review of the fourth increment: every finding raised, the three skeptic verdicts per finding, which were confirmed, and the disposition of each (fixed with a regression test, or why not) |
+| `pytest-full-suite-increment-5.log`, `pytest-full-suite-py311-increment-5.log` | fifth increment (torn-tail recovery after three review rounds): full suite on Python 3.13 and 3.11 |
+| `verifier-v2-increment-5.log` | verifier V1–V5 after the fifth increment; run record `verifier/runs/v2-2026-11-21T22-09-52.092076+00-00.json` |
+| `ci-check-*-increment-5.log` | schema references, authority singleton and sealed-developmental checks after the fifth increment |
+| `validators-increment-5.log` | the fifth-increment deliberation record and both updated intent records against the protocol validators |
+| `review-increment-5.json` | all three adversarial reviews of `provenance/recovery.py`: the first (14 findings against `54fd20cc`), the second (`second_review`, 18 against `2f79683`) and the third verification round (`third_review`, 22 against `621d2de`), each finding with its verdict and disposition |
+| `review-probes-increment-5.log` | the first review's 26 probes replayed against the first fixed tree, with the mechanical adaptations listed |
+| `review2-probes-increment-5.log` | the second review's dispositions re-verified by the third round's fix-checkers on `621d2de` |
+| `review3-probes-increment-5.log` | the third round's probes replayed against the final tree, with how to read each result |
 
 Third-increment tier is unchanged: IMPLEMENTED, UNIT-TESTED, INTEGRATION-TESTED on synthetic ledgers with synthetic
 verifiers. Capability qualification runs repository tests in a pytest subprocess, which is not a sandbox, so nothing
@@ -39,3 +47,7 @@ integration test reopens the ledger file once per simulated day of a three-day a
 records the loop already writes; its money section carries declared estimates and reconciliation flags, never a payment
 or settlement record, and the log says so. No host scheduler has called `turn()` on its own clock, so the wake schedule
 is verified only as a view over durable state. Nothing here is SANDBOX-VERIFIED, EXTERNALLY VERIFIED or FOUNDER-ACCEPTED.
+
+Fifth-increment tier: IMPLEMENTED, UNIT-TESTED, INTEGRATION-TESTED on synthetic JSONL ledgers, with a real SIGKILL inside the
+Gate's dispatch-claim append and inside each step of applying a recovery. No supervisor calls recovery (G5), so the entry
+gate's P2 is not complete. Nothing here is SANDBOX-VERIFIED, EXTERNALLY VERIFIED or FOUNDER-ACCEPTED.

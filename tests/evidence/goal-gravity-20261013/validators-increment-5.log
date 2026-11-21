@@ -1,0 +1,10 @@
+# validators — increment 5 (torn-tail recovery, after three review rounds) — 2026-11-21T22:10:13Z
+## validate_deliberation.py docs/collaboration/deliberation-goal-gravity-fifth-increment-2026-11-13.json
+VALID: deliberation contains five-role review and exactly two passes
+exit=0
+## validate_intent_ledger.py docs/intent/INTENT-20261013-GOAL-GRAVITY.json
+VALID: 1 Founder Intent record(s)
+exit=0
+## validate_intent_ledger.py docs/intent/INTENT-20261014-egregore-synthesis-materials.json
+VALID: 14 Founder Intent record(s)
+exit=0

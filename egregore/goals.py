@@ -715,7 +715,12 @@ class GoalRegistry:
         self.get(old_goal_id)
         if not isinstance(new_spec, GoalSpec) or new_spec.supersedes != old_goal_id:
             raise GoalError("the replacement goal must declare supersedes=<old goal_id>")
-        new_id = self.authorize(new_spec, now=now)
+        # The stop is written first ("durable effect first"): a crash between the two appends leaves the old goal
+        # stopped and the replacement unauthorized, never the old goal live. The replacement's id is its content
+        # hash, known before it is written, and it is validated before anything is written.
+        replacement = GoalSpec.from_dict(new_spec.to_dict())
+        validate_record(replacement.to_dict(), "goal-record")
+        new_id = replacement.goal_id
         state = self.state(old_goal_id)
         if state.status != "superseded":
             state.status = "superseded"
@@ -723,6 +728,8 @@ class GoalRegistry:
             self._write_state(self.TRANSITION_RECORD, old_goal_id, state,
                               reason=f"superseded by {new_id[:19]} ({require_text('actor', actor)}): {reason}",
                               extra={"superseded_by": new_id})
+        if self.authorize(new_spec, now=now) != new_id:
+            raise GoalError("the replacement was authorized under another id; a goal's id is its content hash")
         return new_id
 
     def revoke(self, goal_id: str, *, actor: str, reason: str, now: datetime | str) -> GoalState:

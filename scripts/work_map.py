@@ -145,23 +145,42 @@ _AUTHOR_LABELS = {"implementer", "agent / claim", "agent", "identity", "session"
 _ADDRESSEE_LABELS = {"receiver", "next owner", "reviewer", "integration owner", "reviewer / integrator",
                      "reviewer / integrator · destination"}
 _OPENING = re.compile(r"(?i)^[^\w>|]*(?:session|implementer|from|posted by)\b[\s`*:]*")   # never a quote or a table
-# A heading names its author only as a byline: right after "·", "(" (a Claude session id), "session", "from",
-# "integrator" or "owner", and except after "·" or "from" not in a clause addressed "for"/"to"/"with" someone. When
-# bylines name several ids, a single "· `id`" byline is the author's; otherwise the author is unresolved. A heading
-# that opens with "@", "To" or "For ... (" names its addressee there.
+# A heading names its author only as a byline: right after "·", "(" (a Claude session id), "session" or "from" (the
+# sender: "Handoff from", "From"), or after the role a poster gives itself ("(integrator `id`)", "Owner: `id`"). An
+# id is another party, never a byline, when it is addressed ("for", "to", "cc" or "with" earlier in its clause, except
+# right after "·" or "from"), named as the receiver ("The receiver is ..."), named by a role in a definite phrase
+# ("the #196 integrator, `id`"), named as where work came from ("taking over from `id`", "split from `id`"), or the
+# subject of what follows it ("owner `id` asked me", "(`id` agreed the split)", "`id`'s"). The strongest kind of
+# byline present decides: a "·" byline, else "(", "session" or "from", else a role; when that kind names several ids
+# the author is unresolved, never guessed, and every other byline id is an addressee. A heading that opens with "@",
+# "To" or "For ... (" names its addressee there.
 _BYLINE = re.compile(r"(?i)(·|\(|\bsession|\bfrom|\bintegrator|\bowner)[\s`*_:,]*$")
+_ROLES = ("integrator", "owner")
 _FOR = re.compile(r"(?i)\b(?:for|to|cc|with)\b[^.:;·]*$")
+_RECEIVER = re.compile(r"(?i)\b(?:receivers?|next\s+owners?)\b[^.;·]*$")
+_DEFINITE = re.compile(r"(?i)\bthe\b[^.:;·()]{0,48}$")       # the text before a role word: "the #196 "
+_TAKEN_FROM = re.compile(r"(?i)\b(?:(?:tak(?:e|es|en|ing)|took|pick(?:s|ed|ing)?|hand(?:s|ed|ing)?)\s+(?:\w+\s+){0,2}?"
+                         r"(?:over|up)|inherit(?:s|ed|ing)?|split(?:s|ting)?(?:\s+off)?|fork(?:s|ed|ing)?)\s+from"
+                         r"[\s`*_:,]*(?:session\b[\s`*_:,]*)?$")
+_ACTS = re.compile(r"(?i)^[`*_]*(?:['’]s\b|[^\S\n]+(?:(?:has|had|have)\s+(?:not\s+|already\s+|now\s+|also\s+)?)?"
+                   r"(?:asked|agreed|agrees|approved|approves|accepted|accepts|acknowledged|acknowledges|requested|"
+                   r"confirmed|confirms|proposed|suggested|offered|assigned|answered|decided|said|wrote|replied)\b)")
 _ADDRESSED = re.compile(r"(?i)^[#*_\s]*(?:@|to\b|for\b[^(\n]{0,80}\()[\s`]*")
 _FENCE = re.compile(r"^[ \t]*(`{3,}|~{3,})")
 _INDENTED = re.compile(r"^(?: {4}|\t| {0,3}\t)")
 
 
-def identities(text: str) -> list[tuple[int, str, str]]:
-    """(position, canonical id, client) for every session identity in ``text``, in order."""
+def _spans(text: str) -> list[tuple[int, int, str, str]]:
+    """(start, end, canonical id, client) for every session identity in ``text``, in order."""
     found = []
     for client, pattern, key in _IDS:
-        found += [(m.start(), key(m), client) for m in pattern.finditer(_text(text))]
+        found += [(m.start(), m.end(), key(m), client) for m in pattern.finditer(_text(text))]
     return sorted(found)
+
+
+def identities(text: str) -> list[tuple[int, str, str]]:
+    """(position, canonical id, client) for every session identity in ``text``, in order."""
+    return [(at, key, client) for at, _end, key, client in _spans(text)]
 
 
 def canonical_identity(value: str | None) -> tuple[str | None, str]:
@@ -393,6 +412,30 @@ def _prose(text: str) -> list[str]:
     return out
 
 
+def _heading_bylines(heading: str) -> tuple[tuple[str, str] | None, list[str]]:
+    """The (id, client) a heading's bylines name as its author, or None, and the ids it names as other parties."""
+    bylines, others = [], []
+    for at, end, key, client in _spans(heading):
+        window = max(0, at - 48)
+        by = _BYLINE.search(heading[window:at])
+        if not by or (by[1] == "(" and not key.startswith("session_")):
+            continue
+        word, before = by[1].lower(), heading[max(0, at - 64):at]
+        role_at = window + by.start()
+        if (_ACTS.match(heading[end:end + 64]) or _RECEIVER.search(before) or _TAKEN_FROM.search(before)
+                or (word not in ("·", "from") and _FOR.search(before))
+                or (word in _ROLES and _DEFINITE.search(heading[max(0, role_at - 64):role_at]))):
+            others.append(key)
+            continue
+        bylines.append((key, client, 0 if word == "·" else 2 if word in _ROLES else 1))
+    strongest = min((rank for _k, _c, rank in bylines), default=None)
+    named = {(k, c) for k, c, rank in bylines if rank == strongest}
+    if len(named) != 1:                                  # several ids of the strongest kind: unresolved, not guessed
+        return None, others + [k for k, _c, rank in bylines if rank != strongest]
+    [(key, client)] = named
+    return (key, client), others + [k for k, _c, _rank in bylines if k != key]
+
+
 def comment_author(body: str) -> dict:
     """Who wrote a board comment: a labelled author line outside code fences, else the byline of a Markdown heading
     or bold title, else an opening "Session `id`" line. Never an addressee, never the first id in the body.
@@ -415,21 +458,10 @@ def comment_author(body: str) -> dict:
         elif label in _AUTHOR_LABELS and hits and author is None:
             author = (hits[0][1], hits[0][2], "label")
     if author is None and heading.startswith(("#", "**")) and not _TEAM.search(heading):
-        bylines = []
-        for at, key, client in identities(heading):
-            by = _BYLINE.search(heading[max(0, at - 48):at])
-            if not by or (by[1] == "(" and not key.startswith("session_")):
-                continue
-            if by[1] != "·" and by[1].lower() != "from" and _FOR.search(heading[max(0, at - 64):at]):
-                addressees.append(key)
-                continue
-            bylines.append((key, client, by[1] == "·"))
-        dotted = {(k, c) for k, c, dot in bylines if dot}  # "· `id`" is the byline when it names one id
-        named = dotted if len(dotted) == 1 else {(k, c) for k, c, _dot in bylines}
-        if len(named) == 1:                                  # several ids named as bylines: unresolved, not guessed
-            [(key, client)] = named
-            author = (key, client, "heading")
-            addressees += [k for k, _c, _dot in bylines if k != key]
+        found, others = _heading_bylines(heading)
+        addressees += others
+        if found:
+            author = (*found, "heading")
     if author is None:                                   # "Session `...`." as the comment's opening line
         rest = [ln for ln in _HTML.sub("", body).splitlines() if ln.strip()][1:2]
         opening = _OPENING.match(rest[0]) if rest and not _INDENTED.match(rest[0]) else None

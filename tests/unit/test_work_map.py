@@ -1167,6 +1167,39 @@ def test_an_addressee_a_dead_launch_or_a_team_relay_is_never_the_author():
     assert [s["session"] for s in m["sessions"]] == [A] and m["claims"][0]["session"] == A
 
 
+def test_a_receiver_a_role_held_by_another_or_a_party_that_acts_is_never_the_byline(quick):
+    # Real handoffs name the receiver after "integrator,": the sender's byline is the author, the receiver is not.
+    for cid, author in ((6650124537, "session_01KucyfnPRxLT4YY1UibJ3Ee"), (6802820715, M9E)):
+        got = w.comment_author(REAL[cid])
+        assert (got["author"], got["how"], A in got["addressees"]) == (author, "heading", True), cid
+    m = w.build([], [_comment(6802820715, REAL[6802820715])], now=NOW, use_git=False)
+    assert (m["claims"][0]["session"], [s["session"] for s in m["sessions"]]) == (M9E, [M9E])
+    # Without a "·" byline, an owner who asked, a party who agreed, a session taken over from, one whose half is
+    # meant or one work was inherited or split from is still not the author: the opening line is, or nobody.
+    for heading in ("## Claim: WU-11 (owner `{b}` asked me)", "## Claim: WU-11 (`{b}` agreed the split)",
+                    "## Claim: WU-11, taking over from session `{b}`", "## Claim: WU-11 (`{b}`'s half)",
+                    "## Claim: WU-11, inherited from `{b}`", "## Claim: WU-11, split off from session `{b}`",
+                    "## Claim: WU-11 (owner `{b}` has already approved it)"):
+        opened = w.comment_author(heading.format(b=B) + f"\n\nSession `{A}`.\n")
+        assert (opened["author"], opened["how"], opened["addressees"]) == (A, "opening line", [B]), heading
+        alone = w.comment_author(heading.format(b=B) + "\n")
+        assert (alone["author"], alone["how"], alone["addressees"]) == (None, "unresolved", [B]), heading
+    # A role held by someone else is weaker than the poster's own byline; named in a definite phrase, it is never one.
+    for heading in ("## Claim: WU-11 · session `{a}` · integrator `{b}`", "**Note (`{a}`)**: owner `{b}`",
+                    "**Handoff from `{a}`** for review. The receiver is the #196 integrator, `{b}`."):
+        got = w.comment_author(heading.format(a=A, b=B) + "\n")
+        assert (got["author"], got["how"], got["addressees"]) == (A, "heading", [B]), heading
+    for heading in ("**Note.** The receiver is the #196 integrator, `{b}`.", "## Ready: #300 for the integrator, `{b}`",
+                    "## Ready: #300; the #196 integrator, `{b}`, takes it"):
+        got = w.comment_author(heading.format(b=B) + "\n")
+        assert (got["author"], got["addressees"]) == (None, [B]), heading
+    # The poster's own role byline still names it, and two ids of the strongest kind are still not guessed between.
+    for heading in ("**#196 intake batch** (integrator `{a}`)", "**#196 intake, 2026-11-04** (integration owner `{a}`)",
+                    "## Status. Owner: `{a}`", "**From #196's integrator (session `{a}`)**"):
+        assert w.comment_author(heading.format(a=A) + "\n")["author"] == A, heading
+    assert w.comment_author(f"## Claim · session `{A}` · session `{B}` (integrator `{C}`)\n")["author"] is None
+
+
 def test_an_opening_line_names_the_author_only_as_session_id(quick):
     assert w.comment_author(OPENING_6794587797)["how"] == "opening line"
     for second in (f"`{B}` accepts the assignment.", f"@`{B}`. Found during my run.", f"Agent `{B}` has not answered."):

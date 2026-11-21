@@ -1521,11 +1521,13 @@ def test_a_receiver_a_role_held_by_another_or_a_party_that_acts_is_never_the_byl
         assert (opened["author"], opened["how"], opened["addressees"]) == (A, "opening line", [B]), heading
         alone = w.comment_author(heading.format(b=B) + "\n")
         assert (alone["author"], alone["how"], alone["addressees"]) == (None, "unresolved", [B]), heading
-    # A role held by someone else is weaker than the poster's own byline; named in a definite phrase, it is never one.
-    for heading in ("## Claim: WU-11 · session `{a}` · integrator `{b}`", "**Note (`{a}`)**: owner `{b}`",
-                    "**Handoff from `{a}`** for review. The receiver is the #196 integrator, `{b}`."):
+    # A role named as the receiver is never a byline. A role byline beside another kind of byline naming another id
+    # is not ranked below it: either can be the poster, so the author is unresolved (it was the session byline).
+    got = w.comment_author(f"**Handoff from `{A}`** for review. The receiver is the #196 integrator, `{B}`.\n")
+    assert (got["author"], got["how"], got["addressees"]) == (A, "heading", [B])
+    for heading in ("## Claim: WU-11 · session `{a}` · integrator `{b}`", "**Note (`{a}`)**: owner `{b}`"):
         got = w.comment_author(heading.format(a=A, b=B) + "\n")
-        assert (got["author"], got["how"], got["addressees"]) == (A, "heading", [B]), heading
+        assert (got["author"], got["how"], got["addressees"]) == (None, "unresolved", []), heading
     for heading in ("**Note.** The receiver is the #196 integrator, `{b}`.", "## Ready: #300 for the integrator, `{b}`",
                     "## Ready: #300; the #196 integrator, `{b}`, takes it"):
         got = w.comment_author(heading.format(b=B) + "\n")
@@ -1535,6 +1537,75 @@ def test_a_receiver_a_role_held_by_another_or_a_party_that_acts_is_never_the_byl
                     "## Status. Owner: `{a}`", "**From #196's integrator (session `{a}`)**"):
         assert w.comment_author(heading.format(a=A) + "\n")["author"] == A, heading
     assert w.comment_author(f"## Claim · session `{A}` · session `{B}` (integrator `{C}`)\n")["author"] is None
+
+
+# Constructed headings, {a} posting unless said otherwise; the expected author is the poster or None, never another.
+# "lost" marks a heading whose poster round 2 lost and this round leaves unresolved: recovering it would also take
+# a plausible heading by someone else ("## Review · `B`'s #300", "## Ready for review · the #196 integrator `B`").
+BYLINE_PROBES = [
+    # The poster names itself in the third person, by role, or as the sender.
+    ("## Hand over from `{a}` to `{b}`", "a"),
+    ("## Handing over WU-11 from `{a}` to `{b}`", "a"),
+    ("## Handing WU-11 over from session `{a}`", "a"),
+    ("**Session `{a}` proposed a split of WU-11**", "a"),
+    ("## Claim · `{a}` agreed with `{b}` on the split", "a"),
+    ("## Release · `{a}`'s claim 6650124537", None),                                       # lost
+    ("## Claim · `{a}` (confirmed by `{b}`)", "a"),
+    ("## Status · `{a}` · picked up from `{b}`", "a"),
+    ("## Handoff · `{a}` · the integrator, `{b}`, takes it", "a"),
+    ("**From the #196 integrator, `{a}`**", "a"),
+    ("**From the integrator `{a}`**", "a"),
+    ("## Intake by the #196 integrator `{a}`", None),                                      # lost
+    ("## #196 intake · the integrator `{a}`", None),                                       # lost
+    ("**Note from the integrator (`{a}`)**", "a"),
+    ("**The integrator (`{a}`) accepts #300**", "a"),
+    ("## Owner: `{a}` · for `{b}`", "a"),
+    ("## Claim · session `{a}`, split from `{b}`", "a"),
+    ("## Claim · `{a}` said: WU-11", "a"),
+    ("## Claim (session `{a}`) — owner `{b}` approved", "a"),
+    ("## Ack · session `{a}` acknowledged 6650124537", "a"),
+    ("**Session `{a}` acknowledges intake 6668950482**", "a"),
+    ("**Session `{a}` replied**", "a"),
+    ("## Session `{a}` has now confirmed WU-11", "a"),
+    ("## Handoff: session `{a}` → session `{b}`", None),
+    ("## Claim (`{a}`): forked from `{b}`'s branch", "a"),
+    ("**Integrator `{a}` accepted #300**", "a"),
+    ("**Owner `{a}` decided**: merge order", "a"),
+    ("## Claim · `{a}`’s WU-11", None),                                                    # lost
+    ("**Receiver acknowledgment of handoff 6650124537 (`{a}`)**", None),                   # lost
+    ("**Receiver's intake (session `{a}`)**", None),                                       # lost
+    ("## Next owner's acknowledgment · `{a}`", "a"),
+    ("**Acknowledgment by the receiver (`{a}`)**", None),                                  # lost
+    ("**Intake by the #196 integrator (`{a}`)**", "a"),
+    ("**#196 intake, 2026-11-22** (the integrator, `{a}`)", "a"),
+    ("**From the #196 integrator, `{a}`: #300 is in.**", "a"),
+    ("**From the integrator (`{a}`)**", "a"),
+    # The integrator {a} posts about {b}'s work: an origin byline and a role byline name two ids, so neither is taken.
+    ("**#196 intake of #300 (session `{b}`)** · integrator `{a}`", None),
+    ("## Intake: #300 (`{b}`) by integrator `{a}`", None),
+    ("**Review of #300 (`{b}`)**, owner `{a}`", None),
+    ("## Intake of #300 from session `{b}` · integrator `{a}`", None),
+    ("## #300 (from `{b}`) taken in · owner `{a}`", None),
+    ("**Ack of handoff from `{b}`** (integrator `{a}`)", None),
+    ("**Intake decision: #201 from session `{b}`** (integrator `{a}`)", None),
+    ("## Claim: WU-11 · integrator `{b}` · session `{a}`", None),
+    # {b} is another party in a lead position: never taken as the poster.
+    ("## Status · owner `{b}` asked me to pause", None),
+    ("**Session `{b}` asked us for a split**", None),
+    ("## Ready for review · the #196 integrator `{b}`", None),
+    ("## Ready: #300 (the integrator, `{b}`, takes it)", None),
+    ("## Ack of the handoff · `{b}`'s claim, taken by `{a}`", None),
+    ("## Claim, handed over from `{b}`", None),
+    ("## Claim: WU-11 — session `{b}` replied", None),
+    ("## #300 approved by the integrator `{b}`", None),
+    ("## Claim · `{a}` · `{b}` agreed", None),
+]
+
+
+@pytest.mark.parametrize("heading,poster", BYLINE_PROBES, ids=[h for h, _p in BYLINE_PROBES])
+def test_a_heading_names_its_poster_or_nobody_never_another_party(quick, heading, poster):
+    got = w.comment_author(heading.format(a=A, b=B) + "\n\nSome text.\n")
+    assert (got["author"], got["how"]) == ({"a": (A, "heading"), None: (None, "unresolved")}[poster]), heading
 
 
 def test_an_opening_line_names_the_author_only_as_session_id(quick):

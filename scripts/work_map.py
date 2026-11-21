@@ -156,22 +156,34 @@ _OPENING = re.compile(r"(?i)^[^\w>|]*(?:session|implementer|from|posted by)\b[\s
 # sender: "Handoff from", "From"), or after the role a poster gives itself ("(integrator `id`)", "Owner: `id`"). An
 # id is another party, never a byline, when it is addressed ("for", "to", "cc" or "with" earlier in its clause, except
 # right after "·" or "from"), named as the receiver ("The receiver is ..."), named by a role in a definite phrase
-# ("the #196 integrator, `id`"), named as where work came from ("taking over from `id`", "split from `id`"), or the
-# subject of what follows it ("owner `id` asked me", "(`id` agreed the split)", "`id`'s"). The strongest kind of
-# byline present decides: a "·" byline, else "(", "session" or "from", else a role; when that kind names several ids
-# the author is unresolved, never guessed, and every other byline id is an addressee. A heading that opens with "@",
-# "To" or "For ... (" names its addressee there.
+# ("the #196 integrator, `id`"), named as where work came from ("taking over from `id`", "split from `id`", "handed
+# over from `id`"), or the subject of what follows it ("owner `id` asked me", "(`id` agreed the split)", "`id`'s").
+# Two of these name the poster itself and stay bylines: an id that opens the heading or follows "·" (also after
+# "session" or a role) and is the subject of a verb that follows, unless that clause speaks of the poster as "me",
+# "my", "we" or "us" ("**Session `id` replied**", "## Claim · `id` agreed with ..."; never "· `id`'s", which names
+# whose work it is as readily as who posts); and a definite role
+# right after "from" or "(" whose id ends its clause ("From the #196 integrator, `id`:", "(the integrator, `id`)").
+# The author is the one id the bylines name. When they name several, of one kind or of different kinds, it is
+# unresolved, never guessed: a "from `id`" or "(`id`)" can name where a PR came from as well as who posts, and a role
+# can be the poster's or another's, so no kind of byline outranks another. A heading that opens with "@", "To" or
+# "For ... (" names its addressee there.
 _BYLINE = re.compile(r"(?i)(·|\(|\bsession|\bfrom|\bintegrator|\bowner)[\s`*_:,]*$")
 _ROLES = ("integrator", "owner")
 _FOR = re.compile(r"(?i)\b(?:for|to|cc|with)\b[^.:;·]*$")
 _RECEIVER = re.compile(r"(?i)\b(?:receivers?|next\s+owners?)\b[^.;·]*$")
 _DEFINITE = re.compile(r"(?i)\bthe\b[^.:;·()]{0,48}$")       # the text before a role word: "the #196 "
-_TAKEN_FROM = re.compile(r"(?i)\b(?:(?:tak(?:e|es|en|ing)|took|pick(?:s|ed|ing)?|hand(?:s|ed|ing)?)\s+(?:\w+\s+){0,2}?"
+_TAKEN_FROM = re.compile(r"(?i)\b(?:(?:tak(?:e|es|en|ing)|took|pick(?:s|ed|ing)?|handed)\s+(?:\w+\s+){0,2}?"
                          r"(?:over|up)|inherit(?:s|ed|ing)?|split(?:s|ting)?(?:\s+off)?|fork(?:s|ed|ing)?)\s+from"
                          r"[\s`*_:,]*(?:session\b[\s`*_:,]*)?$")
 _ACTS = re.compile(r"(?i)^[`*_]*(?:['’]s\b|[^\S\n]+(?:(?:has|had|have)\s+(?:not\s+|already\s+|now\s+|also\s+)?)?"
                    r"(?:asked|agreed|agrees|approved|approves|accepted|accepts|acknowledged|acknowledges|requested|"
                    r"confirmed|confirms|proposed|suggested|offered|assigned|answered|decided|said|wrote|replied)\b)")
+_LEAD_START = re.compile(r"(?i)^[#*_\s]*(?:(?:session|integrator|owner)\b[\s`*_:,]*)?$")   # before an opening id
+_LEAD_DOT = re.compile(r"(?i)·[\s`*_]*(?:(?:session|integrator|owner)\b[\s`*_:,]*)?$")     # before a "·" byline id
+_FIRST_PERSON = re.compile(r"\b(?:[Mm]e|[Mm]y|[Ww]e|[Uu]s|[Oo]ur|I)\b")
+_CLAUSE_END = re.compile(r"[.;:·()—–]")
+_SELF_THE = re.compile(r"(?i)(?:\bfrom|\()[\s*_]*$")                    # "From the ...", "(the ..."
+_ENDS = re.compile(r"^[`*_]*(?:\s*$|\s*[):;.·—–])")                    # the id ends its clause
 _ADDRESSED = re.compile(r"(?i)^[#*_\s]*(?:@|to\b|for\b[^(\n]{0,80}\()[\s`]*")
 _FENCE = re.compile(r"^[ \t]*(`{3,}|~{3,})")
 _INDENTED = re.compile(r"^(?: {4}|\t| {0,3}\t)")
@@ -430,18 +442,23 @@ def _heading_bylines(heading: str) -> tuple[tuple[str, str] | None, list[str]]:
             continue
         word, before = by[1].lower(), heading[max(0, at - 64):at]
         role_at = window + by.start()
-        if (_ACTS.match(heading[end:end + 64]) or _RECEIVER.search(before) or _TAKEN_FROM.search(before)
-                or (word not in ("·", "from") and _FOR.search(before))
-                or (word in _ROLES and _DEFINITE.search(heading[max(0, role_at - 64):role_at]))):
+        acts = _ACTS.match(heading[end:end + 64])
+        verb = acts and acts[0].lstrip("`*_")[:1] not in "'’"   # "replied", not "'s"
+        if verb and ((at <= 48 and _LEAD_START.match(heading[:at])) or _LEAD_DOT.search(heading[window:at])):
+            acts = _FIRST_PERSON.search(_CLAUSE_END.split(heading[end:end + 64], maxsplit=1)[0])   # "me": not the poster
+        the = _DEFINITE.search(heading[max(0, role_at - 64):role_at]) if word in _ROLES else None
+        if the and _ENDS.match(heading[end:end + 16]):
+            the_at = max(0, role_at - 64) + the.start()
+            the = None if _SELF_THE.search(heading[max(0, the_at - 16):the_at]) else the
+        if (acts or _RECEIVER.search(before) or _TAKEN_FROM.search(before) or the
+                or (word not in ("·", "from") and _FOR.search(before))):
             others.append(key)
             continue
-        bylines.append((key, client, 0 if word == "·" else 2 if word in _ROLES else 1))
-    strongest = min((rank for _k, _c, rank in bylines), default=None)
-    named = {(k, c) for k, c, rank in bylines if rank == strongest}
-    if len(named) != 1:                                  # several ids of the strongest kind: unresolved, not guessed
-        return None, others + [k for k, _c, rank in bylines if rank != strongest]
-    [(key, client)] = named
-    return (key, client), others + [k for k, _c, _rank in bylines if k != key]
+        bylines.append((key, client))
+    if len(set(bylines)) != 1:                           # none, or several ids of any kinds: unresolved, not guessed
+        return None, others
+    [(key, client)] = set(bylines)
+    return (key, client), [k for k in others if k != key]
 
 
 def comment_author(body: str) -> dict:

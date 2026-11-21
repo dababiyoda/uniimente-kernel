@@ -277,9 +277,15 @@ Those erroneous writes did not change a source branch, source file, PR, merge st
 }
 
 
+INTEGRATION = {"repository": "dababiyoda/uniimente-kernel", "branch": "main", "base_sha": "a" * 40, "owner": "unassigned"}
+
+
 def _receipt(session: str | None, files: list[str], task: str = "https://example.invalid/t", **extra) -> str:
+    """A receipt whose coordination has exactly the receipt check's fields; without a session it has no
+    ``session_id``, which the check refuses, as it refuses PR #241's."""
     coord = {"task_ref": task, "files": files, "interfaces": [], "recheck_at": "2026-11-13T04:00:00Z",
-             "overlap": {"status": extra.get("overlap", "clear"), "inspected_refs": ["x"], "acknowledgment_refs": []}}
+             "overlap": {"status": extra.get("overlap", "clear"), "inspected_refs": ["x"], "acknowledgment_refs": []},
+             "integration": INTEGRATION}
     if session:
         coord["session_id"] = session
     data = {"version": 2, "intent_refs": extra.get("intent_refs", ["INTENT-X"]), "scope": extra.get("scope", "s"),
@@ -526,7 +532,8 @@ def _body(raw: str) -> str:
 
 
 def _coord(**kw) -> str:
-    coord = {"task_ref": "t", "files": ["greg/missions.py"], "session_id": A, "overlap": {"status": "clear"}}
+    coord = {"task_ref": "t", "files": ["greg/missions.py"], "session_id": A, "interfaces": [],
+             "recheck_at": "2026-11-13T04:00:00Z", "overlap": {"status": "clear"}, "integration": INTEGRATION}
     coord.update(kw)
     return json.dumps({"version": 2, "intent_refs": ["INTENT-X"], "scope": "s", "coordination": coord})
 
@@ -588,11 +595,10 @@ def _receipt_check() -> dict:
     return namespace
 
 
-def test_the_receipt_reader_refuses_exactly_what_the_receipt_check_refuses_when_it_reads():
-    check = _receipt_check()
-    sha_a, sha_b, sha_c = "a" * 40, "b" * 40, "c" * 40
+def _checked_receipt(sha_a: str = "a" * 40, sha_b: str = "b" * 40, sha_c: str = "c" * 40) -> dict:
+    """A receipt the receipt check accepts for a draft PR from base ``sha_a`` to head ``sha_b``."""
     guide = f"https://github.com/dababiyoda/uniimente-kernel/blob/{sha_c}/docs/collaboration/START_HERE.md"
-    data = {"version": 2, "repository": "dababiyoda/example", "base_sha": sha_a, "head_sha": sha_b,
+    return {"version": 2, "repository": "dababiyoda/example", "base_sha": sha_a, "head_sha": sha_b,
             "protocol_ref": guide, "intent_refs": ["intent-1"],
             "read_set": [{"path": "AGENTS.md", "revision": sha_b}, {"path": guide, "revision": sha_c}],
             "scope": "s", "classification": "lightweight", "deliberation_ref": None,
@@ -606,6 +612,24 @@ def test_the_receipt_reader_refuses_exactly_what_the_receipt_check_refuses_when_
             "handoff": {"owner": "o", "next_action": "n", "stop_condition": "s",
                         "acknowledgment": {"status": "pending", "receiver_session": None, "reference": None}},
             "review": {"status": "pending", "reference": None}}
+
+
+def _check_refusal(check: dict, data, sha_a: str = "a" * 40, sha_b: str = "b" * 40) -> str | None:
+    """What the receipt check says of ``data`` as a draft PR's receipt: its refusal, or None when it accepts it."""
+    body = f"{check['START']}\n```json\n{json.dumps(data)}\n```\n{check['END']}"
+    event = {"repository": {"full_name": "dababiyoda/example"},
+             "pull_request": {"base": {"sha": sha_a}, "head": {"sha": sha_b}, "draft": True, "body": body}}
+    try:
+        check["validate"](event)
+    except check["ReceiptError"] as exc:
+        return str(exc)
+    return None
+
+
+def test_the_receipt_reader_refuses_exactly_what_the_receipt_check_refuses_when_it_reads():
+    check = _receipt_check()
+    sha_a, sha_b = "a" * 40, "b" * 40
+    data = _checked_receipt(sha_a, sha_b)
     start, end = check["START"], check["END"]
     raw = json.dumps(data)
     forged = json.dumps({**data["coordination"], "session_id": "session_FORGED"})
@@ -652,6 +676,71 @@ def test_the_receipt_reader_refuses_exactly_what_the_receipt_check_refuses_when_
     assert {"invalid or oversized PR body", "invalid receipt JSON", "exactly one receipt required",
             "receipt markers out of order", "receipt must be one fenced JSON object", "unsupported receipt version",
             None} <= refusals
+
+
+def _without(obj: dict, key: str) -> dict:
+    return {k: v for k, v in obj.items() if k != key}
+
+
+@pytest.mark.parametrize("name,coordination,refused_for", [
+    ("accepted", lambda c: c, None),
+    ("no coordination", None, "files"),
+    ("coordination without files", lambda c: _without(c, "files"), "files"),
+    ("coordination without integration", lambda c: _without(c, "integration"), "files"),
+    ("coordination with another field", lambda c: {**c, "owner": "x"}, "files"),
+    ("coordination as a list", lambda c: [c], "files"),
+    ("files empty", lambda c: {**c, "files": []}, "files"),
+    ("files as text", lambda c: {**c, "files": "docs/x.md"}, "files"),
+    ("files holding a blank", lambda c: {**c, "files": ["docs/x.md", " "]}, "files"),
+    ("files holding a number", lambda c: {**c, "files": ["docs/x.md", 7]}, "files"),
+    ("files repeated once stripped", lambda c: {**c, "files": ["docs/x.md", "docs/x.md "]}, "files"),
+    ("an absolute file", lambda c: {**c, "files": ["/docs/x.md"]}, "files"),
+    ("a file above the root", lambda c: {**c, "files": ["docs/../../x.md"]}, "files"),
+    ("a file through a dot", lambda c: {**c, "files": ["docs/./x.md"]}, "files"),
+    ("an empty part", lambda c: {**c, "files": ["docs//x.md"]}, "files"),
+    ("a backslash", lambda c: {**c, "files": ["docs\\x.md"]}, "files"),
+    ("a colon", lambda c: {**c, "files": ["c:docs/x.md"]}, "files"),
+    ("a placeholder", lambda c: {**c, "files": ["<path>"]}, "files"),
+    ("a directory prefix", lambda c: {**c, "files": ["docs/", "greg"]}, None),
+    ("a placeholder session", lambda c: {**c, "session_id": "pending"}, "another field"),
+    ("interfaces of the wrong type", lambda c: {**c, "interfaces": 5}, "another field"),
+    ("a recheck time off the calendar", lambda c: {**c, "recheck_at": "2026-02-30T00:00:00Z"}, "another field"),
+    ("another top-level field", "extra", "another field"),
+])
+def test_files_are_refused_exactly_where_the_receipt_check_refuses_coordination_or_files(name, coordination,
+                                                                                        refused_for):
+    check = _receipt_check()
+    data = _checked_receipt()
+    if coordination is None:
+        del data["coordination"]
+    elif coordination == "extra":
+        data["owner"] = "x"
+    else:
+        data["coordination"] = coordination(data["coordination"])
+    refused = _check_refusal(check, data)
+    assert (refused is None) == (refused_for is None), (name, refused)
+    assert w._files_refused(data) == (refused if refused_for == "files" else None), (name, refused)
+
+
+def test_a_receipt_the_check_refuses_for_its_files_is_never_a_whole_empty_list(quick, tmp_path, capsys):
+    # Each receipt here declares no file. The receipt check refuses all three for their coordination or files, so
+    # none may say that its PR, whose diff was not read, touches nothing.
+    raw = json.loads(_coord())
+    no_files = {**raw, "coordination": _without(raw["coordination"], "files")}
+    empty = {**raw, "coordination": {**raw["coordination"], "files": []}}
+    no_coordination = _without(raw, "coordination")
+    prs = [_pr(701, "h/no-files", base="main", body=_body(json.dumps(no_files))),
+           _pr(702, "h/empty", base="main", body=_body(json.dumps(empty))),
+           _pr(703, "h/no-coordination", base="main", body=_body(json.dumps(no_coordination))),
+           _pr(704, "h/whole", base="main", body=_body(_coord(files=["docs/x.md"])))]
+    answer = _paths_answer(tmp_path, capsys, prs, "greg/missions.py")
+    src, hit = answer["sources"], answer["paths"][0]
+    assert (hit["prs"], hit["unknown_prs"]) == ([], [701, 702, 703])          # #704's whole receipt was read
+    assert src["open_prs_without_diff"] == [701, 702, 703, 704]
+    assert "#701, #702, #703 have no receipt, a cut one or one the receipt check refuses" in src["files_of_those"]
+    assert src["receipts_refused_for_files"] == [701, 702, 703] and src["receipts_with_unreadable_fields"] == []
+    m = w.build(prs, [], now=NOW, use_git=False)
+    assert "receipts the receipt check refuses for their coordination or files: 3" in w.markdown(m)
 
 
 def test_an_older_receipt_is_counted_as_older_not_as_none(quick):

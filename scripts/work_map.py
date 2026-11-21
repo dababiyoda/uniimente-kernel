@@ -32,9 +32,10 @@ circular join attributes to its author is ``release_by_inferred_author``), ``cla
 ``older_claims_without_pr``, ``line_checks``, ``gaps`` (``None`` where its source was not read; what git could not
 check is listed there, never counted as zero) and ``prs`` (one row per open pull request, read once however often
 given: its receipt's fields as declared, ``files`` cut to the first ``FILES_LIMIT`` with ``files_cut`` counting the
-rest, ``receipt_problems`` for fields of the wrong type, ``changed``, the files it changes itself, and
-``changed_via``, where they came from: ``diff`` for local git, ``api`` for the GitHub API (``--github``, a PR into the
-line that this clone cannot diff), None when neither said; ``line_bound`` and ``carried``).
+rest, ``receipt_problems`` for fields of the wrong type, ``files_refused``, why the receipt check refuses its
+coordination or its files (then its files are unknown, never an empty list), ``changed``, the files it changes
+itself, and ``changed_via``, where they came from: ``diff`` for local git, ``api`` for the GitHub API (``--github``, a
+PR into the line that this clone cannot diff), None when neither said; ``line_bound`` and ``carried``).
 
 A snapshot, not a lock. A claim coordinates work; an expired one never permits
 overwriting someone's files (``docs/collaboration/START_HERE.md``). What the
@@ -999,6 +1000,35 @@ def _receipt_fields(r: dict | None) -> tuple[dict, list[str]]:
     return out, problems
 
 
+_COORDINATION = {"task_ref", "session_id", "files", "interfaces", "recheck_at", "overlap", "integration"}
+
+
+def _files_refused(r: dict | None) -> str | None:
+    """Why the receipt check (``.github/workflows/collaboration-receipt.yml``) refuses a receipt for the shape of its
+    coordination or of its claimed files, in the check's words; None when those pass, or there is no receipt. The
+    check's rules, copied because it runs without a checkout: ``coordination`` is present and has exactly the check's
+    fields, and ``files`` is a list of at least one distinct non-blank text, each a repository-relative path or
+    directory prefix. Such a receipt's files are not a whole list. Its other refusals (a stale head SHA, an interface,
+    a recheck time, overlap or integration fields) say nothing about its files."""
+    if not isinstance(r, dict):
+        return None
+    if "coordination" not in r:
+        return "receipt: missing or unexpected fields"
+    coordination = r["coordination"]
+    if not (isinstance(coordination, dict) and set(coordination) == _COORDINATION):
+        return "coordination: missing or unexpected fields"
+    files = coordination["files"]
+    if not (isinstance(files, list) and files and all(isinstance(f, str) and f.strip() for f in files)):
+        return "claimed files: text array required"
+    if len(files) != len({f.strip() for f in files}):
+        return "claimed files: duplicate entries"
+    for path in files:
+        if not (path == path.strip() and not path.startswith("/") and not set("\\:<>") & set(path)
+                and all(part not in ("", ".", "..") for part in path.rstrip("/").split("/"))):
+            return "claimed files must be repository-relative paths or directory prefixes"
+    return None
+
+
 def _ids(text: str) -> set[str]:
     """Unit ids (``WU-11``, ``S42-A``) and ask ids (``S42.A1``) in a text."""
     return set(UNIT.findall(text)) | set(ASK.findall(text))
@@ -1029,6 +1059,7 @@ def _row(pull: dict, root: Path, use_git: bool, line: str = LINE) -> dict:
         "same_repo": pull["head_repo"] is not None and pull["head_repo"] == pull["base_repo"],
         "draft": pull["draft"], "updated": pull["updated_at"], "receipt": r is not None,
         "older_receipt": r is None and receipt_of(body, version=1) is not None, "receipt_problems": problems,
+        "files_refused": _files_refused(r),
         "session": sid, "client": client, "task_ref": f["task_ref"],
         "files": f["files"][:FILES_LIMIT], "files_cut": max(0, len(f["files"]) - FILES_LIMIT),
         **_changed(pull, root, use_git, line),
@@ -1298,9 +1329,10 @@ def outside_path(path: str) -> bool:
 
 def _files_unknown(r: dict) -> bool:
     """A PR whose changed files were not read and whose receipt gives no whole readable file list: it has none, its
-    list was cut, or its list could not be read."""
-    return r["changed"] is None and (not r["receipt"] or r["files_cut"] > 0
-                                     or bool({"files", "coordination"} & set(r["receipt_problems"])))
+    list was cut, or the receipt check refuses its coordination or its files (``_files_refused``: no coordination,
+    one without ``files``, an empty list, a list of the wrong type). An empty list is never read as touching
+    nothing."""
+    return r["changed"] is None and (not r["receipt"] or r["files_cut"] > 0 or bool(r["files_refused"]))
 
 
 def who_touches(paths: list[str], rows: list[dict] | None, claims: list[dict] | None,
@@ -1698,6 +1730,7 @@ def build(prs: list[dict] | None, comments: list[dict] | None, *, root: Path = R
             "open_prs_without_receipt_into_line": if_prs(sorted(r["pr"] for r in rows
                                                                 if not r["receipt"] and r["base"] == line)),
             "receipts_with_unreadable_fields": if_prs(sorted(r["pr"] for r in rows if r["receipt_problems"])),
+            "receipts_refused_for_files": if_prs(sorted(r["pr"] for r in rows if r["files_refused"])),
             "line_bound_prs_without_diff": if_prs(sorted(r["pr"] for r in bound if r["changed"] is None)),
             "line_bound_prs_carried_by_line": if_prs(sorted(r["pr"] for r in bound if r["carried"])),
             "line_bound_prs_not_checked_against_line": if_prs(unchecked_prs),
@@ -1918,7 +1951,8 @@ def markdown(m: dict) -> str:
         out += [f"- Open pull requests without a receipt: {len(g['open_prs_without_receipt'])} "
                 f"({len(g['open_prs_without_receipt_into_line'])} of them into the line); with an older (version-1) "
                 f"receipt: {len(g['open_prs_with_older_receipt'])}; receipts with fields of the wrong type: "
-                f"{len(g['receipts_with_unreadable_fields'])}"
+                f"{len(g['receipts_with_unreadable_fields'])}; receipts the receipt check refuses for their "
+                f"coordination or files: {len(g['receipts_refused_for_files'])}"
                 + (f"; receipts listing more than {FILES_LIMIT} files, the rest not read: "
                    f"{_prs(g['receipts_with_files_cut'], 12)}" if g["receipts_with_files_cut"] else "") + ".",
                 _carried_line(m),
@@ -2113,13 +2147,15 @@ def _answer_sources(m: dict) -> dict:
             "git_read": src["git_read"], "note": src["note"], "not_read": _not_read(m),
             "unreadable_prs": g["unreadable_prs"], "receipts_with_files_cut": g["receipts_with_files_cut"],
             "receipts_with_unreadable_fields": g["receipts_with_unreadable_fields"],
+            "receipts_refused_for_files": g["receipts_refused_for_files"],
             "line_bound_prs_without_diff": g["line_bound_prs_without_diff"],
             "open_prs_without_diff": sorted(r["pr"] for r in m["prs"] if r["changed"] is None)
             if src["prs_read"] else None,
             "files_of_those": "declared in the receipt alone: their diffs were neither in local git nor read from "
                               "the API (a PR stacked on another branch is never read from the API)"
-                              + (f"; {', '.join('#%d' % n for n in unknown)} have no receipt, a cut one or one whose "
-                                 "files could not be read, so a path lists them under unknown_prs" if unknown else "")}
+                              + (f"; {', '.join('#%d' % n for n in unknown)} have no receipt, a cut one or one the "
+                                 "receipt check refuses for its coordination or its files, so a path lists them under "
+                                 "unknown_prs" if unknown else "")}
 
 
 def main(argv: list[str] | None = None) -> int:

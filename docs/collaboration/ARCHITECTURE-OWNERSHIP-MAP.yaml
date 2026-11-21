@@ -224,10 +224,13 @@ architecture_ownership_records:
 # the evidence does not settle the owner; the candidates and the evidence on each side are recorded instead.
 # Owners were read from what greg/ and the CLI import and call at b1950be2, not chosen.
 # Checked by tests/unit/test_canonical_owner_guard.py (mutants: scripts/ci/check_canonical_owner_guard_mutants.py).
-# The test pins every record, entry and canonical module set: removing one, adding a second canonical module, or
-# resolving a NEEDS_FOUNDER_DECISION record without a founder_ruling (an accepted decision or active intent record
-# that names the record) fails until the pin in the test changes in the same reviewed diff. Adding a candidate, an
-# alternate or a distinct entry needs no test change.
+# The test pins every record, entry and canonical module set: removing one, adding a second canonical module, adding
+# a candidate or an alternate to a NEEDS_FOUNDER_DECISION record (both sets are exact while it is undecided), or
+# resolving such a record without a founder_ruling (an accepted decision or active intent record that names the
+# record) fails until the pin in the test changes in the same reviewed diff. Adding an alternate to a CANONICAL record,
+# or a distinct entry to any record, needs no test change (a CANONICAL record has no candidates). Since 2026-11-21
+# (MW-C) a registered function's body is also compared with every runtime function; see the note after the last
+# record.
 # Status: PROPOSED, like every record in this file. A status here attaches, activates, retires or grants nothing.
 function_owner_records:
 
@@ -694,12 +697,17 @@ function_owner_records:
       - '_?([a-z0-9]+_)*inbox_(drop|write|put|deliver|relay|transport)(_[a-z0-9]+)*'
 
 # MW-C, 2026-11-21 (tests/unit/test_canonical_owner_guard.py; docs/evidence/canonical-owner-guard-2026-11-21/README.md).
-# Three rules now bind the records above, and the second amends the header comment of this section:
-# - the body of every canonical, candidate and alternate function a record names (names and constants erased, at least
-#   25 AST nodes) is compared with every function and method of the runtime tree; a copy outside the record's
-#   canonical, candidate and alternate modules fails, and a 'distinct' entry neither exempts a copy nor may name a
-#   module that holds one;
-# - the candidates of a NEEDS_FOUNDER_DECISION record are pinned exactly: adding a candidate to an undecided record
-#   (a new competing owner) needs a change to PINNED in the test, unlike an alternate or a distinct entry;
+# Four rules now bind the records above (the header comment of this section states the pin):
+# - the body of every canonical, candidate and alternate FUNCTION a record names (names and constants erased, pass
+#   and no-op constants dropped, annotations and import aliases normalised, at least 25 AST nodes; the methods of a
+#   registered class are not compared) is compared with every function and method of every runtime .py file
+#   (everything but tests/, docs/, top-level hidden entries and the cortex/evaluation/ files a freeze manifest there
+#   seals); a copy anywhere but the body's own registered module and qualname fails, inside its record or outside it,
+#   and two registered locations with one body fail, so recording a copy does not make it an owner;
+# - a 'distinct' entry neither exempts a copy nor may name a module that holds one; only an entry in the test's
+#   BODY_EXEMPTIONS (location, the body it resembles, the reason; empty today) clears a false positive;
+# - the candidates and alternates of a NEEDS_FOUNDER_DECISION record are pinned exactly: a new competing
+#   implementation of an undecided record needs a change to PINNED in the test;
 # - a HISTORICAL or RETIRED alternate still defined in the tree carries kept_for: {consumer: <module>.<function>}
-#   outside greg/ and tests/ whose source names it, or {open_decision: <record_id>} naming an undecided record.
+#   outside greg/, tests/, docs/, scripts/ci/ and any conftest.py, whose source names it, or
+#   {open_decision: <its own record_id>} while that record is undecided.

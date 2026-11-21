@@ -21,21 +21,31 @@ The registry is ``function_owner_records`` in docs/collaboration/ARCHITECTURE-OW
    structural copy of a registered function or class under any name. Names are a HEURISTIC: a rewritten
    re-implementation under an unmarked, unregistered name, a method inside a class, or code outside those six
    packages passes;
-4. (MW-C, 2026-11-21) the body of every canonical, candidate and alternate FUNCTION a record names, with every name
-   and every constant erased (``fingerprint``, from a fresh copy) and at least ``MIN_COPY_NODES`` nodes, is compared
-   with every function and method at any depth of every runtime file the filesystem lists (``runtime_files``: every
-   .py file under the repository root, directory links followed only inside it, except tests/, docs/, top-level
-   hidden entries and the cortex/evaluation/ files whose bytes a freeze manifest there hashes). A copy anywhere but
-   the body's own registered module and qualname fails, inside its record or outside it, whatever it is called; two
-   registered locations with one body fail (``registered_twin_problems``); a ``distinct`` entry never exempts one
-   (``distinct_copy_problems``: and may not name a module that holds one). It still misses a rewrite that changes
-   structure, an attribute rename (``row['x']`` to ``row.x``) and a function the registry does not record.
+4. (MW-C, 2026-11-21) the body of every canonical, candidate and alternate FUNCTION a record names (a dotted
+   qualname may name a method), with every name and every constant erased, ``pass`` and no-op constant statements
+   dropped, an annotated assignment read as the plain one and every import alias erased (``fingerprint``, from a
+   fresh copy) and at least ``MIN_COPY_NODES`` nodes, is compared with every function and method at any depth of every
+   runtime file the filesystem lists (``runtime_files``: every .py file under the repository root, directory links
+   followed only when they resolve inside it, except tests/, docs/, top-level hidden entries and the
+   cortex/evaluation/ files whose current bytes a cortex/evaluation/freeze-*.json manifest hashes). A copy anywhere
+   but the body's own registered module and qualname fails, inside its record or outside it, whatever it is called;
+   two registered locations with one body fail (``registered_twin_problems``); a ``distinct`` entry never exempts one
+   (``distinct_copy_problems``: and may not name a module that holds one); only a ``BODY_EXEMPTIONS`` entry clears a
+   reviewed false positive. It still misses: a rewrite that changes structure (a statement reordered or added, such
+   as ``_unused = 0``, a body wrapped in ``if True:``, split into two functions or with a helper inlined); an attribute
+   or call-keyword rename (``row['x']`` to ``row.x``); code outside a def (at module level, in a class body or a
+   ``__main__`` block) and code run by ``exec`` of a string; the fork pattern (the owner edited in the same diff that
+   keeps its old body as a copy, which then matches nothing registered); the methods of a registered CLASS (not
+   compared: expanding them reports four existing generic matches, see the README); the 3 registered functions below
+   ``MIN_COPY_NODES`` (acceptance.rank, greg.improvement.attention_close_condition and claim_close_condition); and any
+   function the registry does not record. tests/ is never scanned: fixtures may copy a body on purpose.
 
 The registry itself is pinned (``PINNED``, ``FOUNDER_DECISIONS``, ``MUST_FLAG``): removing a record or an entry,
 adding a second canonical module, adding a candidate or an alternate to a record that is still NEEDS_FOUNDER_DECISION,
 resolving a founder decision without a ruling record, or narrowing a record's markers below the names it must catch
-fails until this file changes in the same reviewed diff. ``kept_for_problems`` is a forward guard for section 76: a HISTORICAL or
-RETIRED alternate still in the tree names what keeps it (a consumer outside greg/ and tests/, or an open decision).
+fails until this file changes in the same reviewed diff. ``kept_for_problems`` is a forward guard for section 76: a
+HISTORICAL or RETIRED alternate still in the tree names what keeps it (a consumer outside greg/, tests/, docs/,
+scripts/ci/ and any conftest.py, or its own record's open decision).
 
 The test reads code and data. It grants, attaches, activates and retires nothing.
 """
@@ -1873,8 +1883,8 @@ def test_a_distinct_entry_cannot_vouch_for_a_module_that_holds_a_copy(tmp_path):
 
 
 def test_an_undecided_record_takes_no_new_candidate_without_a_pin_change():
-    # The adversary's candidate game (scratchpad mwc/attack/candidate_game.py), first half: a third competing owner
-    # added to an undecided record passed every check.
+    # The adversary's candidate game, first half: a third competing owner added as a candidate of an undecided
+    # record passed every check (the alternate half: test_an_undecided_record_takes_no_new_alternate_without_a_pin_change).
     data = load()
     assert pin_problems(data) == []
 

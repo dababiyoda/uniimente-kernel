@@ -44,6 +44,7 @@ FRESH = "test_the_fingerprint_erases_a_fresh_copy_once_and_leaves_the_parsed_tre
 VOUCH = "test_a_distinct_entry_cannot_vouch_for_a_module_that_holds_a_copy"
 UNDECIDED = "test_an_undecided_record_takes_no_new_candidate_without_a_pin_change"
 QUIET = "test_a_file_with_an_invalid_escape_parses_without_a_warning_on_any_python"
+ONE_NODE = "test_the_body_guard_ignores_one_node_edits_pass_no_op_constants_annotations_and_import_aliases"
 SEALED = "test_the_body_scan_reads_cortex_evaluation_except_the_files_a_freeze_manifest_seals"
 LINKS = "test_the_body_scan_reads_bom_files_follows_links_inside_the_repository_only_and_sees_pycache"
 REALITY_KEPT = "        kept_for: {consumer: acceptance.claims.crosswalk_problems}\n"
@@ -333,6 +334,20 @@ MUTANTS = [
     ("MW-C: a manifest seals files outside cortex/evaluation/",
      [("replace", TESTS, " and isinstance(digest, str) and relative.startswith(SEALED_UNDER):\n",
        " and isinstance(digest, str):\n")], SEALED),
+    # -- MW-C round 3: one-node edits normalised before fingerprinting ---------------------------------------------
+    ("MW-C: pass statements kept in the fingerprint",
+     [("replace", TESTS, "    return (isinstance(node, ast.Pass) or (isinstance(node, ast.Expr)",
+       "    return (False or (isinstance(node, ast.Expr)")], ONE_NODE),
+    ("MW-C: no-op constant statements kept in the fingerprint",
+     [("replace", TESTS, " or (isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant))\n",
+       " or False\n")], ONE_NODE),
+    ("MW-C: an annotated assignment kept as written",
+     [("replace", TESTS, "        return ast.Assign(targets=[node.target], value=node.value, type_comment=None)\n",
+       "        return node\n"), ("replace", TESTS, '            ast.AnnAssign: "annotation"}\n', "}\n")], ONE_NODE),
+    ("MW-C: an import alias erased only when one is written",
+     [("replace", TESTS, "    def visit_alias(self, node):\n        node.asname = ERASED\n",
+       "    def visit_alias(self, node):\n        if node.asname is not None:\n            node.asname = ERASED\n")],
+     ONE_NODE),
 ]
 
 

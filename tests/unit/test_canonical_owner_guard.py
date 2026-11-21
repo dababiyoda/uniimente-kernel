@@ -954,10 +954,30 @@ FIX_COPY = ("Import the owner's function instead. If this copy must stay, record
             "or revival condition); a 'distinct' entry does not exempt a copy.")
 
 
+def _inert(node) -> bool:
+    """A statement the fingerprint drops: ``pass``, a no-op constant (a string, ``...``) and a bare annotation."""
+    return (isinstance(node, ast.Pass) or (isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant))
+            or (isinstance(node, ast.AnnAssign) and node.value is None))
+
+
 class _Erase(ast.NodeTransformer):
     """Rewrite every name a body binds or reads, and every constant, to ERASED; structure, attribute names, keyword
-    names and imported module names stay. It rewrites in place, so ``fingerprint`` gives it a fresh copy, and it is
-    idempotent: an erased tree erases to itself."""
+    names and imported module names stay. Three one-node edits are normalised away and nothing more: ``_inert``
+    statements are dropped, an annotated assignment is read as the plain assignment, and every import gets the
+    ERASED alias (``import os`` and ``import os as system`` are one statement). It rewrites in place, so
+    ``fingerprint`` gives it a fresh copy, and it is idempotent: an erased tree erases to itself."""
+
+    def visit_Pass(self, node):
+        return None
+
+    def visit_Expr(self, node):
+        return None if _inert(node) else self.generic_visit(node)
+
+    def visit_AnnAssign(self, node):
+        if _inert(node):
+            return None
+        self.generic_visit(node)
+        return ast.Assign(targets=[node.target], value=node.value, type_comment=None)
 
     def visit_Name(self, node):
         node.id = ERASED
@@ -978,8 +998,7 @@ class _Erase(ast.NodeTransformer):
         return node
 
     def visit_alias(self, node):
-        if node.asname is not None:
-            node.asname = ERASED
+        node.asname = ERASED
         return node
 
     def visit_FunctionDef(self, node):
@@ -1026,15 +1045,18 @@ def _function_body(fn) -> list:
     return body
 
 
-_DROPPED = {ast.arg: "annotation", ast.FunctionDef: "returns", ast.AsyncFunctionDef: "returns"}
+_DROPPED = {ast.arg: "annotation", ast.FunctionDef: "returns", ast.AsyncFunctionDef: "returns",
+            ast.AnnAssign: "annotation"}
 
 
 def _erased_size(fn) -> int:
-    """The node count ``fingerprint`` reports, read without copying: the body's nodes minus the annotations _Erase
-    drops."""
+    """The node count ``fingerprint`` reports, read without copying: the body's nodes minus the ``_inert``
+    statements and the annotations _Erase drops (an annotated assignment counts as the plain one)."""
     stack, size = list(_function_body(fn)), 0
     while stack:
         node = stack.pop()
+        if _inert(node):
+            continue
         size += 1
         skip = _DROPPED.get(type(node))
         for field, value in ast.iter_fields(node):
@@ -1895,3 +1917,51 @@ def test_the_body_scan_reads_cortex_evaluation_except_the_files_a_freeze_manifes
         "cortex/evaluation/edited.py", "cortex/evaluation/settle.py", "cortex/evaluation/suites/runner.py",
         "cortex/other.py", "foundry/systems/team_copy.py"], found
     assert sealed_files(root) == {"cortex/evaluation/sealed.py"}
+
+
+# A registered body with a local import under an alias, a plain import, a nested def and an except-as name.
+DEEP_BODY = ("def collect(home, names):\n"
+             "    import json as codec\n"
+             "    import os\n"
+             "    found = {}\n"
+             "    def load(name):\n"
+             "        return codec.loads((home / name).read_text())\n"
+             "    for name in names:\n"
+             "        try:\n"
+             "            found[name] = load(name)\n"
+             "        except (OSError, ValueError) as error:\n"
+             "            found[name] = {'error': str(error), 'pid': os.getpid()}\n"
+             "    return found\n")
+DEEP_RECORD = {"record_id": "OWN-FN-D", "function": "d", "owner_status": "CANONICAL", "markers": ["Collect"],
+               "canonical": [{"module": "greg.collect", "qualnames": ["collect"]}]}
+
+
+def _variant(*edits: tuple[str, str], name: str = "gather") -> str:
+    text = DEEP_BODY.replace("def collect(", f"def {name}(")
+    for old, new in edits:
+        assert text.count(old) == 1, old
+        text = text.replace(old, new)
+    return text
+
+
+def test_the_body_guard_ignores_one_node_edits_pass_no_op_constants_annotations_and_import_aliases(tmp_path):
+    # Before comparing, the fingerprint drops `pass` and no-op constant statements, reads an annotated assignment as
+    # the plain assignment (a bare annotation is dropped) and erases every import alias, added or renamed. Nothing
+    # else is normalised: `_unused = 0`, a renamed call keyword or an `if True:` wrapper is still a different body.
+    edits = {
+        "with_pass": ("    found = {}\n", "    found = {}\n    pass\n"),
+        "no_op_string": ("    found = {}\n", "    found = {}\n    'collected below'\n"),
+        "no_op_ellipsis": ("    return found\n", "    ...\n    return found\n"),
+        "annotated": ("    found = {}\n", "    found: dict = {}\n"),
+        "bare_annotation": ("    found = {}\n", "    found = {}\n    total: int\n"),
+        "alias_added": ("    import os\n", "    import os as system\n"),
+    }
+    root = _tree(tmp_path, {"greg/collect.py": DEEP_BODY,
+                            **{f"greg/{key}.py": _variant(edit) for key, edit in edits.items()},
+                            "greg/assigned.py": _variant(("    found = {}\n", "    found = {}\n    _unused = 0\n")),
+                            "greg/wrapped_if.py": _variant(("    return found\n", "    if True:\n        return found\n"))})
+    found = body_copy_problems([DEEP_RECORD], root)
+    assert sorted(line.split(":")[0] for line in found) == sorted(f"greg/{key}.py" for key in edits), found
+    for key in edits:
+        fn = parse(root / f"greg/{key}.py").body[0]
+        assert _erased_size(fn) == fingerprint(fn)[0] == fingerprint(parse(root / "greg/collect.py").body[0])[0], key

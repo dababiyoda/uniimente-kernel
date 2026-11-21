@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """Work map: where the build stands, what is open to take, and who holds what.
 
-Read-only. It writes only the files you name, posts nothing, locks nothing and
+Read-only. It writes only the files you name (no bytecode either), posts nothing, locks nothing and
 grants nothing. It joins sources that already exist:
 
 - ``greg/path.json`` (the route) and ``acceptance/directive-sections.json`` (the
   77-section directive: buildable units in dependency order, at the static ceiling);
 - ``foundry/completion.yaml`` (the 55 obligations) and ``scripts/mind_status.py``;
-- open pull requests and their version-2 receipts (exact);
+- open pull requests and their version-2 receipts (read as declared, not re-validated here);
 - work-board comments (heuristic, and labelled so).
 
 Ask it before you edit::
@@ -17,28 +17,53 @@ Ask it before you edit::
     python scripts/work_map.py --github OWNER/REPO --unit WU-11
 
 ``--prs-json`` and ``--comments-json`` replay saved API responses offline.
-Without any of them it prints the position and the units, with no owners.
+Without any of them it prints the position and the units, and says that pull requests
+and comments were not read.
+
+The JSON (``--json``) holds ``generated``, ``line``, ``authority`` ("none"), ``sources`` (counts, the flags
+``prs_read``, ``comments_read`` and ``git_read``, and ``notes``/``note``: what was not read), ``position``, ``units``
+(``state``; ``named_by``, the PRs headed for the line whose title or receipt names the unit or one of its asks;
+``carried_by_line``; ``mentioned_by``; ``named_on_board``; ``claimed_on_board``), ``contended``, ``sessions`` and
+``claims`` (each with ``how``: how its author was resolved; an author a join inferred is a session's
+``inferred_comments`` and a claim's ``inferred_session``, never its stated one; a session's ``checkin`` is its latest
+claim or check-in comment; a claim's ``state`` is its own, its session's is ``session_activity``, and a release only a
+circular join attributes to its author is ``release_by_inferred_author``), ``claims_without_pr``,
+``older_claims_without_pr``, ``line_checks``, ``gaps`` (``None`` where its source was not read; what git could not
+check is listed there, never counted as zero) and ``prs`` (one row per open pull request, read once however often
+given: its receipt's fields as declared, ``files`` cut to the first ``FILES_LIMIT`` with ``files_cut`` counting the
+rest, ``receipt_problems`` for fields of the wrong type, ``changed``, the files git says it changes itself,
+``line_bound`` and ``carried``).
 
 A snapshot, not a lock. A claim coordinates work; an expired one never permits
 overwriting someone's files (``docs/collaboration/START_HERE.md``). What the
-parser cannot resolve is listed as unresolved, never guessed. It always exits 0.
+parser cannot resolve is listed as unresolved, never guessed. Text from pull
+requests and comments is printed as code, so it cannot format the map. It always exits 0.
 """
 from __future__ import annotations
 
-import argparse
-import json
-import os
-import re
-import subprocess
 import sys
-from datetime import datetime, timezone
-from pathlib import Path
+
+sys.dont_write_bytecode = True
+
+import argparse  # noqa: E402
+import bisect  # noqa: E402
+import fnmatch  # noqa: E402
+import json  # noqa: E402
+import os  # noqa: E402
+import posixpath  # noqa: E402
+import re  # noqa: E402
+import subprocess  # noqa: E402
+import tempfile  # noqa: E402
+from datetime import datetime, timezone  # noqa: E402
+from pathlib import Path  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 sys.path.insert(0, str(ROOT))
 
 import branch_catalog  # noqa: E402
+import repo_review  # noqa: E402
+from lineage_map import _stacked_on  # noqa: E402 - one stack walk
 from repo_review import RECEIPT_MARKER as MARKER, _get, receipt_of  # noqa: E402,F401 - one reader, one client
 
 LINE = branch_catalog.LINE
@@ -53,13 +78,13 @@ CHECKIN_BLOCK = """\
 - Prompt: <what I was asked, one or two sentences; no secrets>
 - Plan: <how, in 1-3 steps; what I will not do>
 - Route: N3 | P5 | <unit id> | process   (greg/path.json)
-- Guidance read: uniimente-kernel@<sha>
-- Repository / branch / base → head: <owner/repo> · <branch> · <sha> → <sha>
+- Guidance read: uniimente-kernel@<the commit at which you read the guide, e.g. your starting checkout>
+- Repository / branch / base → head: <owner/repo> · <branch> · <base sha> → pending
 - Files / interfaces: <paths in backticks>; read-only: <...>
-- Depends on: <...>
-- Overlap inspected and split: <what you inspected> (clear | split with <session> | blocked)
-- Acceptance evidence: <...>
-- Reviewer / integrator · Destination: <session or unassigned> · <branch> (draft #<n>)
+- Depends on: <... or nothing>
+- Overlap inspected and split: <claims and PRs you opened> (clear: nothing open changes the same lines | split proposed to <session>, ack: <link or waiting> | blocked)
+- Acceptance evidence: <what will show it works; results go in the PR>
+- Reviewer / integrator · Destination: <session or unassigned> · <branch> (PR: pending)
 - Next action / blocker / handoff condition: <...>
 - Recheck (UTC): <YYYY-MM-DDTHH:MM:SSZ>"""
 
@@ -70,11 +95,40 @@ ENGINEERING_TARGET = ("a useful mission on one exact composed revision; then rec
                       "changed evidence; then useful transfer to a materially different mission "
                       "(founder direction of 2026-11-12)")
 
+HEADING_LIMIT = 2000         # characters of a comment's first line that are read (the longest real one is 1,142)
+SENTENCE_LIMIT = 3000        # characters of one sentence of a files field that are read
+SEGMENT_LIMIT = 8000         # characters of one labelled segment that are read (the longest real one is 2,013)
+FILES_LIMIT = 500            # files of one receipt that are read (the longest real list is far shorter)
+
+
+def _text(value) -> str:
+    """``value`` when it is a string, else the empty string."""
+    return value if isinstance(value, str) else ""
+
+
+def _texts(value) -> list[str]:
+    """The strings in ``value`` when it is a list, else none."""
+    return [x for x in value if isinstance(x, str)] if isinstance(value, list) else []
+
+
+def _reason(exc: BaseException, root: Path = ROOT) -> str:
+    """An exception as its type and, when it names a file, that file relative to the repository (else its name):
+    no local path and no text taken from the data."""
+    name, where = getattr(exc, "filename", None), ""
+    if isinstance(name, (str, os.PathLike)) and "://" not in str(name):
+        try:
+            where = Path(name).resolve().relative_to(root.resolve()).as_posix()
+        except (ValueError, OSError):
+            where = Path(name).name
+    code = getattr(exc, "code", None)
+    return type(exc).__name__ + (f" {code}" if type(code) is int else "") + (f": {where}" if where else "")
+
+
 # ------------------------------------------------------------------ identities
 
 _IDS = [
     ("claude", re.compile(r"session_01[0-9A-Za-z]{22}(?![0-9A-Za-z])"), lambda m: m[0]),
-    ("cursor", re.compile(r"bc-[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}|bc-[0-9a-f]{8}(?![0-9a-f-])"),
+    ("cursor", re.compile(r"(?<![\w-])(?:bc-[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}|bc-[0-9a-f]{8}(?![0-9a-f-]))"),
      lambda m: m[0][:11]),
     ("kimi", re.compile(r"(?<![\w/.-])kimi-[a-z0-9]+(?:-[a-z0-9]+)*-20\d{6}(?:-\d{2})?(?![\w.-])"),
      lambda m: m[0]),
@@ -86,22 +140,28 @@ _TEAM = re.compile(r"\bUAT\b|\bHegemony\b|Provider-review session")
 _AUTHOR_LABELS = {"implementer", "agent / claim", "agent", "identity", "session", "posted by", "from"}
 _ADDRESSEE_LABELS = {"receiver", "next owner", "reviewer", "integration owner", "reviewer / integrator",
                      "reviewer / integrator · destination"}
-_OPENING = re.compile(r"(?i)^\W*(?:session|implementer|from|posted by|agent)\b")
-_TO = re.compile(r"(?i)\b(?:for|to|cc)\b[^.;:]{0,50}$")
-_FROM = re.compile(r"(?i)\bfrom\b[^.;:]{0,50}$")
+_OPENING = re.compile(r"(?i)^[^\w>|]*(?:session|implementer|from|posted by)\b[\s`*:]*")   # never a quote or a table
+# A heading names its author only as a byline: right after "·", "(" (a Claude session id), "session", "from",
+# "integrator" or "owner", and except after "·" or "from" not in a clause addressed "for"/"to" someone. A heading
+# that opens with "@", "To" or "For ... (" names its addressee there.
+_BYLINE = re.compile(r"(?i)(·|\(|\bsession|\bfrom|\bintegrator|\bowner)[\s`*_:,]*$")
+_FOR = re.compile(r"(?i)\b(?:for|to|cc)\b[^.:;·]*$")
+_ADDRESSED = re.compile(r"(?i)^[#*_\s]*(?:@|to\b|for\b[^(\n]{0,80}\()[\s`]*")
+_FENCE = re.compile(r"^[ \t]*(`{3,}|~{3,})")
+_INDENTED = re.compile(r"^(?: {4}|\t| {0,3}\t)")
 
 
 def identities(text: str) -> list[tuple[int, str, str]]:
     """(position, canonical id, client) for every session identity in ``text``, in order."""
     found = []
     for client, pattern, key in _IDS:
-        found += [(m.start(), key(m), client) for m in pattern.finditer(text or "")]
+        found += [(m.start(), key(m), client) for m in pattern.finditer(_text(text))]
     return sorted(found)
 
 
 def canonical_identity(value: str | None) -> tuple[str | None, str]:
     """A receipt's ``session_id`` as (canonical id, client). An id in no known form is kept verbatim."""
-    value = (value or "").strip()
+    value = _text(value).strip()
     if not value:
         return None, "unknown"
     hits = identities(value)
@@ -114,140 +174,329 @@ def canonical_identity(value: str | None) -> tuple[str | None, str]:
 # ------------------------------------------------------------------ board comments
 
 _HTML = re.compile(r"\A\s*(?:<!--.*?-->\s*)+", re.S)
-_LABEL = re.compile(r"^\s*(?:[-*]\s+)?(?:\*\*([A-Z][^*\n]{0,70}?)[:.]?\*\*\s*:?|([A-Z][A-Za-z /()·>→-]{1,48}):(?=\s))", re.M)
+# A bold run with code in it ("**New `x.py`, read-only.**") is a sentence, not a label, and ends no segment.
+_LABEL = re.compile(r"^(?P<indent>[ \t]*)(?:[-*][ \t]+)?"       # [ \t], not \s: a blank line is never rescanned
+                    r"(?:\*\*(?P<bold>[A-Z][^*`\n]{0,70}?)[:.]?\*\*[ \t]*:?"
+                    r"|(?P<plain>[A-Z][A-Za-z /()·>→-]{1,48}):(?=\s))", re.M)
+# Kinds, tested in this order on the heading's lead (the text before its first ":", "(", "—" or "."). A lead that
+# names no kind, or only an update ("Resumed ..."), is a claim or handoff when the rest of the heading announces one.
 _KINDS = [
+    ("claim+handoff", r"\bclaims?\b.*handoff|handoff.*\bclaims?\b"), ("handoff", r"handoff|released into"),
+    ("release", r"\breleas|\bwithdr[ae]w"), ("claim", r"\bclaims?\b"), ("check-in", r"check-?in"),
     ("correction", r"correction"), ("acknowledgment", r"acknowledg"), ("intake", r"\bintake\b"),
-    ("check-in", r"check-?in"), ("claim+handoff", r"claim.*handoff|handoff.*claim"),
-    ("handoff", r"handoff|released into"), ("claim", r"\bclaims?\b"),
     ("update", r"update|status|landed|resumed|pause|continuation|heads-up"),
 ]
-_RECHECK = re.compile(r"(?i)\bre-?check[^\n]{0,24}?(20\d{2}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?Z)")
-_RELEASE = re.compile(r"(?i)releases?\s+(?:the \w+ half of\s+)?claims?\s+`?(\d{10})|claim\s+`?(\d{10})`?\s+released")
+_ANNOUNCES = ("claim+handoff", "handoff", "claim")
+_CLAIM_ID = re.compile(r"(?i)\bclaims?[\s:]*(?:comment\s+)?`?\d{6,}`?|\b(?:no|not a|without)\s+claims?\b")
+_RECHECK = re.compile(r"(?i)\br[^\w\n]{0,2}e-?check[^\n]{0,24}?(20\d{2}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?Z)")
+_RELEASE = re.compile(r"(?i)releases?\s+(the \w+ half of\s+)?claims?\s+`?(\d{10})"
+                      r"|claim\s+`?(\d{10})`?\s+(?:is\s+|was\s+|now\s+)?released\b"
+                      r"|\bclos(?:e|es|ing)\s+(?:the\s+|my\s+)?claims?\s+(?:in\s+|at\s+)?"
+                      r"(?:\S*?issuecomment-|comment\s+)?`?(\d{10})(?!\d)")
 _STOPPED = re.compile(r"(?i)delivery under claim `?(\d{10})`? is stopped")
+_NEGATED = re.compile(r"(?i)\b(?:not|never|no|nothing)\b|n't\b")
+# A negation reaches only its own clause: "Nothing is merged, so this releases claim N" releases it.
+_CLAUSE = re.compile(r"(?i)[.;:,!?\n]|\b(?:so|and|but|then)\b")
 _CLAIM_REF = re.compile(r"(?i)claim[s:]*\s*(?:comment\s+)?`?(\d{10})|issuecomment-(\d{10})|correction to `?(\d{10})")
+# A comment speaks of its own claim only in the first person.
+_OWN_CLAIM = re.compile(r"(?i)\bmy\s+\[?claims?[\s:]*(?:comment\s+)?`?(\d{10})|\bclaims?\s+`?(\d{10})`?\s+(?:is\s+)?"
+                        r"released\s+into\b|\bcorrection\s+to\s+(?:my\s+)?(?:claim\s+)?(?:comment\s+)?`?(\d{10})")
+_COMMENT_ID = re.compile(r"(?<![\d#/])\d{10}(?!\d)")
+_UNDONE = re.compile(r"(?i)\b(?:blocked|pending|planned|proposed|requested|later)\b")    # "Release blocked: ..."
+_DRAFT = re.compile(r"(?i)(?:draft(?:\s+(?:PR|child))?:?|handoff:?(?:\s+PR)?|released into(?:\s+draft)?(?:\s+PR)?)"
+                    r"\**\s*\[?#(\d{1,9})(?!\d)")
+_BRANCH = re.compile(r"(?i)\bbranch:?\**[^\S\n]*`([\w.-]+/[\w./-]+)`")
+_PULL_LINK = re.compile(r"github\.com/([\w.-]+/[\w.-]+)/pull/(\d{1,9})\b")
 _ROUTE = re.compile(r"greg/path\.json#(N(?:10|\d)|P(?:1[0-3]|\d)|process)\b")
 _NODE = re.compile(r"\b(N(?:10|\d)|P(?:1[0-3]|\d))\b|\bprocess\b")
 UNIT = re.compile(r"\b(?:WU|MU|MW)-[0-9A-Z]{1,2}\b|\b[SD]\d{1,2}-[A-Z]\b")
-_NEGATIVE = re.compile(r"(?i)^\W*(?:no|not|do not|explicitly not|out of scope|read-only|excluded)\b|read-only|"
-                       r"\bexcluded\b|\bnot touched\b")
+ASK = re.compile(r"\b[SD]\d{1,2}\.A\d{1,2}\b")
+_UNIT_PHRASE = re.compile(r"(?i)\bunit\s+((?:WU|MU|MW)-[0-9A-Z]{1,2}|[SD]\d{1,2}-[A-Z])\b")
+# A clause that excludes what follows it ("Not `x`", "read-only: `x`", "No edits to `x`"), and a predicate that
+# excludes the paths just before it ("`x` is read-only", "`x` (read-only)").
+_NEGATIVE = re.compile(r"(?i)^\W*(?:no|not|do\s+not|explicitly\s+not|out\s+of\s+scope|read-only|excluded|leave)\b|"
+                       r"[,;:(]\s*not\s+(?=`)|read-only|\bexcluded\b|\bnot\s+touch(?:ed|ing)\b|\bno\s+edits?\s+to\b|"
+                       r"\bdo\s+not\s+(?:edit|touch|change)\b|\bleave\b|\bout\s*\(|\breviews\b")
+_PREDICATE = re.compile(r"(?i)\b(?:is|are|stays?|remains?|kept|left)\s+"
+                        r"(?:read-only|untouched|excluded|out\s+of\s+scope)\b|\bare\s+not\s+touched\b|"
+                        r"\b(?:is|are)\s+read\b,?\s*(?:and\s+|but\s+)?never\s+(?:edited|changed)\b")
+_EXCLUDED_BEFORE = re.compile(r"(?i)[\s`]*\(?\s*(?:is|are|stays?|remains?|kept)?\s*(?:(?:read-only|excluded|untouched|"
+                              r"not\s+touched|out\s+of\s+scope|hot|held\s+by)\b|=\s*#\d)")
+# Emphasis markers, matched so that each can become spaces of its own length: "Do **not** edit" is "Do   not   edit".
+_EMPHASIS = re.compile(r"\*+|(?<![\w`/.-])_+|_+(?![\w`/.-])")
+# A list item that opens with a path and limits itself to it ("- `x.json` and its pin only") declares that path.
+_ONLY_ITEM = re.compile(r"(?m)^[ \t]*(?:[-*+]|\d{1,3}[.)])[ \t]+`[^`\n]+`[^\n.;:`]{0,40}?(?<!-)\bonly\b")
+_INLINE_FILES = re.compile(r"(?i)(?<=[^\s*-])[^\S\n]+\*{0,2}files?:\*{0,2}[^\S\n]")
 _ALIASES = {
     "prompt": {"prompt", "founder request", "asked to", "request", "task / intended observable outcome", "task"},
     "plan": {"plan", "approach", "method"},
     "route": {"route", "gps node", "parent gps node"},
-    "files": {"files", "files / interfaces", "files or interfaces owned", "files/interfaces", "scope",
-              "bounded scope", "remaining scope"},
     "guidance": {"guidance read", "guidance revision"},
 }
+_SCOPE_LABELS = {"owned", "scope", "bounded scope", "remaining scope"}
+CLAIM_KINDS = ("claim", "check-in", "claim+handoff")
+# Authors taken from another comment or a pull request rather than stated in the comment itself. Such a comment
+# counts toward its session's activity, never toward its prompt, plan, route, check-in or file claims.
+JOINS = ("claim reference", "shared marker", "pr receipt", "pr task_ref")
 
 
 def heading_of(body: str) -> str:
-    text = _HTML.sub("", body or "")
-    return next((line.strip() for line in text.splitlines() if line.strip()), "")
+    """The first non-empty line after any leading HTML comments, at most ``HEADING_LIMIT`` characters."""
+    text = _HTML.sub("", _text(body))
+    return next((line.strip() for line in text.splitlines() if line.strip()), "")[:HEADING_LIMIT]
 
 
 def comment_kind(heading: str) -> str:
-    low = heading.lower()
-    return next((kind for kind, pat in _KINDS if re.search(pat, low)), "other")
+    """What a comment is, from the lead of its heading; a claim id it cites ("claim 6794587797") is not a claim."""
+    low = _CLAIM_ID.sub(" ", _text(heading)[:HEADING_LIMIT].lower())
+    low = re.sub(r"\bclaims?\s+releas", "releas", low)
+    lead = re.split(r"[:(—.]", low, maxsplit=1)[0]
+    kind = next((k for k, pat in _KINDS if re.search(pat, lead)), None)
+    if kind in (None, "update"):
+        kind = next((k for k, pat in _KINDS if k in _ANNOUNCES and re.search(pat, low)), kind)
+    return kind or "other"
 
 
 def _norm(label: str) -> str:
     return re.split(r"[,(]", label.lower())[0].strip(" *:.")
 
 
+def segments(body: str) -> list[tuple[str, str]]:
+    """Every labelled segment of a comment, in order: (normalized label, its text up to the next label indented no
+    deeper), so a label's nested list belongs to it."""
+    body = _text(body)
+    marks = [(m.start(), m.end(), _norm(m["bold"] or m["plain"]), len(m["indent"])) for m in _LABEL.finditer(body)]
+    stops, open_ = [len(body)] * len(marks), []
+    for i, (start, _end, _label, indent) in enumerate(marks):
+        while open_ and marks[open_[-1]][3] >= indent:     # a label no deeper ends every open one at its depth or more
+            stops[open_.pop()] = start
+        open_.append(i)
+    return [(label, body[end:min(stop, end + SEGMENT_LIMIT)].strip())
+            for (_s, end, label, _d), stop in zip(marks, stops)]
+
+
 def fields(body: str) -> dict[str, str]:
-    """Labelled segments of a comment: ``{normalized label: text up to the next label}``."""
-    body = body or ""
-    marks = [(m.start(), m.end(), _norm(m[1] or m[2])) for m in _LABEL.finditer(body)]
+    """Labelled segments of a comment: ``{normalized label: text of its first segment}``."""
     out: dict[str, str] = {}
-    for i, (_, end, label) in enumerate(marks):
-        stop = marks[i + 1][0] if i + 1 < len(marks) else len(body)
-        out.setdefault(label, body[end:stop].strip())
+    for label, text in segments(body):
+        out.setdefault(label, text)
     return out
 
 
 def _field(found: dict[str, str], name: str) -> str:
-    """The first segment whose label is an alias of ``name``. Labels match whole, never by prefix, except that
-    every label beginning "files" names files ("files / interfaces claimed", "files or interfaces owned")."""
-    return next((found[a] for a in found if a in _ALIASES[name] or (name == "files" and a.startswith("files"))), "")
+    """The first segment whose label is an alias of ``name``. Labels match whole, never by prefix."""
+    return next((found[a] for a in found if a in _ALIASES[name]), "")
 
 
-def declared_files(text: str, tracked: set[str], dirs: set[str]) -> list[str]:
-    """Backticked repository paths in a files/scope field, without the lines that exclude them."""
-    keep = []
-    for line in re.split(r"\n|(?<=[.;])\s+", text or ""):
-        if _NEGATIVE.search(line):
-            continue
-        for token in re.findall(r"`([^`\n]+)`", line):
-            token = token.strip().rstrip("/") if token.strip().rstrip("/") in dirs else token.strip()
-            known = token in tracked or token in dirs
-            fresh = "/" in token and "." in token.rsplit("/", 1)[-1] and token.split("/")[0] in dirs
-            if (known or fresh) and " " not in token and token not in keep:
+def files_parts(body: str) -> list[tuple[str, bool]]:
+    """The texts a comment declares its files in, each with whether a files or "Owned" label introduces it: every
+    segment whose label has the word "files", every inline "File(s):" sentence, or else the owned/scope segments; and
+    every list item that limits itself to a path ("- `x.json` and its pin only")."""
+    segs = segments(body)
+    named = [(t, True) for label, t in segs if re.search(r"\bfiles?\b", label)]
+    for line in _text(body).splitlines():
+        found = list(_INLINE_FILES.finditer(line))
+        for i, m in enumerate(found):                    # from its sentence's start to the next inline label
+            floor = max(found[i - 1].end() if i else 0, m.start() - SENTENCE_LIMIT)
+            start = max(line.rfind(". ", floor, m.start()), line.rfind("; ", floor, m.start()))
+            stop = min(found[i + 1].start() if i + 1 < len(found) else len(line), m.start() + SENTENCE_LIMIT)
+            named.append((line[start + 2 if start >= 0 else floor:stop], True))
+    only = [(m[0][:SENTENCE_LIMIT], False) for m in _ONLY_ITEM.finditer(_text(body))]
+    return (named or [(t, label == "owned") for label, t in segs if label in _SCOPE_LABELS]) + only
+
+
+def files_text(body: str) -> str:
+    """The text a comment declares its files in (``files_parts``), as one text."""
+    return "\n".join(t for t, _labelled in files_parts(body))
+
+
+def _excluded(sentence: str) -> list[tuple[int, int]]:
+    """Spans of a sentence whose backticked paths it excludes: after a negative phrase ("Not", "read-only:", "Leave",
+    "Founder reviews"), and before a negative predicate ("... are read-only", "... are read, never edited"); inside
+    parentheses either reaches only the parentheses. Emphasis does not hide a phrase ("Do **not** edit")."""
+    plain = _EMPHASIS.sub(lambda m: " " * len(m[0]), sentence)
+
+    def scope(at: int) -> tuple[int, int]:
+        opened = sentence.rfind("(", 0, at)
+        closed = sentence.find(")", opened) if opened >= 0 else -1
+        inside = opened >= 0 and (closed < 0 or closed >= at)
+        return (opened, closed if closed >= 0 else len(sentence)) if inside else (0, len(sentence))
+    spans = []
+    for m in _NEGATIVE.finditer(plain):
+        spans.append((m.start(), scope(m.start())[1]))
+    for m in _PREDICATE.finditer(plain):
+        spans.append((scope(m.start())[0], m.start()))
+    return spans
+
+
+def declared_files(text: str, tracked: set[str], dirs: set[str], globs: bool = True) -> list[str]:
+    """Backticked repository paths in a files/scope field, without the ones a negative phrase excludes. A directory
+    holds its files only when written as a glob (``dir/**``), and a glob counts only where ``globs`` says a files label
+    introduces the text; otherwise a directory is recorded as ``new file under <dir>``, which covers no existing
+    file."""
+    keep, seen = [], set()
+    for sentence in re.split(r"\n|(?<=[.;])\s+", _text(text)):
+        sentence = sentence[:SENTENCE_LIMIT]
+        spans = _excluded(sentence)
+        plain = _EMPHASIS.sub(lambda m: " " * len(m[0]), sentence)
+        for m in re.finditer(r"`([^`\n]+)`", sentence):
+            if _EXCLUDED_BEFORE.match(plain, m.end()) or any(a <= m.start() < b for a, b in spans):
+                continue
+            token = m[1].split("::")[0].strip()          # `greg/x.py::test_y` names the file greg/x.py
+            if not re.fullmatch(r"[\w./*-]+", token):       # spaces, braces, colons: prose or a pattern, not a path
+                continue
+            bare = token.rstrip("/")
+            if "*" in token:
+                if not globs:
+                    continue
+                root = token.split("*")[0].rstrip("/")
+                ok = root in dirs or root in tracked or root.rsplit("/", 1)[0] in dirs
+            elif bare in dirs and bare not in tracked:
+                token, ok = f"new file under {bare}", True
+            else:
+                ok = token in tracked or ("/" in token and "." in token.rsplit("/", 1)[-1]
+                                          and token.split("/")[0] in dirs)
+            if ok and token not in seen:
                 keep.append(token)
+                seen.add(token)
     return keep
 
 
-def comment_author(body: str) -> dict:
-    """Who wrote a board comment, from its heading or a labelled line. Never the first id in the body.
+def _addressed(heading: str) -> set[int]:
+    """Positions of the ids a heading addresses: right after a leading "@", "To" or "For ... (" ."""
+    m = _ADDRESSED.match(heading)
+    return {at for at, _k, _c in identities(heading) if m and at <= m.end() + 1}
 
-    Returns ``author`` (None when unresolved), ``client``, ``how`` and the ``addressees`` it names.
+
+def _prose(text: str) -> list[str]:
+    """The lines of a text outside code: a fence closes only on a run of its own character at least as long as the one
+    that opened it, with nothing after it, and a line indented four spaces after a blank line is an indented block."""
+    out, fence, blank, block = [], None, True, False
+    for line in text.splitlines():
+        f = _FENCE.match(line)
+        if fence:
+            if f and f[1][0] == fence[0] and len(f[1]) >= len(fence) and not line[f.end():].strip():
+                fence = None
+            continue
+        if f:
+            fence = f[1]
+            continue
+        block = bool(line.strip()) and bool(_INDENTED.match(line)) and (blank or block)
+        blank = not line.strip()
+        if not block:
+            out.append(line)
+    return out
+
+
+def comment_author(body: str) -> dict:
+    """Who wrote a board comment: a labelled author line outside code fences, else the byline of a Markdown heading
+    or bold title, else an opening "Session `id`" line. Never an addressee, never the first id in the body.
+
+    Returns ``author`` (None when unresolved), ``client``, ``how``, the ``addressees`` it names and its ``team``.
     """
-    body = body or ""
+    body = _text(body)
     heading = heading_of(body)
-    addressees, author = [], None
-    for at, key, client in identities(heading):
-        before = heading[:at]
-        if _TO.search(before) and not _FROM.search(before):
-            addressees.append(key)
-        elif author is None:
-            author = (key, client, "heading")
-    if author is None:
-        for line in _HTML.sub("", body).splitlines():
-            m = _LABEL.match(line)
-            if not m:
+    team = _TEAM.search(heading) or _TEAM.search(body)
+    addressed = _addressed(heading)
+    addressees = [k for at, k, _c in identities(heading) if at in addressed]
+    author = None
+    for line in _prose(_HTML.sub("", body)):
+        m = _LABEL.match(line)
+        if not m:
+            continue
+        label, hits = _norm(m["bold"] or m["plain"]), identities(line)
+        if label in _ADDRESSEE_LABELS:
+            addressees += [h[1] for h in hits]
+        elif label in _AUTHOR_LABELS and hits and author is None:
+            author = (hits[0][1], hits[0][2], "label")
+    if author is None and heading.startswith(("#", "**")) and not _TEAM.search(heading):
+        for at, key, client in identities(heading):
+            by = _BYLINE.search(heading[max(0, at - 48):at])
+            if not by or (by[1] == "(" and not key.startswith("session_")):
                 continue
-            label, hits = _norm(m[1] or m[2]), identities(line)
-            if label in _ADDRESSEE_LABELS:
-                addressees += [h[1] for h in hits]
-            elif label in _AUTHOR_LABELS and hits and author is None:
-                author = (hits[0][1], hits[0][2], "label")
-    lead = _HTML.match(body)
+            if by[1] != "·" and by[1].lower() != "from" and _FOR.search(heading[max(0, at - 64):at]):
+                addressees.append(key)
+                continue
+            author = (key, client, "heading")
+            break
     if author is None:                                   # "Session `...`." as the comment's opening line
         rest = [ln for ln in _HTML.sub("", body).splitlines() if ln.strip()][1:2]
-        hits = identities(rest[0]) if rest and _OPENING.match(rest[0]) else []
-        if hits:
+        opening = _OPENING.match(rest[0]) if rest and not _INDENTED.match(rest[0]) else None
+        hits = identities(rest[0]) if opening else []
+        if hits and hits[0][0] <= opening.end():
             author = (hits[0][1], hits[0][2], "opening line")
-    if author is None and lead:                          # a leading marker that carries the task's own id
-        hits = identities(lead[0])
-        if hits:
-            author = (hits[0][1], hits[0][2], "marker")
-    team = _TEAM.search(heading)
+    lead = _HTML.match(body)
     return {"author": author[0] if author else None, "client": author[1] if author else "unknown",
             "how": author[2] if author else "unresolved", "addressees": sorted(set(addressees)),
             "team": team[0] if team else None,
             "marker": next(iter(re.findall(r"<!--\s*(UNIIMENTE-[A-Za-z0-9-]+)\s*-->", lead[0] if lead else "")), None)}
 
 
+def _statements(pattern: re.Pattern, body: str) -> list[tuple[re.Match, bool]]:
+    """Each match of ``pattern`` with whether its clause negates it ("I do NOT release claim ...", "Nothing here
+    releases claim ..."; not "Nothing is merged, so this releases claim ...")."""
+    out = []
+    for m in pattern.finditer(body):
+        before = body[max(0, m.start() - 120):m.start()]
+        before = before[max((x.end() for x in _CLAUSE.finditer(before)), default=0):]
+        out.append((m, bool(_NEGATED.search(before))))
+    return out
+
+
+def withdrawn(kind: str, heading: str, own: list[str]) -> list[str]:
+    """Claims a comment gives up by its kind: a release or withdrawal ("Withdrawn: my claim N", "Claim release (N)")
+    gives up the claims it calls its own and those its heading cites; a handoff gives up the claims its heading cites
+    ("Handoff: ..., draft #296 (claim: comment N)"). A heading whose lead negates or defers it ("Not withdrawn",
+    "Release blocked") gives up nothing."""
+    lead = re.split(r"[:(—.]", heading, maxsplit=1)[0]
+    if kind not in ("release", "handoff") or _NEGATED.search(lead) or _UNDONE.search(lead):
+        return []
+    cited = [m[1] for m in _CLAIM_REF.finditer(heading) if m[1]]
+    if kind == "handoff":
+        return cited
+    return own + cited + _COMMENT_ID.findall(heading)
+
+
+def unit_refs(heading: str, body: str) -> list[str]:
+    """Unit and ask ids a claim names: any in its heading, "unit <id>" and ask ids in its text."""
+    return sorted(set(UNIT.findall(heading)) | set(ASK.findall(body)) | set(_UNIT_PHRASE.findall(body)))
+
+
 def parse_comment(c: dict, tracked: set[str], dirs: set[str]) -> dict:
-    body = c.get("body") or ""
+    body = _text(c.get("body"))
     found, heading = fields(body), heading_of(body)
     who = comment_author(body)
+    kind = comment_kind(heading)
     route = _field(found, "route")
     node = _ROUTE.search(body)
     in_label = (_NODE.search(route) or UNIT.search(route)) if route else None
+    in_heading = (UNIT.search(heading) or ASK.search(heading)) if kind in CLAIM_KINDS else None
     recheck = _RECHECK.search(body)
     refs = [next(g for g in m.groups() if g) for m in _CLAIM_REF.finditer(body[:600])]
-    draft = re.search(r"(?i)(?:draft(?:\s+PR)?|handoff:?|\bPR)\s*\[?#(\d+)", heading)
+    own = [next(g for g in m.groups() if g) for m in _OWN_CLAIM.finditer(body[:600])]
+    draft = _DRAFT.search(heading)
+    released = _statements(_RELEASE, body)
+    files: list[str] = []
+    for text, labelled in files_parts(body):
+        files += [f for f in declared_files(text, tracked, dirs, globs=labelled) if f not in files]
     return {
-        "cid": c.get("id"), "at": c.get("created_at", ""), "heading": heading[:160],
-        "kind": comment_kind(heading), **who,
+        "cid": c.get("id"), "at": _text(c.get("created_at")), "heading": heading[:160],
+        "kind": kind, **who,
         "prompt": _field(found, "prompt")[:400], "plan": _field(found, "plan")[:400],
-        "route": node[1] if node else (in_label[0] if in_label else None),
+        "route": node[1] if node else (in_label or in_heading or [None])[0],
         "guidance": _field(found, "guidance")[:160],
-        "files": declared_files(_field(found, "files"), tracked, dirs),
+        "files": files,
         "recheck": recheck[1] if recheck else None,
-        "releases": [next(g for g in m.groups() if g) for m in _RELEASE.finditer(body)],
-        "stops": [m[1] for m in _STOPPED.finditer(body)],
-        "claim_refs": refs, "draft_pr": int(draft[1]) if draft else None,
+        "releases": list(dict.fromkeys([m[2] or m[3] or m[4] for m, negated in released if not negated and not m[1]]
+                                       + withdrawn(kind, heading, own))),
+        "partial_releases": [m[2] for m, negated in released if not negated and m[1]],
+        "stops": [m[1] for m, negated in _statements(_STOPPED, body) if not negated],
+        "claim_refs": refs, "own_claim_refs": own, "draft_pr": int(draft[1]) if draft else None,
+        "pr_refs": sorted({int(n) for n in _DRAFT.findall(body)}),
+        "pr_links": sorted({(repo, int(n)) for repo, n in _PULL_LINK.findall(body)}),
+        "branch_refs": sorted(set(_BRANCH.findall(body))),
+        "unit_refs": unit_refs(heading, body), "heading_units": sorted(_ids(heading)),
+        "heading_ids": sorted({k for _at, k, _c in identities(heading)}),
         "is_checkin": CHECKIN in body, "marker": who["marker"],
     }
 
@@ -256,38 +505,80 @@ def issue_comments(repo: str, issue: int, token: str | None) -> list[dict]:
     out, page = [], 1
     while True:
         batch = _get(f"https://api.github.com/repos/{repo}/issues/{issue}/comments?per_page=100&page={page}", token)
+        if not isinstance(batch, list):
+            raise ValueError("the comments API answered with something other than a list")
         out += batch
         if len(batch) < 100:
             return out
         page += 1
 
 
+def pr_files(repo: str, number: int, token: str | None) -> list[str]:
+    """The files a pull request changes against its base, from the GitHub API, every page (the API stops at 3,000)."""
+    out, page = [], 1
+    while True:
+        batch = _get(f"https://api.github.com/repos/{repo}/pulls/{number}/files?per_page=100&page={page}", token)
+        if not isinstance(batch, list):
+            raise ValueError("the files API answered with something other than a list")
+        out += [f["filename"] for f in batch if isinstance(f, dict) and isinstance(f.get("filename"), str)]
+        if len(batch) < 100 or page >= 30:
+            return out
+        page += 1
+
+
+API_FILES = "_api_files"   # where main() leaves a pull request's changed files read from the API
+
+
+def attach_api_files(repo: str, prs: list, token: str | None, line: str = LINE, workers: int = 8,
+                     reader=None) -> tuple[int, list[int]]:
+    """For each open pull request into the line, read its changed files from the API and leave them on the object
+    under ``API_FILES``; ``_row`` uses them only when local git cannot diff the PR. A PR stacked on another branch is
+    left alone: its file list against its own base would count files merged forward from the line as its own. Returns
+    how many were read and the numbers that could not be."""
+    from concurrent.futures import ThreadPoolExecutor
+    reader = reader or (lambda n: pr_files(repo, n, token))
+    todo = [p for p in prs or [] if isinstance(p, dict) and p.get("state") == "open" and type(p.get("number")) is int
+            and isinstance(p.get("base"), dict) and p["base"].get("ref") == line]
+
+    def one(p):
+        try:
+            p[API_FILES] = reader(p["number"])
+            return None
+        except Exception:  # noqa: BLE001 - a PR whose files cannot be read stays "without diff"
+            return p["number"]
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        failed = sorted(n for n in pool.map(one, todo) if n is not None)
+    return len(todo) - len(failed), failed
+
+
 # ------------------------------------------------------------------ position
 
-def _try(fn):
+def _try(fn, root: Path = ROOT):
     try:
         return fn()
     except Exception as exc:  # noqa: BLE001 - a missing source is reported, never fatal
-        return {"not_run": f"{type(exc).__name__}: {exc}"[:200]}
+        return {"not_run": _reason(exc, root)}
 
 
 def _route(root: Path) -> dict:
     from greg import path as gp
     data = gp.load(root / "greg" / "path.json")
     pos = gp.position(None, data)
-    cortex = next(iter(data.get("subordinate_workstreams", {}).values()), {})
+    workstreams = data.get("subordinate_workstreams") or {}
     return {"destination": data["destination"], "boundary": data.get("completion_boundary", {}).get("product"),
             "acceptance_node": {"id": pos["active"]["id"], "title": pos["active"]["title"]} if pos.get("active") else None,
             "achieved": pos.get("achieved", []),
             "founder_use_gate": data.get("completion_boundary", {}).get("founder_use_gate"),
-            "nodes": [n["id"] for n in data["nodes"]], "mind_nodes": [n["id"] for n in cortex.get("nodes", [])]}
+            "nodes": [n["id"] for n in data["nodes"]],
+            "mind_nodes": [n["id"] for w in workstreams.values() if isinstance(w, dict) for n in w.get("nodes", [])]}
 
 
 def _directive(root: Path) -> dict:
     from acceptance import directive
-    load = lambda p: json.loads((root / "acceptance" / p).read_text())  # noqa: E731
-    doc = load("directive-sections.json")
-    rep = directive.directive_report(doc, load("missions.json"), load("completion-contract.json"), None, root)
+    here = root / "acceptance"
+    doc = directive.load_map(here / directive.DIRECTIVE_MAP.name)
+    rep = directive.directive_report(doc, directive.load(here / directive.MANIFEST.name),
+                                     directive.load(here / directive.CONTRACT.name), None, root)
     units = {u["id"]: u for u in doc.get("units", [])}
     asks = {a["id"]: a for s in rep["sections"] for a in s["asks"]}
     paths = {a["id"]: a.get("owner_paths", []) for s in doc["sections"] for a in s["asks"]}
@@ -303,12 +594,12 @@ def _directive(root: Path) -> dict:
                      "asks": row["asks"], "prerequisite_only": bool(row.get("prerequisite_only")),
                      "waits_on": waits, "evidence": tiers,
                      "owner_paths": sorted({p for a in row["asks"] for p in paths.get(a, [])})})
-    return {"ran_tests": rep["ran"], "summary": rep["summary"], "units": rows}
+    return {"ran_tests": rep["ran"], "summary": rep["summary"], "line": directive.summary_line(rep), "units": rows}
 
 
 def _foundry(root: Path) -> dict:
     from foundry import completion
-    s = completion.status()
+    s = completion.status(completion.contract(root / "foundry" / "completion.yaml"))
     return {"complete": s["complete"], "by_state": {k: len(v) for k, v in s["by_state"].items()}}
 
 
@@ -319,56 +610,105 @@ def _mind(root: Path) -> dict:
 
 
 def _intents(root: Path, top: int = 4) -> list[dict]:
+    """The newest founder intent records on this tree, by the 8-digit date in their file name."""
     rows = []
-    for f in sorted((root / "docs" / "intent").glob("INTENT-2026*.json"), reverse=True):
+    for f in (root / "docs" / "intent").glob("INTENT-20*.json"):
+        date = re.match(r"INTENT-(20\d\d)-?(\d\d)-?(\d\d)", f.name)
         try:
-            d = json.loads(f.read_text())
-        except ValueError:
+            d = json.loads(f.read_text(encoding="utf-8"))
+        except (OSError, ValueError, RecursionError):
             continue
-        if isinstance(d, dict) and d.get("intent_id"):
-            rows.append({"id": d["intent_id"], "title": (d.get("title") or d.get("statement") or "")[:140],
-                         "state": d.get("state", "")})
-    rows.sort(key=lambda r: re.sub(r"\D", "", r["id"])[:8], reverse=True)
+        if date and isinstance(d, dict) and _text(d.get("intent_id")):
+            rows.append({"id": d["intent_id"], "title": (_text(d.get("title")) or _text(d.get("statement")))[:140],
+                         "state": _text(d.get("state")), "date": "".join(date.groups())})
+    rows.sort(key=lambda r: (r["date"], r["id"]), reverse=True)
     return rows[:top]
 
 
 def route_drift(root: Path, route: dict) -> dict:
-    """Node ids on ``greg/path.json`` that the hand-written route table in BACKCAST_GPS.md does not name."""
+    """Node ids on ``greg/path.json`` that the current-route section of BACKCAST_GPS.md does not name.
+
+    The section starts at a heading beginning "## Current full-machine route" and ends at the next level-2 heading.
+    A range names the nodes between its ends only when both ends carry the same letter (N0–N10, P3–P4).
+    """
+    if "not_run" in route:
+        return {"not_run": "route not read"}
     doc = root / "docs" / "BACKCAST_GPS.md"
-    text = doc.read_text() if doc.exists() else ""
-    m = re.search(r"^## Current full-machine route\n(.*?)(?=^## Preserved|\Z)", text, re.S | re.M)
+    text = doc.read_text(encoding="utf-8") if doc.exists() else ""
+    m = re.search(r"^## Current full-machine route[^\n]*\n(.*?)(?=^## |\Z)", text, re.S | re.M)
     if not m:
         return {"section": False, "missing": []}
     section = m[1]
     named = set(re.findall(r"\b[NP]\d{1,2}\b", section))
-    for letter, lo, hi in re.findall(r"\b([NP])(\d{1,2})\s*[–-]\s*[NP](\d{1,2})\b", section):
+    for letter, lo, hi in re.findall(r"\b([NP])(\d{1,2})\s*[–-]\s*\1(\d{1,2})\b", section):
         named |= {f"{letter}{i}" for i in range(int(lo), int(hi) + 1)}
     wanted = route.get("nodes", []) + route.get("mind_nodes", [])
     return {"section": True, "missing": [n for n in wanted if n not in named]}
 
 
+def _push_covers(on, line: str) -> tuple[str, list[str], bool]:
+    """(filter kind, branch patterns, whether a push to ``line`` triggers) for a workflow's ``on`` value."""
+    if isinstance(on, str):
+        on = [on]
+    if isinstance(on, list):
+        return ("every branch", [], True) if "push" in on else ("no push trigger", [], False)
+    if not isinstance(on, dict) or "push" not in on:
+        return "no push trigger", [], False
+    push = on["push"] if isinstance(on["push"], dict) else {}
+    for kind in ("branches", "branches-ignore"):
+        if kind in push:
+            patterns = [push[kind]] if isinstance(push[kind], str) else _texts(push[kind])
+            hit = False
+            for pattern in patterns:                     # GitHub: the last matching pattern wins; "!" negates
+                if fnmatch.fnmatchcase(line, pattern.lstrip("!")):
+                    hit = not pattern.startswith("!")
+            return kind, patterns, hit if kind == "branches" else not hit
+    if "tags" in push or "tags-ignore" in push:
+        return "tags only", [], False
+    return "every branch", [], True
+
+
 def line_checks(rows: list[dict], root: Path, line: str = LINE) -> dict:
-    """How pushes to the line get checked: by a workflow's push filter, or only through a PR whose head is the line."""
-    text = (root / ".github" / "workflows" / "canonical-ci.yml")
-    found = re.search(r"^  push:\s*\n\s+branches:\s*\[([^\]]*)\]", text.read_text(), re.M) if text.exists() else None
-    pushed = [b.strip().strip("'\"") for b in found[1].split(",")] if found else []
-    carriers = sorted(r["pr"] for r in rows if r["head"] == line)
-    return {"push_branches": pushed, "pull_requests_with_line_as_head": carriers,
-            "covered": line in pushed or bool(carriers)}
+    """How pushes to the line get checked: by the push trigger of ``canonical-ci.yml``, or only through an open pull
+    request from this repository whose head is the line. Without PyYAML the workflow is not read."""
+    try:
+        import yaml
+    except ImportError:
+        return {"not_run": "PyYAML not importable"}
+    doc = yaml.safe_load((root / ".github" / "workflows" / "canonical-ci.yml").read_text(encoding="utf-8"))
+    on = (doc.get("on", doc.get(True)) if isinstance(doc, dict) else None)    # YAML 1.1 reads a bare `on:` as True
+    kind, patterns, pushed = _push_covers(on, line)
+    carriers = sorted(r["pr"] for r in rows if r["head"] == line and r["same_repo"])
+    return {"push_filter": kind, "push_branches": patterns, "push_covers_line": pushed,
+            "pull_requests_with_line_as_head": carriers, "covered": pushed or bool(carriers)}
 
 
 def position(root: Path = ROOT) -> dict:
-    route = _try(lambda: _route(root))
-    return {"route": route, "directive": _try(lambda: _directive(root)), "foundry": _try(lambda: _foundry(root)),
-            "mind": _try(lambda: _mind(root)), "latest_intents": _try(lambda: _intents(root)),
-            "route_drift": _try(lambda: route_drift(root, route if "nodes" in route else {}))}
+    route = _try(lambda: _route(root), root)
+    return {"route": route, "directive": _try(lambda: _directive(root), root),
+            "foundry": _try(lambda: _foundry(root), root), "mind": _try(lambda: _mind(root), root),
+            "latest_intents": _try(lambda: _intents(root), root),
+            "route_drift": _try(lambda: route_drift(root, route), root)}
 
 
 # ------------------------------------------------------------------ the join
 
+_NOW = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2})")
+
+
 def _when(stamp: str | None) -> datetime | None:
     try:
-        return datetime.strptime((stamp or "")[:19], "%Y-%m-%dT%H:%M:%S").replace(tzinfo=timezone.utc)
+        return datetime.strptime(_text(stamp)[:19], "%Y-%m-%dT%H:%M:%S").replace(tzinfo=timezone.utc)
+    except ValueError:
+        return None
+
+
+def parse_now(value: str | None) -> datetime | None:
+    """``YYYY-MM-DDTHH:MM:SSZ`` or an ISO time with an offset, in UTC; None for anything else."""
+    if not isinstance(value, str) or not _NOW.fullmatch(value.strip()):
+        return None
+    try:
+        return datetime.fromisoformat(value.strip().replace("Z", "+00:00")).astimezone(timezone.utc)
     except ValueError:
         return None
 
@@ -381,293 +721,1041 @@ def activity(last: str | None, now: datetime) -> str:
     return "ACTIVE" if hours < 48 else "QUIET" if hours < 168 else "DORMANT"
 
 
-def changed_files(pr: dict, root: Path) -> list[str] | None:
-    """Files the PR changes against its base, from local git; None when the refs are not here."""
-    r = subprocess.run(["git", "diff", "--name-only", f"origin/{pr['base']['ref']}...{pr['head']['sha']}"],
-                       cwd=root, capture_output=True, text=True)
+def changed_files(pr: dict, root: Path, against: str | None = None) -> list[str] | None:
+    """Files the PR changes against its base (or ``against``), from local git; None when the refs are not here or git
+    is not."""
+    try:
+        r = subprocess.run(["git", "diff", "--name-only", f"origin/{against or pr['base']}...{pr['head_sha']}"],
+                           cwd=root, capture_output=True, text=True, timeout=60, check=False)
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return None
     return [f for f in r.stdout.splitlines() if f] if r.returncode == 0 else None
 
 
+def _own_commit_files(pr: dict, root: Path, line: str = LINE) -> set[str] | None:
+    """Files touched by the PR's own commits: non-merge commits of its head on neither its base nor the line."""
+    try:
+        r = subprocess.run(["git", "log", "--no-merges", "--name-only", "--format=", pr["head_sha"],
+                            f"^origin/{pr['base']}", f"^origin/{line}"], cwd=root, capture_output=True, text=True,
+                           timeout=60, check=False)
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return None
+    return {f for f in r.stdout.splitlines() if f} if r.returncode == 0 else None
+
+
+def own_files(pr: dict, root: Path, line: str = LINE) -> list[str] | None:
+    """Files the PR itself changes: against its base, and for a PR not based directly on the line only those that
+    also differ from the line and that one of its own commits touches (a commit on neither its base nor the line), so
+    the line's files a stacked head merged in, and its parent's files, are not counted as the PR's. Several merge
+    bases make a three-dot diff fall back to one of them; the commit test does not."""
+    changed = changed_files(pr, root)
+    if changed is None or pr["base"] == line:
+        return changed
+    on_line = changed_files(pr, root, against=line)
+    both = None if on_line is None else [f for f in changed if f in set(on_line)]
+    touched = _own_commit_files(pr, root, line) if both else set()
+    return None if both is None or touched is None else [f for f in both if f in touched]
+
+
+def _git_ok(*args: str, root: Path) -> bool | None:
+    """Whether a git command exits 0; None when it could not answer (exit codes above 1, or no git)."""
+    try:
+        r = subprocess.run(["git", *args], cwd=root, capture_output=True, timeout=60, check=False)
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return None
+    return {0: True, 1: False}.get(r.returncode)
+
+
+def on_line(base: str, root: Path, line: str = LINE) -> bool | None:
+    """A branch whose tip is already in the line's history (a merged or closed parent's branch): work stacked on it
+    is headed for the line. ``main`` and the line are never such a branch. None when git cannot say (the branch or the
+    line is not in this clone)."""
+    if base in (line, "main"):
+        return False
+    return _git_ok("merge-base", "--is-ancestor", f"origin/{base}", f"origin/{line}", root=root)
+
+
+def carried(pr: dict, root: Path, line: str = LINE) -> bool | None:
+    """Whether the PR holds no commit of its own off the line: every non-merge commit of its head is already on the
+    line, by branch_catalog's rule (patch-equal copies count as present), or, for a PR stacked on another branch, every
+    one is on that branch or on the line (its own work landed; what is left is its parent's). None when git cannot
+    say."""
+    try:
+        unique = branch_catalog._git("rev-list", "--count", "--no-merges", "--cherry-pick", "--right-only",
+                                     f"origin/{line}...{pr['head_sha']}", root=root).strip()
+        if unique == "0" or pr.get("base") in (None, line):
+            return unique == "0"
+        own = branch_catalog._git("rev-list", "--count", "--no-merges", pr["head_sha"], f"^origin/{pr['base']}",
+                                  f"^origin/{line}", root=root).strip()
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return None
+    return own == "0"
+
+
 def _covers(declared: str, path: str) -> bool:
-    declared, path = declared.rstrip("/*"), path.rstrip("/")
+    """A declared file, directory prefix or glob covers ``path``, a path under it, or a directory that holds it; ``*``
+    or ``**`` alone covers every path."""
+    whole, declared, path = "*" in declared, declared.rstrip("/*"), path.rstrip("/")
+    if not declared:
+        return whole
+    if "*" in declared:
+        return fnmatch.fnmatchcase(path, declared)
     return declared == path or path.startswith(declared + "/") or declared.startswith(path + "/")
 
 
-def pr_rows(prs: list[dict], root: Path, use_git: bool = True) -> list[dict]:
-    rows = []
-    for p in prs:
-        if p.get("state") != "open":
+_SHA = re.compile(r"[0-9a-f]{40}")
+
+
+def _pull(p) -> dict | None:
+    """The fields of one pull-request object the map reads, typed; None when one it needs is missing."""
+    if not isinstance(p, dict):
+        return None
+    head, base = p.get("head"), p.get("base")
+    if not (type(p.get("number")) is int and isinstance(head, dict) and isinstance(base, dict)
+            and _text(head.get("ref")) and _text(base.get("ref")) and _SHA.fullmatch(_text(head.get("sha")))
+            and all(p.get(k) is None or isinstance(p[k], str) for k in ("title", "body"))):
+        return None
+
+    def repo(side: dict) -> str | None:
+        return _text(side["repo"].get("full_name")) or None if isinstance(side.get("repo"), dict) else None
+    return {"number": p["number"], "state": _text(p.get("state")), "draft": p.get("draft") is True,
+            "title": _text(p.get("title")), "body": _text(p.get("body")), "updated_at": _text(p.get("updated_at")),
+            "head": head["ref"], "head_sha": head["sha"], "head_repo": repo(head),
+            "base": base["ref"], "base_repo": repo(base),
+            "api_files": [f for f in p[API_FILES] if isinstance(f, str)] if isinstance(p.get(API_FILES), list)
+            else None}
+
+
+def _ident(item, index: int, key: str):
+    """How an unreadable item is cited: its number or id when it has one, else its position."""
+    value = item.get(key) if isinstance(item, dict) else None
+    return value if type(value) is int else f"item {index + 1}"
+
+
+def _receipt_fields(r: dict | None) -> tuple[dict, list[str]]:
+    """The receipt fields the map reads, each of the type the receipt check requires. A field of another type is
+    read as absent and named in the returned problems, never coerced into a guess; a field that is missing is
+    absent without a problem."""
+    problems: list[str] = []
+    r = r or {}
+    coord = r.get("coordination", {})
+    if not isinstance(coord, dict):
+        coord, problems = {}, ["coordination"]
+
+    def text(obj: dict, key: str, label: str) -> str | None:
+        value = obj.get(key)
+        if key in obj and not isinstance(value, str):
+            problems.append(label)
+        return value if isinstance(value, str) else None
+
+    def strings(obj: dict, key: str, label: str) -> list[str]:
+        value = obj.get(key)
+        if key in obj and (not isinstance(value, list) or len(_texts(value)) != len(value)):
+            problems.append(label)
+        return _texts(value)
+    overlap = coord.get("overlap")
+    if "overlap" in coord and not isinstance(overlap, dict):
+        problems.append("overlap")
+    out = {"session_id": text(coord, "session_id", "session_id"), "task_ref": text(coord, "task_ref", "task_ref"),
+           "recheck_at": text(coord, "recheck_at", "recheck_at"), "files": strings(coord, "files", "files"),
+           "overlap": text(overlap, "status", "overlap.status") if isinstance(overlap, dict) else None,
+           "scope": text(r, "scope", "scope") or "", "intent_refs": strings(r, "intent_refs", "intent_refs")}
+    return out, problems
+
+
+def _ids(text: str) -> set[str]:
+    """Unit ids (``WU-11``, ``S42-A``) and ask ids (``S42.A1``) in a text."""
+    return set(UNIT.findall(text)) | set(ASK.findall(text))
+
+
+def _changed(pull: dict, root: Path, use_git: bool, line: str = LINE) -> dict:
+    """A PR's changed files and where they came from: local git (``diff``), else, for a PR into the line, the GitHub
+    API (``api``); None when neither could say."""
+    local = own_files(pull, root, line) if use_git else None
+    if local is not None:
+        return {"changed": local, "changed_via": "diff"}
+    if pull.get("api_files") is not None and pull["base"] == line:
+        return {"changed": pull["api_files"], "changed_via": "api"}
+    return {"changed": None, "changed_via": None}
+
+
+def _row(pull: dict, root: Path, use_git: bool, line: str = LINE) -> dict:
+    body = pull["body"]
+    r = receipt_of(body)
+    f, problems = _receipt_fields(r)
+    sid, client = canonical_identity(f["session_id"])
+    refs = " ".join(f["intent_refs"])
+    node = _ROUTE.search(refs)
+    named = _ids(pull["title"]) | _ids(f["scope"]) | _ids(refs)
+    return {
+        "pr": pull["number"], "title": pull["title"][:110], "base": pull["base"], "head": pull["head"],
+        "head_sha": pull["head_sha"], "head_repo": pull["head_repo"], "base_repo": pull["base_repo"],
+        "same_repo": pull["head_repo"] is not None and pull["head_repo"] == pull["base_repo"],
+        "draft": pull["draft"], "updated": pull["updated_at"], "receipt": r is not None,
+        "older_receipt": r is None and receipt_of(body, version=1) is not None, "receipt_problems": problems,
+        "session": sid, "client": client, "task_ref": f["task_ref"],
+        "files": f["files"][:FILES_LIMIT], "files_cut": max(0, len(f["files"]) - FILES_LIMIT),
+        **_changed(pull, root, use_git, line),
+        "overlap": f["overlap"], "recheck": f["recheck_at"], "scope": f["scope"][:200],
+        "names": sorted(named), "mentions": sorted(_ids(body) - named),
+        "route": node[1] if node else None,
+    }
+
+
+def pr_rows(prs: list[dict], root: Path, use_git: bool = True, unreadable: list | None = None,
+            line: str = LINE, duplicates: list | None = None) -> list[dict]:
+    """One row per open pull request. ``names`` are the unit and ask ids in its title or receipt (scope and
+    intent_refs); ``mentions`` are those only its body has; ``files`` are the receipt's first ``FILES_LIMIT`` files
+    and ``files_cut`` counts the rest. An object the map cannot read is skipped and cited in ``unreadable``. A number
+    seen twice (pages that shifted while they were fetched) is read once, from its newest ``updated_at``, and cited
+    in ``duplicates``."""
+    newest: dict[int, tuple[int, dict]] = {}
+    for i, p in enumerate(prs or []):
+        try:
+            pull = _pull(p)
+        except Exception:  # noqa: BLE001 - one unreadable pull request never stops the map
+            pull = None
+        if pull is None:
+            if unreadable is not None:
+                unreadable.append(_ident(p, i, "number"))
             continue
-        r = receipt_of(p.get("body"))
-        coord = (r or {}).get("coordination") if isinstance((r or {}).get("coordination"), dict) else {}
-        sid, client = canonical_identity(coord.get("session_id"))
-        text = f"{p.get('title') or ''}\n{(p.get('body') or '')[:1500]}"
-        refs = " ".join(x for x in (r or {}).get("intent_refs", []) if isinstance(x, str))
-        node = _ROUTE.search(refs)
-        declared = [f for f in coord.get("files", []) if isinstance(f, str)]
-        rows.append({
-            "pr": p["number"], "title": (p.get("title") or "")[:110], "base": p["base"]["ref"],
-            "head": p["head"]["ref"], "head_sha": p["head"]["sha"], "draft": bool(p.get("draft")),
-            "updated": p.get("updated_at", ""), "receipt": r is not None,
-            "session": sid, "client": client, "task_ref": coord.get("task_ref"),
-            "files": declared, "changed": changed_files(p, root) if use_git else None,
-            "overlap": (coord.get("overlap") or {}).get("status") if isinstance(coord.get("overlap"), dict) else None,
-            "recheck": coord.get("recheck_at"), "scope": ((r or {}).get("scope") or "")[:200],
-            "units": sorted(set(UNIT.findall(p.get("title") or "")) or set(UNIT.findall(refs))
-                            or set(UNIT.findall(text))),
-            "route": node[1] if node else None,
-        })
+        if pull["number"] in newest:
+            if duplicates is not None:
+                duplicates.append(pull["number"])
+            if pull["updated_at"] <= newest[pull["number"]][1]["updated_at"]:
+                continue
+        newest[pull["number"]] = (i, pull)
+    rows = []
+    for i, pull in newest.values():
+        if pull["state"] != "open":
+            continue
+        try:
+            rows.append(_row(pull, root, use_git, line))
+        except Exception:  # noqa: BLE001 - one unreadable pull request never stops the map
+            if unreadable is not None:
+                unreadable.append(_ident(prs[i], i, "number"))
     return rows
 
 
-def line_bound(rows: list[dict], line: str = LINE) -> list[dict]:
-    """Open PRs whose work is headed for the line: based on it, or stacked on a PR that is.
+def _integration(r: dict, line: str = LINE) -> bool:
+    """The integration PR (its head is the line) or a composed ``candidate/`` head, from this repository."""
+    return r["same_repo"] and (r["head"] == line or r["head"].startswith("candidate/"))
 
-    The integration PR itself (its head is the line) and composed ``candidate/`` heads are left out: each
-    carries everyone's files, so counting it would make every file look contended.
+
+def line_bound(rows: list[dict], line: str = LINE, contained=None) -> list[dict]:
+    """Open PRs whose work is headed for the line: based on it, stacked on a PR that is, or based on a branch no open PR
+    has as its head that ``contained(base)`` says is already in the line's history (a merged or closed parent). The
+    stack walk is lineage_map's: no depth limit, a cycle ends it, and a head opened twice reaches the line through
+    either PR.
+
+    A head branch is matched to another PR's base only when that PR comes from this repository: a fork's branch
+    called ``main`` or the line's name stacks nothing. The integration PR and composed ``candidate/`` heads are left
+    out: each carries everyone's files, so counting it would make every file look contended.
     """
-    by_head = {r["head"]: r for r in rows}
+    contained = contained or (lambda _base: False)
+    heads = {r["head"] for r in rows if r["same_repo"]}
 
-    def reaches(r: dict, depth: int = 0) -> bool:
-        if r["base"] == line:
-            return True
-        parent = by_head.get(r["base"])
-        return bool(parent) and parent is not r and depth < 12 and reaches(parent, depth + 1)
-    return [r for r in rows if r["head"] != line and not r["head"].startswith("candidate/") and reaches(r)]
+    def node(r: dict) -> dict:
+        reached = r["base"] == line or (r["base"] not in heads and contained(r["base"]))
+        return {"number": (r["head"], r["base"]), "base": line if reached else r["base"]}
+    nodes = [node(r) for r in rows]
+    waiting: dict[str, list[int]] = {}
+    for i, r in enumerate(rows):
+        if r["same_repo"]:
+            waiting.setdefault(nodes[i]["base"], []).append(i)
+    by_ref: dict[str, dict] = {}
+    reached = [line]                                     # each ref once, from the line outwards: no depth is re-walked
+    while reached:
+        for i in waiting.pop(reached.pop(), []):
+            if rows[i]["head"] not in by_ref:
+                by_ref[rows[i]["head"]] = nodes[i]
+                reached.append(rows[i]["head"])
+    return [r for i, r in enumerate(rows) if not _integration(r, line) and _stacked_on(nodes[i], line, by_ref)]
 
 
-def contended(rows: list[dict], line: str = LINE) -> list[dict]:
-    """Files that line-bound PRs from two or more sessions declare or change. One session's stack is not contention."""
-    holders: dict[str, dict[str, set[int]]] = {}
-    for r in line_bound(rows, line):
-        who = r["session"] or f"(no receipt) #{r['pr']}"
+def _holder(r: dict) -> str:
+    return r["session"] or (f"(no session id) #{r['pr']}" if r["receipt"] else f"(no receipt) #{r['pr']}")
+
+
+_PR_NUMBER = re.compile(r"(?:#|/pull/)(\d+)(?!\d)")
+_FIX_ROUND = re.compile(r"(?i)\bfix[- ]round\b")
+
+
+def _fix_round_of(child: dict, parent: dict) -> bool:
+    """A child PR whose title calls it a fix round ("Fix round: ...") and whose title or task_ref names the parent it
+    is stacked on."""
+    return bool(_FIX_ROUND.search(child["title"])) and str(parent["pr"]) in _PR_NUMBER.findall(
+        f"{child['title']} {child['task_ref'] or ''}")
+
+
+def _norm_path(path: str) -> str:
+    """A declared path as a key: a directory without its trailing slash, a glob as written, the whole tree as ``**``."""
+    bare = path.rstrip("/*")
+    return ("**" if "*" in path else bare) if not bare else path if "*" in bare else bare
+
+
+def _ends(glob: str) -> tuple[str, str]:
+    """The literal start and end of a glob: two globs can share a path only where one start extends the other and
+    one end extends the other."""
+    first = min(i for i, ch in enumerate(glob) if ch in "*?[")
+    last = max(i for i, ch in enumerate(glob) if ch in "*?]")
+    return glob[:first], glob[last + 1:]
+
+
+def _holders(bound: list[dict]) -> tuple[dict[int, str], dict[int, str]]:
+    """For each PR, the holder it counts as (a fix-round child counts as the parent it is stacked on, through any
+    depth) and the label it is shown under (its own declared session, marked when it is a fix round)."""
+    heads = {r["head"]: r for r in bound if r["same_repo"]}
+    key: dict[int, str] = {}
+    label: dict[int, str] = {}
+    for r in bound:
+        path, cur, on_path = [], r, set()
+        while cur["pr"] not in key:
+            path.append(cur)
+            on_path.add(cur["pr"])
+            parent = heads.get(cur["base"])
+            if parent is None or parent["pr"] in on_path or not _fix_round_of(cur, parent):
+                key[cur["pr"]] = _holder(cur)
+                break
+            label[cur["pr"]] = f"{_holder(cur)} (fix round of #{parent['pr']})"
+            cur = parent
+        for p in path:
+            key[p["pr"]] = key[cur["pr"]]
+            label.setdefault(p["pr"], _holder(p))
+    return key, label
+
+
+def contended(rows: list[dict], line: str = LINE, contained=None) -> list[dict]:
+    """Paths that line-bound PRs from two or more session ids declare or change, a declared directory or glob
+    covering the paths under it (the rule ``who_touches`` uses); two globs share a row when their literal starts and
+    ends allow a common path. A PR carried by the line holds nothing; one session's stack, and a fix-round child
+    stacked on its parent, count once. ``holders`` shows each PR under its own declared session."""
+    bound = [r for r in line_bound(rows, line, contained) if not r.get("carried")]
+    key_of, label_of = _holders(bound)
+    exact: dict[str, list] = {}
+    under: dict[str, set[str]] = {}
+    globs: dict[str, list] = {}
+    for r in bound:
+        who = key_of[r["pr"]]
         for f in set(r["files"]) | set(r["changed"] or []):
-            holders.setdefault(f, {}).setdefault(who, set()).add(r["pr"])
-    out = [{"file": f, "sessions": len(by), "prs": sorted({n for ns in by.values() for n in ns}),
-            "holders": {s: sorted(ns) for s, ns in sorted(by.items())}}
-           for f, by in holders.items() if len(by) > 1]
+            key = _norm_path(f)
+            if "*" in key:
+                globs.setdefault(key, []).append((who, r["pr"]))
+                continue
+            exact.setdefault(key, []).append((who, r["pr"]))
+            for i in range(1, key.count("/") + 1):
+                under.setdefault("/".join(key.split("/")[:i]), set()).add(key)
+    by_dir: dict[str, dict[tuple, list[str]]] = {}        # globs by the directory they start in, then by holder
+    ends: dict[str, dict[str, set[tuple]]] = {}           # globs by their literal start, then their literal end
+    for g, entries in globs.items():
+        lead = g.split("*")[0]
+        start, end = _ends(g)
+        for e in entries:
+            by_dir.setdefault(lead.rsplit("/", 1)[0] if "/" in lead else "", {}).setdefault(e, []).append(g)
+            ends.setdefault(start, {}).setdefault(end, set()).add(e)
+    matchers = {d: [(e, re.compile("|".join(fnmatch.translate(g) for g in gs))) for e, gs in held_by.items()]
+                for d, held_by in by_dir.items()}
+    starts = sorted(ends)
+
+    def overlapping(start: str, end: str) -> list[tuple]:
+        """Holders of globs whose literal start and end are compatible with these."""
+        found = []
+        near = {start[:i] for i in range(len(start) + 1)}       # starts this one extends, and starts extending it
+        near |= set(starts[bisect.bisect_left(starts, start):bisect.bisect_left(starts, start + "\U0010ffff")])
+        for s in near & ends.keys():
+            for e, entries in ends[s].items():
+                if e.endswith(end) or end.endswith(e):
+                    found += entries
+        return found
+    compatible: dict[tuple[str, str], list[tuple]] = {}
+
+    def held(key: str) -> dict[str, set[int]]:
+        parts = key.split("/")
+        ancestors = ["/".join(parts[:i]) for i in range(1, len(parts) + 1)]
+        found = [e for a in ancestors for e in exact.get(a, [])]
+        if "*" in key:                                  # a glob row: same or compatible globs, not every pattern run
+            se = _ends(key)
+            found += compatible[se] if se in compatible else compatible.setdefault(se, overlapping(*se))
+        else:
+            found += [e for k in under.get(key, ()) for e in exact[k]]
+            found += [e for a in ["", *ancestors] for e, pattern in matchers.get(a, []) if pattern.match(key)]
+        by: dict[str, set[int]] = {}
+        for who, pr in found:
+            by.setdefault(who, set()).add(pr)
+        return by
+    table = {k: by for k in [*exact, *globs] if len(by := held(k)) > 1}
+    for k in [k for k in table if k in under]:          # a directory row adds nothing a file row under it shows
+        if any(k2 in table and set(table[k]) <= set(table[k2]) for k2 in under[k]):
+            del table[k]
+    out = []
+    for f, by in table.items():
+        shown: dict[str, set[int]] = {}
+        for n in {n for ns in by.values() for n in ns}:
+            shown.setdefault(label_of[n], set()).add(n)
+        out.append({"file": f, "sessions": len(by), "prs": sorted({n for ns in by.values() for n in ns}),
+                    "holders": {s: sorted(ns) for s, ns in sorted(shown.items())}})
     return sorted(out, key=lambda x: (-x["sessions"], -len(x["prs"]), x["file"]))
 
 
-def who_touches(paths: list[str], rows: list[dict], claims: list[dict]) -> list[dict]:
+def query_path(path: str, root: Path = ROOT) -> str:
+    """A path as asked, made repository-relative: ``./greg/x.py`` and ``<root>/greg/x.py`` are ``greg/x.py``."""
+    p = Path(path)
+    if p.is_absolute():
+        try:
+            p = p.resolve().relative_to(root.resolve())
+        except (ValueError, OSError):
+            pass
+    return posixpath.normpath(p.as_posix())
+
+
+def who_touches(paths: list[str], rows: list[dict] | None, claims: list[dict] | None,
+                tracked: set[str] | None = None, line: str = LINE) -> list[dict]:
+    """For each path: the open PRs and the claims that cover it. ``prs`` or ``claims`` is None when its source was not
+    read; ``tracked`` is None when the tracked files were not given. The integration PR is left out."""
+    dirs = {"/".join(f.split("/")[:i]) for f in tracked for i in range(1, f.count("/") + 1)} if tracked else set()
+    bound = {r["pr"] for r in line_bound(rows or [], line)}
     hits = []
-    for path in paths:
-        prs = [r for r in rows if any(_covers(f, path) for f in set(r["files"]) | set(r["changed"] or []))]
-        cl = [c for c in claims if any(_covers(f, path) for f in c["files"])]
-        hits.append({"path": path,
-                     "prs": [{"pr": r["pr"], "session": r["session"], "base": r["base"], "overlap": r["overlap"],
-                              "title": r["title"]} for r in prs],
-                     "claims": [{"comment": c["comment"], "session": c["session"], "at": c["at"],
-                                 "state": c["state"]} for c in cl]})
+    for asked in paths:
+        path = query_path(asked)
+        prs = None if rows is None else [
+            {"pr": r["pr"], "session": r["session"], "base": r["base"], "overlap": r["overlap"], "title": r["title"],
+             "updated": r["updated"], "line_bound": r.get("line_bound", r["pr"] in bound),
+             "carried_by_line": r.get("carried"),
+             "via": [v for v, fs in (("receipt", r["files"]), (r.get("changed_via") or "diff", r["changed"] or []))
+                     if any(_covers(f, path) for f in fs)]}
+            for r in rows if not (r["same_repo"] and r["head"] == line)]
+        hits.append({"path": path, **({"asked": asked} if asked != path else {}),
+                     "tracked": (path in tracked or path in dirs) if tracked is not None else None,
+                     "prs": None if prs is None else [p for p in prs if p["via"]],
+                     "claims": None if claims is None else [
+                         {"comment": c["comment"], "session": c["session"], "inferred_session": c["inferred_session"],
+                          "how": c["how"], "at": c["at"], "state": c["state"], "posted": c["posted"],
+                          "session_activity": c["session_activity"],
+                          "cited_by_receipts": c["cited_by_receipts"], "names_prs": c["names_prs"]}
+                         for c in claims if any(_covers(f, path) for f in c["files"])]})
     return hits
 
 
-def build(prs: list[dict] | None, comments: list[dict] | None, *, root: Path = ROOT, line: str = LINE,
-          now: datetime | None = None, use_git: bool = True) -> dict:
-    now = now or datetime.now(timezone.utc)
-    tracked = set(branch_catalog._git("ls-files", root=root).splitlines())
-    dirs = {"/".join(f.split("/")[:i]) for f in tracked for i in range(1, f.count("/") + 1)}
-    pos = position(root)
-    rows = pr_rows(prs or [], root, use_git)
+def _by_task_ref(rows: list[dict]) -> dict[str, dict]:
+    """Comment ids that a receipt with a session id names exactly in its task reference (a whole digit run, never part
+    of a longer number), each with the first such pull request."""
+    out: dict[str, dict] = {}
+    for r in rows:
+        if r["task_ref"] and r["session"]:
+            for run in re.findall(r"\d+", r["task_ref"]):
+                out.setdefault(run, r)
+    return out
+
+
+def _comment(c) -> dict | None:
+    """A board comment the map can read: an object with an integer id and a text body (or none)."""
+    if not isinstance(c, dict) or type(c.get("id")) is not int:
+        return None
+    if not (c.get("body") is None or isinstance(c["body"], str)):
+        return None
+    return {"id": c["id"], "created_at": _text(c.get("created_at")), "body": _text(c.get("body"))}
+
+
+def _tracked(root: Path) -> tuple[set[str], str | None]:
+    """Tracked files, and a note when git did not answer (the files on disk then stand in for them)."""
+    try:
+        return set(branch_catalog._git("ls-files", root=root).splitlines()), None
+    except (OSError, ValueError, subprocess.SubprocessError) as exc:
+        note = f"git not read ({_reason(exc, root)}), files on disk stand in for tracked files"
+        return set(repo_review.tracked_files(root)), note
+
+
+def join_authors(parsed: list[dict], rows: list[dict]) -> None:
+    """Give a comment that states no author the stated author of what it points to, labelled by how: its first-person
+    claim ("my claim N", "claim N released into", "Correction to N"), a shared ``UNIIMENTE-`` marker, the receipt of
+    the draft PR its heading hands off, or the receipt whose task_ref cites it. Review, intake, acknowledgment and
+    team posts are never joined to a PR or a claim, and no join contradicts an id the comment's heading names."""
+    by_id = {c["cid"]: c for c in parsed if c["author"]}
     by_pr = {r["pr"]: r for r in rows}
+    by_task = _by_task_ref(rows)
+    marked: dict[str, dict] = {}
+    for o in parsed:
+        if o["marker"] and o["author"]:
+            marked.setdefault(o["marker"], o)
+    for c in parsed:
+        if c["author"]:
+            continue
+        plain = not re.search(r"(?i)review|intake|acknowledg", c["heading"]) and not c["team"]
+        ref = next((by_id[int(x)] for x in c["own_claim_refs"] if int(x) in by_id and int(x) != c["cid"]), None)
+        pr = by_pr.get(c["draft_pr"]) if c["draft_pr"] else None
+        twin = marked.get(c["marker"]) if c["marker"] else None
+        task = by_task.get(str(c["cid"])) if c["kind"] in CLAIM_KINDS else None
+        fits = set(c["heading_ids"]).__contains__ if c["heading_ids"] else (lambda _author: True)
+        if ref and plain and fits(ref["author"]):
+            c.update(author=ref["author"], client=ref["client"], how="claim reference")
+        elif twin and fits(twin["author"]):
+            c.update(author=twin["author"], client=twin["client"], how="shared marker")
+        elif pr and pr["session"] and plain and fits(pr["session"]):
+            c.update(author=pr["session"], client=pr["client"], how="pr receipt")
+        elif task and plain and fits(task["session"]):
+            c.update(author=task["session"], client=task["client"], how="pr task_ref")
 
-    parsed = [parse_comment(c, tracked, dirs) for c in comments or []]
-    by_id = {c["cid"]: c for c in parsed}
-    for _ in range(2):                                  # joins, each labelled; twice so a chain resolves
-        for c in parsed:
-            if c["author"]:
-                continue
-            ref = next((by_id[int(x)] for x in c["claim_refs"]
-                        if int(x) in by_id and int(x) != c["cid"] and by_id[int(x)]["author"]), None)
-            pr = by_pr.get(c["draft_pr"]) if c["draft_pr"] else None
-            plain = not re.search(r"(?i)review|intake|acknowledg", c["heading"]) and not c["team"]
-            twin = next((o for o in parsed if c["marker"] and o["marker"] == c["marker"] and o["author"]), None)
-            task = next((r for r in rows if r["session"] and r["task_ref"] and str(c["cid"]) in str(r["task_ref"])
-                         and c["kind"] in ("claim", "check-in", "claim+handoff")), None)
-            if ref:
-                c.update(author=ref["author"], client=ref["client"], how="claim reference")
-            elif twin:
-                c.update(author=twin["author"], client=twin["client"], how="shared marker")
-            elif pr and pr["session"] and plain:
-                c.update(author=pr["session"], client=pr["client"], how="pr receipt")
-            elif task and plain:
-                c.update(author=task["session"], client=task["client"], how="pr task_ref")
-    released = {x for c in parsed for x in c["releases"]}
-    stopped = {x for c in parsed for x in c["stops"]}
 
+def sessions_of(rows: list[dict], parsed: list[dict], now: datetime) -> dict[str, dict]:
+    """One row per session id: its PRs, the comments it states (and those a join infers, which count toward its last
+    update only), and what its own comments say it was asked, plans and works on."""
     sessions: dict[str, dict] = {}
+    stated = {c["cid"]: c for c in parsed if c["author"] and c["how"] not in JOINS}
 
     def slot(key: str, client: str) -> dict:
-        return sessions.setdefault(key, {"session": key, "client": client, "prs": [], "comments": 0, "last": "",
-                                         "prompt": "", "plan": "", "route": None, "overlap": set(), "checkin": None})
+        return sessions.setdefault(key, {"session": key, "client": client, "how": set(), "prs": [], "comments": 0,
+                                         "inferred_comments": 0, "last": "", "last_inferred": False, "prompt": "",
+                                         "plan": "", "route": None, "guidance": "", "overlap": set(),
+                                         "checkin": None, "checkin_block": False, "task_refs": []})
 
+    def seen(s: dict, at: str, inferred: bool) -> None:
+        if at > s["last"] or (at == s["last"] and not inferred):
+            s["last"], s["last_inferred"] = at, inferred
     for r in rows:
         if r["session"]:
             s = slot(r["session"], r["client"])
+            s["how"].add("receipt")
             s["prs"].append(r["pr"])
-            s["last"] = max(s["last"], r["updated"])
+            seen(s, r["updated"], False)
             if r["overlap"]:
                 s["overlap"].add(r["overlap"])
             s["route"] = s["route"] or r["route"]
-    claims = []
+            for run in re.findall(r"(?<!\d)\d{10}(?!\d)", r["task_ref"] or ""):
+                cited = stated.get(int(run))
+                if cited and cited["author"] != r["session"]:
+                    s["task_refs"].append({"pr": r["pr"], "comment": int(run), "author": cited["author"]})
     for c in sorted(parsed, key=lambda x: x["at"]):
-        who = c.get("author")
-        if who:
-            s = slot(who, c["client"])
-            s["comments"] += 1
-            s["last"] = max(s["last"], c["at"])
-            if c["prompt"]:
-                s["prompt"] = c["prompt"]
-            if c["plan"]:
-                s["plan"] = c["plan"]
-            s["route"] = c["route"] or s["route"]
-            if c["kind"] in ("claim", "check-in", "claim+handoff"):
-                s["checkin"] = c["cid"]
-        if c["kind"] in ("claim", "check-in", "claim+handoff") and c["files"]:
-            cid = str(c["cid"])
-            state = "released" if cid in released else "stopped" if cid in stopped else activity(c["at"], now).lower()
-            has_pr = any(r["task_ref"] and cid in str(r["task_ref"]) for r in rows)
-            claims.append({"comment": c["cid"], "session": who, "at": c["at"], "files": c["files"],
-                           "recheck": c["recheck"], "state": state, "has_pr": has_pr, "heading": c["heading"]})
+        if not c["author"]:
+            continue
+        s = slot(c["author"], c["client"])
+        s["how"].add(c["how"])
+        if c["how"] in JOINS:
+            s["inferred_comments"] += 1
+            seen(s, c["at"], True)
+            continue
+        s["comments"] += 1
+        seen(s, c["at"], False)
+        s["prompt"] = c["prompt"] or s["prompt"]
+        s["plan"] = c["plan"] or s["plan"]
+        s["guidance"] = c["guidance"] or s["guidance"]
+        s["route"] = c["route"] or s["route"]
+        s["checkin_block"] = s["checkin_block"] or c["is_checkin"]
+        if c["kind"] in CLAIM_KINDS:
+            s["checkin"] = c["cid"]
+    for s in sessions.values():
+        s["activity"] = activity(s["last"], now)
+    return sessions
 
-    units = pos["directive"].get("units", []) if isinstance(pos["directive"], dict) else []
-    bound = line_bound(rows, line)
+
+def _naming(rows: list[dict], line: str = LINE):
+    """A function giving the open pull requests a comment names: by ``#N`` after draft/handoff wording, by a link to
+    a pull request of these repositories, or by a branch an open PR from this repository has as its head. The
+    integration PR and composed candidates are left out."""
+    repos = {r["base_repo"] for r in rows if r["base_repo"]}
+    skip = {r["pr"] for r in rows if _integration(r, line)}
+    heads = {r["head"]: r["pr"] for r in rows if r["same_repo"] and r["head"] != line}
+
+    def named(o: dict) -> set[int]:
+        return ({*o["pr_refs"], *([o["draft_pr"]] if o["draft_pr"] else [])} | {n for repo, n in o["pr_links"]
+                                                                              if repo in repos}
+                | {heads[b] for b in o["branch_refs"] if b in heads}) - skip
+    return named
+
+
+def claims_of(parsed: list[dict], rows: list[dict], sessions: dict[str, dict], now: datetime,
+              line: str = LINE) -> list[dict]:
+    """Claim and check-in comments that declare files. A release or stop counts only when its author is the claim's
+    and its clause does not negate it; "the X half of claim N" is a partial release. An author that a "claim
+    reference" join took from the very claim being released is circular: such a release counts only when a pull
+    request it names has a receipt whose session is the claim's author, and is otherwise listed under
+    ``release_by_inferred_author``. The state is the activity of the claim or of its author's newest comment citing
+    it; ``session_activity`` is the claiming session's. ``names_prs`` are the PRs the claim, or a handoff citing it,
+    names."""
+    said: dict[str, dict[str, list[dict]]] = {"releases": {}, "partial_releases": {}, "stops": {}}
+    cites: dict[str, list[dict]] = {}
+    for c in parsed:
+        for key, index in said.items():
+            for x in c[key]:
+                index.setdefault(x, []).append(c)
+        if c["kind"] in ("handoff", "claim+handoff", "release"):
+            for x in c["claim_refs"]:
+                cites.setdefault(x, []).append(c)
+    by_pr = {r["pr"]: r for r in rows}
+    receipts = {}
+    for r in rows:
+        for run in re.findall(r"(?<!\d)\d+(?!\d)", r["task_ref"] or ""):
+            receipts.setdefault(run, []).append(r["pr"])
+    named = _naming(rows, line)
+    cited_by: dict[str, list[dict]] = {}
+    for c in parsed:
+        for x in set(c["claim_refs"]) | set(c["own_claim_refs"]):
+            cited_by.setdefault(x, []).append(c)
+
+    def counts(o: dict, who: str | None) -> bool:
+        if not who or o["author"] != who:
+            return False
+        return o["how"] != "claim reference" or any(by_pr[n]["session"] == who for n in named(o) if n in by_pr)
+    out = []
+    for c in sorted(parsed, key=lambda x: x["at"]):
+        if c["kind"] not in CLAIM_KINDS or not c["files"]:
+            continue
+        cid, who = str(c["cid"]), c["author"]
+        mine = {k: [o for o in said[k].get(cid, []) if counts(o, who)] for k in said}
+        inferred = sorted({o["cid"] for k in said for o in said[k].get(cid, [])
+                           if who and o["author"] == who and o not in mine[k]})
+        others = sorted({o["cid"] for k in said for o in said[k].get(cid, []) if o not in mine[k]} - set(inferred))
+        fresh = max([c["at"]] + [o["at"] for o in cited_by.get(cid, []) if who and o["author"] == who
+                                 and o["how"] not in JOINS])
+        state = ("released" if mine["releases"] else "stopped" if mine["stops"] else activity(fresh, now).lower())
+        prs = {n: str(c["cid"]) for n in named(c)}
+        for o in cites.get(cid, []):
+            for n in named(o):
+                prs.setdefault(n, str(o["cid"]))
+        cited = sorted(receipts.get(cid, []))
+        names_prs = [{"pr": n, "state": "open" if n in by_pr else "closed", "named_in": int(src)}
+                     for n, src in sorted(prs.items())]
+        out.append({"comment": c["cid"], "session": who if c["how"] not in JOINS else None,
+                    "inferred_session": who if c["how"] in JOINS else None, "how": c["how"],
+                    "addressees": c["addressees"], "at": c["at"], "posted": activity(c["at"], now).lower(),
+                    "files": c["files"], "recheck": c["recheck"], "state": state,
+                    "session_activity": activity(sessions[who]["last"], now).lower() if who in sessions else None,
+                    "released_by": [{"comment": o["cid"], "how": o["how"]} for o in mine["releases"] + mine["stops"]],
+                    "partly_released_by": [o["cid"] for o in mine["partial_releases"]],
+                    "release_stated_by_another_author": others, "release_by_inferred_author": inferred,
+                    "cited_by_receipts": cited, "names_prs": names_prs,
+                    "has_pr": bool(cited or names_prs), "units": c["unit_refs"], "heading": c["heading"]})
+    return out
+
+
+def board_naming(parsed: list[dict], rows: list[dict], bound: list[dict], line: str = LINE) -> list[dict]:
+    """Claims and handoffs on the board, of any age, whose heading names unit or ask ids and that name an open pull
+    request headed for the line and not carried by it: ``{"comment", "ids", "prs"}`` (heuristic)."""
+    live = {r["pr"] for r in bound if not r.get("carried")}
+    named = _naming(rows, line)
+    out = []
+    for c in parsed:
+        if c["kind"] in ("handoff", *CLAIM_KINDS) and c["heading_units"] and (prs := sorted(named(c) & live)):
+            out.append({"comment": c["cid"], "ids": c["heading_units"], "prs": prs})
+    return out
+
+
+def units_of(units: list[dict], rows: list[dict], bound: list[dict], claims: list[dict] | None,
+             prs_read: bool, board: list[dict] | None = None) -> list[dict]:
+    """Each buildable unit with the line-bound open PRs whose title or receipt names it or one of its asks, the PRs
+    carried by the line that name it, the PRs that only mention it, the board claims and handoffs that name it and
+    link such a PR, the recent board claims that name it, and the PRs touching its owner paths. Units keep the
+    directive's dependency order."""
+    ask_unit = {a: u["unit"] for u in units if u["unit"] for a in u["asks"]}
+
+    def of(ids) -> set[str]:
+        return {i if UNIT.fullmatch(i) else ask_unit.get(i) for i in ids} - {None}
     for u in units:
-        named = [r for r in rows if u["unit"] and u["unit"] in r["units"]]
-        near = [r for r in bound if r not in named and u["owner_paths"]
-                and any(_covers(f, p) for f in set(r["files"]) | set(r["changed"] or []) for p in u["owner_paths"])]
-        u["owners"] = [{"pr": r["pr"], "session": r["session"], "base": r["base"]} for r in named]
-        u["also_touching_its_files"] = sorted({r["pr"] for r in near})
-        u["state"] = ("claimed" if named else "waits" if u["waits_on"] else "unclaimed")
+        uid = u["unit"]
+        naming = [r for r in bound if uid and uid in of(r["names"])]
+        live = [r for r in naming if not r.get("carried")]
+        u["named_by"] = [{"pr": r["pr"], "session": r["session"], "base": r["base"]} for r in live]
+        u["carried_by_line"] = sorted(r["pr"] for r in naming if r.get("carried"))
+        u["mentioned_by"] = sorted(r["pr"] for r in rows if uid and r not in naming
+                                   and uid in of(r["names"] + r["mentions"]))
+        u["named_on_board"] = None if board is None else [
+            {"pr": n, "comment": b["comment"]} for b in board if uid and uid in of(b["ids"]) for n in b["prs"]]
+        u["claimed_on_board"] = None if claims is None else sorted(
+            c["comment"] for c in claims if uid and c["state"] in ("active", "quiet")
+            and c["posted"] in ("active", "quiet") and uid in of(c["units"]))
+        u["also_touching_its_files"] = sorted({r["pr"] for r in bound if r not in naming and not r.get("carried")
+                                               and u["owner_paths"] and any(_covers(f, p) for f in
+                                                                            set(r["files"]) | set(r["changed"] or [])
+                                                                            for p in u["owner_paths"])})
+        u["state"] = ("unknown" if not prs_read else "named" if live else "named on the board"
+                      if u["named_on_board"] else "claimed on the board"
+                      if u["claimed_on_board"] else "prerequisite, no completion record" if u["prerequisite_only"]
+                      else "waits" if u["waits_on"] else "unclaimed")
+    return units
 
-    live = [s for s in sessions.values() if activity(s["last"], now) in ("ACTIVE", "QUIET")]
+
+def _utcnow() -> datetime:
+    """The current time, in UTC. One seam, so tests judge activity against a fixed clock."""
+    return datetime.now(timezone.utc)
+
+
+def build(prs: list[dict] | None, comments: list[dict] | None, *, root: Path = ROOT, line: str = LINE,
+          now: datetime | None = None, use_git: bool = True, notes: list[str] | None = None,
+          contained=None, carried_by=None) -> dict:
+    """The map. ``prs`` or ``comments`` None means that source was not read: what depends on it is None, not zero.
+    ``contained(base)`` and ``carried_by(row)`` default to asking git; tests pass them in. Either may answer None
+    (git could not say): such a base or PR is listed in the gaps, never counted as off the line or not carried."""
+    now = now or _utcnow()
+    notes = list(notes or [])
+    tracked, git_note = _tracked(root)
+    if git_note:
+        notes.append(git_note)
+    git = use_git and not git_note
+    if git and _git_ok("rev-parse", "--verify", "--quiet", f"origin/{line}^{{commit}}", root=root) is not True:
+        notes.append(f"origin/{line} is not in this clone (fetch origin): which pull requests are stacked on merged "
+                     "parents or carried by the line was not checked")
+    known: dict[str, bool | None] = {}
+
+    def asked_git(base: str) -> bool | None:
+        if base not in known:
+            known[base] = on_line(base, root, line) if git or base in (line, "main") else None
+        return known[base]
+    given = contained or asked_git
+    unchecked: set[str] = set()
+
+    def checked(base: str) -> bool | None:
+        """The given answer, with the bases it could not answer kept."""
+        answer = given(base)
+        if answer is None:
+            unchecked.add(base)
+        return answer
+    carried_by = carried_by or ((lambda r: carried(r, root, line)) if git else (lambda r: None))
+    dirs = {"/".join(f.split("/")[:i]) for f in tracked for i in range(1, f.count("/") + 1)}
+    pos = position(root)
+    prs_read, comments_read = prs is not None, comments is not None
+    bad_prs: list = []
+    twice_prs: list = []
+    rows = pr_rows(prs or [], root, git, bad_prs, line, twice_prs)
+    bound = line_bound(rows, line, checked)
+    inside = {r["pr"] for r in bound}
+    maybe = sorted(r["pr"] for r in line_bound(rows, line, lambda b: True if b in unchecked else checked(b))
+                   if r["pr"] not in inside)
+    for r in rows:
+        r["line_bound"] = r["pr"] in inside
+        r["carried"] = carried_by(r) if r["line_bound"] else None
+
+    parsed, bad_comments, twice_comments, ids = [], [], [], set()
+    for i, raw in enumerate(comments or []):
+        try:
+            c = _comment(raw)
+            if c is None:
+                raise ValueError("not a comment object")
+            if c["id"] in ids:
+                twice_comments.append(c["id"])
+                continue
+            ids.add(c["id"])
+            parsed.append(parse_comment(c, tracked, dirs))
+        except Exception:  # noqa: BLE001 - one unreadable comment never stops the map
+            bad_comments.append(_ident(raw, i, "id"))
+    join_authors(parsed, rows)
+    sessions = sessions_of(rows, parsed, now)
+    claims = claims_of(parsed, rows, sessions, now, line)
+    units = units_of(pos["directive"].get("units", []) if isinstance(pos["directive"], dict) else [], rows, bound,
+                     claims if comments_read else None, prs_read,
+                     board_naming(parsed, rows, bound, line) if comments_read else None)
+
+    live = [s for s in sessions.values() if s["activity"] in ("ACTIVE", "QUIET")]
     recent = [c for c in parsed if activity(c["at"], now) in ("ACTIVE", "QUIET")]
+    older = [c for c in claims if c["posted"] not in ("active", "quiet") and c["state"] not in ("released", "stopped")
+             and not c["cited_by_receipts"]]
+    unchecked_prs = sorted(r["pr"] for r in bound if r["carried"] is None)
+    both = prs_read and comments_read
+
+    def if_prs(value):
+        return value if prs_read else None
+
+    def if_comments(value):
+        return value if comments_read else None
+
+    def if_both(value):
+        return value if both else None
     return {
         "generated": now.strftime("%Y-%m-%dT%H:%M:%SZ"), "line": line, "authority": "none",
-        "sources": {"open_prs": len(rows), "line_bound_prs": len(bound), "board_comments": len(parsed),
-                    "git_diffs": sum(r["changed"] is not None for r in rows)},
-        "position": pos, "units": units, "contended": contended(rows, line),
-        "sessions": sorted(({**s, "overlap": sorted(s["overlap"]), "activity": activity(s["last"], now)}
+        "sources": {"open_prs": if_prs(len(rows)), "line_bound_prs": if_prs(len(bound)),
+                    "board_comments": if_comments(len(parsed)),
+                    "git_diffs": if_prs(sum(r["changed"] is not None for r in rows)),
+                    "prs_read": prs_read, "comments_read": comments_read, "git_read": git_note is None,
+                    "notes": notes, "note": "; ".join(notes) or None},
+        "position": pos, "units": units, "contended": if_prs(contended(rows, line, checked)),
+        "sessions": sorted(({**s, "how": sorted(s["how"]), "overlap": sorted(s["overlap"])}
                             for s in sessions.values()), key=lambda s: s["last"], reverse=True),
-        "claims_without_pr": [c for c in claims if not c["has_pr"] and c["state"] in ("active", "quiet")],
-        "dormant_claims_without_pr": sum(not c["has_pr"] and c["state"] == "dormant" for c in claims),
-        "line_checks": _try(lambda: line_checks(rows, root, line)),
+        "claims_without_pr": if_comments([c for c in claims if c["state"] in ("active", "quiet")
+                                          and c["posted"] in ("active", "quiet") and not c["cited_by_receipts"]]),
+        "older_claims_without_pr": if_comments({"count": len(older),
+                                                "naming_a_pr": sum(bool(c["names_prs"]) for c in older),
+                                                "by_live_sessions": sum(c["session_activity"] in ("active", "quiet")
+                                                                        for c in older)}),
+        "line_checks": _try(lambda: line_checks(rows, root, line), root),
         "gaps": {
-            "open_prs_without_receipt": sorted(r["pr"] for r in rows if not r["receipt"]),
-            "open_prs_without_receipt_into_line": sorted(r["pr"] for r in rows if not r["receipt"] and r["base"] == line),
-            "recent_posts_unresolved": [{"comment": c["cid"], "at": c["at"], "heading": c["heading"], "team": c["team"]}
-                                        for c in recent if not c.get("author")],
-            "recent_posts": len(recent),
-            "live_sessions": len(live),
-            "live_sessions_stating_prompt": sum(bool(s["prompt"]) for s in live),
-            "live_sessions_stating_plan": sum(bool(s["plan"]) for s in live),
-            "live_sessions_stating_route": sum(bool(s["route"]) for s in live),
+            "unreadable_prs": if_prs(bad_prs),
+            "unreadable_comments": if_comments(bad_comments),
+            "duplicate_prs": if_prs(sorted(set(twice_prs))),
+            "duplicate_comments": if_comments(sorted(set(twice_comments))),
+            "receipts_with_files_cut": if_prs(sorted(r["pr"] for r in rows if r["files_cut"])),
+            "prs_on_bases_not_checked": if_prs(maybe),
+            "open_prs_without_receipt": if_prs(sorted(r["pr"] for r in rows
+                                                      if not r["receipt"] and not r["older_receipt"])),
+            "open_prs_with_older_receipt": if_prs(sorted(r["pr"] for r in rows if r["older_receipt"])),
+            "open_prs_without_receipt_into_line": if_prs(sorted(r["pr"] for r in rows
+                                                                if not r["receipt"] and r["base"] == line)),
+            "receipts_with_unreadable_fields": if_prs(sorted(r["pr"] for r in rows if r["receipt_problems"])),
+            "line_bound_prs_without_diff": if_prs(sorted(r["pr"] for r in bound if r["changed"] is None)),
+            "line_bound_prs_carried_by_line": if_prs(sorted(r["pr"] for r in bound if r["carried"])),
+            "line_bound_prs_not_checked_against_line": if_prs(unchecked_prs),
+            "claims_without_readable_files": if_comments(sorted(c["cid"] for c in parsed
+                                                                if c["kind"] in CLAIM_KINDS and not c["files"])),
+            "recent_posts_unresolved": if_comments([{"comment": c["cid"], "at": c["at"], "heading": c["heading"],
+                                                     "team": c["team"]} for c in recent if not c.get("author")]),
+            "recent_posts": if_comments(len(recent)),
+            "live_sessions": if_both(len(live)),
+            "live_sessions_stating_prompt": if_both(sum(bool(s["prompt"]) for s in live)),
+            "live_sessions_stating_plan": if_both(sum(bool(s["plan"]) for s in live)),
+            "live_sessions_stating_route": if_both(sum(bool(s["route"]) for s in live)),
+            "live_sessions_with_checkin_block": if_both(sum(s["checkin_block"] for s in live)),
         },
-        "prs": rows, "claims": claims,
+        "prs": rows, "claims": if_comments(claims),
     }
 
 
 # ------------------------------------------------------------------ rendering
 
-def _cell(text) -> str:
-    return str(text if text is not None else "").replace("|", "\\|").replace("\n", " ")[:150]
+# Control characters and invisible format characters (bidirectional overrides, zero-width marks) become spaces.
+_CONTROL = re.compile(r"[\x00-\x1f\x7f-\x9f\u00ad\u061c\u180e\u200b-\u200f\u2028-\u202e\u2060-\u206f"
+                      r"\ufeff\ufff9-\ufffb]")
+
+
+def _cell(text, limit: int = 150) -> str:
+    """Text for one table cell: control characters as spaces, cut to ``limit`` with a marker, then backslash and
+    pipe escaped."""
+    text = _CONTROL.sub(" ", "" if text is None else str(text))
+    if len(text) > limit:
+        text = text[:limit - 1] + "…"
+    return text.replace("\\", "\\\\").replace("|", "\\|")
+
+
+def _untrusted(text, limit: int = 150) -> str:
+    """Text from a pull request or a board comment: ``_cell`` with backticks as quotes, inside a code span, so nothing
+    in it can start a heading, a table row, a link, a mention, an issue reference or HTML. Empty text stays empty."""
+    text = _cell(("" if text is None else str(text)).replace("`", "'"), limit)
+    return f"`{text}`" if text.strip() else ""
+
+
+def _more(shown: int, total: int) -> str:
+    """The marker for a list cut to ``shown`` of ``total`` items."""
+    return f" +{total - shown}" if total > shown else ""
+
+
+def _prs(numbers: list[int], top: int) -> str:
+    return ", ".join("#%d" % n for n in numbers[:top]) + _more(min(top, len(numbers)), len(numbers))
+
+
+def _not_read(m: dict) -> list[str]:
+    """Every source that was not read, for the header."""
+    pos, src = m["position"], m["sources"]
+    note = src.get("note") or ""
+    out = list(src.get("notes") or [])
+    if not src["prs_read"] and "pull request" not in note:
+        out.append("pull requests (no --github or --prs-json given)")
+    if not src["comments_read"] and "comment" not in note:
+        out.append("board comments (no --github or --comments-json given)")
+    out += [f"{name} ({pos[key]['not_run']})" for key, name in (("route", "route"), ("directive", "directive"),
+                                                               ("foundry", "Foundry obligations"), ("mind", "Mind"))
+            if isinstance(pos.get(key), dict) and "not_run" in pos[key]]
+    return out
+
+
+def _who(c: dict) -> str:
+    """A claim's session cell: the stated author, or the one a join inferred, marked as inferred."""
+    if c["session"]:
+        return _untrusted(c["session"])
+    if c["inferred_session"]:
+        return f"unresolved; inferred {_untrusted(c['inferred_session'])}"
+    return "unresolved"
+
+
+def _named_prs(c: dict) -> str:
+    return ", ".join(f"#{p['pr']} ({p['state']})" for p in c["names_prs"][:4]) + _more(min(4, len(c["names_prs"])),
+                                                                                       len(c["names_prs"]))
 
 
 def markdown(m: dict) -> str:
-    pos, g = m["position"], m["gaps"]
+    pos, g, src = m["position"], m["gaps"], m["sources"]
     route, dire = pos["route"], pos["directive"]
+    maybe = g["prs_on_bases_not_checked"] or []
+    read = [f"{src['open_prs']} open pull requests ({src['line_bound_prs']} based on the line directly, through open "
+            f"PRs or through a branch already on it"
+            + (f"; {len(maybe)} more may be stacked on bases git could not check here, {_prs(maybe, 12)}: fetch origin"
+               if maybe else "") + f"), {src['git_diffs']} of them with their commits in this clone"
+            if src["prs_read"] else "pull requests not read",
+            f"{src['board_comments']} board comments" if src["comments_read"] else "board comments not read"]
     out = [
         "# Work map", "",
-        f"Generated by `scripts/work_map.py` at {m['generated']} against `{m['line']}`. A snapshot, not a lock, "
-        "and no authority. Receipts and git diffs are exact. Work-board comments are parsed heuristically: the "
-        "board shares one GitHub login, so a comment's author is what the comment says it is. What could not be "
-        "resolved is listed under Gaps. Regenerate it; do not hand-edit it.", "",
-        f"Sources: {m['sources']['open_prs']} open pull requests ({m['sources']['line_bound_prs']} headed for the "
-        f"line), {m['sources']['board_comments']} board comments, {m['sources']['git_diffs']} pull requests with a "
-        "local git diff.", "",
-        "## 1. Position", "",
+        f"Generated by `scripts/work_map.py` at {m['generated']} against {_untrusted(m['line'])}. A snapshot, not a "
+        "lock, and no authority. Receipts are read as declared and not re-validated here. File lists come from "
+        "`git diff origin/<base>...<head>` (for a PR not based on the line, only the files that also differ from the "
+        "line and that one of its own commits touches) for the PRs whose commits are in this clone, and from the "
+        "receipt otherwise. Work-board comments are "
+        "parsed heuristically: the board shares one GitHub login, so the author is read from a labelled line or the "
+        "byline of the first line; where neither names one it is inferred from a claim it cites or a PR it names "
+        "(marked inferred; the *Resolved by* columns say how). Text from pull requests and comments is shown as code. "
+        "What could not be resolved is counted under Gaps and listed in the JSON output. Regenerate it; do not "
+        "hand-edit it.", "",
+        f"Sources: {'; '.join(read)}.", "",
     ]
+    missing = _not_read(m)
+    if missing:
+        out += ["**Not read:** " + "; ".join(_untrusted(x, 200) for x in missing) + ". What depends on them says "
+                "*not read* below; nothing there is a zero.", ""]
+    out += ["## 1. Position", ""]
     if "not_run" in route:
-        out += [f"Route: not read ({route['not_run']}).", "", "| | |", "|---|---|"]
+        out += [f"Route: not read ({_cell(route['not_run'])}).", "", "| | |", "|---|---|"]
     else:
         node = route["acceptance_node"] or {}
-        out += [f"**Destination ({route['boundary']}).** {route['destination']}", "",
+        out += [f"**Destination ({_cell(route['boundary'])}).** {_cell(route['destination'], 2000)}", "",
                 "| | |", "|---|---|",
-                f"| Achieved on the route | {', '.join(route['achieved']) or 'none'} (as the route file attests) |",
-                f"| Acceptance node | `{node.get('id')}`: {_cell(node.get('title'))}. Its exit needs founder-tier "
-                "evidence; nothing here measures it |",
+                f"| Attested as achieved in `greg/path.json` | {_cell(', '.join(route['achieved'])) or 'none'} |",
+                f"| Acceptance node | `{_cell(node.get('id'))}`: {_cell(node.get('title'))}. Its exit needs "
+                "founder-tier evidence; nothing here measures it |",
                 f"| Does it block building? | No. {_cell(route['founder_use_gate'])} |"]
     out += [f"| Engineering target | {ENGINEERING_TARGET}. A declared target, not a measured result |"]
     if "not_run" in dire:
         out += [f"| Directive | not read ({_cell(dire['not_run'])}) |"]
     else:
         s = dire["summary"]
-        status = ", ".join(f"{k} {v}" for k, v in s["by_status"].items())
-        out += [f"| Directive ({s['sections']} sections) | {status}; {s['asks_met']} of {s['asks']} asks met at the "
-                f"{'run' if dire['ran_tests'] else 'static ceiling (no test ran)'}; "
-                f"{s['open_by_blocker'].get('BUILDABLE_NOT_BUILT', 0)} open asks building can close, "
-                f"{s['open_by_blocker'].get('FOUNDER_ONLY', 0)} founder-only, "
-                f"{s['open_by_blocker'].get('EXTERNAL', 0)} external |"]
+        out += [f"| Directive ({s['sections']} sections) | {_cell(dire['line'], 600)}; open asks only the founder can "
+                f"close: {s['open_by_blocker'].get('FOUNDER_ONLY', 0)}; external: "
+                f"{s['open_by_blocker'].get('EXTERNAL', 0)} |"]
     f, mind = pos["foundry"], pos["mind"]
-    out += [f"| Foundry obligations | {f.get('complete', 'not read')} complete (bounded local evidence) |",
-            "| Mind mechanisms | " + (", ".join(f"{k} {v}" for k, v in mind.items()) if "not_run" not in mind
+    out += [f"| Foundry obligations | {_cell(f.get('complete', 'not read'))} complete (bounded local evidence) |",
+            "| Mind mechanisms | " + (_cell(", ".join(f"{k} {v}" for k, v in mind.items())) if "not_run" not in mind
                                       else "not read") + " |"]
     intents = pos["latest_intents"]
     if isinstance(intents, list) and intents:
         out += ["", "Latest founder intent records on this tree (a newer one may be pending in an open PR):", ""]
-        out += [f"- `{i['id']}` ({i['state']}): {_cell(i['title'])}" for i in intents]
+        out += [f"- `{_cell(i['id'])}` ({_cell(i['state'])}): {_cell(i['title'])}" for i in intents]
 
-    out += ["", "## 2. Next eligible work, in dependency order", "",
-            "Units come from `acceptance/directive-sections.json`. *Claimed* means an open pull request names the "
-            "unit. *Unclaimed* means none does: read the newest board comments before you take it.", "",
-            "| Unit | What it builds | Closes | Evidence: now -> required | State | Owner | Also touching its files |",
-            "|---|---|---|---|---|---|---|"]
-    for u in m["units"]:
-        owner = ", ".join(f"#{o['pr']}" for o in u["owners"]) or ""
-        state = u["state"] + (f" (waits on {', '.join(u['waits_on'])})" if u["waits_on"] else "")
-        closes = ", ".join(u["asks"][:4]) + (f" +{len(u['asks']) - 4}" if len(u["asks"]) > 4 else "")
-        out.append(f"| `{u['unit'] or '-'}` | {_cell(u['title'])} | {closes or 'prerequisite'} | "
-                   f"{_cell('; '.join(u['evidence']))} | {state} | {owner} | "
-                   f"{', '.join('#%d' % n for n in u['also_touching_its_files'][:6])} |")
+    out += ["", "## 2. Next eligible work, in dependency order", ""]
+    if "not_run" in dire:
+        out += [f"Not read: the directive was not read ({_cell(dire['not_run'])}), so no unit is listed."]
+    else:
+        out += ["Units come from `acceptance/directive-sections.json`, in its dependency order. *Named* means an open "
+                "pull request headed for the line has the unit id or one of its ask ids in its title or receipt "
+                "(scope, intent_refs); the PR may be old, so check it. A PR whose commits are all on the line is "
+                "listed as *carried* and names nothing. *Named on the board* means a claim or handoff of any age "
+                "names the unit or one of its asks in its heading and links such a pull request (heuristic). *Claimed "
+                "on the board* means a claim posted in the last 7 days names the unit or its asks (heuristic). "
+                "*Unclaimed* means none of these: read the newest board comments before you take it."
+                + ("" if src["prs_read"] else " Pull requests were not read, so every state is *unknown*.")
+                + (f" Git could not check {len(g['line_bound_prs_not_checked_against_line'])} of the PRs headed for the "
+                   "line against it (section 5), so a unit they name may already be carried."
+                   if src["prs_read"] and g["line_bound_prs_not_checked_against_line"] else ""), "",
+                "| Unit | What it builds | Closes | Evidence: now -> required | State | Open PRs naming it "
+                "| Also touching its files |", "|---|---|---|---|---|---|---|"]
+        for u in m["units"]:
+            naming = ", ".join(f"#{o['pr']}" for o in u["named_by"])
+            if u["carried_by_line"]:
+                naming += ("; " if naming else "") + "carried: " + _prs(u["carried_by_line"], 6)
+            state = u["state"] + (f" ({', '.join(map(str, u['claimed_on_board'][:3]))})"
+                                  if u["state"] == "claimed on the board" else "")
+            state += "".join(f" → #{b['pr']} (comment {b['comment']})" for b in u["named_on_board"][:3]
+                             ) if u["state"] == "named on the board" else ""
+            state += f" (waits on {', '.join(u['waits_on'])})" if u["waits_on"] else ""
+            closes = ", ".join(u["asks"][:4]) + _more(min(4, len(u["asks"])), len(u["asks"]))
+            out.append(f"| `{_cell(u['unit'] or '-')}` | {_cell(u['title'])} | {_cell(closes) or 'prerequisite'} | "
+                       f"{_cell('; '.join(u['evidence']))} | {_cell(state)} | {naming} | "
+                       f"{_prs(u['also_touching_its_files'], 6)} |")
+        mentioned = sum(bool(u.get("mentioned_by")) for u in m["units"])
+        if mentioned:
+            out += ["", f"{mentioned} units are also mentioned by pull requests that do not name them (not headed for "
+                    "the line, or named only in the body): `mentioned_by` in the JSON."]
 
-    out += ["", "## 3. Before you edit: contended files", "",
-            "Files that pull requests headed for the line, from two or more sessions, declare or change. "
-            "The integration PR and composed candidates are left out.", "",
-            "| File | Sessions | Pull requests |", "|---|---:|---|"]
-    out += [f"| `{_cell(c['file'])}` | {c['sessions']} | {', '.join('#%d' % n for n in c['prs'][:14])} |"
-            for c in m["contended"][:40]]
-    if len(m["contended"]) > 40:
-        out.append(f"| ... | | {len(m['contended']) - 40} more: run with `--json` |")
+    out += ["", "## 3. Before you edit: contended files", ""]
+    if m["contended"] is None:
+        out += ["Not read: pull requests were not read."]
+    else:
+        bare = g["line_bound_prs_without_diff"]
+        out += ["Paths that two or more session ids declare in a receipt or change against their PR base (own changes "
+                "only), among PRs headed for the line. A declared directory or glob covers the paths under it. A PR "
+                "with no receipt counts as its own session id; a PR carried by the line holds nothing; a fix-round "
+                "child counts with the parent it is stacked on. The integration PR and composed candidates are left "
+                "out." + ("" if src["git_read"] else " Git was not read: declared files only."), "",
+                f"{len(bare)} of {src['line_bound_prs']} PRs headed for the line have no local diff"
+                + (f" ({_prs(bare, 30)}); their file lists rest on the receipt alone: fetch their heads." if bare
+                   else "."), "",
+                "| File | Session ids (a PR with no receipt counts as one) | Pull requests |", "|---|---:|---|"]
+        out += [f"| {_untrusted(c['file'])} | {c['sessions']} | {_prs(c['prs'], 14)} |" for c in m["contended"][:40]]
+        if len(m["contended"]) > 40:
+            out.append(f"| ... | | {len(m['contended']) - 40} more: run with `--json` |")
 
-    out += ["", "## 4. Active sessions", "",
-            "| Session | Client | Last activity | Asked to | Plan | Route | Open PRs | Overlap declared |",
-            "|---|---|---|---|---|---|---|---|"]
-    for s in m["sessions"]:
-        if s["activity"] == "DORMANT":
-            continue
-        out.append(f"| `{_cell(s['session'])}` | {s['client']} | {s['activity']} {s['last'][:16]} | "
-                   f"{_cell(s['prompt'])} | {_cell(s['plan'])} | {_cell(s['route'] or '')} | "
-                   f"{', '.join('#%d' % n for n in sorted(s['prs'])[:12])}"
-                   f"{' +%d' % (len(s['prs']) - 12) if len(s['prs']) > 12 else ''} | {', '.join(s['overlap'])} |")
-    dormant = sum(s["activity"] == "DORMANT" for s in m["sessions"])
-    out += ["", f"{dormant} dormant sessions (no activity for 7 days) are in the JSON output."]
+    out += ["", "## 4. Active sessions", ""]
+    if not (src["prs_read"] or src["comments_read"]):
+        out += ["Not read: neither pull requests nor board comments were read."]
+    else:
+        if not (src["prs_read"] and src["comments_read"]):
+            out += [("Board comments" if src["prs_read"] else "Pull requests") + " were not read: this table is "
+                    "partial.", ""]
+        out += ["| Session | Client | Resolved by | Last update seen (PR updated_at or board comment) | Asked to | "
+                "Plan | Route | Open PRs | Overlap declared |", "|---|---|---|---|---|---|---|---|---|"]
+        for s in m["sessions"]:
+            if s["activity"] == "DORMANT":
+                continue
+            how = _cell(", ".join(s["how"])) + "".join(f"; #{t['pr']} task_ref cites comment {t['comment']} by "
+                                                       f"{_untrusted(t['author'], 40)}" for t in s["task_refs"][:2])
+            out.append(f"| {_untrusted(s['session'])} | {_cell(s['client'])} | {how} | "
+                       f"{s['activity']} {_cell(s['last'][:16])}{' (inferred)' if s['last_inferred'] else ''} | "
+                       f"{_untrusted(s['prompt'])} | {_untrusted(s['plan'])} | "
+                       f"{_untrusted(s['route'] or '')} | {_prs(sorted(s['prs']), 12)} | "
+                       f"{', '.join(_untrusted(o, 40) for o in s['overlap'])} |")
+        dormant = sum(s["activity"] == "DORMANT" for s in m["sessions"])
+        out += ["", f"{dormant} dormant sessions (no update seen for 7 days) are in the JSON output. *(inferred)* "
+                "marks a last update taken from a comment whose author a join inferred."]
 
-    out += ["", "## 5. Gaps: documented is not demonstrated", "",
-            f"- Open pull requests without a receipt: {len(g['open_prs_without_receipt'])} "
-            f"({len(g['open_prs_without_receipt_into_line'])} of them into the line).",
-            f"- Sessions active in the last 7 days: {g['live_sessions']}. Stating their prompt: "
-            f"{g['live_sessions_stating_prompt']}; their plan: {g['live_sessions_stating_plan']}; "
-            f"a route node or unit: {g['live_sessions_stating_route']}.",
-            f"- Board posts in the last 7 days whose author could not be resolved: "
-            f"{len(g['recent_posts_unresolved'])} of {g['recent_posts']}.",
-            _checks_line(m), "",
-            "Claims with no pull request (active in the last 7 days):", "",
-            "| Comment | Session | Posted | Files declared | Recheck | State |", "|---|---|---|---|---|---|"]
-    out += [f"| {c['comment']} | `{_cell(c['session'] or 'unresolved')}` | {c['at'][:16]} | "
-            f"{_cell(', '.join('`%s`' % f for f in c['files'][:6]))} | {c['recheck'] or 'event-based'} | {c['state']} |"
-            for c in m["claims_without_pr"][-25:]]
-    out += ["", f"{m['dormant_claims_without_pr']} older claims with no pull request and no activity for 7 days "
-            "are in the JSON output. A dormant claim is still not permission to overwrite."]
+    out += ["", "## 5. Gaps: documented is not demonstrated", ""]
+    if src["prs_read"]:
+        out += [f"- Open pull requests without a receipt: {len(g['open_prs_without_receipt'])} "
+                f"({len(g['open_prs_without_receipt_into_line'])} of them into the line); with an older (version-1) "
+                f"receipt: {len(g['open_prs_with_older_receipt'])}; receipts with fields of the wrong type: "
+                f"{len(g['receipts_with_unreadable_fields'])}"
+                + (f"; receipts listing more than {FILES_LIMIT} files, the rest not read: "
+                   f"{_prs(g['receipts_with_files_cut'], 12)}" if g["receipts_with_files_cut"] else "") + ".",
+                _carried_line(m),
+                f"- Unreadable pull requests: {len(g['unreadable_prs'])}"
+                + (f" ({_cell(', '.join(map(str, g['unreadable_prs'][:12])))}{_more(12, len(g['unreadable_prs']))})"
+                   if g["unreadable_prs"] else "") + "."]
+        if g["duplicate_prs"]:
+            out += [f"- Pull requests given more than once, read once from the newest copy: "
+                    f"{_prs(g['duplicate_prs'], 12)}."]
+    else:
+        out += ["- Pull requests and their receipts: not read."]
+    if src["prs_read"] and src["comments_read"]:
+        out += [f"- Sessions with an update seen in the last 7 days: {g['live_sessions']}. With a comment carrying a "
+                f"Prompt/Request/Task label: {g['live_sessions_stating_prompt']}; a Plan/Approach/Method label: "
+                f"{g['live_sessions_stating_plan']}; a route node or unit: {g['live_sessions_stating_route']}; "
+                f"the check-in block: {g['live_sessions_with_checkin_block']}."]
+    else:
+        out += ["- Sessions active in the last 7 days: not read (it needs both pull requests and board comments)."]
+    if src["comments_read"]:
+        unread = g["claims_without_readable_files"]
+        out += [f"- Board posts in the last 7 days whose author could not be resolved: "
+                f"{len(g['recent_posts_unresolved'])} of {g['recent_posts']}.",
+                f"- Claims whose file list could not be read: {len(unread)}"
+                + (f" ({_cell(', '.join(map(str, unread[-12:])))}{_more(12, len(unread))})" if unread else "") + ".",
+                f"- Unreadable board comments: {len(g['unreadable_comments'])}"
+                + (f" ({_cell(', '.join(map(str, g['unreadable_comments'][:12])))}"
+                   f"{_more(12, len(g['unreadable_comments']))})" if g["unreadable_comments"] else "") + "."]
+        if g["duplicate_comments"]:
+            out += [f"- Board comments given more than once, read once: {len(g['duplicate_comments'])}."]
+    else:
+        out += ["- Board posts: not read."]
+    out += [_checks_line(m), ""]
+    if not src["comments_read"]:
+        out += ["Claims that no open pull request's receipt cites: not read (board comments were not read)."]
+    else:
+        shown = m["claims_without_pr"][-25:]
+        out += ["Claims that no open pull request's receipt cites (posted in the last 7 days, not released"
+                + (f"; the newest {len(shown)} of {len(m['claims_without_pr'])}" if len(m["claims_without_pr"]) > 25
+                   else "") + "):", "",
+                "| Comment | Session | Resolved by | Posted | Files declared | Recheck | State | Pull request named |",
+                "|---|---|---|---|---|---|---|---|"]
+        out += [f"| {c['comment']} | {_who(c)} | {_cell(c['how'])} | "
+                f"{_cell(c['at'][:16])} | {', '.join(_untrusted(x, 80) for x in c['files'][:6])}"
+                f"{_more(min(6, len(c['files'])), len(c['files']))} | {_cell(c['recheck'] or 'event-based')} | "
+                f"{_cell(c['state'] + (' (part released)' if c['partly_released_by'] else ''))} | {_named_prs(c)} |"
+                for c in shown]
+        older = m["older_claims_without_pr"]
+        out += ["", f"{older['count']} claims posted more than 7 days ago that no open pull request's receipt cites "
+                f"and that were not released ({older['naming_a_pr']} of them name a pull request; "
+                f"{older['by_live_sessions']} are by sessions with an update in the last 7 days) are in the JSON "
+                "output. An old claim is still not permission to overwrite."]
 
     drift = pos["route_drift"]
     out += ["", "## 6. Route drift", ""]
@@ -676,76 +1764,178 @@ def markdown(m: dict) -> str:
     elif not drift.get("section"):
         out += ["This tree has no current-route section in `docs/BACKCAST_GPS.md` to compare with `greg/path.json`."]
     elif drift["missing"]:
-        out += [f"`docs/BACKCAST_GPS.md` does not name these nodes of `greg/path.json`: {', '.join(drift['missing'])}."]
+        out += [f"`docs/BACKCAST_GPS.md` does not name these nodes of `greg/path.json`: "
+                f"{_cell(', '.join(drift['missing']), 600)}."]
     else:
         out += ["None: the route table in `docs/BACKCAST_GPS.md` names every node of `greg/path.json`."]
 
-    out += ["", "## The check-in", "", "Post this on the work board before you edit, and again when you resume:", "",
+    out += ["", "## The check-in", "",
+            "Post this on the work board before any edit, commit or push, and again when you resume. When the pull "
+            "request exists, give this comment's URL as its receipt's `coordination.task_ref`:", "",
             "```text", CHECKIN_BLOCK, "```", ""]
     return "\n".join(out)
 
 
+def _carried_line(m: dict) -> str:
+    """How many PRs headed for the line are carried by it, out of those git could check; never a zero for the rest."""
+    g, head = m["gaps"], "- PRs headed for the line whose commits are all on it already (carried): "
+    unknown, done = g["line_bound_prs_not_checked_against_line"], g["line_bound_prs_carried_by_line"]
+    if not unknown:
+        return head + f"{len(done)}."
+    checked = m["sources"]["line_bound_prs"] - len(unknown)
+    return (head + (f"{len(done)} of the {checked} git could check; " if checked else "")
+            + f"not checked: {len(unknown)} ({_prs(unknown, 12)}), their commits are not in this clone or git was "
+            "not read.")
+
+
 def _checks_line(m: dict) -> str:
     c = m.get("line_checks") or {}
-    if "not_run" in c or not m["sources"]["open_prs"]:
+    if "not_run" in c:
         return "- Checks on pushes to the line: not read."
-    if m["line"] in c["push_branches"]:
+    if c["push_covers_line"]:
         return "- Checks on pushes to the line: Canonical CI runs on push to the line."
-    if c["pull_requests_with_line_as_head"]:
-        prs = ", ".join("#%d" % n for n in c["pull_requests_with_line_as_head"])
-        return (f"- Checks on pushes to the line: only through the pull-request runs of {prs} (its head is the line). "
-                "If it closes, pushes to the line run no Canonical CI.")
-    return ("- Checks on pushes to the line: **none**. No open pull request has the line as its head, and "
-            "`canonical-ci.yml` does not run on push to it.")
+    if not m["sources"]["prs_read"]:
+        return ("- Checks on pushes to the line: `canonical-ci.yml` does not run on push to it; whether an open pull "
+                "request runs them was not read.")
+    if not c["covered"]:
+        return ("- Checks on pushes to the line: **none**. No open pull request from this repository has the line as "
+                "its head, and `canonical-ci.yml` does not run on push to it.")
+    prs = ", ".join("#%d" % n for n in c["pull_requests_with_line_as_head"])
+    return (f"- Checks on pushes to the line: only through the pull-request runs of {prs} (its head is the line). "
+            "If it closes, pushes to the line run no Canonical CI.")
 
 
-def _load(paths: list[Path] | None) -> list[dict] | None:
+# ------------------------------------------------------------------ input and output
+
+def _load(paths: list[Path] | None, kind: str, key: str) -> tuple[list | None, list[str]]:
+    """Saved API responses: the items of every file, or None with notes when a file is missing, broken or not a list.
+    A file holding one object with ``key`` counts as that one item. Items that are not objects are passed on, and
+    the map reports them as unreadable."""
     if not paths:
-        return None
-    out: list[dict] = []
+        return None, []
+    out: list = []
+    notes = []
     for p in paths:
-        data = json.loads(Path(p).read_text())
-        out += data if isinstance(data, list) else [data]
-    return out
+        try:
+            data = json.loads(Path(p).read_text(encoding="utf-8"), parse_constant=lambda _name: None)
+        except (OSError, ValueError, RecursionError) as exc:
+            notes.append(f"{kind} file {Path(p).name} not read ({_reason(exc)})")
+            continue
+        if isinstance(data, dict) and key in data:
+            data = [data]
+        if not isinstance(data, list):
+            notes.append(f"{kind} file {Path(p).name} not read (not a list of {kind}s)")
+            continue
+        out += data
+    return (None if notes else out), notes
+
+
+def _write(path: Path, text: str) -> str | None:
+    """Write ``text`` in UTF-8 with unencodable characters escaped. A new or regular file, or the regular file a
+    symbolic link points to, is written through a temporary file beside it and an atomic rename, so a failed write
+    leaves it as it was and the link stays a link; anything else (``/dev/stdout``, a pipe, a device) is written
+    through as it is. Returns why it failed, or None."""
+    path, tmp = Path(path), None
+    asked = path.name
+    try:
+        if path.is_symlink() or (path.exists() and not path.is_file()):
+            target = Path(os.path.realpath(path))
+            if not (target.is_file() and not target.is_symlink()):
+                with open(path, "w", encoding="utf-8", errors="backslashreplace", newline="\n") as fh:
+                    fh.write(text)
+                return None
+            path = target
+        fd, tmp = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
+        with os.fdopen(fd, "w", encoding="utf-8", errors="backslashreplace", newline="\n") as fh:
+            fh.write(text)
+        os.chmod(tmp, path.stat().st_mode & 0o777 if path.is_file() else 0o644)
+        os.replace(tmp, path)
+        return None
+    except (OSError, ValueError) as exc:
+        if tmp:
+            try:
+                os.unlink(tmp)
+            except OSError:
+                pass
+        return f"{asked} not written ({_reason(exc)})"
+
+
+def _answer_sources(m: dict) -> dict:
+    """What a ``--paths`` or ``--unit`` answer rests on: an empty list means nobody only when its source was read."""
+    src = m["sources"]
+    return {"pull_requests_read": src["prs_read"], "comments_read": src["comments_read"],
+            "git_read": src["git_read"], "note": src["note"], "not_read": _not_read(m),
+            "line_bound_prs_without_diff": m["gaps"]["line_bound_prs_without_diff"],
+            "open_prs_without_diff": sorted(r["pr"] for r in m["prs"] if r["changed"] is None)
+            if src["prs_read"] else None,
+            "files_of_those": "declared in the receipt alone: their diffs were neither in local git nor read from "
+                              "the API (a PR stacked on another branch is never read from the API)"}
 
 
 def main(argv: list[str] | None = None) -> int:
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="backslashreplace")
+        except (AttributeError, ValueError, OSError):
+            pass
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--github", metavar="OWNER/REPO")
     ap.add_argument("--board", type=int, default=96)
     ap.add_argument("--prs-json", type=Path, action="append")
     ap.add_argument("--comments-json", type=Path, action="append")
     ap.add_argument("--line", default=LINE)
-    ap.add_argument("--now", help="UTC time to judge activity against, YYYY-MM-DDTHH:MM:SSZ")
+    ap.add_argument("--now", help="UTC time to judge activity against: YYYY-MM-DDTHH:MM:SSZ or ISO with an offset")
     ap.add_argument("--markdown", type=Path)
     ap.add_argument("--json", type=Path)
     ap.add_argument("--paths", nargs="+", metavar="FILE", help="who touches these files?")
     ap.add_argument("--unit", help="is this unit taken?")
     a = ap.parse_args(argv)
-    token = os.environ.get("GITHUB_TOKEN")
-    prs, comments, note = _load(a.prs_json), _load(a.comments_json), None
     try:
-        if a.github and prs is None:
-            prs = branch_catalog.pull_requests(a.github, token)
-        if a.github and comments is None:
-            comments = issue_comments(a.github, a.board, token)
-    except Exception as exc:  # noqa: BLE001 - the map still prints what it can
-        note = f"GitHub not read ({type(exc).__name__}: {exc})"[:200]
-    m = build(prs, comments, line=a.line, now=_when(a.now) if a.now else None)
-    if note:
-        m["sources"]["note"] = note
-    if a.json:
-        a.json.write_text(json.dumps(m, indent=1, default=sorted) + "\n")
-    if a.markdown:
-        a.markdown.write_text(markdown(m) + "\n")
-    if a.paths:
-        print(json.dumps(who_touches(a.paths, m["prs"], m["claims"]), indent=1))
-    elif a.unit:
-        print(json.dumps([u for u in m["units"] if u["unit"] == a.unit], indent=1))
-    elif not (a.json or a.markdown):
-        print(markdown(m))
-    if note:
-        print(note, file=sys.stderr)
+        prs, notes = _load(a.prs_json, "pull request", "number")
+        comments, more = _load(a.comments_json, "comment", "id")
+        notes += more
+        token = os.environ.get("GITHUB_TOKEN")
+        if a.github and not a.prs_json:
+            try:
+                prs = branch_catalog.pull_requests(a.github, token)
+            except Exception as exc:  # noqa: BLE001 - the map still prints what it can
+                notes.append(f"GitHub pull requests not read ({_reason(exc)})")
+            if prs:
+                read, failed = attach_api_files(a.github, prs, token, a.line)
+                if failed:
+                    notes.append(f"changed files of {len(failed)} open pull requests into the line not read from the "
+                                 f"API: {', '.join('#%d' % n for n in failed[:20])}{_more(min(20, len(failed)), len(failed))}")
+        if a.github and not a.comments_json:
+            try:
+                comments = issue_comments(a.github, a.board, token)
+            except Exception as exc:  # noqa: BLE001
+                notes.append(f"GitHub comments not read ({_reason(exc)})")
+        now = parse_now(a.now) if a.now else None
+        if a.now and now is None:
+            notes.append(f"--now {a.now[:40]!r} not understood (YYYY-MM-DDTHH:MM:SSZ or ISO with an offset); "
+                         "the current time is used")
+        m = build(prs, comments, line=a.line, now=now, notes=notes)
+        outputs = [(a.json, lambda: json.dumps(m, indent=1, default=sorted, allow_nan=False) + "\n"),
+                   (a.markdown, lambda: markdown(m) + "\n")]
+        failed = [_write(path, render()) for path, render in outputs if path]
+        if a.paths:
+            tracked, _ = _tracked(ROOT)
+            print(json.dumps({"sources": _answer_sources(m), "paths": who_touches(
+                a.paths, m["prs"] if m["sources"]["prs_read"] else None, m["claims"], tracked, a.line),
+                "checkin": CHECKIN_BLOCK}, indent=1))
+        elif a.unit:
+            rows = [u for u in m["units"] if u["unit"] == a.unit]
+            known = "not_run" not in m["position"]["directive"]
+            answer = {"rows": rows} if rows else {"answer": "no such unit" if known else "units not read"}
+            print(json.dumps({"sources": _answer_sources(m), "unit": a.unit, **answer, "checkin": CHECKIN_BLOCK},
+                             indent=1))
+        elif not (a.json or a.markdown):
+            print(markdown(m))
+        for line in [*m["sources"]["notes"], *failed]:
+            if line:
+                print(line, file=sys.stderr)
+    except Exception as exc:  # noqa: BLE001 - never a gate: report and exit 0
+        print(f"work map not built ({_reason(exc)})", file=sys.stderr)
     return 0
 
 

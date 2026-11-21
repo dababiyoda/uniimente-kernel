@@ -290,21 +290,29 @@ def _get(url: str, token: str | None):
 RECEIPT_MARKER = "<!-- uniimente:receipt -->"
 
 
-def receipt_of(body: str | None) -> dict | None:
-    """The version-2 receipt in a PR body (docs/collaboration/RECEIPT.md), or None when there is none or it
-    does not parse. A receipt is a declaration the receipt check validated against the PR's head, not proof."""
-    body = body or ""
-    at = body.find(RECEIPT_MARKER)
-    if at < 0:
+def receipt_of(body: str | None, version: int = 2) -> dict | None:
+    """The receipt in a PR body (docs/collaboration/RECEIPT.md) in the shape the receipt check accepts: exactly one
+    start and one end marker, one fenced JSON object between them, and ``version`` equal to the one asked for.
+    None for anything else, including JSON that does not parse, nests too deeply or holds NaN or Infinity.
+    A receipt is a declaration the receipt check validated against the PR's head, not proof."""
+    body = body if isinstance(body, str) else ""
+    end_marker = RECEIPT_MARKER.replace("<!-- ", "<!-- /", 1)
+    if body.count(RECEIPT_MARKER) != 1 or body.count(end_marker) != 1:
         return None
-    m = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", body[at:], re.S)
-    if not m:
+    start, end = body.index(RECEIPT_MARKER) + len(RECEIPT_MARKER), body.index(end_marker)
+    block = re.fullmatch(r"\s*```json\s*\n(.*?)\n```\s*", body[start:end], re.S) if start < end else None
+    if block is None:
         return None
+
+    def non_finite(name: str):
+        raise ValueError(f"non-finite JSON number {name}")
     try:
-        data = json.loads(m[1])
-    except ValueError:
+        data = json.loads(block[1], parse_constant=non_finite)
+    except (ValueError, RecursionError):
         return None
-    return data if isinstance(data, dict) else None
+    if not isinstance(data, dict) or type(data.get("version")) is not int or data["version"] != version:
+        return None
+    return data
 
 
 def github_metrics(repo: str, token: str | None, limit: int = 100) -> dict:

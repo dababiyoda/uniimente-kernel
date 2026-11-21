@@ -1,0 +1,66 @@
+{
+ "intent_id": "INTENT-20261112-CONVERGENCE-USEFUL-PATH",
+ "title": "Convergence is the next engineering outcome; then one useful operational path, a second case, and review findings turned into better engineering",
+ "statement": "Green results on separate branches do not establish compatibility.",
+ "exact_source_excerpt": "Final merge approval and developmental composition are separate boundaries.",
+ "source_refs": [
+  "docs/intent/sources/CONVERGENCE-CLARIFICATION-2026-11-12-source.md",
+  "docs/intent/sources/ABSOLUTE-OPUS-MAXIMUS-2026-11-11-source.md",
+  "docs/intent/INTENT-20261111-ABSOLUTE-OPUS-MAXIMUS.json"
+ ],
+ "source_location": "docs/intent/sources/CONVERGENCE-CLARIFICATION-2026-11-12-source.md",
+ "source_date": "2026-11-12",
+ "changed_axis": "immediate priority and sequence (CLAUDE.md developmental-inheritance axes). The final intended effect, the completion boundary BODY + ORGANS + MIND and the authority envelope are unchanged.",
+ "intended_effect": "The compatible open work behaves as one machine on one exact revision before anyone is asked to merge it, and that machine produces a useful result: first for GREG's own development (an intake recommendation an integrator can use), then for a bounded operational case and a second, materially different one, with what transferred measured. Every substantial component inspected is given a disposition that says where its value goes, who consumes it, what behaviour changes and how that is verified. Defects found by review become regression cases and are tracked for recurrence.",
+ "executable_interpretation": "Agents (1) keep a reversible composed candidate of the compatible heads within development authority, run the checks on that exact revision, and prepare the intake order, dependencies, compatibility changes and evidence for the integrator; composing approves nothing; (2) show on the composed revision the seven behaviours the source lists (a mission through the real entry point; correct outcomes through interruption and restart; capability identity and device revocation; completed work preserved when a dependency fails; uncertainty, timeout, refusal, failure and refutation told apart; an appraisal bound to the closure and evidence it judged; an account of outcome, costs, uncertainty and next step); (3) repair the timeout and closure-appraisal defects found on the integration line; (4) build one bounded operational slice (request, evidence, missing information, eligibility, routing, completion evidence, acceptance, reconciliation, retained learning) on a sandbox case with labelled fixtures, exercise its adverse cases, then run a second materially different case and measure transfer; (5) connect the representation-repair experiment to a real decision in that workflow, with baseline, budget, withheld cases and success conditions declared first, and keep the simpler method where it wins; (6) turn each review finding into a regression or adversarial case, check other consumers of the same contract, and track recurrence, review cost, integration delay and escaped defects; (7) state an access limit exactly (container browser, cloud desktop, the founder's computer, founder-device acceptance are four different things) and attempt the permitted local test before calling a capability unavailable. The source's five answers are applied as engineering recommendations: intake is prepared, not performed; an unreadable receipt stays unknown, is reconciled from available records first and keeps its pending state across restart; the smallest browser implementation that passes the declared requirements is recommended; a rejected answer earns no credit, scoped to that answer, evidence, task conditions and version, with explicit requalification; a late appraisal mismatch is classified as stale, grants nothing, keeps any separately valid refutation, and a fresh appraisal is requested when required.",
+ "owner": "Alfonso Lopez (founder authority); the integration owner and implementing sessions on board #96",
+ "state": "active",
+ "status": "active",
+ "authority_level": "active_requirement",
+ "consequence_class": "sequencing",
+ "binding_scope": "Work selection, composition, verification and reporting on the integration line (#196 and its children) and in the participating organ repositories. Reversible implementation, tests, a candidate branch and draft review only. No merge of a protected or default branch, deployment, spending, publishing, outside contact, live-credential change or activation of a consequential capability.",
+ "constitutional_constraints": [
+  "Chat text is intent evidence, not founder authentication; it authorizes no runtime act",
+  "A composed candidate is evidence only: intake stays the integrator's and protected merges keep their existing approval",
+  "The five answers in the source are engineering recommendations; any change to constitutional authority keeps its existing decision process",
+  "VEPMC = 0 continues to permit developmental engineering; device acceptance, commercial validation and graduation keep their separate requirements; a container, test key or rehearsal moves none of them",
+  "A sandbox operational case uses explicit rules and consented, synthetic or otherwise permitted data, labelled as such; actual payments, customer commitments, publishing and outside contact stay behind their existing boundaries",
+  "A skill, worker, browser or tool is reported as used only when it was available and its execution was observed"
+ ],
+ "success_evidence": [
+  "A candidate branch whose first-parent history names each composed head and commit, with the checks run on that exact revision",
+  "One test on the composed revision that walks the seven listed behaviours in one mission",
+  "An intake package the integrator can use: exact revisions and order, compatibility changes, claims matched to executed evidence, what is unproven",
+  "An operational slice with a usable case packet, a justified next action, unresolved facts, an evidence trail and an accounting projection that separates estimates from transactions; then a second case with measured transfer",
+  "tests/unit/test_founder_clarification_20261112.py: the message is kept whole with a matching digest, the pinned sentences are in it, and the record has every required ledger field"
+ ],
+ "failure_evidence": [
+  "A green result on separate branches reported as compatibility",
+  "A candidate branch treated as approval of its parts, or used as the base of other work",
+  "A capability declared unavailable for want of the founder's computer when a permitted local test was not attempted",
+  "A synthetic rehearsal reported as buyer demand, willingness to pay or commercial validation",
+  "A review finding left as a comment with no regression case and no check of other consumers"
+ ],
+ "dependencies": [
+  "INTENT-20261111-ABSOLUTE-OPUS-MAXIMUS (the directive this clarifies)",
+  "INTENT-20261028-OPUS-MAXIMUS-REISSUE",
+  "INTENT-20261030-BUILD-BEFORE-DEVICE-RUN",
+  "INTENT-20261001-FULL-MACHINE-COMPLETION",
+  "INTENT-0030 (effect, not metaphor)"
+ ],
+ "conflicts": [
+  "The 2026-11-11 directive says \"Do not mix unrelated work into #291\" and asks for small bounded pull requests; a composed candidate holds many units on one branch. Resolved by the source: the candidate is developmental composition for evidence, separate from merge approval, and each unit keeps its own pull request.",
+  "The source's answer on rejected-answer credit asks for explicit requalification; the credit unit's first fix-round instruction made a founder rejection impossible to lift. Resolved in favour of the source: a founder-signed act lifts it, a bare unsigned row does not."
+ ],
+ "next_review_trigger": "The founder corrects or replaces this clarification, the integrator takes or declines the candidate's heads, or the second operational case is measured",
+ "supersedes": [
+  "Reading a set of separately green branches as a working machine (evidence discipline only)"
+ ],
+ "superseded_by": [],
+ "implementation_refs": [
+  "docs/FOUNDER_INTENT_LEDGER.md",
+  "tests/unit/test_founder_clarification_20261112.py",
+  "docs/collaboration/REPOSITORY-DISPOSITIONS-2026-11-11.md"
+ ],
+ "authority_delta": "none"
+}

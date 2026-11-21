@@ -112,6 +112,9 @@ def handle(home: Path, method: str, path: str, headers, body: bytes, *, now: dat
                                    "rejected": [{"file": e.payload["file"], "reason": e.payload["reason"]}
                                                 for e in reader.journal.replay("command.rejected")][-10:]})
         full = status(home)
+        # a device is offered no answer to an ask only the founder key answers: the body would refuse it
+        from greg import asks
+        full["decisions_required"] = asks.for_signer(full["decisions_required"], principal)
         if path == "/api/status":
             full["cognitive"] = cognitive
         data = full["decisions_required"] if path == "/api/decisions" else full

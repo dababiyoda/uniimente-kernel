@@ -101,8 +101,8 @@ MUTANTS = [
      [('compensation=True)\n            return "WAITING"\n        outcome = self.office.act(',
        'compensation=False)\n            return "WAITING"\n        outcome = self.office.act(')], COMP),
     ("the Gate-refused compensation ask is not marked", "greg/missions.py",
-     [('compensation=True)\n            return "WAITING"\n        self.journal.record("mission.compensated"',
-       'compensation=False)\n            return "WAITING"\n        self.journal.record("mission.compensated"')], COMP),
+     [('compensation=True)\n            return "WAITING"\n        return self._record_compensation(',
+       'compensation=False)\n            return "WAITING"\n        return self._record_compensation(')], COMP),
     ("the projection drops the compensation marker", "greg/asks.py",
      [('"compensation", "evidence",', '"evidence",')], COMP),
     # the typed blockers (greg/blockers.py): the morning report, Mission Control's Goals page, greg blockers

@@ -59,7 +59,10 @@ def greg(home, *args, check=True):
 
 def history(home):
     config = json.loads((Path(home) / "body.json").read_text())
-    ledger = EvidenceLedger(config["constitution_hash"], str(Path(home) / "ledger.jsonl"), read_only=True)
+    # The body may be appending while this polls: a line it is still writing (one record can take several writes)
+    # was never acknowledged and is left out, as greg.body.observe does, instead of failing the read.
+    ledger = EvidenceLedger(config["constitution_hash"], str(Path(home) / "ledger.jsonl"), read_only=True,
+                            tail="ignore")
     journal = Journal(EventSpine(ledger), actor="spiffe://uniimente.internal/greg/test-observer")
     return ledger, journal
 

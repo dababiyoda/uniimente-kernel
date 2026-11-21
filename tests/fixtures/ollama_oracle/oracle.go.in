@@ -1,0 +1,187 @@
+package main
+
+// The oracle: Ollama's own manifest, types/model and internal/modelref packages resolving a request name the
+// way the server's run path does. build_oracle.sh fills in the variant and the last line of resolve():
+// v040 is v0.40.0 (0d0720e: scheduleRunner -> GetModelForRunner -> ParseNamedManifestForRunner), main is
+// e9fde36d (getExistingModelForRunner -> loadExistingModelForRunner -> FindNamedManifestForRunner). Written
+// by the independent reviewer of 52f5703b; committed with only this comment and the two fill-ins changed.
+
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"os"
+	"strings"
+
+	"github.com/ollama/ollama/internal/modelref"
+	"github.com/ollama/ollama/manifest"
+	"github.com/ollama/ollama/types/model"
+)
+
+// getExistingName: copy of server/routes.go getExistingName (identical in v0.40.0 and main).
+func getExistingName(n model.Name) (model.Name, error) {
+	var zero model.Name
+	if manifest.IsDigestReferenceName(n) {
+		return n, nil
+	}
+	if name, err := manifest.FindName(n); err == nil {
+		return name, nil
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return zero, err
+	}
+	existing, err := manifest.Manifests(true)
+	if err != nil {
+		return zero, err
+	}
+	var best model.Name
+	bestLen := 0
+	for e := range existing {
+		length := 0
+		if strings.EqualFold(e.Host, n.Host) {
+			length = 1
+			if strings.EqualFold(e.Namespace, n.Namespace) {
+				length = 2
+				if strings.EqualFold(e.Model, n.Model) {
+					length = 3
+				}
+			}
+		}
+		if length > bestLen {
+			bestLen = length
+			best = e
+		}
+	}
+	switch bestLen {
+	case 3:
+		n.Host, n.Namespace, n.Model = best.Host, best.Namespace, best.Model
+	case 2:
+		n.Host, n.Namespace = best.Host, best.Namespace
+	case 1:
+		n.Host = best.Host
+	}
+	return n, nil
+}
+
+// copies of server/model_resolver.go and routes.go normalizeRunner (identical in v0.40.0 and main)
+func normalizeRunner(runner string) (string, error) {
+	switch strings.ToLower(strings.TrimSpace(runner)) {
+	case "":
+		return "", nil
+	case manifest.RunnerMLX, "mlxrunner":
+		return manifest.RunnerMLX, nil
+	case manifest.RunnerGGML:
+		return manifest.RunnerGGML, nil
+	case manifest.RunnerLlamaCPP, "llama.cpp", "llama-cpp", "llama_cpp":
+		return manifest.RunnerLlamaCPP, nil
+	default:
+		return "", fmt.Errorf("unknown runner %q", runner)
+	}
+}
+
+func digestReferenceName(digest string) model.Name {
+	digest = strings.ToLower(strings.Replace(digest, ":", "-", 1))
+	return model.ParseName(digest)
+}
+
+func runnerDigestModelName(digest, runner string) (model.Name, error) {
+	name := digestReferenceName(digest)
+	m, err := manifest.ParseNamedManifestForRunner(name, runner)
+	if err != nil {
+		return model.Name{}, err
+	}
+	if selected := m.SelectedDigest(); selected != "" && !manifest.SameDigest(digest, selected) {
+		name = digestReferenceName(selected)
+	}
+	return name, nil
+}
+
+func digestModelName(ref string) (model.Name, bool, error) {
+	if runner, digestRef, ok := strings.Cut(ref, ":"); ok {
+		if normalized, err := normalizeRunner(runner); err == nil && normalized != "" {
+			digest, ok, err := manifest.ResolveDigestReference(digestRef)
+			if !ok || err != nil {
+				return model.Name{}, ok, err
+			}
+			name, err := runnerDigestModelName(digest, normalized)
+			return name, true, err
+		}
+	}
+	digest, ok, err := manifest.ResolveDigestReference(ref)
+	if !ok || err != nil {
+		return model.Name{}, ok, err
+	}
+	return digestReferenceName(digest), true, nil
+}
+
+// parseAndValidateModelRef, as the generate/chat/embed handlers call it.
+func requestName(raw string) (string, error) {
+	parsed, err := modelref.ParseRef(raw)
+	if err != nil {
+		return "", err
+	}
+	if name, ok, err := digestModelName(parsed.Base); ok || err != nil {
+		if err != nil {
+			return "", err
+		}
+		if parsed.Source == modelref.ModelSourceCloud {
+			return "", errors.New("digest references are local")
+		}
+		return name.String(), nil
+	}
+	name := model.ParseName(parsed.Base)
+	if !name.IsValid() {
+		return "", errors.New("invalid model name")
+	}
+	if parsed.Source == modelref.ModelSourceCloud {
+		return "", errors.New("CLOUD PROXY to ollama.com as " + parsed.Base)
+	}
+	return name.String(), nil
+}
+
+func resolve(raw, runner string) (*manifest.Manifest, error) {
+	name, err := requestName(raw)
+	if err != nil {
+		return nil, err
+	}
+	n := model.ParseName(name)
+	if "@VARIANT@" == "v040" {
+		// server/routes.go v0.40.0 scheduleRunner -> GetModelForRunner -> ParseNamedManifestForRunner
+		if n.IsValid() {
+			e, err := getExistingName(n)
+			if err != nil {
+				return nil, err
+			}
+			n = model.ParseName(e.String())
+		}
+		return manifest.ParseNamedManifestForRunner(n, runner)
+	}
+	// main: getExistingModelForRunner -> loadExistingModelForRunner
+	if !n.IsValid() || manifest.IsDigestReferenceName(n) {
+		return manifest.ParseNamedManifestForRunner(n, runner)
+	}
+	@MAIN_RUN_PATH@
+}
+
+func main() {
+	runner := ""
+	if len(os.Args) > 2 {
+		runner = os.Args[2]
+	}
+	out := map[string]any{"version": "@VARIANT@"}
+	m, err := resolve(os.Args[1], runner)
+	if err != nil {
+		out["error"] = err.Error()
+	} else {
+		layers := [][]string{}
+		for _, l := range m.Layers {
+			layers = append(layers, []string{l.MediaType, l.Digest})
+		}
+		out["digest"] = m.Digest()
+		out["selected"] = m.SelectedDigest()
+		out["config"] = m.Config.Digest
+		out["layers"] = layers
+		out["runner"] = m.Runner
+	}
+	b, _ := json.Marshal(out)
+	fmt.Println(string(b))
+}

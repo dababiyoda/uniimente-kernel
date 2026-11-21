@@ -12,8 +12,9 @@ continuation can renormalize it, and files refused before they are buffered or r
 (greg/textform.py, greg/capabilities.py, greg/business_loop.py); or of the bounded text query that reads a whole
 file of any size (greg/textquery.py, its planner route) and refuses a PDF, by its header or its structure, which the
 planner sends to its reader, or asks about, also for a word count, which it reads whole (greg/planner.py,
-greg/templates.py). The named test must fail for every mutant. Mutants are applied to a scratch copy of the
-repository, never to the working tree.
+greg/templates.py); or of the same hold on a precondition that passed when an action was planned and stopped passing
+before its approval arrived (tests/unit/test_greg_precondition_unheld.py). The named test must fail for every mutant.
+Mutants are applied to a scratch copy of the repository, never to the working tree.
 Exit status 1 if any mutant survives or no longer applies.
 
 Mutants run one after another in one copy, so no run may see another's bytecode. Python reuses a cached .pyc when
@@ -51,6 +52,7 @@ W = "tests/unit/test_greg_judge_incomplete_wrappers.py::"
 F = "tests/unit/test_greg_faithful_text.py::"
 Q = "tests/unit/test_greg_text_query.py::"
 S = "tests/integration/test_greg_section_ix_text_scenarios.py::"
+P = "tests/unit/test_greg_precondition_unheld.py::"
 MUTANTS = [
     ("a check the prefix cannot decide is never read over the whole", "greg/missions.py",
      "    if verdict != INSUFFICIENT or record is None:\n        return verdict, detail",
@@ -79,8 +81,11 @@ MUTANTS = [
      '"output_artifact": outcome.output_artifact}, self.artifact_root)\n        # Evidence that cannot decide',
      '"output_artifact": outcome.output_artifact}, None)\n        # Evidence that cannot decide',
      T + "test_a_refusal_written_past_16_kib_of_a_note_is_honored"),
+    # One function reads every receipt (AuthorityOffice.outcome_of: the dispatch that produced it and a retained one
+    # found again), so this mutant and "a reading reused after a restart" below remove the same line.
     ("the outcome drops the receipt's artifact record", "greg/authority.py",
-     '                                 output_artifact=result.get("output_artifact"), **base)', "**base)",
+     '                             output_artifact=result.get("output_artifact"), **kept)',
+     "                             **kept)",
      T + "test_a_required_phrase_past_16_kib_closes_the_mission_without_asking_and_is_verified"),
     ("the appraiser re-derives a closure from the prefix only", "greg/appraisal.py",
      'verdict, detail = judge_receipt(check["predicate"], receipt.payload["result"], artifacts)',
@@ -103,18 +108,26 @@ MUTANTS = [
      T + "test_a_lone_surrogate_past_the_cut_no_longer_fails_the_action_and_is_judged"),
     # a check the evidence could not decide is neither pursued nor certified as failed (review of #196, J1 and J2)
     ("an unmeasured check is pursued beside a measured failure", "greg/missions.py",
-     "        return self._pursue(m, now, failing - self.inconclusive, evidence)",
-     "        return self._pursue(m, now, failing, evidence)",
+     "        pursuable = failing - self.inconclusive - set(self.capability_faults)",
+     "        pursuable = failing - set(self.capability_faults)",
      U + "test_an_unmeasured_check_is_not_pursued_beside_a_measured_failure"),
     ("a check whose sensor the capability refused is no longer pursued", "greg/missions.py",
-     "        return self._pursue(m, now, failing - self.inconclusive, evidence)",
-     "        return self._pursue(m, now, failing - errors, evidence)",
+     "        pursuable = failing - self.inconclusive - set(self.capability_faults)",
+     "        pursuable = failing - set(self.sensor_errors)",
      "tests/integration/test_greg_adversarial_machine.py::"
      "test_a_more_profitable_offer_that_pressures_buyers_is_refused_and_the_plain_one_is_sold"),
     ("a precondition the observation could not measure is taken as met", "greg/missions.py",
      '            if set(s.get("requires", [])) & unproven:',
      '            if set(s.get("requires", [])) & failing:',
      U + "test_a_strategy_requiring_an_unmeasured_check_stays_held"),
+    # the same hold, for a plan made while the precondition passed (founder's minimum test C, 2026-11-11)
+    ("the hold on an unproven precondition is dropped", "greg/missions.py",
+     '            if set(s.get("requires", [])) & unproven:', "            if False:",
+     P + "test_an_approved_action_whose_precondition_stopped_passing_is_never_dispatched"),
+    ("a founder approval overrides the hold on an unproven precondition", "greg/missions.py",
+     '            if set(s.get("requires", [])) & unproven:',
+     '            if set(s.get("requires", [])) & unproven and not m.approved_scopes:',
+     P + "test_an_approved_action_whose_precondition_stopped_passing_is_never_dispatched"),
     ("the appraiser reads undecided receipt bytes as the claimed failure", "greg/appraisal.py",
      "            elif verdict == INSUFFICIENT:\n                # Bytes that cannot decide",
      "            elif False:\n                # Bytes that cannot decide",
@@ -158,8 +171,8 @@ MUTANTS = [
      "        return False if False in pairs else None if None in pairs else True",
      T + "test_a_cut_below_the_judged_value_never_decides_as_its_wrapper"),
     ("a reading reused after a restart is judged on its prefix", "greg/authority.py",
-     '                                 cost_usd=cost_usd, output_artifact=receipt.payload["result"].get("output_artifact"),',
-     "                                 cost_usd=cost_usd,",
+     '                             output_artifact=result.get("output_artifact"), **kept)',
+     "                             **kept)",
      T + "test_a_reading_reused_after_a_restart_keeps_the_whole_output_its_receipt_kept"),
     ("the appraiser re-derives a bind by artifact from the prefix", "greg/appraisal.py",
      '_set_path(params, edge["param"], bound_value(edge, result.get("output"), whole,',

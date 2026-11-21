@@ -11,7 +11,10 @@ Proof feeds routing (verification weighting, after memory/causal.py): when the
 independent appraiser REFUTES a closure because its receipts or the re-observed
 world do not hold, every capability that acted for that mission loses reliability.
 A refutation for reasons that are not the capability's (signature, inbox, replay
-boundary) does not move routing. Appraiser-VERIFIED actions are counted apart.
+boundary) does not move routing, and neither does a check the appraiser left open
+because it ran no sensor for it or read the world too late (``not_established`` on
+the appraisal: nothing was measured against the capability). Appraiser-VERIFIED
+actions are counted apart.
 Each dispatched attempt is one outcome: a founder reconciliation of an UNCERTAIN
 dispatch replaces that attempt's outcome and, having no receipt, is counted apart
 (founder_reconciled) and never moves reliability.
@@ -64,7 +67,8 @@ def track_record(journal: Journal) -> dict[str, dict]:
     appraisals = {}
     for event in journal.replay("mission.appraised"):
         data = event.payload
-        effect_ok = all(data.get("checks", {}).get(c, False) for c in EFFECT_CHECKS)
+        left_open = data.get("not_established") or ()     # False without a measurement: not the capability's
+        effect_ok = all(data.get("checks", {}).get(c, False) or c in left_open for c in EFFECT_CHECKS)
         if data["verdict"] == "VERIFIED":
             appraisals[data["mission_id"]] = "verified"
         elif data["verdict"] == "REFUTED" and not effect_ok:
@@ -161,11 +165,13 @@ OBSERVATION_WINDOW = 64
 
 
 def observation_method_failed(observation: dict) -> bool:
-    """True when this observation did not measure the world.
+    """True when this observation's method failed to measure the world.
 
-    A predicate miss is a measurement: its detail does not start with "sensor ".
+    A predicate miss is a measurement: its detail does not start with "sensor ". A reading the Mind declined
+    (``declined``: a compile receipt with no answer and no host stop) carries that marker so that nobody is blamed
+    for it, but the method ran and answered as it should: a prohibition or a named deficit is not its failure.
     """
-    return str(observation.get("detail", "")).startswith("sensor ")
+    return str(observation.get("detail", "")).startswith("sensor ") and not observation.get("declined")
 
 
 def observation_competence(journal) -> dict[str, dict]:

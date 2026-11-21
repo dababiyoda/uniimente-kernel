@@ -104,8 +104,8 @@ MUTANTS = [
                                                     "none"))], IMPORTS),
     ("the organ-exchange alternate retired while a capability still binds it with _lazy",
      [("replace", MAP, ORGAN_ALT, RETIRED_ORGAN_ALT)], IMPORTS),
-    ("a re-implementation of temporary teams added (greg/teams.py)",
-     [("create", "greg/teams.py", "class TeamError(RuntimeError):\n    pass\n\n\n"
+    ("a re-implementation of temporary teams added (greg/team_forming.py)",
+     [("create", "greg/team_forming.py", "class TeamError(RuntimeError):\n    pass\n\n\n"
                                   "def form_team(members, grant):\n    return {'members': members}\n")], DEFINES),
     ("a third evidence ladder added (governance/reality_ladder.py)",
      [("create", "governance/reality_ladder.py", "REALITY_LADDER = ('ASPIRATIONAL', 'PROPOSED', 'DOCUMENTED')\n")],
@@ -182,8 +182,8 @@ MUTANTS = [
     # -- F5: a second canonical owner ------------------------------------------------------------------------------
     ("F5: a second canonical module added to temporary teams",
      [("replace", MAP, "        qualnames: [form, act, dissolve, report]\n",
-       "        qualnames: [form, act, dissolve, report]\n      - module: greg.teams\n        qualnames: [form_team]\n"),
-      ("create", "greg/teams.py", "def form_team(members, grant):\n    return {'members': members}\n")], PINS),
+       "        qualnames: [form, act, dissolve, report]\n      - module: greg.team_forming\n        qualnames: [form_team]\n"),
+      ("create", "greg/team_forming.py", "def form_team(members, grant):\n    return {'members': members}\n")], PINS),
     # -- F6: a founder decision resolved by an agent ---------------------------------------------------------------
     ("F6: the goal runtime made canonical with no founder ruling", _flip(), PINS),
     ("F6: the same, citing a ruling file that does not exist",

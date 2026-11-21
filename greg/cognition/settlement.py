@@ -75,7 +75,8 @@ def _valid_receipt(value):
     return True
 
 
-COMPILE_SCHEMAS = ("greg-competency-compilation/0.2",)
+# 0.3 adds ``host_stop``, which is None on every receipt that carries an answer: 0.2 receipts settle as before
+COMPILE_SCHEMAS = ("greg-competency-compilation/0.2", "greg-competency-compilation/0.3")
 
 
 def _compiled(value, states=("ANSWERED",)):
@@ -438,7 +439,6 @@ def decisions_to_recheck(journal) -> list[dict]:
     stamps of the ledger and the journal."""
     if journal is None:
         return []
-    from .compiler import SCHEMA
     facts = {e.event_id: e for e in journal.replay("cognition.realization") if e.payload.get("kind") == "objective"}
     windows = []
     for resolution in _resolutions(journal):
@@ -452,7 +452,7 @@ def decisions_to_recheck(journal) -> list[dict]:
         return []
     compiles = [r for r in journal.ledger.by_type("receipt")
                 if isinstance((r.payload.get("result") or {}).get("output"), dict)
-                and r.payload["result"]["output"].get("schema") == SCHEMA]
+                and r.payload["result"]["output"].get("schema") in COMPILE_SCHEMAS]
     out = []
     for record in compiles:
         output = record.payload["result"]["output"]

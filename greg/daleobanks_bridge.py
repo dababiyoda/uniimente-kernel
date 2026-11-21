@@ -141,7 +141,12 @@ def _behind_door(argv: list, request: dict, env: dict, ctx: InvocationContext, *
     scoped = Relay({identity: {"allow": [[h, 443] for h in hosts], "external": bool(hosts)}}, ctx.egress.journal,
                    connect=ctx.egress.connect, proxy=ctx.egress.proxy)
     interpreter = str(Path(argv[0]).resolve().parent.parent)     # the venv's base Python may live under $HOME
-    namespace = namespace_argv(writable=[ledger_dir], readonly=[root, draft, interpreter], chdir=root)
+    # The venv itself (its bin/ and site-packages), which resolving the interpreter's symlink leaves out: under a
+    # hidden $HOME (CI puts organ venvs there) the interpreter path would not exist inside. Only a real venv root
+    # (one with pyvenv.cfg) is shown, so an interpreter at ~/bin/python never reveals the whole home.
+    venv = Path(argv[0]).absolute().parent.parent
+    shown = [root, draft, interpreter] + ([str(venv)] if (venv / "pyvenv.cfg").is_file() else [])
+    namespace = namespace_argv(writable=[ledger_dir], readonly=shown, chdir=root)
     with Door(scoped, identity) as door:
         return subprocess.run(namespace + door_argv(sys.executable, door.fd, argv), pass_fds=[door.fd],
                               input=json.dumps(request), capture_output=True, text=True, env=env, timeout=120)

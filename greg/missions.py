@@ -35,7 +35,7 @@ from typing import Any
 from jsonschema import Draft202012Validator, FormatChecker
 
 from greg.authority import RECEIPT_LIST_LIMIT, ActionOutcome, AuthorityOffice, text_bytes
-from greg.background import BACKGROUND_CAPABILITIES
+from greg.background import BACKGROUND_CAPABILITIES, BuildHandedOff
 from greg.capabilities import CapabilityError, InvocationContext, ROUTES
 from greg.genesis import is_capability_fault
 from greg import asks, improvement, routing
@@ -207,7 +207,7 @@ def params_view(params) -> dict:
 # that decides its own confinement from ``ctx.egress`` (the organ exchange runs its organs with no network at all)
 # must be listed, or a confined body hands it None and it runs with the body's network.
 CONFINED_EGRESS = frozenset({"http.get", "github.pulls", "brief.engineering", "browser.render",
-                             "browser.session", "worker.commission", "daleobanks.verify", "daleobanks.publish",
+                             "browser.session", "worker.commission", "worker.team", "daleobanks.verify", "daleobanks.publish",
                              "venture.assess", "mcp.act", "organs.exchange"})
 
 
@@ -218,7 +218,29 @@ class Unbound(Exception):
 # Producers whose output has an independent appraiser: producer capability -> (appraiser capability, the
 # appraiser's sensor param naming the instance, the producer output field naming it, the accepting verdict).
 # A typed handoff consumes such an output only after the mission observed that appraisal accept it.
-APPRAISED_PRODUCERS = {"worker.commission": ("worker.appraise", "order", "work_order", "ACCEPTED")}
+APPRAISED_PRODUCERS = {"worker.commission": ("worker.appraise", "order", "work_order", "ACCEPTED"),
+                       # a team (greg/teams.py): one appraisal per member work order, every one of them ACCEPTED
+                       "worker.team": ("worker.appraise", "order", "members", "ACCEPTED")}
+
+
+def appraised_instances(capability: str | None, *, params: dict | None = None, output=None) -> list:
+    """The instances an appraised producer's output must have accepted before any of it is consumed: the one work
+    order of a commission, or every member work order of a team. From the signed params (validation) or from the
+    retained receipt's output (the hold). Empty when nothing names an instance: the hold then refuses the handoff."""
+    rule = APPRAISED_PRODUCERS.get(capability)
+    if rule is None:
+        return []
+    _, key, field, _ = rule
+    if capability == "worker.team":
+        if output is not None:
+            members = output.get(field) if isinstance(output, dict) else None
+            return sorted(members) if isinstance(members, dict) else []
+        return sorted(str((m.get("order") or {}).get(key)) for m in (params or {}).get("members") or []
+                      if isinstance(m, dict))
+    if output is not None:
+        value = output.get(field) if isinstance(output, dict) else None
+        return [value] if value is not None else []
+    return [(params or {}).get(key)]
 
 
 def inline_refs(params) -> list[dict]:
@@ -253,11 +275,12 @@ def _validate_appraised_handoffs(spec: dict):
             if rule is None:
                 continue
             appraiser, key, _, _ = rule
-            instance = strategies[producer].get("params", {}).get(key)
-            if not any(c["sensor"].get("capability") == appraiser
-                       and (c["sensor"].get("params") or {}).get(key) == instance for c in spec["success_checks"]):
-                raise MissionError(f"strategy {consumer['action_id']} consumes {producer}'s output, which has no "
-                                   f"independent appraisal ({appraiser} of {key} {instance!r}) in this mission")
+            for instance in appraised_instances(strategies[producer].get("capability"),
+                                                params=strategies[producer].get("params", {})):
+                if not any(c["sensor"].get("capability") == appraiser
+                           and (c["sensor"].get("params") or {}).get(key) == instance for c in spec["success_checks"]):
+                    raise MissionError(f"strategy {consumer['action_id']} consumes {producer}'s output, which has no "
+                                       f"independent appraisal ({appraiser} of {key} {instance!r}) in this mission")
 
 
 def protected_param(path: str) -> str | None:
@@ -404,7 +427,10 @@ def bound_value(edge: dict, output, whole=None, *, recorded_cut: bool = True):
 
 # Capabilities whose own adapter measures provider spend (not a worker's self-claim):
 # capability -> field of the adapter output holding the provider-reported USD.
-METERED_SPEND = {"worker.commission": "worker.cost_usd"}
+# Producers whose output reports an interrupted worker as status UNCERTAIN (reconciled, never booked as done).
+WORKER_PRODUCERS = ("worker.commission", "worker.team")
+
+METERED_SPEND = {"worker.commission": "worker.cost_usd", "worker.team": "team.spent_usd"}
 
 # ``mission.compensated`` statuses after which nothing is owed for the effect: undone through the Gate (DONE), or
 # decided by the founder (their answer to its COMPENSATION ask, or their rejection of the compensating action).
@@ -1756,6 +1782,9 @@ class MissionEngine:
         # greg.background.Background when the Body's main loop runs a long adapter off its turn; None runs every
         # dispatch inline (the Body's own tick() callers, the tests that drive a Body turn by turn)
         self.background = None
+        # greg.background.OffTurnBuilds when the Body's main loop runs a Genesis builder call off its turn; None
+        # calls every builder inline
+        self.builds = None
 
     # -- founder inputs (already signature-verified by the body) ---------------
     def register(self, spec: dict, command_digest: str) -> str:
@@ -1995,17 +2024,39 @@ class MissionEngine:
                 self.book.rebuild()
             m = self.book.missions.get(m.mission_id, m)
             running = self.background.busy(m.mission_id) if self.background is not None else None
+            if running is None and self.builds is not None:
+                running = self.builds.busy(m.mission_id)
             if running is not None:
-                # Its adapter is still running off the turn: the mission is not stepped (its write-ahead intent is
-                # in flight, not the trace of a body killed inside a dispatch) until the outcome is recorded.
+                # Its adapter (or its Genesis builder call) is still running off the turn: the mission is not
+                # stepped (its write-ahead intent or its build reservation is in flight, not the trace of a body
+                # killed inside a call) until the outcome is recorded or the build's result is taken.
                 summary.append({"mission_id": m.mission_id, "state": "WORKING", "action": running["action_id"],
                                 "attempt": running["attempt"], "since": iso(running["since"])})
                 continue
             if should_stop is not None and should_stop():
                 summary.append({"mission_id": m.mission_id, "state": "NOT_STEPPED", "why": "stop requested"})
                 continue
-            summary.append({"mission_id": m.mission_id, **self._step(m, now)})
+            summary.append({"mission_id": m.mission_id, **self._step_off_turn_builds(m, now)})
         return summary
+
+    def _step_off_turn_builds(self, m: MissionState, now: datetime) -> dict:
+        """Step one mission; a Genesis builder call it starts runs off the turn (greg.background.OffTurnBuilds).
+
+        The step ends at the call, as it would for a body killed inside it; the call's result is taken on the
+        mission's next step, which resumes the same open deficit. Without ``builds`` every call stays inline."""
+        if self.builds is None or self.genesis is None:
+            return self._step(m, now)
+        self.genesis.off_turn = self.builds
+        try:
+            self.genesis.settle_served_builds(m.mission_id, now)
+            return self._step(m, now)
+        except BuildHandedOff as handed:
+            entry = self.builds.busy(m.mission_id) or {"action_id": f"genesis.build:{handed.function}",
+                                                       "attempt": None, "since": now}
+            return {"state": "WORKING", "action": entry["action_id"], "attempt": entry["attempt"],
+                    "since": iso(entry["since"]), "deficit_id": handed.deficit_id, "build": handed.build}
+        finally:
+            self.genesis.off_turn = None
 
     def interrupt_withdrawn(self, now: datetime) -> list[dict]:
         """Interrupt the running dispatches whose authority the founder withdrew while they ran (caller holds the turn).
@@ -2664,11 +2715,21 @@ class MissionEngine:
         ledger = self.journal.ledger
         record = ledger.find(receipt)
         output = (record.payload.get("result") or {}).get("output") if record is not None else None
-        instance = output.get(field) if isinstance(output, dict) else None
+        instances = appraised_instances(strategy.get("capability"), output=output if isinstance(output, dict) else {})
+        if record is None or not instances:
+            return f"{producer}'s output has no independent appraisal ({appraiser}) in this mission"
+        for instance in instances:               # a team: every member order, each judged alone
+            hold = self._appraisal_hold(m, producer, record, appraiser, key, instance, accepted)
+            if hold:
+                return hold
+        return None
+
+    def _appraisal_hold(self, m, producer, record, appraiser, key, instance, accepted) -> str | None:
+        ledger = self.journal.ledger
         checks = {c["check_id"] for c in m.spec["success_checks"] if c["sensor"].get("capability") == appraiser
                   and (c["sensor"].get("params") or {}).get(key) == instance}
-        if record is None or not checks:
-            return f"{producer}'s output has no independent appraisal ({appraiser}) in this mission"
+        if not checks:
+            return f"{producer}'s output has no independent appraisal ({appraiser} of {key} {instance!r}) in this mission"
         latest = None
         for event in self.journal.replay("mission.observed"):
             data = event.payload
@@ -4006,7 +4067,7 @@ class MissionEngine:
                 outcome.status = "UNCERTAIN"
                 outcome.reasons = ["interrupted by the founder while it ran; it finished before it saw the stop, "
                                    "so its outcome and spend require reconciliation"]
-            if (manifest.capability_id == "worker.commission" and outcome.status == "DONE"
+            if (manifest.capability_id in WORKER_PRODUCERS and outcome.status == "DONE"
                     and isinstance(outcome.output, dict) and outcome.output.get("status") == "UNCERTAIN"):
                 # Extracted from #157 (#184): the Gate completed collection, but the cancellable worker stopped
                 # after possible partial effects and spend. Keep its receipt and route it through the same
@@ -4072,7 +4133,7 @@ class MissionEngine:
         scope the dispatch bound (its mcp.act reach and an ask's move digest are read from it)."""
         bound_params = bound_params if bound_params is not None else dict(s.get("params") or {})
         aid = s["action_id"]
-        if (manifest.capability_id == "worker.commission" and outcome.status == "DONE"
+        if (manifest.capability_id in WORKER_PRODUCERS and outcome.status == "DONE"
                 and isinstance(outcome.output, dict) and outcome.output.get("status") == "UNCERTAIN"):
             # Extracted from #157 (#184): the Gate completed collection, but the cancellable worker stopped after
             # possible partial effects and spend. Keep its receipt and route it through the same no-blind-retry

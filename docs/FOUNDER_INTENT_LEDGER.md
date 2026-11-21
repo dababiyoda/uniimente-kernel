@@ -27,6 +27,136 @@ documents are proposals/aspirations. Repetition creates no additional authority.
 | implementation_refs | Shared events/, provenance/, adapters/, contracts/, policy/consequence_gate.py; linked organ shims | Existing anatomy retained; no new whole-machine runtime | Refusal paths and draft-only handoff |
 
 
+## INTENT-20261013-GOAL-GRAVITY — 2026-10-13
+
+Goal Gravity + Experiential Intelligence + Asymmetry Production Line. The founder's
+2026-10-13 directive (verbatim: `docs/intent/sources/GOAL-GRAVITY-DIRECTIVE-2026-10-13-source.md`)
+compiles to one behavioral property of the canonical standing runtime: an authorized
+persistent goal is an attractor for relevant perception, backcasting, preparation,
+capability formation and Gate-governed action. Record: `docs/intent/INTENT-20261013-GOAL-GRAVITY.md`
+(machine-readable `.json` validates against the skill schema). State: **active**,
+`active_requirement`, consequence class `material`. Implementation: `egregore/gravity.py`
+and its sibling modules on `main`'s runtime; decision record
+`docs/decisions/ADR-GOAL-GRAVITY-001.md`; deliberation
+`docs/collaboration/deliberation-goal-gravity-2026-10-13.json`. Evidence tier at
+recording: IMPLEMENTED / UNIT-TESTED / INTEGRATION-TESTED on synthetic ledgers; not
+externally verified, not founder-accepted. The dated identifier is used because the
+numeric `INTENT-00NN` series (0029–0037) is allocated across unmerged draft branches.
+Overlapping unmerged mechanisms (#158 `greg/gravity.py`, #114/#137 `greg/missions.py`,
+#93/#97/#109 Goal Chase) are preserved as substrate; their reconciliation is a founder
+merge decision, never a silent replacement.
+
+## INTENT-20261014-competency-compiler wiring — 2026-10-14 re-issue
+
+The founder re-sent the Goal Gravity directive verbatim on 2026-10-14. The re-issue is appended, with lineage, to
+`docs/intent/sources/GOAL-GRAVITY-DIRECTIVE-2026-10-13-source.md`. Repetition creates no additional authority. The
+re-issue restates the key sentence: "The intended engineering result is a Competency Compiler." PR #165 merged that
+intent and `capabilities/router.py` to `main` the same day as `INTENT-20261014-competency-compiler` (state
+**active**). The router was uncalled.
+
+Draft PR #160's third increment wires the router into the Goal Gravity loop without changing router selection. After its adversarial review, `restore()` replays only outcomes that pass `record_outcome`'s own rules.
+The changes:
+
+- a gate's problem class is routed to the smallest competent mechanism;
+- evidence is typed by epistemic method;
+- an epistemic gap becomes a typed `CapabilityDeficit`;
+- calibration moves only on an independent verifier's confirm or refute;
+- an acquisition ladder can plan, qualify and, on a founder answer, attach a capability at `CANARY`.
+
+Records: `docs/decisions/ADR-GOAL-GRAVITY-002.md` and
+`docs/collaboration/deliberation-competency-compiler-wiring-2026-10-14.json` (decision `NEEDS_FOUNDER_DECISION`).
+Both intent `.json` records carry the new implementation references and conflicts.
+
+**Evidence tier.** IMPLEMENTED, UNIT-TESTED and INTEGRATION-TESTED on synthetic ledgers with synthetic verifiers. No
+routing decision has an outcome verified in reality.
+
+**Open conflicts.** Entry gate G1 may treat wiring inert code in a draft PR as "runtime composition". PR #170 on
+`main` labels the router non-canonical, names the #143 seed-genome lineage as the canonical Competency Compiler
+candidate, and says the router must not be wired in as a second one. Draft PR #160 therefore keeps the mount
+optional and off by default. Both conflicts are preserved, and which compiler the loop mounts, if any, is the
+founder's decision.
+
+**Blocked, not dropped.** These remain open, each named with its dependency in the ADR:
+
+- a code-generating builder
+- an isolation boundary for untrusted candidates
+- a scheduler (G5)
+- founder authentication (G6)
+- live organ transport
+- real verified outcomes
+
+## Third issuance and supplementary materials — 2026-10-14
+
+The founder issued the Goal Gravity directive a third time, in a new session (`session_01TnTfFXr93jtNSzVD9SWeGx`), with
+five supplementary essays, a founder-voiced "at full intended maturity" statement, the 2026-09-05 external audit and
+three AI-generated PDFs. Repetition creates no additional authority. Everything supplied is preserved with lineage:
+the essays verbatim in `docs/intent/sources/EGREGORE-SYNTHESIS-MATERIALS-2026-10-14-source.md`, the audit verbatim with a
+Kernel-side disposition table in `docs/collaboration/UNIIMENTE-AUDIT-2026-09-05-external.md`, the PDFs by name and hash
+in the directive source's "Third issuance" note. Fourteen intent records with lifecycle states live in
+`docs/intent/INTENT-20261014-egregore-synthesis-materials.json` (validator exit 0):
+
+| Record | State | Authority | What it preserves |
+|---|---|---|---|
+| `founder-return-report` | active | active_requirement | the founder's acceptance scene, built as `egregore/absence.py` on draft #160 (fourth increment) |
+| `host-trigger-wake-schedule` | active | active_requirement | the G5/P1 view a scheduler needs, `egregore/schedule.py` |
+| `git-native-causal-memory` | exploratory | exploratory | content-addressed causal history: effect exists (ledger, causal memory); literal Git object model regressed |
+| `substrate-sovereignty` | **conflicted** | advisory | "never rely on external APIs" versus acquire-before-inventing and INTENT-20260930; one founder question resolves it |
+| `master-system-prompt-artifact` | **prohibited** | aspiration | the `EGREGORE_INSTANTIATION` block: preserved as artifact, refused as protocol; its effects are served elsewhere |
+| `durable-execution-substrate` | exploratory | exploratory | Temporal / LangGraph / APScheduler as G5 candidates; effect list is the contract |
+| `self-improving-cognition-research` | exploratory | exploratory | swarms, Bayesian coordination, MALT, DSPy: proposers behind the seam, human-ratified, must beat the baseline |
+| `fifty-five-technology-arsenal` | active | active_requirement | the arsenal is a registry (55 entries on main), not 55 products; "52/55 built" needs evidence |
+| `minimum-viable-continuous-loop` | active | active_requirement | the five-step loop mapped to existing mechanisms; residual: host clock, isolation, real outcomes |
+| `maturity-capabilities` | deferred | aspiration | the ten capabilities with their evidence state and blockers |
+| `pdf-technology-map` | exploratory | advisory | Kimi-generated 2026-07-19 snapshot; autonomy A0–A4 superseded by the Kernel's A0–A9 |
+| `pdf-final-plan` | deferred | active_requirement | four verbatim founder requests (rabbit holes, own automations, swarms, regenerative capital + IaaS) and the passed 2026-08-18 contracts deadline |
+| `pdf-reality-compiler-blueprint` | exploratory | advisory | ChatGPT-generated; stakeholder-first bottleneck; de-literalized "egregore" |
+| `external-audit-2026-09-05` | needs_evidence | advisory | kernel items F03/F04/F05 verified repaired on main; organ items preserved; backlog now 118 open drafts |
+
+Decision record for the fourth increment: `docs/decisions/ADR-GOAL-GRAVITY-003.md` and
+`docs/collaboration/deliberation-goal-gravity-fourth-increment-2026-10-14.json` (EXPERIMENT; adoption remains the
+founder's). While building the return report's tests a defect in the third increment was reproduced and fixed (a grantless
+wake could hide an open attempt and allow a second dispatch; `tests/evidence/goal-gravity-20261013/defect-repro-increment-4.log`).
+Evidence tier unchanged: IMPLEMENTED / UNIT-TESTED / INTEGRATION-TESTED on synthetic ledgers; not externally verified; not
+founder-accepted.
+
+## Fifth increment: torn-tail recovery — 2026-11-13
+
+The founder asked, on 2026-11-13, to "Resume and Follow the repository's own entry instructions". The next unblocked
+dependency for the Goal Gravity directive's §25 "Restart continuity" and for entry-gate proof P2 is reopening canonical
+history after a crash mid-append. Until now that case was characterized by test and left unrepaired. No new intention
+is recorded. The work advances `INTENT-20261013-GOAL-GRAVITY` and `INTENT-20261014-minimum-viable-continuous-loop`, and
+both records now carry the new implementation and evidence references (validator exit 0).
+
+`provenance/recovery.py` makes a torn ledger reopenable only through an explicit, accountable call:
+
+- the torn bytes are quarantined beside the ledger and never re-admitted;
+- they are replaced in place by a chained record of the recovery, applied behind a durable plan so the ledger never opens
+  before that record is durable;
+- every risk a byte check cannot exclude must be named by the caller: `unanchored`, `complete_record` or `stop_record`.
+
+Decision record: `docs/decisions/ADR-GOAL-GRAVITY-004.md`. Deliberation:
+`docs/collaboration/deliberation-goal-gravity-fifth-increment-2026-11-13.json` (EXPERIMENT; adoption remains the
+founder's).
+
+Review: an independent review raised 14 findings against the pre-review commit. Thirteen were confirmed and one was not a
+defect. All are disposed with regression tests. Replaying the probes found one more (R1b, a stale checkpoint), which is
+also fixed. A second review of the result (`2f79683`) raised 18 findings, 15 of them confirmed. The main one: a recovery
+killed between its truncation and its event left an openable ledger with no record of the truncation. The other
+confirmed findings were torn founder revocations and capability detaches recovered as "not a stop", and stale
+quarantine files chained as recoveries of this chain. The repair is now applied in place behind a durable plan, so
+the ledger cannot open before its recovery is recorded. Verification is in memory, and the stop rule covers goal and
+capability controls. A third verification round confirmed 18 more findings in the new protocol and its stop rule, and
+all of them are fixed. The main ones: a completed or foreign plan resumed on a later tear, a lost final newline, short
+writes, and stops written as events. Records: `tests/evidence/goal-gravity-20261013/review-increment-5.json`
+(`second_review`, `third_review`), `review-probes-increment-5.log`, `review2-probes-increment-5.log` and
+`review3-probes-increment-5.log`.
+
+**P2 remains incomplete.** It needs a supervisor (G5) that calls recovery on restart. Whether such a supervisor may
+acknowledge `unanchored` on the founder's behalf is part of that decision, not of this module.
+
+Evidence tier: IMPLEMENTED / UNIT-TESTED / INTEGRATION-TESTED (real SIGKILL inside the dispatch-claim append and inside
+each step of applying a recovery); not externally verified; not founder-accepted.
+
 UNIIMENTE must never silently lose a founder intention, contributor objection, negative result, or superseded design.
 
 Every material intention discovered in chats, documents, issues, pull requests, repositories, or operating evidence must be normalized into an Intent Record and assigned exactly one lifecycle state:

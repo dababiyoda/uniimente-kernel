@@ -1,0 +1,152 @@
+# Second-review dispositions re-verified (third verification round, workflow wf_67cbe503-425, tree 621d2de)
+#
+# Four fix-checkers re-ran or adapted the second review's own finder and verifier probes (most monkeypatched
+# functions the redesign removed, so they were adapted; those that still applied ran as verbatim copies).
+# 'partially_fixed' rows are completed by the round-3 fixes in this commit; see review3-probes-increment-5.log.
+
+## fix-apply
+- crash:0 [major] recovery killed after truncation leaves an openable ledger with no recovery event
+  status: fixed
+  evidence: Probes p1_kill_matrix.py and p2_unpatched_kill.py, written for this check. Commands: cd /home/user/uniimente-kernel && python3 /tmp/claude-0/-home-user/0daa8e65-910e-5099-a9b8-614ba7e0376d/scratchpad/review3/fix-apply/p1_kill_matrix.py, then the same with p2_unpatched_kill.py.
+
+p1 sends a real SIGKILL before or after every syscall the recovery makes: link, unlink, replace, fsync 1-7, pwrite 1-2, ftruncate, plus a partial pwrite. It runs with a torn tail shorter than the event line (30 vs 1302 bytes) and longer (5000 vs 1162).
+- Output: 'SUMMARY: 54 kill points; openable-and-unrecorded=0; exactly-one-correct-event=54/54'.
+- Every kill that had changed the file left it unopenable ('refuses(ValueError)'), up to the newline write ('after:pwrite#2 ... OPENS events_on_open=1').
+- The retry resumed with the right attribution: 'resumed=True recovered_by=supervisor:A completed_by=supervisor:B'. Kills before the apply were replaced by B's own plan.
+
+p2 uses an unpatched child on 20,000 records (10.8 MB).
+- A watcher killed it the instant the tail changed: "('applying (unterminated)', 'refuses to open', 'torn=True resumed=True', 1, ['supervisor:A'])".
+- 24 time-sampled kills gave "summary: {'refuses to open': 17, 'opens with event': 7}". No kill left the ledger openable without its event.
+
+- crash:1 [major] an altered unrecorded quarantine makes recovery raise RecoveryRefused after truncating, and blocks recording
+  status: fixed
+  evidence: Command: cd /home/user/uniimente-kernel && python3 /tmp/claude-0/-home-user/0daa8e65-910e-5099-a9b8-614ba7e0376d/scratchpad/review3/fix-apply/p3_altered_unrecorded.py
+
+The unrecorded quarantine comes from two routes:
+- (a) recovery A is SIGKILLed after its plan is durable, then a power loss drops the torn bytes, so the ledger opens;
+- (b) rotation.
+
+A real `vim -u NONE -N -es -c wq` then alters the quarantine ('ends with newline=True; digest in name matches=False'). Ten later tears were each recovered normally ('returned torn=True unrecorded=1; ledger opens: True'). Summary for both routes: 'refused-after-change=0; events=10 ... altered q1 chained into this ledger: False; sort orders seen: ['q1 after', 'q1 first']'.
+
+One case is a deliberate refusal, not a regression: when the altered file is the very quarantine the pending plan needs, recovery refuses with the ledger unchanged ('RecoveryRefused(... exists wit[h different bytes]); ledger unchanged by the call: True'). That is the 'investigate' policy.
+
+- honesty:2 [major] one altered unrecorded quarantine makes every later recovery truncate then raise, leaving truncations unchained
+  status: fixed
+  evidence: Same probe and command as crash:1 (p3_altered_unrecorded.py). After the vim-altered unrecorded quarantine, all 10 later tears in each route returned normally. Each chained its own event (events grew from 1 to 10), and none was refused after changing the ledger ('refused-after-change=0'). The altered file is only reported: 'unrecorded=1', and 'altered q1 chained into this ledger: False'.
+
+- crash:2 [major] quarantines that do not belong to this chain are chained as recoveries of it (rotation, kept record)
+  status: partially_fixed
+  evidence: The reported paths are fixed. Command: cd /home/user/uniimente-kernel && python3 /tmp/claude-0/-home-user/0daa8e65-910e-5099-a9b8-614ba7e0376d/scratchpad/review3/fix-apply/p4_foreign_quarantines.py
+- 'R1 rotation: torn=False recorded=[] unrecorded=['ledger.jsonl.torn-03023cdd9200e809...'] ledger bytes unchanged=True recovery events in this chain=0'.
+- R2, a rotated tear right after genesis, gives the same result.
+- 'R5 kept record (A rc=-9): torn=False recorded=[] ... recovery events in this chain=0' and 'kept record still the head: True'.
+- A verbatim copy of review2's p5c_rotation_nocrash.py now dies at '[ev] = events(path) ValueError: not enough values to unpack (expected 1, got 0)': no event is chained.
+
+The same effect still reproduces through the new resume path. A foreign plan whose prior head and cut repeat after rotation at genesis, or after a restore, is resumed on a torn new ledger and its event is chained (new finding 1, p5_foreign_plan_resumed.py).
+
+- honesty:1 [major] quarantine files from an earlier ledger at the same path are chained into the current ledger
+  status: partially_fixed
+  evidence: The reported paths are fixed.
+- p4_foreign_quarantines.py prints 'R3 rotation, sidecar removed: torn=False recorded=[] ... ledger bytes unchanged=True recovery events in this chain=0' and the same for 'R4 restore from older backup'.
+- A verbatim copy of review2's f2_stale_quarantines.py prints 'A) clean new ledger -> torn=False recorded=0' and 'B) restored ledger -> recorded=0; events: []'. It was run with TMPDIR under review3: cd /home/user/uniimente-kernel && TMPDIR=/tmp/claude-0/-home-user/0daa8e65-910e-5099-a9b8-614ba7e0376d/scratchpad/review3/fix-apply/r2copy/tmp python3 /tmp/claude-0/-home-user/0daa8e65-910e-5099-a9b8-614ba7e0376d/scratchpad/review3/fix-apply/r2copy/f2_stale_quarantines.py
+
+When the rotated or restored ledger is itself torn at the old plan's (prior head, cut), the old ledger's recovery event is still written into it through _plan_in_progress (new finding 1).
+
+- crash:3 [minor] identical re-tear after a crash gets one event; the first truncator's identity is overwritten
+  status: fixed
+  evidence: Command: cd /home/user/uniimente-kernel && python3 /tmp/claude-0/-home-user/0daa8e65-910e-5099-a9b8-614ba7e0376d/scratchpad/review3/fix-apply/p6_identical_retear.py
+
+A is SIGKILLed after the event write, after the cut, and after the cut's fsync. The tear is either 700 zero bytes or the 22-byte prefix. In every case the body cannot open before a retry ('body opens before any retry: False; B resumed=True'). The identical second tear therefore lands at a new head: 'identical bytes=True; repairs that changed the ledger: 2; events=2 by ['supervisor:A', 'supervisor:C']; prior heads distinct=True; quarantine files=2; sidecars name ['supervisor:A', 'supervisor:C']'.
+
+- honesty:4 [minor] crash after truncation then byte-identical re-tear yields two truncations, one event, overwritten sidecar
+  status: fixed
+  evidence: Same probe as crash:3 (p6_identical_retear.py): two repairs give two events, and both sidecars keep their authors.
+
+One case is by design, not a residual of this finding: A's plan is durable but never applied, and a power loss drops the torn bytes. Output: 'zero kill@pwrite#1 (never applied, power loss) rc=-9: body opens before any retry: True ... repairs that changed the ledger: 1; events=1 by ['supervisor:C']; sidecars name ['supervisor:C']'. A's unapplied sidecar is replaced, but A never changed the ledger, so one repair with one event is accurate. This is the documented 'plan whose application never began is replaced'.
+
+## fix-classifier
+- classifier:0 (cut at the hash's closing quote, and cuts inside a correction record's corrects, classified partial, so complete_record was not demanded)
+  status: fixed
+  evidence: I copied stale_checkpoint_correction.py to review3/fix-classifier and ran it unchanged on R1b's premise (expected_head is a checkpoint one append stale, nothing acknowledged). All six scenarios are now refused and name complete_record:
+- grant_dispatch with 22, 39 and 40 bytes lost
+- correction with 21, 22 and 108 bytes lost
+In review 2, grant 40, correction 22 and correction 108 were ACCEPTED with risks=[].
+
+I also ran vc0_probe.py, the review-2 verifier's probe with the new _verified_prefix signature:
+- `grant_dispatch lost= 40 class=content_complete ... -> ('REFUSED', '... complete_rec')`
+- `correction lost= 22 class=content_complete -> REFUSED`, and the same for lost 23, 60, 108 and 109
+- partial starts only at grant lost=41 and correction lost=110, where the hash's 64 hex digits are no longer complete. That is the new documented rule.
+
+bytes_establish3.py: `grant_dispatch: 40 bytes lost -> 'content_complete'; names the acknowledged hash: True`, and the same for correction with 22, 60 and 109 bytes lost.
+
+The finder's own sweep.py, copied unchanged to review3 (log: review3/fix-classifier/sweep_orig.log), produced zero refusals across all 8 kinds and 4 paddings. Its remaining MISMATCH lines all come from intended semantic changes that its old oracle does not know:
+- k = hash_close-1 (the closing-quote cut) is now content_complete for every kind;
+- correction k in [298..405] is now `anchored, no acks -> demands ('complete_record',)`;
+- may_have_been_a_stop is now True for a partial event before its payload closes, for correction (not in NON_STOP_RECORD_TYPES) and for the goal revocation, which now demands stop_record from k=160.
+
+A new sweep3.py with an independent byte-position oracle found 0 anomalies. It covers 18 real record kinds with 37,322 cut/padding cases and two recovery calls each.
+
+- classifier:2 (tails the writer cannot produce accepted as partial: fork, bit flip, control bytes, foreign field)
+  status: partially_fixed
+  evidence: Every case the finding listed is now refused. not_producible_accepted.py, copied and run unchanged:
+- fork: `[minus closing brace] refused: the tail's prev_hash is not this chain's head`
+- bit flip: `refused: the tail's written hash does not match its own fields`
+- control bytes: `refused: the tail holds bytes the writer never writes (control or non-ASCII)`, both variants
+- foreign field: `refused: the tail's fields are not the ones the writer serializes, in its order`
+
+vc2_probe.py results:
+- the ts_utc 0x12 flip is refused for both the stale-anchor and the unanchored variant;
+- the fork cut right after prev_hash is refused;
+- hash_version 3 is refused.
+
+The defect class still reproduces when the cut is earlier, before the hash's 64 digits are written. vc2_probe still prints `payload bit flip + last 40 bytes lost  ACCEPTED class=partial risks=[] acked_grant_dispatch_still_in_chain=False`. The same kinds of bytes (foreign field, field reordering, a list payload, a non-timestamp ts_utc, compact separators) are accepted as partial when the cut falls before the record's prev_hash key or before the hash completes. See the finding below.
+
+- crash:5 (lexical abspath: '..' through a symlinked directory made recovery act on a different file)
+  status: fixed
+  evidence: I copied p8_dotdot.py to review3/fix-classifier/crash5. Its first recover_torn_tail(named) call now succeeds; it printed nothing because the probe prints only on an exception. The second call then reports `-> False | named ledger still torn: False | other ledger repaired: False`. The named physical ledger was repaired and the unrelated lexical ledger was left untouched.
+
+The adapted verifier probe crash5/v_dotdot3.py:
+- `[1] named via '..' through symlinked dir, anchored -> True | physical still torn: False | events: 1 | quarantine in physical dir: True`
+- `[2] unanchored -> True | prior_head==named(physical) head: True | physical repaired: True | unrelated lexical ledger untouched (still torn): True`
+- `[3] writer lock held through the named path -> WriterConflict`
+- `[4] final-component symlink -> RecoveryRefused`
+- `[4b] final-component symlink behind '..' -> RecoveryRefused`
+- `[4c] symlinked dir without '..' -> True | repaired: True`
+
+The original v_dotdot.py now stops at case [2] with ValueError. That is the probe's own assumption: it expected the lexical ledger to be repaired, and it is now correctly left torn.
+
+## fix-stops
+- classifier:1 [major] STOP_RECORD_TYPES omits real founder stops (torn goal revocation, supersede, capability detach recovered with no acknowledgment, event says not a stop)
+  status: fixed
+  evidence: Re-ran review2/classifier/goal_revoke_torn.py, other_stops.py and verify-classifier-1/torn_founder_controls.py: every one is now refused until stop_record is acknowledged ('stop_record: the torn record is a egregore.goal_transition that shows a stop which never took effect...'; same for egregore.capability_detached). torn_founder_controls.py, after acknowledging stop_record: 'event: classification=partial torn_record_type=egregore.capability_detached may_have_been_a_stop=True acknowledged_risks=['stop_record']', stop_warning set. Control 'ordinary wake (goal_transition)': 'ACCEPTED with expected_head only (no risk acknowledged) ... may_have_been_a_stop=False' (no over-refusal). New probe review3/fix-stops/p1_prior_findings.py (real SIGKILL at 0.10/0.30/0.50/0.70/0.90/0.97 plus every byte offset of the exact line): revoke 'sweep of all 1244 offsets: {(partial, possible): 276, (partial, stop): 928, (content_complete, stop): 39, (complete_unterminated, stop): 1} offsets classified not-a-stop: 0'; supersede(transition) 'not-a-stop: 0' of 1357; detach 'not-a-stop: 0' of 834. A tear before the type or reason is visible is warned (may_have_been_a_stop=True), as designed.
+
+- honesty:0 [major] A torn founder goal revocation, supersession or capability detach is recovered as 'not a stop'; the restarted loop then acts on the revoked goal
+  status: partially_fixed
+  evidence: Its own probes no longer reproduce: honesty/f1_torn_revocation.py, f1b_other_stops.py, verify-honesty-0/v_torn_revoke.py (revoke at 0.5 and 0.9, anchored and unanchored, supersede transition, detach) and v_dispatch_after.py all raise RecoveryRefused '... stop_record: the torn record is a egregore.goal_transition that shows a stop ...' when stop_record is not acknowledged. Supersession, however, is two appends, and only the second (goal_transition) is covered. A SIGKILL in the first (the replacement's egregore.goal_authorized, which names the old goal in 'supersedes') is still recovered with acknowledged_risks=() and may_have_been_a_stop=False, and the restarted loop dispatches on the superseded goal. See the first finding below (review3/fix-stops/p2_supersede_first_append.py).
+
+## fix-space
+- crash:4 [minor] verification needs free space equal to the ledger; killed attempts leave full copies of history
+  status: fixed
+  evidence: Re-ran adapted versions of review2/crash/p3_enospc_checkcopy.py and verify-crash-4/a_enospc.py with no monkeypatch: cd /home/user/uniimente-kernel && python3 /tmp/claude-0/-home-user/0daa8e65-910e-5099-a9b8-614ba7e0376d/scratchpad/review3/fix-space/p1_crash4_enospc_rerun.py. On a 2 MiB tmpfs: '[A] ledger 1543200 B; free 552960 B (free < ledger: True)' then '[A] recovered: True recorded 1 | net space used 12288 B'. A real ENOSPC tear from EvidenceLedger._append on a 4 MiB tmpfs: '[B] operator freed 1 MiB: free 1048576 B < ledger 2408448 B', then '[B] recovered: True partial recorded 1 | net space used 12288 B | unrecorded: []' and '[B] body reopens and appends: records 2849'. With nothing freed, recovery refuses cleanly: '[B0] full disk: RecoveryRefused | the quarantine copy could not be written ([Errno 28] No space left on device); the ledger is unchanged'. A free-space sweep from 0 to 5 pages (p4_free_sweep.py, 36 cases) never left a state that a later call could not finish. In every case the later call ended with exactly one correct event. A small tear needs 2 to 3 free 4 KiB pages; a 10 KB tear needs 4. Three back-to-back killed attempts on a 20k-record ledger (p9_external_kill_sweep.py) leave nothing behind: 'after 3 killed attempts at 0.25s: [('ledger.jsonl', 10897703), ('ledger.jsonl.lock', 0)]'.
+
+- honesty:5 [minor] a recovery killed during verification leaves a full copy of canonical history as <ledger>.check-*
+  status: fixed
+  evidence: No .check- file exists any more; verification is in memory (_verified_prefix, recovery.py:158). External timed SIGKILLs at 24 evenly spaced points of an unmodified 0.88 s recovery of a 20k-record, 10.9 MB ledger: cd /home/user/uniimente-kernel && python3 /tmp/claude-0/-home-user/0daa8e65-910e-5099-a9b8-614ba7e0376d/scratchpad/review3/fix-space/p9_external_kill_sweep.py printed '15x state=untouched debris-files=0 full-history-copy=False | later: ok events=1 by=supervisor:B correct=True' and '9x state=complete debris-files=2 full-history-copy=False | later: ok events=1 by=supervisor:A correct=True'. The two files in the second line are the quarantine and its sidecar. An instrumented real SIGKILL at all 22 file-system steps (before and after each, plus halfway through each of the 4 data writes) was run on two tear sizes, 96 kill points in all (p5_kill_every_step.py). It printed 'PROBLEM LINES: 0' and 'big-copies=[]' at every point. The only debris is a .tmp- file: at most the torn bytes, at most one sidecar, or a second hard link of a complete quarantine. A later call never blocks on it and never reads it. Every later call completed with exactly one event whose torn_sha256, prior_head and quarantine bytes match the original tear. A third call returned torn=False.
+
+- honesty:6 [nit] an inconsistent sidecar is reported as 'sidecar missing' in recovered_by and reason
+  status: fixed
+  evidence: The _record_quarantines path and its 'unknown: sidecar missing' text are gone; a grep of provenance/recovery.py for 'sidecar missing' and 'unknown:' finds no such text. Probe: cd /home/user/uniimente-kernel && python3 /tmp/claude-0/-home-user/0daa8e65-910e-5099-a9b8-614ba7e0376d/scratchpad/review3/fix-space/p6_honesty6_sidecar.py. A real SIGKILL leaves a durable plan for a torn seal, and the sidecar is then made inconsistent, unreadable, missing, or given a changed cut. If application never began, the next caller builds its own event from the torn bytes, e.g. '[P/inconsistent] ... B: torn=True resumed=False unrecorded=0 | events=1 recovered_by=supervisor:B reason='restart B' class=partial type=seal stop=True torn_sha==T=True | 'unknown'/'missing' in event: False'. The same holds for unreadable, missing and plan-cut-changed. If application had begun and only torn_sha256 was edited, the plan's own line is chained: '[M/inconsistent] ... resumed=True ... recovered_by=supervisor:A ... torn_sha==T=True'. No event in any case carries 'unknown' or 'missing'.
+
+## adv-protocol
+- review2 crash:0 (a recovery killed between its truncation and its event leaves an openable ledger with no recovery event)
+  status: fixed
+  evidence: p2_powerloss_mixes.py materializes about 470 post-power-loss states of _apply as real files, at 512-byte sector granularity, for short, long, zero-filled and NUL-padded originals. p7_race.py pauses a real recovery process after each fsync. In no state did the ledger open, or a writer append, before a recovery event was chained. The one state the protocol mishandles is finding P1 below: there the ledger still stays closed, but the wrong event is chained.
+
+- review2 honesty:1 / crash:2 (quarantines from an earlier ledger at the same path, or from before a restore, are chained as recoveries of this chain)
+  status: partially_fixed
+  evidence: The _record_quarantines path is gone, and on a clean ledger foreign files are only reported. But _plan_in_progress can still take a foreign sidecar's completed plan and write its event line into the current chain (finding P3: p3_stale_sidecar_resume.py, case A on a fresh ledger at the same path, case B after a restore).
+
+- review2 crash:4 / honesty:5 (verification copies the whole ledger to disk)
+  status: fixed
+  evidence: _verified_prefix parses in memory. On a 100k-record, 40.6 MB ledger (p5_perf.py) no copy file appears and peak RSS is 297 MB. p3 reports 'new files written: none' apart from the quarantine and sidecar.
+

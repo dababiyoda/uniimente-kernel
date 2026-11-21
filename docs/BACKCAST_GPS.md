@@ -1,5 +1,12 @@
 # Backcast GPS: UNIIMENTE Kernel
 
+> **Executable since 2026-10-13.** The G/P/S control loop described here is no longer only a
+> founder-invoked planning method: `egregore/gps.py` (`BackcastGPSAdapter.fix`) computes
+> goal → active node → active gate → single bottleneck metric → exit evidence → next
+> intervention over the persistent goal registry and world model, and `egregore/gravity.py`
+> runs it as the recurring Goal Gravity loop (INTENT-20261013-GOAL-GRAVITY). The plan below
+> is preserved as the 2026-07-19 kernel-build instance of the method.
+
 ## Reasoning Summary
 
 Current reality, verified 2026-07-19: DALEOBANKS holds a primitive institutional nervous system (hash-chained decision ledger, constitution integrity checking, human approval gates, kill switch and arming ceremony, prompt-injection defenses, raw-evidence preservation, ContextPackets, instinct layer, identity gate, semantic memory, heartbeat supervision, automatic disarm). WealthMachineIntelligence holds the OpportunityPacket-to-VentureAssessment bridge and a capability-leased control plane stack that is built but sitting in ten unmerged stacked pull requests. Governance logic is duplicated across both repositories. External evidence across the whole institution: zero.

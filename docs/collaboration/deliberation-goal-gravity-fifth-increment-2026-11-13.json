@@ -1,0 +1,442 @@
+{
+  "decision_id": "ADR-GOAL-GRAVITY-004",
+  "title": "Fifth increment of the Goal Gravity loop: explicit, evidence-preserving torn-tail recovery of the Evidence Ledger (provenance/recovery.py) as the residual deficit behind entry-gate proof P2",
+  "problem": "A process killed inside an EvidenceLedger append leaves a partial final line; EvidenceLedger refuses to open it (fail-closed, correct), so the institution's history cannot be reopened and entry-gate proof P2 (interruption and autonomous recovery: reopen canonical history, preserve uncertainty, no duplicate consequence) cannot pass with any supervisor. The first four increments characterized the gap by test and listed it as unrepaired. The only way forward was a person editing the canonical ledger by hand, which is unaccountable and can silently drop an acknowledged record (for example a grant_dispatch claim, after which a restarted body could dispatch the same route again).",
+  "founder_intent_refs": [
+    "INTENT-20261013-GOAL-GRAVITY (section 25: Restart continuity)",
+    "INTENT-20261014-minimum-viable-continuous-loop",
+    "SR001-FOUNDER-LOOP-ENTRY (proof P2; G5)",
+    "INTENT-0030",
+    "2026-11-13 founder message: Resume and Follow the repository's own entry instructions"
+  ],
+  "baseline": "Draft PR #160 at 637b976 (fourth increment after review fixes; 794 tests, CI green): a torn final ledger line refuses to load and nothing repairs it; the process-kill tests cover SIGKILL after dispatch and before the gate but not inside an append.",
+  "alternatives": [
+    {
+      "name": "Explicit recovery module with named risks (selected)",
+      "description": "provenance/recovery.py: under the writer lock, verify the prefix, accept only a tail one interrupted append can leave, require named acknowledgment of unanchored/complete_record/stop_record, copy the torn bytes atomically beside the ledger, truncate, chain a ledger.torn_tail_quarantined event; never re-admit the torn record; never automatic.",
+      "advantages": [
+        "Evidence is preserved byte for byte and the repair is itself chained evidence",
+        "The ambiguity a byte check cannot resolve is surfaced as named risks instead of hidden in a mode",
+        "No change to EvidenceLedger or to any contract; organs pinning the boundary archive are unaffected",
+        "Mirrors mature WAL practice (etcd wal.Repair backup-then-truncate) with an evidence-grade record"
+      ],
+      "disadvantages": [
+        "Needs a caller: P2 stays incomplete until a supervisor (G5) exists",
+        "An operator can acknowledge a risk carelessly; the module records the acknowledgment but cannot judge it",
+        "Adds about 350 lines to the provenance boundary package"
+      ],
+      "revival_evidence": "n/a (selected)"
+    },
+    {
+      "name": "Tolerant load inside EvidenceLedger (RocksDB kTolerateCorruptedTailRecords style)",
+      "description": "EvidenceLedger._load drops an incomplete trailing record automatically on open.",
+      "advantages": [
+        "Restarts need no extra call",
+        "Simplest code path"
+      ],
+      "disadvantages": [
+        "Silent loss in every organ that pins the boundary package",
+        "Changes the ledger contract",
+        "RocksDB's own source notes the mode cannot tell a torn tail from real corruption"
+      ],
+      "revival_evidence": "A founder ruling that silent tolerance is acceptable for a named ledger class"
+    },
+    {
+      "name": "Self-delimiting framing (length and checksum prefix, hash_version 3)",
+      "description": "Change the record framing so torn writes are detectable by construction.",
+      "advantages": [
+        "Torn writes detectable without parsing heuristics"
+      ],
+      "disadvantages": [
+        "Shared-contract migration for every organ",
+        "Does not remove the acknowledged-then-damaged ambiguity"
+      ],
+      "revival_evidence": "Torn tails recur in a live deployment, or the ledger owner schedules a format migration for other reasons"
+    },
+    {
+      "name": "Atomic per-record writes (temporary file plus rename, or one file per record)",
+      "description": "Make each append atomic at the filesystem level.",
+      "advantages": [
+        "No torn lines"
+      ],
+      "disadvantages": [
+        "O(n) rewrite per append or a new storage layout",
+        "fsync cost per record"
+      ],
+      "revival_evidence": "A storage-layer redesign for other reasons"
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Opening a torn ledger keeps failing closed forever; P2 cannot pass; the de facto repair is a hand edit of the canonical ledger with no record of who removed what.",
+    "advantages": [
+      "No new code touching evidence",
+      "Zero risk of a repair bug"
+    ],
+    "disadvantages": [
+      "A crash at the worst moment ends the institution's history until a person edits it by hand",
+      "Hand edits can drop an acknowledged dispatch claim and allow a duplicate consequence",
+      "Leaves the Goal Gravity directive's restart-continuity requirement with no mechanism"
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "The founder asked for restart continuity without duplicate consequence; the honest current form is an accountable repair plus an end-to-end kill test, with P2 explicitly left open until a supervisor exists.",
+      "material_concerns": [
+        "Do not describe this as autonomous recovery or as P2 passing",
+        "Keep the destination (24/7 continuity) visible in the blocked table"
+      ],
+      "evidence_refs": [
+        "docs/intent/sources/GOAL-GRAVITY-DIRECTIVE-2026-10-13-source.md (section 25)",
+        "docs/founder-loop-entry-gate.json (P2, G5)"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Keep EvidenceLedger untouched and put the repair beside it; the lock, verification and recording must be one critical section; naming files by prior head and digest makes every incident distinct.",
+      "material_concerns": [
+        "The path-keyed lock is a ledger-level defect that recovery can only partially guard against",
+        "Recovery must never re-admit bytes"
+      ],
+      "evidence_refs": [
+        "provenance/recovery.py",
+        "provenance/ledger.py",
+        "docs/decisions/ADR-GOAL-GRAVITY-004.md"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "The first design let cut-back acknowledged records pass as partial and released the lock before recording; both were reproduced and fixed, and the replay found a stale-checkpoint hole that is now closed. The residual danger is a supervisor that acknowledges every risk unattended.",
+      "material_concerns": [
+        "Named risks become boilerplate if a supervisor passes them by default",
+        "A 40-byte cut of an acknowledged record is accepted when 'unanchored' is acknowledged (by design, recorded)"
+      ],
+      "evidence_refs": [
+        "tests/evidence/goal-gravity-20261013/review-increment-5.json",
+        "tests/evidence/goal-gravity-20261013/review-probes-increment-5.log"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "One function, standard library only, idempotent and crash-safe at every step; stray .tmp files are the only residue. Alias-proof locking should move into EvidenceLedger.",
+      "material_concerns": [
+        "Quarantine files accumulate beside the ledger and need a retention rule",
+        "Bind mounts of the ledger file remain an undetectable alias"
+      ],
+      "evidence_refs": [
+        "tests/unit/test_ledger_recovery.py",
+        "provenance/README.md"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Every claim the event makes is now conditional on what was proven; everything remains synthetic and no supervisor has used it.",
+      "material_concerns": [
+        "No real crash on a live ledger has been recovered",
+        "Evidence tier must stay at UNIT/INTEGRATION-TESTED"
+      ],
+      "evidence_refs": [
+        "tests/integration/test_goal_gravity_process_kill.py",
+        "docs/decisions/ADR-GOAL-GRAVITY-004.md (Evidence tier)"
+      ],
+      "recommendation": "EXPERIMENT"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "Recovery repairs a ledger torn by a real SIGKILL inside the dispatch-claim append without loss, admission or re-dispatch",
+      "tier": "unit_test",
+      "reference": "tests/integration/test_goal_gravity_process_kill.py::test_sigkill_inside_the_dispatch_claim_append_is_recovered_without_loss_or_redispatch",
+      "finding": "torn line classified partial/grant_dispatch, quarantined byte-for-byte; chain verifies; no grant_dispatch survives; intervention stays attempted; no second dispatch; reconcile reports unresolved"
+    },
+    {
+      "claim": "Every confirmed review finding is fixed",
+      "tier": "deterministic_fixture",
+      "reference": "tests/evidence/goal-gravity-20261013/review-probes-increment-5.log; review-increment-5.json; review2-probes-increment-5.log; review3-probes-increment-5.log",
+      "finding": "26 first-review probes replayed against the first fixed tree: 19 complete with no reproduction, 7 end in a deliberate refusal; the second review's probes replayed against the final tree: see review2-probes-increment-5.log"
+    },
+    {
+      "claim": "The full suite passes with the increment",
+      "tier": "unit_test",
+      "reference": "tests/evidence/goal-gravity-20261013/pytest-full-suite-increment-5.log; pytest-full-suite-py311-increment-5.log",
+      "finding": "909 passed, 4 skipped on Python 3.13 and on Python 3.11; verifier V1-V5 PASS; the three CI scripts pass"
+    },
+    {
+      "claim": "Backup-then-truncate of a torn WAL tail is established practice, and tolerant modes cannot distinguish torn tails from corruption",
+      "tier": "primary_source",
+      "reference": "https://pkg.go.dev/go.etcd.io/etcd/server/v3/wal; https://chromium.googlesource.com/external/github.com/coreos/etcd/+/v3.2.7/wal/repair.go; https://git.nextgraph.org/NextGraph/rocksdb/commit/de85e4cadfd3bd9ea5d3e148868f70cfab5c91d4",
+      "finding": "etcd wal.Repair truncates a last file ending in ErrUnexpectedEOF after a .broken copy; RocksDB documents kTolerateCorruptedTailRecords' ambiguity and defaults to point-in-time recovery"
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "An acknowledged record can still be dropped",
+      "tier": "deterministic_fixture",
+      "reference": "tests/evidence/goal-gravity-20261013/review-probes-increment-5.log (semantics-honesty-verify/f0/cuts.py)",
+      "finding": "A 40-byte cut of an acknowledged grant_dispatch is accepted when the caller acknowledges 'unanchored'; the event records the acknowledgment and says an acknowledged record cut back cannot be excluded. Inherent to byte-level evidence without a fresh checkpoint."
+    },
+    {
+      "claim": "P2 is not demonstrated",
+      "tier": "other",
+      "reference": "docs/founder-loop-entry-gate.json (G5 DECISION_REQUIRED_BEFORE_NEW_ARCHITECTURE)",
+      "finding": "No supervisor restarts the process; recovery is called by tests only"
+    },
+    {
+      "claim": "Some power-loss states of an interrupted application are treated as a new tear, not a resume",
+      "tier": "deterministic_fixture",
+      "reference": "tests/evidence/goal-gravity-20261013/review3-probes-increment-5.log (adv-protocol/p2_powerloss_mixes, fix-apply/p7_apply_states)",
+      "finding": "When none of the plan's distinguishing bytes reached the disk (only bytes it shares with the torn record, or zeros), the retry quarantines the bytes as they stand and chains its own accurate event; the first plan's quarantine is reported as unrecorded. Nothing is lost or misattributed, but the two quarantines are not linked in the chain."
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "A crash at the worst moment does not end the institution's history: an accountable call reopens it, preserves the torn bytes and the uncertainty they carry, records the repair in the chain, and the loop never produces the same consequence twice.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "Torn bytes are preserved and the repair is chained",
+        "amplified_value": "Turns a crash into evidence the institution can audit later; reverses into a liability only if quarantine files are deleted, which nothing does"
+      },
+      {
+        "id": "A2",
+        "statement": "Ambiguity is named, not hidden",
+        "amplified_value": "Every recovery records which risks its caller accepted, so a later audit can find the ones that relied on 'unanchored'; reverses if a supervisor acknowledges everything by default"
+      },
+      {
+        "id": "A3",
+        "statement": "No ledger contract change",
+        "amplified_value": "Organs can adopt it by re-pinning without migration; the ledger owner keeps the format decision"
+      },
+      {
+        "id": "A4",
+        "statement": "End-to-end kill test on the dispatch claim",
+        "amplified_value": "The most dangerous crash point for duplicate consequences is exercised with a real SIGKILL; becomes the regression gate for any future supervisor"
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "P2 remains incomplete without a supervisor",
+        "severity": "high",
+        "response_type": "governance",
+        "redesigned_response": "Stated in the ADR, the ledger entry, docs and PR; the supervisor's acknowledgment policy is named as part of the G5 decision"
+      },
+      {
+        "id": "D2",
+        "statement": "A careless caller can acknowledge a risk and drop an acknowledged record",
+        "severity": "medium",
+        "response_type": "evidence",
+        "redesigned_response": "Acknowledgments are recorded in the sidecar and the chained event; the disposition text says what could not be excluded; expected_head narrows the case"
+      },
+      {
+        "id": "D3",
+        "statement": "The writer lock is keyed on the path, so aliases can hide a live writer",
+        "severity": "medium",
+        "response_type": "protective",
+        "redesigned_response": "Recovery refuses symlinks and hard-linked files; the root cause is referred to the ledger owner"
+      },
+      {
+        "id": "D4",
+        "statement": "Quarantine and scratch files accumulate beside the ledger",
+        "severity": "low",
+        "response_type": "modularity",
+        "redesigned_response": "Names are distinct and ignored unless they match the full pattern; a retention rule is left to the operator"
+      },
+      {
+        "id": "D5",
+        "statement": "Byte-level classification is heuristic",
+        "severity": "medium",
+        "response_type": "evidence",
+        "redesigned_response": "The classifier accepts only exact prefixes of the next record's serialization or NULs and refuses everything else; every cut offset of real records is covered by tests"
+      }
+    ],
+    "comparisons": {
+      "baseline": "Fail-closed forever; hand edits as the de facto repair",
+      "do_nothing": "Same as baseline; P2 impossible",
+      "simplest_viable_alternative": "Tolerant load in EvidenceLedger: simpler, but silent and contract-changing",
+      "strongest_competing_architecture": "Self-delimiting framing with checksums: stronger detection, shared migration, same acknowledged-then-damaged ambiguity",
+      "reversible_experiment": "The selected module on the draft branch, called only by tests, revertible in one commit"
+    },
+    "rejected_alternatives": [
+      {
+        "name": "Tolerant load inside EvidenceLedger",
+        "rejection_reason": "Silent loss and a contract change for every organ",
+        "revival_evidence": "Founder ruling accepting silent tolerance for a named ledger class"
+      },
+      {
+        "name": "Atomic per-record writes",
+        "rejection_reason": "O(n) or a new storage layout for a rare event",
+        "revival_evidence": "Storage redesign for other reasons"
+      },
+      {
+        "name": "Self-delimiting framing now",
+        "rejection_reason": "Shared-contract migration not justified by one characterized gap",
+        "revival_evidence": "Torn tails recur in a live deployment"
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "An independent review attacked the first design on three lenses and reproduced 13 real defects (partial-bypass of the complete-record guard, a lock gap, non-atomic copies, identical-tear collisions, glob over-match, symlink alias, stale proof, misattribution); the replay of its probes found a fourth class (a stale checkpoint excusing a complete record). A second review of the fixed tree reproduced 15 more, the decisive one being that truncate-then-append left an openable, unrecorded ledger when the recovery was killed between the two; the design became an in-place plan behind a durable sidecar with in-memory verification. A third round confirmed the second review's fixes on its own probes and found 18 more in the new protocol and the stop rule: a completed or foreign plan resumed on a later tear, a lost final newline, unchecked short writes, a supersede whose first append was not a stop, stops written as events with no stop word in their names, and tails outside the writer's template; all are fixed, and supersede now writes its stop first.",
+    "new_weaknesses": [
+      {
+        "id": "W1",
+        "category": "gaming",
+        "statement": "A supervisor could pass every risk name by default, making acknowledgment boilerplate",
+        "strengthening_response": "The module cannot prevent it; the G5 decision must name who may acknowledge which risk, and the event records each acknowledgment for audit"
+      },
+      {
+        "id": "W2",
+        "category": "fragility",
+        "statement": "A crash mid-copy leaves .tmp scratch files",
+        "strengthening_response": "They never match the quarantine pattern and never block recovery or get chained"
+      },
+      {
+        "id": "W3",
+        "category": "comprehensibility",
+        "statement": "Three risk names and four classifications are more than an operator expects",
+        "strengthening_response": "Refusal messages name each missing risk with one sentence of why; the README and ADR define them"
+      },
+      {
+        "id": "W4",
+        "category": "dependency",
+        "statement": "Correctness depends on EvidenceLedger's serialization staying ASCII JSON with fixed field order",
+        "strengthening_response": "The classifier's prefix and closing-field constants mirror the ledger; a format change makes recovery refuse, not accept, and the tests sweep real serialized records"
+      },
+      {
+        "id": "W5",
+        "category": "reversibility",
+        "statement": "Truncation removes bytes from the canonical file",
+        "strengthening_response": "Bytes are copied durably before truncation and the copy's digest is in the chained event; a quarantined line can always be inspected"
+      },
+      {
+        "id": "W6",
+        "category": "fragility",
+        "statement": "The in-place plan's resume recognizes an interrupted application from the tail bytes and the sidecar; a wrong recognition would write a stale event",
+        "strengthening_response": "Resume requires the sidecar's prior head and cut to match, the quarantine's bytes to match its name, the tail to differ from the original and to be a byte-for-byte mix of the plan's event line and the original; the result is verified end to end, and a plan whose application never began is replaced"
+      },
+      {
+        "id": "W7",
+        "category": "fragility",
+        "statement": "The stop rule depends on registries of record and event types that must keep pace with the code",
+        "strengthening_response": "Unknown types are warned about, never treated as non-stops; tests scan the egregore record constants and every event type literal the code writes and fail when one is unclassified"
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "deferred",
+        "rationale": "Supervisor selection is the founder's G5 decision",
+        "owner": "alfonso_lopez",
+        "review_trigger": "G5 selection"
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "accepted",
+        "rationale": "Inherent to byte-level evidence without a fresh checkpoint; recorded per recovery",
+        "owner": "Kernel provenance maintainers",
+        "review_trigger": "First recovery on a live ledger"
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "deferred",
+        "rationale": "The root fix belongs in EvidenceLedger, which organs pin",
+        "owner": "Kernel provenance maintainers",
+        "review_trigger": "Next boundary-package release"
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "accepted",
+        "rationale": "Rare event; files are evidence",
+        "owner": "Kernel provenance maintainers",
+        "review_trigger": "More than a handful of quarantine files on any ledger"
+      },
+      {
+        "disadvantage_id": "D5",
+        "outcome": "resolved",
+        "rationale": "Strict prefix classifier with refusal by default; offset sweeps in tests",
+        "owner": "Kernel provenance maintainers",
+        "review_trigger": "Any change to ledger serialization"
+      }
+    ],
+    "final_design": "recover_torn_tail under one held lock: refuse aliases and live writers and resolve directories physically; verify the prefix in memory; accept only a prefix of the next record as the writer serializes it, or NULs; require named acknowledgment of unanchored (no expected_head), complete_record (the record hash was written, anchored or not) and stop_record (a stop visible in the bytes); write the quarantine copy and a sidecar holding the exact event line durably; apply it in place so the file ends with a newline only once the event is durable; complete an interrupted plan on the next call; report, never chain, quarantines this chain does not record; never re-admit; never automatic.",
+    "residual_risks": [
+      {
+        "risk": "Unattended acknowledgment by a future supervisor",
+        "mitigation": "Named in the G5 decision; each acknowledgment chained",
+        "owner": "alfonso_lopez",
+        "review_trigger": "G5 selection"
+      },
+      {
+        "risk": "Alias of the ledger file through a bind mount or a writer in another mount namespace",
+        "mitigation": "Symlinks and hard links refused; root fix referred",
+        "owner": "Kernel provenance maintainers",
+        "review_trigger": "Next boundary-package release"
+      },
+      {
+        "risk": "Recovery mistaken for proof that nothing was lost",
+        "mitigation": "Disposition text is conditional; ADR and docs state the limits",
+        "owner": "Kernel provenance maintainers",
+        "review_trigger": "First recovery on a live ledger"
+      },
+      {
+        "risk": "A crash during the apply phase on a filesystem that reorders data and metadata across fsync",
+        "mitigation": "fsync after each step; every intermediate state the protocol can leave is unopenable; a mix that is not recognized is refused, never chained",
+        "owner": "Kernel provenance maintainers",
+        "review_trigger": "First recovery on a live ledger"
+      }
+    ],
+    "recommendation": "EXPERIMENT"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Recorded, not resolved; the increment proceeds as a reversible experiment on the draft with each dissent's threshold named.",
+    "entries": [
+      {
+        "role": "Adversarial Reviewer",
+        "position": "Unattended recovery should never acknowledge 'unanchored' or 'complete_record'",
+        "rationale": "Those are exactly the cases where an acknowledged record can be lost; a machine accepting them for the founder converts evidence loss into policy",
+        "evidence_threshold": "The G5 decision either keeps these acknowledgments human-only or supplies a fresh per-append checkpoint that makes expected_head meaningful",
+        "owner": "alfonso_lopez",
+        "review_trigger": "G5 selection"
+      },
+      {
+        "role": "Operator and Maintainer",
+        "position": "The alias problem should be fixed in EvidenceLedger now, not referred",
+        "rationale": "Two writers on one file through aliases can fork the ledger outside recovery too",
+        "evidence_threshold": "A ledger-owner change that locks the ledger file's own descriptor, released with a boundary-package version organs re-pin",
+        "owner": "Kernel provenance maintainers",
+        "review_trigger": "Next boundary-package release"
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": false,
+    "approval_status": "not_required",
+    "approver": null
+  },
+  "migration_plan": "Additive module and tests on draft PR #160's branch; no change to EvidenceLedger, contracts, manifests or organs; organs pin the boundary archive and are unaffected until they re-pin.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Revert the fifth-increment commits on claude/goal-gravity-loop-20261013",
+      "Keep any quarantine files and chained recovery events as evidence; readers ignore the event type",
+      "Nothing else imports provenance.recovery"
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "Any recovery drops an acknowledged record without a named risk that admits it",
+    "A truncation is ever left without its chained event once the call returns",
+    "A torn record is ever admitted to the chain",
+    "Recovery is ever cited as authority to act",
+    "The founder rules that ledger repair must be impossible rather than explicit"
+  ],
+  "decision": "EXPERIMENT",
+  "decision_owner": "alfonso_lopez",
+  "review_trigger": "Founder review of draft PR #160; G5 supervisor selection; the first recovery of a live ledger; any change to EvidenceLedger serialization"
+}

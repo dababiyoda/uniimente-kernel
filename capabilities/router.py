@@ -6,9 +6,11 @@ mission path, INTENT-20261001-greg-seed-genome); which convergence lineage
 carries forward is a founder decision. This module was built after searching
 only `main` and is retained as an alternative mechanism and a source of
 tested invariants (aggregate budget, fewest-mechanism cover, immutable
-calibration, ledger-before-state). Nothing calls it, and it must not be
-wired in as a second Competency Compiler. See
-docs/intent/INTENT-20261014-competency-compiler.json.
+calibration, ledger-before-state). Nothing on `main` calls it, and it must
+not be wired in as a second Competency Compiler. See
+docs/intent/INTENT-20261014-competency-compiler.json. Draft PR #160 mounts it
+in the Goal Gravity loop behind an optional argument that is off by default;
+that conflict is recorded for the founder's convergence decision.
 
 Founder name: *Competency Compiler*. Target effect: given a problem, decide
 which kinds of knowing can actually answer it, recruit the smallest
@@ -227,6 +229,8 @@ class CapabilityRouter:
         # decision_id -> (problem_class, selected keys). Enough to validate
         # an outcome, and rebuildable from the ledger after a restart.
         self._decisions: dict[str, tuple[str, frozenset]] = {}
+        # (ledger seq, reason) for outcome events restore() refused to replay.
+        self.unreplayed: list[tuple[int, str]] = []
 
     # ------------------------------------------------------------ register
     def register(self, competency: Competency) -> Competency:
@@ -430,6 +434,7 @@ class CapabilityRouter:
             raise RouterError(f"ledger chain is broken; refusing to restore: {reason}")
         self._decisions.clear()
         self._calibration.clear()
+        self.unreplayed = []
         replayed = 0
         for record in self.ledger.records:
             payload = record.payload if record.record_type == "event" else {}
@@ -438,10 +443,30 @@ class CapabilityRouter:
                 self._decisions[payload["decision_id"]] = (
                     payload["problem_class"], frozenset(payload["selected"]))
             elif kind == "capabilities.routing_outcome":
+                # Replay applies the rules record_outcome enforces at write time, so an
+                # outcome appended around it (self-graded, without evidence, or for a
+                # decision that never selected the mechanism) never becomes calibration.
+                reason = self._unreplayable(payload)
+                if reason:
+                    self.unreplayed.append((record.seq, reason))
+                    continue
                 self._bump(payload["competency"], payload["problem_class"],
                            bool(payload["correct"]))
                 replayed += 1
         return replayed
+
+    def _unreplayable(self, payload: dict) -> str:
+        decision = self._decisions.get(payload.get("decision_id"))
+        key, verified_by = payload.get("competency") or "", payload.get("verified_by") or ""
+        if decision is None:
+            return "outcome for an unknown or later routing decision"
+        if key not in decision[1] or payload.get("problem_class") != decision[0]:
+            return "outcome names a mechanism or class the decision did not select"
+        if not payload.get("evidence_ref"):
+            return "outcome without an evidence reference"
+        if not verified_by or verified_by == key or verified_by.split("@", 1)[0] == key.split("@", 1)[0]:
+            return "outcome not verified by someone other than the mechanism"
+        return ""
 
     def _next(self, key: str, problem_class: str, correct: bool) -> Calibration:
         old = self._calibration.get((key, problem_class), Calibration())

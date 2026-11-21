@@ -1,0 +1,341 @@
+# Review probes replayed against the fixed torn-tail recovery (fifth increment)
+#
+# The review (workflow wf_4100bf3c-3ab, record review-increment-5.json) ran three finders and three verifiers
+# against a clean extraction of commit 54fd20cc; every finding but one reproduced there (see each verdict).
+# This log replays every finder and verifier probe against the fixed tree (provenance/recovery.py in this commit).
+#
+# The probes were written for 54fd20cc's API, so each was adapted mechanically before the run (adapter source at
+# the end of this log), changing nothing else:
+#   - quarantine_complete_record=True becomes acknowledged_risks=("unanchored", "complete_record");
+#   - a call with neither expected_head nor acknowledged_risks gets acknowledged_risks=("unanchored",), the most
+#     permissive setting a careless operator could pass, so a refusal below is not an artefact of a missing ack;
+#   - probes that loaded 54fd20cc through preload_commit / commit/ load the repository module instead (SRC=repo);
+#   - reads of the removed unacknowledged_proof field read acknowledged_risks;
+#   - hand-written tails that are not a prefix of a real record ('{"seq": 2, "re') get the real field order, and
+#     tails with a hard-coded seq use the ledger's next seq (seq starts at 0), so each probe exercises its
+#     finding instead of the corruption refusal;
+#   - r2 part A asserted that a body opened inside the old unlocked window; it now prints what the body reports.
+#
+# Result: 26 probes. 19 complete and no finding reproduces. 7 end in RecoveryRefused, each a deliberate refusal:
+#   c_e2e_redispatch (complete object followed by more bytes), m_symlink_alias (symlinked path),
+#   two_byte_and_truncation and stale_checkpoint_proof and r3_stale_sidecar part B and v4_stale_proof (a complete
+#   record needs 'complete_record' acknowledged even when expected_head matches: review R1b, found by this replay
+#   and fixed in this commit), torn_suspend (a torn suspension needs 'stop_record' acknowledged).
+# Expected residue: a crash mid-copy leaves a '.tmp-' scratch file beside the ledger (counted by the v12 probe's
+# broad glob as a third '.torn-*' file); it is never taken for a quarantine and never chained.
+# Last 14 lines of each probe's output, cut at 300 columns.
+
+===== evidence-integrity/a_same_bytes_twice.py
+incident 1: torn True recorded 1 prior_head sha256:6457f12b1d967
+incident 2: torn True recorded [{'quarantine_file': 'ledger.jsonl.torn-2a6261c3c6d0df83-15d48944c48362562daa61159a6d6858ad688e2e826b87a52bf25cf155dce1f0', 'record_hash': 'sha256:5e2e1b9f84ff8747756ef11c85b0a0ed6dd21b2bba8ff33097c87b369abbdeff'}] returned prior_head sha256:2a6261c3c6d0d | file trunca
+recovery events in chain: 2 -> recovered_by ['ops:first', 'ops:second']
+chain head == head before incident 2 (no event appended for incident 2): False False
+sidecar prior_head == incident-2 prior head? True | sidecar complete_records 6 vs actual 6
+EXIT 0
+===== evidence-integrity/c_e2e_redispatch.py
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user/0daa8e65-910e-5099-a9b8-614ba7e0376d/scratchpad/review-recovery/evidence-integrity/c_e2e_redispatch.replay.py", line 48, in <module>
+    out = recover_torn_tail(path, compile_constitution(ROOT).constitution_hash, recovered_by="supervisor:review",
+                            reason="restart after SIGKILL", acknowledged_risks=('unanchored',))
+  File "/home/user/uniimente-kernel/provenance/recovery.py", line 238, in recover_torn_tail
+    quarantined = _quarantine_and_truncate(path, constitution_hash, data, recovered_by=recovered_by,
+                                           reason=reason, expected_head=expected_head, acknowledged=acknowledged)
+  File "/home/user/uniimente-kernel/provenance/recovery.py", line 256, in _quarantine_and_truncate
+    found = _classify(torn, prefix_ledger)
+  File "/home/user/uniimente-kernel/provenance/recovery.py", line 176, in _classify
+    raise RecoveryRefused("the tail holds a complete object followed by more bytes; one interrupted append "
+                          "cannot produce that (a newline was overwritten or lines were joined)")
+provenance.recovery.RecoveryRefused: the tail holds a complete object followed by more bytes; one interrupted append cannot produce that (a newline was overwritten or lines were joined)
+EXIT 1
+===== evidence-integrity/c_partial_bypass.py
+[delete \n]           ledger refuses to open: ValueError
+[delete \n]           REFUSED: acknowledge these risks to proceed, or supply expected_head where it applies: complete_rec
+[flip \n -> \x0b]      ledger refuses to open: ValueError
+[flip \n -> \x0b]      REFUSED: the tail holds a complete object followed by more bytes; one interrupted append cannot pro
+[\n -> 'x']            ledger refuses to open: ValueError
+[\n -> 'x']            REFUSED: the tail holds a complete object followed by more bytes; one interrupted append cannot pro
+[delete '}\n']         ledger refuses to open: ValueError
+[delete '}\n']         REFUSED: acknowledge these risks to proceed, or supply expected_head where it applies: complete_rec
+[merge last 2 lines]   ledger refuses to open: ValueError
+[merge last 2 lines]   REFUSED: the tail holds a complete object followed by more bytes; one interrupted append cannot pro
+EXIT 0
+===== evidence-integrity/d_glob_sidecar.py
+clean ledger, sidecar backup present -> recorded: []
+quarantine events now: 1 | second claims file abad64c1b34c classification partial torn_bytes 48
+EXIT 0
+===== evidence-integrity/m_symlink_alias.py
+via real path: WriterConflict (correct): the ledger has a live writer; stop it before recovering
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user/0daa8e65-910e-5099-a9b8-614ba7e0376d/scratchpad/review-recovery/evidence-integrity/m_symlink_alias.replay.py", line 33, in <module>
+    out = recover_torn_tail(alias, ANCHOR, recovered_by="ops:x", reason="r", acknowledged_risks=('unanchored',))
+  File "/home/user/uniimente-kernel/provenance/recovery.py", line 222, in recover_torn_tail
+    raise RecoveryRefused("call recovery with the ledger's own path, not a symlink to it")
+provenance.recovery.RecoveryRefused: call recovery with the ledger's own path, not a symlink to it
+EXIT 1
+===== crash-concurrency/r1_partial_quarantine.py
+[quarantine] retry 2: returned torn=False recorded=[]
+[quarantine] ledger ends with newline (truncated): True
+[quarantine] ledger opens; recovery events in chain: 1 records: 3
+[quarantine] body appended after restart; recovery events still: 1
+
+[sidecar] child returncode: 0 
+[sidecar]   left behind: ledger.jsonl.torn-154340126aacbe45-40a08 size 54
+[sidecar]   left behind: ledger.jsonl.torn-154340126aacbe45-40a08 size 504
+[sidecar] retry 1: returned torn=False recorded=[]
+[sidecar] retry 2: returned torn=False recorded=[]
+[sidecar] ledger ends with newline (truncated): True
+[sidecar] ledger opens; recovery events in chain: 1 records: 3
+[sidecar] body appended after restart; recovery events still: 1
+EXIT 0
+===== crash-concurrency/r2_window_race.py
+[A] restarting body, started inside the former window, reports: GAVEUP
+[A] no exception
+[B] natural race, 30 runs: WriterConflict AFTER truncation (recovery unrecorded) in 0; harmless pre-lock refusals retried: 86
+EXIT 0
+===== crash-concurrency/r3_stale_sidecar.py
+[A] recovery events in chain: 2 [('ops:first', 'sha256:d2e915fda2b51'), ('ops:second', 'sha256:49d693929daac')]
+[A] sidecar prior_head: sha256:49d693929daac complete_records: 6 | recovery 2 actual complete_records: 6
+[B] attempt 1: killed after the sidecar is durable, before truncation
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user/0daa8e65-910e-5099-a9b8-614ba7e0376d/scratchpad/review-recovery/crash-concurrency/r3_stale_sidecar.replay.py", line 81, in <module>
+    out = recovery.recover_torn_tail(path, ANCHOR, recovered_by="ops:y", reason="r", expected_head=head)
+  File "/home/user/uniimente-kernel/provenance/recovery.py", line 238, in recover_torn_tail
+    quarantined = _quarantine_and_truncate(path, constitution_hash, data, recovered_by=recovered_by,
+                                           reason=reason, expected_head=expected_head, acknowledged=acknowledged)
+  File "/home/user/uniimente-kernel/provenance/recovery.py", line 272, in _quarantine_and_truncate
+    raise RecoveryRefused("acknowledge these risks to proceed, or supply expected_head where it applies: "
+                          + "; ".join(f"{r}: {why[r]}" for r in missing))
+provenance.recovery.RecoveryRefused: acknowledge these risks to proceed, or supply expected_head where it applies: complete_record: the tail holds a complete, correctly chained record; it may have been acknowledged and damaged later, and no checkpoint taken before it can exclude that
+EXIT 1
+===== crash-concurrency/r4_poisoned_sidecar_future.py
+trial 0: retry1=ok later-recovery=ok truncated=True sorted-first=new later recovery recorded=True events=2
+trial 1: retry1=ok later-recovery=ok truncated=True sorted-first=poisoned later recovery recorded=True events=2
+trial 2: retry1=ok later-recovery=ok truncated=True sorted-first=poisoned later recovery recorded=True events=2
+trial 3: retry1=ok later-recovery=ok truncated=True sorted-first=new later recovery recorded=True events=2
+trial 4: retry1=ok later-recovery=ok truncated=True sorted-first=new later recovery recorded=True events=2
+trial 5: retry1=ok later-recovery=ok truncated=True sorted-first=new later recovery recorded=True events=2
+EXIT 0
+===== crash-concurrency-verify/v0_lock_gap.py
+source: /home/user/uniimente-kernel/provenance/recovery.py
+same-process second flock: refused 11
+[det] returned [{'quarantine_file': 'ledger.jsonl.torn-6afdf061e15ad419-1b15a957244de7a767525be80c23948a7281a47f611036101d64c698d76bbe0d', 'record_hash': 'sha256:9fa275b0ddc63b3e0cbfacb03b919f505c0e660667b4b16ce055d4d91cb78531'}]
+[det] truncated=True quarantine_files=1 body_records=0 recovery_events=1
+[det] retry after body stopped: recorded 0 | truncated=True quarantine_files=1 body_records=0 recovery_events=1
+[race sleep=0.0] 20 runs: recorded-ok=20 WriterConflict-after-truncation=0 pre-lock-refusals=8
+[race sleep=0.001] 20 runs: recorded-ok=20 WriterConflict-after-truncation=0 pre-lock-refusals=0
+[race sleep=0.01] 20 runs: recorded-ok=20 WriterConflict-after-truncation=0 pre-lock-refusals=0
+EXIT 0
+===== crash-concurrency-verify/v0_supervisor.py
+[supervisor fresh-process restarts] 40 runs: recorded-ok=40 truncated-but-unrecorded=0
+EXIT 0
+===== crash-concurrency-verify/v12_partial_files.py
+[quarantine] retry 2: torn=False recorded=0
+[quarantine] ledger truncated=True
+[quarantine] body reopened and appended; recovery events in chain: 1
+[quarantine] later recovery: recorded=1
+[quarantine] after later recovery: truncated=True quarantines=3 recovery events=2
+
+[sidecar] child rc=0; files: [('4303d9a37d40', 54), ('9a37d40.json', 504)]
+[sidecar] retry 1: torn=False recorded=0
+[sidecar] retry 2: torn=False recorded=0
+[sidecar] ledger truncated=True
+[sidecar] body reopened and appended; recovery events in chain: 1
+[sidecar] later recovery: recorded=1
+[sidecar] after later recovery: truncated=True quarantines=2 recovery events=2
+EXIT 0
+===== crash-concurrency-verify/v1_enospc_like.py
+child recovery failed: OSError [Errno 27] File too large
+files: []
+ledger still torn: False
+EXIT 0
+===== crash-concurrency-verify/v3_same_tear.py
+tear=b'{"seq": 'x8: r1 recorded=1; r2 torn=True removed=-1301B recorded=1; events=[('ops:first', '34a1333cea0f'), ('ops:second', 'bd8a92e7d796')]; r2 actual prior_head=bd8a92e7d796
+tear=b'\x00\x00\x00\x00\x00\x00\x00\x00'x64: r1 recorded=1; r2 torn=True removed=-1248B recorded=1; events=[('ops:first', '28a4838eb463'), ('ops:second', '843c562f7190')]; r2 actual prior_head=843c562f7190
+EXIT 0
+===== crash-concurrency-verify/v4_stale_proof.py
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user/0daa8e65-910e-5099-a9b8-614ba7e0376d/scratchpad/review-recovery/crash-concurrency-verify/v4_stale_proof.replay.py", line 37, in <module>
+    out = recovery.recover_torn_tail(path, ANCHOR, recovered_by="ops:y", reason="attempt 2", **k2)
+  File "/home/user/uniimente-kernel/provenance/recovery.py", line 238, in recover_torn_tail
+    quarantined = _quarantine_and_truncate(path, constitution_hash, data, recovered_by=recovered_by,
+                                           reason=reason, expected_head=expected_head, acknowledged=acknowledged)
+  File "/home/user/uniimente-kernel/provenance/recovery.py", line 272, in _quarantine_and_truncate
+    raise RecoveryRefused("acknowledge these risks to proceed, or supply expected_head where it applies: "
+                          + "; ".join(f"{r}: {why[r]}" for r in missing))
+provenance.recovery.RecoveryRefused: acknowledge these risks to proceed, or supply expected_head where it applies: complete_record: the tail holds a complete, correctly chained record; it may have been acknowledged and damaged later, and no checkpoint taken before it can exclude that
+EXIT 1
+===== semantics-honesty/r1/stale_checkpoint_proof.py
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user/0daa8e65-910e-5099-a9b8-614ba7e0376d/scratchpad/review-recovery/semantics-honesty/r1/stale_checkpoint_proof.replay.py", line 17, in <module>
+    out = recover_torn_tail(path, ANCHOR, recovered_by="ops:review", reason="restart", expected_head=checkpoint)
+  File "/home/user/uniimente-kernel/provenance/recovery.py", line 238, in recover_torn_tail
+    quarantined = _quarantine_and_truncate(path, constitution_hash, data, recovered_by=recovered_by,
+                                           reason=reason, expected_head=expected_head, acknowledged=acknowledged)
+  File "/home/user/uniimente-kernel/provenance/recovery.py", line 272, in _quarantine_and_truncate
+    raise RecoveryRefused("acknowledge these risks to proceed, or supply expected_head where it applies: "
+                          + "; ".join(f"{r}: {why[r]}" for r in missing))
+provenance.recovery.RecoveryRefused: acknowledge these risks to proceed, or supply expected_head where it applies: complete_record: the tail holds a complete, correctly chained record; it may have been acknowledged and damaged later, and no checkpoint taken before it can exclude that
+EXIT 1
+===== semantics-honesty/r1/two_byte_and_truncation.py
+gate.run returned state: recorded | executor calls: ['P-fixed'] | records: 11 last type: event
+(a) 1-byte cut: refused -> acknowledge these risks to proceed, or supply expected_head where it a
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user/0daa8e65-910e-5099-a9b8-614ba7e0376d/scratchpad/review-recovery/semantics-honesty/r1/two_byte_and_truncation.replay.py", line 60, in <module>
+    out = recover_torn_tail(p2, CH, recovered_by="ops:review", reason="restart after crash", acknowledged_risks=('unanchored',))
+  File "/home/user/uniimente-kernel/provenance/recovery.py", line 238, in recover_torn_tail
+    quarantined = _quarantine_and_truncate(path, constitution_hash, data, recovered_by=recovered_by,
+                                           reason=reason, expected_head=expected_head, acknowledged=acknowledged)
+  File "/home/user/uniimente-kernel/provenance/recovery.py", line 272, in _quarantine_and_truncate
+    raise RecoveryRefused("acknowledge these risks to proceed, or supply expected_head where it applies: "
+                          + "; ".join(f"{r}: {why[r]}" for r in missing))
+provenance.recovery.RecoveryRefused: acknowledge these risks to proceed, or supply expected_head where it applies: complete_record: the tail holds a complete, correctly chained record; it may have been acknowledged and damaged later, and no checkpoint taken before it can exclude that
+EXIT 1
+===== semantics-honesty/r2/identical_tear.py
+tear=b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' | 1st recorded: 1 | 2nd torn: True 2nd recorded: [{'quarantine_file': 'ledger.jsonl.torn-b8141a61ef5c45db-ad7facb2586fc6e966c004d7d1d16b024f5805ff7cb47c7a85dabd8b48892ca7', 'record_hash': 'sha256:84a573a34bc36b6b4252bb8f094348bc2a9e0dfc3aa1e6ffcf15aa9
+tear=b'{"seq": ' | 1st recorded: 1 | 2nd torn: True 2nd recorded: [{'quarantine_file': 'ledger.jsonl.torn-118bd98ca101a4df-15d48944c48362562daa61159a6d6858ad688e2e826b87a52bf25cf155dce1f0', 'record_hash': 'sha256:0d495b269a5c4ac93af5d62a3eb436728cf68fd72f910f0e8f067b9d129818b4'}] | recovery events i
+EXIT 0
+===== semantics-honesty/r3/deterministic.py
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<string>", line 3, in <module>
+    L=EvidenceLedger('sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', path='/tmp/claude-0/-home-user/0daa8e65-910e-5099-a9b8-614ba7e0376d/scratchpad/review-recovery/semantics-honesty/r3/tmp9u7mn4au/ledger.jsonl'); L.append('event', {'type':'body.restarted'}); print('HOLDING
+  File "/home/user/uniimente-kernel/provenance/ledger.py", line 77, in __init__
+    raise WriterConflict('ledger already has a writer') from exc
+provenance.ledger.WriterConflict: ledger already has a writer
+separate process: 
+recovered
+file now ends with newline (truncated): True | quarantine files: 2
+chain: ['probe', 'ledger.torn_tail_quarantined']
+EXIT 0
+===== semantics-honesty/r3/race.py
+trials: 40 hits (WriterConflict raised after the file was already truncated): 0
+EXIT 0
+===== semantics-honesty/r3/race_5ms.py
+trials: 30 hits (WriterConflict raised after the file was already truncated): 0
+EXIT 0
+===== semantics-honesty/r4/misattribution.py
+sidecar keys: ['acknowledged_risks', 'anchor', 'classification', 'complete_records', 'may_have_been_a_stop', 'prior_head', 'reason', 'recovered_by', 'torn_bytes', 'torn_record_type', 'torn_sha256']
+2nd call torn: False | chain event recovered_by: supervisor:A | reason: SIGKILL of body pid 4242
+EXIT 0
+===== semantics-honesty/r5/alive_uncertain.py
+append raised ReconciliationRequired; _uncertain = True
+same process : WriterConflict -> the ledger has a live writer; stop it before recovering
+other process: WriterConflict -> the ledger has a live writer; stop it before recovering
+alive ledger refuses further appends: previous append is uncertain; reopen verified history
+after close: torn = True classification = partial
+stale closed handle cannot append: not the active ledger writer
+EXIT 0
+===== semantics-honesty/r6/torn_suspend.py
+child rc: -9 | torn tail names the record type: True
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user/0daa8e65-910e-5099-a9b8-614ba7e0376d/scratchpad/review-recovery/semantics-honesty/r6/torn_suspend.replay.py", line 36, in <module>
+    out = recover_torn_tail(path, ANCHOR, recovered_by="supervisor:restart", reason="body died", acknowledged_risks=('unanchored',))
+  File "/home/user/uniimente-kernel/provenance/recovery.py", line 238, in recover_torn_tail
+    quarantined = _quarantine_and_truncate(path, constitution_hash, data, recovered_by=recovered_by,
+                                           reason=reason, expected_head=expected_head, acknowledged=acknowledged)
+  File "/home/user/uniimente-kernel/provenance/recovery.py", line 272, in _quarantine_and_truncate
+    raise RecoveryRefused("acknowledge these risks to proceed, or supply expected_head where it applies: "
+                          + "; ".join(f"{r}: {why[r]}" for r in missing))
+provenance.recovery.RecoveryRefused: acknowledge these risks to proceed, or supply expected_head where it applies: stop_record: the torn record is a egregore.suspended, a stop that never took effect; whoever issued it must re-issue it before the body restarts
+EXIT 1
+===== semantics-honesty-verify/f0/cuts.py
+1 REFUSED acknowledge these risks to proceed, or supply expected_head 
+2 REFUSED acknowledge these risks to proceed, or supply expected_head 
+3 REFUSED acknowledge these risks to proceed, or supply expected_head 
+40 ACCEPTED partial | acked dispatch in chain: False | proof: None | disposition says never returned: True
+EXIT 0
+===== semantics-honesty-verify/f1/race_small.py
+0 ('ok', True) attempts 3 chain ['probe', 'ledger.torn_tail_quarantined', 'body.restarted']
+1 ('ok', True) attempts 9 chain ['probe', 'ledger.torn_tail_quarantined', 'body.restarted']
+2 ('ok', True) attempts 10 chain ['probe', 'ledger.torn_tail_quarantined', 'body.restarted']
+3 ('ok', True) attempts 7 chain ['probe', 'ledger.torn_tail_quarantined', 'body.restarted']
+4 ('ok', True) attempts 1 chain ['probe', 'ledger.torn_tail_quarantined', 'body.restarted']
+5 ('ok', True) attempts 5 chain ['probe', 'ledger.torn_tail_quarantined', 'body.restarted']
+hits 0
+EXIT 0
+
+# ---- adapter: adapt.py
+"""Adapt the reviewers' probe scripts (written against 54fd20cc's API) to the fixed API, changing nothing else.
+
+- quarantine_complete_record=True  -> acknowledged_risks=("unanchored", "complete_record")
+- a recover_torn_tail(...) call with neither expected_head, acknowledged_risks nor **kwargs gets
+  acknowledged_risks=("unanchored",) -- the most permissive setting a careless operator would pass
+- a hand-written tail that is not the prefix of a real serialized record ('{"seq": 2, "re...') is rewritten to the real
+  prefix order ('{"seq": 2, "ts_utc": "..."...') so the probe exercises its finding instead of the corruption refusal
+"""
+import re, sys
+src = open(sys.argv[1]).read()
+src = src.replace('{"quarantine_complete_record": True}', "{'acknowledged_risks': ('unanchored', 'complete_record')}")
+src = src.replace('quarantine_complete_record=True', "acknowledged_risks=('unanchored', 'complete_record')")
+src = re.sub(r"""b'\{"seq": (\d+), "re""", r"""b'{"seq": \1, "ts_utc": "2026-11-13T12:00:00Z", "re""", src)
+out, i = [], 0
+for m in re.finditer(r"recover_torn_tail\(", src):
+    if m.start() < i:
+        continue
+    j, depth = m.end(), 1
+    while depth:
+        c = src[j]; depth += (c == "(") - (c == ")"); j += 1
+    call = src[m.start():j]
+    if not any(k in call for k in ("expected_head", "acknowledged_risks", "**")) and "def " not in src[max(0, m.start()-4):m.start()]:
+        call = call[:-1] + ", acknowledged_risks=('unanchored',))"
+    out.append(src[i:m.start()]); out.append(call); i = j
+out.append(src[i:])
+sys.stdout.write("".join(out))
+# ---- fixture patches: patch_fixtures.py
+"""Per-probe fixture patches for the replay (run from review-recovery/). Each is an exact, asserted replacement."""
+
+
+def patch(path, old, new):
+    s = open(path).read()
+    assert old in s, (path, old)
+    open(path, "w").write(s.replace(old, new))
+
+
+# r2 part A asserted the body OPENED inside the old unlocked window; record what the body reports instead
+patch("crash-concurrency/r2_window_race.replay.py",
+      '''        assert proc.stdout.readline().strip() == "OPENED"
+        state["proc"] = proc''',
+      '''        state["proc"] = proc
+        state["line"] = proc.stdout.readline().strip()
+        print("[A] restarting body, started inside the former window, reports:", state["line"])''')
+
+# r4 and v12 hard-coded the seq of a later tear; seq starts at 0 (genesis), so the next seq is the line count
+patch("crash-concurrency/r4_poisoned_sidecar_future.replay.py",
+      """t2 = b'{"seq": 3, "ts_utc": "y%d' % trial""",
+      """t2 = b'{"seq": %d, "ts_utc": "y%d' % (open(path, "rb").read().count(b"\\n"), trial)""")
+patch("crash-concurrency/r4_poisoned_sidecar_future.replay.py",
+      """    try:
+        recovery.recover_torn_tail(path, ANCHOR, recovered_by="ops", reason="retry 1\"""",
+      """    r1 = "ok"
+    try:
+        recovery.recover_torn_tail(path, ANCHOR, recovered_by="ops", reason="retry 1\"""")
+patch("crash-concurrency-verify/v12_partial_files.replay.py",
+      """fh.write(b'{"seq": 3, "ts_utc": "2026-11-13T13:00:00Z", "pay')""",
+      """fh.write(b'{"seq": %d, "ts_utc": "2026-11-13T13:00:00Z", "pay' % open(path, "rb").read().count(b"\\n"))""")
+print("fixture patches applied")
+# ---- driver: regen.sh
+#!/bin/sh
+# Regenerate every *.replay.py from the reviewers' original probe and apply the per-probe harness patches.
+# The patches change only what the old API or a hand-written fixture made inapplicable; each is listed here.
+set -e
+HERE="$(cd "$(dirname "$0")" && pwd)"
+cd "$HERE/../review-recovery"
+for f in evidence-integrity/*.py crash-concurrency/*.py crash-concurrency-verify/*.py semantics-honesty/r*/*.py semantics-honesty-verify/f*/*.py; do
+  case $f in *common.py|*probes.py|*.replay.py|*/contender*.py) continue;; esac
+  python3 "$HERE/adapt.py" "$f" > "${f%.py}.replay.py"
+done
+K=/home/user/uniimente-kernel
+# 1. the semantics probes loaded 54fd20cc through preload_commit; the replay loads the fixed module from the repo
+for f in semantics-honesty/r*/*.replay.py semantics-honesty-verify/f*/*.replay.py; do
+  sed -i "s#^import preload_commit.*\$#sys.path.insert(0, '$K')  \# replay: fixed provenance.recovery, not 54fd20cc#" "$f"
+  sed -i 's/import preload_commit; //' "$f"
+done
+# 2. the fixed API has no unacknowledged_proof; its replacement fields are acknowledged_risks and anchor
+for f in crash-concurrency/r3_stale_sidecar.replay.py semantics-honesty/r1/stale_checkpoint_proof.replay.py \
+         evidence-integrity/c_e2e_redispatch.replay.py crash-concurrency-verify/v4_stale_proof.replay.py; do
+  sed -i "s/\[\"unacknowledged_proof\"\]/.get(\"acknowledged_risks\")/g; s/\['unacknowledged_proof'\]/.get('acknowledged_risks')/g; s/\.get(\"unacknowledged_proof\")/.get(\"acknowledged_risks\")/g" "$f"
+done
+# 3. per-probe fixture patches
+python3 "$HERE/patch_fixtures.py"

@@ -1,0 +1,98 @@
+# Adversarial-review reproductions for the Goal Gravity third increment
+# Each probe was written by a dimension reviewer against commit 81c90c7. Most assert that the defect exists
+# (pass = defect reproduced); the ledger-consistency probes assert the correct behavior (fail = defect reproduced).
+# same_trigger_redelivery and turn_replay were non-defect checks and pass on both trees.
+
+## Run A: clean checkout of 81c90c7 (the reviewed commit)
+81c90c7 Goal Gravity third increment: Competency Compiler wiring and the remaining achievable directive gaps
+authority-safety/test_probe_attach.py: 3 passed in 2.94s
+authority-safety/test_probe_calibration.py: 1 passed in 0.34s
+authority-safety/test_probe_founder_squat.py: 1 passed in 0.35s
+authority-safety/test_probe_mute.py: 1 passed in 0.29s
+authority-safety/test_probe_organ.py: 1 passed in 0.34s
+authority-safety/test_probe_partial_attach.py: 1 passed in 1.06s
+authority-safety/test_probe_revoke.py: 1 passed in 0.30s
+authority-safety/test_probe_supersede.py: 1 passed in 0.34s
+authority-safety/test_probe_tactic.py: 3 passed in 0.43s
+authority-safety/test_probe_tactic_exec.py: 2 passed in 0.52s
+authority-safety/test_probe_verify.py: 2 passed in 0.36s
+competency-evidence-verify/test_v0.py: 3 passed in 0.45s
+competency-evidence-verify/test_v1.py: 1 passed in 0.37s
+competency-evidence-verify/test_v2.py: 2 passed in 0.55s
+competency-evidence-verify/test_v3.py: 4 passed in 0.65s
+competency-evidence-verify/test_v4.py: 2 passed in 0.35s
+competency-evidence/test_probe_agree.py: 1 passed in 0.54s
+competency-evidence/test_probe_calib.py: 1 passed in 0.35s
+competency-evidence/test_probe_crossgoal.py: 1 passed in 0.31s
+competency-evidence/test_probe_deficit.py: 3 passed in 0.36s
+competency-evidence/test_probe_downgrade.py: 2 passed in 0.37s
+competency-evidence/test_probe_founder.py: 2 passed in 0.35s
+competency-evidence/test_probe_launder.py: 1 passed in 0.27s
+competency-evidence/test_probe_refute.py: 2 passed in 0.42s
+competency-evidence/test_probe_schema.py: 1 passed in 0.33s
+competency-evidence/test_probe_typed.py: 2 passed in 0.27s
+evidence-honesty/test_probe_claims.py: 5 passed in 3.57s
+evidence-honesty/test_probe_intensity.py: 1 passed in 0.29s
+evidence-honesty/test_probe_organs.py: 1 passed in 0.19s
+evidence-honesty/test_probe_tactic.py: 2 passed in 0.31s
+ledger-consistency/test_attach_not_reconstructible.py: 1 failed in 1.31s
+ledger-consistency/test_founder_answer_crash.py: 1 failed in 0.39s
+ledger-consistency/test_latest_routing_tie.py: 1 failed in 0.33s
+ledger-consistency/test_reconcile_wrong_attempt.py: 2 failed in 0.55s
+ledger-consistency/test_reopened_deficit.py: 1 failed in 0.52s
+ledger-consistency/test_same_trigger_redelivery.py: 1 passed in 0.34s
+ledger-consistency/test_turn_replay.py: 1 passed in 0.44s
+ledger-consistency/test_verify_crash_and_none.py: 2 failed in 0.56s
+
+## Run B: the fixed tree (this commit's working tree)
+81c90c7 Goal Gravity third increment: Competency Compiler wiring and the remaining achievable directive gaps
+(plus the uncommitted review fixes recorded in this commit)
+authority-safety/test_probe_attach.py: 3 failed in 2.50s
+authority-safety/test_probe_calibration.py: 1 failed in 0.35s
+authority-safety/test_probe_founder_squat.py: 1 failed in 0.40s
+authority-safety/test_probe_mute.py: 1 failed in 0.39s
+authority-safety/test_probe_organ.py: 1 failed in 0.32s
+authority-safety/test_probe_partial_attach.py: 1 failed in 0.31s
+authority-safety/test_probe_revoke.py: 1 failed in 0.31s
+authority-safety/test_probe_supersede.py: 1 failed in 0.36s
+authority-safety/test_probe_tactic.py: 2 failed, 1 passed in 0.43s
+authority-safety/test_probe_tactic_exec.py: 1 failed, 1 passed in 0.38s
+authority-safety/test_probe_verify.py: 2 failed in 0.53s
+competency-evidence-verify/test_v0.py: 2 failed, 1 passed in 0.64s
+competency-evidence-verify/test_v1.py: 1 passed in 0.39s
+competency-evidence-verify/test_v2.py: 1 failed, 1 passed in 0.59s
+competency-evidence-verify/test_v3.py: 4 failed in 0.55s
+competency-evidence-verify/test_v4.py: 2 failed in 0.45s
+competency-evidence/test_probe_agree.py: 1 passed in 0.63s
+competency-evidence/test_probe_calib.py: 1 failed in 0.37s
+competency-evidence/test_probe_crossgoal.py: 1 failed in 0.41s
+competency-evidence/test_probe_deficit.py: 2 failed, 1 passed in 0.48s
+competency-evidence/test_probe_downgrade.py: 2 failed in 0.48s
+competency-evidence/test_probe_founder.py: 2 failed in 0.60s
+competency-evidence/test_probe_launder.py: 1 failed in 0.35s
+competency-evidence/test_probe_refute.py: 2 passed in 0.44s
+competency-evidence/test_probe_schema.py: 1 passed in 0.43s
+competency-evidence/test_probe_typed.py: 2 failed in 0.37s
+evidence-honesty/test_probe_claims.py: 2 failed, 3 passed in 3.03s
+evidence-honesty/test_probe_intensity.py: 1 failed in 0.41s
+evidence-honesty/test_probe_organs.py: 1 failed in 0.24s
+evidence-honesty/test_probe_tactic.py: 2 passed in 0.33s
+ledger-consistency/test_attach_not_reconstructible.py: 1 passed in 1.19s
+ledger-consistency/test_founder_answer_crash.py: 1 passed in 0.39s
+ledger-consistency/test_latest_routing_tie.py: 1 passed in 0.30s
+ledger-consistency/test_reconcile_wrong_attempt.py: 2 passed in 0.38s
+ledger-consistency/test_reopened_deficit.py: 1 passed in 0.38s
+ledger-consistency/test_same_trigger_redelivery.py: 1 passed in 0.49s
+ledger-consistency/test_turn_replay.py: 1 passed in 0.41s
+ledger-consistency/test_verify_crash_and_none.py: 2 passed in 0.42s
+
+## Tests that pass in Run B, and why that is expected
+# Non-defect checks (assert correct behavior on both trees): authority-safety tactic ::test_proposer_ban_binds_when_tactic_undeclared,
+#   tactic_exec ::test_banned_proposer_undeclared_tactic_abstains, competency-evidence agree ::test_two_loops_and_restart_agree,
+#   schema ::test_refused_route_deficit_and_resolution_validate, evidence-honesty tactic ::test_probe_undeclared / ::test_probe_declared,
+#   verifier-written v0 ::test_untrusted_alone_cannot, v1 ::test_matrix, v2 ::test_b_without_wake.
+# Print-only probes (no assertion; their printed output is the evidence): competency-evidence refute (both),
+#   deficit ::test_no_typed_deficit_when_gate_has_no_moves, evidence-honesty claims ::..._lost_on_restart_... and
+#   ::test_probe_restart_on_a_file_ledger_loses_the_attach (on the fixed tree they print genome present, routed True).
+# evidence-honesty claims ::test_probe_refusal_rate_ignores_its_declared_30_day_window asserts the whole-ledger behavior;
+#   the finding was a false description, fixed by correcting the modality description, not the computation.

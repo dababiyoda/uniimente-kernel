@@ -1,0 +1,441 @@
+{
+  "decision_id": "DELIB-GOAL-GRAVITY-2026-10-14-002",
+  "title": "Wire the Competency Compiler (capabilities/router.py, #165 on main) into the Goal Gravity loop as inert library code, with typed evidence, verified-outcome calibration and a builder-less acquisition chain; linked to DELIB-GOAL-GRAVITY-2026-10-13-001",
+  "problem": "Observation: the 2026-10-13 directive (re-issued 2026-10-14) names the Competency Compiler as the intended engineering result. Observation: PR #165 merged capabilities/router.py to main on 2026-10-14; its own commit says nothing calls it and wiring waits on the entry gate. Observation: draft PR #160 already carries the Goal Gravity loop (persistent goals, GPS, classifier, Gate-only execution) with no epistemic routing: any trusted observation clears any gate, verification never calibrates mechanism choice, and a missing capability only blocks. Inference: the residual CapabilityDeficit is the seam between the two (gate -> problem class -> admissible methods -> recruited mechanism -> typed evidence -> verified outcome -> calibration) plus the acquisition path when the repertoire is insufficient. Proposal: build that seam inside egregore/ without editing the router's semantics, activating nothing.",
+  "founder_intent_refs": [
+    "INTENT-20261013-GOAL-GRAVITY",
+    "INTENT-20261014-competency-compiler",
+    "INTENT-0030",
+    "SR001-FOUNDER-LOOP-ENTRY"
+  ],
+  "baseline": "main b2f2d21: capabilities/router.py (CapabilityRouter: route, compose exactly, record_outcome from independent verifiers, restore from the ledger, CapabilityDeficit) with no caller; draft PR #160 at ef369d1: Goal Gravity loop with untyped gates, verify_outcome that marks externally_verified but calibrates nothing, deficits that block but never resolve except by retention.",
+  "alternatives": [
+    {
+      "name": "Seam module egregore/competency.py mounted as loop.competency (selected)",
+      "description": "Optional constructor argument; PlanNode.problem_class routes the active gate; routing only tightens classification; typed evidence clears typed gates; verify_outcome(verdict) feeds record_outcome; refresh() replays other writers; acquisition plan/qualify/attach on a founder decision.",
+      "advantages": [
+        "Uses the router on main unchanged",
+        "Every existing goal and test is unaffected (no problem_class means unrouted)",
+        "Closes the Competency Compiler sentence clause by clause with tests",
+        "No second router, deficit plane or authority path"
+      ],
+      "disadvantages": [
+        "Coarse move-to-mechanism link (node.requires_capabilities)",
+        "Taxonomy is closed at eight problem classes",
+        "Acquisition qualifies supplied candidates; it cannot build them"
+      ],
+      "revival_evidence": "n/a (selected)"
+    },
+    {
+      "name": "Edit capabilities/router.py to call into goals directly",
+      "description": "Make the router aware of goals and gates.",
+      "advantages": [
+        "One module"
+      ],
+      "disadvantages": [
+        "Couples a pure selection library to the loop",
+        "Rewrites another session's merged semantics"
+      ],
+      "revival_evidence": "Router owner asks for it"
+    },
+    {
+      "name": "Port draft #158's greg/cognition/compiler.py or #143's cortex routing",
+      "description": "Use the earlier Competency Compiler lineages.",
+      "advantages": [
+        "Richer problem characterization and shadow routing"
+      ],
+      "disadvantages": [
+        "Stacked on unmerged drafts (200-278 commits ahead)",
+        "Would be a second router beside main's"
+      ],
+      "revival_evidence": "Founder merges #158 or #143"
+    },
+    {
+      "name": "Defer wiring until the entry gate opens (as #165 suggests)",
+      "description": "Leave the router inert.",
+      "advantages": [
+        "No interpretation risk about the entry gate"
+      ],
+      "disadvantages": [
+        "The directive's section 32.8 and the Competency Compiler sentence stay unmet in code",
+        "Nothing exercises the router against goals"
+      ],
+      "revival_evidence": "Founder rules that wiring in a draft counts as runtime composition under G1"
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "The router stays inert on main; goals clear gates on any trusted observation; mechanism choice never learns.",
+    "advantages": [
+      "No review load",
+      "No possible conflict with #165's stated sequencing"
+    ],
+    "disadvantages": [
+      "A simulation can still 'prove' demand inside the loop",
+      "Verified failures never demote a mechanism",
+      "Blocked goals cannot acquire capability and resume"
+    ]
+  },
+  "roles": [
+    {
+      "role": "founder-intent steward",
+      "position": "The Competency Compiler sentence is literal intent; the router is the canonical selection mechanism on main; wiring it into the loop with typed evidence is the faithful realization. The rhetoric stays compiled to margin: unproven mechanisms never run external moves.",
+      "material_concerns": [
+        "Reading #165's 'waits on the entry gate' as a prohibition the founder did not issue",
+        "Claiming generation of capabilities when only qualification exists"
+      ],
+      "evidence_refs": [
+        "docs/intent/INTENT-20261014-competency-compiler.json",
+        "docs/intent/sources/GOAL-GRAVITY-DIRECTIVE-2026-10-13-source.md"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "systems architect",
+      "position": "One seam module, optional; the router's semantics are untouched; every projection is now an incremental ledger fold so two loops agree; deficits share one typed contract with two origins.",
+      "material_concerns": [
+        "Coarse mechanism linkage",
+        "Two calibration stores (CausalMemory weighting vs router calibration)"
+      ],
+      "evidence_refs": [
+        "egregore/competency.py",
+        "egregore/gravity.py",
+        "contracts/capability-deficit.schema.json"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "adversarial reviewer",
+      "position": "Strongest attack: the loop now has three more ways to look capable (routing, acquisition, intake) while the evidence tier is unchanged and grants remain test-minted. Second: the router's Beta(1,1) prior locks out mechanisms after one failure. Third: qualify() runs repository tests in a subprocess, which is not isolation.",
+      "material_concerns": [
+        "Capability theater",
+        "Lock-out property of the router",
+        "Subprocess harness misread as a sandbox"
+      ],
+      "evidence_refs": [
+        "tests/unit/test_goal_gravity_competency.py",
+        "egregore/acquisition.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "operator and maintainer",
+      "position": "Stdlib plus the existing router; qualify() costs one pytest subprocess per candidate; folds are O(new records); the full suite stays under a minute.",
+      "material_concerns": [
+        "verify_chain in the ledger_integrity modality is O(n) per turn",
+        "Two kill points tested; torn tails still refuse to open"
+      ],
+      "evidence_refs": [
+        "egregore/sensorium.py",
+        "tests/integration/test_goal_gravity_process_kill.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "evidence and welfare guardian",
+      "position": "Typed evidence is a welfare gain: a forum post cannot make the founder believe demand is proven. Human-only methods can only come from founder answers. Muted domains are no longer stored. Every report and ask stays declinable at no cost.",
+      "material_concerns": [
+        "Founder identity is declared lineage (G6)",
+        "WMI scores are simulations and must never be presented as measured market friction"
+      ],
+      "evidence_refs": [
+        "egregore/experience.py",
+        "egregore/organ_signals.py",
+        "tests/unit/test_goal_gravity_controls.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "Full suite green after the increment",
+      "tier": "unit_test",
+      "reference": "python -m pytest -q: 735 passed, 4 skipped",
+      "finding": "all goal-gravity, router and kernel tests pass"
+    },
+    {
+      "claim": "Typed gates refuse inadmissible evidence",
+      "tier": "unit_test",
+      "reference": "tests/unit/test_goal_gravity_competency.py::test_only_evidence_of_an_admissible_kind_clears_a_typed_gate",
+      "finding": "a retrieval-typed belief never clears market_demand; an empirical_experiment observation does"
+    },
+    {
+      "claim": "Calibration moves only on independent verification",
+      "tier": "unit_test",
+      "reference": "tests/unit/test_goal_gravity_competency.py::test_calibration_moves_only_on_independent_verification_and_bad_mechanisms_are_demoted",
+      "finding": "executor claims and reconciliation leave trials at zero; one confirm then one refute demotes"
+    },
+    {
+      "claim": "Blocked goal acquires and resumes",
+      "tier": "unit_test",
+      "reference": "tests/unit/test_goal_gravity_acquisition.py::test_attach_on_a_founder_decision_resumes_the_original_goal",
+      "finding": "a real repository test runs in a subprocess; attach waits for a founder answer; the deficit resolves and the move executes (pytest; the child process is not an isolation boundary, so this is not sandbox execution)"
+    },
+    {
+      "claim": "Restart continuity across a real SIGKILL at two points",
+      "tier": "unit_test",
+      "reference": "tests/integration/test_goal_gravity_process_kill.py",
+      "finding": "no re-dispatch; reconcile reports unresolved until an accountable resolution (pytest; the child process is not an isolation boundary, so this is not sandbox execution)"
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "#165 says wiring waits on the entry gate",
+      "tier": "primary_source",
+      "reference": "git show b2f2d21 (commit message)",
+      "finding": "this record reads the gate as governing activation and adoption; wiring here activates nothing; the founder decides"
+    },
+    {
+      "claim": "Draft #158 already has a Layer 5 Competency Compiler",
+      "tier": "primary_source",
+      "reference": "greg/cognition/compiler.py on claude/greg-polyintelligence-mind",
+      "finding": "unmerged, stacked; preserved as substrate and credited"
+    },
+    {
+      "claim": "Router lock-out after one failure",
+      "tier": "unit_test",
+      "reference": "capabilities/router.py _rejection with Beta(1,1)",
+      "finding": "a mechanism with one success and one failure (0.5) is permanently rejected at the default floor; recorded for the router owner"
+    },
+    {
+      "claim": "The increment as first committed (81c90c7) met its own authority and evidence claims",
+      "tier": "unit_test",
+      "reference": "tests/unit/test_goal_gravity_review.py; tests/evidence/goal-gravity-20261013/review-probes-increment-3.log",
+      "finding": "Refuted. An adversarial review raised 35 findings that reproduced on 81c90c7, including two blocking: a low-trust corroborator could relabel a trusted reading's method, and a re-dispatched attempt could be reconciled from an earlier attempt's Gate events. Others: attach without a founder answer, forged outcome events replayed into calibration, one goal's founder decision clearing another goal's gate. All are fixed with regression tests. The refuting verifiers and the completeness critic did not run (usage limit), so the findings were confirmed by re-running each reproduction, not by an independent verifier."
+    },
+    {
+      "claim": "capabilities/router.py is the Competency Compiler the loop should mount",
+      "tier": "primary_source",
+      "reference": "main d64a6c9 (#170): capabilities/router.py docstring, capabilities/README.md, docs/intent/INTENT-20261014-competency-compiler.json",
+      "finding": "Contested by main. #170 labels the router a non-canonical alternative that must not be wired in as a second Competency Compiler and names the #143 seed-genome lineage as the canonical candidate. This branch keeps the mount optional and off by default; the choice of compiler is a founder decision."
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "GREG recognizes the kind of question each gate poses, recruits the smallest competent registered mechanism or composition inside the goal's envelope, accepts only evidence that kind of knowing can produce, learns mechanism reliability only from independent verification, and when nothing is competent opens a governed acquisition path that ends with the original goal resuming.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "Epistemic admissibility at the gate",
+        "amplified_value": "Proof standards become structural: the institution cannot fool itself (or Alfonso) that a simulation proved demand; this is an accepted-proof advantage that compounds as more gates are typed"
+      },
+      {
+        "id": "A2",
+        "statement": "Selection learns from verified outcomes only",
+        "amplified_value": "Mechanism reputation becomes a durable, ledgered asset; bad mechanisms are demoted automatically, good ones stop being exploratory"
+      },
+      {
+        "id": "A3",
+        "statement": "Deficits resolve into resumed goals",
+        "amplified_value": "Capability growth is pulled by real goal gaps, not accumulated for display; every attached capability starts unproven and capped at the goal's ceiling"
+      },
+      {
+        "id": "A4",
+        "statement": "Human-only gates become one compressed decision whose answer is the evidence",
+        "amplified_value": "Founder attention is spent exactly where judgment is irreplaceable, and the answer moves the goal immediately"
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "Coarse move-to-mechanism linkage via node.requires_capabilities",
+        "severity": "medium",
+        "response_type": "modularity",
+        "redesigned_response": "Recorded; per-move mechanism declaration is a later, separate contract change if routing evidence shows mis-attribution"
+      },
+      {
+        "id": "D2",
+        "statement": "Closed eight-class taxonomy on main",
+        "severity": "medium",
+        "response_type": "governance",
+        "redesigned_response": "Unrouted gates are counted in measures(); a taxonomy extension (e.g. optimization for #164) is a separate PR to the router owner"
+      },
+      {
+        "id": "D3",
+        "statement": "Acquisition qualifies but cannot build",
+        "severity": "high",
+        "response_type": "evidence",
+        "redesigned_response": "Stated in code, docs and the attach ask; suppliers (#129, #164, coding agents) plug into qualify()"
+      },
+      {
+        "id": "D4",
+        "statement": "Router lock-out property",
+        "severity": "medium",
+        "response_type": "protective",
+        "redesigned_response": "Seam uses the router's default floor; property recorded in the router's intent record for its owner"
+      },
+      {
+        "id": "D5",
+        "statement": "Subprocess harness is not isolation",
+        "severity": "medium",
+        "response_type": "evidence",
+        "redesigned_response": "Node ids restricted to this repository's tests/; sanitized environment; timeout; every record states 'not an isolation boundary'"
+      }
+    ],
+    "comparisons": {
+      "baseline": "router inert; gates untyped",
+      "do_nothing": "router stays inert",
+      "simplest_viable_alternative": "route gates but ignore evidence typing and calibration (would still let a simulation clear demand)",
+      "strongest_competing_architecture": "#158's Layer 5 compiler with shadow routing (unmerged, stacked)",
+      "reversible_experiment": "this draft increment"
+    },
+    "rejected_alternatives": [
+      {
+        "name": "Edit the router to know about goals",
+        "rejection_reason": "couples a pure library to the loop and rewrites merged semantics",
+        "revival_evidence": "router owner requests it"
+      },
+      {
+        "name": "Port #158/#143 routing",
+        "rejection_reason": "second router on unmergeable stacks",
+        "revival_evidence": "founder merges those lineages"
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Assume Pass 1 shipped. Attacks: (1) a proposer self-labels its observations with a strong method to clear gates; (2) a mechanism grades itself through a near-identical verifier name; (3) two loops diverge on calibration; (4) attach is triggered by a forged founder answer; (5) qualification runs arbitrary paths; (6) the institution's own derived signals wake goals in a loop.",
+    "new_weaknesses": [
+      {
+        "id": "W1",
+        "category": "gaming",
+        "statement": "Self-declared epistemic methods on sensor observations",
+        "strengthening_response": "Trust stays capped by the envelope; establishes is derived from the router table; human-only methods are stripped and marked untrusted outside the founder-answer path; organ adapters type WMI scores as simulation"
+      },
+      {
+        "id": "W2",
+        "category": "gaming",
+        "statement": "Self-grading by name prefix",
+        "strengthening_response": "verify_outcome checks the router's prefix rule and the loop's actor/source rule before any write; one verification per action"
+      },
+      {
+        "id": "W3",
+        "category": "fragility",
+        "statement": "Divergent projections over one ledger",
+        "strengthening_response": "every projection is an incremental fold; refresh() replays other writers' routing decisions and outcomes; tested with two loops and a file-ledger restart"
+      },
+      {
+        "id": "W4",
+        "category": "centralization",
+        "statement": "Founder answers as authority",
+        "strengthening_response": "answers are declared lineage (G6), trust attributed, never verified; attach is not a grant; envelopes capped at the goal ceiling"
+      },
+      {
+        "id": "W5",
+        "category": "reversibility",
+        "statement": "Arbitrary code execution through qualify()",
+        "strengthening_response": "node ids must match tests/ inside this repository and exist; no shell; sanitized env; timeout"
+      },
+      {
+        "id": "W6",
+        "category": "expense",
+        "statement": "Interoceptive self-excitation",
+        "strengthening_response": "derived readings emit only on change; test_readings_are_emitted_only_on_change_and_anchored_to_the_ledger"
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "accepted",
+        "rationale": "coarse but honest; per-move declaration later if evidence demands",
+        "owner": "kernel maintainers",
+        "review_trigger": "first mis-attributed calibration"
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "accepted",
+        "rationale": "taxonomy belongs to the router owner",
+        "owner": "router owner",
+        "review_trigger": "unrouted gate count above zero on a real goal"
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "accepted",
+        "rationale": "building needs a supplier lineage or a founder instruction",
+        "owner": "alfonso_lopez",
+        "review_trigger": "ruling on #129/#137/#164"
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "resolved",
+        "rationale": "seam floor chosen to avoid lock-out after a first success",
+        "owner": "kernel maintainers",
+        "review_trigger": "router change to its prior or floor"
+      },
+      {
+        "disadvantage_id": "D5",
+        "outcome": "resolved",
+        "rationale": "bounded and labelled; true isolation remains a separate facility (SR001 blocker)",
+        "owner": "kernel maintainers",
+        "review_trigger": "an isolation facility becomes available"
+      }
+    ],
+    "final_design": "egregore/competency.py seam; typed evidence in experience/gps; verdict-bearing verify_outcome feeding the router; acquisition plan/qualify/attach; incremental ledger folds in every projection; nothing activates.",
+    "residual_risks": [
+      {
+        "risk": "Capability theater: more mechanisms, same evidence tier",
+        "mitigation": "every doc and record states the tier; CMC/VEPMC unchanged",
+        "owner": "alfonso_lopez",
+        "review_trigger": "first real verified outcome"
+      },
+      {
+        "risk": "Router lock-out after early failures",
+        "mitigation": "recorded for the router owner; seam floor at default",
+        "owner": "router owner",
+        "review_trigger": "a useful mechanism rejected after one failure"
+      },
+      {
+        "risk": "Torn ledger tail stops the body",
+        "mitigation": "characterization test; repair must quarantine a copy first",
+        "owner": "kernel maintainers",
+        "review_trigger": "first torn tail in practice"
+      }
+    ],
+    "recommendation": "NEEDS_FOUNDER_DECISION"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Preserved; the wiring is a reversible experiment on a draft branch; the founder decides whether wiring in a draft counts as runtime composition under the entry gate.",
+    "entries": [
+      {
+        "role": "adversarial reviewer",
+        "position": "#165's author sequenced the router as inert until the entry gate opens; wiring it in a draft PR pre-empts that sequencing",
+        "rationale": "Respect for another session's recorded sequencing and for the entry gate's G1 adoption ruling",
+        "evidence_threshold": "Founder rules that wiring counts as runtime composition under G1",
+        "owner": "alfonso_lopez",
+        "review_trigger": "founder review of draft PR #160"
+      },
+      {
+        "role": "evidence and welfare guardian",
+        "position": "qualify() runs repository tests in a subprocess and could be mistaken for sandboxed verification",
+        "rationale": "SR001 lists the missing isolated verification facility as a blocker",
+        "evidence_threshold": "Any document or ask describing qualification as sandboxed or isolated",
+        "owner": "kernel maintainers",
+        "review_trigger": "an isolation facility becomes available"
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "constitutional",
+    "changes_authority": false,
+    "requires_authorized_human": true,
+    "approval_status": "pending",
+    "approver": null
+  },
+  "migration_plan": "Additive: new modules, optional fields (problem_class, target_by, baseline, max_mechanism_cost_usd) omitted when unset so existing goal ids are stable; additive edits to INTENT-20261014-competency-compiler; no data migration.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Revert the increment's commits on the draft branch",
+      "Goals without problem_class behave exactly as before",
+      "Router and its ledger events remain valid history"
+    ]
+  },
+  "kill_criteria": [
+    "Any path where routing loosens a classification",
+    "A mechanism's calibration changing without an independent verifier and evidence",
+    "An attach without a founder answer",
+    "qualify() executing anything outside this repository's tests/",
+    "A human-only method accepted from a sensor"
+  ],
+  "decision": "NEEDS_FOUNDER_DECISION",
+  "decision_owner": "alfonso_lopez",
+  "review_trigger": "Founder review of draft PR #160; any change to capabilities/router.py; first real independently verified outcome (prior decision DELIB-GOAL-GRAVITY-2026-10-13-001; ADR docs/decisions/ADR-GOAL-GRAVITY-002.md)"
+}

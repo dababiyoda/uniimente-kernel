@@ -1,0 +1,221 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.internal/contracts/experience-event.schema.json",
+  "title": "Experience Event",
+  "description": "A signal that has been attributed, interpreted into typed observations, related to goals, and integrated into the world model (egregore/experience.py). Raw telemetry is not an experience; this record is. It carries no authority and is not a claim of subjective experience.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "experience_id",
+    "signal_id",
+    "source",
+    "observed_at",
+    "integrated_at",
+    "observations",
+    "goal_relevance",
+    "changes",
+    "context",
+    "effects",
+    "content_hash"
+  ],
+  "properties": {
+    "experience_id": {
+      "$ref": "#/$defs/hash"
+    },
+    "signal_id": {
+      "$ref": "#/$defs/hash"
+    },
+    "source": {
+      "type": "string",
+      "minLength": 1
+    },
+    "observed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "integrated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "observations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "subject",
+          "attribute",
+          "value",
+          "confidence",
+          "source",
+          "observed_at",
+          "evidence_refs",
+          "trust_level"
+        ],
+        "properties": {
+          "subject": {
+            "type": "string",
+            "minLength": 1
+          },
+          "attribute": {
+            "type": "string",
+            "minLength": 1
+          },
+          "value": {
+            "type": [
+              "number",
+              "string",
+              "boolean",
+              "null"
+            ]
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "evidence_refs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "trust_level": {
+            "enum": [
+              "untrusted",
+              "attributed",
+              "verified"
+            ]
+          },
+          "method": {
+            "enum": [
+              "adversarial_review",
+              "deterministic_computation",
+              "empirical_experiment",
+              "expert_judgment",
+              "formal_verification",
+              "human_decision",
+              "legal_determination",
+              "retrieval",
+              "simulation",
+              "statistical_inference"
+            ],
+            "description": "Epistemic method that produced the observation (capabilities/router.py EPISTEMIC_METHODS)"
+          },
+          "establishes": {
+            "enum": [
+              "authorization",
+              "claim_with_provenance",
+              "estimate",
+              "external_fact",
+              "fact_within_model",
+              "hypothesis",
+              "legal_position",
+              "objection"
+            ],
+            "description": "Derived from the method by the router table; never self-declared"
+          },
+          "method_refused": {
+            "const": true,
+            "description": "A human-only method was claimed outside the founder-answer path; stripped and marked untrusted"
+          }
+        }
+      }
+    },
+    "goal_relevance": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "number",
+        "minimum": 0
+      }
+    },
+    "changes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "key",
+          "previous",
+          "current",
+          "updated",
+          "contradiction",
+          "disposition"
+        ],
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "previous": {},
+          "current": {},
+          "updated": {
+            "type": "boolean"
+          },
+          "contradiction": {
+            "type": "boolean"
+          },
+          "disposition": {
+            "enum": [
+              "new_belief",
+              "refreshed",
+              "corroborated",
+              "contradiction_retained",
+              "stale_ignored"
+            ]
+          }
+        }
+      }
+    },
+    "context": {
+      "type": "object"
+    },
+    "effects": {
+      "type": "object",
+      "required": [
+        "memory",
+        "prediction",
+        "attention",
+        "learning",
+        "action"
+      ],
+      "properties": {
+        "memory": {
+          "type": "boolean"
+        },
+        "prediction": {
+          "type": "boolean"
+        },
+        "attention": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/hash"
+          }
+        },
+        "learning": {
+          "type": "string"
+        },
+        "action": {
+          "type": "string"
+        }
+      },
+      "description": "Directive section 7: possible change to memory, prediction, attention, learning or action"
+    },
+    "content_hash": {
+      "$ref": "#/$defs/hash",
+      "description": "Content hash of the integrated SignalEnvelope; the same signal_id with a different content_hash is an IntegrityConflict, never an overwrite."
+    }
+  },
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+  }
+}

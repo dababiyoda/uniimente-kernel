@@ -1,0 +1,4 @@
+$ python3 scripts/ci/check_schema_refs.py
+schemas scanned: 18, local refs checked: 34
+all document-local schema references resolve
+exit 0

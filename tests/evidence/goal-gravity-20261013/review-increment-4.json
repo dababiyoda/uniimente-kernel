@@ -1,0 +1,885 @@
+{
+ "kind": "adversarial-review-record",
+ "increment": 4,
+ "pr": "dababiyoda/uniimente-kernel#160",
+ "reviewed_tree": "6ce6b3f + uncommitted fourth increment (committed as eae807d)",
+ "method": "Workflow tool: five dimension reviewers (fold-correctness, honesty-and-authority, loop-guard-regression, determinism-idempotence-restart, test-quality) over the uncommitted diff, then three refuting skeptics per finding; a finding counts as confirmed when at least two of three skeptics fail to refute it",
+ "runs": [
+  "wf_293dca41-74d",
+  "wf_ecde1cc2-860"
+ ],
+ "what_actually_ran": "run 1: five reviewers returned findings; four skeptic agents completed before the account's usage limit stopped the rest. run 2 (resumed): two reviewers returned findings; three reviewers and every skeptic failed on the same limit ('You've hit your session limit · resets 9pm (UTC)'). Only one finding (the re-surfaced deferred ask, absence.py:236) therefore has the full three-skeptic confirmation; one more (the accountable 'failed' resolution counted as a Gate refusal, absence.py:162) has one confirming skeptic. Every other finding was confirmed by reproduction: each has a regression test that fails on eae807d and passes on the fixed tree (tests/evidence/goal-gravity-20261013/review-probes-increment-4.log).",
+ "skeptic_verdicts": [
+  {
+   "agent": "af1a99c6a366648e3",
+   "workflow_run": "wf_293dca41-74d",
+   "refuted": false,
+   "confidence": 0.95,
+   "reasoning_head": "The defect is real, realistic, and introduced by this increment (egregore/absence.py is a new untracked file in the diff).\n\nCode reading: /home/user/uniimente-kernel-pr160/egregore/absence.py:217-237 builds `asks_upto` (latest ASK_RECORD per item_id via dict comprehension) and `answers_upto` (latest ANSWER_RECORD per item_id) as two independent maps, then classifies with `if answer is None: waitin"
+  },
+  {
+   "agent": "ab2e6ca939cafed64",
+   "workflow_run": "wf_293dca41-74d",
+   "refuted": false,
+   "confidence": 0.95,
+   "reasoning_head": "The claimed defect is real, introduced by this increment (egregore/absence.py is an untracked new file), and reachable through the ordinary host path the increment itself prescribes, not only via the manual `registry.wake` the offered repro used.\n\nCode reading (absence.py:216-237): `asks_upto` keeps the latest ASK_RECORD per item_id and `answers_upto` keeps the latest ANSWER_RECORD per item_id in "
+  },
+  {
+   "agent": "a54207bc8d90b97dd",
+   "workflow_run": "wf_293dca41-74d",
+   "refuted": false,
+   "confidence": 0.93,
+   "reasoning_head": "The claim is confirmed, not refuted. egregore/absence.py is new in this increment (absent at 6ce6b3f), so the defect is introduced by the diff, not pre-existing. The fold at absence.py:217-237 builds two independent dicts (latest ASK_RECORD per item_id with routed_at<=until; latest ANSWER_RECORD per item_id with answered_at<=until) and at line 236 classifies any item whose latest answer is 'defer'"
+  },
+  {
+   "agent": "aca95faa7f2ef1d60",
+   "workflow_run": "wf_293dca41-74d",
+   "refuted": false,
+   "confidence": 0.92,
+   "reasoning_head": "The claim stands; I could not refute it.\n\nCode path (egregore/absence.py, new untracked file in this increment, lines ~162-167): the intervention fold has `elif p[\"evidence_state\"] == \"failed\": refused.append({... \"gate_state\": detail.get(\"state\"), \"reasons\": list(detail.get(\"reasons\", ())), \"how\": detail.get(\"reconciled_from\", \"gate_run_in_turn\")})`. It keys solely on evidence_state == \"failed\" a"
+  }
+ ],
+ "finding_count_raw": 49,
+ "finding_count_deduplicated": 49,
+ "findings": [
+  {
+   "file": "egregore/absence.py",
+   "line": 236,
+   "severity": "high",
+   "title": "Re-surfaced deferred ask is reported as deferred, not waiting; decisions_waiting_as_of_until undercounts",
+   "dimension": null,
+   "reviewer_agent": "af0fee6a6c97bf377",
+   "workflow_run": "wf_293dca41-74d",
+   "claim": "The fold classifies each ask by looking up the latest ASK_RECORD and the latest ANSWER_RECORD per item_id in two separate dicts (lines 217-237) and treats any latest answer with decision == 'defer' as 'deferred', regardless of whether a later ASK_RECORD re-routed the item after resurface_after passed. FounderAttentionRouter.sync() (attention.py:161-162) re-opens a deferred item on a later ASK_RECORD, and WakeSchedule.entries() (schedule.py:56-63) folds asks and answers in ledger order and so handles this correctly, but AbsenceReporter does not. Scenario: ask routed at T1, founder defers at T1 (resurface_after = T1+7d = 2026-10-20T13:00Z), goal wakes and the ask re-routes at 2026-10-20T13:00Z (new ASK_RECORD). return_report(since=T0, until=2026-10-21T13:30Z) puts the item in deferred_as_of_until (with a resurface_after already in the past) and omits it from decisions_waiting_as_of_until; headline says '1 decision(s) exceed delegated authority and wait for you' while the router has 2 open decision asks. per_goal.decisions_waiting inherits the undercount. The founder's return brief therefore hides a live decision.",
+   "reproduction_offered": "cd /home/user/uniimente-kernel-pr160 && PYTHONPATH=/home/user/uniimente-kernel-pr160 python3 -m pytest -q -p no:cacheprovider --rootdir=/home/user/uniimente-kernel-pr160 -s /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-fold-correctness/test_repro.py -k h1\nOutput:\nH1 resurface_after: 2026-10-20T13:00:00Z until: 2026-10-21T13:30:00Z\nH1 router open decision asks: ['sha256:878899bb...', 'sha256:bd146aef...']\nH1 fold decisions_waiting_as_of_until ids: ['sha256:bd146aef...']\nH1 fold deferred_as_of_until ids: ['sha256:878899bb...']\nH1 headline: [..., '1 decision(s) exceed delegated authority and wait for you; ...']\nH1 schedule deferred entries: []   (WakeSchedule correctly sees it as no longer deferred)\n1 passed",
+   "suggested_fix": "Fold ASK_RECORD and ANSWER_RECORD in ledger order per item_id (as WakeSchedule.entries does), or only treat an answer as closing/deferring the ask when parse_time(answer['answered_at']) >= parse_time(ask['routed_at']) of the latest ask with routed_at <= until; otherwise the item is open again and belongs in waiting (or informed for information kinds). Add a unit test mirroring test_a_deferred_ask_is_scheduled_to_resurface that asserts the re-surfaced item appears in decisions_waiting_as_of_until and not in deferred_as_of_until.",
+   "disposition": {
+    "status": "fixed",
+    "fix": "asks and answers are folded in ledger order per item (as WakeSchedule does); an item whose latest record is an ask is open again",
+    "regression_test": "tests/unit/test_goal_gravity_absence.py::test_a_resurfaced_deferred_ask_is_waiting_again_not_deferred"
+   }
+  },
+  {
+   "file": "egregore/absence.py",
+   "line": 162,
+   "severity": "medium",
+   "title": "Accountable human resolution to 'failed' is counted as refused_by_gate",
+   "dimension": null,
+   "reviewer_agent": "af0fee6a6c97bf377",
+   "workflow_run": "wf_293dca41-74d",
+   "claim": "Every INTERVENTION_RECORD with evidence_state == 'failed' in the window is placed in refused_by_gate, including records written by reconcile() under the accountable_resolution branch (gravity.py:1050-1060), where no Gate decision exists: detail carries reconciled_by/evidence_refs/note and no state or reasons. The entry then has gate_state None and reasons [], per_goal.refused_by_gate increments, and the headline says 'N refused by the Gate or policy at commit'. Scenario: executor raises on dispatch (evidence_state unknown), founder calls reconcile(resolutions={route: {'state': 'failed', 'reconciled_by': 'alfonso_lopez', ...}}) at T3 because the carrier confirms nothing was sent. return_report(since=T1, until=T3) reports '1 refused by the Gate or policy at commit' while the Gate's own action records contain zero refused/denied states. The module docstring promises never to count a classifier decision as a Gate refusal; a human resolution of an unknown attempt is likewise not a Gate refusal.",
+   "reproduction_offered": "cd /home/user/uniimente-kernel-pr160 && PYTHONPATH=/home/user/uniimente-kernel-pr160 python3 -m pytest -q -p no:cacheprovider --rootdir=/home/user/uniimente-kernel-pr160 -s /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-fold-correctness/test_repro.py -k h2\nOutput:\n=== H2 refused_by_gate (window T1..T3) === [{\"gate_state\": null, \"how\": \"accountable_resolution\", \"intervention_id\": \"contact-engineers\", \"reasons\": [], ...}]\nH2 headline: [..., '0 move(s) executed ...; 0 prepared ...; 1 refused by the Gate or policy at commit.', ...]\nH2 per_goal refused_by_gate: 1\nH2 Gate action records in refused/denied state: 0\n1 passed",
+   "suggested_fix": "Only treat a 'failed' record as refused_by_gate when detail.get('reconciled_from') != 'accountable_resolution' (i.e. how is gate_run_in_turn or gate_ledger_events, and detail carries a Gate state). Report accountable-resolution failures in a separate bucket (e.g. closed_as_failed_by_resolution with reconciled_by and evidence_refs) or leave them to the existing reconciliations list, and exclude them from the 'refused by the Gate or policy at commit' headline count and per_goal.refused_by_gate.",
+   "disposition": {
+    "status": "fixed",
+    "fix": "refused_by_gate admits only Gate-sourced failed records (gate_run_in_turn, gate_ledger_events)",
+    "regression_test": "tests/unit/test_goal_gravity_absence.py::test_an_accountable_human_resolution_is_neither_a_gate_execution_nor_a_gate_refusal"
+   }
+  },
+  {
+   "file": "egregore/absence.py",
+   "line": 184,
+   "severity": "medium",
+   "title": "prepared is re-counted on every grantless wake of the same move; money and headline inflate",
+   "dimension": null,
+   "reviewer_agent": "af0fee6a6c97bf377",
+   "workflow_run": "wf_293dca41-74d",
+   "claim": "The prepared list is every PREPARED_RECORD with prepared_at in the window, with no dedupe. gravity.py:939-945 appends a new PREPARED_RECORD each time a route classifies PREPARE_FOR_FOUNDER/ESCALATE, and a 'planned' route is not protected by the prior-attempt guard, so each wake re-prepares the same move (classification_id differs per turn because it digests classified_at). executed is deduped by (goal, route, attempt) at line 146, prepared is not. Scenario: brief executed and outreach ($0.50) prepared at T1; the goal is woken at T2 and T3 without a grant. return_report(since=T0, until=T3) lists contact-engineers three times, money.estimated_cost_usd_prepared_not_spent = 1.5 for one $0.50 move, headline says '3 prepared for you and not executed', per_goal.prepared = 3, while the attention router shows a single ask for that route. The founder reads three times the prepared work and three times the unspent estimate that actually exists.",
+   "reproduction_offered": "cd /home/user/uniimente-kernel-pr160 && PYTHONPATH=/home/user/uniimente-kernel-pr160 python3 -m pytest -q -p no:cacheprovider --rootdir=/home/user/uniimente-kernel-pr160 -s /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-fold-correctness/test_repro.py -k h3\nOutput:\nH3 prepared entries: [('contact-engineers', '2026-10-13T13:00:00Z'), ('contact-engineers', '2026-10-14T13:00:00Z'), ('contact-engineers', '2026-10-15T13:00:00Z')]\nH3 money: {... 'estimated_cost_usd_prepared_not_spent': 1.5 ...}\nH3 headline: [..., '1 move(s) executed ...; 3 prepared for you and not executed; 0 refused ...', ...]\nH3 per_goal prepared: 3 executed: 1\nH3 distinct (goal, intervention) prepared: 1 records: 3\n1 passed",
+   "suggested_fix": "Dedupe prepared by (goal_id, intervention.route_hash) keeping the earliest (or latest) record in the window and a times_prepared count, so headline counts, money.estimated_cost_usd_prepared_not_spent and per_goal.prepared describe distinct prepared moves; alternatively count only prepared moves whose latest intervention state as of until is still 'planned'. Add a test that wakes a goal twice without a grant and asserts one prepared entry and one estimate.",
+   "disposition": {
+    "status": "fixed",
+    "fix": "prepared is deduplicated by (goal, route) with first/last_prepared_at and times_prepared; the estimate is summed once per route; preparation_records_in_window keeps the raw count",
+    "regression_test": "tests/unit/test_goal_gravity_absence.py::test_a_move_prepared_on_every_wake_is_one_prepared_move_with_a_count"
+   }
+  },
+  {
+   "file": "egregore/absence.py",
+   "line": 440,
+   "severity": "low",
+   "title": "Headline opens 'Nothing happened in this window' when founder answers, reconciliations, verifications or refusals fall in a turn-less window",
+   "dimension": null,
+   "reviewer_agent": "af0fee6a6c97bf377",
+   "workflow_run": "wf_293dca41-74d",
+   "claim": "_headline emits 'Nothing happened in this window: ... nothing waits for you.' whenever turns.count == 0 and executed, prepared and decisions_waiting_as_of_until are empty, ignoring reconciliations, verifications, refused_by_gate, discrepancies, answers and preferences in the same window. The same report then appends 'You acted 1 answer(s), 1 preference(s), ...' and lists a confirmed verification, producing a self-contradictory brief. The 'You acted' line also omits accountable_resolutions and discrepancy_reviews, and founder_activity.actors omits reconciled_by, so a window containing only an accountable resolution reads 'You acted 0 answer(s), 0 preference(s), 0 authorization(s)' with actors [] while away is False. Scenario: brief executed at T1; founder refuses the outreach ask and an independent verifier confirms the brief at T2; return_report(since=T1+1s, until=T2).",
+   "reproduction_offered": "cd /home/user/uniimente-kernel-pr160 && PYTHONPATH=/home/user/uniimente-kernel-pr160 python3 -m pytest -q -p no:cacheprovider --rootdir=/home/user/uniimente-kernel-pr160 -s /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-fold-correctness/test_repro.py -k \"h4 or h2\"\nOutput (h4):\nH4 headline: [\"Nothing happened in this window: no turn ran, nothing executed, nothing was prepared, nothing waits for you.\", \"You acted 1 answer(s), 1 preference(s), 0 authorization(s) in this window.\", ...]\nH4 verifications: [{'verdict': 'confirmed', 'verifier': 'auditor:independent', ...}]\nOutput (h2 narrow window T2..T3): H2 narrow headline[0]: Nothing happened in this window: ... | refused_by_gate: 1 | accountable_resolutions: 1 | actors: []\n2 passed",
+   "suggested_fix": "Gate the 'Nothing happened' sentence on all window-scoped sections being empty (turns, executed, prepared, refused_by_gate, reconciliations, verifications, discrepancies.recorded_in_window, answers/preferences/authorizations, information_items_in_window) and otherwise emit the normal activity lines; include accountable_resolutions and discrepancy_reviews in the 'You acted' sentence and add reconciled_by to founder_activity.actors.",
+   "disposition": {
+    "status": "fixed",
+    "fix": "'Nothing happened' is emitted only when every window-scoped section is empty and the founder and accountable parties were silent",
+    "regression_test": "tests/unit/test_goal_gravity_absence.py::test_a_window_holding_only_a_founder_refusal_never_reads_nothing_happened"
+   }
+  },
+  {
+   "file": "egregore/absence.py",
+   "line": 117,
+   "severity": "low",
+   "title": "turns.classifier_decisions counts prior-attempt guard entries that ran no classifier",
+   "dimension": null,
+   "reviewer_agent": "af0fee6a6c97bf377",
+   "workflow_run": "wf_293dca41-74d",
+   "claim": "decisions_by_kind counts every entry in turn.processed[].decisions as a classifier decision. The new guard in gravity.py:832-848 appends, for any route already attempted or done, an entry whose decision is copied from the prior record (always EXECUTE_AUTONOMOUSLY, since only that path produces open/done states) with reasons stating 'no re-classification'. Each later wake of a goal with an executed route therefore adds one phantom EXECUTE_AUTONOMOUSLY to turns.classifier_decisions. Scenario: brief executed at T1, goal woken at T2 without a grant; return_report(since=T0, until=T2) reports classifier_decisions.EXECUTE_AUTONOMOUSLY == 2 while the ledger holds exactly one CLASSIFICATION_RECORD with that decision for the goal.",
+   "reproduction_offered": "cd /home/user/uniimente-kernel-pr160 && PYTHONPATH=/home/user/uniimente-kernel-pr160 python3 -m pytest -q -p no:cacheprovider --rootdir=/home/user/uniimente-kernel-pr160 -s /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-fold-correctness/test_repro.py -k h5\nOutput:\nH5 guard decision entry: {'intervention_id': 'compile-brief', 'decision': 'EXECUTE_AUTONOMOUSLY', 'reasons': ['route already attempted; no re-classification, ...'], 'evidence_state': 'executed', 'disposition': 'already executed; not re-proposed', ...}\nH5 fold turns.classifier_decisions: {'EXECUTE_AUTONOMOUSLY': 2, 'PREPARE_FOR_FOUNDER': 2}\nH5 actual CLASSIFICATION_RECORD decisions: {'EXECUTE_AUTONOMOUSLY': 1, 'PREPARE_FOR_FOUNDER': 2}\n1 passed",
+   "suggested_fix": "Skip decision entries whose note is 'already attempted; no duplicate consequential action' (or whose selected_by_deliberation is None and disposition starts with 'already'/'reconciliation required') when building decisions_by_kind, or count classifier decisions from InterventionClassifier.CLASSIFICATION_RECORD records with classified_at in the window; optionally report the guard skips as a separate routes_held_by_prior_attempt count.",
+   "disposition": {
+    "status": "fixed",
+    "fix": "guard pass-through entries are counted as turns.guard_passthroughs, not as classifier decisions",
+    "regression_test": "tests/unit/test_goal_gravity_absence.py::test_an_open_attempt_is_never_hidden_by_a_later_grantless_wake_and_never_redispatched"
+   }
+  },
+  {
+   "file": "egregore/absence.py",
+   "line": 447,
+   "severity": "high",
+   "title": "Headline counts receipt-less accountable-resolution 'executed' moves as 'executed through the Consequence Gate with receipts'",
+   "dimension": null,
+   "reviewer_agent": "ac614838a621e630a",
+   "workflow_run": "wf_293dca41-74d",
+   "claim": "The `executed` fold (line 147) admits any INTERVENTION_RECORD in DONE_STATES, including those written by `reconcile(resolutions={route: {\"state\": \"executed\", ...}})`, which carry `how=\"accountable_resolution\"`, `receipt_hash=None`, `action_id=None` and no Gate `recorded` action. The headline then reads \"1 move(s) executed through the Consequence Gate with receipts\" while `evidence_tier.executed_moves_with_receipts` is 0 and the ledger holds zero `receipt` records. Inputs: ext goal with an external_contact outreach move; executor raises at T1 (state `unknown`); founder resolves it as `executed` with evidence_refs=[\"carrier:ticket-77\"] at T2; `return_report(since=T0, until=T2)`. Wrong output: headline asserts a Gate receipt that does not exist; this is the exact overstatement class the module docstring says it prevents.",
+   "reproduction_offered": "cd /home/user/uniimente-kernel-pr160 && python3 /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-honesty/repro.py  (scenario_A_B, part A). Output: executed entries: [('contact-engineers', 'accountable_resolution', None, None)] | evidence_tier.executed_moves_with_receipts: 0 | HEADLINE: ['1 move(s) executed through the Consequence Gate with receipts; 0 prepared for you and not executed; 0 refused by the Gate or policy at commit.'] | gate_dispatch records: 1 | receipt records: 0",
+   "suggested_fix": "Split `executed` into Gate-recorded moves (receipt_hash present, how=gate_run_in_turn|gate_ledger_events) and accountably-resolved moves (how=accountable_resolution, no receipt), and make the headline sentence count only the former under 'with receipts', adding a separate clause such as 'N closed as executed by an accountable resolution (no Gate receipt)'. Alternatively compute the headline count from `evidence_tier.executed_moves_with_receipts`.",
+   "disposition": {
+    "status": "fixed",
+    "fix": "records with reconciled_from=accountable_resolution are listed under closed_by_accountable_resolution (never executed/refused); the headline counts receipts explicitly",
+    "regression_test": "tests/unit/test_goal_gravity_absence.py::test_an_accountable_human_resolution_is_neither_a_gate_execution_nor_a_gate_refusal"
+   }
+  },
+  {
+   "file": "egregore/absence.py",
+   "line": 236,
+   "severity": "high",
+   "title": "A deferred ask that has re-surfaced is reported as deferred, hiding a live decision from `decisions_waiting_as_of_until`",
+   "dimension": null,
+   "reviewer_agent": "ac614838a621e630a",
+   "workflow_run": "wf_293dca41-74d",
+   "claim": "`asks_upto` keeps the latest ASK_RECORD per item_id and `answers_upto` the latest ANSWER_RECORD, but the branch at lines 234-237 never compares their times: any item whose latest answer is `defer` goes to `deferred`, even when a later ASK_RECORD re-routed it after `resurface_after` and `FounderAttentionRouter.open_asks()` lists it as open. Inputs: executed_brief at T1 opens the outreach decision; founder defers at T2 (resurface 2026-10-21T13:00Z); goal re-wakes and the turn at 2026-10-21T13:00Z re-routes the same item_id; `return_report(since=T0, until=2026-10-21T14:00Z)`. Wrong output: `decisions_waiting_as_of_until` lacks the item, `per_goal.decisions_waiting` is 0, no 'decision(s) exceed delegated authority and wait for you' headline sentence is emitted, while `attention.open_asks()` reports it open. The founder's return brief undercounts the one thing it exists to surface.",
+   "reproduction_offered": "cd /home/user/uniimente-kernel-pr160 && python3 /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-honesty/repro.py  (scenario_C). Output: resurface_after: 2026-10-21T13:00:00Z | re-routed in turn at 2026-10-21T13:00: True | attention.open_asks() has it as open: True | in decisions_waiting_as_of_until: False | in deferred_as_of_until: True | HEADLINE: (no decisions-waiting sentence emitted) | per_goal decisions_waiting: {'sha256:c94da': 0}",
+   "suggested_fix": "Treat an item as deferred only when its latest answer is `defer` AND `answered_at` is later than the latest ask's `routed_at` (i.e. mirror FounderAttentionRouter.sync's rule: a re-routed ask after a defer is open). Add a unit test: defer, re-surface via turn, then assert the item is in `decisions_waiting_as_of_until` and not in `deferred_as_of_until`.",
+   "disposition": {
+    "status": "fixed",
+    "fix": "asks and answers are folded in ledger order per item (as WakeSchedule does); an item whose latest record is an ask is open again",
+    "regression_test": "tests/unit/test_goal_gravity_absence.py::test_a_resurfaced_deferred_ask_is_waiting_again_not_deferred"
+   }
+  },
+  {
+   "file": "egregore/schedule.py",
+   "line": 63,
+   "severity": "medium",
+   "title": "Wake schedule keeps scheduling deferred asks whose goal is paused, revoked, superseded or completed; next_due_at collapses to 'now' forever",
+   "dimension": null,
+   "reviewer_agent": "ac614838a621e630a",
+   "workflow_run": "wf_293dca41-74d",
+   "claim": "The cadence branch filters by goal status (line 48) but the deferred-ask branch (lines 62-71) only reads `status` for display and never filters on it. A deferred ask on a goal later paused (`stop_pushing`) or revoked (same code path for superseded/completed) remains an entry; once `resurface_after` passes it is overdue on every call, so `next_due_at == as_of` and `suggested_trigger_id = cadence:<now>` are returned forever. A host obeying the schedule calls `turn()` which wakes nothing (paused/revoked goals cannot wake), and the next `wake_schedule` says the same thing again: the schedule misreports due work and drives a busy loop. Inputs: robotics goal; turn at T1 opens an ask; founder defers at T1; `record_preference(stop_pushing=True)` or `revoke()` at T2; `wake_schedule(now=2026-10-25T00:00Z)`.",
+   "reproduction_offered": "cd /home/user/uniimente-kernel-pr160 && python3 /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-honesty/repro2.py  (scenario_D_fixed). Output: -- pause: status=paused | entries: [('deferred_ask', 'paused', '2026-10-20T13:00:00Z', True)] | next_due_at == as_of: True | trigger: cadence:2026-10-25T00:00:00Z | host turn woke: () | a minute later overdue: [{'kind': 'deferred_ask', ...}] | next_due_at == as_of: True  -- revoke: status=revoked | entries: [('deferred_ask', 'revoked', ...True)] | next_due_at == as_of: True | host turn woke: () | a minute later ... next_due_at == as_of: True",
+   "suggested_fix": "In the deferred-ask branch, skip entries whose goal status is not in SLEEPING or has `stop_pushing` (the same predicate as line 48), or whose goal is unknown; optionally list them under a separate `stale_deferred` key so nothing is lost. Add the paused/revoked/superseded/completed cases to test_paused_revoked_completed_and_awake_goals_are_not_scheduled.",
+   "disposition": {
+    "status": "fixed",
+    "fix": "deferred asks are scheduled only for goals that can wake; the rest are listed under stale_deferred, never overdue",
+    "regression_test": "tests/unit/test_goal_gravity_schedule.py::test_a_deferred_ask_on_a_goal_that_cannot_wake_is_stale_not_due"
+   }
+  },
+  {
+   "file": "egregore/absence.py",
+   "line": 162,
+   "severity": "medium",
+   "title": "Accountable 'failed' resolutions are listed under `refused_by_gate` and headlined as 'refused by the Gate or policy at commit'",
+   "dimension": null,
+   "reviewer_agent": "ac614838a621e630a",
+   "workflow_run": "wf_293dca41-74d",
+   "claim": "Every INTERVENTION_RECORD with evidence_state `failed` is appended to `refused`, including those `reconcile()` writes from an accountable resolution (`reconciled_from=\"accountable_resolution\"`, `gate_state=None`, `reasons=[]`) when the executor raised and a human later confirmed nothing was sent. Nothing was refused by the Gate or by policy; the Gate returned `reconciliation_required`. Inputs: ext goal, executor raises at T1, founder resolves `failed` at T2 with note 'nothing sent'; `return_report(since=T0, until=T2)`. Wrong output: `refused_by_gate` has the entry, `per_goal.refused_by_gate == 1`, headline says '1 refused by the Gate or policy at commit'. This also mislabels the integration scenario's own NEXT_DAY resolution.",
+   "reproduction_offered": "cd /home/user/uniimente-kernel-pr160 && python3 /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-honesty/repro.py (scenario_A_B part B) and repro2.py (scenario_B_full). Output: refused_by_gate: [('contact-engineers', 'accountable_resolution', None, [])] | per_goal refused_by_gate: {'sha256:b776d': 1} | wide window [T0,T2]: ['0 move(s) executed ...; 1 refused by the Gate or policy at commit.']",
+   "suggested_fix": "Include in `refused` only records whose `detail.reconciled_from` is absent/`gate_run_in_turn` or `gate_ledger_events` with a Gate terminal state in `detail.state`; report accountable `failed` resolutions under `reconciliations` (already present) or a new `closed_failed_by_resolution` list, and word the headline accordingly.",
+   "disposition": {
+    "status": "fixed",
+    "fix": "refused_by_gate admits only Gate-sourced failed records (gate_run_in_turn, gate_ledger_events)",
+    "regression_test": "tests/unit/test_goal_gravity_absence.py::test_an_accountable_human_resolution_is_neither_a_gate_execution_nor_a_gate_refusal"
+   }
+  },
+  {
+   "file": "egregore/absence.py",
+   "line": 441,
+   "severity": "medium",
+   "title": "'Nothing happened in this window ... nothing waits for you' is emitted for windows that contain founder answers, reconciliations or refusals",
+   "dimension": null,
+   "reviewer_agent": "ac614838a621e630a",
+   "workflow_run": "wf_293dca41-74d",
+   "claim": "The first headline branch keys only on turns, executed, prepared and decisions_waiting. A window in which the founder refused an ask, or resolved an unknown attempt, has no turn, so the headline opens with 'Nothing happened in this window: no turn ran, nothing executed, nothing was prepared, nothing waits for you.' and then, two lines later, 'You acted 1 answer(s), 1 preference(s), 0 authorization(s) in this window.' The two sentences contradict each other and the first is false (reconciliations=1 / answers=1 / refused_by_gate=1 in the same report body). Inputs: executed_brief at T1; `founder_answer(decision=\"refuse\")` at T2; `return_report(since=T2, until=T2)`; or the resolution scenario in the previous finding over [T2,T2].",
+   "reproduction_offered": "cd /home/user/uniimente-kernel-pr160 && python3 /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-honesty/repro2.py (scenario_B_full narrow window, scenario_answer_only_window). Output: founder_activity.answers: 1 | preferences_or_refusals: 1 | HEADLINE: Nothing happened in this window: no turn ran, nothing executed, nothing was prepared, nothing waits for you. | HEADLINE: You acted 1 answer(s), 1 preference(s), 0 authorization(s) in this window.  (and for the resolution window: reconciliations: 1 | refused_by_gate: 1 | accountable_resolutions: 1 | away: False | HEADLINE: Nothing happened in this window ...)",
+   "suggested_fix": "Gate the 'Nothing happened' sentence on the whole body being empty (also refused_by_gate, reconciliations, verifications, discrepancies.recorded_in_window, information_items_in_window, retained.retentions and founder_activity.away), or replace it with 'No turn ran in this window' and let the remaining sentences carry the facts.",
+   "disposition": {
+    "status": "fixed",
+    "fix": "'Nothing happened' is emitted only when every window-scoped section is empty and the founder and accountable parties were silent",
+    "regression_test": "tests/unit/test_goal_gravity_absence.py::test_a_window_holding_only_a_founder_refusal_never_reads_nothing_happened"
+   }
+  },
+  {
+   "file": "egregore/absence.py",
+   "line": 191,
+   "severity": "medium",
+   "title": "The same waiting move is counted as 'prepared' once per wake; prepared-not-spent money multiplies by the number of wakes",
+   "dimension": null,
+   "reviewer_agent": "ac614838a621e630a",
+   "workflow_run": "wf_293dca41-74d",
+   "claim": "`turn()` writes a PREPARED_RECORD every time a woken goal re-classifies a still-waiting move as PREPARE_FOR_FOUNDER (the ask itself is deduplicated by the attention router, the prepared record is not). The report folds every PREPARED_RECORD in the window, so one 0.5 USD outreach move prepared at T1 and re-prepared on cadence/signal wakes at T2 and T3 yields `prepared` with three entries, `per_goal.prepared == 3`, `money.estimated_cost_usd_prepared_not_spent == 1.5` and the headline '3 prepared for you and not executed', while only one move and one or two decisions exist. The guard added in this increment (gravity.py:832) prevents re-dispatch of executed/open routes but does nothing for the prepared side, so the inflation grows with every wake during a long absence.",
+   "reproduction_offered": "cd /home/user/uniimente-kernel-pr160 && python3 /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-honesty/repro.py (scenario_E). Output: prepared entries: [('contact-engineers', '2026-10-13T13:00:00Z', 0.5), ('contact-engineers', '2026-10-14T13:00:00Z', 0.5), ('contact-engineers', '2026-10-15T13:00:00Z', 0.5)] | money.estimated_cost_usd_prepared_not_spent: 1.5 | decisions_waiting_as_of_until: 2 | per_goal prepared: {'sha256:c94da': 3} | HEADLINE: ['1 move(s) executed ...; 3 prepared for you and not executed; ...'] | turns.classifier_decisions: {'EXECUTE_AUTONOMOUSLY': 3, 'PREPARE_FOR_FOUNDER': 3}",
+   "suggested_fix": "Deduplicate `prepared` by (goal_id, route_hash) keeping the earliest `prepared_at` in the window and a `times_re_prepared` count, and sum money over distinct routes. Add a test that wakes a goal three times with the same waiting move and asserts one prepared entry and 0.5 prepared-not-spent.",
+   "disposition": {
+    "status": "fixed",
+    "fix": "prepared is deduplicated by (goal, route) with first/last_prepared_at and times_prepared; the estimate is summed once per route; preparation_records_in_window keeps the raw count",
+    "regression_test": "tests/unit/test_goal_gravity_absence.py::test_a_move_prepared_on_every_wake_is_one_prepared_move_with_a_count"
+   }
+  },
+  {
+   "file": "egregore/absence.py",
+   "line": 383,
+   "severity": "medium",
+   "title": "goals.total / per_goal / headline use the registry as of now, so a closed window reports goals that did not exist in it and re-records itself",
+   "dimension": null,
+   "reviewer_agent": "ac614838a621e630a",
+   "workflow_run": "wf_293dca41-74d",
+   "claim": "`per_goal` iterates `registry.goals()` (line 359) with no `authorized_at <= until` filter, and `goals.total = len(per_goal)`. The headline 'N of M authorized goal(s) were active' therefore counts goals authorized after `until`: a window [T0,T1] containing one goal reads '1 of 1' before two later authorizations at T3 and '1 of 3' afterwards. Because `report_id` includes the content hash, the same closed window produces a different report_id after unrelated later records and `report(record=True)` appends a second REPORT_RECORD for the same window, contradicting the module docstring ('recording it twice appends nothing' / 'one reporter across a restart produce[s] the same report dictionary') and the 'status_now' labelling discipline used elsewhere in the body.",
+   "reproduction_offered": "cd /home/user/uniimente-kernel-pr160 && python3 /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-honesty/repro.py (scenario_F) and repro2.py (scenario_record_twice). Output: same window, before later authorizations -> headline[0]: 1 of 1 authorized goal(s) were active ... | after -> 1 of 3 authorized goal(s) were active ... | goals.total before/after: 1 3 | report_id stable across time for the same window: False | per_goal includes goals authorized after until: [('sha256:75c99', False), ('sha256:d60a9', True), ('sha256:e1941', False)] ; F2: first.recorded: True | second.recorded: True | ids equal: False | REPORT_RECORDs for the same window: 2 | differing keys: ['goals', 'headline']",
+   "suggested_fix": "Restrict `per_goal` to goals whose AUTHORIZED_RECORD `authorized_at <= until`, rename `total` to `authorized_as_of_until`, and either drop `status_now`/`priority`/`by_status_now` from the content hash or move them into a clearly separate `now` block excluded from `content_hash` so a closed window is stable and recorded once.",
+   "disposition": {
+    "status": "fixed",
+    "fix": "the hashed body is a function of records dated <= until: goals folded from authorization/transition/preference records as of until (authorized_as_of_until, status_as_of_until, ...); all-time and now fields moved to an unhashed, unrecorded as_of_now envelope",
+    "regression_test": "tests/unit/test_goal_gravity_absence.py::test_a_closed_window_is_the_same_report_however_the_ledger_grows"
+   }
+  },
+  {
+   "file": "egregore/absence.py",
+   "line": 261,
+   "severity": "medium",
+   "title": "A non-founder discrepancy review flips founder_activity.away and produces 'You acted 0 answer(s), 0 preference(s), 0 authorization(s)'",
+   "dimension": null,
+   "reviewer_agent": "ac614838a621e630a",
+   "workflow_run": "wf_293dca41-74d",
+   "claim": "`review_discrepancy` accepts any reviewer other than the acting agent (an external auditor, another organ), yet `founder_activity.discrepancy_reviews` counts every review and `away` is computed over all integer counts, so one review by `auditor:external` makes `away=False`, sets `note` to 'the founder acted in this window; counts above', lists the auditor under `actors`, and the headline reads 'You acted 0 answer(s), 0 preference(s), 0 authorization(s) in this window.' The founder did nothing in the window; the report attributes a third party's action to the founder and drops the honest 'You answered nothing' sentence.",
+   "reproduction_offered": "cd /home/user/uniimente-kernel-pr160 && python3 /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-honesty/repro.py (scenario_G). Output: founder_activity: {'answers': 0, 'preferences_or_refusals': 0, 'goals_authorized': 0, 'discrepancy_reviews': 1, 'accountable_resolutions': 0, 'actors': ['auditor:external'], 'away': False} | note: the founder acted in this window; counts above | HEADLINE founder line: ['You acted 0 answer(s), 0 preference(s), 0 authorization(s) in this window.']",
+   "suggested_fix": "Move `discrepancy_reviews` and `accountable_resolutions` into a separate `accountable_parties` block (with their actors) and compute `away` from answers, preferences_or_refusals and goals_authorized only; have the headline print 'You answered nothing; 1 discrepancy review by auditor:external' when third parties acted.",
+   "disposition": {
+    "status": "fixed",
+    "fix": "founder_activity counts only founder paths (answers, preferences/refusals, authorizations, revocations/supersessions); reviews and resolutions live in accountable_parties with their actors and their own headline sentence",
+    "regression_test": "tests/unit/test_goal_gravity_absence.py::test_a_negative_outcome_is_a_discrepancy_and_an_auditor_review_is_not_founder_activity"
+   }
+  },
+  {
+   "file": "docs/intent/sources/GOAL-GRAVITY-DIRECTIVE-2026-10-13-source.md",
+   "line": 1472,
+   "severity": "medium",
+   "title": "Modified directive source document cites three artifacts that do not exist in the tree",
+   "dimension": null,
+   "reviewer_agent": "ac614838a621e630a",
+   "workflow_run": "wf_293dca41-74d",
+   "claim": "The new 'Third issuance' section states the five essays are 'reproduced verbatim in docs/intent/sources/EGREGORE-SYNTHESIS-MATERIALS-2026-10-14-source.md' (line 1472), that extracted intent candidates 'are recorded in docs/intent/INTENT-20261014-egregore-synthesis-materials.json' (line 1480), and that the fourth increment is 'docs/decisions/ADR-GOAL-GRAVITY-003.md' (line 1485). None of the three files exists in the worktree (tracked or untracked). The lineage document, which is itself the evidence record for founder intent, asserts preservation and decision records that are not present, which is exactly the 'claim without artifact' the evidence standard forbids.",
+   "reproduction_offered": "cd /home/user/uniimente-kernel-pr160 && for f in docs/intent/sources/EGREGORE-SYNTHESIS-MATERIALS-2026-10-14-source.md docs/intent/INTENT-20261014-egregore-synthesis-materials.json docs/decisions/ADR-GOAL-GRAVITY-003.md; do [ -e \"$f\" ] && echo EXISTS $f || echo MISSING $f; done ; git -C /home/user/uniimente-kernel-pr160 status --porcelain. Output: MISSING docs/intent/sources/EGREGORE-SYNTHESIS-MATERIALS-2026-10-14-source.md | MISSING docs/intent/INTENT-20261014-egregore-synthesis-materials.json | MISSING docs/decisions/ADR-GOAL-GRAVITY-003.md ; status lists no such untracked files.",
+   "suggested_fix": "Either add the three files in this increment, or reword the section to say they are planned/pending and name the task that produces them; do not commit a lineage record that references artifacts absent from the same tree.",
+   "disposition": {
+    "status": "fixed_in_commit_eae807d",
+    "fix": "the three artifacts named by the lineage note were committed with the implementation (docs/intent/sources/EGREGORE-SYNTHESIS-MATERIALS-2026-10-14-source.md, docs/intent/INTENT-20261014-egregore-synthesis-materials.json, docs/decisions/ADR-GOAL-GRAVITY-003.md); the review ran on the uncommitted tree",
+    "regression_test": "git ls-tree eae807d"
+   }
+  },
+  {
+   "file": "egregore/closure.py",
+   "line": 164,
+   "severity": "low",
+   "title": "Three of the new closure 'honest' conjuncts test hard-coded literals or a top-level-only key and cannot fail",
+   "dimension": null,
+   "reviewer_agent": "ac614838a621e630a",
+   "workflow_run": "wf_293dca41-74d",
+   "claim": "`report[\"requests_nothing\"] is True` and `report[\"kind\"] == \"information\"` check values that `_compile` sets as literals at absence.py:404, and `\"options\" not in report` checks only top-level keys while every waiting decision in `decisions_waiting_as_of_until` carries nested `options` (and the report record re-states the ask's question/recommendation/options on the ledger). A body that added a top-level `ask` with options still satisfies the predicate. The conjuncts therefore do not constrain whether the report requests anything; only `executed == []`, `len(prepared) >= 1`, `goals_authorized == 1` and the single REPORT_RECORD count carry information.",
+   "reproduction_offered": "cd /home/user/uniimente-kernel-pr160 && python3 /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-honesty/repro.py (scenario_H). Output: literal in _compile: ['\"kind\": \"information\", \"requests_nothing\": True,'] | closure evidence() passes: True | 'options' not in report (top level): True | nested options in waiting decisions: [[{'cost': '0.5 USD estimated', 'label': 'authorize this move'}, ...]] | closure predicate still True for a body carrying a top-level ask with options: True",
+   "suggested_fix": "Replace the literal checks with behavioural ones: assert that `return_report` appends exactly one record and that it is REPORT_RECORD (no ASK_RECORD), that `attention.open_asks()` is unchanged before/after the report, and that the report record is never folded by FounderAttentionRouter.sync; drop `\"options\" not in report` or apply it to the top-level keys you actually mean.",
+   "disposition": {
+    "status": "fixed",
+    "fix": "the evidence closure now checks behaviour: exactly one record appended (the report), open asks unchanged, and the same window re-reported after the ledger grew has the same report id and no second record",
+    "regression_test": "egregore/closure.py (evidence closure; verifier V3)"
+   }
+  },
+  {
+   "file": "egregore/absence.py",
+   "line": 155,
+   "severity": "low",
+   "title": "'reconciled' in money and headline is the executor's own echo of the expected outcome, not an independent reconciliation",
+   "dimension": null,
+   "reviewer_agent": "ac614838a621e630a",
+   "workflow_run": "wf_293dca41-74d",
+   "claim": "`reconciled` is `\"reconciled=True\" in expected_vs_actual`, and the Gate computes that flag as `result[\"observed_outcome\"] == proposal.expected_outcome` (policy/consequence_gate.py:333-343) from the executor's returned dict. An executor that echoes `p.expected_outcome` (as GOOD and any dishonest executor would) is always 'reconciled'. The headline then reads '1 reconciled against the expected outcome, 0 not', and the evidence tier states `executor_claims_counted_as_verification: False`, while the reconciliation count is itself an executor claim. The founder's source scene ('every movement reconciled') is being satisfied by self-report.",
+   "reproduction_offered": "cd /home/user/uniimente-kernel-pr160 && python3 /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-honesty/repro.py (scenario_I, executor returns observed_outcome=p.expected_outcome and validation_status='externally_verified'). Output: executed.reconciled: True | expected_vs_actual: expected='brief compiled' actual='brief compiled' reconciled=True | executor_claimed_validation: externally_verified | verification: None | HEADLINE: ['Estimated cost of executed moves: $0.04 (declared estimates; 1 reconciled against the expected outcome, 0 not). ...'] | retained assets: {'evidence': 1} ['verified receipt for compile a due-diligence brief']",
+   "suggested_fix": "Rename the field to `executor_reported_match` (and the headline clause to 'N executor-reported matches of the expected outcome'), keep `verification` as the only independent signal, and set the evidence-tier flags from computed values rather than literals (e.g. `executor_claims_counted_as_verification = any(e['verification'] is None and e['reconciled'] for e in executed)` would then honestly read True).",
+   "disposition": {
+    "status": "fixed",
+    "fix": "renamed to executor_reported_match / executed_moves_executor_reported_match with the basis stated; evidence_tier flags are computed cross-checks, not literals",
+    "regression_test": "tests/unit/test_goal_gravity_absence.py::test_report_separates_executed_prepared_refused_and_unknown"
+   }
+  },
+  {
+   "file": "egregore/schedule.py",
+   "line": 48,
+   "severity": "low",
+   "title": "A goal durably left 'awake' is invisible to the wake schedule although any turn would process it",
+   "dimension": null,
+   "reviewer_agent": "ac614838a621e630a",
+   "workflow_run": "wf_293dca41-74d",
+   "claim": "A crash between `registry.wake()` and the end-of-processing `transition()` leaves an `awake` TRANSITION_RECORD on the ledger. `turn()` processes such goals via `by_status(\"awake\")`, but `entries()` skips any status not in SLEEPING, so `next_due_at` is None and `suggested_trigger_id` is None: the schedule tells a host nothing is due while an authorized goal is awake and waiting for a turn. The host-trigger view is the only way a scheduler learns to call, so the goal is stranded until an unrelated signal arrives.",
+   "reproduction_offered": "cd /home/user/uniimente-kernel-pr160 && python3 /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-honesty/repro2.py (scenario_awake_goal). Output: status: awake | entries: [] | next_due_at: None | yet any turn processes it: woken = ('sha256:d60a9...',) | processed: 1",
+   "suggested_fix": "Add an `awake_now` entry kind for goals with status `awake` (due_at = now, overdue = True) so the schedule reports them as immediately due, matching turn()'s behaviour.",
+   "disposition": {
+    "status": "fixed",
+    "fix": "awake goals appear as awake_now entries, due now",
+    "regression_test": "tests/unit/test_goal_gravity_schedule.py::test_paused_revoked_and_completed_goals_are_not_scheduled_and_an_awake_goal_is_due_now"
+   }
+  },
+  {
+   "file": "egregore/gravity.py",
+   "line": 840,
+   "severity": "nit",
+   "title": "Prior-attempt guard pass-through entries are counted as classifier decisions in turns.classifier_decisions",
+   "dimension": null,
+   "reviewer_agent": "ac614838a621e630a",
+   "workflow_run": "wf_293dca41-74d",
+   "claim": "The new guard appends a decision entry carrying `prior[\"decision\"]` (e.g. EXECUTE_AUTONOMOUSLY) on every later wake of a goal whose route is executed or open, without any classification having run. The report's `turns.classifier_decisions` counts them, so one executed route woken twice more reports `EXECUTE_AUTONOMOUSLY: 3`. Not harmful to authority (nothing runs), but the digest overstates how many autonomous-execution decisions the classifier made.",
+   "reproduction_offered": "cd /home/user/uniimente-kernel-pr160 && python3 /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-honesty/repro.py (scenario_E). Output: turns.classifier_decisions: {'EXECUTE_AUTONOMOUSLY': 3, 'PREPARE_FOR_FOUNDER': 3} for one brief executed once at T1 and skipped by the guard at T2 and T3.",
+   "suggested_fix": "Mark guard entries with `\"decision\": \"NOT_RECLASSIFIED\"` (or a `guarded: True` flag) and have `_compile` exclude them from `classifier_decisions`, reporting them under a separate `routes_held_by_prior_attempt` count.",
+   "disposition": {
+    "status": "fixed",
+    "fix": "guard pass-through entries are counted as turns.guard_passthroughs, not as classifier decisions",
+    "regression_test": "tests/unit/test_goal_gravity_absence.py::test_an_open_attempt_is_never_hidden_by_a_later_grantless_wake_and_never_redispatched"
+   }
+  },
+  {
+   "file": "egregore/gravity.py",
+   "line": 848,
+   "severity": "medium",
+   "title": "Guard starves the typed capability-deficit and its blocker when every candidate move on the active gate is done/open; acquisition ladder cannot open",
+   "dimension": null,
+   "reviewer_agent": "ae18d2b1d417ce346",
+   "workflow_run": "wf_293dca41-74d",
+   "claim": "The typed capability-deficit record (InterventionClassifier.DEFICIT_RECORD, lifecycle DISCOVERED) and the 'capability deficit: <cap>' blocker string are produced only inside classify()'s WAIT arm (egregore/interventions.py:196-212) and the loop's WAIT arm. The new guard `continue`s before classify() for any route whose latest record is attempted/unknown/executed/externally_verified. When the active gate's only declared move(s) are in that state and a required capability later goes missing (founder `revoke_capability`, or genome absent after restart), no typed deficit is written, `acquisition.open_deficits()` is empty, `acquisition.plan()` raises ContractError('no open deficit for this goal; nothing to acquire'), and the goal is transitioned to status=blocked with an EMPTY `blockers` list (missing_capabilities is set, but status()['blockers'] names nothing). On HEAD the same sequence records the deficit, names the blocker and plan() succeeds. The epistemic deficit was deliberately moved out of classify() into _route() (gravity.py:432, comment: 'Recorded here, not only when a move is classified'); the capability deficit was not given the same treatment, so the guard newly removes it for executed/open routes. Step 6 (gravity.py:794) only writes the untyped DEFICIT_CLASS_RECORD, which acquisition does not read.",
+   "reproduction_offered": "Scratch script /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-loop-guard/cap_deficit.py run against `git archive HEAD` snapshot and the working tree. Single-node goal with one move (brief) and requires_capabilities=('brief.compiler@1.0',) registered in GenomeRegistry; T1 turn with grant -> executed; founder record_preference(kind='revoke_capability', value='brief.compiler@1.0'); wake; T2 grantless turn.\nHEAD (6ce6b3f): T2 decisions [('WAIT','planned',None)]; typed capability-deficit records: [(['brief.compiler@1.0'],'goal_blocked_not_closed')]; acquisition.plan OK; state.blockers: ['capability deficit: brief.compiler@1.0']\nWORKING TREE: T2 decisions [('EXECUTE_AUTONOMOUSLY','executed','already attempted; no duplicate consequential action')]; typed capability-deficit records: []; acquisition.open_deficits: []; acquisition.plan -> ContractError no open deficit for this goal; nothing to acquire; goal state: blocked ['brief.compiler@1.0']; state.blockers: []",
+   "suggested_fix": "Record the capability deficit at the gate level, independent of move classification, mirroring _route()'s epistemic handling: at step 6 (gravity.py:793-794), when fix.missing_capabilities is non-empty, call self.classifier._record_deficit(spec, <the same capability-deficit dict classify() builds at interventions.py:200-211>) and append f'capability deficit: {cap}' to blockers for each missing capability (dedupe is already handled by _record_deficit). Then the WAIT arm's blockers.extend becomes redundant and can stay or be removed. Add a regression test: executed-only gate + later-missing capability -> typed DEFICIT_RECORD present, acquisition.plan() succeeds, state.blockers non-empty.",
+   "disposition": {
+    "status": "fixed",
+    "fix": "the typed capability deficit is recorded at the gate level (InterventionClassifier.capability_deficit) with its blocker, independent of move classification",
+    "regression_test": "tests/unit/test_goal_gravity_guard.py::test_a_capability_lost_after_the_route_executed_still_opens_a_typed_deficit_and_the_ladder"
+   }
+  },
+  {
+   "file": "egregore/gravity.py",
+   "line": 1399,
+   "severity": "low",
+   "title": "status() lists an executed or reconciliation-blocked route under next_autonomous_work because _decisions is frozen at dispatch time",
+   "dimension": null,
+   "reviewer_agent": "ae18d2b1d417ce346",
+   "workflow_run": "wf_293dca41-74d",
+   "claim": "status() derives next_autonomous_work/waiting_work solely from the _decisions map (latest CLASSIFICATION_RECORD per route) and never consults evidence_state. Since the guard now skips classify() for every route whose latest record is attempted/unknown/executed/externally_verified, _decisions permanently holds the dispatch-time 'EXECUTE_AUTONOMOUSLY', so status() reports the route as 'next_autonomous_work' even though the loop will never dispatch it (done) or is blocked on reconciliation (unknown). On HEAD this was already the case whenever a grant was present on the later turn (classify -> EXECUTE -> prior), so it is pre-existing, but the guard makes it the only possible outcome; the old grantless behaviour (waiting_work 'founder decision' + evidence_state 'planned') was the hidden-attempt defect this increment fixes, so there is no longer any path that moves such a route out of next_autonomous_work.",
+   "reproduction_offered": "Scratch scripts status_decisions.py and status_with_grant.py in /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-loop-guard/. Single-move goal; T1 executed (GOOD executor) or unknown (raising executor) under grant; wake; T2 grantless turn; status(T2).\nWORKING TREE: [executed] status.evidence_state ['executed']; next_autonomous_work ['compile-brief']; waiting_work []. [unknown] evidence_state ['unknown']; next_autonomous_work ['compile-brief']; waiting_work []; blockers ['reconciliation required: route 8d8c8b0684eec4c2 outcome unknown'].\nHEAD grantless: evidence_state ['planned'] (the fixed defect), next_autonomous_work [], waiting_work [{'why': 'founder decision'}].\nHEAD with grant on T2 (status_with_grant.py): calls 0, evidence_state ['executed'], next_autonomous_work ['compile-brief'] -> pre-existing in the grant case.",
+   "suggested_fix": "In status() (gravity.py:1395-1404) check evidence_state[raw['route_hash']] before the decision branch: if in DONE_STATES -> waiting.append({'why': 'already executed; not re-proposed'}) (or omit from both lists); if in OPEN_ATTEMPT_STATES -> waiting.append({'why': 'reconciliation required'}). Add an assertion to the new absence test (test_an_executed_route_is_not_re_proposed_or_hidden_by_a_later_grantless_wake) that status()['next_autonomous_work'] does not contain the executed route.",
+   "disposition": {
+    "status": "fixed",
+    "fix": "status() checks the route's evidence state before the decision map: open -> 'reconciliation required; outcome unknown', done -> 'already executed; not re-proposed'",
+    "regression_test": "tests/unit/test_goal_gravity_absence.py::test_an_executed_route_is_not_re_proposed_or_hidden_by_a_later_grantless_wake"
+   }
+  },
+  {
+   "file": "egregore/gravity.py",
+   "line": 843,
+   "severity": "low",
+   "title": "Guard entry drops selected_by_deliberation (None) under standing cognition, breaking the seam contract asserted by the existing test",
+   "dimension": null,
+   "reviewer_agent": "ae18d2b1d417ce346",
+   "workflow_run": "wf_293dca41-74d",
+   "claim": "In standing-cognition mode every decision entry carried selected_by_deliberation in (True, False) (test_goal_gravity_seams.py:95 asserts this for all decisions of a cognitive turn). The guard hard-codes 'selected_by_deliberation': None for any route with a prior attempt/execution, even though the tick did select or not select that candidate this turn (the CANDIDATE_RECORD still records it). A cognitive turn that contains a previously executed route therefore violates the invariant the existing test documents; the old EXECUTE-arm prior branch preserved `selected` because it ran after classification.",
+   "reproduction_offered": "Scratch script /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-loop-guard/cognition_selected.py (make_cognitive_loop from tests/unit/test_goal_gravity_seams.py; robotics_goal(second_node=False); _record_intervention(brief, 'executed'); cognitive turn at T1).\nHEAD: [('contact-engineers','PREPARE_FOR_FOUNDER','planned',True), ('compile-brief','PREPARE_FOR_FOUNDER','planned',False)]; contract all in (True, False): True\nWORKING TREE: [('contact-engineers','PREPARE_FOR_FOUNDER','planned',True), ('compile-brief','EXECUTE_AUTONOMOUSLY','executed',None)]; contract all in (True, False): False",
+   "suggested_fix": "Move `selected = None if self.cognition is None else (intervention.route_hash == selected_route)` (gravity.py:857) above the guard and use `selected` instead of the literal None in the guard entry at line 843.",
+   "disposition": {
+    "status": "fixed",
+    "fix": "selected_by_deliberation is computed before the guard and carried into the guard entry",
+    "regression_test": "tests/unit/test_goal_gravity_guard.py::test_the_guard_keeps_the_seam_contract_under_standing_cognition"
+   }
+  },
+  {
+   "file": "egregore/absence.py",
+   "line": 117,
+   "severity": "low",
+   "title": "Return report counts guard entries as classifier decisions although classify() never ran",
+   "dimension": null,
+   "reviewer_agent": "ae18d2b1d417ce346",
+   "workflow_run": "wf_293dca41-74d",
+   "claim": "AbsenceReporter folds turns.classifier_decisions as Counter(d['decision'] for every decision entry in processed turns). Guard entries carry the prior record's decision ('EXECUTE_AUTONOMOUSLY') and the reason 'route already attempted; no re-classification...', so each later wake of a goal with an open/done route adds one phantom 'EXECUTE_AUTONOMOUSLY' classifier decision per turn. The founder's return report therefore overstates how often the classifier decided to execute (3 vs 1 actual CLASSIFICATION_RECORD in the repro) while the same increment's rationale is that these routes are 'never re-classified'. withheld_by_classifier is unaffected because guard entries never carry REQUEST_EVIDENCE/WAIT/ABSTAIN.",
+   "reproduction_offered": "Scratch script /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-loop-guard/measures_inflation.py on the working tree: single-move goal, T1 dispatch with raising executor -> unknown; two grantless wakes at T2, T3; return_report(since=T0, until=T3).\nOutput: CLASSIFICATION_RECORDs on ledger: 1; report.turns.classifier_decisions: {'EXECUTE_AUTONOMOUSLY': 3}; report.turns.count: 3; work_to_first_actionable: {'turns': 1, 'classifications': 1, ...} (unaffected because the first actionable turn precedes any guard entry).",
+   "suggested_fix": "Give guard entries an explicit marker (e.g. 'classified': False, or reuse the existing 'disposition' key which only guard entries carry) and in absence.py:117 count only entries that were actually classified: Counter(d['decision'] for p in processed for d in p.get('decisions', []) if 'disposition' not in d). Optionally report the skipped routes separately (e.g. turns.routes_held_without_reclassification) so the information is not lost.",
+   "disposition": {
+    "status": "fixed",
+    "fix": "guard pass-through entries are counted as turns.guard_passthroughs, not as classifier decisions",
+    "regression_test": "tests/unit/test_goal_gravity_absence.py::test_an_open_attempt_is_never_hidden_by_a_later_grantless_wake_and_never_redispatched"
+   }
+  },
+  {
+   "file": "egregore/schedule.py",
+   "line": 63,
+   "severity": "high",
+   "title": "wake_schedule lists an undischargeable 'deferred_ask' as overdue forever: every host poll gets a fresh 'cadence:<now>' trigger id and appends an empty silent turn",
+   "dimension": null,
+   "reviewer_agent": "a2a5b27b095473b1a",
+   "workflow_run": "wf_293dca41-74d",
+   "claim": "The deferred_ask branch (lines 56-71) has no filter on the goal's status/stop_pushing (unlike the review_cadence branch at line 48) and no way to be discharged except the goal waking and re-asking the same item. next_trigger() maps any overdue entry to next_due_at = now and suggested_trigger_id = 'cadence:<now>'. Because <now> differs on every poll, the recommended turn(trigger_id, now) is never a replay: each poll appends a new TURN_RECORD with status 'silent', woken=(), and the entry is still overdue afterwards. For a goal paused (stop_pushing) or revoked after the founder deferred, this is permanent (the ADR's own falsification condition 'a schedule listing a paused or revoked goal' is met); for a goal that was re-processed between the defer and resurface_after it persists until the goal's own cadence elapses. Inputs: robotics goal, turn at T1 opens an ask, founder_answer(defer) at T1 (resurface_after 2026-10-20T13:00Z), then record_preference(stop_pushing) / revoke / a second relevant-signal turn; three hourly polls at 2026-10-25T12..14Z. Wrong output: overdue=[deferred_ask] and a distinct trigger id on all three polls, three silent TURN_RECORDs appended, entry still overdue.",
+   "reproduction_offered": "cd /home/user/uniimente-kernel-pr160 && python3 /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-determinism/repro_b_overdue_deferred.py\n--- paused goal (stop_pushing) after defer: resurface_after=2026-10-20T13:00:00Z goal status=paused\n  poll 0: overdue=[('deferred_ask', 'sha256:87889')] next_due_at=2026-10-25T12:00:00Z trigger=cadence:2026-10-25T12:00:00Z\n          turn status=silent woken=() routed=0\n  poll 1: overdue=[('deferred_ask', 'sha256:87889')] next_due_at=2026-10-25T13:00:00Z trigger=cadence:2026-10-25T13:00:00Z\n          turn status=silent woken=() routed=0\n  poll 2: overdue=[('deferred_ask', 'sha256:87889')] next_due_at=2026-10-25T14:00:00Z trigger=cadence:2026-10-25T14:00:00Z\n          turn status=silent woken=() routed=0\n  distinct trigger ids issued: 3; TURN_RECORDs appended: 3\n  deferred_ask still overdue after the recommended turns: True\n--- revoked goal after defer: (identical: 3 ids, 3 TURN_RECORDs, still overdue)\n--- goal re-processed before resurface (cadence anchor reset): goal status=dormant (identical: 3 ids, 3 TURN_RECORDs, still overdue)",
+   "suggested_fix": "In entries(): skip deferred_ask entries whose goal is not in the registry or whose status is not in SLEEPING or has stop_pushing (mirror line 48), and skip items that are not actually re-askable (e.g. route already refused/forgotten). Make an overdue deferred_ask dischargeable by the turn it recommends: either have turn() treat an elapsed resurface_after as a wake reason for that goal (so the ask is re-routed and the latest record becomes an ASK), or derive the deferred entry's due time as max(resurface_after, goal cadence due) so 'overdue' only appears when the recommended turn will wake the goal. Add a test: defer, pause/revoke (and separately re-process before resurface), poll wake_schedule at three times, assert at most one non-silent turn and that the entry disappears or next_due_at moves forward.",
+   "disposition": {
+    "status": "fixed",
+    "fix": "deferred asks are scheduled only for goals that can wake; the rest are listed under stale_deferred, never overdue",
+    "regression_test": "tests/unit/test_goal_gravity_schedule.py::test_a_deferred_ask_on_a_goal_that_cannot_wake_is_stale_not_due"
+   }
+  },
+  {
+   "file": "egregore/absence.py",
+   "line": 83,
+   "severity": "medium",
+   "title": "Same window re-reported after the ledger grew yields a different content_hash/report_id and a second REPORT_RECORD: per-goal '*_now', goals.total/by_status_now and '*_all_time' fields are not a function of the window",
+   "dimension": null,
+   "reviewer_agent": "a2a5b27b095473b1a",
+   "workflow_run": "wf_293dca41-74d",
+   "claim": "report_id is digest(window + content_hash), and the body includes state read at report time rather than as of `until`: goals.total and goals.by_status_now (lines 383-385) come from registry.goals()/state() including goals authorized after `until`; per_goal status_now, active_gate_now, single_bottleneck_metric_now, blockers_now and priority (lines 359-368) are current state; learned.institutional_learning_all_time (line 319) and money.treasury_or_business_events_on_ledger_all_time (lines 268-275) scan the whole ledger. So the documented idempotence ('recorded once per identical content', GOAL_GRAVITY.md lines 120-121 and row 153 'identical across loops and restart; recorded once'; ADR-003 item 1) holds only while the ledger is unchanged. Inputs: executed_brief at T0..T1, return_report(T0,T1) recorded, then authorize a goal at T2 and run a turn at T3 (both after `until`), then return_report(T0,T1) again. Wrong output: second call has recorded=True with a different report_id; two egregore.return_report records exist for one window; the report's headline changes from '1 of 1 authorized goal(s)' to '1 of 2' although nothing in the window changed. No test covers the same window reported after later records; no doc states that the body depends on post-window state.",
+   "reproduction_offered": "cd /home/user/uniimente-kernel-pr160 && python3 /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-determinism/repro_a_same_window.py\nfirst recorded: True report_id: sha256:f5eab9d722531048a\nsecond recorded: True report_id: sha256:dd42577ed0b14d9b0\nsame report_id: False\nREPORT_RECORD count for one window: 2\n  DIFF .goals.by_status_now.dormant: 1 -> 2\n  DIFF .goals.per_goal: [{\"active_gate_now\": \"favorable convergence observed\", \"authorized_in_window\": t -> [{\"active_gate_now\": \"g\", \"authorized_in_window\": false, \"blockers_now\": 0, \"dec\n  DIFF .goals.total: 1 -> 2\n  DIFF .headline[0]: \"1 of 1 authorized goal(s) were active: 1 goal-processing(s) across 1 turn(s); 1 -> \"1 of 2 authorized goal(s) were active: 1 goal-processing(s) across 1 turn(s); 1",
+   "suggested_fix": "Make the hashed body a pure function of records with logical time <= until: fold goal state as of `until` from AUTHORIZED/TRANSITION/PREFERENCE records (only goals authorized <= until; status/gate/blockers from the latest transition <= until) and compute institutional learning and treasury/business counts from records dated <= until (or move the genuinely 'now'/'all-time' fields out of the hashed body into the envelope returned by report()). Then either keep report_id = window + content_hash (now stable) or key the record on the window alone and refuse/annotate a differing re-report. Add a test: report(window), append post-window records (authorize, turn, preference), report(window) again, assert same report_id, recorded=False, one REPORT_RECORD. Document whichever semantics is chosen in GOAL_GRAVITY.md and ADR-003.",
+   "disposition": {
+    "status": "fixed",
+    "fix": "the hashed body is a function of records dated <= until: goals folded from authorization/transition/preference records as of until (authorized_as_of_until, status_as_of_until, ...); all-time and now fields moved to an unhashed, unrecorded as_of_now envelope",
+    "regression_test": "tests/unit/test_goal_gravity_absence.py::test_a_closed_window_is_the_same_report_however_the_ledger_grows"
+   }
+  },
+  {
+   "file": "egregore/absence.py",
+   "line": 227,
+   "severity": "medium",
+   "title": "A deferred ask that re-surfaced (new ASK record after the defer answer) is reported under deferred_as_of_until and omitted from decisions_waiting_as_of_until",
+   "dimension": null,
+   "reviewer_agent": "a2a5b27b095473b1a",
+   "workflow_run": "wf_293dca41-74d",
+   "claim": "asks_upto and answers_upto are two dicts keyed by item_id; the join at lines 225-237 treats any answer for the item as current regardless of whether a later ASK record (the re-surfacing route in FounderAttentionRouter.route after resurface_after) exists. The schedule module (schedule.py lines 56-61) correctly uses the latest record by ledger order; the report does not. Inputs: robotics goal, turn at T1 opens ask X, founder_answer(X, defer) at T1 (resurface_after 2026-10-20T13:00Z), a turn at 2026-10-21T13:00Z re-routes X (attention.open_asks() lists X as open), then return_report(since=T0, until=2026-10-21T14:00Z). Wrong output: X is absent from decisions_waiting_as_of_until, present in deferred_as_of_until with a resurface_after already in the past, so the founder's return brief under-reports what is waiting and shows a stale deferral.",
+   "reproduction_offered": "cd /home/user/uniimente-kernel-pr160 && python3 /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-determinism/repro_c_resurfaced_ask.py\nre-surfaced (new ASK record after the defer answer): True\nattention.open_asks() lists it as open: True\ndecisions_waiting_as_of_until contains it: False\ndeferred_as_of_until contains it: True",
+   "suggested_fix": "Build the as-of state by one pass over ledger.records in order, keeping for each item_id the latest ASK or ANSWER record whose logical time is <= until (as schedule.py does). Classify waiting/informed when the latest record is an ASK (or the latest answer is a defer whose resurface_after <= until and the item was re-routed), deferred only when the latest record is a defer answer. Add a test mirroring test_a_deferred_ask_is_scheduled_to_resurface that reports after the re-surfacing turn and asserts the item is waiting, not deferred.",
+   "disposition": {
+    "status": "fixed",
+    "fix": "asks and answers are folded in ledger order per item (as WakeSchedule does); an item whose latest record is an ask is open again",
+    "regression_test": "tests/unit/test_goal_gravity_absence.py::test_a_resurfaced_deferred_ask_is_waiting_again_not_deferred"
+   }
+  },
+  {
+   "file": "egregore/absence.py",
+   "line": 236,
+   "severity": "high",
+   "title": "Return report lists a re-surfaced, unanswered deferred ask as 'deferred', not 'waiting'; no test covers defer -> resurface",
+   "dimension": null,
+   "reviewer_agent": "a4aa39f9cc8a91e0f",
+   "workflow_run": "wf_293dca41-74d",
+   "claim": "AbsenceReporter._compile keys asks and answers by item_id and takes the latest answer; when a founder 'defer' is followed by a re-route of the same item (a new ASK_RECORD after resurface_after, which attention.sync treats as open again), the branch `elif answer[\"decision\"] == \"defer\"` still files the item under deferred_as_of_until (with a resurface_after already in the past) and decisions_waiting_as_of_until is empty, so the headline carries no 'wait for you' sentence while loop.attention.open_asks() holds one open decision. The invariant the new unit test asserts at tests/unit/test_goal_gravity_absence.py:149 (open decision/confirmation asks == waiting) is violated in this path, and tests/unit/test_goal_gravity_absence.py:191 only checks the pre-resurface state. Inputs: executed_brief, founder_answer(defer, now=T2), turn(now=2026-10-22T13:00:00Z) (cadence wake re-surfaces the ask), return_report(since=T0, until=2026-10-23T13:00:00Z). Wrong output: decisions_waiting_as_of_until == [], item in deferred_as_of_until.",
+   "reproduction_offered": "PYTHONPATH=/home/user/uniimente-kernel-pr160 python3 -m pytest -q -p no:cacheprovider --rootdir=/tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-testq -s /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-testq/test_hostile.py::test_h1_resurfaced_unanswered_deferred_ask /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-testq/test_hostile2.py::test_h1b_invariant_from_the_unit_test_breaks_after_resurface -> output: 'resurfaced: True', 'attention open: True', 'report waiting: False report deferred: True', 'H1b open decisions: 1 | report waiting: 0', 'H1b headline mentions waiting?: False'; both FAILED (assert 1 == 0). Mutation M20 in scratch mutate.py (treat a defer older than the latest ask's routed_at as waiting) passes all 16 new tests, so no existing test pins either behaviour.",
+   "suggested_fix": "In _compile, when answer['decision']=='defer' and parse_time(answer['answered_at']) < parse_time(ask['routed_at']) (the ask was re-routed after the defer), classify the item as waiting/informed exactly as attention.sync does; add a test to tests/unit/test_goal_gravity_absence.py: defer at T2, turn at resurface_after+1d, assert item in decisions_waiting_as_of_until and not in deferred_as_of_until, and re-assert the line-149 invariant in that state.",
+   "disposition": {
+    "status": "fixed",
+    "fix": "asks and answers are folded in ledger order per item (as WakeSchedule does); an item whose latest record is an ask is open again",
+    "regression_test": "tests/unit/test_goal_gravity_absence.py::test_a_resurfaced_deferred_ask_is_waiting_again_not_deferred"
+   }
+  },
+  {
+   "file": "egregore/schedule.py",
+   "line": 92,
+   "severity": "high",
+   "title": "wake_schedule.next_trigger promotes a deferred-ask resurface time to next_due_at with a 'cadence:' id; a host following it gets a silent turn and the ask never resurfaces; the test masks this with a manual registry.wake",
+   "dimension": null,
+   "reviewer_agent": "a4aa39f9cc8a91e0f",
+   "workflow_run": "wf_293dca41-74d",
+   "claim": "A deferred_ask entry's due_at is resurface_after, but turn() only wakes goals by signal, intersection or review cadence; a deferred ask re-surfaces only when the goal wakes for another reason (entries() even says so in wake_reason_expected). next_trigger nevertheless returns that time as next_due_at and mints trigger_id_for(next_due) with clock='cadence', and the note tells the host to call turn(trigger_id=..., now=next_due_at). Inputs: goal woken at T1, founder defers at T2 (resurface_after = 2026-10-21T13:00:00Z; cadence due 2026-10-20T13:00:00Z), host follows the schedule twice. Wrong output: the turn at 2026-10-21T13:00:00Z is 'silent', woken == (), the ask does not resurface, and the next wake_schedule reports the same entry overdue=True with next_due_at == now, so a host loop replays the same recorded trigger id until 2026-10-27. tests/unit/test_goal_gravity_schedule.py:70 calls loop.registry.wake(goal_id, reason='test', now=T2) before the turn, which hides this; nothing drives turn() from suggested_trigger_id/next_due_at for a deferred_ask entry (unlike line 35 for cadence).",
+   "reproduction_offered": "PYTHONPATH=/home/user/uniimente-kernel-pr160 python3 -m pytest -q -p no:cacheprovider --rootdir=/tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-testq -s /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-testq/test_hostile.py::test_h5_turn_at_deferred_due_time_without_manual_wake -> output: 'entries2: [(deferred_ask, 2026-10-21T13:00:00Z, False), (review_cadence, 2026-10-27T13:00:00Z, False)] next: 2026-10-21T13:00:00Z cadence:2026-10-21T13:00:00Z', 'deferred-due turn woken: () status: silent resurfaced: False', 'entries3: [(deferred_ask, 2026-10-21T13:00:00Z, True), ...] next: 2026-10-21T13:00:00Z'; FAILED. Mutation M19 (schedule keeps the first ask instead of the latest) also survives the new tests (mutate.py rc=0), so the re-ask path of the schedule is untested too.",
+   "suggested_fix": "Either make the loop honour the obligation (turn() adds goals with an elapsed deferred resurface_after to the wake plan, like due_for_review) or stop next_trigger from promoting deferred_ask entries to next_due_at/suggested_trigger_id (and use clock='deferred' for their ids). In the test, delete the manual registry.wake at line 70 and drive the turn with plan['suggested_trigger_id']/plan['next_due_at'] from a plan whose next entry is the deferred_ask, asserting the ask re-surfaces and the entry then leaves the schedule.",
+   "disposition": {
+    "status": "fixed",
+    "fix": "GoalGravityLoop.turn wakes goals returned by WakeSchedule.due_resurfaces ('deferred founder ask re-surfaces'); deferred-ask trigger ids use the 'resurface' clock; the test drives the turn from the schedule with no manual wake",
+    "regression_test": "tests/unit/test_goal_gravity_schedule.py::test_a_deferred_ask_is_scheduled_to_resurface_and_the_suggested_turn_resurfaces_it"
+   }
+  },
+  {
+   "file": "egregore/absence.py",
+   "line": 440,
+   "severity": "medium",
+   "title": "Headline says 'Nothing happened in this window' over a window holding a torn turn (dispatch recorded, process killed before the turn record), then contradicts itself in the next sentence",
+   "dimension": null,
+   "reviewer_agent": "a4aa39f9cc8a91e0f",
+   "workflow_run": "wf_293dca41-74d",
+   "claim": "_headline emits the 'Nothing happened ... nothing executed ... nothing waits for you' sentence whenever turns.count, executed, prepared and decisions_waiting are all empty, ignoring attempted_in_window and open_attempts_as_of_until. A crash between gate dispatch and the TURN_RECORD (the exact scenario of tests/integration/test_goal_gravity_process_kill.py) leaves an 'attempted' INTERVENTION_RECORD and no turn record, so the founder's return report over that window reads 'Nothing happened in this window: no turn ran, nothing executed, nothing was prepared, nothing waits for you.' immediately followed by '1 dispatched move(s) have an unknown outcome and wait for reconciliation'. The same contradiction appears if return_report is called mid-turn by an executor. No new test covers a torn turn or a mid-turn report.",
+   "reproduction_offered": "PYTHONPATH=/home/user/uniimente-kernel-pr160 python3 -m pytest -q -p no:cacheprovider --rootdir=/tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-testq -s /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-testq/test_hostile2.py::test_h8_report_over_a_torn_turn_after_sigkill (child process SIGKILLs itself inside the executor, as the repo's process_kill test does) -> output: 'H8 turns.count: 0 | attempted_in_window: 1 | open: [(attempted, ...)] | goals.active_in_window: 1 | status_now: [awake]', headline[0]='Nothing happened in this window: no turn ran, nothing executed, nothing was prepared, nothing waits for you.', headline[1]='1 dispatched move(s) have an unknown outcome and wait for reconciliation; none will be retried blindly.'; FAILED. Same contradiction printed by test_hostile.py::test_h4_report_requested_mid_turn ('mid headline').",
+   "suggested_fix": "Add `and not body['attempted_in_window'] and not body['open_attempts_as_of_until'] and not body['refused_by_gate']` to the 'nothing happened' condition (or emit a 'a turn was interrupted after dispatch' sentence when attempted_in_window > turns.count's attempts), and add an absence test over a torn-turn ledger built with the process_kill technique.",
+   "disposition": {
+    "status": "fixed",
+    "fix": "'Nothing happened' is emitted only when every window-scoped section is empty and the founder and accountable parties were silent",
+    "regression_test": "tests/unit/test_goal_gravity_absence.py::test_a_window_holding_only_a_founder_refusal_never_reads_nothing_happened"
+   }
+  },
+  {
+   "file": "tests/unit/test_goal_gravity_absence.py",
+   "line": 129,
+   "severity": "medium",
+   "title": "Money reconciliation flags and the discrepancies section have zero falsifying coverage: every executed move in the new tests reconciles positively",
+   "dimension": null,
+   "reviewer_agent": "a4aa39f9cc8a91e0f",
+   "workflow_run": "wf_293dca41-74d",
+   "claim": "All executions in the three new test modules use GOOD (result_class positive, reconciled=True), so executed[].reconciled is only ever asserted True, money.executed_moves_unreconciled only ever 0, and report['discrepancies'] / the discrepancy headline sentence are never asserted at all. Mutations that hard-code reconciled=True (M13), zero unreviewed_as_of_until (M14) or empty recorded_in_window (M15) pass all 16 new tests, although 'failures' and 'every movement reconciled' are the founder scene the module docstring quotes. The code itself handles a negative outcome correctly (probe H7), so this is purely a test gap.",
+   "reproduction_offered": "cd /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-testq && python3 mutate.py M13_reconciled_always_true M14_discrepancies_zeroed M15_discrepancies_in_window_empty -> '=== M13_reconciled_always_true: rc=0', '=== M14_discrepancies_zeroed: rc=0', '=== M15_discrepancies_in_window_empty: rc=0' (all 16 new tests pass under each mutation). grep -n 'discrepanc\\|unreconciled\"\\] == [1-9]' tests/unit/test_goal_gravity_absence.py tests/integration/test_goal_gravity_absence.py -> no matches. Probe test_hostile.py::test_h7_unreconciled_negative_outcome passed with executed[0].reconciled False, money.executed_moves_unreconciled 1, discrepancies.recorded_in_window length 1, headline '1 outcome discrepancy(ies) recorded; 1 unreviewed'.",
+   "suggested_fix": "Add a test with an executor returning result_class 'negative' (and/or a non-matching observed_outcome): assert executed[0]['reconciled'] is False, money.executed_moves_reconciled == 0 and executed_moves_unreconciled == 1, len(discrepancies.recorded_in_window) == 1 with reviewed False, unreviewed_as_of_until == 1, the headline discrepancy sentence, and that review_discrepancy before `until` flips reviewed/unreviewed counts.",
+   "disposition": {
+    "status": "fixed",
+    "fix": "negative-outcome test added (executor match False, discrepancy recorded/unreviewed/reviewed, retention 0)",
+    "regression_test": "tests/unit/test_goal_gravity_absence.py::test_a_negative_outcome_is_a_discrepancy_and_an_auditor_review_is_not_founder_activity"
+   }
+  },
+  {
+   "file": "tests/unit/test_goal_gravity_absence.py",
+   "line": 301,
+   "severity": "low",
+   "title": "'open attempts as of until' is never dated by a test: a reconciliation after the window end is not shown to leave the earlier window's attempt open",
+   "dimension": null,
+   "reviewer_agent": "a4aa39f9cc8a91e0f",
+   "workflow_run": "wf_293dca41-74d",
+   "claim": "The regression test reconciles at T3 and re-reports with until=T3, and the integration test re-reports the absence window before the founder acts, so no test asserts that open_attempts_as_of_until for a window ending before the reconciliation still lists the attempt. Dropping the `upto(p.get('at'))` filter from latest_as_of (mutation M10) passes all 16 new tests, whereas the analogous dating of verifications is explicitly tested at lines 171-172 ('verification is dated, not retroactive'). The code is correct (probe H10), so the claim 'as of until' is untested rather than wrong.",
+   "reproduction_offered": "cd /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-testq && python3 mutate.py M10_open_attempts_ignore_until -> '=== M10_open_attempts_ignore_until: rc=0'. Probe test_hostile2.py::test_h10_open_attempt_is_dated_by_until passed: 'H10 open as of T2: [unknown] | open as of T3: []' after reconcile(now=T3).",
+   "suggested_fix": "After loop.reconcile(ext_id, now=T3, ...) at line 298, also assert loop.return_report(since=T0, until=T2, record=False)['report']['open_attempts_as_of_until'] still equals [the ext attempt] (and reconciliations == [] for that window).",
+   "disposition": {
+    "status": "fixed",
+    "fix": "open_attempts_as_of_until asserted for a window ending before the reconciliation",
+    "regression_test": "tests/unit/test_goal_gravity_absence.py::test_an_open_attempt_is_never_hidden_by_a_later_grantless_wake_and_never_redispatched"
+   }
+  },
+  {
+   "file": "egregore/absence.py",
+   "line": 121,
+   "severity": "low",
+   "title": "turns.signals_integrated counts a refused reserved-source signal (founder://answers) as integrated; no test fakes the founder-answer source against the report",
+   "dimension": null,
+   "reviewer_agent": "a4aa39f9cc8a91e0f",
+   "workflow_run": "wf_293dca41-74d",
+   "claim": "turn_stats['signals_integrated'] sums len(turn['signal_ids']) from the turn record, which lists every caller signal presented, including one refused by turn()'s reserved-source guard (RESERVED_SOURCE_RECORD) or muted (MUTED_RECORD). Input: one caller signal with source GoalGravityLoop.FOUNDER_ANSWER_SOURCE in a turn at T1, report over [T1, T1]. Wrong output: turns.signals_integrated == 1 and headline '1 signal(s) and 1 derived reading(s) integrated.' while learned.reserved_source_refusals == 1 and the only integrated experience is the derived sensorium reading. founder_activity.away stays True (correct). None of the new tests exercise a faked founder source or a muted signal in the report.",
+   "reproduction_offered": "PYTHONPATH=/home/user/uniimente-kernel-pr160 python3 -m pytest -q -p no:cacheprovider --rootdir=/tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-testq -s /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-testq/test_hostile2.py::test_h2b_faked_founder_source_window_excludes_authorization -> 'H2b woken: () | turns.signals_integrated: 1 | learned.experiences_integrated: 1 | reserved_source_refusals: 1 | away: True', headline[0] ends '1 signal(s) and 1 derived reading(s) integrated.'; FAILED on signals_integrated == 0.",
+   "suggested_fix": "Compute signals_integrated from EXPERIENCE_RECORDs whose context.trigger_id matches the turn (or subtract the turn's RESERVED_SOURCE/MUTED records), and add a test: a signal with source 'founder://answers' leaves founder_activity.away True, reserved_source_refusals 1 and signals_integrated 0.",
+   "disposition": {
+    "status": "fixed",
+    "fix": "signals_integrated excludes signals the same turn refused (reserved source) or did not integrate (muted); signals_presented keeps the raw count",
+    "regression_test": "tests/unit/test_goal_gravity_absence.py::test_a_refused_reserved_source_signal_is_not_counted_as_integrated"
+   }
+  },
+  {
+   "file": "tests/unit/test_goal_gravity_schedule.py",
+   "line": 46,
+   "severity": "nit",
+   "title": "Test name claims completed goals are excluded from the schedule but the body authorizes none",
+   "dimension": null,
+   "reviewer_agent": "a4aa39f9cc8a91e0f",
+   "workflow_run": "wf_293dca41-74d",
+   "claim": "test_paused_revoked_completed_and_awake_goals_are_not_scheduled covers stop_pushing (paused), revoke and wake only; no goal reaches status 'completed', so the 'completed' branch of SLEEPING filtering is asserted by the name alone. (Also: the stop_pushing check in schedule.py is redundant with the status check—mutation M7 removing it survives—so the paused case is really tested through status 'paused'.)",
+   "reproduction_offered": "grep -n complet /home/user/uniimente-kernel-pr160/tests/unit/test_goal_gravity_schedule.py -> only line 46 (the def line). cd /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-testq && python3 mutate.py M7_schedule_ignores_stop_pushing -> rc=0.",
+   "suggested_fix": "Add a goal driven to 'completed' (e.g. via registry.transition(..., status='completed') or a satisfied plan) and assert it is absent from wake_schedule entries, or rename the test to what it exercises.",
+   "disposition": {
+    "status": "fixed",
+    "fix": "the test now authorizes and completes a goal and asserts it is not scheduled",
+    "regression_test": "tests/unit/test_goal_gravity_schedule.py::test_paused_revoked_and_completed_goals_are_not_scheduled_and_an_awake_goal_is_due_now"
+   }
+  },
+  {
+   "file": "tests/unit/test_goal_gravity_absence.py",
+   "line": 144,
+   "severity": "nit",
+   "title": "evidence_tier.prepared_counted_as_executed / executor_claims_counted_as_verification are hard-coded False literals; the assertions on them cannot fail",
+   "dimension": null,
+   "reviewer_agent": "a4aa39f9cc8a91e0f",
+   "workflow_run": "wf_293dca41-74d",
+   "claim": "absence.py:397-398 sets both flags to the constant False, so `assert report['evidence_tier']['prepared_counted_as_executed'] is False` (line 144) and `... ['executor_claims_counted_as_verification'] is False` (line 161) are tautologies that would still pass if prepared were counted as executed or executor claims as verification. The neighbouring assertions do catch those mutations (M2, M3 fail), so the flags add no falsification power and present a declared policy as a measured property.",
+   "reproduction_offered": "grep -n 'executor_claims_counted_as_verification\\|prepared_counted_as_executed' /home/user/uniimente-kernel-pr160/egregore/absence.py -> lines 397-398 both literal False. cd /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-testq && python3 mutate.py M2_prepared_counted_as_executed M3_executor_claim_counted_as_verification -> both rc=1, caught by the executed-list/verification assertions, not by these flags.",
+   "suggested_fix": "Either drop the two assertions (keep the behavioural ones) or make the flags computed (e.g. derive them from a cross-check that no executed entry originates from a PREPARED_RECORD / that no verification entry lacks a VERIFICATION_RECORD hash) so a regression would flip them.",
+   "disposition": {
+    "status": "fixed",
+    "fix": "the two flags are computed from cross-checks (prepared_records_also_counted_as_executed, verifications_without_ledger_record)",
+    "regression_test": "egregore/absence.py evidence_tier"
+   }
+  },
+  {
+   "file": "egregore/absence.py",
+   "line": 147,
+   "severity": "high",
+   "title": "Accountable human resolutions are headlined as Gate executions \"with receipts\" and as Gate refusals \"at commit\"",
+   "dimension": null,
+   "reviewer_agent": "ab0bdcfdfdcd483d4",
+   "workflow_run": "wf_ecde1cc2-860",
+   "claim": "The `executed` fold (line 147) admits every intervention record in DONE_STATES, and the `refused` fold (line 162) every `failed` record, including those written by `reconcile()` from an `accountable_resolution` (a human saying \"it went out\" / \"nothing was sent\"; no Gate action, no receipt, no Gate reasons). The headline at lines 447-448 then prints `len(executed)` as \"move(s) executed through the Consequence Gate with receipts\" and `len(refused_by_gate)` as \"refused by the Gate or policy at commit\". A human's testimony is thereby reported as a Gate execution with a receipt (receipt_hash None, action_id None) and as a Gate refusal (gate_state None, reasons []), contradicting `evidence_tier.executed_moves_with_receipts` = 0 in the same report and the module's own promise never to count a claim as execution.",
+   "reproduction_offered": "Ran /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-honesty/r1_resolution_counted_as_gate.py: two external moves dispatched with executor raising -> both `unknown`; then loop.reconcile(a, resolutions={route: {state: 'executed', reconciled_by: 'alfonso_lopez', ...}}) and reconcile(b, ... state 'failed'). return_report(since=T2, until=T2) printed: `gate_dispatch records: 2  receipts on ledger: 0`; executed=[{intervention_id: contact-engineers, receipt_hash: null, action_id: null, how: accountable_resolution}]; refused_by_gate=[{gate_state: null, reasons: [], how: accountable_resolution}]; evidence_tier.executed_moves_with_receipts: 0; HEADLINE: \"1 move(s) executed through the Consequence Gate with receipts; 0 prepared for you and not executed; 1 refused by the Gate or policy at commit.\"",
+   "suggested_fix": "Partition by provenance: count an entry in `executed` for the Gate sentence only when `detail.action_id`/`receipt_hash` is present (how in {gate_run_in_turn, gate_ledger_events}); list `reconciled_from == 'accountable_resolution'` entries in a separate `resolved_by_human` section naming `reconciled_by` and saying no receipt exists. Put a record in `refused_by_gate` only when `detail.state in GATE_TERMINAL_FAILED`; a human 'failed' resolution belongs in the same human-resolution section. Make the headline count from those partitions and add tests mirroring r1.",
+   "disposition": {
+    "status": "fixed",
+    "fix": "records with reconciled_from=accountable_resolution are listed under closed_by_accountable_resolution (never executed/refused); the headline counts receipts explicitly",
+    "regression_test": "tests/unit/test_goal_gravity_absence.py::test_an_accountable_human_resolution_is_neither_a_gate_execution_nor_a_gate_refusal"
+   }
+  },
+  {
+   "file": "egregore/absence.py",
+   "line": 236,
+   "severity": "medium",
+   "title": "A deferred ask that has re-surfaced (open again) is reported as deferred, so decisions waiting are undercounted",
+   "dimension": null,
+   "reviewer_agent": "ab0bdcfdfdcd483d4",
+   "workflow_run": "wf_ecde1cc2-860",
+   "claim": "`waiting`/`deferred` classification compares the latest ASK record to the latest ANSWER record by item_id without regard to ledger order. After a `defer` answer, the loop re-routes the same item once `resurface_after` passes (a new ASK_RECORD; `FounderAttentionRouter.sync` re-opens it). The report still sees `answer.decision == 'defer'` and files the item under `deferred_as_of_until` (with a `resurface_after` already in the past) instead of `decisions_waiting_as_of_until`, so the headline count of decisions waiting for the founder is too low.",
+   "reproduction_offered": "Ran /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-honesty/r3_resurfaced_deferred_listed_as_deferred.py (same scenario as tests/unit/test_goal_gravity_schedule.py::test_a_deferred_ask_is_scheduled_to_resurface, then a report). Output: `re-surfaced as open ask in turn t2: True`; `loop.attention.open_asks() contains it: True`; `in decisions_waiting_as_of_until: False`; `in deferred_as_of_until: [('sha256:878899bb7', '2026-10-20T13:00:00Z')]`; `open decision asks now: 2`; `report decisions waiting: 1`; HEADLINE: \"1 decision(s) exceed delegated authority and wait for you\".",
+   "suggested_fix": "Fold asks and answers in ledger order (as `WakeSchedule.entries` and `FounderAttentionRouter.sync` already do): the item is waiting when its latest record up to `until` is an ASK, deferred only when the latest record is a `defer` ANSWER. Add a regression test that defers, re-surfaces, and asserts the item is in `decisions_waiting_as_of_until`.",
+   "disposition": {
+    "status": "fixed",
+    "fix": "asks and answers are folded in ledger order per item (as WakeSchedule does); an item whose latest record is an ask is open again",
+    "regression_test": "tests/unit/test_goal_gravity_absence.py::test_a_resurfaced_deferred_ask_is_waiting_again_not_deferred"
+   }
+  },
+  {
+   "file": "egregore/schedule.py",
+   "line": 62,
+   "severity": "medium",
+   "title": "Wake schedule emits deferred-ask entries for paused/revoked goals; once past resurface they are permanently overdue and a host would call turn() forever",
+   "dimension": null,
+   "reviewer_agent": "ab0bdcfdfdcd483d4",
+   "workflow_run": "wf_ecde1cc2-860",
+   "claim": "The deferred-ask loop (lines 62-71) does not filter by goal status or `stop_pushing`; it records `goal_status` but still schedules. A `defer` followed by the founder pausing (stop_pushing) or revoking the goal leaves an entry that becomes `overdue` at `resurface_after` and stays overdue forever, because `wake()` refuses paused/revoked goals so the ask never re-surfaces. `next_trigger` then returns `next_due_at == as_of` on every call with a fresh `cadence:<now>` trigger id, and a host obeying the documented contract appends one silent TURN_RECORD per tick that wakes nothing. The same spin occurs transiently whenever a deferred ask's resurface time precedes the goal's cadence due time. This defeats the view's promise to \"discover a due obligation\" and manufactures turns against a goal the founder stopped.",
+   "reproduction_offered": "Ran /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-honesty/r4_schedule_stale_deferred.py. Paused case: `entries: [('deferred_ask', 'paused', '2026-10-20T13:00:00Z', True)]`, `next_due_at == as_of: True`; three obeying ticks: `tick 0..2: woken=() status=silent ... overdue=['deferred_ask']`, `silent turn records appended by obeying the schedule: 3`. Revoked case: `entries: [('deferred_ask', 'revoked', True)] next_due_at==now: True`. Plain case: deferred ask due 2026-10-21T13:00 while goal cadence next due 2026-10-27: `turn at next_due_at woke: () status: silent`; `one hour later: next_due_at==now: True overdue: ['deferred_ask']`.",
+   "suggested_fix": "Skip deferred asks whose goal is not in SLEEPING or has `stop_pushing` (mirror the cadence filter at line 48); for the rest, set `due_at = max(resurface_after, goal's cadence due)` or exclude deferred asks from `overdue`/`next_due_at` (report them as informational `resurfaces_at`), since turn() only re-surfaces them when the goal wakes. Add tests: defer+pause, defer+revoke, defer before cadence -> no overdue entry / next_due_at equals the cadence time.",
+   "disposition": {
+    "status": "fixed",
+    "fix": "deferred asks are scheduled only for goals that can wake; the rest are listed under stale_deferred, never overdue",
+    "regression_test": "tests/unit/test_goal_gravity_schedule.py::test_a_deferred_ask_on_a_goal_that_cannot_wake_is_stale_not_due"
+   }
+  },
+  {
+   "file": "egregore/absence.py",
+   "line": 191,
+   "severity": "medium",
+   "title": "The same move re-prepared on every wake is counted N times as \"prepared for you\" and its cost summed N times",
+   "dimension": null,
+   "reviewer_agent": "ab0bdcfdfdcd483d4",
+   "workflow_run": "wf_ecde1cc2-860",
+   "claim": "`turn()` appends a PREPARED_RECORD each time the classifier returns PREPARE for a route (the attention router dedupes the ask, the ledger does not dedupe the preparation). The report folds every PREPARED record in the window (line 191), prints `len(prepared)` as \"prepared for you and not executed\" (line 448), sums `estimated_cost_usd` per record into `estimated_cost_usd_prepared_not_spent` (line 272) and `per_goal.prepared`. One outreach move at $0.50 prepared on three wakes is reported as 3 prepared items and $1.50 not spent while one decision for it waits.",
+   "reproduction_offered": "Ran /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-honesty/r6_prepared_duplicates.py: one goal with a single outreach move (estimated_cost_usd=0.5), woken at T1, T2, T3 without a grant. Output: `turn 1: ... suppressed=['duplicate of an open or already-routed a']`; `PREPARED records: 3`; `report prepared entries: [('contact-engineers', T1), ('contact-engineers', T2), ('contact-engineers', T3)]`; `estimated_cost_usd_prepared_not_spent: 1.5 (one move, declared 0.5)`; `per_goal prepared: 3`; HEADLINE: \"... 3 prepared for you and not executed; ...\".",
+   "suggested_fix": "Dedupe `prepared` by (goal_id, route_hash) within the window (keep first/last `at` and a `times_prepared` count) and sum each route's estimated cost once; or stop re-appending PREPARED_RECORD when the latest record for the route is already `planned`+`prepared` with an open ask. Add a test with two wakes asserting one prepared entry and 0.5.",
+   "disposition": {
+    "status": "fixed",
+    "fix": "prepared is deduplicated by (goal, route) with first/last_prepared_at and times_prepared; the estimate is summed once per route; preparation_records_in_window keeps the raw count",
+    "regression_test": "tests/unit/test_goal_gravity_absence.py::test_a_move_prepared_on_every_wake_is_one_prepared_move_with_a_count"
+   }
+  },
+  {
+   "file": "egregore/absence.py",
+   "line": 359,
+   "severity": "low",
+   "title": "goals.total and the \"N of M authorized goal(s)\" headline count goals authorized after the window end",
+   "dimension": null,
+   "reviewer_agent": "ab0bdcfdfdcd483d4",
+   "workflow_run": "wf_ecde1cc2-860",
+   "claim": "`per_goal` iterates `registry.goals()` (current registry, line 359) and `goals.total = len(per_goal)` (line 383) feeds the first headline sentence (line 444). A goal authorized after `until` (or long since revoked) is counted in `total` for a historical window in which it did not exist, mixing a now-fact into a windowed sentence without a label (`total` carries no `_now` suffix unlike `status_now`/`blockers_now`).",
+   "reproduction_offered": "Ran /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-honesty/r5_total_and_away.py: goal a authorized T0 and processed at T1; goal b authorized at T3. return_report(since=T0, until=T1) printed `goals.total: 2  active_in_window: 1` and `HEADLINE[0]: 1 of 2 authorized goal(s) were active: ...`.",
+   "suggested_fix": "Restrict `per_goal`/`total` to goals whose AUTHORIZED_RECORD `authorized_at <= until` (and optionally exclude goals revoked/superseded before `since`), or rename to `total_now` and have the headline use the as-of-until count.",
+   "disposition": {
+    "status": "fixed",
+    "fix": "the hashed body is a function of records dated <= until: goals folded from authorization/transition/preference records as of until (authorized_as_of_until, status_as_of_until, ...); all-time and now fields moved to an unhashed, unrecorded as_of_now envelope",
+    "regression_test": "tests/unit/test_goal_gravity_absence.py::test_a_closed_window_is_the_same_report_however_the_ledger_grows"
+   }
+  },
+  {
+   "file": "egregore/absence.py",
+   "line": 261,
+   "severity": "low",
+   "title": "founder_activity.away ignores founder revocations and counts non-founder reviewers as founder action",
+   "dimension": null,
+   "reviewer_agent": "ab0bdcfdfdcd483d4",
+   "workflow_run": "wf_ecde1cc2-860",
+   "claim": "`away` (line 261) is derived from answers, preferences, authorizations, discrepancy reviews and accountable resolutions. `GoalRegistry.revoke` writes only a TRANSITION_RECORD (\"revoked by alfonso_lopez: ...\"), so a window in which the founder revoked a goal reports `away: True` and the headline (line 473) says \"You answered nothing in this window; everything above happened under standing authority or was prepared\". Conversely a review by an independent auditor flips `away` to False and the headline (line 475) says \"You acted 0 answer(s), 0 preference(s), 0 authorization(s) in this window\" although the founder did nothing.",
+   "reproduction_offered": "r5_total_and_away.py: after loop.registry.revoke(a, actor='alfonso_lopez', reason='stop', now=T2), return_report(since=T2, until=T2) printed `founder_activity: {... 'away': True ...}` and HEADLINE \"You answered nothing in this window; everything above happened under standing authority or was prepared.\" while `transition records in window with 'revoked by': ['revoked by alfonso_lopez: stop']`. r9_misc.py: after loop.review_discrepancy(g, h, reviewer='auditor:independent', ...) at T2, the T2 window printed `away: False actors: ['auditor:independent']` and HEADLINE \"You acted 0 answer(s), 0 preference(s), 0 authorization(s) in this window.\"",
+   "suggested_fix": "Count revoke/supersede transitions (give them an explicit `actor` field in the payload instead of a reason prefix) as founder activity; attribute reviews/resolutions to their actor and compute `away` from founder-attributed actors only (or rename the block `human_activity` and make the headline enumerate reviews/resolutions too).",
+   "disposition": {
+    "status": "fixed",
+    "fix": "founder_activity counts only founder paths (answers, preferences/refusals, authorizations, revocations/supersessions); reviews and resolutions live in accountable_parties with their actors and their own headline sentence",
+    "regression_test": "tests/unit/test_goal_gravity_absence.py::test_a_negative_outcome_is_a_discrepancy_and_an_auditor_review_is_not_founder_activity"
+   }
+  },
+  {
+   "file": "egregore/closure.py",
+   "line": 164,
+   "severity": "low",
+   "title": "New closure honesty assertions are tautologies and cannot fail",
+   "dimension": null,
+   "reviewer_agent": "ab0bdcfdfdcd483d4",
+   "workflow_run": "wf_ecde1cc2-860",
+   "claim": "`report['requests_nothing'] is True` and `report['kind'] == 'information'` test literal constants written at absence.py:404; `'options' not in report` tests a top-level key that `_compile` never emits, while every open ask's question, options and recommendation are carried nested in `decisions_waiting_as_of_until[*]`. None of these three conjuncts constrains whether `return_report` opens an ask, appends records beyond its own, or changes the attention state; they would pass for any dict built from the same literal.",
+   "reproduction_offered": "Ran /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-honesty/r8_closure_tautology.py: `body literal: ['\"kind\": \"information\", \"requests_nothing\": True,']`; on a real report with one waiting decision: `'options' not in report: True | requests_nothing: True` while `nested ask carried: question= \"Gate 'favorable convergence observed' is active...\" options= ['authorize this move', 'revise the route', 'do nothing now']`; `tautology check on an arbitrary dict: True`.",
+   "suggested_fix": "Replace the constant checks with behavioural ones: record ledger counts by type before/after `return_report` and assert exactly one REPORT_RECORD was appended and zero ASK/PREPARED/INTERVENTION/TRANSITION records; assert `loop.attention.open_asks()` is unchanged; assert no `executed` entry lacks a receipt_hash when `how` claims a Gate path.",
+   "disposition": {
+    "status": "fixed",
+    "fix": "the evidence closure now checks behaviour: exactly one record appended (the report), open asks unchanged, and the same window re-reported after the ledger grew has the same report id and no second record",
+    "regression_test": "egregore/closure.py (evidence closure; verifier V3)"
+   }
+  },
+  {
+   "file": "egregore/gravity.py",
+   "line": 841,
+   "severity": "nit",
+   "title": "Guard-skipped routes are reported as classifier decisions although no classification ran",
+   "dimension": null,
+   "reviewer_agent": "ab0bdcfdfdcd483d4",
+   "workflow_run": "wf_ecde1cc2-860",
+   "claim": "The new prior-attempt guard appends a decision entry copying `prior['decision']` (EXECUTE_AUTONOMOUSLY) without invoking the classifier or writing a CLASSIFICATION_RECORD. The report's `turns.classifier_decisions` (absence.py:127) counts these entries, so a window in which only the guard fired shows classifier decisions that never happened.",
+   "reproduction_offered": "r9_misc.py: after an executed brief, a grantless wake at T3 printed `t3 decisions: [('compile-brief', 'EXECUTE_AUTONOMOUSLY', 'already executed; not re-propo'), ...]`, `classification records at T3: 0`, and `report turns.classifier_decisions: {'EXECUTE_AUTONOMOUSLY': 1, 'PREPARE_FOR_FOUNDER': 1}`.",
+   "suggested_fix": "Mark guard entries (e.g. `classified: False` or `decision: 'ALREADY_ATTEMPTED'`) and exclude them from `classifier_decisions` / `withheld_by_classifier`, listing them under a separate `routes_held_by_prior_attempt` count.",
+   "disposition": {
+    "status": "fixed",
+    "fix": "guard pass-through entries are counted as turns.guard_passthroughs, not as classifier decisions",
+    "regression_test": "tests/unit/test_goal_gravity_absence.py::test_an_open_attempt_is_never_hidden_by_a_later_grantless_wake_and_never_redispatched"
+   }
+  },
+  {
+   "file": "egregore/absence.py",
+   "line": 236,
+   "severity": "high",
+   "title": "Resurfaced deferred ask is reported as deferred, not waiting",
+   "dimension": null,
+   "reviewer_agent": "a67912df1ff61d229",
+   "workflow_run": "wf_ecde1cc2-860",
+   "claim": "asks_upto/answers_upto are keyed by item_id and the entry is classified solely by the latest ANSWER (lines 225-237). A decision the founder deferred is re-routed by FounderAttentionRouter.route() once resurface_after passes (a second ASK_RECORD with the same item_id; the router then holds it in _open as a waiting decision), but the fold still sees answer.decision == 'defer' and files it under deferred_as_of_until. decisions_waiting_as_of_until, per_goal.decisions_waiting and the headline '{n} decision(s) exceed delegated authority and wait for you' undercount by one per resurfaced ask, and the deferred entry pairs the new routed_at with a resurface_after that is already in the past. schedule.py (lines 56-63) gets this right by taking the latest of ask/answer in ledger order; absence.py does not.",
+   "reproduction_offered": "python3 /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-fold/probe_a_resurfaced_defer.py -> 'deferred until 2026-10-20T13:00:00Z'; 're-routed after resurface: True'; 'ASK records for this item_id: ['2026-10-13T13:00:00Z', '2026-10-21T13:00:00Z']'; 'attention router says open (waiting): True kind: decision'; 'report decisions_waiting_as_of_until contains item: False'; 'report deferred_as_of_until contains item: True'; 'TOTAL open decision asks in router: 2 | report decisions_waiting_as_of_until: 1 | report deferred_as_of_until: 1'; 'schedule (for contrast) still lists deferred_ask: False'.",
+   "suggested_fix": "Classify by the latest of the ask and the answer for each item_id in ledger order (as WakeSchedule.entries does), or treat an ask whose routed_at is later than the latest answer's answered_at as open again: if the latest record is an ASK (or the latest answer is 'defer' and a later ASK exists) -> waiting/informed; only when the latest record is a 'defer' ANSWER with no later ask -> deferred. Add a unit test mirroring test_a_deferred_ask_is_scheduled_to_resurface that asserts the resurfaced item is in decisions_waiting_as_of_until and not in deferred_as_of_until.",
+   "disposition": {
+    "status": "fixed",
+    "fix": "asks and answers are folded in ledger order per item (as WakeSchedule does); an item whose latest record is an ask is open again",
+    "regression_test": "tests/unit/test_goal_gravity_absence.py::test_a_resurfaced_deferred_ask_is_waiting_again_not_deferred"
+   }
+  },
+  {
+   "file": "egregore/absence.py",
+   "line": 184,
+   "severity": "high",
+   "title": "prepared lists one PREPARED_RECORD per turn, inflating 'prepared for you' and estimated_cost_usd_prepared_not_spent",
+   "dimension": null,
+   "reviewer_agent": "a67912df1ff61d229",
+   "workflow_run": "wf_ecde1cc2-860",
+   "claim": "gravity.py appends a PREPARED_RECORD every turn a move stays PREPARE_FOR_FOUNDER/ESCALATE (line 944) while the attention router suppresses the duplicate ask, so one pending move yields N records over N wakes. The fold does not dedupe prepared by (goal_id, route_hash) the way executed is deduped by (goal, route, attempt): report['prepared'] has N entries for the same intervention, per_goal.prepared == N, money.estimated_cost_usd_prepared_not_spent sums the same declared estimate N times, and the headline says '{N} prepared for you and not executed' for a single decision.",
+   "reproduction_offered": "python3 /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-fold/probe_f_prepared_dupes.py -> 't2 [...('contact-engineers', 'PREPARE_FOR_FOUNDER')] routing suppressed: ['duplicate of an open or already-routed ask']' (same for t3); 'open decision asks for the outreach route: 1'; 'report prepared entries: [('contact-engineers', '2026-10-13T13:00:00Z', 0.5), ('contact-engineers', '2026-10-14T13:00:00Z', 0.5), ('contact-engineers', '2026-10-15T13:00:00Z', 0.5)]'; 'money.estimated_cost_usd_prepared_not_spent: 1.5 (one move, declared 0.5)'; 'per_goal prepared: [3]'; headline '... 3 prepared for you and not executed ...'.",
+   "suggested_fix": "Dedupe prepared by (goal_id, intervention.route_hash) within the window (keep the latest record and add a 'times_prepared' or 'first_prepared_at' field), compute estimated_cost_usd_prepared_not_spent over distinct routes, and have per_goal.prepared and the headline count distinct prepared moves. Alternatively count only PREPARED_RECORDs whose paired ask was actually routed (not suppressed).",
+   "disposition": {
+    "status": "fixed",
+    "fix": "prepared is deduplicated by (goal, route) with first/last_prepared_at and times_prepared; the estimate is summed once per route; preparation_records_in_window keeps the raw count",
+    "regression_test": "tests/unit/test_goal_gravity_absence.py::test_a_move_prepared_on_every_wake_is_one_prepared_move_with_a_count"
+   }
+  },
+  {
+   "file": "egregore/absence.py",
+   "line": 305,
+   "severity": "medium",
+   "title": "goals_completed / active_in_window re-report a goal in any later window that merely transitions it",
+   "dimension": null,
+   "reviewer_agent": "a67912df1ff61d229",
+   "workflow_run": "wf_ecde1cc2-860",
+   "claim": "completed_in_window selects every TRANSITION_RECORD with state.status == 'completed' and last_reviewed_at in the window, and statuses_in_window/active (lines 362-363, 381) count any transition. GoalRegistry.transition() accepts a completed goal, and verify_outcome/_apply_verification (gravity.py 1176) and reconcile() transition it, so a verification days after completion writes a 'completed' TRANSITION_RECORD dated at verification time. A window containing only that verification reports learned.goals_completed = [goal], goals.active_in_window = 1 and the headline '1 of 1 authorized goal(s) were active: 0 goal-processing(s) across 0 turn(s)', although nothing completed or was processed in that window.",
+   "reproduction_offered": "python3 /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-fold/probe_b_completed_recount.py -> 'completed at T3: True completed'; 'TRANSITION records written at T4: [('outcome externally verified by auditor:independent', 'completed')]'; '[T3,T3] learned.goals_completed: ['sha256:cada6b...']'; '[T4,T4] learned.goals_completed: ['sha256:cada6b...'] <-- goal completed at T3, not T4'; '[T4,T4] turns.count: 0 goals.active_in_window: 1'; '[T4,T4] per_goal.statuses_in_window: [['completed']]'; headline '1 of 1 authorized goal(s) were active: 0 goal-processing(s) across 0 turn(s); ...'.",
+   "suggested_fix": "Count a completion only when the status changes to 'completed' (compare with the previous TRANSITION_RECORD for the goal, or match reason == 'all plan nodes satisfied by observed evidence'). Define active_in_window as goals with turns_processed > 0 (or with a status change in the window), not any transition record.",
+   "disposition": {
+    "status": "fixed",
+    "fix": "completions and activity are status *changes* (previous transition status differs); a transition that repeats 'completed' is not a completion",
+    "regression_test": "tests/unit/test_goal_gravity_absence.py::test_a_completion_is_reported_once_and_a_later_transition_does_not_re_report_it"
+   }
+  },
+  {
+   "file": "egregore/absence.py",
+   "line": 162,
+   "severity": "medium",
+   "title": "A human 'failed' resolution is folded into refused_by_gate and the 'refused by the Gate or policy at commit' headline",
+   "dimension": null,
+   "reviewer_agent": "a67912df1ff61d229",
+   "workflow_run": "wf_ecde1cc2-860",
+   "claim": "refused collects every intervention record with evidence_state == 'failed', including reconcile()-derived records whose detail.reconciled_from == 'accountable_resolution' (gravity.py 1058). Those carry no Gate state and no Gate reasons (gate_state None, reasons []), yet the report lists them under refused_by_gate, counts them in per_goal.refused_by_gate, and the headline says '{n} refused by the Gate or policy at commit' for an outcome the Gate never adjudicated (the executor raised; a person recorded it as failed).",
+   "reproduction_offered": "python3 /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-fold/probe_d_resolution_labels.py -> 'both unknown: unknown unknown'; after reconcile(... {'state': 'failed', 'reconciled_by': 'alfonso_lopez', ...}): 'refused_by_gate: [('contact-engineers', None, [], 'accountable_resolution')]'; headline '... 1 refused by the Gate or policy at commit.'; 'per_goal refused_by_gate: {'sha256:9ffb0': 1, ...}'.",
+   "suggested_fix": "Only treat a 'failed' record as a Gate refusal when detail.reconciled_from in (absent/'gate_run_in_turn', 'gate_ledger_events') and detail.state is in GATE_TERMINAL_FAILED; put accountable-resolution failures in a separate list (e.g. 'closed_failed_by_resolution' with reconciled_by, evidence_refs, note) and exclude them from the Gate-refusal headline count.",
+   "disposition": {
+    "status": "fixed",
+    "fix": "refused_by_gate admits only Gate-sourced failed records (gate_run_in_turn, gate_ledger_events)",
+    "regression_test": "tests/unit/test_goal_gravity_absence.py::test_an_accountable_human_resolution_is_neither_a_gate_execution_nor_a_gate_refusal"
+   }
+  },
+  {
+   "file": "egregore/absence.py",
+   "line": 261,
+   "severity": "medium",
+   "title": "founder_activity.away flips to False and headline says 'You acted' when only a non-founder auditor acted",
+   "dimension": null,
+   "reviewer_agent": "a67912df1ff61d229",
+   "workflow_run": "wf_ecde1cc2-860",
+   "claim": "away is computed from all integer counters including discrepancy_reviews and accountable_resolutions, which fold DISCREPANCY_REVIEW_RECORD / RECONCILIATION_RECORD written by any accountable party other than the acting agent (review_discrepancy only forbids the actor itself). An independent auditor's review therefore marks the founder present and the headline branch at line 475 prints 'You acted 0 answer(s), 0 preference(s), 0 authorization(s) in this window.' while the founder answered nothing. The documented contract is 'founder activity in the window (away when none)'.",
+   "reproduction_offered": "python3 /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-fold/probe_e_away.py -> 'discrepancies after negative outcome: 1'; after review_discrepancy(reviewer='auditor:independent'): founder_activity {'accountable_resolutions': 0, 'actors': ['auditor:independent'], 'answers': 0, 'away': False, 'discrepancy_reviews': 1, 'goals_authorized': 0, 'preferences_or_refusals': 0}; headline 'You acted 0 answer(s), 0 preference(s), 0 authorization(s) in this window.'",
+   "suggested_fix": "Compute away from founder-attributable records only (answers, preferences/refusals, authorizations; reviews/resolutions only when the actor matches the goal's authorized_by/legal principal), report third-party reviews and resolutions under a separate 'accountable_third_parties' section, and make the headline branch print the review/resolution counts instead of 'You acted ... 0 ... 0 ... 0'.",
+   "disposition": {
+    "status": "fixed",
+    "fix": "founder_activity counts only founder paths (answers, preferences/refusals, authorizations, revocations/supersessions); reviews and resolutions live in accountable_parties with their actors and their own headline sentence",
+    "regression_test": "tests/unit/test_goal_gravity_absence.py::test_a_negative_outcome_is_a_discrepancy_and_an_auditor_review_is_not_founder_activity"
+   }
+  },
+  {
+   "file": "egregore/absence.py",
+   "line": 447,
+   "severity": "low",
+   "title": "Headline claims executed moves have receipts even when none do",
+   "dimension": null,
+   "reviewer_agent": "a67912df1ff61d229",
+   "workflow_run": "wf_ecde1cc2-860",
+   "claim": "The headline sentence '{len(executed)} move(s) executed through the Consequence Gate with receipts' uses len(body['executed']) although executed includes reconcile()-derived 'executed' records from an accountable resolution (reconciled_from == 'accountable_resolution', receipt_hash None, reconciled False). evidence_tier.executed_moves_with_receipts in the same report correctly says 0, so the headline contradicts the tier.",
+   "reproduction_offered": "python3 /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-fold/probe_d_resolution_labels.py -> 'executed: [('contact-engineers', None, 'accountable_resolution', False)]'; 'evidence_tier.executed_moves_with_receipts: 0'; headline '1 move(s) executed through the Consequence Gate with receipts; ...'.",
+   "suggested_fix": "Phrase the headline from the tier counts, e.g. '{n} move(s) executed ({with_receipts} with Gate receipts, {n - with_receipts} closed by accountable resolution without a receipt)', or split executed into gate-recorded and resolution-closed lists.",
+   "disposition": {
+    "status": "fixed",
+    "fix": "records with reconciled_from=accountable_resolution are listed under closed_by_accountable_resolution (never executed/refused); the headline counts receipts explicitly",
+    "regression_test": "tests/unit/test_goal_gravity_absence.py::test_an_accountable_human_resolution_is_neither_a_gate_execution_nor_a_gate_refusal"
+   }
+  },
+  {
+   "file": "egregore/absence.py",
+   "line": 478,
+   "severity": "low",
+   "title": "Headline reports 0 moves externally verified in a window that contains a confirmed verification",
+   "dimension": null,
+   "reviewer_agent": "a67912df1ff61d229",
+   "workflow_run": "wf_ecde1cc2-860",
+   "claim": "evidence_tier.externally_verified_moves (line 396) counts only moves whose execution record falls inside the window and that have a confirmed verification as of until. A verification dated inside the window for a move executed before the window appears in report['verifications'] and learned.independent_verifications but the headline 'Evidence: ...; 0 move(s) externally verified' tells the returning founder nothing was verified, and the 'learned' line that would show the count is only emitted when turns.count > 0.",
+   "reproduction_offered": "python3 /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-fold/probe_g_verified_headline.py -> 'verifications in window: [('confirmed', 'auditor:independent')]'; 'executed in window: 0'; 'evidence_tier.externally_verified_moves: 0'; 'learned.independent_verifications: 1'; headline last line 'Evidence: ledger-derived (chain intact); 0 move(s) externally verified; executor claims are not verification.'",
+   "suggested_fix": "Add a tier field counting confirmed/refuted verifications dated in the window (independent of execution date) and use it (or both figures, labelled) in the Evidence headline, or emit the learned/verification sentence whenever verifications is non-empty rather than only when a turn ran.",
+   "disposition": {
+    "status": "fixed",
+    "fix": "verifications_dated_in_window / verifications_confirmed_in_window are reported and headlined independently of the execution date; the learned sentence is emitted when verifications exist",
+    "regression_test": "tests/unit/test_goal_gravity_absence.py::test_executor_claims_are_not_verification_but_an_independent_verifier_is"
+   }
+  },
+  {
+   "file": "egregore/absence.py",
+   "line": 117,
+   "severity": "low",
+   "title": "turns.classifier_decisions counts prior-attempt guard entries that the classifier never produced",
+   "dimension": null,
+   "reviewer_agent": "a67912df1ff61d229",
+   "workflow_run": "wf_ecde1cc2-860",
+   "claim": "decisions_by_kind is a Counter over every turn-summary decision entry. The new guard in gravity.py (lines 832-848) appends an entry copying prior['decision'] (always EXECUTE_AUTONOMOUSLY for an attempted/done route) on every later wake without running the classifier, so classifier_decisions over-reports EXECUTE_AUTONOMOUSLY by one per guard skip relative to CLASSIFICATION_RECORDs in the same window.",
+   "reproduction_offered": "python3 /tmp/claude-0/-home-user/d75c3db8-6aea-5c08-8f06-d4440a45ae3a/scratchpad/review-fold/probe_c_classifier_counts.py -> 't2 decision entries: [('compile-brief', 'EXECUTE_AUTONOMOUSLY', 'already attempted; no duplicate consequential action'), ('contact-engineers', 'PREPARE_FOR_FOUNDER', None)]'; 'CLASSIFICATION_RECORDs in window by decision: {'EXECUTE_AUTONOMOUSLY': 1, 'PREPARE_FOR_FOUNDER': 2}'; 'report turns.classifier_decisions: {'EXECUTE_AUTONOMOUSLY': 2, 'PREPARE_FOR_FOUNDER': 2}'.",
+   "suggested_fix": "Fold classifier_decisions from InterventionClassifier.CLASSIFICATION_RECORD payload['classification'] with classified_at in the window, or skip turn-summary entries whose note == 'already attempted; no duplicate consequential action' (and report them separately as 'routes_held_open_or_done').",
+   "disposition": {
+    "status": "fixed",
+    "fix": "guard pass-through entries are counted as turns.guard_passthroughs, not as classifier decisions",
+    "regression_test": "tests/unit/test_goal_gravity_absence.py::test_an_open_attempt_is_never_hidden_by_a_later_grantless_wake_and_never_redispatched"
+   }
+  }
+ ],
+ "undisposed": [],
+ "limits": [
+  "the review ran on the uncommitted tree before the implementation commit; the fixes are a second commit",
+  "confirmation by reproduction is not independent verification; the skeptic stage mostly did not run",
+  "no reviewer ran for determinism-idempotence-restart, loop-guard-regression and test-quality in run 2; run 1's reviewers for those dimensions did run and their findings are included"
+ ]
+}

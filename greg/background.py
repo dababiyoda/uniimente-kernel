@@ -42,7 +42,7 @@ from __future__ import annotations
 import threading
 
 # Capabilities whose adapter may run for minutes, so it runs outside the turn. Everything else stays inline.
-BACKGROUND_CAPABILITIES = frozenset({"worker.commission"})
+BACKGROUND_CAPABILITIES = frozenset({"worker.commission", "worker.team"})
 KILL_GRACE_SECONDS = 5   # after its worker's process group is killed, a dispatch records its outcome within this
 
 
@@ -184,3 +184,108 @@ class Background:
     def clock_monotonic() -> float:
         import time
         return time.monotonic()
+
+
+class BuildHandedOff(BaseException):
+    """Raised inside a mission's step when Genesis handed its builder call off the turn (``OffTurnBuilds``).
+
+    It ends that mission's step at the builder call, as a body killed inside the call would, except that the call
+    keeps running and its result is kept for the mission's next step. It is a BaseException so that no ``except
+    Exception`` on the way out of the step contains it; ``MissionEngine.step`` catches it and reports the mission
+    WORKING."""
+
+    def __init__(self, mission_id: str, function: str, deficit_id: str, build: int):
+        super().__init__(f"{mission_id}: building {function} ({deficit_id} build {build}) off the turn")
+        self.mission_id, self.function, self.deficit_id, self.build = mission_id, function, deficit_id, build
+
+
+class OffTurnBuilds:
+    """Genesis's builder call off the Body's turn (S38-A follow-up; founder decision on #96, 2026-11-21).
+
+    A Genesis build calls a coding agent for up to its timeout (300 s per attempt for Claude Code). Run inline, that
+    one call froze every other mission, the inbox and the heartbeat. Here only ``builder.build`` leaves the turn, and
+    unlike a worker dispatch it never touches the turn's state at all: the call gets a request and returns a
+    candidate. Everything around it stays on the turn, in one thread at a time, exactly as before:
+
+    - the budget check and the reservation (``genesis.build_started``, with the most the call may spend) are
+      recorded on the turn before the call starts;
+    - the call's result is held in memory, never written by the build's thread;
+    - the mission is not stepped while its call runs (``busy``), and is reported WORKING;
+    - its next step resumes the same open deficit (``Genesis._deficit_for``), takes the result (``take``) and records,
+      screens, verifies, registers and attaches it on the turn, under the mission's authority as it is then: a
+      mission the founder ended meanwhile is not stepped, so its late result is never attached.
+
+    Failure semantics are the inline ones for a body killed inside the call (acceptance H.G7): a result that is
+    never taken (the body stopped, crashed or restarted, or the mission ended) leaves its ``genesis.build_started``
+    unsettled, so ``Genesis._build_spend`` keeps charging it at its reserved ceiling until it is reconciled, and a
+    call made again after a restart is a new, separately charged build. STOP does not wait for a running call; the
+    Body names the builds it left unfinished in ``body.stopped``."""
+
+    def __init__(self, *, clock):
+        self.clock = clock
+        self._lock = threading.Lock()
+        self.running: dict[str, dict] = {}                    # mission_id -> the build call in flight
+        self._done: dict[tuple[str, int], dict] = {}          # (deficit_id, build) -> the finished call
+
+    def start(self, *, mission_id: str, function: str, deficit_id: str, build: int, attempt: int, call,
+              effects: list | None = None) -> None:
+        """Run ``call()`` (the builder call alone) on its own thread. Called on the turn."""
+        key = (deficit_id, build)
+
+        def body():
+            try:
+                outcome = {"value": call()}
+            except BaseException as exc:      # the builder is untrusted; its failure is taken as evidence on the turn
+                outcome = {"error": exc}
+            with self._lock:
+                self._done[key] = {**outcome, "attempt": attempt, "build": build, "mission_id": mission_id,
+                                   "effects": list(effects or ())}   # replayed on the turn by whoever takes it
+                self.running.pop(mission_id, None)
+
+        thread = threading.Thread(target=body, name=f"greg-build {mission_id} {deficit_id}#{build}", daemon=True)
+        with self._lock:
+            if mission_id in self.running:
+                raise RuntimeError(f"{mission_id} already has a build in flight")   # busy() prevents this
+            self.running[mission_id] = {"action_id": f"genesis.build:{function}", "attempt": attempt,
+                                        "deficit_id": deficit_id, "build": build, "since": self.clock(),
+                                        "thread": thread}
+        thread.start()
+
+    def busy(self, mission_id: str) -> dict | None:
+        """The build call of this mission that is still running, if any."""
+        with self._lock:
+            entry = self.running.get(mission_id)
+            return None if entry is None else {k: v for k, v in entry.items() if k != "thread"}
+
+    def ready(self, deficit_id: str) -> bool:
+        """Whether a call of this deficit has finished and waits to be taken."""
+        with self._lock:
+            return any(k[0] == deficit_id for k in self._done)
+
+    def ready_for(self, mission_id: str) -> list[str]:
+        """The deficits of this mission whose call has finished and waits to be taken."""
+        with self._lock:
+            return sorted({k[0] for k, v in self._done.items() if v["mission_id"] == mission_id})
+
+    def take(self, deficit_id: str) -> dict | None:
+        """The finished call of this deficit, removed: ``{"value"|"error", "attempt", "build"}``, or None."""
+        with self._lock:
+            key = next((k for k in sorted(self._done) if k[0] == deficit_id), None)
+            return None if key is None else self._done.pop(key)
+
+    def unfinished(self) -> list[dict]:
+        """The calls still running, for the body's stop record (they are reconciled as interrupted builds)."""
+        with self._lock:
+            return [{"mission_id": mid, "deficit_id": e["deficit_id"], "build": e["build"]}
+                    for mid, e in sorted(self.running.items())]
+
+    def join(self, timeout: float | None = None) -> list[str]:
+        """Wait for every running call; the missions still building when the timeout passes are returned."""
+        import time
+        deadline = None if timeout is None else time.monotonic() + timeout
+        with self._lock:
+            threads = [e["thread"] for e in self.running.values()]
+        for thread in threads:
+            thread.join(None if deadline is None else max(0.0, deadline - time.monotonic()))
+        with self._lock:
+            return sorted(self.running)

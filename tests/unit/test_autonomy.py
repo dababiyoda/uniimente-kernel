@@ -8,13 +8,28 @@ import pytest
 
 from autonomy.levels import (AutonomyAuthority, AutonomyTuple, PromotionEvidence,
                              MAX_GRANTABLE, PROMOTION_CRITERIA)
+from dataclasses import asdict
+
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+from greg.founder import FounderVerifier, key_id, public_bytes, sign_command
 from provenance.ledger import EvidenceLedger
 
 GENESIS = "sha256:" + "0" * 64
+BODY = "autonomy-test-body"
+FOUNDER = Ed25519PrivateKey.generate()          # a test key, enrolled only in VERIFIER below
+_PUB = public_bytes(FOUNDER.public_key()).hex()
+VERIFIER = FounderVerifier(body_id=BODY, enrolled={key_id(_PUB): _PUB}, seen_nonce=lambda n: False)
+
+
+def _grant(subject, tuple_, level, *, key=FOUNDER, **kw):
+    """The founder's signed AUTONOMY_GRANT for exactly this subject, tuple and level."""
+    return sign_command(key, "AUTONOMY_GRANT", {"subject": subject, "tuple": asdict(tuple_), "level": level},
+                        body_id=BODY, **kw)
 
 
 def _authority():
-    return AutonomyAuthority(EvidenceLedger(GENESIS))
+    return AutonomyAuthority(EvidenceLedger(GENESIS), verifier=VERIFIER)
 
 
 def _tuple(**kw):
@@ -49,11 +64,11 @@ class TestIssuance:
     def test_a9_never_granted_at_issue(self):
         auth = _authority()
         with pytest.raises(ValueError, match="A9"):
-            auth.issue("agent-1", _tuple(), level=9, authorized_by="Alfonso Lopez")
+            auth.issue("agent-1", _tuple(), level=9, authorized_by="Alfonso Lopez", authorization=_grant("agent-1", _tuple(), 9))
 
     def test_issue_starts_at_declared_level_and_ledgers(self):
         auth = _authority()
-        lic = auth.issue("agent-1", _tuple(), level=2, authorized_by="Alfonso Lopez")
+        lic = auth.issue("agent-1", _tuple(), level=2, authorized_by="Alfonso Lopez", authorization=_grant("agent-1", _tuple(), 2))
         assert lic.level == 2 and lic.active
         kinds = [r.payload["type"] for r in auth.ledger.by_type("event")]
         assert "autonomy.issued" in kinds
@@ -62,7 +77,7 @@ class TestIssuance:
 class TestPromotion:
     def test_weakest_link_blocks_promotion(self):
         auth = _authority()
-        lic = auth.issue("agent-1", _tuple(), level=3, authorized_by="Alfonso Lopez")
+        lic = auth.issue("agent-1", _tuple(), level=3, authorized_by="Alfonso Lopez", authorization=_grant("agent-1", _tuple(), 3))
         ev = _evidence(criteria={c: True for c in PROMOTION_CRITERIA} | {"security": False})
         with pytest.raises(ValueError, match="weakest link"):
             auth.promote(lic.license_id, ev)
@@ -72,19 +87,19 @@ class TestPromotion:
 
     def test_missing_outcome_record_blocks_promotion(self):
         auth = _authority()
-        lic = auth.issue("agent-1", _tuple(), level=1, authorized_by="Alfonso Lopez")
+        lic = auth.issue("agent-1", _tuple(), level=1, authorized_by="Alfonso Lopez", authorization=_grant("agent-1", _tuple(), 1))
         with pytest.raises(ValueError, match="missing_outcome_records"):
             auth.promote(lic.license_id, _evidence(missing_outcome_records=1))
 
     def test_rising_founder_intervention_blocks_promotion(self):
         auth = _authority()
-        lic = auth.issue("agent-1", _tuple(), level=1, authorized_by="Alfonso Lopez")
+        lic = auth.issue("agent-1", _tuple(), level=1, authorized_by="Alfonso Lopez", authorization=_grant("agent-1", _tuple(), 1))
         with pytest.raises(ValueError, match="founder_intervention"):
             auth.promote(lic.license_id, _evidence(founder_intervention_trend="rising"))
 
     def test_clean_evidence_promotes_one_level_with_verifier(self):
         auth = _authority()
-        lic = auth.issue("agent-1", _tuple(), level=4, authorized_by="Alfonso Lopez")
+        lic = auth.issue("agent-1", _tuple(), level=4, authorized_by="Alfonso Lopez", authorization=_grant("agent-1", _tuple(), 4))
         lic = auth.promote(lic.license_id, _evidence())       # licenses are returned as copies
         assert lic.level == 5
         rec = [r for r in auth.ledger.by_type("event")
@@ -105,27 +120,27 @@ class TestPromotion:
 class TestRegression:
     def test_severe_failure_zeroes_and_deactivates_immediately(self):
         auth = _authority()
-        lic = auth.issue("agent-1", _tuple(), level=7, authorized_by="Alfonso Lopez")
+        lic = auth.issue("agent-1", _tuple(), level=7, authorized_by="Alfonso Lopez", authorization=_grant("agent-1", _tuple(), 7))
         lic = auth.regress(lic.license_id, failure_class="harm", detail="unforeseen physical risk")
         assert lic.level == 0 and not lic.active
         assert auth.level_of("agent-1", _tuple()) == 0   # inactive reads as zero
 
     def test_non_severe_failure_steps_down_one(self):
         auth = _authority()
-        lic = auth.issue("agent-1", _tuple(), level=5, authorized_by="Alfonso Lopez")
+        lic = auth.issue("agent-1", _tuple(), level=5, authorized_by="Alfonso Lopez", authorization=_grant("agent-1", _tuple(), 5))
         lic = auth.regress(lic.license_id, failure_class="sloppy_reconciliation", detail="late records")
         assert lic.level == 4 and lic.active
 
     def test_inactive_license_cannot_promote_without_renewal(self):
         auth = _authority()
-        lic = auth.issue("agent-1", _tuple(), level=6, authorized_by="Alfonso Lopez")
+        lic = auth.issue("agent-1", _tuple(), level=6, authorized_by="Alfonso Lopez", authorization=_grant("agent-1", _tuple(), 6))
         auth.regress(lic.license_id, failure_class="concealment", detail="hid failure")
         with pytest.raises(ValueError, match="renewal"):
             auth.promote(lic.license_id, _evidence())
 
     def test_renewal_requires_fresh_complete_evidence(self):
         auth = _authority()
-        lic = auth.issue("agent-1", _tuple(), level=6, authorized_by="Alfonso Lopez")
+        lic = auth.issue("agent-1", _tuple(), level=6, authorized_by="Alfonso Lopez", authorization=_grant("agent-1", _tuple(), 6))
         auth.regress(lic.license_id, failure_class="unauthorized_effect", detail="x")
         weak = _evidence(criteria={c: True for c in PROMOTION_CRITERIA} | {"recovery": False})
         with pytest.raises(ValueError, match="renewal criteria"):
@@ -151,7 +166,7 @@ class TestIssueIsNotAWayPastPromotion:
     """
 
     def _auth(self):
-        return AutonomyAuthority(EvidenceLedger("sha256:" + "0" * 64))
+        return AutonomyAuthority(EvidenceLedger("sha256:" + "0" * 64), verifier=VERIFIER)
 
     def test_autonomy_above_a0_is_refused_without_a_named_authorizer(self):
         auth = self._auth()
@@ -178,13 +193,13 @@ class TestIssueIsNotAWayPastPromotion:
         """Reserved human sovereignty is not a grant a human can make here."""
         auth = self._auth()
         with pytest.raises(ValueError, match="reserved human sovereignty"):
-            auth.issue("agent-x", _tuple(), level=9, authorized_by="Alfonso Lopez")
+            auth.issue("agent-x", _tuple(), level=9, authorized_by="Alfonso Lopez", authorization=_grant("agent-x", _tuple(), 9))
 
     def test_the_authorizer_is_recorded_on_the_ledger_and_in_history(self):
         """An attributable grant, or the fix is only a speed bump."""
         ledger = EvidenceLedger("sha256:" + "0" * 64)
-        auth = AutonomyAuthority(ledger)
-        lic = auth.issue("agent-x", _tuple(), level=5, authorized_by="Alfonso Lopez")
+        auth = AutonomyAuthority(ledger, verifier=VERIFIER)
+        lic = auth.issue("agent-x", _tuple(), level=5, authorized_by="Alfonso Lopez", authorization=_grant("agent-x", _tuple(), 5))
 
         assert lic.history[0]["authorized_by"] == "Alfonso Lopez"
         issued = [r.payload for r in ledger.by_type("event")
@@ -217,7 +232,7 @@ class TestIssueIsNotAWayPastPromotion:
 
 class TestAuthorizerLevelLedgerAndCopies:
     def _auth(self):
-        return AutonomyAuthority(EvidenceLedger("sha256:" + "0" * 64))
+        return AutonomyAuthority(EvidenceLedger("sha256:" + "0" * 64), verifier=VERIFIER)
 
     def _events(self, auth):
         return [r.payload["type"] for r in auth.ledger.by_type("event")]
@@ -254,7 +269,7 @@ class TestAuthorizerLevelLedgerAndCopies:
             self._auth().issue("agent-1", _tuple(), level=5, authorized_by=name)
 
     def test_a_human_authorizer_who_merely_shares_a_letter_with_the_subject_is_accepted(self):
-        lic = self._auth().issue("a", _tuple(), level=2, authorized_by="Alfonso Lopez")
+        lic = self._auth().issue("a", _tuple(), level=2, authorized_by="Alfonso Lopez", authorization=_grant("a", _tuple(), 2))
         assert lic.level == 2
 
     @pytest.mark.parametrize("level", [float("nan"), 8.0, 1.5, True, "8", None])
@@ -268,12 +283,12 @@ class TestAuthorizerLevelLedgerAndCopies:
         auth = self._auth()
         auth.ledger.close()
         with pytest.raises(Exception, match="writer"):
-            auth.issue("agent-1", _tuple(), level=8, authorized_by="Alfonso Lopez")
+            auth.issue("agent-1", _tuple(), level=8, authorized_by="Alfonso Lopez", authorization=_grant("agent-1", _tuple(), 8))
         assert auth.level_of("agent-1", _tuple()) == 0 and auth._licenses == {}
 
     def test_a_ledger_that_refuses_a_promotion_or_renewal_leaves_the_level(self):
         auth = self._auth()
-        lic = auth.issue("agent-1", _tuple(), level=3, authorized_by="Alfonso Lopez")
+        lic = auth.issue("agent-1", _tuple(), level=3, authorized_by="Alfonso Lopez", authorization=_grant("agent-1", _tuple(), 3))
         auth.ledger.close()
         with pytest.raises(Exception, match="writer"):
             auth.promote(lic.license_id, _evidence())
@@ -285,7 +300,7 @@ class TestAuthorizerLevelLedgerAndCopies:
 
     def test_a_regression_the_ledger_refuses_still_drops_autonomy_to_the_floor(self):
         auth = self._auth()
-        lic = auth.issue("agent-1", _tuple(), level=6, authorized_by="Alfonso Lopez")
+        lic = auth.issue("agent-1", _tuple(), level=6, authorized_by="Alfonso Lopez", authorization=_grant("agent-1", _tuple(), 6))
         auth.ledger.close()
         with pytest.raises(Exception, match="writer"):
             auth.regress(lic.license_id, failure_class="sloppy", detail="late records")
@@ -308,7 +323,7 @@ class TestAuthorizerLevelLedgerAndCopies:
     def test_the_caller_cannot_edit_the_stored_tuple_through_its_own_object(self):
         auth = self._auth()
         t = _tuple()
-        lic = auth.issue("agent-1", t, level=2, authorized_by="Alfonso Lopez")
+        lic = auth.issue("agent-1", t, level=2, authorized_by="Alfonso Lopez", authorization=_grant("agent-1", t, 2))
         t.budget_usd = 1e9
         assert auth._licenses[lic.license_id].tuple.budget_usd == 25.0
 
@@ -317,9 +332,9 @@ class TestAuthorizerLevelLedgerAndCopies:
         seen = []
         real = AutonomyAuthority.issue
 
-        def spy(self, subject, tuple_, level=0, *, authorized_by=None):
+        def spy(self, subject, tuple_, level=0, *, authorized_by=None, authorization=None):
             seen.append(authorized_by)
-            return real(self, subject, tuple_, level, authorized_by=authorized_by)
+            return real(self, subject, tuple_, level, authorized_by=authorized_by, authorization=authorization)
 
         monkeypatch.setattr(AutonomyAuthority, "issue", spy)
         assert build_registry().verify_module("autonomy").complete

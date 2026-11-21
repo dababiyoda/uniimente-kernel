@@ -46,6 +46,7 @@ UNDECIDED = "test_an_undecided_record_takes_no_new_candidate_without_a_pin_chang
 UNDECIDED_ALTERNATE = "test_an_undecided_record_takes_no_new_alternate_without_a_pin_change"
 OWN_LOCATION = "test_a_registered_body_is_exempt_only_at_its_own_location"
 TWINS = "test_two_registered_locations_with_one_body_fail"
+EXEMPT = "test_a_pinned_exemption_clears_exactly_one_location_and_a_stale_one_fails"
 QUIET = "test_a_file_with_an_invalid_escape_parses_without_a_warning_on_any_python"
 ONE_NODE = "test_the_body_guard_ignores_one_node_edits_pass_no_op_constants_annotations_and_import_aliases"
 SEALED = "test_the_body_scan_reads_cortex_evaluation_except_the_files_a_freeze_manifest_seals"
@@ -355,6 +356,22 @@ MUTANTS = [
     ("MW-C: __pycache__ skipped by path segment",
      [("replace", TESTS, '        elif entry.name.endswith(".py") and entry.is_file():\n',
        '        elif entry.name.endswith(".py") and entry.is_file() and "__pycache__" not in path.parts:\n')], LINKS),
+    # -- MW-C round 3 (skeptic regression 6): the reviewed exemption for a false positive ----------------------------
+    ("MW-C: an exemption clears every copy in its module",
+     [("replace", TESTS, '        key = (c["module"], c["name"])\n',
+       '        key = next((k for k in exemptions if k[0] == c["module"]), (c["module"], c["name"]))\n')], EXEMPT),
+    ("MW-C: an exemption clears a copy of any registered body",
+     [("replace", TESTS, 'if key in exemptions and exemptions[key][0] == c["registered"] and ',
+       "if key in exemptions and ")], EXEMPT),
+    ("MW-C: a stale exemption passes",
+     [("replace", TESTS, "if key not in used and str(reason).strip()]\n", "if False]\n")], EXEMPT),
+    ("MW-C: an exemption with no reason clears its copy",
+     [("replace", TESTS, ' and str(exemptions[key][1]).strip():\n', ":\n"),
+      ("replace", TESTS, "for key, (resembles, reason) in exemptions.items() if not str(reason).strip()]\n",
+       "for key, (resembles, reason) in exemptions.items() if False]\n")], EXEMPT),
+    ("MW-C: the distinct check ignores the exemptions",
+     [("replace", TESTS, "    for c in exempted(body_copies(records, root)[0], exemptions)[0]:\n",
+       "    for c in body_copies(records, root)[0]:\n")], EXEMPT),
     # -- MW-C round 3: cortex/evaluation/ is scanned except the files a freeze manifest seals ----------------------
     ("MW-C: cortex/evaluation/ skipped wholesale again",
      [("replace", TESTS, 'if not relative.startswith(".") and relative not in sealed:\n',

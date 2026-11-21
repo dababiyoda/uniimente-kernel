@@ -956,6 +956,12 @@ NOT_RUNTIME = ("tests/", "docs/")
 SEALED_UNDER = "cortex/evaluation/"
 MANIFESTS = "freeze-*.json"
 ERASED = "_"                     # every name and every constant of a fingerprinted body becomes this one sentinel
+# Guard 4's reviewed escape hatch for a false positive: a different function whose erased body happens to equal a
+# registered one (small registered bodies have generic shapes). (module, qualname) of the location -> (the registered
+# "module.qualname" it resembles, the reason it is a different function). An entry clears exactly that location for
+# exactly that body; an entry that no longer matches a copy, or gives no reason, fails. Empty on 2026-11-21; adding one
+# is a reviewed change to this file.
+BODY_EXEMPTIONS: dict[tuple[str, str], tuple[str, str]] = {}
 FIX_COPY = ("Import the owner's function instead and remove the copy. Recording it does not exempt it: a body is "
             "exempt only at its own registered location, a 'distinct' entry exempts nothing, and two registered "
             "locations with one body fail (registered_twin_problems); {record} is in "
@@ -1208,7 +1214,8 @@ def _prints(path: Path, stamp: int, sizes: frozenset) -> tuple:
 def body_copies(records: list[dict], root: Path = ROOT) -> tuple[list[dict], list[str]]:
     """(every function or method whose fingerprint is a registered body's, anywhere but that body's own registered
     module and qualname, inside its record or outside it; every runtime file that does not parse). Neither a
-    'distinct' entry nor recording the module as a canonical, candidate or alternate module exempts a copy."""
+    'distinct' entry nor recording the module as a canonical, candidate or alternate module exempts a copy; only
+    BODY_EXEMPTIONS does (``exempted``)."""
     bodies = registered_bodies(records, root)
     sizes = frozenset(size for size, _ in bodies)
     found, unreadable = [], []
@@ -1216,7 +1223,7 @@ def body_copies(records: list[dict], root: Path = ROOT) -> tuple[list[dict], lis
         relative = path.relative_to(root).as_posix()
         try:
             prints = _prints(path, path.stat().st_mtime_ns, sizes)
-        except (SyntaxError, UnicodeDecodeError, ValueError) as exc:
+        except (SyntaxError, UnicodeDecodeError, ValueError, OSError) as exc:
             unreadable.append(f"{relative} cannot be parsed ({type(exc).__name__}), so guard 4 cannot show that it "
                               f"holds no copy of a registered function")
             continue
@@ -1229,20 +1236,38 @@ def body_copies(records: list[dict], root: Path = ROOT) -> tuple[list[dict], lis
     return found, unreadable
 
 
-def body_copy_problems(records: list[dict], root: Path = ROOT) -> list[str]:
+def exempted(found: list[dict], exemptions: dict = BODY_EXEMPTIONS) -> tuple[list[dict], list[str]]:
+    """(the copies no exemption clears; a problem for every exemption that clears nothing or gives no reason). An
+    entry clears the copy at its own (module, qualname) of the registered body it names, and no other."""
+    used, kept = set(), []
+    for c in found:
+        key = (c["module"], c["name"])
+        if key in exemptions and exemptions[key][0] == c["registered"] and str(exemptions[key][1]).strip():
+            used.add(key)
+        else:
+            kept.append(c)
+    problems = [f"BODY_EXEMPTIONS {key} gives no reason: say why {key[0]}.{key[1]} is a different function from "
+                f"{resembles}" for key, (resembles, reason) in exemptions.items() if not str(reason).strip()]
+    problems += [f"BODY_EXEMPTIONS {key} no longer matches a copy of {resembles} at {key[0]}.{key[1]}: remove it"
+                 for key, (resembles, reason) in exemptions.items() if key not in used and str(reason).strip()]
+    return kept, sorted(problems)
+
+
+def body_copy_problems(records: list[dict], root: Path = ROOT, exemptions: dict = BODY_EXEMPTIONS) -> list[str]:
     found, unreadable = body_copies(records, root)
+    found, stale = exempted(found, exemptions)
     out = [f"{c['at']} defines {c['name']!r}, a copy of the body of {c['registered']} ({c['registered_at']}), "
            f"registered in {c['record']['record_id']} ({c['record'].get('function')}); names and constants are erased "
            f"before comparing, so renamed variables or changed literals are still the same body. Its owner is "
            f"{owner(c['record'])}. " + FIX_COPY.format(record=c["record"]["record_id"]) for c in found]
-    return sorted(set(out)) + unreadable
+    return sorted(set(out)) + unreadable + stale
 
 
-def distinct_copy_problems(records: list[dict], root: Path = ROOT) -> list[str]:
+def distinct_copy_problems(records: list[dict], root: Path = ROOT, exemptions: dict = BODY_EXEMPTIONS) -> list[str]:
     """A 'distinct' entry says a module holds a different function. It may not name a module that holds a copy of a
-    registered body (guard 4): a copy is an alternate, recorded with its status and condition."""
+    registered body (guard 4) that BODY_EXEMPTIONS does not clear: a copy is never a different function."""
     holding: dict[str, list[dict]] = {}
-    for c in body_copies(records, root)[0]:
+    for c in exempted(body_copies(records, root)[0], exemptions)[0]:
         holding.setdefault(c["module"], []).append(c)
     out = []
     for r in records:
@@ -2071,3 +2096,31 @@ def test_two_registered_locations_with_one_body_fail(tmp_path):
     found = registered_twin_problems(records, root)
     assert len(found) == 1 and "greg.body.send_signed" in found[0] and "greg.relay.send_signed_twin" in found[0], found
     assert registered_twin_problems(records[:1] + [{**records[1], "alternates": []}], root) == []
+
+
+def test_a_pinned_exemption_clears_exactly_one_location_and_a_stale_one_fails(tmp_path):
+    # Skeptic regression 6: a false positive of guard 4 (a different function whose erased body equals a small
+    # registered one) had no reviewed escape hatch. BODY_EXEMPTIONS, a literal in this file and empty on 2026-11-21,
+    # maps the location (module, qualname) to the registered body it resembles and the reason; an entry clears that
+    # location for that body and nothing else, and one that no longer matches a copy fails.
+    relay = OWNER_BODY.replace("def send_signed(", "def relay(")
+    root = _tree(tmp_path, {"greg/body.py": OWNER_BODY, "greg/a.py": relay + "\n\n" + relay.replace(
+        "def relay(", "def forward("), "greg/b.py": relay})
+    exempt = {("greg.a", "relay"): ("greg.body.send_signed", "a different function: test fixture")}
+    found = body_copy_problems([INBOX_RECORD], root, exemptions=exempt)
+    assert sorted(line.split(" defines ")[0] for line in found) == ["greg/a.py:11", "greg/b.py:1"], found
+    # an entry for another registered body clears nothing there, and says it is stale
+    other = {("greg.a", "relay"): ("greg.remote.handle", "a different function")}
+    found = body_copy_problems([INBOX_RECORD], root, exemptions=other)
+    assert sum(line.startswith(("greg/a.py:", "greg/b.py:")) for line in found) == 3, found
+    assert any("BODY_EXEMPTIONS ('greg.a', 'relay')" in line and "no longer matches" in line for line in found), found
+    # a stale entry, or one without a reason, fails
+    stale = body_copy_problems([INBOX_RECORD], root, exemptions={**exempt, ("greg.gone", "x"): (
+        "greg.body.send_signed", "gone")})
+    assert any("BODY_EXEMPTIONS ('greg.gone', 'x')" in line and "no longer matches" in line for line in stale), stale
+    reasonless = body_copy_problems([INBOX_RECORD], root, exemptions={("greg.a", "relay"): ("greg.body.send_signed", "")})
+    assert any("BODY_EXEMPTIONS ('greg.a', 'relay')" in line and "reason" in line for line in reasonless), reasonless
+    # an exempted location is not a copy to the distinct check either
+    vouched = {**INBOX_RECORD, "distinct": [{"module": "greg.a", "qualnames": ["relay"], "why": "different"}]}
+    assert len(distinct_copy_problems([vouched], root, exemptions=exempt)) == 1        # forward is still a copy
+    assert BODY_EXEMPTIONS == {} or all(reason for _, reason in BODY_EXEMPTIONS.values())

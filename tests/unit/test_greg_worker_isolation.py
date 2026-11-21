@@ -297,3 +297,36 @@ def test_executable_symlink_chain_outside_the_read_roots_is_recreated_in_the_env
     assert argv.index("--symlink") > argv.index("--ro-bind") and "--unshare-net" in argv
     # A plain binary has no chain and the envelope gains no symlink.
     assert _executable_links(real, read_paths) == [] and "--symlink" not in _bubblewrap_argv("/usr/bin/bwrap", read_paths)
+
+
+def test_private_tmp_is_mounted_before_read_paths_so_a_read_path_under_tmp_survives(tmp_path):
+    """Reproduced on #184's head: the private /tmp was bound after the read-only paths, so every read path under
+    /tmp vanished inside the envelope and a provider binary there failed with 'execvp ... No such file or
+    directory'. The private /tmp now comes first and the read paths are bound over it."""
+    from greg.worker_isolation import _bubblewrap_argv
+    cwd = tmp_path / "orders" / "o1" / "work"
+    runtime = tmp_path / "runtime"
+    provider = Path("/tmp/provider-root")
+    argv = _bubblewrap_argv("/usr/bin/bwrap", [provider], cwd, runtime, network=False)
+    tmp_bind = argv.index("/tmp") - 2
+    assert argv[tmp_bind:tmp_bind + 3] == ["--bind", str(runtime / "tmp"), "/tmp"]
+    assert tmp_bind < argv.index("--ro-bind") < argv.index("--tmpfs")
+    assert argv.count("/tmp") == 1
+
+
+def test_a_provider_binary_under_tmp_starts_inside_the_envelope(tmp_path):
+    support()
+    root = Path(__import__("tempfile").mkdtemp(prefix="greg-provider-", dir="/tmp"))
+    try:
+        binary = root / "bin" / "provider"
+        binary.parent.mkdir()
+        binary.write_text("#!/bin/sh\necho provider-ran\n")
+        binary.chmod(0o755)
+        cwd = root / "orders" / "o1" / "work"
+        cwd.mkdir(parents=True)
+        envelope = isolation.prepare_worker([str(binary)], cwd, 30, "codex", reviewed=True, source_env={})
+        assert envelope["evidence"]["mechanism"] == "bubblewrap"
+        result = execute(envelope, cwd)
+        assert result.returncode == 0 and result.stdout.strip() == "provider-ran", result.stderr
+    finally:
+        __import__("shutil").rmtree(root, ignore_errors=True)

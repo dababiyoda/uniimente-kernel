@@ -35,7 +35,7 @@ from typing import Any
 from jsonschema import Draft202012Validator, FormatChecker
 
 from greg.authority import RECEIPT_LIST_LIMIT, ActionOutcome, AuthorityOffice, text_bytes
-from greg.background import BACKGROUND_CAPABILITIES
+from greg.background import BACKGROUND_CAPABILITIES, BuildHandedOff
 from greg.capabilities import CapabilityError, InvocationContext, ROUTES
 from greg.genesis import is_capability_fault
 from greg import asks, improvement, routing
@@ -1756,6 +1756,9 @@ class MissionEngine:
         # greg.background.Background when the Body's main loop runs a long adapter off its turn; None runs every
         # dispatch inline (the Body's own tick() callers, the tests that drive a Body turn by turn)
         self.background = None
+        # greg.background.OffTurnBuilds when the Body's main loop runs a Genesis builder call off its turn; None
+        # calls every builder inline
+        self.builds = None
 
     # -- founder inputs (already signature-verified by the body) ---------------
     def register(self, spec: dict, command_digest: str) -> str:
@@ -1995,17 +1998,39 @@ class MissionEngine:
                 self.book.rebuild()
             m = self.book.missions.get(m.mission_id, m)
             running = self.background.busy(m.mission_id) if self.background is not None else None
+            if running is None and self.builds is not None:
+                running = self.builds.busy(m.mission_id)
             if running is not None:
-                # Its adapter is still running off the turn: the mission is not stepped (its write-ahead intent is
-                # in flight, not the trace of a body killed inside a dispatch) until the outcome is recorded.
+                # Its adapter (or its Genesis builder call) is still running off the turn: the mission is not
+                # stepped (its write-ahead intent or its build reservation is in flight, not the trace of a body
+                # killed inside a call) until the outcome is recorded or the build's result is taken.
                 summary.append({"mission_id": m.mission_id, "state": "WORKING", "action": running["action_id"],
                                 "attempt": running["attempt"], "since": iso(running["since"])})
                 continue
             if should_stop is not None and should_stop():
                 summary.append({"mission_id": m.mission_id, "state": "NOT_STEPPED", "why": "stop requested"})
                 continue
-            summary.append({"mission_id": m.mission_id, **self._step(m, now)})
+            summary.append({"mission_id": m.mission_id, **self._step_off_turn_builds(m, now)})
         return summary
+
+    def _step_off_turn_builds(self, m: MissionState, now: datetime) -> dict:
+        """Step one mission; a Genesis builder call it starts runs off the turn (greg.background.OffTurnBuilds).
+
+        The step ends at the call, as it would for a body killed inside it; the call's result is taken on the
+        mission's next step, which resumes the same open deficit. Without ``builds`` every call stays inline."""
+        if self.builds is None or self.genesis is None:
+            return self._step(m, now)
+        self.genesis.off_turn = self.builds
+        try:
+            self.genesis.settle_served_builds(m.mission_id, now)
+            return self._step(m, now)
+        except BuildHandedOff as handed:
+            entry = self.builds.busy(m.mission_id) or {"action_id": f"genesis.build:{handed.function}",
+                                                       "attempt": None, "since": now}
+            return {"state": "WORKING", "action": entry["action_id"], "attempt": entry["attempt"],
+                    "since": iso(entry["since"]), "deficit_id": handed.deficit_id, "build": handed.build}
+        finally:
+            self.genesis.off_turn = None
 
     def interrupt_withdrawn(self, now: datetime) -> list[dict]:
         """Interrupt the running dispatches whose authority the founder withdrew while they ran (caller holds the turn).

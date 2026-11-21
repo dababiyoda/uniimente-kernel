@@ -611,6 +611,7 @@
     "greg/routing.py",
     "greg/service.py",
     "greg/sop.py",
+    "greg/teams.py",
     "greg/templates.py",
     "greg/textform.py",
     "greg/textquery.py",

@@ -1115,6 +1115,7 @@ STRENGTHENS = {
     "business.reconcile": ("proof", "settlement"),
     "worker.commission": ("capability_formation", "routing", "settlement", "compounding"),
     "worker.appraise": ("proof", "eligibility", "reliability"),
+    "worker.team": ("capability_formation", "routing", "settlement", "compounding"),
     "browser.session": ("proof", "capability_formation", "settlement"),
     "browser.trace": ("proof",),
     "daleobanks.verify": ("proof", "eligibility"),
@@ -1431,6 +1432,21 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                                  provenance={"source": "uniimente-kernel/greg/workers.py",
                                              "mechanism_from": "greg/appraisal.py separate re-derivation"}),
                         _lazy("greg.workers", "appraise")),
+    "worker.team": (_builtin("worker.team", "work.team",
+                             "Field a temporary worker team (Foundry #48) under one grant: its members' WorkOrders "
+                             "run at once, each recorded and independently appraisable; the team dissolves",
+                             "cli", "internal_write", "team:",
+                             {"team": "str", "objective": "str", "max_budget_usd": "float",
+                              "members": "list[{role, order}]"},
+                             {"status": "str", "team": "dict", "members": "dict"},
+                             filesystem="workspace-write", network="egress-allowlist",
+                             egress_allowlist=("api.anthropic.com",), data_classes=("project_sources",),
+                             binaries=tuple(b for b in ("/usr/bin/git",) if Path(b).exists()) or ("/usr/bin/git",),
+                             tests=("tests/unit/test_greg_teams.py",),
+                             provenance={"source": "uniimente-kernel/greg/teams.py",
+                                         "mechanism_from": "foundry/systems/teams.py (#48) through foundry.apply; "
+                                                           "greg/workers.py commission"}),
+                    _lazy("greg.teams", "field")),
     "browser.session": (_builtin("browser.session", "computer.browser_session",
                                  "Drive a disposable real browser through signed steps (navigate, type, click, "
                                  "select, extract, download) with per-step screenshots; stops at consequential "

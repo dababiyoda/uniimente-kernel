@@ -859,12 +859,44 @@ def test_line_checks_read_block_lists_missing_filters_and_patterns(tmp_path, mon
               f"on:\n  push:\n    branches-ignore: [{LINE}]\n": False,
               "on:\n  push:\n    tags: ['v*']\n": False,
               "on: [push, pull_request]\n": True,
-              "on:\n  push:\n    branches: ['claude/**', '!claude/greg-*']\n": False}
+              "on:\n  push:\n    branches: ['claude/**', '!claude/greg-*']\n": False,
+              # GitHub's filter patterns: * stops at /, ** does not, ? and + act on the character before them
+              "on:\n  push:\n    branches: ['*']\n": False, "on:\n  push:\n    branches: ['claude*']\n": False,
+              "on:\n  push:\n    branches: ['*-whgiee']\n": False, "on:\n  push:\n    branches: ['claude/*']\n": True,
+              "on:\n  push:\n    branches: ['**']\n": True,
+              f"on:\n  push:\n    branches: ['{LINE[:-1]}?']\n": False,
+              f"on:\n  push:\n    branches: ['{LINE}?']\n": True,
+              f"on:\n  push:\n    branches: ['{LINE[:-1]}+']\n": True,
+              f"on:\n  push:\n    branches: ['{LINE[:-2]}[a-z][a-z]']\n": True,
+              f"on:\n  push:\n    branches: ['{LINE[:-1]}\\e']\n": True,           # \ escapes; . is literal
+              f"on:\n  push:\n    branches: ['{LINE.replace('-', '.', 1)}']\n": False,
+              "on:\n  push:\n    branches-ignore: ['*']\n": True,
+              # a paths filter makes a push run only when the pushed files match: not every push is checked
+              "on:\n  push:\n    branches: [main]\n    paths: ['docs/**']\n": False,
+              f"on:\n  push:\n    branches: [{LINE}]\n    paths: ['docs/**']\n": False,
+              "on:\n  push:\n    paths-ignore: ['**']\n": False}
+    filters = []
     for text, covers in shapes.items():
         (wf / "canonical-ci.yml").write_text(text)
         assert w.line_checks([], tmp_path)["push_covers_line"] is covers, text
+        filters.append(w.line_checks([], tmp_path)["push_filter"])
+    assert filters[-3:] == ["branches", "branches and paths", "every branch and paths"]   # paths matter once matched
     monkeypatch.setitem(sys.modules, "yaml", None)
     assert w.line_checks([], tmp_path) == {"not_run": "PyYAML not importable"}
+
+
+def test_line_checks_never_say_false_where_the_pull_requests_were_not_read(quick):
+    checks = w.build(None, None, now=NOW, use_git=False)["line_checks"]
+    assert (checks["push_covers_line"], checks["pull_requests_with_line_as_head"], checks["covered"]) == (
+        False, None, None)
+    bad = _pr(316, LINE, base="main")
+    bad["title"] = 5                                               # unreadable: it may be the carrier
+    m = w.build([bad], [], now=NOW, use_git=False)
+    assert (m["gaps"]["unreadable_prs"], m["line_checks"]["covered"]) == ([316], None)
+    line = next(x for x in w.markdown(m).splitlines() if "Checks on pushes" in x)
+    assert "**none**" not in line and "unknown" in line and "316" in line, line
+    assert w.build([_pr(196, LINE, base="older-trunk")], [], now=NOW, use_git=False)["line_checks"]["covered"]
+    assert w.build([], [], now=NOW, use_git=False)["line_checks"]["covered"] is False
 
 
 def test_route_drift_ends_at_the_next_heading_and_needs_matching_letters(tmp_path):

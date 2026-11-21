@@ -654,8 +654,37 @@ def route_drift(root: Path, route: dict) -> dict:
     return {"section": True, "missing": [n for n in wanted if n not in named]}
 
 
+def _filter_pattern(pattern: str) -> re.Pattern:
+    """A GitHub Actions filter pattern as a regular expression (the workflow syntax's filter pattern cheat sheet):
+    ``*`` matches anything but ``/``, ``**`` anything; ``?`` makes the character before it optional and ``+`` repeats
+    it; ``[...]`` is one letter or digit of a class; ``\\`` escapes; everything else is literal."""
+    out: list[str] = []
+    i = 0
+    while i < len(pattern):
+        ch = pattern[i]
+        if pattern.startswith("**", i):
+            out.append(".*")
+            i += 1
+        elif ch == "*":
+            out.append("[^/]*")
+        elif ch in "?+" and out:
+            out[-1] = f"(?:{out[-1]}){ch}"
+        elif ch == "[" and "]" in pattern[i + 2:]:
+            end = pattern.index("]", i + 2)
+            out.append("[" + "".join(c if c.isalnum() or c == "-" else "\\" + c for c in pattern[i + 1:end]) + "]")
+            i = end
+        elif ch == "\\" and i + 1 < len(pattern):
+            out.append(re.escape(pattern[i + 1]))
+            i += 1
+        else:
+            out.append(re.escape(ch))
+        i += 1
+    return re.compile("".join(out))
+
+
 def _push_covers(on, line: str) -> tuple[str, list[str], bool]:
-    """(filter kind, branch patterns, whether a push to ``line`` triggers) for a workflow's ``on`` value."""
+    """(filter kind, branch patterns, whether every push to ``line`` triggers) for a workflow's ``on`` value. A
+    ``paths`` or ``paths-ignore`` filter makes a push trigger only when its files match, so it covers no line."""
     if isinstance(on, str):
         on = [on]
     if isinstance(on, list):
@@ -663,22 +692,25 @@ def _push_covers(on, line: str) -> tuple[str, list[str], bool]:
     if not isinstance(on, dict) or "push" not in on:
         return "no push trigger", [], False
     push = on["push"] if isinstance(on["push"], dict) else {}
+    paths = " and paths" if "paths" in push or "paths-ignore" in push else ""
     for kind in ("branches", "branches-ignore"):
         if kind in push:
             patterns = [push[kind]] if isinstance(push[kind], str) else _texts(push[kind])
             hit = False
             for pattern in patterns:                     # GitHub: the last matching pattern wins; "!" negates
-                if fnmatch.fnmatchcase(line, pattern.lstrip("!")):
+                if _filter_pattern(pattern[1:] if pattern.startswith("!") else pattern).fullmatch(line):
                     hit = not pattern.startswith("!")
-            return kind, patterns, hit if kind == "branches" else not hit
+            matched = hit if kind == "branches" else not hit
+            return kind + (paths if matched else ""), patterns, matched and not paths
     if "tags" in push or "tags-ignore" in push:
         return "tags only", [], False
-    return "every branch", [], True
+    return "every branch" + paths, [], not paths
 
 
-def line_checks(rows: list[dict], root: Path, line: str = LINE) -> dict:
+def line_checks(rows: list[dict], root: Path, line: str = LINE, prs_read: bool = True, unreadable=()) -> dict:
     """How pushes to the line get checked: by the push trigger of ``canonical-ci.yml``, or only through an open pull
-    request from this repository whose head is the line. Without PyYAML the workflow is not read."""
+    request from this repository whose head is the line. ``covered`` is None, never False, when the pull requests were
+    not read or one of them could not be read (it may be the one). Without PyYAML the workflow is not read."""
     try:
         import yaml
     except ImportError:
@@ -686,9 +718,10 @@ def line_checks(rows: list[dict], root: Path, line: str = LINE) -> dict:
     doc = yaml.safe_load((root / ".github" / "workflows" / "canonical-ci.yml").read_text(encoding="utf-8"))
     on = (doc.get("on", doc.get(True)) if isinstance(doc, dict) else None)    # YAML 1.1 reads a bare `on:` as True
     kind, patterns, pushed = _push_covers(on, line)
-    carriers = sorted(r["pr"] for r in rows if r["head"] == line and r["same_repo"])
+    carriers = sorted(r["pr"] for r in rows if r["head"] == line and r["same_repo"]) if prs_read else None
+    covered = True if pushed or carriers else None if not prs_read or unreadable else False
     return {"push_filter": kind, "push_branches": patterns, "push_covers_line": pushed,
-            "pull_requests_with_line_as_head": carriers, "covered": pushed or bool(carriers)}
+            "pull_requests_with_line_as_head": carriers, "covered": covered}
 
 
 def position(root: Path = ROOT) -> dict:
@@ -1503,7 +1536,7 @@ def build(prs: list[dict] | None, comments: list[dict] | None, *, root: Path = R
                                                 "naming_a_pr": sum(bool(c["names_prs"]) for c in older),
                                                 "by_live_sessions": sum(c["session_activity"] in ("active", "quiet")
                                                                         for c in older)}),
-        "line_checks": _try(lambda: line_checks(rows, root, line), root),
+        "line_checks": _try(lambda: line_checks(rows, root, line, prs_read, bad_prs), root),
         "gaps": {
             "unreadable_prs": if_prs(bad_prs),
             "unreadable_comments": if_comments(bad_comments),
@@ -1823,12 +1856,18 @@ def _checks_line(m: dict) -> str:
         return "- Checks on pushes to the line: not read."
     if c["push_covers_line"]:
         return "- Checks on pushes to the line: Canonical CI runs on push to the line."
+    push = ("`canonical-ci.yml` runs on push to it only when the pushed files match its paths filter"
+            if "paths" in c["push_filter"] else "`canonical-ci.yml` does not run on push to it")
     if not m["sources"]["prs_read"]:
-        return ("- Checks on pushes to the line: `canonical-ci.yml` does not run on push to it; whether an open pull "
-                "request runs them was not read.")
+        return f"- Checks on pushes to the line: {push}; whether an open pull request runs them was not read."
+    if c["covered"] is None:
+        bad = m["gaps"]["unreadable_prs"] or []
+        return (f"- Checks on pushes to the line: unknown. {len(bad)} open pull requests could not be read "
+                f"({_cell(', '.join(map(str, bad[:12])))}{_more(12, len(bad))}), and one of them may have the line as "
+                f"its head; {push}.")
     if not c["covered"]:
         return ("- Checks on pushes to the line: **none**. No open pull request from this repository has the line as "
-                "its head, and `canonical-ci.yml` does not run on push to it.")
+                f"its head, and {push}.")
     prs = ", ".join("#%d" % n for n in c["pull_requests_with_line_as_head"])
     return (f"- Checks on pushes to the line: only through the pull-request runs of {prs} (its head is the line). "
             "If it closes, pushes to the line run no Canonical CI.")

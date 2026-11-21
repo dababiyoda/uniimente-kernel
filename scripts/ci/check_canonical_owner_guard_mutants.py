@@ -46,6 +46,7 @@ UNDECIDED = "test_an_undecided_record_takes_no_new_candidate_without_a_pin_chang
 UNDECIDED_ALTERNATE = "test_an_undecided_record_takes_no_new_alternate_without_a_pin_change"
 OWN_LOCATION = "test_a_registered_body_is_exempt_only_at_its_own_location"
 TWINS = "test_two_registered_locations_with_one_body_fail"
+KEPT_RULES = "test_kept_for_names_the_alternates_own_open_record_and_a_consumer_outside_tests_and_tools"
 EXEMPT = "test_a_pinned_exemption_clears_exactly_one_location_and_a_stale_one_fails"
 QUIET = "test_a_file_with_an_invalid_escape_parses_without_a_warning_on_any_python"
 ONE_NODE = "test_the_body_guard_ignores_one_node_edits_pass_no_op_constants_annotations_and_import_aliases"
@@ -356,6 +357,25 @@ MUTANTS = [
     ("MW-C: __pycache__ skipped by path segment",
      [("replace", TESTS, '        elif entry.name.endswith(".py") and entry.is_file():\n',
        '        elif entry.name.endswith(".py") and entry.is_file() and "__pycache__" not in path.parts:\n')], LINKS),
+    # -- MW-C round 3 (skeptic regression 5): what may keep a HISTORICAL or RETIRED alternate -----------------------
+    ("MW-C: REALITY kept for an unrelated open decision (OWN-FN-AUTONOMY-LEVELS)",
+     [("replace", MAP, REALITY_KEPT, "        kept_for: {open_decision: OWN-FN-AUTONOMY-LEVELS}\n")], HISTORY),
+    ("MW-C: REALITY kept for a helper appended to scripts/ci/ (a function that reads it, in tooling)",
+     [("append", "scripts/ci/check_canonical_owner_guard_mutants.py",
+       "\n\ndef _keep_reality():\n    from greg.mission_control import REALITY\n    return REALITY\n"),
+      ("replace", MAP, REALITY_KEPT, REALITY_KEPT.replace("acceptance.claims.crosswalk_problems",
+                                                         "scripts.ci.check_canonical_owner_guard_mutants._keep_reality"))],
+     HISTORY),
+    ("MW-C: open_decision may name another undecided record",
+     [("replace", TESTS, '                if kept["open_decision"] != rid:\n', "                if False:\n")], KEPT_RULES),
+    ("MW-C: open_decision accepted on the alternate's own decided record",
+     [("replace", TESTS, '                elif by_id.get(rid, {}).get("owner_status") != "NEEDS_FOUNDER_DECISION":\n',
+       "                elif False:\n")], KEPT_RULES),
+    ("MW-C: a consumer under docs/ or scripts/ci/ accepted",
+     [("replace", TESTS, 'NOT_CONSUMERS = ("greg", "tests", "docs", "scripts.ci")\n', 'NOT_CONSUMERS = ("greg", "tests")\n')],
+     KEPT_RULES),
+    ("MW-C: a consumer in a conftest.py accepted",
+     [("replace", TESTS, 'NOT_CONSUMER_NAMES = ("conftest",)\n', "NOT_CONSUMER_NAMES = ()\n")], KEPT_RULES),
     # -- MW-C round 3 (skeptic regression 6): the reviewed exemption for a false positive ----------------------------
     ("MW-C: an exemption clears every copy in its module",
      [("replace", TESTS, '        key = (c["module"], c["name"])\n',

@@ -1284,7 +1284,15 @@ def distinct_copy_problems(records: list[dict], root: Path = ROOT, exemptions: d
 # -- history kept only with a live reason (section 76; MW-C, 2026-11-21) -------------------------------------------
 
 KEPT_FOR = ("consumer", "open_decision")
-NOT_CONSUMERS = ("greg", "tests")
+# Not a consumer: greg/ (guard 2 forbids it to reach the alternate), tests/ (a test of the kept object is not a use),
+# docs/ and scripts/ci/ (tooling, not use), and any conftest.py (test set-up), by dotted module prefix and name.
+NOT_CONSUMERS = ("greg", "tests", "docs", "scripts.ci")
+NOT_CONSUMER_NAMES = ("conftest",)
+
+
+def _not_a_consumer(module: str) -> bool:
+    return (any(module == p or module.startswith(p + ".") for p in NOT_CONSUMERS)
+            or module.rpartition(".")[2] in NOT_CONSUMER_NAMES)
 
 
 def _names_in(node) -> set[str]:
@@ -1297,14 +1305,16 @@ def kept_for_problems(records: list[dict], root: Path = ROOT) -> list[str]:
     the registry: every alternate with status HISTORICAL or RETIRED whose module (or one of its qualnames) is still
     defined in the tree carries ``kept_for``, exactly one of
 
-    - ``{consumer: <module>.<function>}``: a function outside greg/ (which guard 2 forbids to reach it) and tests/ (a
-      test of the kept object is not a use) whose source names the kept object, in a module that imports it from the
-      alternate's module; or
-    - ``{open_decision: <record_id>}``: a record still NEEDS_FOUNDER_DECISION whose ruling may revive it.
+    - ``{consumer: <module>.<function>}``: a function outside ``NOT_CONSUMERS`` (greg/, tests/, docs/, scripts/ci/) and
+      any conftest.py, and outside the alternate's own module, whose source names the kept object, in a module that
+      imports it from the alternate's module; or
+    - ``{open_decision: <record_id>}``: the alternate's OWN record, while it is still NEEDS_FOUNDER_DECISION (its
+      ruling may revive the alternate; another record's open decision keeps nothing).
 
     An alternate gone from the tree needs none: git keeps its history. On 2026-11-21 this binds one entry
     (greg.mission_control REALITY, HISTORICAL). It binds only what the registry records: obsolete code that no record
-    names is not seen."""
+    names is not seen. A STATED LIMIT: a consumer is checked by what its source names, not by whether anything calls
+    it, so a dead two-line shim outside those places that imports and returns the object still passes."""
     by_id = {r.get("record_id"): r for r in records}
     out = []
     for r in records:
@@ -1319,22 +1329,25 @@ def kept_for_problems(records: list[dict], root: Path = ROOT) -> list[str]:
             kept = e.get("kept_for")
             if not (isinstance(kept, dict) and len(kept) == 1 and next(iter(kept)) in KEPT_FOR):
                 out.append(f"{rid}: {e['status']} alternate {what} is still defined in the tree and does not say what "
-                           f"keeps it: give it kept_for {{consumer: <module>.<function>}} (code outside greg/ and "
-                           f"tests/ that still reads it) or {{open_decision: <record_id>}} (an undecided record whose "
-                           f"ruling may revive it), or remove it from the tree (git keeps its history)")
+                           f"keeps it: give it kept_for {{consumer: <module>.<function>}} (code outside greg/, tests/, "
+                           f"docs/, scripts/ci/ and any conftest.py that still reads it) or {{open_decision: {rid}}} "
+                           f"(while its own record is undecided), or remove it from the tree (git keeps its history)")
                 continue
             if "open_decision" in kept:
-                target = by_id.get(kept["open_decision"])
-                if target is None or target.get("owner_status") != "NEEDS_FOUNDER_DECISION":
-                    out.append(f"{rid}: {what} is kept_for open_decision {kept['open_decision']}, which is not a "
-                               f"NEEDS_FOUNDER_DECISION record of the registry; once the founder rules, the alternate "
-                               f"leaves the tree, or names the consumer that still reads it")
+                if kept["open_decision"] != rid:
+                    out.append(f"{rid}: {what} is kept_for open_decision {kept['open_decision']}, which is not its own "
+                               f"record {rid}; only the decision on the alternate's own record may revive it")
+                elif by_id.get(rid, {}).get("owner_status") != "NEEDS_FOUNDER_DECISION":
+                    out.append(f"{rid}: {what} is kept_for open_decision {rid}, which is not NEEDS_FOUNDER_DECISION; "
+                               f"once the founder rules, the alternate leaves the tree, or names the consumer that "
+                               f"still reads it")
                 continue
             consumer = str(kept["consumer"])
             consumer_module, _, function = consumer.rpartition(".")
-            if not consumer_module or consumer_module.split(".")[0] in NOT_CONSUMERS or consumer_module == module:
-                out.append(f"{rid}: {what} is kept_for consumer {consumer}, which is not a function outside greg/ "
-                           f"and tests/ and outside the alternate's own module")
+            if not consumer_module or _not_a_consumer(consumer_module) or consumer_module == module:
+                out.append(f"{rid}: {what} is kept_for consumer {consumer}, which is not a consumer: a function "
+                           f"outside greg/, tests/, docs/, scripts/ci/ and any conftest.py, and outside the "
+                           f"alternate's own module")
                 continue
             path, node = module_file(consumer_module, root), definition_node(consumer_module, function, root)
             if path is None or not isinstance(node, FUNCTIONS):
@@ -1865,15 +1878,15 @@ def test_the_history_guard_refuses_a_kept_alternate_with_no_live_reason(tmp_path
         "tests/__init__.py": "", "tests/test_ladder.py": "from greg.ladder import REALITY\ndef test_x():\n    REALITY\n",
     })
 
-    def problems(kept_for=None, status="HISTORICAL", module="greg.ladder", decided="NEEDS_FOUNDER_DECISION"):
+    def problems(kept_for=None, status="HISTORICAL", module="greg.ladder", own="CANONICAL"):
         alternate = {"module": module, "qualnames": ["REALITY"], "status": status, "reason": "r",
                      "revival_condition": "c", **({"kept_for": kept_for} if kept_for is not None else {})}
-        records = [{"record_id": "OWN-FN-L", "owner_status": "CANONICAL", "alternates": [alternate]},
-                   {"record_id": "OWN-FN-OPEN", "owner_status": decided}]
+        records = [{"record_id": "OWN-FN-L", "owner_status": own, "alternates": [alternate]},
+                   {"record_id": "OWN-FN-OPEN", "owner_status": "NEEDS_FOUNDER_DECISION"}]
         return kept_for_problems(records, root)
 
     assert problems({"consumer": "acceptance.claims.crosswalk"}) == []
-    assert problems({"open_decision": "OWN-FN-OPEN"}) == []
+    assert problems({"open_decision": "OWN-FN-L"}, own="NEEDS_FOUNDER_DECISION") == []
     assert problems(status="RETIRED", kept_for={"consumer": "acceptance.claims.crosswalk"}) == []
     assert problems(module="greg.gone") == []                       # gone from the tree: git keeps its history
     assert problems(status="ALTERNATE") == []                       # a live alternate states a retirement condition
@@ -1881,15 +1894,15 @@ def test_the_history_guard_refuses_a_kept_alternate_with_no_live_reason(tmp_path
                            ({}, "does not say what keeps it"),
                            ({"consumer": "acceptance.claims.crosswalk", "open_decision": "OWN-FN-OPEN"},
                             "does not say what keeps it"),
-                           ({"consumer": "greg.console.show"}, "outside greg/ and tests/"),
-                           ({"consumer": "tests.test_ladder.test_x"}, "outside greg/ and tests/"),
+                           ({"consumer": "greg.console.show"}, "not a consumer"),
+                           ({"consumer": "tests.test_ladder.test_x"}, "not a consumer"),
                            ({"consumer": "acceptance.claims.other"}, "does not name greg.ladder.REALITY"),
                            ({"consumer": "acceptance.unrelated.crosswalk"}, "does not name greg.ladder.REALITY"),
                            ({"consumer": "acceptance.claims.missing"}, "does not exist"),
-                           ({"open_decision": "OWN-FN-NONE"}, "not a NEEDS_FOUNDER_DECISION record")):
+                           ({"open_decision": "OWN-FN-NONE"}, "not its own record")):
         found = problems(kept_for)
         assert len(found) == 1 and said in found[0], (kept_for, found)
-    assert "not a NEEDS_FOUNDER_DECISION record" in problems({"open_decision": "OWN-FN-OPEN"}, decided="CANONICAL")[0]
+    assert "is not NEEDS_FOUNDER_DECISION" in problems({"open_decision": "OWN-FN-L"})[0]
 
 
 INBOX_RECORD = {"record_id": "OWN-FN-X", "function": "x", "owner_status": "CANONICAL", "markers": ["Inbox"],
@@ -2124,3 +2137,35 @@ def test_a_pinned_exemption_clears_exactly_one_location_and_a_stale_one_fails(tm
     vouched = {**INBOX_RECORD, "distinct": [{"module": "greg.a", "qualnames": ["relay"], "why": "different"}]}
     assert len(distinct_copy_problems([vouched], root, exemptions=exempt)) == 1        # forward is still a copy
     assert BODY_EXEMPTIONS == {} or all(reason for _, reason in BODY_EXEMPTIONS.values())
+
+
+def test_kept_for_names_the_alternates_own_open_record_and_a_consumer_outside_tests_and_tools(tmp_path):
+    # Skeptic regression 5: kept_for was satisfied by naming any of the three long-open founder decisions, or by a
+    # consumer in docs/, scripts/ci/ or a conftest.py. open_decision must be the alternate's own record, still
+    # undecided; a consumer may not sit under tests/, greg/, docs/ or scripts/ci/, or in any conftest.py. A STATED
+    # LIMIT, recorded as passing: a dead two-line shim anywhere else that imports and names the object still passes.
+    reads = "from greg.ladder import REALITY\ndef keep():\n    return REALITY\n"
+    root = _tree(tmp_path, {
+        "greg/__init__.py": "", "greg/ladder.py": "REALITY = ('A', 'B')\n",
+        "docs/tools/keep.py": reads, "scripts/ci/keep.py": reads, "conftest.py": reads,
+        "acceptance/conftest.py": reads, "scripts/keep_reality.py": reads,
+    })
+
+    def problems(kept_for, own="NEEDS_FOUNDER_DECISION"):
+        alternate = {"module": "greg.ladder", "qualnames": ["REALITY"], "status": "HISTORICAL", "reason": "r",
+                     "revival_condition": "c", "kept_for": kept_for}
+        records = [{"record_id": "OWN-FN-L", "owner_status": own, "alternates": [alternate]},
+                   {"record_id": "OWN-FN-OPEN", "owner_status": "NEEDS_FOUNDER_DECISION"}]
+        return kept_for_problems(records, root)
+
+    assert problems({"open_decision": "OWN-FN-L"}) == []
+    for kept_for, own, said in (({"open_decision": "OWN-FN-OPEN"}, "NEEDS_FOUNDER_DECISION", "not its own record"),
+                                ({"open_decision": "OWN-FN-OPEN"}, "CANONICAL", "not its own record"),
+                                ({"open_decision": "OWN-FN-L"}, "CANONICAL", "is not NEEDS_FOUNDER_DECISION"),
+                                ({"consumer": "docs.tools.keep.keep"}, "CANONICAL", "not a consumer"),
+                                ({"consumer": "scripts.ci.keep.keep"}, "CANONICAL", "not a consumer"),
+                                ({"consumer": "conftest.keep"}, "CANONICAL", "not a consumer"),
+                                ({"consumer": "acceptance.conftest.keep"}, "CANONICAL", "not a consumer")):
+        found = problems(kept_for, own)
+        assert len(found) == 1 and said in found[0], (kept_for, own, found)
+    assert problems({"consumer": "scripts.keep_reality.keep"}, "CANONICAL") == []      # the stated limit

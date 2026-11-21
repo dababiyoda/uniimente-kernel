@@ -1,0 +1,33 @@
+{
+  "system": 9,
+  "kind": "hosted OCI rebuild and second-environment execution (CI job 7, scripts/ci/prove_oci.py)",
+  "observed": "2026-10-22T06:54:39Z",
+  "recorded": "2026-11-13",
+  "source": {
+    "repository": "dababiyoda/uniimente-kernel",
+    "workflow": "Canonical CI",
+    "run_id": 39736818025,
+    "job_id": 119684337436,
+    "job": "7 · Owned OCI capability rebuild and execution",
+    "conclusion": "success",
+    "head_sha": "55e6d74af4c0e4e24c410dec3f443675e60e5571",
+    "branch": "claude/opus-maximus-one-greg-20261014",
+    "artifact": {"name": "owned-oci-capability-evidence", "id": 12407443009,
+                 "zip_sha256": "fd3f5ab2891534e70e208a832f4e6cabc8cc7a9853e4e43ccb1325612fd41a68",
+                 "files": ["context.tar", "first.oci.tar", "second.oci.tar", "report.json"],
+                 "expires": "2026-11-21"}
+  },
+  "job_log_result_line": {"reproduced": true,
+                          "image": "sha256:8294aedfc65eb3d241bf581f343e5d7a9239600ec67fa1211468863b3ea556ba",
+                          "cases": 6},
+  "what_the_job_enforces": [
+    "base and builder images resolved to one immutable digest each before the context is built",
+    "two --no-cache buildx builds with --network none and a fixed SOURCE_DATE_EPOCH; OCI layouts content-address checked; the two layouts must be identical or the job fails",
+    "the loaded image's id must equal the retained OCI config digest",
+    "6 requests (3 valid rules, a code-injection source, an over-budget rule, an attribute access) run in the image with --network=none --read-only --cap-drop=ALL --user 10001 and must equal the host evaluation exactly"
+  ],
+  "re_observed": "on every CI run of the branch; this record pins one observation",
+  "not_downloaded_here": "the artifact zip could not be fetched into the development container (its storage host is outside this session's network policy); the digest above is the one GitHub reported at upload",
+  "authority_created": false,
+  "pushed": false
+}

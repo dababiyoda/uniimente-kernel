@@ -1,0 +1,12 @@
+{
+ "command": "python -m foundry.completion --run 9",
+ "name": "Containers",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "context_intact": true,
+  "context_sha256": "b3e1a317447802134f586af84ee06046c21519bebbbbcc6b4465c888343910dd",
+  "image_built": false
+ },
+ "result_sha256": "sha256:9742c24a7b85a1147a5112c89e0aa329d09c1cf1178fdd133bb52575ef61cb49",
+ "system": 9
+}

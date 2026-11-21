@@ -114,7 +114,7 @@ banner on `main`; the entrance is the default branch.
 | | Branch | Commit when prepared (2026-11-13) | Commit re-checked 2026-11-21 |
 |---|---|---|---|
 | Default branch today | `main` | `d64a6c931bb05aba4e3454847b665e73384bbdfa` (2026-10-14) | unchanged |
-| Proposed default | `claude/greg-full-machine-completion-whgiee` (draft #196) | `8d20532464b1533b28d71d8331ca3412a90dbb11` | `121195907fff261bb8610ed03488ef4461b59f73` (read before 20:26Z; from 20:40:38Z, the intake of #336, `86f9600f1a222f43a78c3a84ce5c9f9a5de380f9`. It moves at every intake; record the head at the moment of the switch) |
+| Proposed default | `claude/greg-full-machine-completion-whgiee` (draft #196) | `8d20532464b1533b28d71d8331ca3412a90dbb11` | `121195907fff261bb8610ed03488ef4461b59f73` (read before 20:26Z); from about 20:42Z, `86f9600f1a222f43a78c3a84ce5c9f9a5de380f9` (Merge #336 into #196 (intake)); read at 2026-11-21T23:20Z: `e3a84f95b307dfdab784c058bddca7d3abe5f384` (Merge #339 into #196 (intake)). The head moves at every intake, so each of these is a reading at its time, not the current head; record the head at the moment of the switch |
 
 ### What the switch does, verified 2026-11-13 from the public API and this tree
 
@@ -223,11 +223,11 @@ the check suites on the last commit). Seen only as search-engine snippets, not o
 before this paragraph was written (20:26Z): #196's `head.sha` was `121195907fff261bb8610ed03488ef4461b59f73`; its
 `pull_request` run [43538095376](https://github.com/dababiyoda/uniimente-kernel/actions/runs/43538095376) had that
 head SHA, and its check runs (for example id 132297031436, "1 · Kernel and organ tests") were then listed on the PR's
-head commit. The head moves at every intake: at 2026-11-21T20:40:38Z it became
-`86f9600f1a222f43a78c3a84ce5c9f9a5de380f9` (the intake of #336), which has runs of its own, so read the head and its
-check runs again before relying on them. In this tree, `.github/workflows/canonical-ci.yml` runs on `pull_request` and
-on `push` to `branches: [main]` and tags, with the concurrency group `canonical-ci-${{ github.ref }}` and
-`cancel-in-progress: false`.
+head commit. The head moves at every intake: it then became `86f9600f1a222f43a78c3a84ce5c9f9a5de380f9` (the intake
+of #336), whose merge commit is dated 2026-11-21T20:40:38Z; #196 moved to it at about 20:42Z (its check suites were
+created at 20:42:05Z), and it has runs of its own, so read the head and its check runs again before relying on them.
+In this tree, `.github/workflows/canonical-ci.yml` runs on `pull_request` and on `push` to `branches: [main]` and
+tags, with the concurrency group `canonical-ci-${{ github.ref }}` and `cancel-in-progress: false`.
 
 ### Adoption package (status on 2026-11-13, heads re-checked 2026-11-21; every row is pending the founder)
 

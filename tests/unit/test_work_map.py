@@ -797,6 +797,33 @@ def test_the_integration_pr_is_left_out_of_who_touches_and_paths_are_normalized(
     assert w._covers("tests/unit/test_wp06_*.py", "tests/unit/test_wp06_audit.py")
 
 
+def test_a_path_in_another_worktree_is_made_relative_and_one_outside_is_never_clear(tmp_path):
+    # The entry guide says: run the map from the checkout you started in, edit in a separate worktree.
+    repo = tmp_path / "repo"
+    (repo / "greg").mkdir(parents=True)
+    _git(repo, "init", "-q", "-b", "line")
+    (repo / "greg" / "missions.py").write_text("x\n")
+    _git(repo, "add", "greg/missions.py")
+    _git(repo, "commit", "-q", "-m", "x")
+    _git(repo, "worktree", "add", "-q", "-b", "edit", str(tmp_path / "edit"))
+    other = tmp_path / "other"
+    other.mkdir()
+    _git(other, "init", "-q")
+    edit = tmp_path / "edit" / "greg"
+    assert w.query_path(str(edit / "missions.py"), repo) == "greg/missions.py"
+    assert w.query_path(str(edit / "not_yet.py"), repo) == "greg/not_yet.py"
+    rows = w.pr_rows([_pr(1, "a/one", body=_receipt(A, ["greg/missions.py"]))], ROOT, use_git=False)
+    asked = [str(edit / "missions.py"), str(other / "greg" / "missions.py"), str(tmp_path / "loose.py"),
+             "../greg/missions.py"]
+    hits = w.who_touches(asked, rows, [], {"greg/missions.py"}, LINE, root=repo)
+    assert [(h["path"], h["asked"], h["tracked"], [p["pr"] for p in h["prs"]]) for h in hits[:1]] == [
+        ("greg/missions.py", asked[0], True, [1])]
+    assert "outside_repository" not in hits[0]
+    for h in hits[1:]:
+        assert (h["outside_repository"], h["tracked"], h["prs"], h["claims"], h["unknown_prs"]) == (
+            True, None, None, None, None), h
+
+
 def test_how_is_kept_and_a_join_or_another_author_never_speaks_for_a_session(quick):
     prs = [_pr(290, "b/authority", body=_receipt(B, ["greg/authority.py"],
                                                 task="https://x/issues/96#issuecomment-16794587797"))]

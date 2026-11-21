@@ -1158,15 +1158,39 @@ def contended(rows: list[dict], line: str = LINE, contained=None) -> list[dict]:
     return sorted(out, key=lambda x: (-x["sessions"], -len(x["prs"]), x["file"]))
 
 
+def _worktree(where: Path) -> tuple[Path, Path] | None:
+    """(top of the worktree, the repository's common git directory) that holds a directory; None when git cannot
+    say."""
+    try:
+        r = subprocess.run(["git", "-C", str(where), "rev-parse", "--path-format=absolute", "--show-toplevel",
+                            "--git-common-dir"], capture_output=True, text=True, timeout=30, check=False)
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return None
+    found = r.stdout.splitlines()
+    return (Path(found[0]).resolve(), Path(found[1]).resolve()) if r.returncode == 0 and len(found) == 2 else None
+
+
 def query_path(path: str, root: Path = ROOT) -> str:
-    """A path as asked, made repository-relative: ``./greg/x.py`` and ``<root>/greg/x.py`` are ``greg/x.py``."""
+    """A path as asked, made repository-relative: ``./greg/x.py``, ``<root>/greg/x.py`` and ``greg/x.py`` in another
+    worktree of this repository are ``greg/x.py``. Any other absolute path stays absolute (``outside_path``)."""
     p = Path(path)
     if p.is_absolute():
         try:
             p = p.resolve().relative_to(root.resolve())
         except (ValueError, OSError):
-            pass
+            near = next((d for d in p.parents if d.is_dir()), None)
+            there, here = (_worktree(near) if near else None), _worktree(root)
+            if there and here and there[1] == here[1]:
+                try:
+                    p = p.resolve().relative_to(there[0])
+                except (ValueError, OSError):
+                    pass
     return posixpath.normpath(p.as_posix())
+
+
+def outside_path(path: str) -> bool:
+    """A path ``query_path`` could not place in this repository: absolute, or above its root."""
+    return posixpath.isabs(path) or path == ".." or path.startswith("../")
 
 
 def _files_unknown(r: dict) -> bool:
@@ -1177,16 +1201,22 @@ def _files_unknown(r: dict) -> bool:
 
 
 def who_touches(paths: list[str], rows: list[dict] | None, claims: list[dict] | None,
-                tracked: set[str] | None = None, line: str = LINE, unread: list | None = None) -> list[dict]:
+                tracked: set[str] | None = None, line: str = LINE, unread: list | None = None,
+                root: Path = ROOT) -> list[dict]:
     """For each path: the open PRs and the claims that cover it, and ``unknown_prs``, the PRs for which nobody can say:
     those in ``unread`` (PRs that could not be read) and those whose files are known neither from a diff nor from a
     whole receipt (``_files_unknown``). ``prs``, ``unknown_prs`` or ``claims`` is None when its source was not read;
-    ``tracked`` is None when the tracked files were not given. The integration PR is left out."""
+    ``tracked`` is None when the tracked files were not given. A path in no worktree of this repository is marked
+    ``outside_repository`` and all four are None: nothing here answers for it. The integration PR is left out."""
     dirs = {"/".join(f.split("/")[:i]) for f in tracked for i in range(1, f.count("/") + 1)} if tracked else set()
     bound = {r["pr"] for r in line_bound(rows or [], line)}
     hits = []
     for asked in paths:
-        path = query_path(asked)
+        path = query_path(asked, root)
+        if outside_path(path):
+            hits.append({"path": path, "asked": asked, "outside_repository": True, "tracked": None, "prs": None,
+                         "unknown_prs": None, "claims": None})
+            continue
         prs = None if rows is None else [
             {"pr": r["pr"], "session": r["session"], "base": r["base"], "overlap": r["overlap"], "title": r["title"],
              "updated": r["updated"], "line_bound": r.get("line_bound", r["pr"] in bound),
@@ -2001,7 +2031,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--now", help="UTC time to judge activity against: YYYY-MM-DDTHH:MM:SSZ or ISO with an offset")
     ap.add_argument("--markdown", type=Path)
     ap.add_argument("--json", type=Path)
-    ap.add_argument("--paths", nargs="*", metavar="FILE", help="who touches these files? (none still gets an answer)")
+    ap.add_argument("--paths", nargs="*", metavar="FILE",
+                    help="who touches these files? Repository-relative paths (an absolute path in any worktree of this "
+                         "repository is made relative); none still gets an answer")
     ap.add_argument("--unit", help="is this unit taken?")
     a = ap.parse_args(argv)          # a malformed command line is a usage error: argparse exits 2
     try:

@@ -125,13 +125,13 @@ MUTANTS = [
     # the copy in _record_outcome (it follows ``aid = s["action_id"]``); the dispatch keeps an identical, redundant one
     ("an interrupted worker's receipt is recorded DONE", "greg/missions.py",
      '        aid = s["action_id"]\n'
-     '        if (manifest.capability_id == "worker.commission" and outcome.status == "DONE"\n'
+     '        if (manifest.capability_id in WORKER_PRODUCERS and outcome.status == "DONE"\n'
      '                and isinstance(outcome.output, dict) and outcome.output.get("status") == "UNCERTAIN"):\n',
      '        aid = s["action_id"]\n'
      '        if False:\n'),
     ("the interrupted-worker rule is applied to every capability", "greg/missions.py",
      '        aid = s["action_id"]\n'
-     '        if (manifest.capability_id == "worker.commission" and outcome.status == "DONE"\n',
+     '        if (manifest.capability_id in WORKER_PRODUCERS and outcome.status == "DONE"\n',
      '        aid = s["action_id"]\n'
      '        if (True and outcome.status == "DONE"\n'),
     ("a recovered interrupted worker keeps the reuse reason, not the interruption's", "greg/missions.py",

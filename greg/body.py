@@ -1452,8 +1452,13 @@ class Body:
         background = self.engine.background if self.engine is not None else None
         if background is None:
             return []
-        return [{"mission_id": mid, "state": "WORKING", "action": entry["action_id"], "attempt": entry["attempt"],
-                 "since": iso(entry["since"])} for mid, entry in sorted(background.running.items())]
+        builds = getattr(self.engine, "builds", None)
+        running = dict(background.running)
+        for entry in (builds.unfinished() if builds is not None else []):
+            running.setdefault(entry["mission_id"], builds.busy(entry["mission_id"]) or {})
+        return [{"mission_id": mid, "state": "WORKING", "action": entry.get("action_id"),
+                 "attempt": entry.get("attempt"), "since": iso(entry["since"]) if entry.get("since") else None}
+                for mid, entry in sorted(running.items())]
 
     def _heartbeat(self, state: str, summary: list):
         data = {"pid": os.getpid(), "boot_id": getattr(self, "boot_id", None), "at": iso(self.clock()),
@@ -1477,8 +1482,10 @@ class Body:
             # The main loop runs a long adapter (a worker) off its turn: one worker no longer freezes every other
             # mission, the inbox and the heartbeat (directive section 38, S38-A). tick() callers outside the main
             # loop keep dispatching inline.
-            from greg.background import Background
+            from greg.background import Background, OffTurnBuilds
             self.engine.background = Background(self._turn, clock=self.clock, stop_check=self._stop_flag)
+            # A Genesis builder call (a coding agent, up to its timeout) leaves the turn the same way.
+            self.engine.builds = OffTurnBuilds(clock=self.clock)
             ticks = active = 0
             last_seen = None
             while True:
@@ -1530,11 +1537,15 @@ class Body:
             # ends for another reason lets its workers finish, as an inline turn did.
             unfinished = (self.engine.background.shutdown(STOP_JOIN_SECONDS) if self._stop_flag()
                           else self.engine.background.join())
+            # A Genesis builder call still running is not waited for: its reservation stands (H.G7) and the
+            # restart charges it until it is reconciled; the stop record names it.
+            builds_left = self.engine.builds.unfinished() if getattr(self.engine, "builds", None) else []
             with self._turn:
                 self.engine.background.raise_failed()
                 self.journal.record("body.stopped", {"boot_id": self.boot_id, "reason": reason,
                                                      "at": iso(self.clock()), "ledger_head": self.ledger.head,
-                                                     **({"dispatches_unfinished": unfinished} if unfinished else {})},
+                                                     **({"dispatches_unfinished": unfinished} if unfinished else {}),
+                                                     **({"builds_unfinished": builds_left} if builds_left else {})},
                                     key=[self.boot_id, "stopped"])
                 self._heartbeat("STOPPED", [])
                 # Sealed in the same critical section. A dispatch named unfinished above may be waiting for the

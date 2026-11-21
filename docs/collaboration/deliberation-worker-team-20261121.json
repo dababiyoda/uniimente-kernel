@@ -1,0 +1,315 @@
+{
+ "decision_id": "WORKER-TEAM-WU03-20261121",
+ "title": "worker.team: one signed action fields a temporary worker team (Foundry #48) under one grant",
+ "problem": "Foundry #48 teams existed, but no signed GREG action fielded a worker organization, and no mission ran two WorkOrders at once (S23.A3, S38.A2, S39.A1 blocked on WU-03). The founder asked for two genuinely concurrent workers under one grant through #48 on foundry.apply, with distinct roles and orders, a parent spend cap, independent appraisal, dissolution that stops further action, and refusal of paid roles whose spend cannot be metered.",
+ "founder_intent_refs": [
+  "Founder decision in this session, 2026-11-21, recorded on #96 comment 7068061767, item 2 (WU-03)",
+  "acceptance/directive-sections.json WU-03; asks S23.A3, S38.A2, S39.A1",
+  "ARCHITECTURE-OWNERSHIP-MAP OWN-FN-TEMPORARY-TEAMS migration_path: a GREG team runner forms its teams through #48 on foundry.apply"
+ ],
+ "baseline": "#196 12119590: no worker.team; one worker.commission per action; #48 reachable only as raw foundry ops",
+ "alternatives": [
+  {
+   "name": "Two worker.commission strategies in one mission",
+   "description": "Sign each worker as its own action and let Background run them at once.",
+   "advantages": [
+    "No new capability"
+   ],
+   "disadvantages": [
+    "Background holds one dispatch per mission, so they run one after the other",
+    "Two grants and two caps, not one team under one grant"
+   ],
+   "revival_evidence": "Background dispatch keyed by action instead of mission"
+  },
+  {
+   "name": "worker.team adapter over #48 through foundry.apply (selected)",
+   "description": "Compile the swarm contract (#1), attach a competence per provider (#12), form/act/dissolve/report through #48, run member WorkOrders on threads.",
+   "advantages": [
+    "#48 stays the one canonical team implementation",
+    "Members are ordinary WorkOrders: no new worker authority"
+   ],
+   "disadvantages": [
+    "Several Foundry subprocess calls per team",
+    "The team's stores are action-private, not mission-canonical"
+   ],
+   "revival_evidence": "Selected"
+  },
+  {
+   "name": "OMNIMORPH organ composition",
+   "description": "Compose a temporary organ manifest.",
+   "advantages": [
+    "Richer organization design"
+   ],
+   "disadvantages": [
+    "Research status; never acts"
+   ],
+   "revival_evidence": "OWN-FN-TEMPORARY-TEAMS revival_condition"
+  },
+  {
+   "name": "A new GREG team runtime",
+   "description": "Reimplement form/act/dissolve in greg/.",
+   "advantages": [
+    "No Foundry subprocess cost"
+   ],
+   "disadvantages": [
+    "A second implementation of a canonically owned function; the owner guard refuses it"
+   ],
+   "revival_evidence": "None"
+  }
+ ],
+ "do_nothing_option": {
+  "expected_outcome": "No mission fields a team; S38.A2 stays sequential; WU-04 has nothing to gate.",
+  "advantages": [
+   "No change"
+  ],
+  "disadvantages": [
+   "Three asks stay blocked"
+  ]
+ },
+ "roles": [
+  {
+   "role": "founder-intent steward",
+   "position": "Every named condition is a test: concurrency, distinct roles and orders, parent cap, independent appraisal, dissolution, unmetered refusal.",
+   "material_concerns": [
+    "The team is one signed action and one grant; members cannot exceed it"
+   ],
+   "recommendation": "EXPERIMENT",
+   "evidence_refs": [
+    "#96 comment 7068061767"
+   ]
+  },
+  {
+   "role": "systems architect",
+   "position": "#48 stays canonical; greg/teams.py is a caller recorded in the ownership map.",
+   "material_concerns": [
+    "Team stores are action-private (journal=None) so the mission's canonical Foundry store is untouched"
+   ],
+   "recommendation": "EXPERIMENT",
+   "evidence_refs": [
+    "greg/teams.py",
+    "docs/collaboration/ARCHITECTURE-OWNERSHIP-MAP.yaml"
+   ]
+  },
+  {
+   "role": "adversarial reviewer",
+   "position": "Attacked: a stop after members ran turned the action REFUSED and booked nothing for real spend. Fixed: bookkeeping after start ignores the stop, and the outcome is UNCERTAIN with the cap reserved.",
+   "material_concerns": [
+    "A member that raises is charged at its whole cap",
+    "An instance attribute cannot claim metering; only the provider class can"
+   ],
+   "recommendation": "EXPERIMENT",
+   "evidence_refs": [
+    "tests/unit/test_greg_teams.py::test_a_team_the_founder_ends_mid_work_dissolves_and_keeps_its_cap_until_reconciled",
+    "tests/unit/test_greg_teams.py::test_a_paid_role_whose_spend_cannot_be_metered_is_refused_before_anyone_works"
+   ]
+  },
+  {
+   "role": "operator and maintainer",
+   "position": "worker.team runs off the turn (BACKGROUND_CAPABILITIES) and behind the egress relay (CONFINED_EGRESS), like worker.commission.",
+   "material_concerns": [
+    "codex and aider are refused as team members until they report spend"
+   ],
+   "recommendation": "EXPERIMENT",
+   "evidence_refs": [
+    "tests/unit/test_greg_teams.py::test_the_shipped_providers_are_metered_free_or_refused_as_paid_roles"
+   ]
+  },
+  {
+   "role": "evidence and welfare guardian",
+   "position": "Each member's work order is appraised alone against the one team receipt.",
+   "material_concerns": [
+    "worker.appraise reads the member's entry in the team receipt; any field mismatch rejects"
+   ],
+   "recommendation": "EXPERIMENT",
+   "evidence_refs": [
+    "tests/unit/test_greg_teams.py::test_one_signed_action_fields_two_concurrent_workers_under_one_grant"
+   ]
+  }
+ ],
+ "evidence": [
+  {
+   "claim": "Both members enter their work before either is released",
+   "finding": "Two threads reach one Barrier(2) while the release event is unset; both pass together",
+   "reference": "tests/unit/test_greg_teams.py::test_one_signed_action_fields_two_concurrent_workers_under_one_grant",
+   "tier": "unit_test"
+  },
+  {
+   "claim": "Combined spend within the parent cap",
+   "finding": "Caps 0.4 + 0.4 reserved under a 1.0 signed cap; booked 0.40 measured; #48 records the same 0.40",
+   "reference": "tests/unit/test_greg_teams.py::test_one_signed_action_fields_two_concurrent_workers_under_one_grant",
+   "tier": "unit_test"
+  },
+  {
+   "claim": "Caps above the signed cap never start",
+   "finding": "0.6 + 0.6 under 1.0 is refused; no member called",
+   "reference": "tests/unit/test_greg_teams.py::test_members_whose_caps_exceed_the_signed_cap_never_start",
+   "tier": "unit_test"
+  },
+  {
+   "claim": "Dissolution prevents further action",
+   "finding": "After the team dissolves, a #48 act through foundry.apply raises 'DISSOLVED'",
+   "reference": "tests/unit/test_greg_teams.py::test_one_signed_action_fields_two_concurrent_workers_under_one_grant",
+   "tier": "unit_test"
+  },
+  {
+   "claim": "Fail before",
+   "finding": "On 12119590 worker.team does not exist; every test fails",
+   "reference": "tests/unit/test_greg_teams.py",
+   "tier": "unit_test"
+  }
+ ],
+ "counterevidence": [
+  {
+   "claim": "A cancelled team is not stopped instantly",
+   "finding": "Test-double members are not governed providers, so they finish before they see the stop; the outcome is UNCERTAIN with the cap reserved",
+   "reference": "tests/unit/test_greg_teams.py::test_a_team_the_founder_ends_mid_work_dissolves_and_keeps_its_cap_until_reconciled",
+   "tier": "unit_test"
+  }
+ ],
+ "pass_1": {
+  "intended_outcome": "A founder-signed mission fields a bounded team of concurrent workers whose combined spend and authority never exceed the one grant.",
+  "advantages": [
+   {
+    "id": "A1",
+    "statement": "Parallel workers under one grant",
+    "amplified_value": "S38.A2's parallelism lands where it materially shortens wall time"
+   },
+   {
+    "id": "A2",
+    "statement": "Each output is appraised alone",
+    "amplified_value": "One weak member cannot ride on another's acceptance"
+   }
+  ],
+  "disadvantages": [
+   {
+    "id": "D1",
+    "statement": "Team stores are action-private, not mission-canonical",
+    "severity": "low",
+    "response_type": "evidence",
+    "redesigned_response": "Created fresh per grant; the receipt carries the #48 journal and spend"
+   },
+   {
+    "id": "D2",
+    "statement": "Unmetered CLI providers cannot join a team",
+    "severity": "medium",
+    "response_type": "protective",
+    "redesigned_response": "Refused before formation; a provider joins once it reports spend"
+   },
+   {
+    "id": "D3",
+    "statement": "A stopped team still finishes its members' bookkeeping",
+    "severity": "medium",
+    "response_type": "governance",
+    "redesigned_response": "Outcome is UNCERTAIN; the signed cap stays reserved until reconciled"
+   }
+  ],
+  "selected_design": "greg/teams.py field: #1 compile, #12 attach, #48 form, parallel worker.commission, #48 act per member, #48 dissolve, #48 report",
+  "comparisons": {
+   "baseline": "One worker per action, sequential",
+   "do_nothing": "No teams on GREG's path",
+   "simplest_viable_alternative": "Two worker.commission strategies (sequential under Background)",
+   "strongest_competing_architecture": "OMNIMORPH organ composition",
+   "reversible_experiment": "Unsigned missions never field a team; revert removes the builtin"
+  },
+  "rejected_alternatives": [
+   {
+    "name": "Two worker.commission strategies",
+    "rejection_reason": "Background runs one dispatch per mission",
+    "revival_evidence": "Per-action dispatch"
+   },
+   {
+    "name": "OMNIMORPH",
+    "rejection_reason": "Research status; never acts",
+    "revival_evidence": "OWN-FN-TEMPORARY-TEAMS revival_condition"
+   },
+   {
+    "name": "New GREG team runtime",
+    "rejection_reason": "Duplicates #48",
+    "revival_evidence": "None"
+   }
+  ]
+ },
+ "pass_2": {
+  "attack_summary": "Re-attacked for lost spend, borrowed authority, cross-member appraisal and post-dissolution action.",
+  "new_weaknesses": [
+   {
+    "id": "W1",
+    "category": "gaming",
+    "statement": "A stop after members ran made the action REFUSED, booking 0 for real spend",
+    "strengthening_response": "Post-start bookkeeping ignores the stop; outcome UNCERTAIN; cap reserved"
+   },
+   {
+    "id": "W2",
+    "category": "fragility",
+    "statement": "A member that raises could have spent",
+    "strengthening_response": "Charged at its whole cap"
+   },
+   {
+    "id": "W3",
+    "category": "dependency",
+    "statement": "Several Foundry subprocesses per team",
+    "strengthening_response": "Bounded at 2 + 2 per provider + 2 per member calls; each 30 s wall-capped"
+   }
+  ],
+  "residual_risks": [
+   {
+    "risk": "A real governed worker sees the stop only between its own checks",
+    "mitigation": "Its spend is bounded by its reserved cap",
+    "owner": "worker maintainers",
+    "review_trigger": "A team with a real Claude Code member"
+   }
+  ],
+  "pass_1_disadvantage_dispositions": [
+   {
+    "disadvantage_id": "D1",
+    "outcome": "accepted",
+    "owner": "the #196 integrator",
+    "rationale": "The mission's canonical Foundry store is untouched",
+    "review_trigger": "A mission that consumes a team's store"
+   },
+   {
+    "disadvantage_id": "D2",
+    "outcome": "resolved",
+    "owner": "this session",
+    "rationale": "Tested refusal",
+    "review_trigger": "A CLI provider that reports spend"
+   },
+   {
+    "disadvantage_id": "D3",
+    "outcome": "resolved",
+    "owner": "this session",
+    "rationale": "Tested: UNCERTAIN with reserved cap",
+    "review_trigger": "Reconciliation of team outcomes"
+   }
+  ],
+  "final_design": "worker.team builtin (greg/teams.py) over #48 through foundry.apply; members are worker.commission WorkOrders on threads under the action's grant; spend metered as team.spent_usd; worker.appraise binds each member to the team receipt.",
+  "recommendation": "EXPERIMENT"
+ },
+ "dissent": {
+  "present": false,
+  "handling": "None recorded.",
+  "entries": []
+ },
+ "authority_impact": {
+  "level": "standard",
+  "changes_authority": false,
+  "requires_authorized_human": false,
+  "approval_status": "not_required",
+  "approver": null
+ },
+ "migration_plan": "None: a new builtin; worker.appraise accepts the team receipt shape in addition to the commission receipt.",
+ "rollback_plan": {
+  "possible": true,
+  "steps": [
+   "Revert the commit; no mission signs worker.team without it"
+  ],
+  "reason_impossible": null
+ },
+ "kill_criteria": [
+  "A team's booked spend below its members' measured spend",
+  "Any act accepted after the team dissolved"
+ ],
+ "decision": "EXPERIMENT",
+ "decision_owner": "the #196 integrator, on this draft's evidence; merge remains the founder's",
+ "review_trigger": "The first team with a real metered member, or WU-04's organization-vs-simpler gate"
+}

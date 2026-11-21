@@ -613,6 +613,7 @@ class ClaudeCodeWorker:
     """
 
     name = "claude-code"
+    METERS_SPEND = True        # the CLI reports total_cost_usd and enforces --max-budget-usd (greg.teams)
     REPO_TOOLS = ("Read", "Edit", "Write", "Glob", "Grep", "Bash")
     REPO_BASH = ("Bash(python -m pytest:*)", "Bash(python3 -m pytest:*)", "Bash(git diff:*)",
                  "Bash(git status:*)", "Bash(git log:*)", "Bash(ls:*)")
@@ -1288,6 +1289,9 @@ def appraise(params: dict, ctx: InvocationContext) -> dict:
         receipts = [r for r in ctx.journal.ledger.by_type("receipt")
                     if r.payload.get("grant_id") == order.get("grant_id")]
         canonical = receipts[0].payload.get("result", {}).get("output") if len(receipts) == 1 else None
+        if isinstance(canonical, dict) and isinstance(canonical.get("team"), dict):
+            # A worker.team receipt (greg/teams.py) holds one entry per member work order under its one grant.
+            canonical = (canonical.get("members") or {}).get(order_name)
         if (not isinstance(canonical, dict) or canonical.get("order_digest") != frozen_digest
                 or order.get("order") != order_name
                 or ctx.mission_id and order.get("mission_id") != ctx.mission_id):

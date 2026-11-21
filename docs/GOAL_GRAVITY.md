@@ -150,7 +150,9 @@ leaves a partial last line. The ledger then refuses to open. That refusal is cor
 - it verifies every complete line;
 - it accepts only a tail one interrupted append can leave;
 - it requires the caller to name every risk a byte check cannot exclude (`unanchored`, `complete_record`, `stop_record`);
-- it copies the torn bytes beside the ledger before truncating, and chains a `ledger.torn_tail_quarantined` event.
+- it copies the torn bytes beside the ledger, with a durable plan, before touching the ledger;
+- it replaces them in place with a chained `ledger.torn_tail_quarantined` event, and the file does not end with a
+  newline until that event is durable, so no restarting writer can append before the repair is recorded.
 
 The torn record is never re-admitted. The kill test shows the end-to-end effect:
 
@@ -221,7 +223,7 @@ Compiler and the gaps an independent audit found on 2026-10-14.
 | 8 | I. Founder Attention Router | MISSING | see record | WMI: MISSING (requires_human_approval const; notify_role only logs). | EXISTING | UNIT-TESTED | quiet hours, defer/accept/pause/lower semantics, information and emergency items; no delivery channel |
 | 9 | Capability Genesis connected to Goal Gravity | MISSING | see record | WMI: MISSING (manifest unresolved: venture cell charters not yet requested, Bridge B). | PARTIAL | UNIT-TESTED (pytest subprocess; not SANDBOX-VERIFIED) | plan → qualify → founder attach → resume works for supplied candidates; no builder (#129/#164/coding agent) |
 | 10 | Founder refusal/corrections recorded and not re-proposed unchanged | PARTIAL | see record | WMI: MISSING (only compliance refusals retained in influencer_company drafts and ... | EXISTING | UNIT-TESTED | refusals bind route and identical effect; declared model tactics bound; not consulted by the Gate or the Ratifier |
-| 11 | Restart continuity without duplicate consequential action | EXISTING | see record | WMI: EXISTING for evaluation admission only via kernel BridgeState (test_signed_bridge.py ... | EXISTING | INTEGRATION-TESTED (real SIGKILL ×2) | torn ledger tail refuses to open on its own and is repaired only by an explicit, recorded `recover_torn_tail` call (real SIGKILL inside the dispatch-claim append tested) |
+| 11 | Restart continuity without duplicate consequential action | EXISTING | see record | WMI: EXISTING for evaluation admission only via kernel BridgeState (test_signed_bridge.py ... | EXISTING | INTEGRATION-TESTED (real SIGKILL ×3, plus SIGKILL inside each step of a recovery) | torn ledger tail refuses to open on its own and is repaired only by an explicit, recorded `recover_torn_tail` call; nothing calls it on restart until G5 |
 | 12 | Evidence state distinction planned/attempted/executed/externally verified/failed/unknown | PARTIAL | see record | WMI: PARTIAL (LoopRecord.stage ladder with settled_simulated vs executed; 'unknown until ... | EXISTING | UNIT-TESTED | independent verification with a verdict; calibrates the router; zero real instances |
 | 13 | Experience Surface metrics | MISSING | see record | WMI: MISSING. | PARTIAL | UNIT-TESTED | trusted modalities count only attributed sources; relevance metrics need real labels |
 | 14 | §25 scenario 1: Persistent goal survival | MISSING | see record | see record | EXISTING | INTEGRATION-TESTED | cross-process restart covered by the kill tests |

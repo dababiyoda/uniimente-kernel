@@ -140,8 +140,13 @@ founder's).
 
 Review: an independent review raised 14 findings against the pre-review commit. Thirteen were confirmed and one was not a
 defect. All are disposed with regression tests. Replaying the probes found one more (R1b, a stale checkpoint), which is
-also fixed. The findings and probe replay are in `tests/evidence/goal-gravity-20261013/review-increment-5.json` and
-`review-probes-increment-5.log`.
+also fixed. A second review of the result (`2f79683`) raised 18 findings, 15 of them confirmed. The main one: a recovery
+killed between its truncation and its event left an openable ledger with no record of the truncation. The other
+confirmed findings were torn founder revocations and capability detaches recovered as "not a stop", and stale
+quarantine files chained as recoveries of this chain. The repair is now applied in place behind a durable plan, so
+the ledger cannot open before its recovery is recorded. Verification is in memory, and the stop rule covers goal and
+capability controls. Records: `tests/evidence/goal-gravity-20261013/review-increment-5.json`, `review-probes-increment-5.log`
+and `review2-probes-increment-5.log`.
 
 **P2 remains incomplete.** It needs a supervisor (G5) that calls recovery on restart. Whether such a supervisor may
 acknowledge `unanchored` on the founder's behalf is part of that decision, not of this module.

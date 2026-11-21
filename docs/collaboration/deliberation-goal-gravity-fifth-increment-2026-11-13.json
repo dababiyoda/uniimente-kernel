@@ -156,8 +156,8 @@
     {
       "claim": "Every confirmed review finding is fixed",
       "tier": "deterministic_fixture",
-      "reference": "tests/evidence/goal-gravity-20261013/review-probes-increment-5.log; review-increment-5.json",
-      "finding": "26 reviewer probes replayed against the fixed tree: 19 complete with no reproduction, 7 end in a deliberate refusal"
+      "reference": "tests/evidence/goal-gravity-20261013/review-probes-increment-5.log; review-increment-5.json; review2-probes-increment-5.log",
+      "finding": "26 first-review probes replayed against the first fixed tree: 19 complete with no reproduction, 7 end in a deliberate refusal; the second review's probes replayed against the final tree: see review2-probes-increment-5.log"
     },
     {
       "claim": "The full suite passes with the increment",
@@ -273,7 +273,7 @@
     ]
   },
   "pass_2": {
-    "attack_summary": "An independent review attacked the first design on three lenses and reproduced 13 real defects (partial-bypass of the complete-record guard, a lock gap, non-atomic copies, identical-tear collisions, glob over-match, symlink alias, stale proof, misattribution); the replay of its probes found a fourth class (a stale checkpoint excusing a complete record). A second review of the final tree attacked the classifier, crash safety and evidence honesty again.",
+    "attack_summary": "An independent review attacked the first design on three lenses and reproduced 13 real defects (partial-bypass of the complete-record guard, a lock gap, non-atomic copies, identical-tear collisions, glob over-match, symlink alias, stale proof, misattribution); the replay of its probes found a fourth class (a stale checkpoint excusing a complete record). A second review of the fixed tree reproduced 15 more, the decisive one being that truncate-then-append left an openable, unrecorded ledger when the recovery was killed between the two, plus founder revocations and capability detaches missing from the stop rule and foreign quarantines chained into this chain. The design was changed to an in-place plan applied behind a durable sidecar, in-memory verification and a content-aware stop rule; a third verification round checks the fixes and attacks the new protocol.",
     "new_weaknesses": [
       {
         "id": "W1",
@@ -304,6 +304,12 @@
         "category": "reversibility",
         "statement": "Truncation removes bytes from the canonical file",
         "strengthening_response": "Bytes are copied durably before truncation and the copy's digest is in the chained event; a quarantined line can always be inspected"
+      },
+      {
+        "id": "W6",
+        "category": "fragility",
+        "statement": "The in-place plan's resume recognizes an interrupted application from the tail bytes and the sidecar; a wrong recognition would write a stale event",
+        "strengthening_response": "Resume requires the sidecar's prior head and cut to match, the quarantine's bytes to match its name, the tail to differ from the original and to be a byte-for-byte mix of the plan's event line and the original; the result is verified end to end, and a plan whose application never began is replaced"
       }
     ],
     "pass_1_disadvantage_dispositions": [
@@ -343,7 +349,7 @@
         "review_trigger": "Any change to ledger serialization"
       }
     ],
-    "final_design": "recover_torn_tail under one held lock: refuse aliases and live writers; verify the prefix; accept only a prefix of the next record or NULs; require named acknowledgment of unanchored (no expected_head), complete_record (any complete tail, anchored or not) and stop_record; copy atomically beside the ledger; truncate; chain one event per quarantine file with conditional disposition text; never re-admit; never automatic.",
+    "final_design": "recover_torn_tail under one held lock: refuse aliases and live writers and resolve directories physically; verify the prefix in memory; accept only a prefix of the next record as the writer serializes it, or NULs; require named acknowledgment of unanchored (no expected_head), complete_record (the record hash was written, anchored or not) and stop_record (a stop visible in the bytes); write the quarantine copy and a sidecar holding the exact event line durably; apply it in place so the file ends with a newline only once the event is durable; complete an interrupted plan on the next call; report, never chain, quarantines this chain does not record; never re-admit; never automatic.",
     "residual_risks": [
       {
         "risk": "Unattended acknowledgment by a future supervisor",
@@ -360,6 +366,12 @@
       {
         "risk": "Recovery mistaken for proof that nothing was lost",
         "mitigation": "Disposition text is conditional; ADR and docs state the limits",
+        "owner": "Kernel provenance maintainers",
+        "review_trigger": "First recovery on a live ledger"
+      },
+      {
+        "risk": "A crash during the apply phase on a filesystem that reorders data and metadata across fsync",
+        "mitigation": "fsync after each step; every intermediate state the protocol can leave is unopenable; a mix that is not recognized is refused, never chained",
         "owner": "Kernel provenance maintainers",
         "review_trigger": "First recovery on a live ledger"
       }

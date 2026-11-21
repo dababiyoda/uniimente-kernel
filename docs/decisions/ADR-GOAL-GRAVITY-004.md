@@ -41,27 +41,48 @@ Add `provenance/recovery.py` with
 Holding the ledger's single-writer lock for the whole procedure, it:
 
 1. **Refuses unsafe entry conditions.** It refuses a symlinked path or a file with more than one hard link, because
-   the lock is keyed on the path string. It refuses a live writer (`WriterConflict`), an empty file and a torn
-   genesis line.
-2. **Verifies history.** Every complete line must verify as a chain anchored to the expected constitution. A
-   supplied `expected_head` must equal the head before the torn line.
-3. **Accepts only what one interrupted append can leave.** That is a byte prefix of the next record's serialization
-   (`{"seq": <n>, "ts_utc": "`, pure ASCII), optionally NUL-padded, or a run of NULs. The tail is classified
-   `partial`, `zero_fill`, `content_complete` or `complete_unterminated`. Anything else is refused as corruption,
-   even with every risk acknowledged.
+   the lock is keyed on the path string, and resolves the directories in the path physically, as the operating
+   system does. It refuses a live writer (`WriterConflict`). An empty file and a torn or zero-filled genesis line are
+   refused on purpose: nothing distinguishes them from an acknowledged history truncated to nothing, so a person
+   decides.
+2. **Verifies history in memory.** Every complete line must verify as a chain anchored to the expected constitution,
+   parsed with the same checks `EvidenceLedger._load` applies; no copy of history is written. A supplied
+   `expected_head` must equal the head before the torn line.
+3. **Accepts only what one interrupted append can leave.** That is a byte prefix of the next record's line as the
+   writer serializes it, optionally NUL-padded, or a run of NULs:
+   - printable ASCII JSON;
+   - the writer's fields in its order, starting `{"seq": <n>, "ts_utc": "`;
+   - once written, a `prev_hash` equal to this chain's head;
+   - once written, a hash and closing fields that are this record's own.
+
+   The tail is classified `partial`, `zero_fill`, `content_complete`, `content_complete_unverified` or
+   `complete_unterminated`. Anything else is refused, even with every risk acknowledged: a fork, a foreign field,
+   control bytes, a mismatched hash or a complete object followed by more bytes. So is a NUL hole inside the content,
+   which a reordering storage stack and the zeroing of an acknowledged record can both leave.
 4. **Requires named acknowledgment of the risks a byte check cannot exclude:**
    - `unanchored`: no `expected_head` was given.
-   - `complete_record`: the tail is a complete chained record. This applies with or without `expected_head`; see
-     R1b below.
-   - `stop_record`: the torn record is a seal, a suspension, a founder control or a founder answer.
-5. **Preserves the torn bytes before removing them.** They are copied byte for byte to
-   `<ledger>.torn-<prior head[:16]>-<sha256>`, through a temporary file, fsync and link. A `.json` sidecar is written
-   the same way (temporary file, fsync, replace). Only then is the ledger truncated to its last complete record, and
-   the directory fsynced.
-6. **Records the recovery under the same lock.** One `ledger.torn_tail_quarantined` event is appended with the
-   classification, prior head, torn type, anchor, acknowledged risks, `recovered_by`, `reason`, `recorded_by`, any
-   stop warning and an honest disposition. A crash between truncation and the event is completed on the next call,
-   under the identity of whoever truncated.
+   - `complete_record`: the record's 64-digit hash was written, so its identity is fixed. This applies with or
+     without `expected_head` (R1b) and for records with `corrects` set (second review, classifier:0).
+   - `stop_record`: the torn bytes show a stop. That covers a seal, a suspension, a founder preference or answer, a
+     capability detach, a goal revocation, supersession or pause, and an event whose type or status names a stop
+     (second review, classifier:1 and honesty:0). A tail that cannot exclude a stop, such as an unknown record type
+     or a cut before the deciding field, is warned about without a required acknowledgment.
+5. **Writes the plan before touching the ledger.**
+   - The torn bytes are copied byte for byte to `<ledger>.torn-<16 hex of the prior head>-<sha256>` (temporary
+     file, fsync, link).
+   - A `.json` sidecar is written by temporary file, fsync and replace. It records what was found, who is recovering
+     it, and the exact `ledger.torn_tail_quarantined` event line to write (the plan).
+6. **Applies the plan in place, so the ledger never opens before its repair is recorded.**
+   - The event line is written over the torn bytes, the file is cut to its length, then the newline is written,
+     with an fsync after each step.
+   - Until the newline the file never ends with a newline, so `EvidenceLedger` keeps refusing to open it and no
+     restarting writer can append.
+   - A call that finds a plan part-way applied (the tail is a byte mix of the plan's event line and the torn bytes)
+     completes that plan. The plan's caller remains `recovered_by` and the new caller is returned as
+     `completed_by`.
+   - A plan whose application never began is replaced by the new caller's own.
+   - The result is verified end to end.
+   - Quarantine files this chain does not record are reported, never chained.
 
 The torn record is never re-admitted: an append that never returned took no effect. Opening a torn ledger still
 fails closed. Nothing calls recovery automatically.
@@ -100,8 +121,10 @@ real child halfway through writing `grant_dispatch`. It then checks the followin
   [RocksDB WAL recovery consistency levels](https://git.nextgraph.org/NextGraph/rocksdb/commit/de85e4cadfd3bd9ea5d3e148868f70cfab5c91d4),
   [RocksDB `WALRecoveryMode`](https://javadoc.io/static/org.rocksdb/rocksdbjni/7.9.2/org/rocksdb/WALRecoveryMode.html).
 - **What differs, and why.** This ledger is evidence, not a cache, so silent tolerance is wrong for it. The adopted
-  mechanism keeps etcd's backup-then-truncate. It adds a chained record of the repair. It turns RocksDB's documented
-  ambiguity into named risks that an accountable caller must acknowledge, instead of a mode that hides them.
+  mechanism keeps etcd's backup-first discipline but replaces the torn bytes with a record of the repair. It applies
+  that record in place, behind a durable plan, the write-ahead-intent pattern of redo logs. It turns RocksDB's
+  documented ambiguity into named risks that an accountable caller must acknowledge, instead of a mode that hides
+  them.
 - **Existing mechanisms searched.**
   - `EvidenceLedger`'s fail-closed load, single-writer lock, `corrects` field and seal.
   - The kill tests of the first through fourth increments.
@@ -111,7 +134,7 @@ real child halfway through writing `grant_dispatch`. It then checks the followin
   facility (SR001).
 - **Falsification.** Any one of these would falsify the effect:
   - an acknowledged record dropped without the caller naming a risk that admits it;
-  - a truncation without a chained event;
+  - a ledger that opens with its torn bytes removed but no recovery event;
   - a torn record admitted to the chain;
   - a tail accepted that one interrupted append cannot produce;
   - a second dispatch after recovery;
@@ -126,6 +149,8 @@ real child halfway through writing `grant_dispatch`. It then checks the followin
 | Tolerant load inside `EvidenceLedger` (RocksDB-style mode) | restarts need no extra call | silent loss in every organ that pins the boundary package; contract change; the ambiguity RocksDB documents | rejected; revive only with a founder ruling on silent tolerance |
 | Self-delimiting framing (length and checksum prefix, `hash_version` 3) | torn writes detectable by construction | shared-contract migration for every organ; does not remove the acknowledged-then-damaged ambiguity | deferred; revive if torn tails recur in a live deployment |
 | Atomic per-record writes (temp plus rename, or one file per record) | no torn lines | O(n) rewrite per append or a new storage layout; fsync cost | rejected |
+| Truncate in place, then append the event (first design, `54fd20cc` and `2f79683`) | simple | a crash between the two leaves an openable ledger with no record of the truncation (second review, crash:0) | superseded by the in-place plan |
+| Atomic replace (write the prefix and the event to a scratch file, rename it over the ledger) | textbook atomicity | needs free space equal to the ledger at the moment a full disk is the classic cause of a torn append; changes the inode; leaves full copies of history when killed | rejected in favour of the in-place plan |
 
 ## Adversarial review of this increment
 
@@ -150,7 +175,10 @@ surfaced one more (R1b). The full record, with verbatim verdicts, is
 | SH-2 (major claimed; verifier: not a defect) | a torn suspension is quarantined and the body restarts unsuspended | not a defect: `suspend` sets its flag only after `append` returns. Hardened: torn type named, `stop_record` required for stop types, stop warning when the type is a stop or unreadable |
 | R1b (found by the replay) | a checkpoint one append stale matches the head before the torn line, so `expected_head` alone let a complete, acknowledged record be dropped with "never returned" | `complete_record` required whenever the tail is complete; anchored disposition is conditional ("if that was the writer's last acknowledged head") |
 
-Every disposition has a regression test in `tests/unit/test_ledger_recovery.py`.
+Every disposition has a regression test in `tests/unit/test_ledger_recovery.py`. The second review below replaced the
+mechanism behind CC-0/SH-1, CC-2 and SH-4 (truncate under the lock, then record from the sidecar) with the in-place
+plan, which keeps their effect: no writer appends before the repair is recorded, and a crash never chains another
+attempt's proof or identity.
 
 `tests/evidence/goal-gravity-20261013/review-probes-increment-5.log` replays all 26 probes against the fixed tree:
 
@@ -158,6 +186,27 @@ Every disposition has a regression test in `tests/unit/test_ledger_recovery.py`.
 - 7 end in a deliberate refusal.
 
 The log lists each mechanical adaptation the old API required.
+
+### Second adversarial review (of `2f79683`)
+
+A second review workflow (`wf_6a3dd129-b42`: classifier, crash and honesty finders, one independent verifier per
+finding) raised 18 findings. Fifteen were confirmed real and three were judged not defects. Records:
+`tests/evidence/goal-gravity-20261013/review-increment-5.json` (`second_review`) and
+`review2-probes-increment-5.log`.
+
+| Finding(s) | Issue at `2f79683` | Disposition |
+|---|---|---|
+| crash:0 (major) | a recovery killed after truncating and before its event left an openable ledger; a restarting body appended onto the unrecorded truncation (about half of a long call is in that window) | the in-place plan: the ledger never ends with a newline until the event is durable; real-SIGKILL test at each apply step |
+| crash:1, honesty:2 (major) | an altered, unrecorded quarantine made recovery refuse after it had truncated, and blocked recording | quarantines without an event in this chain are reported, never chained, so nothing can fail after a change |
+| classifier:1, honesty:0 (major) | a torn goal revocation, supersession or capability detach was recovered as "not a stop" and the revoked goal acted again | detach added to the stop types; goal transitions and events are stops when their visible payload shows one; wake/sleep reasons exclude a stop; unknown types warned; a test classifies every declared record type |
+| classifier:0 (major claimed; verifier: minor) | a cut just before the hash's closing quote, or inside a correction record's closing fields, was `partial`, so `complete_record` was not demanded | complete once the 64-digit hash is written; `corrects` rebuilt and the hash recomputed; every-offset sweep of six record kinds |
+| classifier:2 (minor) | tails the writer cannot produce (a fork, control bytes, a foreign field) were accepted as `partial` | refused |
+| crash:2, honesty:1 (minor) | quarantines from an earlier ledger at the same path were chained as recoveries of this one | reported, never chained |
+| crash:3, honesty:4 (minor) | after a crash, a byte-identical re-tear at the same head gave two truncations and one event | the precondition (a truncation without an event) no longer exists |
+| crash:4, honesty:5 (minor) | verification wrote a full copy of history: recovery needed free space equal to the ledger, and killed attempts left copies | verification in memory, with a parity test against `_load` |
+| crash:5 (minor) | `..` through a symlinked directory made recovery act on a different file | directories resolved physically |
+| honesty:6 (nit) | a fallback attribution text named the wrong cause | moot: events are never built from a sidecar now |
+| classifier:3, classifier:4, honesty:3 (verifier: not defects) | a NUL hole inside a record and a torn genesis line are refused; sidecar fields could reach the event | the refusals are deliberate and now documented, and a person decides; the sidecar path is gone |
 
 **Root cause referred to the ledger owner.** `EvidenceLedger` keys its single-writer lock on `<path>.lock`. A
 symlink, hard link or bind mount of the ledger file therefore has its own lock file, and two writers can append to the
@@ -178,7 +227,7 @@ module.
 ## Evidence tier
 
 IMPLEMENTED, UNIT-TESTED and INTEGRATION-TESTED on synthetic JSONL ledgers, with a real SIGKILL inside the dispatch-claim
-append. Not SANDBOX-VERIFIED, not EXTERNALLY VERIFIED, not FOUNDER-ACCEPTED. No supervisor has called recovery, and CMC,
+append and inside each step of applying a recovery. Not SANDBOX-VERIFIED, not EXTERNALLY VERIFIED, not FOUNDER-ACCEPTED. No supervisor has called recovery, and CMC,
 VDM and VEPMC remain 0.
 
 ## Not achievable in this increment (preserved targets with blocking dependency)
@@ -187,6 +236,9 @@ VDM and VEPMC remain 0.
 - Independent verification of recovery in an isolated facility is blocked on SR001's isolated verification facility.
 - Alias-proof locking inside `EvidenceLedger` is blocked on a ledger-owner change to the boundary package, which
   organs must re-pin.
+- An empty file, a torn or zero-filled genesis line, and a NUL hole inside a record are refused by design, so a
+  person decides. Tolerating them is a ledger-recreation decision, best taken with G5 or with self-delimiting
+  framing.
 - Recovery of a torn line in an organ's own ledger (WMI, DALEOBANKS) is blocked on organ adoption. The organs pin the
   boundary archive at `4999acff`, so this module reaches them only when they re-pin.
 
@@ -199,7 +251,7 @@ from its file and never needs to be restored.
 **Kill criteria.** Kill the mechanism if any of these occurs:
 
 - any recovery drops an acknowledged record without a named risk that admits it;
-- a truncation is ever left without its chained event once the call returns;
+- a ledger ever opens with its torn bytes removed and no recovery event;
 - a torn record is ever admitted;
 - recovery is ever cited as authority to act;
 - the founder rules that ledger repair must be impossible rather than explicit.

@@ -1,0 +1,310 @@
+{
+ "decision_id": "GENESIS-BUILD-OFF-TURN-20261121",
+ "title": "Run a Genesis builder call off the Body's turn (S38-A follow-up)",
+ "problem": "Genesis._builder_route called builder.build inside MissionEngine._step, under the Body's turn lock. A Claude Code build may take up to its 300 s timeout per attempt, two attempts per deficit. While it ran no other mission was stepped, the inbox was not read and the heartbeat stopped. #273 moved worker.commission's adapter off the turn; builder calls were named there as unconverted. Separately, Genesis set the per-call ceiling on the one shared builder object (self.builder.max_budget_usd), which is safe only while calls are serial.",
+ "founder_intent_refs": [
+  "Founder decision in this session, 2026-11-21, recorded on #96 comment 7068061767: own the Genesis builder-call change and WU-03",
+  "directive 2026-10-28 section 38 (S38-A): one long call must not freeze every other mission",
+  "acceptance H.G7: a build the body died inside is charged at its reserved ceiling"
+ ],
+ "baseline": "#196 12119590: builder.build inline in the turn; the per-call ceiling written onto the shared builder",
+ "alternatives": [
+  {
+   "name": "Run the whole mission step on a dispatch thread (Background.dispatch)",
+   "description": "Treat _step as the act and wrap builder.build like a worker adapter.",
+   "advantages": [
+    "Reuses the dispatch code unchanged"
+   ],
+   "disadvantages": [
+    "A step can also dispatch a worker: nested dispatches share one mission key in Background.running",
+    "Every step pays a thread; verification and attach would run on a second thread"
+   ],
+   "revival_evidence": "A second kind of long call inside a step that needs the turn's state while it runs"
+  },
+  {
+   "name": "Only the builder call leaves the turn; the next step takes its result (OffTurnBuilds)",
+   "description": "Record the reservation on the turn, run builder.build on a thread that touches no shared state, end the step, and take the result on the mission's next step, which resumes the same open deficit.",
+   "advantages": [
+    "The build thread never enters the journal, Gate, registry or book",
+    "Reuses the restart path that already exists (an open deficit is resumed; an unsettled build is charged at its reservation)"
+   ],
+   "disadvantages": [
+    "The step's remaining work runs one turn later",
+    "A result that is never taken stays charged at its reservation"
+   ],
+   "revival_evidence": "Selected"
+  },
+  {
+   "name": "Give every builder a stop_check and keep it inline",
+   "description": "Make STOP interrupt the call, but leave it on the turn.",
+   "advantages": [
+    "Smallest change"
+   ],
+   "disadvantages": [
+    "Other missions still freeze for the whole call; only STOP improves"
+   ],
+   "revival_evidence": "None; does not produce the effect"
+  },
+  {
+   "name": "Pass the ceiling as a build() argument",
+   "description": "Change the builder interface instead of copying the builder per call.",
+   "advantages": [
+    "No shared-object copy"
+   ],
+   "disadvantages": [
+    "Changes every builder and test double's signature"
+   ],
+   "revival_evidence": "A builder that cannot be shallow-copied"
+  }
+ ],
+ "do_nothing_option": {
+  "expected_outcome": "Each real build freezes the whole Body for up to 300 s per attempt; a second mission's build would also rewrite the first's ceiling once builds ran at once.",
+  "advantages": [
+   "No change to the Genesis loop"
+  ],
+  "disadvantages": [
+   "S38-A's effect stays partial",
+   "Heartbeat silence reads as a dead body to the supervisor"
+  ]
+ },
+ "roles": [
+  {
+   "role": "founder-intent steward",
+   "position": "The founder asked for exactly this split: only builder.build leaves the turn; reservation, journal, verification and attach stay serialized.",
+   "material_concerns": [
+    "No authority changes: the same signed budget, cone and attach rules apply on the step that takes the result"
+   ],
+   "recommendation": "EXPERIMENT",
+   "evidence_refs": [
+    "#96 comment 7068061767"
+   ]
+  },
+  {
+   "role": "systems architect",
+   "position": "The build thread is pure: request in, candidate out. The step that takes it is an ordinary turn, so nothing new runs concurrently with the journal.",
+   "material_concerns": [
+    "BuildHandedOff is a BaseException so no except Exception on the step's path contains it; MissionEngine catches it"
+   ],
+   "recommendation": "EXPERIMENT",
+   "evidence_refs": [
+    "greg/background.py OffTurnBuilds",
+    "greg/missions.py _step_off_turn_builds"
+   ]
+  },
+  {
+   "role": "adversarial reviewer",
+   "position": "Attacked: a result taken after the founder ended the mission; two missions sharing one builder object; a finished result blocked by its own reservation; a need served by another mission's build.",
+   "material_concerns": [
+    "Each attack is a test; the reservation-blocks-itself and served-meanwhile defects were found and fixed while writing them"
+   ],
+   "recommendation": "EXPERIMENT",
+   "evidence_refs": [
+    "tests/unit/test_greg_genesis_build_off_turn.py::test_two_missions_building_at_once_each_run_under_their_own_signed_ceiling",
+    "tests/unit/test_greg_genesis_build_off_turn.py::test_a_mission_the_founder_ends_while_it_builds_never_gets_its_late_result"
+   ]
+  },
+  {
+   "role": "operator and maintainer",
+   "position": "STOP no longer waits up to 300 s for a build; body.stopped names the builds left unfinished, and the restart charges them until reconciled.",
+   "material_concerns": [
+    "A real Claude Code subprocess keeps running until the process exits; its spend is bounded by the reserved ceiling"
+   ],
+   "recommendation": "EXPERIMENT",
+   "evidence_refs": [
+    "tests/unit/test_greg_genesis_build_off_turn.py::test_stop_does_not_wait_for_a_build_and_the_restart_still_charges_its_reservation"
+   ]
+  },
+  {
+   "role": "evidence and welfare guardian",
+   "position": "Spend is never under-booked: an untaken call stays charged at its ceiling (H.G7); a taken or served one settles at its reported cost.",
+   "material_concerns": [
+    "Overcharge, not undercharge, is the failure direction"
+   ],
+   "recommendation": "EXPERIMENT",
+   "evidence_refs": [
+    "Genesis._build_spend",
+    "Genesis.settle_served_builds"
+   ]
+  }
+ ],
+ "evidence": [
+  {
+   "claim": "Fail before, pass after",
+   "finding": "On #196 12119590 all 5 tests fail (163 s, each waiting out its 30 s timeout); with the change all 5 pass in about 9 s",
+   "reference": "tests/unit/test_greg_genesis_build_off_turn.py",
+   "tier": "unit_test"
+  },
+  {
+   "claim": "Mission B closes while A's builder is held",
+   "finding": "B is achieved while A's call has neither been released nor returned; the heartbeat shows A WORKING with action genesis.build:markdown.unchecked_count; A closes after release with one build, taken once",
+   "reference": "tests/unit/test_greg_genesis_build_off_turn.py::test_a_long_genesis_build_does_not_freeze_the_other_missions",
+   "tier": "unit_test"
+  },
+  {
+   "claim": "Each mission builds under its own signed ceiling",
+   "finding": "Two missions signed at 0.3 and 0.7 build at once; the calls see 0.3 and 0.7, the shared builder keeps 1.0, and each deficit settles at its reported cost",
+   "reference": "tests/unit/test_greg_genesis_build_off_turn.py::test_two_missions_building_at_once_each_run_under_their_own_signed_ceiling",
+   "tier": "unit_test"
+  }
+ ],
+ "counterevidence": [
+  {
+   "claim": "A Body STOP used to wait for the build",
+   "finding": "Now it does not; the build's result is lost and charged at its ceiling. This is the existing semantics of a body killed inside the call, now also reached by STOP",
+   "reference": "tests/unit/test_greg_genesis_build_off_turn.py::test_stop_does_not_wait_for_a_build_and_the_restart_still_charges_its_reservation",
+   "tier": "unit_test"
+  }
+ ],
+ "pass_1": {
+  "intended_outcome": "A Genesis build no longer freezes the Body, and builds in flight together each stay inside their own mission's signed limit.",
+  "advantages": [
+   {
+    "id": "A1",
+    "statement": "Other missions, the inbox and the heartbeat keep turning during a build",
+    "amplified_value": "The last measured whole-body freeze from a single call is gone"
+   },
+   {
+    "id": "A2",
+    "statement": "Ceilings are per call",
+    "amplified_value": "Concurrent builds cannot borrow each other's signed budget"
+   }
+  ],
+  "disadvantages": [
+   {
+    "id": "D1",
+    "statement": "An untaken result stays charged at its ceiling",
+    "severity": "low",
+    "response_type": "evidence",
+    "redesigned_response": "Served-meanwhile results are settled at their reported cost; only abandoned or stopped ones keep the reservation"
+   },
+   {
+    "id": "D2",
+    "statement": "STOP abandons a running call",
+    "severity": "medium",
+    "response_type": "governance",
+    "redesigned_response": "body.stopped names it; the restart charges and resumes"
+   },
+   {
+    "id": "D3",
+    "statement": "A late result could arrive after the mission's authority changed",
+    "severity": "medium",
+    "response_type": "protective",
+    "redesigned_response": "It is only taken on an ordinary step, which checks the mission's current state, cone and attach rules"
+   }
+  ],
+  "selected_design": "OffTurnBuilds: only builder.build off the turn; take the result on the next step",
+  "comparisons": {
+   "baseline": "Inline builder call under the turn lock",
+   "do_nothing": "Whole-body freeze for each build",
+   "simplest_viable_alternative": "OffTurnBuilds (selected)",
+   "strongest_competing_architecture": "Run the whole step on a dispatch thread",
+   "reversible_experiment": "Off only in Body.run's main loop; engine.builds = None restores inline builds"
+  },
+  "rejected_alternatives": [
+   {
+    "name": "Whole step on a dispatch thread",
+    "rejection_reason": "Nested worker dispatch shares one mission key",
+    "revival_evidence": "A long call that needs the turn's state while it runs"
+   },
+   {
+    "name": "Inline with stop_check only",
+    "rejection_reason": "Does not unfreeze other missions",
+    "revival_evidence": "None"
+   },
+   {
+    "name": "Ceiling as a build() argument",
+    "rejection_reason": "Changes every builder's signature",
+    "revival_evidence": "A builder that cannot be copied"
+   }
+  ]
+ },
+ "pass_2": {
+  "attack_summary": "Re-attacked the selected design for lost spend, double builds, stale authority and process lifetime.",
+  "new_weaknesses": [
+   {
+    "id": "W1",
+    "category": "fragility",
+    "statement": "A finished result's own reservation made the budget look spent, so it was never taken",
+    "strengthening_response": "A finished call counts like an unjudged paid candidate; fixed and pinned by the liveness test"
+   },
+   {
+    "id": "W2",
+    "category": "gaming",
+    "statement": "When another mission's build serves the need first, the second call would stay charged at its ceiling forever",
+    "strengthening_response": "settle_served_builds records its reported cost at the start of the mission's next step"
+   },
+   {
+    "id": "W3",
+    "category": "dependency",
+    "statement": "copy.copy of a builder that keeps per-instance counters would lose them",
+    "strengthening_response": "Only used off the turn; the shipped builders keep no counters; recorded as a residual risk"
+   }
+  ],
+  "residual_risks": [
+   {
+    "risk": "A real coding-agent subprocess outlives a STOP until the process exits",
+    "mitigation": "Bounded by its reserved ceiling and by the builder's own timeout",
+    "owner": "Genesis maintainers",
+    "review_trigger": "A builder with a stop hook"
+   },
+   {
+    "risk": "A future builder keeps per-call state on the instance",
+    "mitigation": "Copy per call; the builder interface stays request in, candidate out",
+    "owner": "Genesis maintainers",
+    "review_trigger": "A new builder class"
+   }
+  ],
+  "pass_1_disadvantage_dispositions": [
+   {
+    "disadvantage_id": "D1",
+    "outcome": "resolved",
+    "owner": "this session",
+    "rationale": "Served results are settled; others keep the safe overcharge",
+    "review_trigger": "Reconciliation of untaken builds"
+   },
+   {
+    "disadvantage_id": "D2",
+    "outcome": "accepted",
+    "owner": "Alfonso",
+    "rationale": "Matches the existing body-killed-inside-the-call semantics",
+    "review_trigger": "A builder that can be stopped"
+   },
+   {
+    "disadvantage_id": "D3",
+    "outcome": "resolved",
+    "owner": "this session",
+    "rationale": "Tested: an ended mission's late result is never taken",
+    "review_trigger": "Any new path that takes a result outside a step"
+   }
+  ],
+  "final_design": "greg/background.OffTurnBuilds plus BuildHandedOff; Genesis records the reservation, hands off the call with a per-call builder copy, and takes or settles the result on the mission's next step; the Body enables it only in its main loop.",
+  "recommendation": "EXPERIMENT"
+ },
+ "dissent": {
+  "present": false,
+  "handling": "None recorded.",
+  "entries": []
+ },
+ "authority_impact": {
+  "level": "standard",
+  "changes_authority": false,
+  "requires_authorized_human": false,
+  "approval_status": "not_required",
+  "approver": null
+ },
+ "migration_plan": "None: no record schema or stored state changes; body.stopped gains an optional builds_unfinished field.",
+ "rollback_plan": {
+  "possible": true,
+  "steps": [
+   "Revert the commit; Body.run then builds inline again"
+  ],
+  "reason_impossible": null
+ },
+ "kill_criteria": [
+  "Any build charged below its reported cost",
+  "A result attached to a mission the founder ended"
+ ],
+ "decision": "EXPERIMENT",
+ "decision_owner": "the #196 integrator, on this draft's evidence; merge remains the founder's",
+ "review_trigger": "A builder that supports stop, or a second kind of long call inside a mission step"
+}

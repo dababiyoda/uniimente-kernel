@@ -1,0 +1,265 @@
+{
+ "decision_id": "DELIB-20261121-BLACK-START-CORE",
+ "title": "A read-only black-start core over a copied body home (acceptance H.G13)",
+ "problem": "tests/recovery/recovery-tests.yaml declares black_start_environment (primary unavailable: a read-only core reads ledger and constitution, asserts shutdown, revokes credentials, notifies Alfonso; workflows/shutdown-recovery.yaml stage 1), and the harness reported it NOT RUN because no such core existed.",
+ "founder_intent_refs": [
+  "INTENT-20261013-OPUS-MAXIMUS-MASTER-EXECUTION (acceptance H.G13)",
+  "INTENT-20261111-REVOKED-DEVICE-AUTHORITY",
+  "docs/FOUNDER_EFFECT_COMPILER.md: 'Make UNIIMENTE immortal' compiles to continuity across component failure, recovery and shutdown-safe restoration"
+ ],
+ "baseline": "#196 12119590: greg/recovery.py restores a body from its seed (a writer); greg status reads a live home; no command reads a stopped body's copy and reports the stage-1/stage-2 facts without writing.",
+ "alternatives": [
+  {
+   "name": "Proposed: greg/black_start.py and `greg --home COPY black-start`",
+   "description": "Compose existing readers: EvidenceLedger(read_only, tail=ignore).verify_chain, compile_constitution, the heartbeat published-head rule, body.booted/body.stopped, device_delegations, compute.node_states/unrevoked_nodes, founder_keys. Output the revocations as unsigned founder commands and the notification as a file outside the home.",
+   "advantages": [
+    "No new state, no key, no write in the home",
+    "Every fact comes from an existing reader the body itself uses",
+    "The listed commands are the real command kinds, so the founder's signature is the only missing step"
+   ],
+   "disadvantages": [
+    "A second reader of shutdown facts beside greg status",
+    "Reads the whole ledger into memory",
+    "Shown-down judged from the copy only: a body still running elsewhere cannot be seen"
+   ],
+   "revival_evidence": "n/a (selected)"
+  },
+  {
+   "name": "Extend greg status with a --black-start flag",
+   "description": "Add the checks to body.status.",
+   "advantages": [
+    "One reader"
+   ],
+   "disadvantages": [
+    "status is the live founder projection; mixing the copy-only escalate rule into it couples two contracts",
+    "greg/body.py is heavily contended"
+   ],
+   "revival_evidence": "status grows a copy-mode for other reasons"
+  },
+  {
+   "name": "Sign the revocations in the core",
+   "description": "Give the core the founder key so it revokes directly.",
+   "advantages": [
+    "One step for the founder"
+   ],
+   "disadvantages": [
+    "A recovery tool holding the founder key widens authority; intelligence never creates authority"
+   ],
+   "revival_evidence": "none"
+  },
+  {
+   "name": "Send the notification",
+   "description": "Email or push from the core.",
+   "advantages": [
+    "Stage 1 complete as written"
+   ],
+   "disadvantages": [
+    "Needs a founder-authorized outbound channel; outside contact is founder-only"
+   ],
+   "revival_evidence": "Founder authorizes a notification channel"
+  }
+ ],
+ "do_nothing_option": {
+  "expected_outcome": "black_start_environment stays NOT RUN; a founder with only a copied home has no tool that tells him whether it verifies, whether the body was down, and what to revoke.",
+  "advantages": [
+   "No new code"
+  ],
+  "disadvantages": [
+   "H.G13 stays open",
+   "Recovery stage 1 has no executable path"
+  ]
+ },
+ "roles": [
+  {
+   "role": "Founder-Intent Steward",
+   "position": "Preserves the continuity destination with the strongest real mechanism: verify, report, propose; the founder signs.",
+   "material_concerns": [
+    "Must not imply a notification was sent"
+   ],
+   "evidence_refs": [
+    "tests/unit/test_greg_black_start.py::test_the_notification_never_lands_in_the_home",
+    "tests/integration/test_greg_recovery_scenarios_process.py::test_black_start_environment"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Systems Architect",
+   "position": "Composition of existing readers in a new module; greg/recovery.py (six open PRs) and greg/body.py untouched beyond imports.",
+   "material_concerns": [
+    "Drift between this shutdown rule and status's"
+   ],
+   "evidence_refs": [
+    "greg/black_start.py"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Adversarial Reviewer",
+   "position": "Attacked with a tampered head, a rollback, another constitution, a live copy and a notification path inside the home; each refused or escalated, nothing derived from unverified history.",
+   "material_concerns": [
+    "A rollback within the heartbeat's one-turn window is not detected (same limit as the boot guard)"
+   ],
+   "evidence_refs": [
+    "tests/integration/test_greg_recovery_scenarios_process.py::test_black_start_environment",
+    "tests/unit/test_greg_black_start.py::test_a_checkout_whose_constitution_is_not_the_ratified_one_escalates"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Operator and Maintainer",
+   "position": "One command with exit codes 0/1/3 an operator can script; it works with no access to the original machine.",
+   "material_concerns": [
+    "Must be run on a copy; on a live home it reports not shown down and still writes nothing"
+   ],
+   "evidence_refs": [
+    "tests/integration/test_greg_recovery_scenarios_process.py::test_black_start_environment"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Evidence and Welfare Guardian",
+   "position": "The report lists credential identifiers and labels only; no secret leaves the home; the notification file is 0600 and never overwrites.",
+   "material_concerns": [
+    "The report includes device labels the founder chose"
+   ],
+   "evidence_refs": [
+    "tests/unit/test_greg_black_start.py"
+   ],
+   "recommendation": "EXPERIMENT"
+  }
+ ],
+ "evidence": [
+  {
+   "claim": "Over a stopped body's copy the core verifies, shows down, lists the phone and node revocations and writes the NOT_SENT notification; the copy is byte-identical afterwards",
+   "tier": "sandbox_execution",
+   "reference": "tests/integration/test_greg_recovery_scenarios_process.py::test_black_start_environment",
+   "finding": "passed; original home deleted before the run"
+  },
+  {
+   "claim": "The listed revocations are the real commands",
+   "tier": "sandbox_execution",
+   "reference": "tests/integration/test_greg_recovery_scenarios_process.py::test_black_start_environment",
+   "finding": "founder-signed into another copy, the body applies them; a second core run lists nothing to revoke"
+  },
+  {
+   "claim": "Damaged history yields nothing derived",
+   "tier": "sandbox_execution",
+   "reference": "tests/integration/test_greg_recovery_scenarios_process.py::test_black_start_environment",
+   "finding": "tampered head, rollback by three records, another constitution: exit 3, credentials and shutdown null, copy unwritten"
+  },
+  {
+   "claim": "The tests catch the checks they rely on",
+   "tier": "sandbox_execution",
+   "reference": "three mutants of greg/black_start.py",
+   "finding": "published-head check removed: caught; shown_down forced true: caught; constitution comparison removed: survived the integration test, then caught by the added unit test"
+  }
+ ],
+ "counterevidence": [
+  {
+   "claim": "The integration test alone covered every check",
+   "tier": "sandbox_execution",
+   "reference": "mutant 3",
+   "finding": "it did not: the other-constitution damage fails on the genesis record, not on the comparison; a unit test now isolates the comparison"
+  },
+  {
+   "claim": "A signed BODY_STOP leaves a copy the body would resume",
+   "tier": "sandbox_execution",
+   "reference": "tests/integration/test_greg_recovery_scenarios_process.py::test_black_start_environment",
+   "finding": "the stop persists as a STOP file; resuming a copy needs `greg start --local` (local physical authority), which the test runs and the report shows"
+  }
+ ],
+ "pass_1": {
+  "intended_outcome": "With only a copy of a stopped body's home, the founder learns whether its history verifies, whether it was down, and exactly what to sign to end every standing credential, and nothing in the copy changes.",
+  "advantages": [
+   {
+    "id": "A1",
+    "statement": "Stage 1 of the shutdown-recovery workflow has an executable path",
+    "amplified_value": "The harness now runs all four declared recovery scenarios; none is reported NOT RUN"
+   },
+   {
+    "id": "A2",
+    "statement": "Revocations are emitted as the exact command bodies",
+    "amplified_value": "A future authorized channel can carry them to the founder's signer unchanged"
+   }
+  ],
+  "disadvantages": [
+   {
+    "id": "D1",
+    "statement": "Second reader of shutdown facts beside greg status",
+    "severity": "low",
+    "response_type": "modularity",
+    "redesigned_response": "Both read the same records (body.booted main_loop, body.stopped, heartbeat); the core adds only the copy-mode escalate rule"
+   },
+   {
+    "id": "D2",
+    "statement": "Shown-down cannot see a body still running on another machine",
+    "severity": "medium",
+    "response_type": "observability",
+    "redesigned_response": "The report says what it judged from (last boot, stop record, heartbeat) and a live copy reports not shown down; an external anchor (greg/anchor.py) is the stronger signal"
+   },
+   {
+    "id": "D3",
+    "statement": "Whole-ledger read",
+    "severity": "low",
+    "response_type": "bound",
+    "redesigned_response": "Read-only and offline; same cost as greg status"
+   }
+  ]
+ },
+ "pass_2": {
+  "attack_summary": "Attack the strengthened design: a copy with a valid chain but a rolled-back tail; a config naming another constitution; an output path inside the home or over an existing file; an expired delegation on a copy whose clock is wrong; a live copy.",
+  "new_weaknesses": [
+   {
+    "id": "W1",
+    "category": "gaming",
+    "statement": "Rollback hidden by a matching heartbeat rewrite",
+    "strengthening_response": "Out of scope for a copy-only reader, as for the boot guard; anchor witnesses cover it (recorded residual)"
+   },
+   {
+    "id": "W2",
+    "category": "clock",
+    "statement": "An expired delegation might be omitted on a trusted-clock assumption",
+    "strengthening_response": "device_delegations lists expired keys; the core lists them for revocation (unit test)"
+   },
+   {
+    "id": "W3",
+    "category": "write",
+    "statement": "Notification written into the home or over evidence",
+    "strengthening_response": "Refused inside the home; O_EXCL refuses overwrite (unit and integration tests)"
+   }
+  ],
+  "pass_1_disadvantage_disposition": {
+   "D1": "resolved by shared records",
+   "D2": "accepted with owner this workstream; residual recorded in H.G13 closed_by",
+   "D3": "accepted"
+  }
+ },
+ "dissent": {
+  "present": false,
+  "handling": "No dissent recorded. Self-review by one session in five lenses, not independent review.",
+  "entries": []
+ },
+ "authority_impact": {
+  "level": "standard",
+  "changes_authority": false,
+  "requires_authorized_human": false,
+  "approval_status": "not_required",
+  "approver": null
+ },
+ "migration_plan": "None; no record format changes.",
+ "rollback_plan": {
+  "possible": true,
+  "steps": [
+   "Revert the commit; black_start_environment returns to NOT RUN and H.G13 to OPEN"
+  ],
+  "reason_impossible": null
+ },
+ "kill_criteria": [
+  "The core writes anything inside an assessed home",
+  "It derives credentials or shutdown state from history that does not verify",
+  "It reports a live body as shown down"
+ ],
+ "decision": "EXPERIMENT",
+ "decision_owner": "Alfonso Lopez (merge); this workstream (implementation)",
+ "review_trigger": "The first black-start run on a real founder body, or a founder-authorized notification channel"
+}

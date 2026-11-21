@@ -227,7 +227,8 @@ class OffTurnBuilds:
         self.running: dict[str, dict] = {}                    # mission_id -> the build call in flight
         self._done: dict[tuple[str, int], dict] = {}          # (deficit_id, build) -> the finished call
 
-    def start(self, *, mission_id: str, function: str, deficit_id: str, build: int, attempt: int, call) -> None:
+    def start(self, *, mission_id: str, function: str, deficit_id: str, build: int, attempt: int, call,
+              effects: list | None = None) -> None:
         """Run ``call()`` (the builder call alone) on its own thread. Called on the turn."""
         key = (deficit_id, build)
 
@@ -237,7 +238,8 @@ class OffTurnBuilds:
             except BaseException as exc:      # the builder is untrusted; its failure is taken as evidence on the turn
                 outcome = {"error": exc}
             with self._lock:
-                self._done[key] = {**outcome, "attempt": attempt, "build": build, "mission_id": mission_id}
+                self._done[key] = {**outcome, "attempt": attempt, "build": build, "mission_id": mission_id,
+                                   "effects": list(effects or ())}   # replayed on the turn by whoever takes it
                 self.running.pop(mission_id, None)
 
         thread = threading.Thread(target=body, name=f"greg-build {mission_id} {deficit_id}#{build}", daemon=True)

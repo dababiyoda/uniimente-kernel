@@ -254,3 +254,86 @@ def test_two_missions_building_at_once_each_run_under_their_own_signed_ceiling(t
     assert len(events(home, "capability.registered")) == 1
     for deficit in opened:
         assert round(build_spend(home, deficit), 6) == COST
+
+
+# -- the production builder: ModelBuilder over a ModelRouter (#336 independent review, 2026-11-21) -------------------
+
+class HeldRoute:
+    """A model route double. A call under a ceiling below 0.5 fails, billed FAIL_COST. Any other call answers
+    with GOOD, billed COST. Each call is held until the test releases calls under that ceiling."""
+    name, provider = "held-route", "test"
+
+    def __init__(self):
+        self.release = {}                      # ceiling -> threading.Event
+        self.threads = []
+
+    def gate(self, ceiling):
+        return self.release.setdefault(round(ceiling, 6), threading.Event())
+
+    def complete(self, system, user, *, budget_usd=None):
+        from greg.models import RouteError
+        self.threads.append(threading.current_thread().name)
+        self.gate(budget_usd).wait(WAIT * 2)
+        if budget_usd < 0.5:
+            raise RouteError("held route fails under a low ceiling", cost_usd=FAIL_COST)
+        return {"text": f"```python\n{GOOD}```", "cost_usd": COST}
+
+
+FAIL_COST = 0.02
+
+
+def recording_threads(monkeypatch):
+    """Which thread ran the router's ``record`` callback, the one greg.model_keys.attach installs to write
+    ``model.route`` to the Body's journal (and bench a refused key): it must run on the Body's turn."""
+    from greg import model_keys
+    writers, attach = [], model_keys.attach
+
+    def spying_attach(router, journal):
+        attach(router, journal)
+        record = router.record
+
+        def spy(event):
+            writers.append(threading.current_thread().name)
+            return record(event)
+        router.record = spy
+    monkeypatch.setattr(model_keys, "attach", spying_attach)
+    return writers
+
+
+def test_a_model_router_build_writes_its_routing_evidence_on_the_turn_and_books_only_its_own_spend(tmp_path,
+                                                                                                  monkeypatch):
+    from greg.models import ModelRouter
+    home, key, body_id, data = make_body(tmp_path)
+    low = _mission(data, budget=0.3)
+    low["priority"] = 10
+    high = _mission(data, budget=0.7)
+    high["mission_id"] = "m:runbook-high"
+    drop(home, signed(key, body_id, "MISSION", low))
+    drop(home, signed(key, body_id, "MISSION", high))
+    route = HeldRoute()
+    router = ModelRouter([route])
+    builder = builders.ModelBuilder(router, max_budget_usd=1.0)
+    writers = recording_threads(monkeypatch)
+    body = Body(home, builder=builder)
+    loop = start(body)
+    try:
+        wait_for(lambda: len(route.threads) == 2, "both missions' model calls to be in flight")
+        route.gate(0.7).set()                                    # the high mission's call answers first
+        wait_for(lambda: "m:runbook-high" in achieved(home), "the high mission to close on its model build")
+        # The answered call never touched the shared router: no other mission can read its spend from it.
+        assert router.last is None
+        route.gate(0.3).set()                                    # then the low mission's call fails, billed
+        wait_for(lambda: any(p.get("cost_usd") == FAIL_COST for p in events(home, "genesis.unbuilt")),
+                 "the low mission's failed call to be booked")
+    finally:
+        for gate in list(route.release.values()):
+            gate.set()
+        stop(body, loop)
+    assert route.threads and all(t.startswith("greg-build") for t in route.threads)   # the calls ran off the turn
+    assert writers and not any(t.startswith("greg-build") for t in writers)            # their evidence on the turn
+    outcomes = sorted(p["outcome"] for p in events(home, "model.route"))
+    assert outcomes == ["failed", "ok"]                     # both calls' routing evidence reached the journal once
+    opened = {p["deficit_id"]: p["mission_id"] for p in events(home, "deficit.opened")}
+    low_deficit = next(d for d, m in opened.items() if m == "m:runbook")
+    unbuilt = [p for p in events(home, "genesis.unbuilt") if p["deficit_id"] == low_deficit]
+    assert [p["cost_usd"] for p in unbuilt] == [FAIL_COST]   # its own billed failure, never the other's COST

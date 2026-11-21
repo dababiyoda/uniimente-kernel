@@ -2000,6 +2000,7 @@ class Genesis:
                 done = self.off_turn.take(deficit_id) if self.off_turn is not None else None
                 if done is not None:
                     build, attempt = done["build"], done["attempt"]
+                    self._replay_route_effects(done)
                     # spent counted the unsettled reservation; the record below settles it at the reported cost
                     spent -= next((e.payload["reserved_usd"] for e in self.journal.replay("genesis.build_started")
                                    if e.payload["deficit_id"] == deficit_id and e.payload["build"] == build), 0.0)
@@ -2027,11 +2028,9 @@ class Genesis:
                     if self.off_turn is not None:
                         # Off the turn, missions build at once: each call gets its own copy of the builder carrying
                         # its own mission's ceiling, so one mission never runs under another's signed limit.
-                        call_builder = copy.copy(self.builder)
-                        if ceiling is not None:
-                            call_builder.max_budget_usd = ceiling
+                        call_builder, effects = self._off_turn_builder(ceiling)
                         self.off_turn.start(mission_id=mission.mission_id, function=function, deficit_id=deficit_id,
-                                            build=build, attempt=attempt,
+                                            build=build, attempt=attempt, effects=effects,
                                             call=lambda b=call_builder: b.build(request, feedback))
                         raise BuildHandedOff(mission.mission_id, function, deficit_id, build)
                     if ceiling is not None:   # per attempt: this function's remaining signed budget
@@ -2161,11 +2160,49 @@ class Genesis:
             if found is not None:
                 self._settle_unused_build(deficit_id, opened[deficit_id], found.capability_id, now)
 
+    def _off_turn_builder(self, ceiling):
+        """A builder for one call off the Body's turn: its own copy, its own mission's ceiling, and no shared state.
+
+        A builder that reaches models through a router (``ModelBuilder``) gets its own copy of the router too: the
+        shared one keeps route health and the latest call's spend (``last``), and its ``record`` callback writes
+        ``model.route`` to the journal (greg.model_keys.attach) and benches a refused key. Off the turn the copy only
+        collects those events; the mission's next step, on the turn, replays them into the shared router
+        (``_replay_route_effects``), so the journal is written and the route benched exactly as an inline call would,
+        and one mission's error never reads another mission's spend."""
+        call_builder = copy.copy(self.builder)
+        if ceiling is not None:
+            call_builder.max_budget_usd = ceiling
+        effects: list = []
+        router = getattr(self.builder, "router", None)
+        if router is not None:
+            private = copy.copy(router)
+            for name in ("health", "routes"):
+                if hasattr(router, name):
+                    setattr(private, name, copy.deepcopy(getattr(router, name)) if name == "health"
+                            else list(getattr(router, name)))
+            if hasattr(router, "last"):
+                private.last = None
+            private.record = effects.append
+            call_builder.router = private
+        return call_builder, effects
+
+    def _replay_route_effects(self, done: dict) -> None:
+        """On the turn: what an off-turn call's router noted, applied to the shared router as the inline call did."""
+        router = getattr(self.builder, "router", None)
+        for event in done.get("effects") or ():
+            if router is None:
+                break
+            if hasattr(router, "observe"):
+                router.observe(event)
+            if getattr(router, "record", None) is not None:
+                router.record(event)
+
     def _settle_unused_build(self, deficit_id: str, function: str, served_by: str, now) -> None:
         done = self.off_turn.take(deficit_id)
         if done is None:
             return
         build, attempt = done["build"], done["attempt"]
+        self._replay_route_effects(done)
         why = f"call {build} finished after {served_by} came to serve {function}; its candidate is not used"
         if "error" in done:
             exc = done["error"]

@@ -1361,6 +1361,40 @@ def test_a_file_list_from_the_api_is_counted_and_described_as_from_the_api(quick
 
 # ------------------------------------------------------------------ who wrote a board comment
 
+def _sources_line(text: str) -> str:
+    return next(x for x in text.splitlines() if x.startswith("Sources: "))
+
+
+def test_file_lists_the_api_was_never_asked_for_are_not_read_never_zero(quick, tmp_path, capsys, monkeypatch):
+    prs = [_pr(1, "a/one", body=_receipt(A, ["greg/missions.py"]))]
+    unasked = w.build(prs, [], now=NOW, use_git=False)
+    assert unasked["sources"]["api_file_lists"] is None and w._answer_sources(unasked)["api_file_lists"] is None
+    assert "file lists not read from the GitHub API" in _sources_line(w.markdown(unasked))
+    asked = w.build(prs, [], now=NOW, use_git=False, api_read=True)
+    assert asked["sources"]["api_file_lists"] == 0
+    assert "0 with file lists read from the GitHub API" in _sources_line(w.markdown(asked))
+    gitless = w.build(prs, [], root=tmp_path, now=NOW)            # git did not answer: its count is not a zero
+    assert (gitless["sources"]["git_read"], gitless["sources"]["git_diffs"]) == (False, None)
+    assert "commits not read from git" in _sources_line(w.markdown(gitless))
+
+    src = tmp_path / "prs.json"
+    src.write_text(json.dumps(prs))
+    assert w.main(["--prs-json", str(src), "--json", str(tmp_path / "replay.json")]) == 0
+    assert json.loads((tmp_path / "replay.json").read_text())["sources"]["api_file_lists"] is None
+
+    def unreachable(*_a):
+        raise OSError("502")
+    monkeypatch.setattr(w.branch_catalog, "pull_requests", lambda *_a: json.loads(json.dumps(prs)))
+    monkeypatch.setattr(w, "pr_files", unreachable)
+    monkeypatch.setattr(w, "issue_comments", lambda *_a: [])
+    assert w.main(["--github", REPO, "--json", str(tmp_path / "live.json")]) == 0
+    live = json.loads((tmp_path / "live.json").read_text())["sources"]
+    assert live["api_file_lists"] == 0 and "not read from the API: #1" in live["note"]   # asked, and it failed
+    monkeypatch.setattr(w.branch_catalog, "pull_requests", lambda *_a: [])
+    assert w.main(["--github", REPO, "--json", str(tmp_path / "none.json")]) == 0
+    assert json.loads((tmp_path / "none.json").read_text())["sources"]["api_file_lists"] == 0   # nothing to ask
+
+
 def test_an_addressee_a_dead_launch_or_a_team_relay_is_never_the_author():
     uat = w.comment_author(REAL[6685585240])                                  # "First launch `bc-c902adb9` died"
     assert (uat["author"], uat["team"]) == (None, "UAT")

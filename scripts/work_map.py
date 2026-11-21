@@ -21,8 +21,9 @@ Without any of them it prints the position and the units, and says that pull req
 and comments were not read.
 
 The JSON (``--json``) holds ``generated``, ``line``, ``authority`` ("none"), ``sources`` (counts, among them
-``git_diffs`` and ``api_file_lists``, the PRs whose changed files came from local git and from the GitHub API; the flags
-``prs_read``, ``comments_read`` and ``git_read``, and ``notes``/``note``: what was not read), ``position``, ``units``
+``git_diffs`` and ``api_file_lists``, the PRs whose changed files came from local git and from the GitHub API, each
+None when git did not answer or the files API was not asked; the flags ``prs_read``, ``comments_read`` and
+``git_read``, and ``notes``/``note``: what was not read), ``position``, ``units``
 (``state``; ``named_by``, the PRs headed for the line whose title or receipt names the unit or one of its asks;
 ``carried_by_line``; ``mentioned_by``; ``named_on_board``; ``claimed_on_board``), ``contended``, ``sessions`` and
 ``claims`` (each with ``how``: how its author was resolved; an author a join inferred is a session's
@@ -1621,10 +1622,12 @@ def _utcnow() -> datetime:
 
 def build(prs: list[dict] | None, comments: list[dict] | None, *, root: Path = ROOT, line: str = LINE,
           now: datetime | None = None, use_git: bool = True, notes: list[str] | None = None,
-          contained=None, carried_by=None) -> dict:
+          contained=None, carried_by=None, api_read: bool = False) -> dict:
     """The map. ``prs`` or ``comments`` None means that source was not read: what depends on it is None, not zero.
-    ``contained(base)`` and ``carried_by(row)`` default to asking git; tests pass them in. Either may answer None
-    (git could not say): such a base or PR is listed in the gaps, never counted as off the line or not carried."""
+    ``api_read`` says the files API was asked for the PRs into the line (``attach_api_files``), as it is when a PR
+    carries a file list from it; otherwise ``api_file_lists`` is None, not zero. ``contained(base)`` and
+    ``carried_by(row)`` default to asking git; tests pass them in. Either may answer None (git could not say): such a
+    base or PR is listed in the gaps, never counted as off the line or not carried."""
     now = now or _utcnow()
     notes = list(notes or [])
     tracked, git_note = _tracked(root)
@@ -1653,6 +1656,7 @@ def build(prs: list[dict] | None, comments: list[dict] | None, *, root: Path = R
     dirs = {"/".join(f.split("/")[:i]) for f in tracked for i in range(1, f.count("/") + 1)}
     pos = position(root)
     prs_read, comments_read = prs is not None, comments is not None
+    api_read = api_read or any(isinstance(p, dict) and isinstance(p.get(API_FILES), list) for p in prs or [])
     bad_prs: list = []
     twice_prs: list = []
     rows = pr_rows(prs or [], root, git, bad_prs, line, twice_prs)
@@ -1703,8 +1707,8 @@ def build(prs: list[dict] | None, comments: list[dict] | None, *, root: Path = R
         "generated": now.strftime("%Y-%m-%dT%H:%M:%SZ"), "line": line, "authority": "none",
         "sources": {"open_prs": if_prs(len(rows)), "line_bound_prs": if_prs(len(bound)),
                     "board_comments": if_comments(len(parsed)),
-                    "git_diffs": if_prs(sum(r["changed_via"] == "diff" for r in rows)),
-                    "api_file_lists": if_prs(sum(r["changed_via"] == "api" for r in rows)),
+                    "git_diffs": if_prs(sum(r["changed_via"] == "diff" for r in rows)) if git_note is None else None,
+                    "api_file_lists": if_prs(sum(r["changed_via"] == "api" for r in rows)) if api_read else None,
                     "prs_read": prs_read, "comments_read": comments_read, "git_read": git_note is None,
                     "notes": notes, "note": "; ".join(notes) or None},
         "position": pos, "units": units, "contended": if_prs(contended(rows, line, checked)),
@@ -1814,11 +1818,14 @@ def markdown(m: dict) -> str:
     pos, g, src = m["position"], m["gaps"], m["sources"]
     route, dire = pos["route"], pos["directive"]
     maybe = g["prs_on_bases_not_checked"] or []
+    diffs = (f"{src['git_diffs']} of them with their commits in this clone" if src["git_diffs"] is not None
+             else "their commits not read from git")
+    lists = (f", {src['api_file_lists']} with file lists read from the GitHub API" if src["api_file_lists"] is not None
+             else "; their file lists not read from the GitHub API (only --github without --prs-json reads them)")
     read = [f"{src['open_prs']} open pull requests ({src['line_bound_prs']} based on the line directly, through open "
             f"PRs or through a branch already on it"
             + (f"; {len(maybe)} more may be stacked on bases git could not check here, {_prs(maybe, 12)}: fetch origin"
-               if maybe else "") + f"), {src['git_diffs']} of them with their commits in this clone, "
-            f"{src['api_file_lists']} with file lists read from the GitHub API"
+               if maybe else "") + "), " + diffs + lists
             if src["prs_read"] else "pull requests not read",
             f"{src['board_comments']} board comments" if src["comments_read"] else "board comments not read"]
     out = [
@@ -2144,7 +2151,8 @@ def _answer_sources(m: dict) -> dict:
     src, g = m["sources"], m["gaps"]
     unknown = sorted(r["pr"] for r in m["prs"] if _files_unknown(r))
     return {"pull_requests_read": src["prs_read"], "comments_read": src["comments_read"],
-            "git_read": src["git_read"], "note": src["note"], "not_read": _not_read(m),
+            "git_read": src["git_read"], "api_file_lists": src["api_file_lists"], "note": src["note"],
+            "not_read": _not_read(m),
             "unreadable_prs": g["unreadable_prs"], "receipts_with_files_cut": g["receipts_with_files_cut"],
             "receipts_with_unreadable_fields": g["receipts_with_unreadable_fields"],
             "receipts_refused_for_files": g["receipts_refused_for_files"],
@@ -2184,11 +2192,13 @@ def main(argv: list[str] | None = None) -> int:
         comments, more = _load(a.comments_json, "comment", "id")
         notes += more
         token = os.environ.get("GITHUB_TOKEN")
+        api_read = False
         if a.github and not a.prs_json:
             try:
                 prs = branch_catalog.pull_requests(a.github, token)
             except Exception as exc:  # noqa: BLE001 - the map still prints what it can
                 notes.append(f"GitHub pull requests not read ({_reason(exc)})")
+            api_read = prs is not None                   # the files API is asked for every PR read here
             if prs:
                 read, failed = attach_api_files(a.github, prs, token, a.line)
                 if failed:
@@ -2203,7 +2213,7 @@ def main(argv: list[str] | None = None) -> int:
         if a.now and now is None:
             notes.append(f"--now {a.now[:40]!r} not understood (YYYY-MM-DDTHH:MM:SSZ or ISO with an offset); "
                          "the current time is used")
-        m = build(prs, comments, line=a.line, now=now, notes=notes)
+        m = build(prs, comments, line=a.line, now=now, notes=notes, api_read=api_read)
         outputs = [(a.json, lambda: json.dumps(m, indent=1, default=sorted, allow_nan=False) + "\n"),
                    (a.markdown, lambda: markdown(m) + "\n")]
         failed = [_write(path, render()) for path, render in outputs if path]

@@ -297,14 +297,19 @@ def _get(url: str, token: str | None):
 RECEIPT_MARKER = "<!-- uniimente:receipt -->"
 
 
+RECEIPT_BODY_LIMIT = 65536   # characters of a PR body the receipt check reads; a longer body is refused
+
+
 def receipt_of(body: str | None, version: int = 2) -> dict | None:
-    """The receipt in a PR body (docs/collaboration/RECEIPT.md) in the shape the receipt check accepts: exactly one
-    start and one end marker, one fenced JSON object between them, and ``version`` equal to the one asked for.
-    None for anything else, including JSON that does not parse, nests too deeply or holds NaN or Infinity.
-    A receipt is a declaration the receipt check validated against the PR's head, not proof."""
+    """The receipt in a PR body (docs/collaboration/RECEIPT.md) read as the receipt check reads it
+    (``.github/workflows/collaboration-receipt.yml``): a body of at most ``RECEIPT_BODY_LIMIT`` characters, exactly
+    one start and one end marker, one fenced JSON object between them with no key repeated at any depth, and
+    ``version`` equal to the one asked for. None for anything else, including JSON that does not parse, nests too
+    deeply or holds NaN or Infinity. A receipt is a declaration the receipt check validated against the PR's head, not
+    proof."""
     body = body if isinstance(body, str) else ""
     end_marker = RECEIPT_MARKER.replace("<!-- ", "<!-- /", 1)
-    if body.count(RECEIPT_MARKER) != 1 or body.count(end_marker) != 1:
+    if len(body) > RECEIPT_BODY_LIMIT or body.count(RECEIPT_MARKER) != 1 or body.count(end_marker) != 1:
         return None
     start, end = body.index(RECEIPT_MARKER) + len(RECEIPT_MARKER), body.index(end_marker)
     block = re.fullmatch(r"\s*```json\s*\n(.*?)\n```\s*", body[start:end], re.S) if start < end else None
@@ -313,8 +318,16 @@ def receipt_of(body: str | None, version: int = 2) -> dict | None:
 
     def non_finite(name: str):
         raise ValueError(f"non-finite JSON number {name}")
+
+    def unique(pairs: list) -> dict:
+        out = {}
+        for key, value in pairs:
+            if key in out:
+                raise ValueError("duplicate JSON key")
+            out[key] = value
+        return out
     try:
-        data = json.loads(block[1], parse_constant=non_finite)
+        data = json.loads(block[1], object_pairs_hook=unique, parse_constant=non_finite)
     except (ValueError, RecursionError):
         return None
     if not isinstance(data, dict) or type(data.get("version")) is not int or data["version"] != version:

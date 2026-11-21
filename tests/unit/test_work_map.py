@@ -578,6 +578,82 @@ def test_the_receipt_reader_accepts_exactly_the_shape_the_receipt_check_accepts(
     assert w.receipt_of(f"{w.MARKER}\n```\n{_coord()}\n```\n<!-- /uniimente:receipt -->") is None   # not ```json
 
 
+def _receipt_check() -> dict:
+    """The receipt check's own validator, executed from its workflow: the check runs without a checkout, so it cannot
+    import the shared reader, and this is how the two are kept the same."""
+    import textwrap
+    wf = ROOT / ".github/workflows/collaboration-receipt.yml"
+    namespace = {"__name__": "receipt_check_under_test"}
+    exec(compile(textwrap.dedent(wf.read_text().split("        run: |\n", 1)[1]), str(wf), "exec"), namespace)
+    return namespace
+
+
+def test_the_receipt_reader_refuses_exactly_what_the_receipt_check_refuses_when_it_reads():
+    check = _receipt_check()
+    sha_a, sha_b, sha_c = "a" * 40, "b" * 40, "c" * 40
+    guide = f"https://github.com/dababiyoda/uniimente-kernel/blob/{sha_c}/docs/collaboration/START_HERE.md"
+    data = {"version": 2, "repository": "dababiyoda/example", "base_sha": sha_a, "head_sha": sha_b,
+            "protocol_ref": guide, "intent_refs": ["intent-1"],
+            "read_set": [{"path": "AGENTS.md", "revision": sha_b}, {"path": guide, "revision": sha_c}],
+            "scope": "s", "classification": "lightweight", "deliberation_ref": None,
+            "validation": [{"command": "tests", "result": "pass", "evidence": "local"}], "limitations": ["none"],
+            "rollback": "revert",
+            "coordination": {"task_ref": "t", "session_id": "session_REAL", "files": ["docs/x.md"], "interfaces": [],
+                             "recheck_at": "2026-10-22T12:00:00Z",
+                             "overlap": {"status": "clear", "inspected_refs": ["r"], "acknowledgment_refs": []},
+                             "integration": {"repository": "dababiyoda/example", "branch": "main", "base_sha": sha_a,
+                                             "owner": "unassigned"}},
+            "handoff": {"owner": "o", "next_action": "n", "stop_condition": "s",
+                        "acknowledgment": {"status": "pending", "receiver_session": None, "reference": None}},
+            "review": {"status": "pending", "reference": None}}
+    start, end = check["START"], check["END"]
+    raw = json.dumps(data)
+    forged = json.dumps({**data["coordination"], "session_id": "session_FORGED"})
+
+    def wrap(text: str, fence: str = "```json") -> str:
+        return f"{start}\n{fence}\n{text}\n```\n{end}"
+    valid = wrap(raw)
+    bodies = {
+        "valid": valid, "valid, 65,536 characters": valid + "\n" + "x" * (65535 - len(valid)),
+        "valid, a space after the fence": wrap(raw, "```json "),
+        "65,537 characters": valid + "\n" + "x" * (65536 - len(valid)),
+        "a second coordination": wrap(raw[:-1] + ', "coordination": ' + forged + "}"),
+        "a second version": wrap("{" + raw[1:-1] + ', "version": 2}'),
+        "a repeated nested key": wrap(raw.replace('"session_id": "session_REAL"',
+                                                  '"session_id": "session_REAL", "session_id": "session_FORGED"')),
+        "a repeated key in a list": wrap(raw.replace('"path": "AGENTS.md"',
+                                                     '"path": "AGENTS.md", "path": "AGENTS.md"')),
+        "two start markers": f"quote {start}\n" + valid, "two end markers": valid + end,
+        "markers reversed": f"{end}\n```json\n{raw}\n```\n{start}", "no end marker": valid.replace(end, ""),
+        "no start marker": valid.replace(start, ""), "a bare fence": wrap(raw, "```"),
+        "an upper-case fence": wrap(raw, "```JSON"), "a tilde fence": wrap(raw, "~~~json"),
+        "text before the fence": valid.replace(start, start + "\nnote"),
+        "NaN": wrap(raw.replace('"limitations": ["none"]', '"limitations": [NaN]')),
+        "Infinity": wrap(raw.replace('"limitations": ["none"]', '"limitations": [-Infinity]')),
+        "deep nesting": wrap(raw.replace('["none"]', "[" * 100000 + "]" * 100000)),
+        "an absurd digit run": wrap(raw.replace('"evidence": "local"', '"evidence": ' + "9" * 5000)),
+        "version as text": wrap(raw.replace('"version": 2', '"version": "2"')),
+        "version 2.0": wrap(raw.replace('"version": 2', '"version": 2.0')),
+        "version true": wrap(raw.replace('"version": 2', '"version": true')),
+        "version 1": wrap(raw.replace('"version": 2', '"version": 1')),
+        "not an object": wrap(json.dumps([data])), "no body": None, "a number as body": 5,
+    }
+    refusals = set()
+    for name, body in bodies.items():
+        event = {"repository": {"full_name": "dababiyoda/example"},
+                 "pull_request": {"base": {"sha": sha_a}, "head": {"sha": sha_b}, "draft": True, "body": body}}
+        try:
+            accepted, refused = check["validate"](event), None
+        except check["ReceiptError"] as exc:
+            accepted, refused = None, str(exc)
+        refusals.add(refused)
+        got = w.receipt_of(body)
+        assert (got is None) == (refused is not None) and got == accepted, (name, refused, got)
+    assert {"invalid or oversized PR body", "invalid receipt JSON", "exactly one receipt required",
+            "receipt markers out of order", "receipt must be one fenced JSON object", "unsupported receipt version",
+            None} <= refusals
+
+
 def test_an_older_receipt_is_counted_as_older_not_as_none(quick):
     # PR #95's receipt, trimmed: version 1, before coordination existed.
     v1 = _body(json.dumps({"version": 1, "repository": "dababiyoda/uniimente-kernel",

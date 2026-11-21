@@ -43,6 +43,9 @@ CATCHES = "test_the_body_guard_catches_renamed_nested_relocated_and_one_line_cop
 FRESH = "test_the_fingerprint_erases_a_fresh_copy_once_and_leaves_the_parsed_tree_alone"
 VOUCH = "test_a_distinct_entry_cannot_vouch_for_a_module_that_holds_a_copy"
 UNDECIDED = "test_an_undecided_record_takes_no_new_candidate_without_a_pin_change"
+UNDECIDED_ALTERNATE = "test_an_undecided_record_takes_no_new_alternate_without_a_pin_change"
+OWN_LOCATION = "test_a_registered_body_is_exempt_only_at_its_own_location"
+TWINS = "test_two_registered_locations_with_one_body_fail"
 QUIET = "test_a_file_with_an_invalid_escape_parses_without_a_warning_on_any_python"
 ONE_NODE = "test_the_body_guard_ignores_one_node_edits_pass_no_op_constants_annotations_and_import_aliases"
 SEALED = "test_the_body_scan_reads_cortex_evaluation_except_the_files_a_freeze_manifest_seals"
@@ -85,7 +88,8 @@ def _flip(ruling: str = "") -> list:
 # the unique ``start`` up to the next ``end`` (None: to the end of the file), ("append", path, text),
 # ("create", path, text), ("copy_def", path, name, new_name, new_path): a top-level def copied under a new name, or
 # ("copy_body", path, name, new_path, form): a top-level def copied with every name and literal changed, as a
-# function, a method ("method") or a nested def ("nested") (``_copy_body``).
+# function, a method ("method") or a nested def ("nested") (``_copy_body``), or ("append_body", path, name,
+# existing_path, form): the same copy appended to a file that exists.
 MUTANTS = [
     ("a registry entry removed: temporary teams",
      [("cut", MAP, "  - record_id: OWN-FN-TEMPORARY-TEAMS\n", "  - record_id: OWN-FN-COMMERCE-CLOSURE\n")], SHAPE),
@@ -268,8 +272,9 @@ MUTANTS = [
      [("copy_body", "greg/remote.py", "handle", "scripts/remote_copy.py", "function")], BODIES),
     ("MW-C: a copy of greg.organs.exchange recorded as distinct", DISTINCT_COPY, DISTINCT),
     ("MW-C: guard 4 exempts a record's distinct modules",
-     [("replace", TESTS, "                if module not in owned_modules(r):\n",
-       "                if module not in owned_modules(r) | {e['module'] for e in r.get('distinct') or []}:\n")],
+     [("replace", TESTS, "                if (module, name) != (body.module, body.qualname):\n",
+       "                if (module, name) != (body.module, body.qualname) and module not in "
+       "{e['module'] for e in body.record.get('distinct') or []}:\n")],
      VOUCH),
     ("MW-C: constant erasure removed from the anonymiser",
      [("replace", TESTS, "        node.value, node.kind = ERASED, None\n", "        node.kind = None\n")], CATCHES),
@@ -294,6 +299,32 @@ MUTANTS = [
        "        evidence: [\"added by an agent\"]\n      - side: B\n        module: greg.gravity\n")], PINS),
     ("MW-C: a qualname added to an undecided record's candidate (greg.gravity rederive)",
      [("replace", MAP, "qualnames: [select, step]", "qualnames: [select, step, rederive]")], PINS),
+    # -- MW-C round 3 (skeptic regression 1): a copy joins an undecided record as a live ALTERNATE ----------------
+    ("MW-C: a disguised copy of greg.gravity.step recorded as a live ALTERNATE of the undecided goal runtime",
+     [("copy_body", "greg/gravity.py", "step", "egregore/goal_engine2.py", "function"),
+      ("replace", MAP, "    alternates:\n      - module: egregore.goal_chase\n",
+       "    alternates:\n      - module: egregore.goal_engine2\n        qualnames: [step_copy]\n"
+       "        status: ALTERNATE\n        reason: a third goal runtime\n"
+       "        retirement_condition: when the founder rules on the goal runtime\n"
+       "      - module: egregore.goal_chase\n")], PINS),
+    ("MW-C: the same, its body caught by guard 4 as a twin of greg.gravity.step",
+     [("copy_body", "greg/gravity.py", "step", "egregore/goal_engine2.py", "function"),
+      ("replace", MAP, "    alternates:\n      - module: egregore.goal_chase\n",
+       "    alternates:\n      - module: egregore.goal_engine2\n        qualnames: [step_copy]\n"
+       "        status: ALTERNATE\n        reason: a third goal runtime\n"
+       "        retirement_condition: when the founder rules on the goal runtime\n"
+       "      - module: egregore.goal_chase\n")], BODIES),
+    ("MW-C: a disguised copy of reconcile appended to an existing ALTERNATE module (no registry edit)",
+     [("append_body", "greg/business_loop.py", "reconcile", "business/commercial_loop.py", "function")], BODIES),
+    ("MW-C: the exact pin covers candidates only, not an undecided record's alternates",
+     [("replace", TESTS, '            for role in ("candidates", "alternates"):\n',
+       '            for role in ("candidates",):\n')], UNDECIDED_ALTERNATE),
+    ("MW-C: guard 4 exempts every canonical, candidate and alternate module of the record again",
+     [("replace", TESTS, "                if (module, name) != (body.module, body.qualname):\n",
+       "                if module not in owned_modules(body.record):\n")], OWN_LOCATION),
+    ("MW-C: two registered locations with one body pass",
+     [("replace", TESTS, "        if len({registered for registered, _, _ in locations}) > 1:\n",
+       "        if False:\n")], TWINS),
     ("MW-C: the exact candidate pin removed from pin_problems",
      [("replace", TESTS, '        if r.get("owner_status") == "NEEDS_FOUNDER_DECISION":\n            # An undecided',
        '        if False:\n            # An undecided')], UNDECIDED),
@@ -443,6 +474,15 @@ def _apply(repo: Path, edits) -> tuple[dict, list[Path]] | None:
             created.append(target)
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text(body)
+            continue
+        if kind == "append_body":
+            name, existing, form = args
+            target = repo / existing
+            body = _copy_body(path.read_text(), name, form) if path.is_file() else None
+            if body is None or not target.is_file():
+                return _restore(originals, created)
+            originals.setdefault(target, target.read_text())
+            target.write_text(target.read_text() + "\n\n" + body)
             continue
         if path not in originals:
             originals[path] = path.read_text()

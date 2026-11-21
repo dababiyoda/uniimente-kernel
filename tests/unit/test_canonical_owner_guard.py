@@ -25,16 +25,16 @@ The registry is ``function_owner_records`` in docs/collaboration/ARCHITECTURE-OW
    and every constant erased (``fingerprint``, from a fresh copy) and at least ``MIN_COPY_NODES`` nodes, is compared
    with every function and method at any depth of every runtime file the filesystem lists (``runtime_files``: every
    .py file under the repository root, directory links followed only inside it, except tests/, docs/, top-level
-   hidden entries and the cortex/evaluation/ files whose bytes a freeze manifest there hashes). A copy outside the
-   record's canonical, candidate and alternate modules fails, wherever it is and whatever it is called; a
-   ``distinct`` entry never exempts one (``distinct_copy_problems``: and may not name a module that holds one). It
-   still misses a rewrite that changes structure, an attribute rename (``row['x']`` to ``row.x``) and a function the
-   registry does not record.
+   hidden entries and the cortex/evaluation/ files whose bytes a freeze manifest there hashes). A copy anywhere but
+   the body's own registered module and qualname fails, inside its record or outside it, whatever it is called; two
+   registered locations with one body fail (``registered_twin_problems``); a ``distinct`` entry never exempts one
+   (``distinct_copy_problems``: and may not name a module that holds one). It still misses a rewrite that changes
+   structure, an attribute rename (``row['x']`` to ``row.x``) and a function the registry does not record.
 
 The registry itself is pinned (``PINNED``, ``FOUNDER_DECISIONS``, ``MUST_FLAG``): removing a record or an entry,
-adding a second canonical module, adding a candidate to a record that is still NEEDS_FOUNDER_DECISION, resolving a
-founder decision without a ruling record, or narrowing a record's markers below the names it must catch fails until
-this file changes in the same reviewed diff. ``kept_for_problems`` is a forward guard for section 76: a HISTORICAL or
+adding a second canonical module, adding a candidate or an alternate to a record that is still NEEDS_FOUNDER_DECISION,
+resolving a founder decision without a ruling record, or narrowing a record's markers below the names it must catch
+fails until this file changes in the same reviewed diff. ``kept_for_problems`` is a forward guard for section 76: a HISTORICAL or
 RETIRED alternate still in the tree names what keeps it (a consumer outside greg/ and tests/, or an open decision).
 
 The test reads code and data. It grants, attaches, activates and retires nothing.
@@ -49,6 +49,7 @@ import json
 import os
 from pathlib import Path
 import re
+from typing import NamedTuple
 import warnings
 
 import yaml
@@ -67,10 +68,11 @@ ROLES = (("canonical", "canonical"), ("candidates", "candidates"), ("alternates"
 # -- frozen at this commit (review findings F4, F5, F6, MUH-F1 on 77deac50) --------------------------------------
 # Every record and every (module, qualname) it names. Removing one fails: an implementation leaves a record by a
 # status change (RETIRED, HISTORICAL), never by deletion. The canonical module set is exact: a second canonical module
-# is two owners (section 52) and must be recorded as an ALTERNATE instead. The candidate set of a record that is still
-# NEEDS_FOUNDER_DECISION is exact too (MW-C, 2026-11-21): its candidates are competing owners, so adding one fails
-# until it is pinned here. Adding an alternate or a distinct entry needs no change here; changing this literal is a
-# reviewed change to the guard itself.
+# is two owners (section 52) and must be recorded as an ALTERNATE instead. The candidate and alternate sets of a record
+# that is still NEEDS_FOUNDER_DECISION are exact too (MW-C, 2026-11-21): its candidates are competing owners and each
+# live alternate one more competing implementation, so adding one fails until it is pinned here. Adding an alternate
+# to a decided record, or a distinct entry to any record, needs no change here; changing this literal is a reviewed
+# change to the guard itself.
 PINNED = {
     "OWN-FN-TEMPORARY-TEAMS": {
         "canonical": {"foundry.systems.teams": ("form", "act", "dissolve", "report")},
@@ -550,14 +552,19 @@ def pin_problems(data: dict, root: Path = ROOT, pinned: dict = PINNED,
                         problems.append(f"{rid}: {role} {module}.{name} is pinned and was removed; an implementation "
                                         f"leaves the record by a status change (RETIRED, HISTORICAL), not by deletion")
         if r.get("owner_status") == "NEEDS_FOUNDER_DECISION":
-            # An undecided record's candidates are its competing owners until the founder rules: the set is exact.
-            added = sorted(f"{module}.{name}" if name else module for module, names in have["candidates"].items()
-                           for name in (sorted(names or ()) or [""])
-                           if module not in pin["candidates"] or (name and name not in pin["candidates"][module]))
-            problems += [f"{rid}: candidate {name} is not pinned. The candidates of a NEEDS_FOUNDER_DECISION record are "
-                         f"its competing owners until the founder rules, so a new one joins only in a reviewed change "
-                         f"to PINNED in tests/unit/test_canonical_owner_guard.py, never by a registry edit alone"
-                         for name in added]
+            # An undecided record's candidates are its competing owners until the founder rules, and each live
+            # alternate is one more competing implementation: both sets are exact (a whole-module alternate is wider
+            # than any pinned qualnames, so it is new too).
+            for role in ("candidates", "alternates"):
+                added = sorted(f"{module}.{name}" if name else module for module, names in have[role].items()
+                               for name in (sorted(names or ()) or [""])
+                               if module not in pin[role] or (name and name not in pin[role][module])
+                               or (not name and pin[role][module]))
+                problems += [f"{rid}: {role[:-1]} {name} is not pinned. The candidates and alternates of a "
+                             f"NEEDS_FOUNDER_DECISION record are its competing implementations until the founder "
+                             f"rules, so a new one joins only in a reviewed change to PINNED in "
+                             f"tests/unit/test_canonical_owner_guard.py, never by a registry edit alone"
+                             for name in added]
     return problems
 
 
@@ -949,9 +956,10 @@ NOT_RUNTIME = ("tests/", "docs/")
 SEALED_UNDER = "cortex/evaluation/"
 MANIFESTS = "freeze-*.json"
 ERASED = "_"                     # every name and every constant of a fingerprinted body becomes this one sentinel
-FIX_COPY = ("Import the owner's function instead. If this copy must stay, record its module in {record} in "
-            "docs/collaboration/ARCHITECTURE-OWNERSHIP-MAP.yaml as an ALTERNATE (with its status and its retirement "
-            "or revival condition); a 'distinct' entry does not exempt a copy.")
+FIX_COPY = ("Import the owner's function instead and remove the copy. Recording it does not exempt it: a body is "
+            "exempt only at its own registered location, a 'distinct' entry exempts nothing, and two registered "
+            "locations with one body fail (registered_twin_problems); {record} is in "
+            "docs/collaboration/ARCHITECTURE-OWNERSHIP-MAP.yaml.")
 
 
 def _inert(node) -> bool:
@@ -1143,10 +1151,22 @@ def _function_node(module: str, qualname: str, root: Path = ROOT):
     return node if isinstance(node, FUNCTIONS) else None
 
 
-def registered_bodies(records: list[dict], root: Path = ROOT) -> dict[tuple[int, str], list[tuple[dict, str, str]]]:
-    """fingerprint -> [(record, "module.qualname", "path:line")] for every canonical, candidate and alternate
-    qualname that names a function of at least MIN_COPY_NODES erased nodes. Classes and constants are guard 3's."""
-    out: dict[tuple[int, str], list[tuple[dict, str, str]]] = {}
+class Body(NamedTuple):
+    """A registered function body: its record, its own location (module and dotted qualname) and its file:line."""
+    record: dict
+    module: str
+    qualname: str
+    where: str
+
+    @property
+    def registered(self) -> str:
+        return f"{self.module}.{self.qualname}"
+
+
+def registered_bodies(records: list[dict], root: Path = ROOT) -> dict[tuple[int, str], list[Body]]:
+    """fingerprint -> [Body] for every canonical, candidate and alternate qualname that names a function of at least
+    MIN_COPY_NODES erased nodes. Classes and constants are guard 3's."""
+    out: dict[tuple[int, str], list[Body]] = {}
     for r in records:
         for role, e in entries(r):
             if role == "distinct":
@@ -1158,8 +1178,23 @@ def registered_bodies(records: list[dict], root: Path = ROOT) -> dict[tuple[int,
                 shape = fingerprint(node)
                 if shape[0] >= MIN_COPY_NODES:
                     where = f"{module_file(e['module'], root).relative_to(root).as_posix()}:{node.lineno}"
-                    out.setdefault(shape, []).append((r, f"{e['module']}.{q}", where))
+                    out.setdefault(shape, []).append(Body(r, e["module"], q, where))
     return out
+
+
+def registered_twin_problems(records: list[dict], root: Path = ROOT) -> list[str]:
+    """Two registered locations whose bodies share one fingerprint: one is a copy of the other, and recording a copy
+    does not make it an owner (guard 4 exempts a body only at its own location). The same location named by two
+    records is one location."""
+    out = []
+    for found in registered_bodies(records, root).values():
+        locations = sorted({(b.registered, b.where, b.record.get("record_id")) for b in found})
+        if len({registered for registered, _, _ in locations}) > 1:
+            out.append("registered with one body: " + "; ".join(f"{name} ({where}, {rid})" for name, where, rid
+                                                                in locations)
+                       + ". One is a copy of the other: import the owner's function instead and remove the copy from "
+                         "the tree and from the registry")
+    return sorted(out)
 
 
 @lru_cache(maxsize=None)
@@ -1171,8 +1206,9 @@ def _prints(path: Path, stamp: int, sizes: frozenset) -> tuple:
 
 
 def body_copies(records: list[dict], root: Path = ROOT) -> tuple[list[dict], list[str]]:
-    """(every function or method whose fingerprint is a registered body's, outside that record's canonical,
-    candidate and alternate modules; every runtime file that does not parse). A 'distinct' entry never exempts."""
+    """(every function or method whose fingerprint is a registered body's, anywhere but that body's own registered
+    module and qualname, inside its record or outside it; every runtime file that does not parse). Neither a
+    'distinct' entry nor recording the module as a canonical, candidate or alternate module exempts a copy."""
     bodies = registered_bodies(records, root)
     sizes = frozenset(size for size, _ in bodies)
     found, unreadable = [], []
@@ -1186,10 +1222,10 @@ def body_copies(records: list[dict], root: Path = ROOT) -> tuple[list[dict], lis
             continue
         module = module_name(path, root)
         for name, line, shape in prints:
-            for r, registered, where in bodies.get(shape, []):
-                if module not in owned_modules(r):
-                    found.append({"record": r, "registered": registered, "registered_at": where, "module": module,
-                                  "at": f"{relative}:{line}", "name": name})
+            for body in bodies.get(shape, []):
+                if (module, name) != (body.module, body.qualname):
+                    found.append({"record": body.record, "registered": body.registered, "registered_at": body.where,
+                                  "module": module, "at": f"{relative}:{line}", "name": name})
     return found, unreadable
 
 
@@ -1595,10 +1631,11 @@ def test_a_stale_qualname_or_module_is_reported(tmp_path):
 def test_no_copy_of_a_registered_function_body_outside_its_record():
     records = load()["function_owner_records"]
     # not vacuous: 27 registered function bodies of at least MIN_COPY_NODES erased nodes on 2026-11-21, compared with
-    # every function and method of about 500 runtime files
+    # every function and method of about 550 runtime files; each is exempt only at its own location
     assert sum(len(found) for found in registered_bodies(records).values()) >= 20
     assert len(list(runtime_files())) > 400
     assert body_copy_problems(records) == []
+    assert registered_twin_problems(records) == []
 
 
 def test_no_distinct_entry_names_a_module_that_holds_a_copy_of_a_registered_body():
@@ -1965,3 +2002,72 @@ def test_the_body_guard_ignores_one_node_edits_pass_no_op_constants_annotations_
     for key in edits:
         fn = parse(root / f"greg/{key}.py").body[0]
         assert _erased_size(fn) == fingerprint(fn)[0] == fingerprint(parse(root / "greg/collect.py").body[0])[0], key
+
+
+def test_an_undecided_record_takes_no_new_alternate_without_a_pin_change():
+    # Skeptic regression 1 (MW-C review, 2026-11-21): a copy of an owner's body joined the undecided goal runtime as a
+    # live ALTERNATE (egregore.goal_engine2 advance, a disguised greg.gravity.step) and every check passed. The
+    # alternates of a NEEDS_FOUNDER_DECISION record are pinned exactly, as its candidates are.
+    data = load()
+
+    def changed(record_id: str, edit) -> list[str]:
+        out = copy.deepcopy(data)
+        edit(next(r for r in out["function_owner_records"] if r["record_id"] == record_id))
+        return [p for p in pin_problems(out) if p.startswith(record_id)]
+
+    engine = {"module": "egregore.goal_engine2", "qualnames": ["advance"], "status": "ALTERNATE",
+              "reason": "a third goal runtime", "retirement_condition": "when the founder rules on the goal runtime"}
+    new_module = changed("OWN-FN-GOAL-RUNTIME", lambda r: r["alternates"].append(engine))
+    assert any("alternate egregore.goal_engine2.advance is not pinned" in p for p in new_module), new_module
+    new_name = changed("OWN-FN-GOAL-RUNTIME", lambda r: r["alternates"][0]["qualnames"].append("chase_v2"))
+    assert any("alternate egregore.goal_chase.chase_v2 is not pinned" in p for p in new_name), new_name
+    whole = changed("OWN-FN-STATUS-EVIDENCE-LADDER", lambda r: r["alternates"][0].update(qualnames=[]))
+    assert any("alternate greg.mission_control is not pinned" in p for p in whole), whole
+    for record_id in FOUNDER_DECISIONS:
+        assert changed(record_id, lambda r: r.setdefault("alternates", []).append(
+            {**engine, "module": "greg.extra", "qualnames": ["x"]})), record_id
+
+
+def test_a_registered_body_is_exempt_only_at_its_own_location(tmp_path):
+    # Skeptic regression 1, second half: guard 4 exempted every canonical, candidate and alternate module of a record
+    # for any of the record's bodies, so a copy appended to an existing ALTERNATE module passed with no registry edit.
+    # A body is exempt only at its own registered module and qualname: anywhere else, inside or outside the record,
+    # it is a copy.
+    data = {r["record_id"]: r for r in load()["function_owner_records"]}
+    commerce, goal = data["OWN-FN-COMMERCE-CLOSURE"], data["OWN-FN-GOAL-RUNTIME"]
+    real = _real("business.commercial_loop", "greg.business_loop", "greg.gravity", "egregore.goal_chase")
+    root = _tree(tmp_path, {
+        **real,
+        # appended to an existing ALTERNATE module of the commerce record, no registry edit
+        "business/commercial_loop.py": real["business/commercial_loop.py"] + "\n\n"
+                                       + _disguised("greg.business_loop", "reconcile", "settle"),
+        # beside the owner in its own canonical module
+        "greg/business_loop.py": real["greg/business_loop.py"] + "\n\n"
+                                 + _disguised("greg.business_loop", "reconcile", "reconcile_v1"),
+        # in the undecided goal runtime's ALTERNATE module, a copy of its candidate greg.gravity.step
+        "egregore/goal_chase.py": real["egregore/goal_chase.py"] + "\n\n"
+                                  + _disguised("greg.gravity", "step", "advance"),
+    })
+    found = body_copy_problems([commerce, goal], root)
+    where = {line.split(" defines ")[0].split(":")[0] + " " + line.split(" defines ")[1].split(",")[0]
+             for line in found}
+    assert where == {"business/commercial_loop.py 'settle'", "greg/business_loop.py 'reconcile_v1'",
+                     "egregore/goal_chase.py 'advance'"}, found
+    # the registered originals are never reported
+    assert not any(" defines 'reconcile'," in line or " defines 'step'," in line for line in found)
+
+
+def test_two_registered_locations_with_one_body_fail(tmp_path):
+    # Registering a copy does not make it an owner: two registered entries whose bodies share one fingerprint fail,
+    # so a copy can be neither left unrecorded nor recorded (the skeptic's egregore.goal_engine2 advance, recorded as
+    # an ALTERNATE, is such a pair with greg.gravity.step). The same location named twice (by two records) is one.
+    twin = OWNER_BODY.replace("def send_signed(", "def send_signed_twin(")
+    records = [{**INBOX_RECORD, "canonical": [{"module": "greg.body", "qualnames": ["send_signed"]}]},
+               {"record_id": "OWN-FN-Y", "function": "y", "owner_status": "CANONICAL", "markers": ["Y"],
+                "canonical": [{"module": "greg.body", "qualnames": ["send_signed"]}],
+                "alternates": [{"module": "greg.relay", "qualnames": ["send_signed_twin"], "status": "ALTERNATE",
+                                "reason": "r", "retirement_condition": "c"}]}]
+    root = _tree(tmp_path, {"greg/body.py": OWNER_BODY, "greg/relay.py": twin})
+    found = registered_twin_problems(records, root)
+    assert len(found) == 1 and "greg.body.send_signed" in found[0] and "greg.relay.send_signed_twin" in found[0], found
+    assert registered_twin_problems(records[:1] + [{**records[1], "alternates": []}], root) == []

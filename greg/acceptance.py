@@ -117,7 +117,7 @@ def report(home: str | Path) -> dict:
     from greg.body import Layout, observe, status
     layout = Layout(home)
     st = status(home)
-    config = json.loads(layout.config.read_text())
+    config = layout.read_config()
     with observe(home, actor="spiffe://uniimente.internal/greg/acceptance-reader") as journal:
         ok, chain = journal.ledger.verify_chain()
         achieved = {e.payload["mission_id"] for e in journal.replay("mission.achieved")}
@@ -213,7 +213,7 @@ def report(home: str | Path) -> dict:
 def main(home: str | Path) -> int:
     from greg.body import Layout
     result = report(home)
-    config = json.loads(Layout(home).config.read_text())
+    config = Layout(home).read_config()
     folder = Path(config.get("deliver_root") or Path(home) / "deliveries") / "acceptance"
     folder.mkdir(parents=True, exist_ok=True)
     path = folder / (result["at"].replace(":", "") + ".json")

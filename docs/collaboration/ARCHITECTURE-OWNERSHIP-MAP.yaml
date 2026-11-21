@@ -464,10 +464,15 @@ function_owner_records:
       - module: greg.mission_control
         qualnames: [REALITY]
         status: HISTORICAL
-        reason: "a six-level reality tuple defined in greg/mission_control.py and read by nothing in the repository"
+        reason: >-
+          a six-level reality tuple defined in greg/mission_control.py. No module under greg/ reads it (guard 2);
+          acceptance/claims.py imports it (line 80) and crosswalk_problems checks that its REALITY_CROSSWALK maps
+          every one of the six labels onto acceptance.LADDER, so the reality-claim guard still reads it. Corrected
+          2026-11-21 (MW-C): this said "read by nothing in the repository"
         revival_condition: >-
           only if the founder picks these six levels as the ladder; otherwise Mission Control imports whichever
           tuple the decision above makes canonical
+        kept_for: {consumer: acceptance.claims.crosswalk_problems}
     distinct:
       - module: greg.metrics
         qualnames: [FOUNDER_TIER, STRUCTURAL_CANDIDATE, founder_tier]
@@ -678,3 +683,14 @@ function_owner_records:
       - '_?([A-Z][A-Za-z0-9]*)?Inbox([A-Z][A-Za-z0-9]*)?'
       - '_?([a-z0-9]+_)*(drop|deliver|relay|forward|post|push)_(to_)?(inbox|envelope|command)s?(_[a-z0-9]+)*'
       - '_?([a-z0-9]+_)*inbox_(drop|write|put|deliver|relay|transport)(_[a-z0-9]+)*'
+
+# MW-C, 2026-11-21 (tests/unit/test_canonical_owner_guard.py; docs/evidence/canonical-owner-guard-2026-11-21/README.md).
+# Three rules now bind the records above, and the second amends the header comment of this section:
+# - the body of every canonical, candidate and alternate function a record names (names and constants erased, at least
+#   25 AST nodes) is compared with every function and method of the runtime tree; a copy outside the record's
+#   canonical, candidate and alternate modules fails, and a 'distinct' entry neither exempts a copy nor may name a
+#   module that holds one;
+# - the candidates of a NEEDS_FOUNDER_DECISION record are pinned exactly: adding a candidate to an undecided record
+#   (a new competing owner) needs a change to PINNED in the test, unlike an alternate or a distinct entry;
+# - a HISTORICAL or RETIRED alternate still defined in the tree carries kept_for: {consumer: <module>.<function>}
+#   outside greg/ and tests/ whose source names it, or {open_decision: <record_id>} naming an undecided record.

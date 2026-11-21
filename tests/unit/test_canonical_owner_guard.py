@@ -20,11 +20,20 @@ The registry is ``function_owner_records`` in docs/collaboration/ARCHITECTURE-OW
    it reuses the exact name of a registered implementation (except the record's ``generic_names``), or when it is a
    structural copy of a registered function or class under any name. Names are a HEURISTIC: a rewritten
    re-implementation under an unmarked, unregistered name, a method inside a class, or code outside those six
-   packages passes.
+   packages passes;
+4. (MW-C, 2026-11-21) the body of every canonical, candidate and alternate FUNCTION a record names, with every name
+   and every constant erased (``fingerprint``, from a fresh copy) and at least ``MIN_COPY_NODES`` nodes, is compared
+   with every function and method at any depth of every runtime file the filesystem lists (``runtime_files``: tests/,
+   docs/ and the frozen cortex/evaluation/ skipped by path prefix). A copy outside the record's canonical, candidate
+   and alternate modules fails, wherever it is and whatever it is called; a ``distinct`` entry never exempts one
+   (``distinct_copy_problems``: and may not name a module that holds one). It still misses a rewrite that changes
+   structure, an attribute rename (``row['x']`` to ``row.x``) and a function the registry does not record.
 
 The registry itself is pinned (``PINNED``, ``FOUNDER_DECISIONS``, ``MUST_FLAG``): removing a record or an entry,
-adding a second canonical module, resolving a founder decision without a ruling record, or narrowing a record's
-markers below the names it must catch fails until this file changes in the same reviewed diff.
+adding a second canonical module, adding a candidate to a record that is still NEEDS_FOUNDER_DECISION, resolving a
+founder decision without a ruling record, or narrowing a record's markers below the names it must catch fails until
+this file changes in the same reviewed diff. ``kept_for_problems`` is a forward guard for section 76: a HISTORICAL or
+RETIRED alternate still in the tree names what keeps it (a consumer outside greg/ and tests/, or an open decision).
 
 The test reads code and data. It grants, attaches, activates and retires nothing.
 """
@@ -35,6 +44,7 @@ import copy
 from functools import lru_cache
 from pathlib import Path
 import re
+import warnings
 
 import yaml
 
@@ -52,8 +62,10 @@ ROLES = (("canonical", "canonical"), ("candidates", "candidates"), ("alternates"
 # -- frozen at this commit (review findings F4, F5, F6, MUH-F1 on 77deac50) --------------------------------------
 # Every record and every (module, qualname) it names. Removing one fails: an implementation leaves a record by a
 # status change (RETIRED, HISTORICAL), never by deletion. The canonical module set is exact: a second canonical module
-# is two owners (section 52) and must be recorded as an ALTERNATE instead. Adding a candidate, an alternate or a
-# distinct entry needs no change here; changing this literal is a reviewed change to the guard itself.
+# is two owners (section 52) and must be recorded as an ALTERNATE instead. The candidate set of a record that is still
+# NEEDS_FOUNDER_DECISION is exact too (MW-C, 2026-11-21): its candidates are competing owners, so adding one fails
+# until it is pinned here. Adding an alternate or a distinct entry needs no change here; changing this literal is a
+# reviewed change to the guard itself.
 PINNED = {
     "OWN-FN-TEMPORARY-TEAMS": {
         "canonical": {"foundry.systems.teams": ("form", "act", "dissolve", "report")},
@@ -502,6 +514,15 @@ def pin_problems(data: dict, root: Path = ROOT, pinned: dict = PINNED,
                     if not any(module in h and (h[module] is None or name in h[module]) for h in where):
                         problems.append(f"{rid}: {role} {module}.{name} is pinned and was removed; an implementation "
                                         f"leaves the record by a status change (RETIRED, HISTORICAL), not by deletion")
+        if r.get("owner_status") == "NEEDS_FOUNDER_DECISION":
+            # An undecided record's candidates are its competing owners until the founder rules: the set is exact.
+            added = sorted(f"{module}.{name}" if name else module for module, names in have["candidates"].items()
+                           for name in (sorted(names or ()) or [""])
+                           if module not in pin["candidates"] or (name and name not in pin["candidates"][module]))
+            problems += [f"{rid}: candidate {name} is not pinned. The candidates of a NEEDS_FOUNDER_DECISION record are "
+                         f"its competing owners until the founder rules, so a new one joins only in a reviewed change "
+                         f"to PINNED in tests/unit/test_canonical_owner_guard.py, never by a registry edit alone"
+                         for name in added]
     return problems
 
 
@@ -882,6 +903,309 @@ def unrecorded(records: list[dict], root: Path = ROOT, packages=GUARDED) -> list
     return sorted(set(out))
 
 
+# -- guard 4: a registered function's body anywhere in the runtime tree (MW-C, 2026-11-21) --------------------------
+
+# Not runtime code: tests and documents. FROZEN: instruments kept exactly as written (the evaluation runners
+# tests/unit/test_no_structural_duplicates.py also skips). Both by full path prefix, never by a path segment, so a copy
+# cannot hide in a new directory that shares one of these names.
+NOT_RUNTIME = ("tests/", "docs/")
+FROZEN = ("cortex/evaluation/",)
+ERASED = "_"                     # every name and every constant of a fingerprinted body becomes this one sentinel
+FIX_COPY = ("Import the owner's function instead. If this copy must stay, record its module in {record} in "
+            "docs/collaboration/ARCHITECTURE-OWNERSHIP-MAP.yaml as an ALTERNATE (with its status and its retirement "
+            "or revival condition); a 'distinct' entry does not exempt a copy.")
+
+
+class _Erase(ast.NodeTransformer):
+    """Rewrite every name a body binds or reads, and every constant, to ERASED; structure, attribute names, keyword
+    names and imported module names stay. It rewrites in place, so ``fingerprint`` gives it a fresh copy, and it is
+    idempotent: an erased tree erases to itself."""
+
+    def visit_Name(self, node):
+        node.id = ERASED
+        return node
+
+    def visit_arg(self, node):
+        node.arg, node.annotation, node.type_comment = ERASED, None, None
+        return node
+
+    def visit_Constant(self, node):
+        node.value, node.kind = ERASED, None
+        return node
+
+    def visit_ExceptHandler(self, node):
+        self.generic_visit(node)
+        if node.name is not None:
+            node.name = ERASED
+        return node
+
+    def visit_alias(self, node):
+        if node.asname is not None:
+            node.asname = ERASED
+        return node
+
+    def visit_FunctionDef(self, node):
+        self.generic_visit(node)
+        node.name, node.returns, node.type_comment = ERASED, None, None
+        return node
+
+    visit_AsyncFunctionDef = visit_FunctionDef
+
+    def visit_ClassDef(self, node):
+        self.generic_visit(node)
+        node.name = ERASED
+        return node
+
+    def visit_Global(self, node):
+        node.names = [ERASED] * len(node.names)
+        return node
+
+    visit_Nonlocal = visit_Global
+
+    def visit_MatchAs(self, node):
+        self.generic_visit(node)
+        if node.name is not None:
+            node.name = ERASED
+        return node
+
+    def visit_MatchStar(self, node):
+        if node.name is not None:
+            node.name = ERASED
+        return node
+
+    def visit_MatchMapping(self, node):
+        self.generic_visit(node)
+        if node.rest is not None:
+            node.rest = ERASED
+        return node
+
+
+def _function_body(fn) -> list:
+    """A function's statements without its docstring."""
+    body = fn.body
+    if body and isinstance(body[0], ast.Expr) and _str(body[0].value) is not None:
+        body = body[1:]
+    return body
+
+
+_DROPPED = {ast.arg: "annotation", ast.FunctionDef: "returns", ast.AsyncFunctionDef: "returns"}
+
+
+def _erased_size(fn) -> int:
+    """The node count ``fingerprint`` reports, read without copying: the body's nodes minus the annotations _Erase
+    drops."""
+    stack, size = list(_function_body(fn)), 0
+    while stack:
+        node = stack.pop()
+        size += 1
+        skip = _DROPPED.get(type(node))
+        for field, value in ast.iter_fields(node):
+            if field == skip:
+                continue
+            if isinstance(value, ast.AST):
+                stack.append(value)
+            elif isinstance(value, list):
+                stack.extend(v for v in value if isinstance(v, ast.AST))
+    return size
+
+
+def fingerprint(fn) -> tuple[int, str]:
+    """(node count, dump) of a function's body (docstring dropped) with every name and constant erased, taken from a
+    fresh deep copy: the cached parse other guards read is never rewritten, and nothing is erased twice."""
+    module = _Erase().visit(ast.Module(body=copy.deepcopy(_function_body(fn)), type_ignores=[]))
+    return sum(1 for _ in ast.walk(module)) - 1, ast.dump(module)
+
+
+def runtime_files(root: Path = ROOT):
+    """Every runtime .py file as the filesystem lists it (no git: the mutant gate's copy of the tree has none), by
+    guard 3's rule (``python_files``), without NOT_RUNTIME, FROZEN and top-level hidden directories (.git, tool
+    caches, an agent's worktree: none is tracked runtime code)."""
+    for top in sorted(Path(root).iterdir()):
+        if top.name.startswith(".") or f"{top.name}/" in NOT_RUNTIME:
+            continue
+        for path in python_files(root, top.name) if top.is_dir() else [top] if top.suffix == ".py" else []:
+            if not path.relative_to(root).as_posix().startswith(FROZEN):
+                yield path
+
+
+def _functions(tree: ast.Module):
+    """(dotted scope name, node) for every function and method at any depth."""
+    out = []
+
+    def visit(node, prefix):
+        for child in ast.iter_child_nodes(node):
+            if isinstance(child, DEFS):
+                name = f"{prefix}.{child.name}" if prefix else child.name
+                if isinstance(child, FUNCTIONS):
+                    out.append((name, child))
+                visit(child, name)
+            else:
+                visit(child, prefix)
+    visit(tree, "")
+    return out
+
+
+def _function_node(module: str, qualname: str, root: Path = ROOT):
+    """The def a registered (dotted) qualname names, or None for a class, a constant or a missing name."""
+    node, path = None, module_file(module, root)
+    body = parse(path).body if path is not None else []
+    for part in qualname.split("."):
+        node = next((n for n in statements(body) if isinstance(n, DEFS) and n.name == part), None)
+        if node is None:
+            return None
+        body = node.body
+    return node if isinstance(node, FUNCTIONS) else None
+
+
+def registered_bodies(records: list[dict], root: Path = ROOT) -> dict[tuple[int, str], list[tuple[dict, str, str]]]:
+    """fingerprint -> [(record, "module.qualname", "path:line")] for every canonical, candidate and alternate
+    qualname that names a function of at least MIN_COPY_NODES erased nodes. Classes and constants are guard 3's."""
+    out: dict[tuple[int, str], list[tuple[dict, str, str]]] = {}
+    for r in records:
+        for role, e in entries(r):
+            if role == "distinct":
+                continue
+            for q in e.get("qualnames") or []:
+                node = _function_node(e["module"], q, root)
+                if node is None:
+                    continue
+                shape = fingerprint(node)
+                if shape[0] >= MIN_COPY_NODES:
+                    where = f"{module_file(e['module'], root).relative_to(root).as_posix()}:{node.lineno}"
+                    out.setdefault(shape, []).append((r, f"{e['module']}.{q}", where))
+    return out
+
+
+@lru_cache(maxsize=None)
+def _prints(path: Path, stamp: int, sizes: frozenset) -> tuple:
+    """(scope name, line, fingerprint) for every function of one file whose erased size is one of ``sizes``; the
+    rest are never copied."""
+    return tuple((name, node.lineno, fingerprint(node)) for name, node in _functions(_parse(path, stamp))
+                 if _erased_size(node) in sizes)
+
+
+def body_copies(records: list[dict], root: Path = ROOT) -> tuple[list[dict], list[str]]:
+    """(every function or method whose fingerprint is a registered body's, outside that record's canonical,
+    candidate and alternate modules; every runtime file that does not parse). A 'distinct' entry never exempts."""
+    bodies = registered_bodies(records, root)
+    sizes = frozenset(size for size, _ in bodies)
+    found, unreadable = [], []
+    for path in runtime_files(root):
+        relative = path.relative_to(root).as_posix()
+        try:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", SyntaxWarning)    # tracked scripts with invalid escapes still parse
+                prints = _prints(path, path.stat().st_mtime_ns, sizes)
+        except (SyntaxError, UnicodeDecodeError, ValueError) as exc:
+            unreadable.append(f"{relative} cannot be parsed ({type(exc).__name__}), so guard 4 cannot show that it "
+                              f"holds no copy of a registered function")
+            continue
+        module = module_name(path, root)
+        for name, line, shape in prints:
+            for r, registered, where in bodies.get(shape, []):
+                if module not in owned_modules(r):
+                    found.append({"record": r, "registered": registered, "registered_at": where, "module": module,
+                                  "at": f"{relative}:{line}", "name": name})
+    return found, unreadable
+
+
+def body_copy_problems(records: list[dict], root: Path = ROOT) -> list[str]:
+    found, unreadable = body_copies(records, root)
+    out = [f"{c['at']} defines {c['name']!r}, a copy of the body of {c['registered']} ({c['registered_at']}), "
+           f"registered in {c['record']['record_id']} ({c['record'].get('function')}); names and constants are erased "
+           f"before comparing, so renamed variables or changed literals are still the same body. Its owner is "
+           f"{owner(c['record'])}. " + FIX_COPY.format(record=c["record"]["record_id"]) for c in found]
+    return sorted(set(out)) + unreadable
+
+
+def distinct_copy_problems(records: list[dict], root: Path = ROOT) -> list[str]:
+    """A 'distinct' entry says a module holds a different function. It may not name a module that holds a copy of a
+    registered body (guard 4): a copy is an alternate, recorded with its status and condition."""
+    holding: dict[str, list[dict]] = {}
+    for c in body_copies(records, root)[0]:
+        holding.setdefault(c["module"], []).append(c)
+    out = []
+    for r in records:
+        for e in r.get("distinct") or []:
+            for c in holding.get(e.get("module"), []):
+                out.append(f"{r.get('record_id')}: distinct entry {e['module']} names a module that holds a copy of "
+                           f"the body of {c['registered']} ({c['at']}, {c['name']!r}, registered in "
+                           f"{c['record']['record_id']}); a copy is never a different function: record the module as "
+                           f"an ALTERNATE of {c['record']['record_id']} with its retirement or revival condition, or "
+                           f"import the owner")
+    return sorted(set(out))
+
+
+# -- history kept only with a live reason (section 76; MW-C, 2026-11-21) -------------------------------------------
+
+KEPT_FOR = ("consumer", "open_decision")
+NOT_CONSUMERS = ("greg", "tests")
+
+
+def _names_in(node) -> set[str]:
+    return {n.id for n in ast.walk(node) if isinstance(n, ast.Name)} | {
+        n.attr for n in ast.walk(node) if isinstance(n, ast.Attribute)}
+
+
+def kept_for_problems(records: list[dict], root: Path = ROOT) -> list[str]:
+    """Directive section 76: "Do not keep obsolete implementations merely to preserve history." A FORWARD GUARD over
+    the registry: every alternate with status HISTORICAL or RETIRED whose module (or one of its qualnames) is still
+    defined in the tree carries ``kept_for``, exactly one of
+
+    - ``{consumer: <module>.<function>}``: a function outside greg/ (which guard 2 forbids to reach it) and tests/ (a
+      test of the kept object is not a use) whose source names the kept object, in a module that imports it from the
+      alternate's module; or
+    - ``{open_decision: <record_id>}``: a record still NEEDS_FOUNDER_DECISION whose ruling may revive it.
+
+    An alternate gone from the tree needs none: git keeps its history. On 2026-11-21 this binds one entry
+    (greg.mission_control REALITY, HISTORICAL). It binds only what the registry records: obsolete code that no record
+    names is not seen."""
+    by_id = {r.get("record_id"): r for r in records}
+    out = []
+    for r in records:
+        rid = r.get("record_id")
+        for e in r.get("alternates") or []:
+            if e.get("status") not in NOT_IMPORTABLE:
+                continue
+            module, names = e["module"], list(e.get("qualnames") or [])
+            if module_file(module, root) is None or (names and not any(has_qualname(module, q, root) for q in names)):
+                continue
+            what = f"{module}" + (f".{'/'.join(names)}" if names else "")
+            kept = e.get("kept_for")
+            if not (isinstance(kept, dict) and len(kept) == 1 and next(iter(kept)) in KEPT_FOR):
+                out.append(f"{rid}: {e['status']} alternate {what} is still defined in the tree and does not say what "
+                           f"keeps it: give it kept_for {{consumer: <module>.<function>}} (code outside greg/ and "
+                           f"tests/ that still reads it) or {{open_decision: <record_id>}} (an undecided record whose "
+                           f"ruling may revive it), or remove it from the tree (git keeps its history)")
+                continue
+            if "open_decision" in kept:
+                target = by_id.get(kept["open_decision"])
+                if target is None or target.get("owner_status") != "NEEDS_FOUNDER_DECISION":
+                    out.append(f"{rid}: {what} is kept_for open_decision {kept['open_decision']}, which is not a "
+                               f"NEEDS_FOUNDER_DECISION record of the registry; once the founder rules, the alternate "
+                               f"leaves the tree, or names the consumer that still reads it")
+                continue
+            consumer = str(kept["consumer"])
+            consumer_module, _, function = consumer.rpartition(".")
+            if not consumer_module or consumer_module.split(".")[0] in NOT_CONSUMERS or consumer_module == module:
+                out.append(f"{rid}: {what} is kept_for consumer {consumer}, which is not a function outside greg/ "
+                           f"and tests/ and outside the alternate's own module")
+                continue
+            path, node = module_file(consumer_module, root), definition_node(consumer_module, function, root)
+            if path is None or not isinstance(node, FUNCTIONS):
+                out.append(f"{rid}: {what} is kept_for consumer {consumer}, which does not exist (moved or renamed? "
+                           f"update kept_for, or remove the alternate from the tree)")
+                continue
+            kept_names = set(names) or {module.rpartition(".")[2]}
+            refs = reach(path, root).refs
+            if not (_names_in(node) & {n.split(".")[-1] for n in kept_names}
+                    and any(_hits(ref, module, names) for _, ref in refs)):
+                out.append(f"{rid}: {what} is kept_for consumer {consumer}, whose source does not name "
+                           f"{module}.{'/'.join(names) or '*'} (imported from {module}); a consumer is code that still "
+                           f"reads the kept object")
+    return out
+
+
 # -- the registry ------------------------------------------------------------------------------------------------
 
 def test_registry_names_an_owner_status_alternates_and_conditions_for_every_required_function():
@@ -1180,3 +1504,244 @@ def test_a_stale_qualname_or_module_is_reported(tmp_path):
     assert any("greg.owner.run does not exist" in line for line in found)
     assert any("module greg.moved does not exist" in line for line in found)
     assert not any("A.b" in line for line in found)
+
+
+# -- guard 4, the exact candidate pin and the history guard (MW-C, 2026-11-21) ------------------------------------
+
+def test_no_copy_of_a_registered_function_body_outside_its_record():
+    records = load()["function_owner_records"]
+    # not vacuous: 27 registered function bodies of at least MIN_COPY_NODES erased nodes on 2026-11-21, compared with
+    # every function and method of about 500 runtime files
+    assert sum(len(found) for found in registered_bodies(records).values()) >= 20
+    assert len(list(runtime_files())) > 400
+    assert body_copy_problems(records) == []
+
+
+def test_no_distinct_entry_names_a_module_that_holds_a_copy_of_a_registered_body():
+    assert distinct_copy_problems(load()["function_owner_records"]) == []
+
+
+def test_every_historical_or_retired_alternate_still_in_the_tree_says_what_keeps_it():
+    records = load()["function_owner_records"]
+    kept = [e for r in records for e in r.get("alternates") or [] if e.get("status") in NOT_IMPORTABLE
+            and module_file(e["module"]) is not None]
+    assert kept, "no HISTORICAL or RETIRED alternate is still in the tree: the guard would pass vacuously"
+    assert kept_for_problems(records) == []
+
+
+class _Disguise(ast.NodeTransformer):
+    """What a copier changes to hide a copy: every variable and argument name, and every string and number literal
+    (inside an f-string only the names, so the copy still parses)."""
+
+    def __init__(self):
+        self.fstring = 0
+
+    def visit_Name(self, node):
+        node.id += "_v"
+        return node
+
+    def visit_arg(self, node):
+        node.arg += "_v"
+        return node
+
+    def visit_JoinedStr(self, node):
+        self.fstring += 1
+        self.generic_visit(node)
+        self.fstring -= 1
+        return node
+
+    def visit_Constant(self, node):
+        if self.fstring:
+            return node
+        if isinstance(node.value, str):
+            node.value += " (copy)"
+        elif isinstance(node.value, (int, float)) and not isinstance(node.value, bool):
+            node.value += 1
+        return node
+
+
+def _disguised(module: str, name: str, new_name: str, method: bool = False, indent: str = "") -> str:
+    """A renamed copy of a registered function from this repository, every name and literal changed."""
+    node = copy.deepcopy(definition_node(module, name))
+    node.name, node.decorator_list = new_name, []
+    _Disguise().visit(node)
+    if method:
+        node.args.args.insert(0, ast.arg("self"))
+    ast.fix_missing_locations(node)
+    return "".join(indent + line + "\n" for line in ast.unparse(node).splitlines())
+
+
+def _real(*modules: str) -> dict[str, str]:
+    return {str(module_file(m).relative_to(ROOT)): module_file(m).read_text() for m in modules}
+
+
+def test_the_body_guard_catches_renamed_nested_relocated_and_one_line_copies(tmp_path):
+    data = {r["record_id"]: r for r in load()["function_owner_records"]}
+    commerce, teams = data["OWN-FN-COMMERCE-CLOSURE"], data["OWN-FN-TEMPORARY-TEAMS"]
+    inbox = {"record_id": "OWN-FN-X", "function": "x", "owner_status": "CANONICAL", "markers": ["Inbox"],
+             "canonical": [{"module": "greg.body", "qualnames": ["send_signed"]}]}
+    # every statement of OWNER_BODY on one line: no line-count threshold would see it
+    one_line = ("def relay(h, k, t, b): e = {'t': t, 'b': b, 'k': k}; p = h / 'box' / (t + '.j'); "
+                "s = p.with_suffix('.x'); s.write_text(str(e)); s.replace(p); return p\n")
+    different = ("def read_inbox(home, kind):\n    path = home / 'inbox' / (kind + '.json')\n"
+                 "    if not path.exists():\n        return None\n    data = json.loads(path.read_text())\n"
+                 "    for key in ('body', 'kind'):\n        data.setdefault(key, None)\n"
+                 "    return data.get('body')\n")
+    root = _tree(tmp_path, {
+        **_real("greg.business_loop", "foundry.systems.teams"),
+        "greg/body.py": OWNER_BODY,
+        # a method in business/, outside the six guarded packages, every local renamed and every literal changed
+        "business/case_copy.py": "class Case:\n" + _disguised("greg.business_loop", "reconcile", "settle",
+                                                               method=True, indent="    "),
+        # a nested def
+        "greg/wrapped.py": "def outer():\n" + _disguised("greg.business_loop", "reconcile", "inner", indent="    ")
+                           + "    return inner\n",
+        # top level, outside the six packages
+        "closure/settle_copy.py": _disguised("greg.business_loop", "reconcile", "settle_case"),
+        # in the owner's own directory, under another name
+        "foundry/systems/team_copy.py": _disguised("foundry.systems.teams", "form", "convene"),
+        "greg/oneline.py": one_line,
+        "greg/reader.py": different,
+        # a directory named evaluation is skipped only where it is the frozen cortex/evaluation/
+        "greg/evaluation/team_copy.py": _disguised("foundry.systems.teams", "form", "convene"),
+        "cortex/evaluation/team_copy.py": _disguised("foundry.systems.teams", "form", "convene"),
+    })
+    found = body_copy_problems([commerce, teams, inbox], root)
+    expected = {"business/case_copy.py": ("'Case.settle'", "greg.business_loop.reconcile (greg/business_loop.py:"),
+                "greg/wrapped.py": ("'outer.inner'", "greg.business_loop.reconcile (greg/business_loop.py:"),
+                "closure/settle_copy.py": ("'settle_case'", "greg.business_loop.reconcile (greg/business_loop.py:"),
+                "foundry/systems/team_copy.py": ("'convene'", "foundry.systems.teams.form (foundry/systems/teams.py:"),
+                "greg/evaluation/team_copy.py": ("'convene'", "foundry.systems.teams.form (foundry/systems/teams.py:"),
+                "greg/oneline.py": ("'relay'", "greg.body.send_signed (greg/body.py:1)")}
+    for path, (copied, registered) in expected.items():
+        assert any(line.startswith(f"{path}:") and copied in line and registered in line for line in found), path
+    assert len(found) == len(expected), found
+    # the control: a genuinely different function of similar size (within a fifth of the registered body's)
+    size, registered_size = _erased_size(ast.parse(different).body[0]), fingerprint(ast.parse(OWNER_BODY).body[0])[0]
+    assert abs(size - registered_size) <= registered_size / 5
+    assert not any(line.startswith("greg/reader.py") for line in found)
+    # the owners' own modules hold the originals, not copies
+    assert not any(line.startswith(("greg/business_loop.py", "foundry/systems/teams.py", "greg/body.py"))
+                   for line in found)
+
+
+def test_the_body_guard_does_not_see_an_attribute_rename(tmp_path):
+    # A STATED LIMIT, recorded as passing. Attribute names and subscript-versus-attribute access are structure the
+    # fingerprint keeps, so a copy that changes one attribute name (write_text to write_bytes) or reads a field as
+    # an attribute instead of a key (envelope['kind'] to envelope.kind) is not detected. A later change that claims
+    # this coverage must change these assertions.
+    record = {"record_id": "OWN-FN-X", "function": "x", "owner_status": "CANONICAL", "markers": ["Inbox"],
+              "canonical": [{"module": "greg.body", "qualnames": ["send_signed"]}]}
+    keyed = OWNER_BODY.replace("    path = home / 'inbox' / (kind + '.json')\n",
+                               "    path = home / 'inbox' / (envelope['kind'] + '.json')\n")
+    root = _tree(tmp_path, {
+        "greg/body.py": keyed,
+        "greg/renamed_attribute.py": keyed.replace("def send_signed(", "def relay(").replace("write_text", "write_bytes"),
+        "greg/attribute_access.py": keyed.replace("def send_signed(", "def relay(").replace("envelope['kind']",
+                                                                                           "envelope.kind"),
+        "greg/exact.py": keyed.replace("def send_signed(", "def relay("),
+    })
+    found = body_copy_problems([record], root)
+    assert [line.split(":")[0] for line in found] == ["greg/exact.py"]    # the guard runs on this tree
+
+
+def test_the_fingerprint_erases_a_fresh_copy_once_and_leaves_the_parsed_tree_alone(tmp_path):
+    # A nested def is fingerprinted from its own fresh copy, never from a tree an outer erase already rewrote, and
+    # the cached parse other guards read stays as it was.
+    nested = ("def outer(q: int) -> int:\n    def g(c: int, d: float) -> bool:\n        x = c + 1\n"
+              "        y = d * 2.5\n        if x > y:\n            return None\n        return f'{x:>4}' == 'a'\n"
+              "    return g(q, q)\n")
+    top = ("def h(a, b):\n    x = a + 7\n    y = b * 9.0\n    if x > y:\n        return None\n"
+           "    return f'{x:>4}' == 'b'\n")
+    root = _tree(tmp_path, {"m.py": nested})
+    tree = parse(root / "m.py")
+    before = ast.dump(tree, include_attributes=True)
+    outer, inner = tree.body[0], tree.body[0].body[0]
+    first = fingerprint(outer), fingerprint(inner)
+    assert (fingerprint(outer), fingerprint(inner)) == first
+    assert ast.dump(parse(root / "m.py"), include_attributes=True) == before
+    assert fingerprint(inner) == fingerprint(ast.parse(top).body[0])
+    for fn in (outer, inner, ast.parse(top).body[0]):
+        erased = ast.Module(body=copy.deepcopy(_function_body(fn)), type_ignores=[])
+        once = ast.dump(_Erase().visit(erased))
+        assert ast.dump(_Erase().visit(erased)) == once                     # erasing is idempotent
+        assert _erased_size(fn) == fingerprint(fn)[0]
+
+
+def test_a_distinct_entry_cannot_vouch_for_a_module_that_holds_a_copy(tmp_path):
+    # The adversary's candidate game, second half: a structural copy recorded as 'distinct'.
+    record = copy.deepcopy(next(r for r in load()["function_owner_records"]
+                                if r["record_id"] == "OWN-FN-ORGAN-EXCHANGE"))
+    record["distinct"].append({"module": "greg.organs2", "qualnames": ["exchange"], "why": "different"})
+    record["distinct"].append({"module": "greg.briefs", "qualnames": ["verify_delivery"], "why": "different"})
+    root = _tree(tmp_path, {**_real("greg.organs"),
+                            "greg/organs2.py": _disguised("greg.organs", "exchange", "exchange"),
+                            "greg/briefs.py": "def verify_delivery(action):\n    return None\n"})
+    found = distinct_copy_problems([record], root)
+    assert len(found) == 1 and found[0].startswith("OWN-FN-ORGAN-EXCHANGE: distinct entry greg.organs2 ")
+    assert "greg.organs.exchange" in found[0] and "greg/organs2.py:1" in found[0]
+    # a distinct entry exempts nothing: the copy itself is still reported
+    assert [line.split(":")[0] for line in body_copy_problems([record], root)] == ["greg/organs2.py"]
+
+
+def test_an_undecided_record_takes_no_new_candidate_without_a_pin_change():
+    # The adversary's candidate game (scratchpad mwc/attack/candidate_game.py), first half: a third competing owner
+    # added to an undecided record passed every check.
+    data = load()
+    assert pin_problems(data) == []
+
+    def changed(record_id: str, edit) -> list[str]:
+        out = copy.deepcopy(data)
+        edit(next(r for r in out["function_owner_records"] if r["record_id"] == record_id))
+        return [p for p in pin_problems(out) if p.startswith(record_id)]
+
+    new_module = changed("OWN-FN-GOAL-RUNTIME", lambda r: r["candidates"].append(
+        {"module": "greg.goal_engine2", "qualnames": ["run"], "side": "C", "evidence": ["new"]}))
+    assert any("candidate greg.goal_engine2.run is not pinned" in p for p in new_module), new_module
+    new_name = changed("OWN-FN-GOAL-RUNTIME", lambda r: next(
+        c for c in r["candidates"] if c["module"] == "greg.gravity")["qualnames"].append("rederive"))
+    assert any("candidate greg.gravity.rederive is not pinned" in p for p in new_name), new_name
+    for record_id in FOUNDER_DECISIONS:
+        assert changed(record_id, lambda r: r["candidates"].append(
+            {"module": "greg.extra", "qualnames": ["x"], "side": "Z", "evidence": ["new"]})), record_id
+    # a decided record still takes a new alternate or distinct entry without a pin change
+    assert changed("OWN-FN-TEMPORARY-TEAMS", lambda r: r["alternates"].append(
+        {"module": "greg.crew", "qualnames": ["form_team"], "status": "ALTERNATE", "reason": "r",
+         "retirement_condition": "c"})) == []
+
+
+def test_the_history_guard_refuses_a_kept_alternate_with_no_live_reason(tmp_path):
+    root = _tree(tmp_path, {
+        "greg/__init__.py": "", "greg/ladder.py": "REALITY = ('A', 'B')\n", "greg/console.py": (
+            "from greg.ladder import REALITY\ndef show():\n    return REALITY\n"),
+        "acceptance/__init__.py": "", "acceptance/claims.py": (
+            "from greg.ladder import REALITY\ndef crosswalk():\n    return list(REALITY)\ndef other():\n    return 1\n"),
+        "acceptance/unrelated.py": "REALITY = ()\ndef crosswalk():\n    return REALITY\n",
+        "tests/__init__.py": "", "tests/test_ladder.py": "from greg.ladder import REALITY\ndef test_x():\n    REALITY\n",
+    })
+
+    def problems(kept_for=None, status="HISTORICAL", module="greg.ladder", decided="NEEDS_FOUNDER_DECISION"):
+        alternate = {"module": module, "qualnames": ["REALITY"], "status": status, "reason": "r",
+                     "revival_condition": "c", **({"kept_for": kept_for} if kept_for is not None else {})}
+        records = [{"record_id": "OWN-FN-L", "owner_status": "CANONICAL", "alternates": [alternate]},
+                   {"record_id": "OWN-FN-OPEN", "owner_status": decided}]
+        return kept_for_problems(records, root)
+
+    assert problems({"consumer": "acceptance.claims.crosswalk"}) == []
+    assert problems({"open_decision": "OWN-FN-OPEN"}) == []
+    assert problems(status="RETIRED", kept_for={"consumer": "acceptance.claims.crosswalk"}) == []
+    assert problems(module="greg.gone") == []                       # gone from the tree: git keeps its history
+    assert problems(status="ALTERNATE") == []                       # a live alternate states a retirement condition
+    for kept_for, said in ((None, "does not say what keeps it"),
+                           ({}, "does not say what keeps it"),
+                           ({"consumer": "acceptance.claims.crosswalk", "open_decision": "OWN-FN-OPEN"},
+                            "does not say what keeps it"),
+                           ({"consumer": "greg.console.show"}, "outside greg/ and tests/"),
+                           ({"consumer": "tests.test_ladder.test_x"}, "outside greg/ and tests/"),
+                           ({"consumer": "acceptance.claims.other"}, "does not name greg.ladder.REALITY"),
+                           ({"consumer": "acceptance.unrelated.crosswalk"}, "does not name greg.ladder.REALITY"),
+                           ({"consumer": "acceptance.claims.missing"}, "does not exist"),
+                           ({"open_decision": "OWN-FN-NONE"}, "not a NEEDS_FOUNDER_DECISION record")):
+        found = problems(kept_for)
+        assert len(found) == 1 and said in found[0], (kept_for, found)
+    assert "not a NEEDS_FOUNDER_DECISION record" in problems({"open_decision": "OWN-FN-OPEN"}, decided="CANONICAL")[0]

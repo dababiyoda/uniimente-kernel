@@ -1043,6 +1043,21 @@ def test_a_worktree_git_names_through_a_symlink_loop_never_escapes(quick, tmp_pa
     assert len(w.who_touches(["greg/missions.py"], [], [], {"greg/missions.py"}, root=tmp_path)) == 1
 
 
+def test_placing_many_paths_asks_git_once_per_directory_not_once_per_path(quick, tmp_path, monkeypatch):
+    repo = tmp_path / "repo"
+    (repo / "greg").mkdir(parents=True)
+    _git(repo, "init", "-q", "-b", "line")
+    real_run, calls = subprocess.run, []
+    monkeypatch.setattr(w.subprocess, "run", lambda *a, **k: calls.append(a) or real_run(*a, **k))
+    asked = {}
+    for n in (1, 2, 50):
+        calls.clear()
+        hits = w.who_touches([f"greg/new_{i}.py" for i in range(n)], [], [], {"greg/missions.py"}, root=repo)
+        assert [h["path"] for h in hits] == [f"greg/new_{i}.py" for i in range(n)]
+        asked[n] = len(calls)
+    assert asked[1] == asked[2] == asked[50] <= 2, asked      # the root, and the one directory the paths are in
+
+
 @pytest.mark.skipif(os.name != "posix" or os.geteuid() == 0, reason="needs a directory this process cannot search")
 def test_a_path_under_a_directory_that_cannot_be_searched_is_unknown(tmp_path):
     locked = tmp_path / "locked"

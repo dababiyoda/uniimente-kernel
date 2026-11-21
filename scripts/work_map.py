@@ -1284,15 +1284,24 @@ def _worktree(where: Path) -> tuple[Path, Path] | None:
         return None
 
 
-def _place(path: str, root: Path = ROOT) -> tuple[str, str | None]:
+def _place(path: str, root: Path = ROOT, worktrees: dict | None = None) -> tuple[str, str | None]:
     """(the path the map answers for, why it could not be placed or None). A path, relative to the root or absolute,
     is placed by the worktree that git says holds its nearest existing directory, also under the root, where a
     worktree can be nested (``.claude/worktrees/<name>``): in a worktree of this repository it is made relative to that
     worktree's top; in another repository or in none it is made absolute (``outside_path``). A symbolic link at its
     end is placed as the link, not as what it points to. When git cannot answer for the root, the root decides. When a
     directory on its way cannot be read, or git cannot say which worktree holds a path under the root, it is not
-    placed: it is returned as asked with the reason, and nothing answers for it."""
+    placed: it is returned as asked with the reason, and nothing answers for it. ``worktrees`` caches what git said
+    for each directory (the root and each nearest existing directory), so many paths cost git once per directory."""
     asked = posixpath.normpath(Path(path).as_posix())
+    worktrees = {} if worktrees is None else worktrees
+
+    def tree(where) -> tuple[Path, Path] | None:
+        key = os.fspath(where)
+        if key not in worktrees:
+            worktrees[key] = _worktree(Path(key))
+        return worktrees[key]
+
     try:
         lexical = os.path.normpath(os.path.join(root, path))
         near = lexical
@@ -1307,7 +1316,7 @@ def _place(path: str, root: Path = ROOT) -> tuple[str, str | None]:
             near = os.path.dirname(near)
         real, rest = os.path.realpath(near, strict=True), os.path.relpath(lexical, near)
         absolute = Path(real, rest).as_posix()
-        here, there = _worktree(root), _worktree(Path(real))
+        here, there = tree(root), tree(real)
         if here is None:                                 # git answers for nothing here: the root decides
             top = os.path.realpath(root)
         elif there is not None and there[1] == here[1]:  # a worktree of this repository, nested or not
@@ -1355,9 +1364,9 @@ def who_touches(paths: list[str], rows: list[dict] | None, claims: list[dict] | 
     for them, and the other paths are still answered. The integration PR is left out."""
     dirs = {"/".join(f.split("/")[:i]) for f in tracked for i in range(1, f.count("/") + 1)} if tracked else set()
     bound = {r["pr"] for r in line_bound(rows or [], line)}
-    hits = []
+    hits, worktrees = [], {}
     for asked in paths:
-        path, unplaced = _place(asked, root)
+        path, unplaced = _place(asked, root, worktrees)
         if unplaced or outside_path(path):
             hits.append({"path": path, "asked": asked, "outside_repository": None if unplaced else True,
                          **({"not_placed": unplaced} if unplaced else {}), "tracked": None, "prs": None,

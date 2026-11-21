@@ -4361,10 +4361,10 @@
      "coverage": "partial",
      "blocker": {
       "class": "BUILDABLE_NOT_BUILT",
-      "reason": "A machine-checked registry holds function-owner records (canonical implementation, alternates by status, migration path, retirement or revival condition), but only for the functions found duplicated, not for every major mechanism. Still open: some of its records are NEEDS_FOUNDER_DECISION, with candidates and no owner; benchmarks have no field; the registry is PROPOSED and retires nothing",
+      "reason": "A machine-checked registry holds function-owner records (canonical implementation, alternates by status, migration path, retirement or revival condition) for the 8 functions found duplicated. Still open: which list counts as 'every major mechanism' is not settled, and no build can show the registry complete until it is: the 18 completion-contract functions (acceptance/completion-contract.json), the Foundry's numbered systems (foundry/systems/__init__.py SYSTEMS, numbered 1-55, 54 entries) or the 10 concern records of docs/collaboration/ARCHITECTURE-OWNERSHIP-MAP.yaml. That anchor is a question for the integrator or the founder, not a choice the builder makes. Also open: 3 of the 8 records are NEEDS_FOUNDER_DECISION, with candidates and no owner; benchmarks have no field; the registry is PROPOSED and retires nothing",
       "unit": "MW-C"
      },
-     "note": "Corrected 2026-11-11. The reason recorded on 2026-10-30 ('Only a prose convergence map exists') described the tree before function_owner_records in docs/collaboration/ARCHITECTURE-OWNERSHIP-MAP.yaml and tests/unit/test_canonical_owner_guard.py landed on this line (mutant gate in Canonical CI job 10). On 2026-11-11: 8 records, 5 CANONICAL and 3 NEEDS_FOUNDER_DECISION (goal runtime, evidence ladder, autonomy levels). Limits: docs/evidence/canonical-owner-guard-2026-10-30/README.md."
+     "note": "Corrected 2026-11-11. The reason recorded on 2026-10-30 ('Only a prose convergence map exists') described the tree before function_owner_records in docs/collaboration/ARCHITECTURE-OWNERSHIP-MAP.yaml and tests/unit/test_canonical_owner_guard.py landed on this line (mutant gate in Canonical CI job 10). On 2026-11-11: 8 records, 5 CANONICAL and 3 NEEDS_FOUNDER_DECISION (goal runtime, evidence ladder, autonomy levels). Limits: docs/evidence/canonical-owner-guard-2026-10-30/README.md. Corrected 2026-11-21 (MW-C): the reason said 'not for every major mechanism' without naming which list that is; it now names the three candidate anchors as an open question. Limits: docs/evidence/canonical-owner-guard-2026-11-21/README.md."
     },
     {
      "id": "S52.A2",
@@ -5400,7 +5400,10 @@
      "evidence": [
       "tests/unit/test_canonical_owner_guard.py::test_registry_names_an_owner_status_alternates_and_conditions_for_every_required_function",
       "tests/unit/test_canonical_owner_guard.py::test_the_registry_keeps_every_pinned_record_entry_and_founder_decision",
-      "tests/unit/test_canonical_owner_guard.py::test_no_unrecorded_reimplementation_of_a_registered_function"
+      "tests/unit/test_canonical_owner_guard.py::test_no_unrecorded_reimplementation_of_a_registered_function",
+      "tests/unit/test_canonical_owner_guard.py::test_no_copy_of_a_registered_function_body_outside_its_record",
+      "tests/unit/test_canonical_owner_guard.py::test_the_body_guard_catches_renamed_nested_relocated_and_one_line_copies",
+      "tests/unit/test_canonical_owner_guard.py::test_an_undecided_record_takes_no_new_candidate_without_a_pin_change"
      ],
      "required_tier": "UNIT_VERIFIED",
      "tier": "UNIT_VERIFIED",
@@ -5410,10 +5413,10 @@
      ],
      "blocker": {
       "class": "BUILDABLE_NOT_BUILT",
-      "reason": "As S52.A1 and S52.A2: a registry names one canonical owner for each function it records, and a guard fails an unrecorded re-implementation of a registered function in greg/, foundry/, egregore/, omnimorph/, autonomy/ or governance/. Still open: the records marked NEEDS_FOUNDER_DECISION have competing owners and none is removed; the guard is a name-and-structure heuristic that misses a rewritten copy under an unmarked name, a method inside a class and code outside those packages; a function the registry does not record has no owner check",
+      "reason": "As S52.A1 and S52.A2: a registry names one canonical owner for each function it records, and a re-implementation of a registered function fails, by name or exact structure in the six guarded packages (guard 3) and, since 2026-11-21, as a copy of a registered function's body with its names and constants erased, as a method, nested def or one-line copy, anywhere in the runtime tree (guard 4); a NEEDS_FOUNDER_DECISION record takes no new candidate without a pin change. Still open: the 3 NEEDS_FOUNDER_DECISION records keep competing owners until the founder rules, and none is removed; a function the registry does not record has no owner check (which functions must be recorded is S52.A1's open question)",
       "unit": "MW-C"
      },
-     "note": "Corrected 2026-11-11. The reason recorded on 2026-10-30 ('ownership is reconciled in prose; no registry or guard keeps one canonical owner per function') described the tree before docs/collaboration/ARCHITECTURE-OWNERSHIP-MAP.yaml's function_owner_records and tests/unit/test_canonical_owner_guard.py landed on this line. Limits: docs/evidence/canonical-owner-guard-2026-10-30/README.md."
+     "note": "Corrected 2026-11-11. The reason recorded on 2026-10-30 ('ownership is reconciled in prose; no registry or guard keeps one canonical owner per function') described the tree before docs/collaboration/ARCHITECTURE-OWNERSHIP-MAP.yaml's function_owner_records and tests/unit/test_canonical_owner_guard.py landed on this line. Limits: docs/evidence/canonical-owner-guard-2026-10-30/README.md. Corrected 2026-11-21 (MW-C): the reason said the guard misses a rewritten copy under an unmarked name, a method inside a class and code outside the six packages; guard 4 now fails a copy of a registered function's body in each of those places (test_the_body_guard_catches_renamed_nested_relocated_and_one_line_copies). A copy that changes structure or an attribute name is still missed. The unit stays MW-C: S52.A2's residual (MU-H) covers the undecided records, not functions the registry does not record. Limits: docs/evidence/canonical-owner-guard-2026-11-21/README.md."
     },
     {
      "id": "S69.A4",
@@ -5972,17 +5975,22 @@
      "ask": "Obsolete implementations are not kept merely for history: each function names its retirement condition",
      "excerpt": "Do not keep obsolete implementations merely to preserve history.",
      "owner_paths": [
-      "greg/"
+      "greg/",
+      "docs/collaboration/ARCHITECTURE-OWNERSHIP-MAP.yaml"
      ],
-     "evidence": [],
+     "evidence": [
+      "tests/unit/test_canonical_owner_guard.py::test_every_historical_or_retired_alternate_still_in_the_tree_says_what_keeps_it",
+      "tests/unit/test_canonical_owner_guard.py::test_registry_names_an_owner_status_alternates_and_conditions_for_every_required_function"
+     ],
      "required_tier": "UNIT_VERIFIED",
-     "tier": "INTENDED",
-     "coverage": "gap",
+     "tier": "UNIT_VERIFIED",
+     "coverage": "partial",
      "blocker": {
       "class": "BUILDABLE_NOT_BUILT",
-      "reason": "No retirement conditions per function",
+      "reason": "Every alternate the owner registry records names its retirement condition (ALTERNATE) or revival condition (RESEARCH, HISTORICAL, RETIRED), and a forward guard requires each HISTORICAL or RETIRED alternate still defined in the tree to say what keeps it: kept_for names a consumer outside greg/ and tests/ whose source reads it, or a record still NEEDS_FOUNDER_DECISION. Still open: both bind only implementations the registry records (on 2026-11-21 one HISTORICAL alternate, greg.mission_control REALITY, kept for acceptance.claims.crosswalk_problems, and none RETIRED). The excerpt covers every obsolete implementation; obsolete code no record names is not found by any test",
       "unit": "MW-C"
-     }
+     },
+     "note": "Corrected 2026-11-21 (MW-C). The reason recorded on 2026-10-30 ('No retirement conditions per function') described the tree before function_owner_records in docs/collaboration/ARCHITECTURE-OWNERSHIP-MAP.yaml landed; the forward guard is new in MW-C. Limits: docs/evidence/canonical-owner-guard-2026-11-21/README.md."
     },
     {
      "id": "S76.A3",

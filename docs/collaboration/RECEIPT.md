@@ -5,8 +5,9 @@ never invent an owner, acknowledgment, source read or test. Keep exactly one blo
 This version consolidates #95's checker and adds coordination declarations. V1
 remains historical evidence; it does not satisfy the v2 check.
 
-Read AGENTS.md at the current PR head after each push. Record the guide's full
-commit in both its URL and read_set. The PR event's repository/base/head must
+Read AGENTS.md at the current PR head after each push. Record the full commit
+at which you actually read the guide (for example, your starting checkout) in both
+its URL and read_set. The PR event's repository/base/head must
 match. For file claims use exact repo-relative paths or clearly labeled directory
 prefixes; list shared interfaces separately. Inspected refs must include relevant
 open work and the board, even when the result is no overlap. `split` requires the
@@ -96,8 +97,10 @@ reader needs to place your work on the route and find your check-in:
   `greg/path.json#N3` or `greg/path.json#P5` for a route node,
   `acceptance/directive-sections.json#WU-11` for a directive unit, and
   `greg/path.json#process` for coordination work with no product node.
-- `read_set`: already records the guidance you read (AGENTS.md at your head, and the
-  guide's commit). That is the "guidance read" line of the check-in.
+- `read_set`: already records the guidance you read. The guide's entry is the commit
+  at which you actually read it (for example, your starting checkout); that is the
+  "Guidance read" line of the check-in. AGENTS.md is recorded at your head because
+  the validator requires a reread after each push.
 - `coordination.task_ref`: the URL of your check-in comment on the work board.
 
 `python scripts/work_map.py` reads these to show which unit has an owner and which

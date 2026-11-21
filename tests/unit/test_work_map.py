@@ -1124,6 +1124,20 @@ def test_an_addressee_a_dead_launch_or_a_team_relay_is_never_the_author():
     for body in ("## Handoff: #279 is green (bc-8e2ec3d3 ran it)\n", f"**UAT relay · `{A}` reported #279 green**\n",
                  f"## Note\n\n```text\n## Check-in: x\n- Session: `{A}`\n```\n"):
         assert w.comment_author(body)["author"] is None, body
+    # The other party of a split, an owner who asked, or a session taken over from is not the author; a trailing
+    # "· `id`" byline is. Two bylines naming two ids are not guessed between.
+    for heading in ("## Claim: WU-11, split agreed with session `{b}` · `{a}`",
+                    "## Claim: WU-11 (owner `{b}` asked me) · `{a}`",
+                    "## Claim: WU-11, split agreed with session `{b}` · session `{a}`",
+                    "## Claim: WU-11 (`{b}` agreed the split) · `{a}`",
+                    "## Claim: WU-11, taking over from session `{b}` · `{a}`"):
+        got = w.comment_author(heading.format(a=A, b=B) + "\n\n- **Files:** `greg/missions.py`\n")
+        assert (got["author"], got["how"], B in got["addressees"]) == (A, "heading", True), heading
+    pair = w.comment_author(f"## Claim: WU-11 · `{A}` · `{B}`\n")
+    assert (pair["author"], pair["how"]) == (None, "unresolved")
+    m = w.build([], [_comment(6900000001, f"## Claim: WU-11, split agreed with session `{B}` · `{A}`\n\n"
+                                          "- **Files:** `greg/missions.py`\n")], now=NOW, use_git=False)
+    assert [s["session"] for s in m["sessions"]] == [A] and m["claims"][0]["session"] == A
 
 
 def test_an_opening_line_names_the_author_only_as_session_id(quick):

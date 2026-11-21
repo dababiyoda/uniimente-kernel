@@ -146,10 +146,11 @@ _ADDRESSEE_LABELS = {"receiver", "next owner", "reviewer", "integration owner", 
                      "reviewer / integrator · destination"}
 _OPENING = re.compile(r"(?i)^[^\w>|]*(?:session|implementer|from|posted by)\b[\s`*:]*")   # never a quote or a table
 # A heading names its author only as a byline: right after "·", "(" (a Claude session id), "session", "from",
-# "integrator" or "owner", and except after "·" or "from" not in a clause addressed "for"/"to" someone. A heading
+# "integrator" or "owner", and except after "·" or "from" not in a clause addressed "for"/"to"/"with" someone. When
+# bylines name several ids, a single "· `id`" byline is the author's; otherwise the author is unresolved. A heading
 # that opens with "@", "To" or "For ... (" names its addressee there.
 _BYLINE = re.compile(r"(?i)(·|\(|\bsession|\bfrom|\bintegrator|\bowner)[\s`*_:,]*$")
-_FOR = re.compile(r"(?i)\b(?:for|to|cc)\b[^.:;·]*$")
+_FOR = re.compile(r"(?i)\b(?:for|to|cc|with)\b[^.:;·]*$")
 _ADDRESSED = re.compile(r"(?i)^[#*_\s]*(?:@|to\b|for\b[^(\n]{0,80}\()[\s`]*")
 _FENCE = re.compile(r"^[ \t]*(`{3,}|~{3,})")
 _INDENTED = re.compile(r"^(?: {4}|\t| {0,3}\t)")
@@ -414,6 +415,7 @@ def comment_author(body: str) -> dict:
         elif label in _AUTHOR_LABELS and hits and author is None:
             author = (hits[0][1], hits[0][2], "label")
     if author is None and heading.startswith(("#", "**")) and not _TEAM.search(heading):
+        bylines = []
         for at, key, client in identities(heading):
             by = _BYLINE.search(heading[max(0, at - 48):at])
             if not by or (by[1] == "(" and not key.startswith("session_")):
@@ -421,8 +423,13 @@ def comment_author(body: str) -> dict:
             if by[1] != "·" and by[1].lower() != "from" and _FOR.search(heading[max(0, at - 64):at]):
                 addressees.append(key)
                 continue
+            bylines.append((key, client, by[1] == "·"))
+        dotted = {(k, c) for k, c, dot in bylines if dot}  # "· `id`" is the byline when it names one id
+        named = dotted if len(dotted) == 1 else {(k, c) for k, c, _dot in bylines}
+        if len(named) == 1:                                  # several ids named as bylines: unresolved, not guessed
+            [(key, client)] = named
             author = (key, client, "heading")
-            break
+            addressees += [k for k, _c, _dot in bylines if k != key]
     if author is None:                                   # "Session `...`." as the comment's opening line
         rest = [ln for ln in _HTML.sub("", body).splitlines() if ln.strip()][1:2]
         opening = _OPENING.match(rest[0]) if rest and not _INDENTED.match(rest[0]) else None

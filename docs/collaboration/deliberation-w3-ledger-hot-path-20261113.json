@@ -1,0 +1,138 @@
+{
+  "decision_id": "W3-LEDGER-HOT-PATH-20261113",
+  "title": "Whiteboard W3: keep or revert the ledger hot-path changes e2440a6, bd0c17d and 3884493 on the #196 line",
+  "problem": "Whiteboard item W3 (board #96, comment 6852550499) asks whether the three commits that make a body tick read only new history should stay on #196. They change how the evidence ledger, the event spine and the mission book read retained records. The whiteboard names the #196 integrator as owner of the call. This record is self-review: one session (session_01FBS4KNJR59nSbdGbxo8Mbx) wrote all five roles.",
+  "founder_intent_refs": [
+    "INTENT-20261112-CONVERGENCE-USEFUL-PATH (whiteboard authority note, founder reply 'Approved', #96 comment 6852618695)",
+    "INTENT-20261001-FULL-MACHINE-COMPLETION (a body that persists across months)",
+    "CONTRADICTION-0002 Option A (live constitutional integrity is separate from historical continuity pins)"
+  ],
+  "baseline": "#196 at f383fd26 carries all three commits. Canonical CI on f383fd26 passes every job (job 1: the full kernel and organ suite; jobs 10 and 10b: every mutation gate). #211 (bounded body memory, adopted at 50cf3f75) is built on the incremental spine and ledger indexes that these commits introduced.",
+  "alternatives": [
+    {
+      "name": "Revert all three",
+      "description": "Restore whole-chain re-verification and whole-history replay on every append, read and rebuild.",
+      "advantages": ["Every read re-hashes the whole chain, so an in-process alteration of the ledger's private list is caught on the next read instead of within 300 s."],
+      "disadvantages": ["A body tick grows with history again: about 3 s per tick at 7,800 records, 136.8 ms at 31,256 for one holding mission (measured in the commit messages).", "It breaks #211's bounded-memory ledger, which reads payloads back by position from the indexes.", "It discards tested work: tests/unit/test_greg_mission_book_incremental.py checks every rebuild against a fresh fold."],
+      "revival_evidence": "A demonstrated correctness defect in the incremental paths (an answer that differs from a full replay) that a targeted fix cannot close."
+    },
+    {
+      "name": "Keep, and also apply the three-line Gate claim-lookup change",
+      "description": "Retain the commits and change policy/consequence_gate.py so its claim scan uses the ledger index (8.2 ms flat instead of 18.0 ms).",
+      "advantages": ["Removes the last term of tick time that grows with history."],
+      "disadvantages": ["policy/consequence_gate.py is a continuity artifact pinned by the repair harness (SR002); a first version that changed it failed 13 repair-harness tests and was reverted."],
+      "revival_evidence": "Whiteboard W4 concludes that the pin can move without weakening what it attests. W4 is claimed separately (#96 comment by session_012cg2bknzWBFYr1ZucX4Bru)."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "The commits stay where they are on #196 (do nothing equals retain here).",
+    "advantages": ["No churn; CI is green on the current tree."],
+    "disadvantages": ["Without a recorded decision, W3 stays open on the whiteboard and the 300 s detection window stays undocumented as an accepted risk."]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "A body that runs for months with a bounded tick is part of the full machine. Reverting would move the line away from it.",
+      "material_concerns": ["The founder's merge decision (W2) should see a line whose tick does not grow with history."],
+      "evidence_refs": ["e2440a6 commit message: 3 s per tick at 7,800 records before", "3884493 commit message: 18.0 ms at 31,256 records after"],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "The incremental indexes are now load-bearing: #211's bounded memory and the mission book's incremental fold read through them.",
+      "material_concerns": ["Two readers of one ledger must agree. The indexes re-check each answer against the record before handing it out."],
+      "evidence_refs": ["#211 adoption at 50cf3f75", "tests/unit/test_greg_mission_book_incremental.py"],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "The weakest point is detection latency: code inside the process that alters the ledger's private list can be served for up to 300 s before a full re-verification.",
+      "material_concerns": ["The window is real, but it needs code already inside the process, which can do worse than that. Every explicit verify_chain() and every reopen still checks the whole chain."],
+      "evidence_refs": ["e2440a6 commit message, 'Given up, stated plainly'"],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Full CI is green on the current tree with these commits; the whiteboard's earlier 49-against-48 failure comparison is superseded by zero failures.",
+      "material_concerns": ["A future change to the ledger must keep the incremental paths and the full re-verification in step."],
+      "evidence_refs": ["Canonical CI on f383fd26: every job success"],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "No evidence is dropped: retained records never leave the ledger, and readers get copies, so a reader's bug cannot alter history.",
+      "material_concerns": ["Evidence-retention questions belong to W5 and #278 (compaction), which this decision does not settle."],
+      "evidence_refs": ["e2440a6: every read hands out the caller's own copy"],
+      "recommendation": "RETAIN"
+    }
+  ],
+  "evidence": [
+    {"claim": "The full kernel and organ suite and every mutation gate pass with the commits applied", "tier": "sandbox_execution", "reference": "Canonical CI on #196 f383fd26 (jobs 1, 10, 10b)", "finding": "all success"},
+    {"claim": "An incremental mission-book rebuild equals a fresh fold", "tier": "unit_test", "reference": "tests/unit/test_greg_mission_book_incremental.py (bd0c17d)", "finding": "eight real mission scenarios checked at every rebuild; 10 of 10 applicable mutants caught"},
+    {"claim": "Tick time no longer grows with history except the Gate claim scan", "tier": "sandbox_execution", "reference": "3884493 commit message", "finding": "median active tick 136.8 ms -> 18.0 ms at 31,256 records"}
+  ],
+  "counterevidence": [
+    {"claim": "Detection of an in-process alteration is delayed", "tier": "primary_source", "reference": "e2440a6 commit message", "finding": "up to 300 s on the hot path; explicit verify_chain() and reopen catch it at once"},
+    {"claim": "Tick time still grows slowly through the Gate's claim scan", "tier": "primary_source", "reference": "3884493 commit message", "finding": "8.2 ms flat only with the unapplied Gate change (W4)"}
+  ],
+  "pass_1": {
+    "intended_outcome": "A body's tick cost stays bounded as its history grows, with no change to what history says or to whole-chain verification on open and on request.",
+    "advantages": [
+      {"id": "A1", "statement": "Tick cost no longer scales with retained records on the mission and observation paths.", "amplified_value": "Makes month-long founder-device operation practical and is the base #211's bounded memory builds on."},
+      {"id": "A2", "statement": "Readers receive copies, so a reader's bug cannot corrupt history.", "amplified_value": "Turns a whole class of evidence corruption into a non-event."}
+    ],
+    "disadvantages": [
+      {"id": "D1", "statement": "Up to 300 s before an in-process alteration of the ledger's private list is noticed on the hot path.", "severity": "low", "response_type": "protective", "redesigned_response": "Keep whole-chain verification on open, on every explicit verify_chain(), on assigned history and every 300 s; document the window as an accepted risk."},
+      {"id": "D2", "statement": "Two code paths (incremental and full) must stay consistent.", "severity": "medium", "response_type": "evidence", "redesigned_response": "Keep the tests that compare each incremental answer with a full replay; any ledger change must keep them passing."}
+    ],
+    "comparisons": {
+      "baseline": "#196 with the commits: green CI, bounded tick.",
+      "do_nothing": "Same as the baseline; the decision is only recorded.",
+      "simplest_viable_alternative": "Revert: simpler code paths, but tick cost grows with history and #211 breaks.",
+      "strongest_competing_architecture": "Keep and also change the Gate claim scan (W4), blocked on the SR002 continuity pin.",
+      "reversible_experiment": "None needed: the effect is already measured, and a revert stays possible by git revert of the three commits plus #211."
+    },
+    "rejected_alternatives": [
+      {"name": "Revert all three", "rejection_reason": "Reintroduces growth with history and breaks adopted work, with no correctness defect shown.", "revival_evidence": "A reproduced incremental-versus-full disagreement that a targeted fix cannot close."}
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Attacked the strengthened design for a reader that bypasses the indexes, a fold that silently skips a record, and hidden dependence of other work on these commits.",
+    "new_weaknesses": [
+      {"id": "N1", "category": "dependency", "statement": "Later work (#211 and the bounded payload store) now depends on these indexes, so a future revert is no longer a three-commit operation.", "strengthening_response": "Record the dependency here and in the #196 body, so a revert decision sees its full cost."},
+      {"id": "N2", "category": "comprehensibility", "statement": "The 300 s window is documented only in a commit message.", "strengthening_response": "This record states it as an accepted risk with an owner and a review trigger."}
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {"disadvantage_id": "D1", "outcome": "accepted", "rationale": "The attacker needs code inside the process, and full verification still runs on open, on request and every 300 s.", "owner": "#196 integrator (session_01FBS4KNJR59nSbdGbxo8Mbx)", "review_trigger": "Any change that lets untrusted code run in the body's process, or a finding that the 300 s full check can be skipped."},
+      {"disadvantage_id": "D2", "outcome": "resolved", "rationale": "Equivalence tests exist and run in job 1, which is green.", "owner": "#196 integrator", "review_trigger": "Any change to provenance/ledger.py, events/spine.py or MissionBook.rebuild."}
+    ],
+    "final_design": "RETAIN e2440a6, bd0c17d and 3884493 on #196 as they are. The Gate claim-scan change stays with W4. Compaction and memory policy stay with W5 and #278.",
+    "residual_risks": [
+      {"risk": "A future ledger change updates one path and not the other.", "mitigation": "The incremental-versus-replay tests fail on such a change.", "owner": "#196 integrator", "review_trigger": "Any change to the ledger or spine read paths."},
+      {"risk": "The 300 s window is exploited by in-process code.", "mitigation": "Explicit verify_chain() before any consequential export or acceptance read.", "owner": "#196 integrator", "review_trigger": "A new in-process plugin or worker model."}
+    ],
+    "recommendation": "RETAIN"
+  },
+  "dissent": {
+    "present": false,
+    "handling": "No role dissented. This is self-review by one session; any agent may reopen W3 on #96 with a reproduced incremental-versus-full disagreement.",
+    "entries": []
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": false,
+    "approval_status": "not_required",
+    "approver": null
+  },
+  "migration_plan": "None: the commits are already on #196. This record documents the decision and the accepted risk.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": ["git revert 3884493e bd0c17dc e2440a64 on #196 after first reverting or adapting #211's bounded payload store", "Re-run job 1 and the mission-book incremental tests"],
+    "reason_impossible": null
+  },
+  "kill_criteria": ["A reproduced case where an incremental ledger, spine or mission-book answer differs from a full replay and cannot be fixed in place"],
+  "decision": "RETAIN",
+  "decision_owner": "#196 integrator, session_01FBS4KNJR59nSbdGbxo8Mbx (named owner of W3 on the whiteboard)",
+  "review_trigger": "Any change to provenance/ledger.py, events/spine.py or MissionBook.rebuild; the W4 outcome; the W5/#278 outcome."
+}

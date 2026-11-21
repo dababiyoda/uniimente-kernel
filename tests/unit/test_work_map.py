@@ -987,6 +987,62 @@ def test_a_path_whose_directory_cannot_be_read_is_unknown_and_the_other_paths_ar
     assert (hits[1]["path"], [p["pr"] for p in hits[1]["prs"]]) == ("greg/missions.py", [1])
 
 
+@pytest.mark.skipif(not hasattr(os, "symlink") or os.name != "posix", reason="needs symbolic links")
+def test_a_path_through_a_symlink_loop_is_not_placed_and_the_other_paths_are_answered(quick, tmp_path, capsys):
+    # A path through a loop makes os.lstat raise ELOOP, and before Python 3.13 Path.resolve() turns a loop into a
+    # RuntimeError: naming the reason must never raise, so one such path never drops the whole answer.
+    repo = tmp_path / "repo"
+    (repo / "greg").mkdir(parents=True)
+    _git(repo, "init", "-q", "-b", "line")
+    (repo / "greg" / "missions.py").write_text("x\n")
+    os.symlink("loop", repo / "loop")                                   # ln -s loop loop
+    os.symlink("b", repo / "a")
+    os.symlink("a", repo / "b")                                         # a two-link cycle
+    rows = w.pr_rows([_pr(1, "a/one", body=_receipt(A, ["greg/missions.py"]))], repo, use_git=False)
+    for looped, reason in (("loop/x.py", "OSError: loop/x.py"), ("a/x.py", "OSError: a/x.py"),
+                           (str(repo / "loop" / "deep" / "x.py"), "OSError: loop/deep/x.py")):
+        hits = w.who_touches([looped, "greg/missions.py"], rows, [], {"greg/missions.py"}, root=repo)
+        assert (hits[0]["not_placed"], hits[0]["outside_repository"], hits[0]["prs"]) == (reason, None, None), looped
+        assert (hits[1]["path"], [p["pr"] for p in hits[1]["prs"]]) == ("greg/missions.py", [1]), looped
+    os.symlink("loop", tmp_path / "loop")
+    prs, comments = tmp_path / "prs.json", tmp_path / "comments.json"
+    prs.write_text(json.dumps([_pr(1, "a/one", body=_receipt(A, ["greg/missions.py"]))]))
+    comments.write_text("[]")
+    assert w.main(["--prs-json", str(prs), "--comments-json", str(comments), "--paths",
+                   str(tmp_path / "loop" / "x.py"), "greg/missions.py"]) == 0
+    answer = json.loads(capsys.readouterr().out)
+    assert answer["paths"][0]["not_placed"] == "OSError: x.py" and answer["checkin"] == w.CHECKIN_BLOCK
+    assert [p["pr"] for p in answer["paths"][1]["prs"]] == [1]
+
+
+@pytest.mark.skipif(not hasattr(os, "symlink") or os.name != "posix", reason="needs symbolic links")
+def test_an_input_or_output_file_that_is_a_symlink_loop_is_noted_and_the_map_still_answers(quick, tmp_path, capsys):
+    os.symlink("loop", tmp_path / "loop")
+    comments = tmp_path / "comments.json"
+    comments.write_text("[]")
+    assert w.main(["--prs-json", str(tmp_path / "loop"), "--comments-json", str(comments), "--paths",
+                   "greg/missions.py"]) == 0
+    out = capsys.readouterr()
+    answer = json.loads(out.out)
+    assert answer["sources"]["pull_requests_read"] is False and answer["paths"][0]["prs"] is None
+    assert answer["checkin"] == w.CHECKIN_BLOCK and "pull request file loop not read (OSError" in out.err
+    prs = tmp_path / "prs.json"
+    prs.write_text("[]")
+    assert w.main(["--prs-json", str(prs), "--comments-json", str(comments), "--json", str(tmp_path / "loop"),
+                   "--paths", "greg/missions.py"]) == 0
+    out = capsys.readouterr()
+    assert json.loads(out.out)["checkin"] == w.CHECKIN_BLOCK and "loop not written (OSError" in out.err
+
+
+def test_a_worktree_git_names_through_a_symlink_loop_never_escapes(quick, tmp_path, monkeypatch):
+    # Before Python 3.13, Path.resolve() raises RuntimeError on a loop; what git prints is read without it.
+    os.symlink("loop", tmp_path / "loop")
+    looped = f"{tmp_path / 'loop' / 'top'}\n{tmp_path / 'loop' / '.git'}\n"
+    monkeypatch.setattr(w.subprocess, "run", lambda *a, **k: subprocess.CompletedProcess(a, 0, looped, ""))
+    assert w._worktree(tmp_path) == (tmp_path / "loop" / "top", tmp_path / "loop" / ".git")
+    assert len(w.who_touches(["greg/missions.py"], [], [], {"greg/missions.py"}, root=tmp_path)) == 1
+
+
 @pytest.mark.skipif(os.name != "posix" or os.geteuid() == 0, reason="needs a directory this process cannot search")
 def test_a_path_under_a_directory_that_cannot_be_searched_is_unknown(tmp_path):
     locked = tmp_path / "locked"

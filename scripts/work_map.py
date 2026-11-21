@@ -120,13 +120,17 @@ def _texts(value) -> list[str]:
 
 def _reason(exc: BaseException, root: Path = ROOT) -> str:
     """An exception as its type and, when it names a file, that file relative to the repository (else its name):
-    no local path and no text taken from the data."""
+    no local path and no text taken from the data. It never raises: the file is resolved with ``os.path.realpath``,
+    which leaves a symbolic link loop as it is, where ``Path.resolve()`` raises RuntimeError before Python 3.13."""
     name, where = getattr(exc, "filename", None), ""
     if isinstance(name, (str, os.PathLike)) and "://" not in str(name):
         try:
-            where = Path(name).resolve().relative_to(root.resolve()).as_posix()
-        except (ValueError, OSError):
-            where = Path(name).name
+            where = Path(os.path.realpath(name)).relative_to(os.path.realpath(root)).as_posix()
+        except (ValueError, OSError, RuntimeError):
+            try:
+                where = Path(name).name
+            except (TypeError, ValueError):
+                where = ""
     code = getattr(exc, "code", None)
     return type(exc).__name__ + (f" {code}" if type(code) is int else "") + (f": {where}" if where else "")
 
@@ -1267,14 +1271,17 @@ def contended(rows: list[dict], line: str = LINE, contained=None) -> list[dict]:
 
 def _worktree(where: Path) -> tuple[Path, Path] | None:
     """(top of the worktree, the repository's common git directory) that holds a directory; None when git cannot
-    say."""
+    say. What git prints is resolved with ``os.path.realpath``, never ``Path.resolve()``, which raises RuntimeError on
+    a symbolic link loop before Python 3.13."""
     try:
         r = subprocess.run(["git", "-C", str(where), "rev-parse", "--path-format=absolute", "--show-toplevel",
                             "--git-common-dir"], capture_output=True, text=True, timeout=30, check=False)
-    except (OSError, ValueError, subprocess.SubprocessError):
+        found = r.stdout.splitlines()
+        if r.returncode != 0 or len(found) != 2:
+            return None
+        return Path(os.path.realpath(found[0])), Path(os.path.realpath(found[1]))
+    except (OSError, ValueError, RuntimeError, subprocess.SubprocessError):
         return None
-    found = r.stdout.splitlines()
-    return (Path(found[0]).resolve(), Path(found[1]).resolve()) if r.returncode == 0 and len(found) == 2 else None
 
 
 def _place(path: str, root: Path = ROOT) -> tuple[str, str | None]:
@@ -1310,7 +1317,7 @@ def _place(path: str, root: Path = ROOT) -> tuple[str, str | None]:
         else:
             return absolute, None                        # another repository's worktree, or none
         placed = posixpath.normpath(Path(os.path.relpath(real, top), rest).as_posix())
-    except (OSError, ValueError) as exc:
+    except (OSError, ValueError, RuntimeError) as exc:
         return asked, _reason(exc, root)
     return (absolute if outside_path(placed) else placed), None
 
@@ -2136,7 +2143,7 @@ def _write(path: Path, text: str) -> str | None:
         os.chmod(tmp, path.stat().st_mode & 0o777 if path.is_file() else 0o644)
         os.replace(tmp, path)
         return None
-    except (OSError, ValueError) as exc:
+    except (OSError, ValueError, RuntimeError) as exc:
         if tmp:
             try:
                 os.unlink(tmp)

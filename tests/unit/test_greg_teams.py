@@ -287,3 +287,73 @@ def test_a_team_the_founder_ends_mid_work_dissolves_and_keeps_its_cap_until_reco
     assert state["state"] == "DISSOLVED"
     with pytest.raises(CapabilityError, match="DISSOLVED"):
         team_act(home, "m:team", "calc-team", "multiplier")
+
+
+# -- a team's output is consumed only after every member's independent appraisal (#338 review 7068962544) ----------
+
+def handoff_mission(repo, home, *, checks=True):
+    """The team mission plus a consumer that writes the adder's patch digest: a typed inline handoff."""
+    spec = team_mission(repo)
+    spec["strategies"].append(
+        {"action_id": "note-patch", "capability": "fs.write", "target": "workspace:patch.txt",
+         "params": {"relative_path": "patch.txt",
+                    "content": {"$from_action": {"action_id": "field-team", "field": "members.add-sub.patch_sha256",
+                                                 "type": "string"}}},
+         "advances": ["patch_noted"], "rationale": "record the adder's appraised patch"})
+    note = Layout(home).workspace / "m_team" / "patch.txt"
+    spec["success_checks"].append({"check_id": "patch_noted", "description": "the adder's patch digest is noted",
+                                   "sensor": {"capability": "fs.read", "params": {"path": str(note)},
+                                              "target": "fs:patch.txt"},
+                                   "predicate": {"op": "contains", "field": "text", "value": "sha256"}})
+    spec["light_cone"]["capabilities"] += ["fs.read", "fs.write"]
+    spec["light_cone"]["targets"] += ["workspace:patch.txt", "fs:patch.txt"]
+    if not checks:
+        drop_checks(spec, {c["check_id"] for c in spec["success_checks"] if c["sensor"]["capability"] == "worker.appraise"})
+    return spec, note
+
+
+def drop_checks(spec, ids):
+    spec["success_checks"] = [c for c in spec["success_checks"] if c["check_id"] not in ids]
+    team = spec["strategies"][0]
+    team["advances"] = [a for a in team["advances"] if a not in ids] or ["patch_noted"]
+
+
+def test_a_consumer_of_a_team_member_needs_that_members_appraisal_in_the_mission(tmp_path):
+    from greg.missions import MissionError, validate_mission
+    repo = tmp_path / "proj"
+    spec, _ = handoff_mission(repo, tmp_path, checks=False)
+    with pytest.raises(MissionError, match="no independent appraisal \\(worker.appraise of order 'add-mul'\\)|"
+                                           "no independent appraisal \\(worker.appraise of order 'add-sub'\\)"):
+        validate_mission(spec)
+    spec, _ = handoff_mission(repo, tmp_path)
+    drop_checks(spec, {"multiplier_accepted"})
+    with pytest.raises(MissionError, match="worker.appraise of order 'add-mul'"):   # every member, not only the one used
+        validate_mission(spec)
+    validate_mission(handoff_mission(repo, tmp_path)[0])                     # both appraisals present: accepted
+
+
+BAD_MUL = {"pkg/ops.py": "def mul(a, b):\n    return a + b\n",
+           "tests/test_ops.py": "from pkg.ops import mul\n\n\ndef test_mul():\n    assert mul(3, 2) == 6\n"}
+
+
+def test_no_member_output_is_consumed_while_another_member_is_rejected(tmp_path, monkeypatch):
+    """The consumer uses only the adder's output, which is accepted. The multiplier's change fails its own
+    acceptance, so the team's output is never handed on: every member must be accepted first."""
+    home, key, body_id, repo, (a, b, barrier, release, entered) = team_ready(tmp_path, monkeypatch)
+    b.edits = BAD_MUL
+    release.set()
+    spec, note = handoff_mission(repo, home)
+    drop(home, signed(key, body_id, "MISSION", spec))
+    body = Body(home)
+    loop = start(body)
+    try:
+        wait_for(lambda: actions(home, "worker.team"), "the team to finish")
+        wait_for(lambda: any(p["check_id"] == "adder_accepted" and p["passed"]
+                             for p in payloads(home, "mission.observed")), "the adder to be accepted")
+        time.sleep(1.5)                                    # many turns in which the consumer could have run
+    finally:
+        stop(body, loop)
+    observed = {p["check_id"]: p["passed"] for p in payloads(home, "mission.observed")}
+    assert observed["adder_accepted"] is True and observed["multiplier_accepted"] is False
+    assert not [p for p in actions(home, "fs.write") if p.get("action_id") == "note-patch" and p["status"] == "DONE"]
+    assert not note.exists()

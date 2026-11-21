@@ -218,7 +218,29 @@ class Unbound(Exception):
 # Producers whose output has an independent appraiser: producer capability -> (appraiser capability, the
 # appraiser's sensor param naming the instance, the producer output field naming it, the accepting verdict).
 # A typed handoff consumes such an output only after the mission observed that appraisal accept it.
-APPRAISED_PRODUCERS = {"worker.commission": ("worker.appraise", "order", "work_order", "ACCEPTED")}
+APPRAISED_PRODUCERS = {"worker.commission": ("worker.appraise", "order", "work_order", "ACCEPTED"),
+                       # a team (greg/teams.py): one appraisal per member work order, every one of them ACCEPTED
+                       "worker.team": ("worker.appraise", "order", "members", "ACCEPTED")}
+
+
+def appraised_instances(capability: str | None, *, params: dict | None = None, output=None) -> list:
+    """The instances an appraised producer's output must have accepted before any of it is consumed: the one work
+    order of a commission, or every member work order of a team. From the signed params (validation) or from the
+    retained receipt's output (the hold). Empty when nothing names an instance: the hold then refuses the handoff."""
+    rule = APPRAISED_PRODUCERS.get(capability)
+    if rule is None:
+        return []
+    _, key, field, _ = rule
+    if capability == "worker.team":
+        if output is not None:
+            members = output.get(field) if isinstance(output, dict) else None
+            return sorted(members) if isinstance(members, dict) else []
+        return sorted(str((m.get("order") or {}).get(key)) for m in (params or {}).get("members") or []
+                      if isinstance(m, dict))
+    if output is not None:
+        value = output.get(field) if isinstance(output, dict) else None
+        return [value] if value is not None else []
+    return [(params or {}).get(key)]
 
 
 def inline_refs(params) -> list[dict]:
@@ -253,11 +275,12 @@ def _validate_appraised_handoffs(spec: dict):
             if rule is None:
                 continue
             appraiser, key, _, _ = rule
-            instance = strategies[producer].get("params", {}).get(key)
-            if not any(c["sensor"].get("capability") == appraiser
-                       and (c["sensor"].get("params") or {}).get(key) == instance for c in spec["success_checks"]):
-                raise MissionError(f"strategy {consumer['action_id']} consumes {producer}'s output, which has no "
-                                   f"independent appraisal ({appraiser} of {key} {instance!r}) in this mission")
+            for instance in appraised_instances(strategies[producer].get("capability"),
+                                                params=strategies[producer].get("params", {})):
+                if not any(c["sensor"].get("capability") == appraiser
+                           and (c["sensor"].get("params") or {}).get(key) == instance for c in spec["success_checks"]):
+                    raise MissionError(f"strategy {consumer['action_id']} consumes {producer}'s output, which has no "
+                                       f"independent appraisal ({appraiser} of {key} {instance!r}) in this mission")
 
 
 def protected_param(path: str) -> str | None:
@@ -2692,11 +2715,21 @@ class MissionEngine:
         ledger = self.journal.ledger
         record = ledger.find(receipt)
         output = (record.payload.get("result") or {}).get("output") if record is not None else None
-        instance = output.get(field) if isinstance(output, dict) else None
+        instances = appraised_instances(strategy.get("capability"), output=output if isinstance(output, dict) else {})
+        if record is None or not instances:
+            return f"{producer}'s output has no independent appraisal ({appraiser}) in this mission"
+        for instance in instances:               # a team: every member order, each judged alone
+            hold = self._appraisal_hold(m, producer, record, appraiser, key, instance, accepted)
+            if hold:
+                return hold
+        return None
+
+    def _appraisal_hold(self, m, producer, record, appraiser, key, instance, accepted) -> str | None:
+        ledger = self.journal.ledger
         checks = {c["check_id"] for c in m.spec["success_checks"] if c["sensor"].get("capability") == appraiser
                   and (c["sensor"].get("params") or {}).get(key) == instance}
-        if record is None or not checks:
-            return f"{producer}'s output has no independent appraisal ({appraiser}) in this mission"
+        if not checks:
+            return f"{producer}'s output has no independent appraisal ({appraiser} of {key} {instance!r}) in this mission"
         latest = None
         for event in self.journal.replay("mission.observed"):
             data = event.payload

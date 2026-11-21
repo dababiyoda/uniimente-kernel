@@ -190,6 +190,42 @@ ends when #196 is closed after the default switch (the line's push runs then car
 made, a commit on the line is checked only through #196's pull-request runs. `directive-completion.yml` can stay as it
 is while #196 is open: its pull-request run does more than a push run (the ratchet against a base).
 
+If the head branch is added to `push.branches`, each commit on it gets two Canonical CI runs whose jobs report check
+runs with identical names on the same head SHA. The push run tests the branch tip and the `pull_request` run tests the
+merge with the base. GitHub's docs do not say which same-named check run a required check or the merge box reads, and
+its API returns the most recent run by default, so a later green push run can stand in for a failed `pull_request`
+run. Before treating a green merge box as proof that the merged result passed, read the "(pull_request)" entries on
+the PR's Checks tab, or give the push jobs distinct names.
+
+Sources. GitHub Docs: events that trigger workflows,
+[`pull_request`](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#pull_request)
+([source](https://raw.githubusercontent.com/github/docs/main/content/actions/reference/workflows-and-actions/events-that-trigger-workflows.md))
+and [`push`](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#push);
+[troubleshooting required status checks](https://docs.github.com/en/pull-requests/how-tos/merge-and-close-pull-requests/troubleshooting-required-status-checks)
+([source](https://raw.githubusercontent.com/github/docs/main/content/pull-requests/how-tos/merge-and-close-pull-requests/troubleshooting-required-status-checks.md));
+[about protected branches](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches)
+([source](https://raw.githubusercontent.com/github/docs/main/content/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches.md));
+[status checks](https://docs.github.com/en/pull-requests/reference/status-checks)
+([source](https://raw.githubusercontent.com/github/docs/main/content/pull-requests/reference/status-checks.md));
+[control workflow concurrency](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency)
+([source](https://raw.githubusercontent.com/github/docs/main/data/reusables/actions/actions-group-concurrency.md));
+the REST API's [list check runs for a Git reference](https://docs.github.com/en/rest/checks/runs#list-check-runs-for-a-git-reference)
+([OpenAPI](https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json))
+and [using the REST API to interact with checks](https://docs.github.com/en/rest/guides/using-the-rest-api-to-interact-with-checks);
+the GraphQL enum [`CheckRunType`](https://docs.github.com/en/graphql/reference/enums#checkruntype)
+([schema mirror](https://raw.githubusercontent.com/octokit/graphql-schema/main/schema.graphql)). GitHub Community:
+[discussion 26940](https://github.com/orgs/community/discussions/26940) (accepted answer by BrightRan, 2020; the page
+does not label the author as staff), [discussion 26325](https://github.com/orgs/community/discussions/26325) and
+[discussion 24872](https://github.com/orgs/community/discussions/24872) (lee-dohm: the state of a PR is determined by
+the check suites on the last commit). Seen only as search-engine snippets, not opened:
+<https://docs.github.com/en/enterprise-server@2.20/rest/reference/checks> and
+<https://www.kenmuse.com/blog/creating-github-checks/>. This repository, from the GitHub API: #196's `head.sha` is
+`121195907fff261bb8610ed03488ef4461b59f73`; its `pull_request` run
+[43538095376](https://github.com/dababiyoda/uniimente-kernel/actions/runs/43538095376) has that head SHA, and its check
+runs (for example id 132297031436, "1 · Kernel and organ tests") are listed on the PR's head commit.
+`.github/workflows/canonical-ci.yml` runs on `pull_request` and on `push` to `branches: [main]` and tags, with the
+concurrency group `canonical-ci-${{ github.ref }}` and `cancel-in-progress: false`.
+
 ### Adoption package (status on 2026-11-13, heads re-checked 2026-11-21; every row is pending the founder)
 
 One table for the Kernel and the 12 consumer drafts. "Before → after" is the draft's head before this session's

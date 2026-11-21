@@ -1,0 +1,184 @@
+{
+  "decision_id": "DELIB-20261121-MW-C-OWNER-GUARD",
+  "title": "MW-C: extend the canonical-owner guard that #253 landed to copies of registered bodies anywhere in the tree, pin undecided candidates exactly, and guard historical entries",
+  "problem": "Unit MW-C asks for a function-to-canonical-module registry whose test fails when a new module re-implements a registered function (asks S52.A1, S69.A3, S76.A2; units WU-03, WU-09, WU-12, WU-13 and MU-H wait on it). #253 (f6f003b2) landed the registry and guard 3, but an adversarial study on the line at 12119590 reproduced that guard 3 misses a copy written as a method, a copy outside its six packages, a copy with renamed locals or changed literals, and a copy inside the owner's own directory; that a competing owner can enter an undecided record as a candidate or a distinct entry with every guard green; that nothing stops an implementation kept only for history; and that the registry's REALITY reason ('read by nothing') is false.",
+  "founder_intent_refs": [
+    "INTENT-20261028-OPUS-MAXIMUS-REISSUE (sections 52, 69, 76)",
+    "INTENT-20261019-UPWARD-ASCENT",
+    "INTENT-20261001-FULL-MACHINE-COMPLETION",
+    "INTENT-20261113-ONE-ENTRANCE (take the first unclaimed buildable unit afterwards)"
+  ],
+  "baseline": "On the line at 12119590: docs/collaboration/ARCHITECTURE-OWNERSHIP-MAP.yaml function_owner_records holds 8 records (5 CANONICAL, 3 NEEDS_FOUNDER_DECISION); tests/unit/test_canonical_owner_guard.py has 16 tests, including guard 3 (exact AST, module level, six packages) and a removal-only pin; scripts/ci/check_canonical_owner_guard_mutants.py runs 59 mutants in CI job 10b; tests/unit/test_no_structural_duplicates.py compares names-erased bodies over the whole tree but keeps constants and is not linked to the registry. S52.A1 and S69.A3 read UNIT_VERIFIED (partial); S76.A2 reads INTENDED (gap) and cites nothing.",
+  "alternatives": [
+    {
+      "name": "Bookkeeping only: record MW-C closed_by #253 and re-point the asks",
+      "description": "Declare the literal title met by #253 and move each ask's residual to another unit.",
+      "advantages": ["No code; frees WU-03, WU-09, WU-12, WU-13 and MU-H in the map at once", "Honest about the literal title"],
+      "disadvantages": ["The ratchet refuses closing an ask without a new or changed cited test, so nothing closes", "Relabels the reproduced gaps instead of closing them", "Leaves the false REALITY reason"],
+      "revival_evidence": "If the integrator rules that MW-C's title alone defines the unit, adopt the closed_by step separately."
+    },
+    {
+      "name": "Design as first proposed: a mechanism-owner index over the 18 completion-contract functions, per-record section-52 headings, an erased-constant scan over the whole tree with a line threshold",
+      "description": "Anchor 'every major mechanism' to the completion contract and scan every mechanism-path function.",
+      "advantages": ["Would attempt to close S52.A1 outright", "Scans unregistered mechanism-path functions too"],
+      "disadvantages": ["The adversary reproduced that it would break CI job 10b (git ls-files in a git-less copy), erase constants twice in nested defs, exempt whole owner directories and need records the registry does not yet support", "Chooses the anchor list, which is the integrator's or founder's question", "Larger and slower"],
+      "revival_evidence": "Revive the mechanism-path scan once the anchor list is chosen and each index row names its canonical module."
+    },
+    {
+      "name": "Registered-body guard, exact candidate pin and history guard (chosen)",
+      "description": "Compare only registered bodies, erased from a fresh copy, by node count, at any depth, over every runtime file listed from the filesystem.",
+      "advantages": ["Starts green on today's tree (0 copies of 27 registered bodies over 506 files)", "Closes every reproduced detector gap for registered functions and both gaming routes"],
+      "disadvantages": ["Unregistered functions still have no owner check", "Structure, not meaning: an attribute rename or a rewrite escapes", "S52.A1 cannot close until the anchor is chosen"],
+      "revival_evidence": "If a re-implementation of a registered function lands unflagged, revisit the fingerprint."
+    },
+    {
+      "name": "Semantic or behavioural equivalence checking",
+      "description": "Compare functions by behaviour (property tests, symbolic execution) instead of structure.",
+      "advantages": ["Would catch rewrites that keep meaning"],
+      "disadvantages": ["Far more expensive and flaky in CI", "No existing mechanism in the repository to reuse"],
+      "revival_evidence": "Revive if structural copies are shown to be a minor share of real duplication."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "MW-C stays open; five units keep waiting on it; a renamed or relocated copy of a registered function can land with CI green; a new competing owner can enter an undecided record unnoticed.",
+    "advantages": ["No review cost", "No risk of a false positive in CI"],
+    "disadvantages": ["The reproduced gaps stay open", "The false REALITY reason stays in the registry"]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Section 69 asks to reconcile ownership and remove competing active ownership; section 76 asks not to keep implementations merely for history. Building the guard that makes both reviewable advances them without choosing anything only the founder may choose (which owner wins, which mechanisms count).",
+      "material_concerns": ["S52.A1's anchor list is not this unit's to pick", "Undecided records must stay undecided"],
+      "evidence_refs": ["acceptance/directive-sections.json S52.A1, S69.A3, S76.A2", "docs/evidence/canonical-owner-guard-2026-11-21/README.md, The anchor question"],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Reuse, do not add: the registry, guard 3's file listing and parse cache, and the existing mutant gate. One new test function family in the one guard file; no workflow, runtime or schema change.",
+      "material_concerns": ["Two copy detectors now coexist (guard 4 and test_no_structural_duplicates); their scopes must stay stated", "The fingerprint must stay idempotent"],
+      "evidence_refs": ["tests/unit/test_canonical_owner_guard.py guard 4", "commit 09b85598"],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "The first design was red on today's tree, would have broken job 10b, left a hole inside owner directories and closed S52.A1 on a false claim. The chosen design takes each of the nine corrections; it still sees structure only, and its pins are only as strong as review of a literal in a test.",
+      "material_concerns": ["Attribute renames and rewrites escape", "PINNED, FROZEN and MIN_COPY_NODES are literals anyone can edit in the same diff"],
+      "evidence_refs": ["scratchpad/mwc/attack/ (b3proto.py, idem.py, variants.py, candidate_game.py)", "test_the_body_guard_does_not_see_an_attribute_rename"],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Guard 4's real-tree test takes about 3.4 s and the guard file about 14 s; the mutant gate grows from 59 to 76 mutants (about 351 s) in a job that already runs. A contributor who adds a candidate to an undecided record now has to change PINNED in a reviewed diff.",
+      "material_concerns": ["Mutant job time", "A false positive would block unrelated PRs into the line"],
+      "evidence_refs": ["docs/evidence/canonical-owner-guard-2026-11-21/README.md, Run time", "the heads of #305, #314 and WU-03: 0 findings"],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Every claim is labelled UNIT-TESTED in a container; no runtime behaviour, authority or grant changes; the registry stays PROPOSED and retires nothing. The false REALITY reason is corrected with its real consumer named.",
+      "material_concerns": ["The builder's report must be verified independently before the PR is ready", "No ask may be shown met that is not"],
+      "evidence_refs": ["python -m acceptance directive --collect --against 12119590", "acceptance/claims.py:80"],
+      "recommendation": "RETAIN"
+    }
+  ],
+  "evidence": [
+    {"claim": "Guard 3 and test_no_structural_duplicates miss a method copy, an out-of-package copy, a changed-literal copy and an in-directory copy", "tier": "sandbox_execution", "reference": "scratchpad/mwc/attack/variants.py and the synthetic trees of test_the_body_guard_catches_renamed_nested_relocated_and_one_line_copies", "finding": "confirmed"},
+    {"claim": "Guard 4 is green on today's tree", "tier": "unit_test", "reference": "tests/unit/test_canonical_owner_guard.py on db2c725e: 0 copies of 27 registered bodies over 506 files", "finding": "confirmed by the builder; independent verification pending"},
+    {"claim": "A candidate added to an undecided record passed every guard before", "tier": "sandbox_execution", "reference": "scratchpad/mwc/attack/candidate_game.py", "finding": "confirmed"},
+    {"claim": "REALITY is read outside greg/", "tier": "primary_source", "reference": "acceptance/claims.py:80 and crosswalk_problems", "finding": "confirmed"},
+    {"claim": "The mutant gate catches every new mutant in its git-less copy", "tier": "unit_test", "reference": "python -B -u scripts/ci/check_canonical_owner_guard_mutants.py: 76/76", "finding": "confirmed by the builder; independent verification pending"}
+  ],
+  "counterevidence": [
+    {"claim": "Structural comparison finds only structural copies", "tier": "unit_test", "reference": "test_the_body_guard_does_not_see_an_attribute_rename", "finding": "accepted as a stated limit"},
+    {"claim": "Unregistered duplicates exist that no guard links to an owner, for example the _deliver pair", "tier": "sandbox_execution", "reference": "greg/organ_exchange.py:349 and greg/ventures.py:340 (199 erased nodes)", "finding": "not recorded here: recording it would turn #305 and #314 red; proposed for the integrator"}
+  ],
+  "pass_1": {
+    "intended_outcome": "A copy of a registered function's body, renamed, relocated, nested or reformatted, cannot land outside its record without a test failing; an undecided record cannot gain a competing owner without a reviewed pin change; a historical alternate stays only while something outside greg/ and tests/ reads it or a founder decision is open.",
+    "advantages": [
+      {"id": "A1", "statement": "Guard 4 starts green and needs no new registry format", "amplified_value": "Every later unit (WU-03 teams, WU-06 nodes, WU-13 the reality ladder) gets an owner check for registered functions the moment it lands, with no extra work by its session."},
+      {"id": "A2", "statement": "The exact candidate pin turns a silent ownership change into a visible diff", "amplified_value": "Section 69's 'remove competing active ownership' becomes reviewable: a new co-owner shows up as a change to PINNED, which the integrator sees."},
+      {"id": "A3", "statement": "The history guard makes section 76 testable for what the registry records", "amplified_value": "REALITY is kept for a named reason that a test checks, and a later ruling that ends the reason turns the guard red."},
+      {"id": "A4", "statement": "It reuses guard 3's listing and parse cache and the existing mutant job", "amplified_value": "No new subsystem to maintain and no workflow edit on the most contended file."}
+    ],
+    "disadvantages": [
+      {"id": "D1", "statement": "Structure, not meaning: an attribute rename or a rewrite escapes", "severity": "medium", "response_type": "evidence", "redesigned_response": "Recorded as a passing limit test, so a later claim of that coverage must change it in a reviewed diff."},
+      {"id": "D2", "statement": "Unregistered functions have no owner check", "severity": "medium", "response_type": "governance", "redesigned_response": "Kept as S69.A3's stated residual; the anchor list that would bound it is put to the integrator or founder."},
+      {"id": "D3", "statement": "A false positive would block PRs into the line", "severity": "medium", "response_type": "protective", "redesigned_response": "Measured 0 on today's tree and on the heads of #305, #314 and WU-03; a node-count threshold of 25 and registered bodies only."},
+      {"id": "D4", "statement": "Pins and thresholds are literals in a test", "severity": "low", "response_type": "governance", "redesigned_response": "Stated; any change to them is a visible diff in the guard file, which the integrator reviews."},
+      {"id": "D5", "statement": "The mutant job grows by 17 mutants", "severity": "low", "response_type": "modularity", "redesigned_response": "Measured (about 351 s for 76); no new job."}
+    ],
+    "comparisons": {
+      "baseline": "Guard 3 and a removal-only pin: copies with renamed locals or outside six packages pass.",
+      "do_nothing": "Five units keep waiting and the gaps stay open.",
+      "simplest_viable_alternative": "Bookkeeping only; the ratchet refuses it as closure, so it relabels without building.",
+      "strongest_competing_architecture": "A mechanism-owner index anchored to the completion contract with a whole-tree erased scan; reproduced as red on today's tree and as choosing the founder's anchor.",
+      "reversible_experiment": "This change itself: revert the three commits and the guard file returns to #253's state."
+    },
+    "rejected_alternatives": [
+      {"name": "Bookkeeping only", "rejection_reason": "Does not close any ask under the ratchet and leaves the reproduced gaps", "revival_evidence": "An integrator ruling that the title alone defines MW-C"},
+      {"name": "Mechanism-owner index over the completion contract", "rejection_reason": "Red on today's tree, breaks job 10b as designed, and chooses the anchor list", "revival_evidence": "The anchor list is chosen"},
+      {"name": "Semantic equivalence checking", "rejection_reason": "Expensive, flaky, nothing to reuse", "revival_evidence": "Structural copies shown to be a minor share of duplication"}
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Attacked as though deployed: can a copy still land, can the pins or the history guard be satisfied trivially, does the guard cost too much, does it change behaviour beyond its files. An independent verifier and a skeptic were run on the built head; their results go in the PR before it is marked ready.",
+    "new_weaknesses": [
+      {"id": "W1", "category": "gaming", "statement": "A contributor can raise MIN_COPY_NODES, add a skip or edit PINNED in the same diff as a copy", "strengthening_response": "Each is a literal in the guard file; the mutant gate holds a mutant for the skip-by-segment and the pin removal, and the integrator reviews the guard file."},
+      {"id": "W2", "category": "gaming", "statement": "kept_for could name a consumer that only mentions the object in a comment", "strengthening_response": "The consumer must be a function whose source names the kept object in a module that imports it from the alternate, outside greg/ and tests/; mutants cover a consumer that does not read it and one under greg/."},
+      {"id": "W3", "category": "fragility", "statement": "Listing the filesystem scans untracked .py files too", "strengthening_response": "Stated limit; required by the git-less mutant copy, and untracked files are local only."},
+      {"id": "W4", "category": "dependency", "statement": "Other sessions' PRs into the line may start failing when this lands", "strengthening_response": "Run on #305, #314 and the WU-03 head before the PR (0 findings); to be re-run on the line head before intake."}
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {"disadvantage_id": "D1", "outcome": "accepted", "rationale": "Structural checking is the reusable mechanism; meaning-level checks have no basis here yet", "owner": "MW-C implementer", "review_trigger": "an escaped copy"},
+      {"disadvantage_id": "D2", "outcome": "deferred", "rationale": "Bounded by the anchor list, which is the integrator's or founder's decision", "owner": "integrator / founder", "review_trigger": "the anchor is chosen"},
+      {"disadvantage_id": "D3", "outcome": "resolved", "rationale": "Measured 0 on today's tree and three heads", "owner": "MW-C implementer", "review_trigger": "a red PR caused by guard 4"},
+      {"disadvantage_id": "D4", "outcome": "accepted", "rationale": "Visible diffs are the review surface", "owner": "integrator", "review_trigger": "a change to PINNED, FROZEN or MIN_COPY_NODES"},
+      {"disadvantage_id": "D5", "outcome": "accepted", "rationale": "Inside the existing job's time", "owner": "integrator", "review_trigger": "job 10b near its limit"}
+    ],
+    "final_design": "Guard 4 compares every canonical, candidate and alternate body of function_owner_records, erased of names and constants from a fresh copy and of at least 25 AST nodes, with every function and method at any depth in every runtime file listed from the filesystem (full-prefix skips only); a match outside the record's modules fails. A distinct entry never exempts and may not name a module holding a copy. Undecided records' candidates are pinned exactly. HISTORICAL or RETIRED alternates still in the tree need kept_for naming a reading consumer outside greg/ and tests/ or an open decision. REALITY's reason is corrected. S69.A3 and S76.A2 cite the new tests and stay partial; S52.A1 names the anchor question.",
+    "residual_risks": [
+      {"risk": "A meaningful rewrite of a registered function lands unflagged", "mitigation": "Stated limit; review", "owner": "integrator", "review_trigger": "an escaped copy found later"},
+      {"risk": "The anchor question stays open and S52.A1 never closes", "mitigation": "Put to the integrator and founder in the PR and the ask's reason", "owner": "founder", "review_trigger": "a ruling on the list of major mechanisms"},
+      {"risk": "The _deliver duplicate stays unrecorded", "mitigation": "Proposal to the integrator in the evidence record", "owner": "integrator", "review_trigger": "#305 and #314 settled"}
+    ],
+    "recommendation": "RETAIN"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Recorded; it blocks no draft",
+    "entries": [
+      {
+        "role": "Adversarial Reviewer",
+        "position": "A structural guard gives a false sense of coverage: the copies most likely to matter are edited, not pasted.",
+        "rationale": "Attribute renames and rewrites escape by construction.",
+        "evidence_threshold": "One re-implementation of a registered function found on the line that guard 4 did not flag.",
+        "owner": "integrator",
+        "review_trigger": "that finding, or the anchor ruling"
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": false,
+    "approval_status": "not_required",
+    "approver": "The #196 integration owner takes the draft in or not; no setting, grant, runtime behaviour or retirement is changed. Choosing the anchor list and ruling the undecided records stay the founder's."
+  },
+  "migration_plan": "None at runtime. A contributor who adds a candidate to an undecided record edits PINNED in the same reviewed diff; one who keeps a HISTORICAL alternate adds kept_for.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Revert the three MW-C commits (09b85598, f4bf6def, db2c725e) and this record",
+      "The guard file, the mutant gate, the registry entry and the three asks return to the line's state",
+      "Nothing at runtime depends on them"
+    ]
+  },
+  "kill_criteria": [
+    "Guard 4 reports a copy on the line that a reviewer judges to be a different function, and the threshold cannot fix it without losing a reproduced catch",
+    "Job 10b exceeds its time limit because of the new mutants",
+    "The independent verification finds an ask shown met that is not"
+  ],
+  "decision": "RETAIN",
+  "decision_owner": "The #196 integration owner (session_01FBS4KNJR59nSbdGbxo8Mbx) for intake; the founder for the anchor list and the undecided records. This record is one session's synthesis of a read-only study, an adversary's attack and the builder's report; the five roles are lenses of that work, not five people.",
+  "review_trigger": "Independent verification of the built head; any red PR into the line caused by guard 4; the anchor ruling."
+}

@@ -51,7 +51,7 @@ def run(payload, pid="p", registry=None, cortex=None):
 
 
 def test_version_records_the_ported_repairs():
-    assert CORTEX_VERSION == "0.2.2"
+    assert CORTEX_VERSION == "0.2.3"
 
 
 # ------------------------------------------------------------------ settlement integrity (D1, PRR-13/14/15)

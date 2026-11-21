@@ -824,6 +824,71 @@ def test_a_path_in_another_worktree_is_made_relative_and_one_outside_is_never_cl
             True, None, None, None, None), h
 
 
+def test_a_path_in_a_worktree_nested_under_the_checkout_is_placed_in_that_worktree(tmp_path):
+    # Claude Code puts worktrees inside the main checkout, under .claude/worktrees/<name>.
+    repo = tmp_path / "repo"
+    (repo / "greg").mkdir(parents=True)
+    _git(repo, "init", "-q", "-b", "line")
+    (repo / "greg" / "missions.py").write_text("x\n")
+    os.symlink("missions.py", repo / "greg" / "link.py")
+    _git(repo, "add", "greg")
+    _git(repo, "commit", "-q", "-m", "x")
+    nested = repo / ".claude" / "worktrees" / "wt1"
+    _git(repo, "worktree", "add", "-q", "-b", "edit", str(nested))
+    other = repo / "vendor" / "other"                                         # another repository inside the checkout
+    other.mkdir(parents=True)
+    _git(other, "init", "-q")
+    rows = w.pr_rows([_pr(1, "a/one", body=_receipt(A, ["greg/missions.py"]))], ROOT, use_git=False)
+    asked = [str(nested / "greg" / "missions.py"), ".claude/worktrees/wt1/greg/missions.py",
+             str(nested / "greg" / "not_yet.py"), str(repo / "greg" / "link.py"),
+             str(other / "greg" / "missions.py"), "vendor/other/greg/missions.py"]
+    hits = w.who_touches(asked, rows, [], {"greg/missions.py", "greg/link.py"}, LINE, root=repo)
+    assert [(h["path"], h["tracked"], [p["pr"] for p in h["prs"]]) for h in hits[:4]] == [
+        ("greg/missions.py", True, [1]), ("greg/missions.py", True, [1]), ("greg/not_yet.py", False, []),
+        ("greg/link.py", True, [])]                                           # a link is placed as the link
+    for h in hits[4:]:
+        assert (h["outside_repository"], h["tracked"], h["prs"], h["unknown_prs"]) == (True, None, None, None), h
+
+
+def test_a_path_whose_directory_cannot_be_read_is_unknown_and_the_other_paths_are_answered(
+        quick, tmp_path, monkeypatch, capsys):
+    # Before Python 3.13, Path.is_dir raises PermissionError for a directory that cannot be searched; 3.13 answers
+    # False. Either way the path's place is not known, and one such path never drops the whole answer.
+    locked = tmp_path / "locked"
+    (locked / "inner").mkdir(parents=True)
+    real_lstat, real_is_dir = os.lstat, Path.is_dir
+
+    def refuse(p) -> None:
+        if str(p).startswith(str(locked / "inner")):
+            raise PermissionError(13, "Permission denied", str(p))
+    monkeypatch.setattr(os, "lstat", lambda p, *a, **k: refuse(p) or real_lstat(p, *a, **k))
+    monkeypatch.setattr(Path, "is_dir", lambda self, *a, **k: refuse(self) or real_is_dir(self, *a, **k))
+    prs, comments = tmp_path / "prs.json", tmp_path / "comments.json"
+    prs.write_text(json.dumps([_pr(1, "a/one", body=_receipt(A, ["greg/missions.py"]))]))
+    comments.write_text("[]")
+    assert w.main(["--prs-json", str(prs), "--comments-json", str(comments), "--paths",
+                   str(locked / "inner" / "x.py"), "greg/missions.py"]) == 0
+    hits = json.loads(capsys.readouterr().out)["paths"]
+    assert (hits[0]["outside_repository"], hits[0]["tracked"], hits[0]["prs"], hits[0]["unknown_prs"],
+            hits[0]["claims"]) == (None, None, None, None, None)
+    assert hits[0]["not_placed"] == "PermissionError: x.py"
+    assert (hits[1]["path"], [p["pr"] for p in hits[1]["prs"]]) == ("greg/missions.py", [1])
+
+
+@pytest.mark.skipif(os.name != "posix" or os.geteuid() == 0, reason="needs a directory this process cannot search")
+def test_a_path_under_a_directory_that_cannot_be_searched_is_unknown(tmp_path):
+    locked = tmp_path / "locked"
+    (locked / "inner").mkdir(parents=True)
+    rows = w.pr_rows([_pr(1, "a/one", body=_receipt(A, ["greg/missions.py"]))], ROOT, use_git=False)
+    locked.chmod(0)
+    try:
+        hits = w.who_touches([str(locked / "inner" / "x.py"), "greg/missions.py"], rows, [], {"greg/missions.py"})
+    finally:
+        locked.chmod(0o755)
+    assert (hits[0]["outside_repository"], hits[0]["prs"]) == (None, None) and hits[0]["not_placed"]
+    assert [p["pr"] for p in hits[1]["prs"]] == [1]
+
+
 def test_how_is_kept_and_a_join_or_another_author_never_speaks_for_a_session(quick):
     prs = [_pr(290, "b/authority", body=_receipt(B, ["greg/authority.py"],
                                                 task="https://x/issues/96#issuecomment-16794587797"))]

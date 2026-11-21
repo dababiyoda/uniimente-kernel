@@ -134,7 +134,7 @@ deficit classes, reconciliation, independent verification, section-20 controls, 
 `tests/unit/test_goal_gravity_intake.py`, `tests/unit/test_goal_gravity_organs.py`,
 `tests/unit/test_goal_gravity_review.py` (one regression test per confirmed adversarial-review finding),
 `tests/integration/test_goal_gravity_acceptance.py` (section-33 chain) and
-`tests/integration/test_goal_gravity_process_kill.py` (SIGKILL after dispatch and before the gate, torn-tail characterization). Five closures: `goal_gravity_closures()` in
+`tests/integration/test_goal_gravity_process_kill.py` (SIGKILL after dispatch, before the gate, and inside the dispatch-claim append with torn-tail recovery). Five closures: `goal_gravity_closures()` in
 `closure.py`, registered on the integration registry.
 
 Evidence tier of the current implementation: IMPLEMENTED, UNIT-TESTED, INTEGRATION-TESTED on synthetic ledgers with
@@ -167,6 +167,6 @@ it submits one bounded move through the Gate and records the receipt. It does no
 - **Founder authentication**: chat text, hashes and shared keys never authenticate Alfonso (G6). Founder answers are attributed, not authenticated.
 - **Live organ transport**: the adapters accept canonical organ outputs. No live DALEOBANKS or WMI transport is connected, so organ signals are untrusted unless signed headers verify.
 - **Router taxonomy**: the eight problem classes are `main`'s. Extending them is a router-owner decision, not a loop decision.
-- **Torn-tail repair**: a partially written final ledger line refuses to load. That is characterized by test, not repaired.
+- **Torn-tail recovery without a supervisor**: a partially written final ledger line still refuses to load on its own. `provenance/recovery.py` repairs it when an accountable caller asks (quarantine, truncate, record), but nothing calls it automatically until a supervisor is selected (G5).
 - **Report delivery and settlement figures** (fourth increment): the return report is a ledger record and a method; no channel is contacted and no settlement record exists for its money section to consume. A real absence, a founder channel (G6) and organ-side settlement adapters are the dependencies.
 - **A host clock for the wake schedule**: `wake_schedule()` computes when to call `turn()`; nothing calls it. G5 selection is the dependency.

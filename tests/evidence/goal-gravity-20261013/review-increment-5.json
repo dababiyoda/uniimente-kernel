@@ -1,0 +1,335 @@
+{
+  "review": "independent adversarial review of the fifth increment (torn-tail recovery)",
+  "workflow_run": "wf_4100bf3c-3ab",
+  "reviewed_commit": "54fd20cc",
+  "method": "three finder dimensions (evidence integrity, crash and concurrency, semantics and honesty), each followed by an independent verifier that re-ran or rewrote the reproduction against a clean extraction of 54fd20cc",
+  "counts": {
+    "raised": 14,
+    "confirmed_real": 13,
+    "not_a_defect": 1,
+    "distinct_after_deduplication": 10,
+    "added_during_replay": 1
+  },
+  "findings": [
+    {
+      "id": "EI-0",
+      "dimension": "evidence-integrity",
+      "line_at_54fd20cc": 157,
+      "severity_claimed": "major",
+      "summary": "Only a final line that parses as a complete chained record needs proof (expected_head or quarantine_complete_record). Any damage that makes the tail fail to parse is classified 'partial' and dropped with no proof. So one corrupted byte at the end of an acknowledged record drops that record from the chain. The recovery event then says the append 'never returned to its caller', and a restarted body can re-dispatch the same consequence.",
+      "verdict": {
+        "real": true,
+        "reproduced": true,
+        "severity": "major",
+        "reason": "I reproduced this against the committed tree (`git archive 54fd20cc`, extracted to evidence-integrity-verify/commit). The working tree has uncommitted edits to recovery.py, so I did not test against it.\n\nIn the commit, `_classify` (lines 95-111) returns 'partial' whenever `strict_json` fails or the object does not chain. The proof check on line 157 only fires for 'complete_unterminated'. So any tail that is not a valid prefix of the next record is still truncated with no proof:\n- a complete object followed by a stray byte (`}x`, or `}\\x0b` from a bit flip of the newline);\n- two or more acknowledged lines joined into one;\n- an object that does not chain.\n\nThe recovery event then says the append 'never returned to its caller'.\n\nObserved with c_partial_bypass.py: the run that only deletes the newline is REFUSED. The `\\n->\\x0b`, `\\n->x` and `delete }\\n` runs each report classification=partial, proof=None, acknowledged grant_dispatch still in chain=False. Merging the last 2 lines leaves 2 records, so the witness and the claim are both dropped.\n\nObserved with c_e2e_redispatch.py: a real child was SIGKILLed after the Gate's durable claim. Its clean 14-record ledger had seq 7-13 joined into one line plus 'x'. Recovery reported partial, proof None, and 0 grant_dispatch claims after recovery. The restarted body then made 1 executor call for proposal egregore:goal:sha256:d60a907c70249781:sha256:57c746aee09ef275. On the undamaged ledger the repo's own test asserts there are no calls.\n\nWhy this counts as a defect:\n- Damage that a single interrupted append cannot produce, such as a complete object followed by a byte or joined lines, ought to be refused. The docstring's claim (lines 12-13) that 'a corrupted or tampered record is still refused' does not hold for the last line. The committed test `test_anything_but_a_pure_torn_tail_is_refused_and_left_untouched` covers only tampering of complete lines.\n- The `delete }\\n` case is a valid byte prefix of a record line. Without an anchor it can only be caught by detecting that the content is complete."
+      },
+      "disposition": {
+        "state": "fixed",
+        "fix": "The classifier is strict: the tail must be a byte prefix of the next record's serialization ('{\"seq\": <n>, \"ts_utc\": \"'), optionally NUL-padded, or NUL-only; a complete object followed by more bytes, non-ASCII bytes, NUL inside content or any other beginning is refused as corruption. Without expected_head the 'unanchored' risk must be acknowledged by name, and the event's disposition says an acknowledged record cut back to look torn cannot be excluded.",
+        "regression_tests": [
+          "tests/unit/test_ledger_recovery.py::test_corruption_that_no_interrupted_append_produces_is_refused_even_with_proof",
+          "tests/unit/test_ledger_recovery.py::test_an_unanchored_recovery_is_refused_until_acknowledged",
+          "tests/unit/test_ledger_recovery.py::test_a_tail_with_complete_content_is_suspect_and_refused_without_proof"
+        ],
+        "replay_against_fixed_tree": "c_partial_bypass: all five damages refused; c_e2e_redispatch: refused (complete object followed by more bytes); f0/cuts: 1-3 byte cuts refused, a 40-byte cut proceeds only with 'unanchored' acknowledged and is chained as unanchored; two_byte_and_truncation: both cuts refused"
+      }
+    },
+    {
+      "id": "EI-1",
+      "dimension": "evidence-integrity",
+      "line_at_54fd20cc": 167,
+      "severity_claimed": "major",
+      "summary": "Quarantine files and sidecars are keyed only by the digest of the torn bytes, and the ledger event is deduplicated by that digest. A second, separate tear with byte-identical torn bytes is truncated without any ledger event. The reused sidecar also describes the first incident (wrong prior_head and complete_records).",
+      "verdict": {
+        "real": true,
+        "reproduced": true,
+        "severity": "minor",
+        "reason": "I reproduced this against the commit. The quarantine file name is `f\"{path}.torn-{digest}\"`, which depends only on the torn bytes. The existing file and sidecar are reused, and `_record_quarantines` deduplicates on `torn_sha256`.\n\nObserved with a_same_bytes_twice.py: incident 1 recorded 1 event. Incident 2 returned torn=True and recorded=[], and the file was truncated by 8 bytes. The chain held only 1 recovery event, with recovered_by ['ops:first']. The chain head equalled the head before incident 2. The sidecar's prior_head did not match incident 2, and it reported complete_records 2 against an actual 6.\n\nI confirmed a second trigger with two zero-fill tails of 200 NUL bytes each. Incident 2 truncated 200 bytes and recorded 0 events, leaving 1 event in total.\n\nThe second truncation is therefore invisible in the chain, and the only durable description of it is wrong. No acknowledged record is lost: the identical bytes are preserved in the incident-1 file.\n\nI rated it minor because it needs byte-identical tails from two separate incidents: a tear inside the constant 8-byte line prefix, or equal-length NUL runs after power loss on a filesystem that zero-fills."
+      },
+      "disposition": {
+        "state": "fixed",
+        "fix": "Quarantine files are named <ledger>.torn-<prior head[:16]>-<sha256>, so identical bytes from separate incidents get separate files, sidecars and events; recording deduplicates by file name, not digest.",
+        "regression_tests": [
+          "tests/unit/test_ledger_recovery.py::test_two_separate_tears_with_identical_bytes_each_get_their_own_event"
+        ],
+        "replay_against_fixed_tree": "a_same_bytes_twice, v3_same_tear, identical_tear: two events, each with its own prior_head and recovered_by"
+      }
+    },
+    {
+      "id": "EI-2",
+      "dimension": "evidence-integrity",
+      "line_at_54fd20cc": 134,
+      "severity_claimed": "minor",
+      "summary": "Recovery takes its 'single-writer lock' on the path string (<path>.lock) rather than on the file. Called through a symlink alias of the ledger, it does not see a live writer. It truncates and appends its event under that writer, the writer keeps acknowledging appends with stale memory, and the file forks into a ledger that no longer opens. The root cause, path-keyed flock, is shared with EvidenceLedger, but recovery's stated safety premise depends on it.",
+      "verdict": {
+        "real": true,
+        "reproduced": true,
+        "severity": "minor",
+        "reason": "I reproduced this against the commit. The lock is `open(path + '.lock')`, keyed on the path string, and the commit has no check for symlinks or hard links. Calling recovery through an alias therefore does not see a live writer on the real path.\n\nObserved with m_symlink_alias.py: the real path raised WriterConflict, which is correct. The alias returned torn=True with 1 event recorded. The live writer then acknowledged seq 2, and the ledger failed to open with 'sequence break at 3'.\n\nThe tail in that script is injected by hand, so I looked for a realistic trigger. The case I first suspected does not reach it: recovery crashes between truncation and the event, the body restarts, and recovery is re-run through the alias. That recorded 0 events, because `_quarantine_files` also globs by the alias name.\n\nA real race does reach it (m_race.py, run twice). A live writer appends records of about 20 KB on the real path while a supervisor calls recovery through a symlink as a routine check. Recovery observed an in-flight append cut at a page boundary: a 7,778-byte prefix of seq 1. While it fsynced the quarantine copy, the writer acknowledged further records, and then `truncate(cut)` removed them. The file afterwards started at seq 0 and then seq 40, so acknowledged records 1-39 were deleted. The writer kept acknowledging, and the ledger no longer opens.\n\nThe control, the same race on the real path, raised WriterConflict throughout and left an intact 792-record ledger.\n\nA hard-link alias bypasses the lock the same way. It reproduces in both the commit and the uncommitted working tree, whose `os.path.islink` guard does not catch hard links.\n\nI rated it minor because it needs an aliased ledger path, which nothing in the repo uses; recovery has no non-test caller in the commit. The root cause, a path-keyed flock, already exists in EvidenceLedger. The consequence when it does occur is deletion of acknowledged evidence."
+      },
+      "disposition": {
+        "state": "fixed (recovery side); root cause referred",
+        "fix": "A symlinked path is refused. The root cause, a writer lock keyed on the path string, is shared with EvidenceLedger; hard links and bind mounts still alias and are named as a residual for the ledger owner in ADR-GOAL-GRAVITY-004.",
+        "regression_tests": [
+          "tests/unit/test_ledger_recovery.py::test_a_symlinked_path_is_refused_because_the_writer_lock_is_keyed_on_the_path"
+        ],
+        "replay_against_fixed_tree": "m_symlink_alias: refused"
+      }
+    },
+    {
+      "id": "EI-3",
+      "dimension": "evidence-integrity",
+      "line_at_54fd20cc": 115,
+      "severity_claimed": "minor",
+      "summary": "_quarantine_files treats any '<ledger>.torn-*' file not ending in '.json' as a quarantine of torn bytes. A later call on a clean ledger therefore appends a ledger.torn_tail_quarantined event for a recovery that never happened, under the caller's recovered_by.",
+      "verdict": {
+        "real": true,
+        "reproduced": true,
+        "severity": "minor",
+        "reason": "I reproduced this against the commit. `_quarantine_files` treats every match of `glob(path + '.torn-*')` that does not end in `.json` as quarantined torn bytes.\n\nObserved with d_glob_sidecar.py: the ledger was clean and a `.json.bak` copy of a sidecar was present. Recovery recorded a second ledger.torn_tail_quarantined event naming the `.json.bak` file, with classification 'unknown: sidecar missing' and torn_bytes 249.\n\nAn Emacs-style `~` backup (`<sidecar>.json~`) does the same: recorded 1, giving 2 recovery events in total. The canonical, append-only chain then permanently claims that a torn tail was cut off and quarantined when none was, attributed to the caller's recovered_by. That is a false evidence record.\n\nThe code also spreads the sidecar before the fixed keys (`{\"type\": EVENT_TYPE, **meta, ...}`), so a hand-edited sidecar could override 'type'. Sidecars this module writes never carry that key.\n\nI rated it minor because it needs a stray file beside the ledger."
+      },
+      "disposition": {
+        "state": "fixed",
+        "fix": "Only files whose whole name matches <base>.torn-<16 hex>-<64 hex> are quarantines, and a file's bytes must match the digest its name records before it is chained.",
+        "regression_tests": [
+          "tests/unit/test_ledger_recovery.py::test_backups_and_editor_files_beside_the_ledger_are_never_taken_for_quarantines"
+        ],
+        "replay_against_fixed_tree": "d_glob_sidecar: a clean ledger with a sidecar backup records nothing"
+      }
+    },
+    {
+      "id": "CC-0",
+      "dimension": "crash-concurrency",
+      "line_at_54fd20cc": 183,
+      "severity_claimed": "major",
+      "summary": "The recovery lock is released after truncation and before the chain event is appended. A restarting writer that opens the ledger in that window wins it every time in a natural race. The truncation then goes unrecorded while the body appends on top of it, and recover_torn_tail raises WriterConflict, which its docstring says means nothing changed.",
+      "verdict": {
+        "real": true,
+        "reproduced": true,
+        "severity": "major",
+        "reason": "Confirmed in both the commit (copied to scratch) and the working tree. At 54fd20cc lines 181-183, `finally: lock.close()` releases the flock after truncate+fsync. `_record_quarantines` then opens a separate EvidenceLedger writer that flocks with LOCK_NB, so any opener that lands in that gap takes the lock first. My v0_lock_gap.py used a real second process, started deterministically once the gap opened. Output: `[det] raised WriterConflict: ledger already has a writer; body said OPENED 1` and `[det] truncated=True quarantine_files=1 body_records=1 recovery_events=0`. So the file was changed even though the docstring says 'in each case nothing is changed', and the step-1 claim that no live writer can be appending is broken. When the operator retries after stopping the body, the event is recorded, but it lands after the body's records (`recorded 1 ... recovery_events=1`). How often this happens depends on how fast the opener retries. The finder's claim that the body wins 'every time' holds only for a zero-backoff in-process retry loop. My runs gave 20/20 hits with zero backoff, 4/20 with 1 ms backoff, 0/20 with 10 ms backoff, and 0/40 with supervisor-style fresh-process restarts. No caller in the repo retries open in a loop. A second concurrent `recover_torn_tail` can also take the lock in the gap. I also confirmed that a second flock in the same process on a new fd is refused (errno 11), so simply calling EvidenceLedger before `lock.close()` cannot fix this. The uncommitted README's 'under the writer lock' wording overstates the same point."
+      },
+      "disposition": {
+        "state": "fixed",
+        "fix": "The writer lock is held from verification through truncation and the chained event; the event is appended through a writer opened under that same lock, so no restarting writer can append in between.",
+        "regression_tests": [
+          "tests/unit/test_ledger_recovery.py::test_no_restarting_writer_can_append_between_the_truncation_and_its_record"
+        ],
+        "replay_against_fixed_tree": "r2_window_race: [A] a body started inside the former window gives up, [B] 0 of 30 unrecorded; v0_lock_gap: 0 of 60; v0_supervisor: 40 of 40 recorded; race/race_5ms: 0 of 70; race_small: 0 of 6"
+      }
+    },
+    {
+      "id": "CC-1",
+      "dimension": "crash-concurrency",
+      "line_at_54fd20cc": 169,
+      "severity_claimed": "major",
+      "summary": "A crash after the quarantine file is created but before its bytes are durable leaves an empty or partial <ledger>.torn-<sha256>. Every later call then refuses with 'exists with different bytes', so the ledger stays torn and unopenable, and the only way out is to delete a file by hand.",
+      "verdict": {
+        "real": true,
+        "reproduced": true,
+        "severity": "major",
+        "reason": "Confirmed with a real SIGKILL against both versions. `_write_durable` opens with mode 'xb', which creates the directory entry before the bytes are written and fsynced. My child process was killed right after that open, leaving a 0-byte `<ledger>.torn-<digest>` and the ledger still untouched. Both retries then raised `RecoveryRefused: ... exists with different bytes`. The ledger stays torn (`body cannot open ledger: ValueError: partial or blank history record`). The only way forward is deleting a file with an evidence name by hand, and the refusal message makes that file look like tampering. No evidence is lost, because the torn bytes are still in the ledger, so this fails closed. It does contradict the docstring's 'Every step is idempotent and crash-safe' and blocks restart after one badly timed crash, which can be a kill or a power cut before fsync. I also tried to trigger it with a file-size rlimit, but that failed earlier (in `_verified_prefix`'s temp copy), so that attempt is not evidence either way."
+      },
+      "disposition": {
+        "state": "fixed",
+        "fix": "The quarantine copy is written to a temporary file, fsynced, then linked into place (never replacing); a crash leaves only an ignored .tmp- file and the retry completes.",
+        "regression_tests": [
+          "tests/unit/test_ledger_recovery.py::test_a_crash_while_writing_a_copy_never_leaves_a_partial_file_that_blocks_recovery"
+        ],
+        "replay_against_fixed_tree": "r1 [quarantine], v12 [quarantine], v1_enospc_like: retry recovers and records once"
+      }
+    },
+    {
+      "id": "CC-2",
+      "dimension": "crash-concurrency",
+      "line_at_54fd20cc": 173,
+      "severity_claimed": "major",
+      "summary": "A crash while the sidecar is being written leaves an empty or partial .json, which is never rewritten because only its existence is checked. Every later call truncates the ledger and then dies in json.loads, so the recovery is never recorded in the chain while the body restarts on the truncated ledger. The bad sidecar also stops later, unrelated recoveries from being recorded whenever it sorts first.",
+      "verdict": {
+        "real": true,
+        "reproduced": true,
+        "severity": "major",
+        "reason": "Confirmed with a real SIGKILL right after the sidecar's open 'xb', on both versions. That leaves a complete 54-byte quarantine file and a 0-byte `.json`. On retry, line 173 sees that the sidecar exists and skips rewriting it. The ledger is then truncated, and `_record_quarantines` raises `JSONDecodeError` on retry 1 and retry 2, with `ledger truncated=True`. The body reopens normally and appends while the chain has 0 recovery events. A later, independent tear and recovery also raises JSONDecodeError after truncating. In the commit version the new quarantine sorted first and was recorded but the poisoned one never was (events=1, 2 quarantines). In the working tree the new one sorted after the poisoned one and neither was recorded (events=0). This permanently breaks the rule that every recovery is visible in the chain, after a single ill-timed crash, and every later call fails."
+      },
+      "disposition": {
+        "state": "fixed",
+        "fix": "The sidecar is written atomically (temporary file, fsync, replace) by every attempt that truncates; a sidecar that is unreadable or contradicts its file is not trusted and the event says so instead of failing.",
+        "regression_tests": [
+          "tests/unit/test_ledger_recovery.py::test_a_crash_while_writing_a_copy_never_leaves_a_partial_file_that_blocks_recovery",
+          "tests/unit/test_ledger_recovery.py::test_a_sidecar_that_contradicts_its_quarantine_file_is_not_trusted",
+          "tests/unit/test_ledger_recovery.py::test_a_sidecar_cannot_rewrite_the_event_it_describes"
+        ],
+        "replay_against_fixed_tree": "r1 [sidecar], v12 [sidecar]: recorded once; r4_poisoned_sidecar_future: 6 of 6 later recoveries recorded"
+      }
+    },
+    {
+      "id": "CC-3",
+      "dimension": "crash-concurrency",
+      "line_at_54fd20cc": 200,
+      "severity_claimed": "minor",
+      "summary": "A quarantine is identified only by the sha256 of its content. A later, independent recovery whose torn bytes match an earlier one reuses the earlier sidecar and is skipped as already recorded, so the second truncation leaves no event in the chain.",
+      "verdict": {
+        "real": true,
+        "reproduced": true,
+        "severity": "minor",
+        "reason": "Reproduced against the committed code, where qpath is `<ledger>.torn-<digest>` and deduplication uses the digest only. Two independent crashes leaving byte-identical tears, either the 8-byte `{\"seq\": ` or a 64-byte NUL zero-fill, each got truncated. The second recovery returned `torn=True removed=8B recorded=0` (and `removed=64B recorded=0`), and the chain holds only `ops:first`'s event with the first prior_head. The second truncation is invisible in the chain, and the reused sidecar describes the first recovery. The copy is still byte-identical, so no bytes are lost. Reachability needs identical tears, which is rare but plausible for same-length zero-fill tails. The uncommitted working tree already fixes this by putting `prior_head[:16]` in the name and deduplicating on `quarantine_file`. The same script against it recorded both events with the correct prior_heads."
+      },
+      "disposition": {
+        "state": "fixed",
+        "fix": "Quarantine files are named <ledger>.torn-<prior head[:16]>-<sha256>, so identical bytes from separate incidents get separate files, sidecars and events; recording deduplicates by file name, not digest.",
+        "regression_tests": [
+          "tests/unit/test_ledger_recovery.py::test_two_separate_tears_with_identical_bytes_each_get_their_own_event"
+        ],
+        "replay_against_fixed_tree": "a_same_bytes_twice, v3_same_tear, identical_tear: two events, each with its own prior_head and recovered_by"
+      }
+    },
+    {
+      "id": "CC-4",
+      "dimension": "crash-concurrency",
+      "line_at_54fd20cc": 163,
+      "severity_claimed": "minor",
+      "summary": "After a crash between the durable sidecar write and the truncation, the retry that actually truncates records the earlier attempt's 'unacknowledged_proof', not its own. The chain event attributes one caller's proof to a different caller, and what the function returns disagrees with what it chains.",
+      "verdict": {
+        "real": true,
+        "reproduced": true,
+        "severity": "minor",
+        "reason": "Reproduced with a real SIGKILL at `open(path, 'r+b')`, after the sidecar was durable and before truncation, on both versions. Case 1: attempt 1 by ops:x used quarantine_complete_record=True, and the retry by ops:y used expected_head. The retry returned `'expected_head matched'`, but the chain event reads `recovered_by=ops:y ... proof='quarantine_complete_record accepted by the caller'`. Case 2 is the reverse: ops:y gave only quarantine_complete_record=True, yet the chain credits ops:y with `'expected_head matched'`. The return value disagrees with the chain, and the accountable caller is credited with a proof they did not give. In case 2 the anchor itself matched the same unchanged prefix, so the claim is true of the file but credited to the wrong person. This needs a crash in that window plus a retry with a different proof, so it is minor. The working tree's `_SIDECAR_KEYS` filtering still copies `unacknowledged_proof` and `anchor` from the stale sidecar."
+      },
+      "disposition": {
+        "state": "fixed",
+        "fix": "The attempt that truncates rewrites the sidecar with its own recovered_by, reason, anchor and acknowledged risks, so a retry never inherits an earlier attempt's proof.",
+        "regression_tests": [
+          "tests/unit/test_ledger_recovery.py::test_a_retry_records_its_own_proof_not_an_earlier_attempts"
+        ],
+        "replay_against_fixed_tree": "r3_stale_sidecar part B and v4_stale_proof now stop earlier: their retry offers only expected_head for a complete record, which R1b requires to be acknowledged; the unit test covers the retry path"
+      }
+    },
+    {
+      "id": "SH-0",
+      "dimension": "semantics-honesty",
+      "line_at_54fd20cc": 157,
+      "severity_claimed": "major",
+      "summary": "The guard for a suspect complete record only catches one case: an acknowledged record missing exactly its final newline. If any other cut lands inside an acknowledged record (two bytes, or anywhere mid-line), the line is classified 'partial' and quarantined with no proof. The chain then states the append 'never returned to its caller'. If the cut lands inside an acknowledged grant_dispatch, the Gate dispatches the same proposal again. This contradicts docstring lines 12-13 ('repairs a torn tail and nothing else (a corrupted or tampered record is still refused)') and lines 24-29 (deleting bytes from an acknowledged record is refused without proof), as well as the unit-test module docstring 'refuse anything that is not a pure torn tail'.",
+      "verdict": {
+        "real": true,
+        "reproduced": true,
+        "severity": "major",
+        "reason": "I reproduced this against the committed 54fd20cc module. I reran the finder's script and also wrote my own, semantics-honesty-verify/f0/cuts.py. In my script the last line is an acknowledged grant_dispatch. A 1-byte cut is refused, but cuts of 2, 3 and 40 bytes are all accepted as 'partial' with unacknowledged_proof=None. The acknowledged record leaves the chain, and the chain event then states as fact that 'the torn append never returned to its caller'. The finder's Gate scenario also reproduced: executor calls ['P-fixed', 'P-fixed'] after recovery without expected_head. The docstring contradicts this. It says this 'repairs a torn tail and nothing else (a corrupted or tampered record is still refused)', and it explicitly treats post-acknowledgment byte deletion as a threat, yet the guard covers only the 1-byte case. The doctrine says anything that is not a pure torn tail must be refused, and that documentation must not claim more than the code does. Both are violated. One mitigating point: dropping the whole dispatch line at a clean line boundary already opens without recovery when no expected_head is given, so the duplicate dispatch is not unique to recovery. What recovery adds is the false coverage claim and a false disposition written into canonical evidence. The expected_head 'proof' wording also overclaims: a stale checkpoint passes and is recorded as 'expected_head matched'. From file contents alone the code cannot tell a torn append from a truncated acknowledged record."
+      },
+      "disposition": {
+        "state": "fixed",
+        "fix": "The classifier is strict: the tail must be a byte prefix of the next record's serialization ('{\"seq\": <n>, \"ts_utc\": \"'), optionally NUL-padded, or NUL-only; a complete object followed by more bytes, non-ASCII bytes, NUL inside content or any other beginning is refused as corruption. Without expected_head the 'unanchored' risk must be acknowledged by name, and the event's disposition says an acknowledged record cut back to look torn cannot be excluded.",
+        "regression_tests": [
+          "tests/unit/test_ledger_recovery.py::test_corruption_that_no_interrupted_append_produces_is_refused_even_with_proof",
+          "tests/unit/test_ledger_recovery.py::test_an_unanchored_recovery_is_refused_until_acknowledged",
+          "tests/unit/test_ledger_recovery.py::test_a_tail_with_complete_content_is_suspect_and_refused_without_proof"
+        ],
+        "replay_against_fixed_tree": "c_partial_bypass: all five damages refused; c_e2e_redispatch: refused (complete object followed by more bytes); f0/cuts: 1-3 byte cuts refused, a 40-byte cut proceeds only with 'unanchored' acknowledged and is chained as unanchored; two_byte_and_truncation: both cuts refused"
+      }
+    },
+    {
+      "id": "SH-1",
+      "dimension": "semantics-honesty",
+      "line_at_54fd20cc": 182,
+      "severity_claimed": "major",
+      "summary": "Steps 1-4 run under the writer lock. The lock is then released (lock.close() at line 182), and step 5 reopens the ledger as a new writer inside _record_quarantines. In that gap a restarting body can take the lock. recover_torn_tail then raises WriterConflict even though the file has already been truncated. The docstring says WriterConflict means 'in each case nothing is changed', and the recovery event stays out of the chain for as long as the body holds the lock.",
+      "verdict": {
+        "real": true,
+        "reproduced": true,
+        "severity": "major",
+        "reason": "I reproduced this with a real separate restart-loop process and no monkeypatching (semantics-honesty-verify/f1/race_small.py): 6 of 6 trials ended with recover_torn_tail raising WriterConflict after the file had already been truncated and quarantined, with the chain showing ['probe', 'body.restarted'] and no ledger.torn_tail_quarantined event. The finder's deterministic.py gave the same result. The code path is clear: lock.close() runs in the finally block at line 182, before _record_quarantines opens a fresh EvidenceLedger writer. Whoever wins the gap gets a clean ledger and appends ahead of the recovery event. This contradicts the docstring, which says WriterConflict means 'nothing is changed' and that the lock means 'no live writer can be appending'. It also breaks the rule that a recovery must be visible in the chain: the event is missing until someone calls recovery again. The window is narrow, but a tight restart loop hits it."
+      },
+      "disposition": {
+        "state": "fixed",
+        "fix": "The writer lock is held from verification through truncation and the chained event; the event is appended through a writer opened under that same lock, so no restarting writer can append in between.",
+        "regression_tests": [
+          "tests/unit/test_ledger_recovery.py::test_no_restarting_writer_can_append_between_the_truncation_and_its_record"
+        ],
+        "replay_against_fixed_tree": "r2_window_race: [A] a body started inside the former window gives up, [B] 0 of 30 unrecorded; v0_lock_gap: 0 of 60; v0_supervisor: 40 of 40 recorded; race/race_5ms: 0 of 70; race_small: 0 of 6"
+      }
+    },
+    {
+      "id": "SH-2",
+      "dimension": "semantics-honesty",
+      "line_at_54fd20cc": 208,
+      "severity_claimed": "major",
+      "summary": "The module justifies 'quarantine, never re-admit' only by saying nothing can have relied on the record (docstring line 22). That reasoning fails for stop instructions. A suspension (egregore.suspended) torn by SIGKILL is quarantined, and the restarted runtime comes back unsuspended. The recovery event records only classification 'partial'. It does not name the record type, although '\"record_type\": \"egregore.suspended\"' is plainly present in the torn bytes. So recovery fails toward action, and the chain does not show that a stop was dropped.",
+      "verdict": {
+        "real": false,
+        "reproduced": true,
+        "severity": "not-a-defect",
+        "reason": "The behaviour reproduces: the child exits -9, the event is 'partial', and the restarted runtime has is_suspended False. It is not a defect under the stated doctrine. StandingCognitionRuntime.suspend sets _suspended = True only after ledger.append returns, so the killed suspend never took effect even in memory, and its caller never got the record hash back. The outcome is the same as a crash one instruction before the append, which no recovery can change. Re-admitting a half-written line is impossible. The torn bytes are preserved byte for byte, and the chained event names the quarantine file and digest, so the recovery and the evidence stay visible. The docstring never claims the event names the torn record's type; it says _classify is informational. Its claim that nothing (no Gate dispatch, no executor call) can have relied on the record holds here. Recording a best-effort record-type hint for safety-relevant types would be a useful improvement, but it is not a breach of the doctrine."
+      },
+      "disposition": {
+        "state": "not a defect (verifier); hardened",
+        "fix": "A stop record that tore never took effect (suspend sets its flag only after append returns), so recovery does not undo it. The event now names the torn record type when visible, a torn seal/suspension/founder control/founder answer needs 'stop_record' acknowledged, and the event carries a stop warning whenever the type is a stop or cannot be read.",
+        "regression_tests": [
+          "tests/unit/test_ledger_recovery.py::test_a_torn_stop_needs_its_own_acknowledgment_and_the_event_warns",
+          "tests/unit/test_ledger_recovery.py::test_a_tail_cut_before_its_type_is_warned_about_without_an_acknowledgment"
+        ],
+        "replay_against_fixed_tree": "torn_suspend: refused until 'stop_record' is acknowledged"
+      }
+    },
+    {
+      "id": "SH-3",
+      "dimension": "semantics-honesty",
+      "line_at_54fd20cc": 154,
+      "severity_claimed": "major",
+      "summary": "Quarantine files are named by the digest of the torn bytes alone, and _record_quarantines de-duplicates by that digest. A later, independent tear with identical bytes is therefore truncated but never recorded in the chain. An equal-length zero-filled block after power loss, or a short '{\"seq\": ' prefix, is enough. The existing sidecar is reused with the first tear's stale prior_head, and the second tear's metadata is never written. This breaks docstring step 5 ('appends one event') and the rule that a recovery must be visible in the chain.",
+      "verdict": {
+        "real": true,
+        "reproduced": true,
+        "severity": "minor",
+        "reason": "I reran identical_tear.py. For both a 4096-NUL tear and a '{\"seq\": ' tear, the second recovery returns torn=True and recorded=[]. The chain holds only one recovery event, and the only sidecar's prior_head belongs to the first tear. The code path is clear: qpath is named only by sha256(torn); an existing qpath with equal bytes and an existing sidecar are reused; and _record_quarantines skips any digest already seen in the chain. The second truncation is therefore invisible in the chain, which contradicts step 5 ('appends one event') and the rule that a recovery must be visible. The trigger is rare. Real torn appends include seq and a microsecond ts_utc, so byte-identical tears need very short prefixes or equal-length zero-filled blocks after power loss. No evidence bytes are lost, because the quarantined copy is identical. Hence minor."
+      },
+      "disposition": {
+        "state": "fixed",
+        "fix": "Quarantine files are named <ledger>.torn-<prior head[:16]>-<sha256>, so identical bytes from separate incidents get separate files, sidecars and events; recording deduplicates by file name, not digest.",
+        "regression_tests": [
+          "tests/unit/test_ledger_recovery.py::test_two_separate_tears_with_identical_bytes_each_get_their_own_event"
+        ],
+        "replay_against_fixed_tree": "a_same_bytes_twice, v3_same_tear, identical_tear: two events, each with its own prior_head and recovered_by"
+      }
+    },
+    {
+      "id": "SH-4",
+      "dimension": "semantics-honesty",
+      "line_at_54fd20cc": 207,
+      "severity_claimed": "minor",
+      "summary": "When a crash between truncation and the ledger event is completed by a later call, as the docstring promises, the event names the later caller's recovered_by and reason as the recovery's. The sidecar does not store who actually truncated the ledger or why, so that accountability is lost and the chain misattributes the truncation.",
+      "verdict": {
+        "real": true,
+        "reproduced": true,
+        "severity": "minor",
+        "reason": "I reran misattribution.py. The sidecar keys are only classification, complete_records, prior_head, torn_bytes and torn_sha256. When a later call completes step 5, the chained event records recovered_by='ops:B' and B's reason, although supervisor:A did the truncation. The truncator's identity and reason are not persisted anywhere. Even if the sidecar held them, the payload construction `{..., **meta, ..., 'recovered_by': recovered_by, 'reason': reason}` would overwrite them with the completing caller's values. The docstring says the event names 'who recovered it and why', so the chain misattributes accountability in exactly the crash-completion path the module promises to handle."
+      },
+      "disposition": {
+        "state": "fixed",
+        "fix": "The sidecar records who truncated and why; the event keeps that as recovered_by/reason and names the later caller separately as recorded_by.",
+        "regression_tests": [
+          "tests/unit/test_ledger_recovery.py::test_a_crash_after_truncation_is_completed_on_the_next_call_without_duplicates"
+        ],
+        "replay_against_fixed_tree": "misattribution: event recovered_by is the truncating supervisor"
+      }
+    }
+  ],
+  "added_during_replay": [
+    {
+      "id": "R1b",
+      "dimension": "semantics-honesty",
+      "source": "a probe (semantics-honesty/r1/stale_checkpoint_proof.py) the finder wrote but did not raise as a finding; it still reproduced when the probes were replayed against the first fixed tree",
+      "summary": "A checkpoint taken one append before an acknowledged record matches the head before the torn line, so expected_head alone let recovery quarantine a complete, acknowledged grant_dispatch whose newline was lost, and the event said the append never returned.",
+      "disposition": {
+        "state": "fixed",
+        "fix": "A complete or content-complete tail always requires 'complete_record' to be acknowledged, with or without expected_head; the anchored disposition now says what was matched ('if that was the writer's last acknowledged head') instead of asserting the append never returned.",
+        "regression_tests": [
+          "tests/unit/test_ledger_recovery.py::test_a_checkpoint_one_append_stale_cannot_drop_an_acknowledged_record_silently",
+          "tests/unit/test_ledger_recovery.py::test_with_proof_a_complete_tail_is_quarantined_never_admitted"
+        ],
+        "replay_against_fixed_tree": "stale_checkpoint_proof: refused until 'complete_record' is acknowledged"
+      }
+    }
+  ],
+  "replay": "every finder and verifier probe was adapted to the fixed API (tests/evidence/goal-gravity-20261013/review-probes-increment-5.log) and run against the fixed tree: 19 complete with no finding reproducing, 7 end in a deliberate refusal by the fixed code",
+  "evidence_tier": "UNIT-TESTED and INTEGRATION-TESTED on synthetic JSONL ledgers with real SIGKILLs; not SANDBOX-VERIFIED, not EXTERNALLY VERIFIED, not FOUNDER-ACCEPTED"
+}

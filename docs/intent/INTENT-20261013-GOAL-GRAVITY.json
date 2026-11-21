@@ -55,7 +55,10 @@
         "docs/collaboration/deliberation-goal-gravity-fourth-increment-2026-10-14.json",
         "tests/evidence/goal-gravity-20261013/review-increment-4.json",
         "tests/evidence/goal-gravity-20261013/review-probes-increment-4.log",
-        "tests/unit/test_goal_gravity_guard.py"
+        "tests/unit/test_goal_gravity_guard.py",
+        "tests/unit/test_ledger_recovery.py",
+        "tests/integration/test_goal_gravity_process_kill.py::test_sigkill_inside_the_dispatch_claim_append_is_recovered_without_loss_or_redispatch",
+        "tests/evidence/goal-gravity-20261013/review-increment-5.json"
       ],
       "implementation_refs": [
         "egregore/goals.py",
@@ -86,7 +89,9 @@
         "egregore/schedule.py",
         "docs/decisions/ADR-GOAL-GRAVITY-003.md",
         "docs/intent/INTENT-20261014-egregore-synthesis-materials.json",
-        "docs/intent/sources/EGREGORE-SYNTHESIS-MATERIALS-2026-10-14-source.md"
+        "docs/intent/sources/EGREGORE-SYNTHESIS-MATERIALS-2026-10-14-source.md",
+        "provenance/recovery.py",
+        "docs/decisions/ADR-GOAL-GRAVITY-004.md"
       ],
       "owner": "alfonso_lopez",
       "next_review_trigger": "Founder review of the draft PR; first real sensor adapter or durable scheduler calling GoalGravityLoop.turn without a human tick; any founder ruling on the #137/#158 lineages",
@@ -99,7 +104,7 @@
         "Which supplier should feed acquisition candidates first: draft #129's genesis loop, draft #164's construction by reduction, or a coding agent under the Capability Genesis contract?"
       ],
       "created_at": "2026-10-13T14:30:00Z",
-      "updated_at": "2026-10-14T16:40:00Z"
+      "updated_at": "2026-11-21T19:23:16Z"
     }
   ]
 }

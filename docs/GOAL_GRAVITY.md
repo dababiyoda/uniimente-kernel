@@ -142,6 +142,27 @@ loop wakes a sleeping goal when a deferred ask's resurface time has elapsed, so 
 On the loop side the typed capability deficit is recorded at the gate level, `status()` never lists an open or executed route
 as next autonomous work, and the guard keeps the standing-cognition seam contract.
 
+**Restart after a torn append (fifth increment, 2026-11-13).** A process killed inside the Gate's `grant_dispatch` append
+leaves a partial last line. The ledger then refuses to open. That refusal is correct, but it used to be permanent.
+`provenance/recovery.py` (`recover_torn_tail`) is the explicit, accountable repair:
+
+- it holds the writer lock throughout;
+- it verifies every complete line;
+- it accepts only a tail one interrupted append can leave;
+- it requires the caller to name every risk a byte check cannot exclude (`unanchored`, `complete_record`, `stop_record`);
+- it copies the torn bytes beside the ledger before truncating, and chains a `ledger.torn_tail_quarantined` event.
+
+The torn record is never re-admitted. The kill test shows the end-to-end effect:
+
+- the reopened chain verifies;
+- no dispatch claim survives;
+- the intervention stays `attempted`;
+- a fresh grant does not dispatch the route again;
+- reconciliation reports the route unresolved.
+
+Nothing calls recovery on restart until a supervisor is selected (G5), so P2 is not complete. See ADR-GOAL-GRAVITY-004
+and `tests/evidence/goal-gravity-20261013/review-increment-5.json`.
+
 ## 2. Evidence tier per target (section 26 vocabulary)
 
 | Target | State on this branch | Tier | Proof | Not yet |
@@ -200,7 +221,7 @@ Compiler and the gaps an independent audit found on 2026-10-14.
 | 8 | I. Founder Attention Router | MISSING | see record | WMI: MISSING (requires_human_approval const; notify_role only logs). | EXISTING | UNIT-TESTED | quiet hours, defer/accept/pause/lower semantics, information and emergency items; no delivery channel |
 | 9 | Capability Genesis connected to Goal Gravity | MISSING | see record | WMI: MISSING (manifest unresolved: venture cell charters not yet requested, Bridge B). | PARTIAL | UNIT-TESTED (pytest subprocess; not SANDBOX-VERIFIED) | plan → qualify → founder attach → resume works for supplied candidates; no builder (#129/#164/coding agent) |
 | 10 | Founder refusal/corrections recorded and not re-proposed unchanged | PARTIAL | see record | WMI: MISSING (only compliance refusals retained in influencer_company drafts and ... | EXISTING | UNIT-TESTED | refusals bind route and identical effect; declared model tactics bound; not consulted by the Gate or the Ratifier |
-| 11 | Restart continuity without duplicate consequential action | EXISTING | see record | WMI: EXISTING for evaluation admission only via kernel BridgeState (test_signed_bridge.py ... | EXISTING | INTEGRATION-TESTED (real SIGKILL ×2) | torn ledger tail refuses to open (characterized liveness gap) |
+| 11 | Restart continuity without duplicate consequential action | EXISTING | see record | WMI: EXISTING for evaluation admission only via kernel BridgeState (test_signed_bridge.py ... | EXISTING | INTEGRATION-TESTED (real SIGKILL ×2) | torn ledger tail refuses to open on its own and is repaired only by an explicit, recorded `recover_torn_tail` call (real SIGKILL inside the dispatch-claim append tested) |
 | 12 | Evidence state distinction planned/attempted/executed/externally verified/failed/unknown | PARTIAL | see record | WMI: PARTIAL (LoopRecord.stage ladder with settled_simulated vs executed; 'unknown until ... | EXISTING | UNIT-TESTED | independent verification with a verdict; calibrates the router; zero real instances |
 | 13 | Experience Surface metrics | MISSING | see record | WMI: MISSING. | PARTIAL | UNIT-TESTED | trusted modalities count only attributed sources; relevance metrics need real labels |
 | 14 | §25 scenario 1: Persistent goal survival | MISSING | see record | see record | EXISTING | INTEGRATION-TESTED | cross-process restart covered by the kill tests |
@@ -254,7 +275,7 @@ Compiler and the gaps an independent audit found on 2026-10-14.
 | Asymmetry retention fed from WMI validation plans / next actions / monetization paths | no versioned contract for those fields | a venture-assessment 1.2 contract and adapter field mapping with declared loss |
 | Isolated qualification of generated capabilities | `qualify()` is a subprocess inside this repository | the SR001 isolated verification facility |
 | Taxonomy for constructed capabilities (optimization, assignment) | the router's eight classes have no optimization class | a router-owner PR on `main` (needed for #164's reductions) |
-| Torn-ledger-tail recovery | the ledger refuses to open after a partial append (fail-closed) | a repair procedure that quarantines the original first |
+| Torn-ledger-tail recovery | `provenance/recovery.py` exists (fifth increment): an explicit, accountable call quarantines the torn bytes beside the ledger, truncates to the last complete record and records the recovery in the chain; opening alone still fails closed | a supervisor that calls it on restart (G5) and an independent isolated verification facility (SR001) |
 | `turn()` as a stage of `tick()` (one trigger clock) | today `turn` consumes `tick` candidates as a projection with its own conflict record | founder decision after the first durable scheduler integration (second-increment dissent) |
 | Delivery of the return report to the founder | the report is a ledger record and a method; no channel is contacted | founder channel decision; founder authentication (G6) |
 | Money in the return report beyond declared estimates | no settlement, payment or bank record type exists on the ledger | organ-side payment/settlement adapters and a reconciled record type the report can consume |

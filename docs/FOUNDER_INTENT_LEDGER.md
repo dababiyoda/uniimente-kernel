@@ -119,6 +119,36 @@ wake could hide an open attempt and allow a second dispatch; `tests/evidence/goa
 Evidence tier unchanged: IMPLEMENTED / UNIT-TESTED / INTEGRATION-TESTED on synthetic ledgers; not externally verified; not
 founder-accepted.
 
+## Fifth increment: torn-tail recovery — 2026-11-13
+
+The founder asked, on 2026-11-13, to "Resume and Follow the repository's own entry instructions". The next unblocked
+dependency for the Goal Gravity directive's §25 "Restart continuity" and for entry-gate proof P2 is reopening canonical
+history after a crash mid-append. Until now that case was characterized by test and left unrepaired. No new intention
+is recorded. The work advances `INTENT-20261013-GOAL-GRAVITY` and `INTENT-20261014-minimum-viable-continuous-loop`, and
+both records now carry the new implementation and evidence references (validator exit 0).
+
+`provenance/recovery.py` makes a torn ledger reopenable only through an explicit, accountable call:
+
+- the torn bytes are quarantined beside the ledger and never re-admitted;
+- the ledger is truncated to its last complete record;
+- the repair is recorded in the chain;
+- every risk a byte check cannot exclude must be named by the caller: `unanchored`, `complete_record` or `stop_record`.
+
+Decision record: `docs/decisions/ADR-GOAL-GRAVITY-004.md`. Deliberation:
+`docs/collaboration/deliberation-goal-gravity-fifth-increment-2026-11-13.json` (EXPERIMENT; adoption remains the
+founder's).
+
+Review: an independent review raised 14 findings against the pre-review commit. Thirteen were confirmed and one was not a
+defect. All are disposed with regression tests. Replaying the probes found one more (R1b, a stale checkpoint), which is
+also fixed. The findings and probe replay are in `tests/evidence/goal-gravity-20261013/review-increment-5.json` and
+`review-probes-increment-5.log`.
+
+**P2 remains incomplete.** It needs a supervisor (G5) that calls recovery on restart. Whether such a supervisor may
+acknowledge `unanchored` on the founder's behalf is part of that decision, not of this module.
+
+Evidence tier: IMPLEMENTED / UNIT-TESTED / INTEGRATION-TESTED (real SIGKILL inside the dispatch-claim append); not
+externally verified; not founder-accepted.
+
 UNIIMENTE must never silently lose a founder intention, contributor objection, negative result, or superseded design.
 
 Every material intention discovered in chats, documents, issues, pull requests, repositories, or operating evidence must be normalized into an Intent Record and assigned exactly one lifecycle state:

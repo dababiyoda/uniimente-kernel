@@ -342,7 +342,7 @@
         "uniimente-kernel capabilities/genome.py and egregore/retention.py (registry; retention after verified outcomes)",
         "uniimente-kernel sandbox/ (isolation: specification only)"
       ],
-      "rationale": "Four of the five steps exist on this branch in bounded form: the JSONL ledger, the deterministic loop with Gate-only execution, capability genomes with authority envelopes, and retention/evolution under ratification. Residual: a host clock (G5), an isolation facility for untrusted candidates, and any real externally verified outcome. A git commit per decision is unnecessary given the hash chain; failure 'branches' compile to preserved failed records plus ChangeProposals, not Git branches.",
+      "rationale": "Four of the five steps exist on this branch in bounded form: the JSONL ledger, the deterministic loop with Gate-only execution, capability genomes with authority envelopes, and retention/evolution under ratification. Residual: a host clock (G5), an isolation facility for untrusted candidates, and any real externally verified outcome. A git commit per decision is unnecessary given the hash chain; failure 'branches' compile to preserved failed records plus ChangeProposals, not Git branches. Fifth increment (2026-11-13): a crash mid-append no longer leaves the ledger permanently unopenable; provenance/recovery.py repairs it on an explicit, accountable call (quarantine, truncate, chained event, named risks). Nothing calls it on restart until G5 selects a supervisor.",
       "conflicts": [
         "Material 4's orchestrator 'executes it only if it passes all automated tests' versus the Gate's requirement of a pre-existing grant, policy and commit-time revalidation; tests are necessary, not sufficient",
         "Isolation ('isolated Docker container') is a stated requirement with no facility in this repository (SR001 isolated verification facility blocker)"
@@ -351,12 +351,14 @@
         "tests/integration/test_goal_gravity_acceptance.py (section-33 chain)",
         "tests/integration/test_goal_gravity_absence.py",
         "docs/founder-loop-entry-gate.json (P1-P7; HOLD_ACTIVATION)",
-        "Zero externally verified outcomes (CMC 0)"
+        "Zero externally verified outcomes (CMC 0)",
+        "tests/integration/test_goal_gravity_process_kill.py (SIGKILL inside the dispatch-claim append, explicit torn-tail recovery, no re-dispatch)"
       ],
       "implementation_refs": [
         "egregore/gravity.py",
         "provenance/ledger.py",
-        "egregore/retention.py"
+        "egregore/retention.py",
+        "provenance/recovery.py"
       ],
       "owner": "alfonso_lopez (activation); Kernel egregore maintainers",
       "next_review_trigger": "G5 scheduler selection and the first host-driven turn; first externally verified outcome",
@@ -364,7 +366,7 @@
         "Which isolation facility (container with egress allow-list, WASI, microVM) qualifies untrusted candidates first?"
       ],
       "created_at": "2026-10-14T16:40:00Z",
-      "updated_at": "2026-10-14T16:40:00Z"
+      "updated_at": "2026-11-21T19:23:16Z"
     },
     {
       "intent_id": "INTENT-20261014-maturity-capabilities",

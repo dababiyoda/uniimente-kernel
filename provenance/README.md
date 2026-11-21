@@ -17,6 +17,18 @@ Witness. Signed receipts for high-consequence records.
   constitution version, current authority, current capability, current
   budget, and expected outcome. HMAC-SHA256 signed. Proof remains valid
   even if the original model disappears.
+- `recovery.py` — `recover_torn_tail(path, constitution_hash, recovered_by=, reason=, expected_head=None,
+  acknowledged_risks=())`: the explicit, accountable repair for a ledger whose last line was torn by a crash
+  mid-append. Holding the writer lock throughout, it verifies every complete line, accepts only a tail one
+  interrupted append can leave (a byte prefix of the next record's line, NUL padding, or a zero-filled run;
+  anything else is refused as corruption), copies the torn bytes atomically to
+  `<ledger>.torn-<prior head>-<sha256>` with a `.json` sidecar, truncates to the last complete record and
+  appends a `ledger.torn_tail_quarantined` event naming who recovered it and why. A torn append never
+  returned to its caller, so it is quarantined and never re-admitted. Risks a byte check cannot exclude must
+  be acknowledged by name: `unanchored` (no `expected_head`), `complete_record` (the tail is a complete
+  chained record, which a checkpoint cannot tell from one acknowledged and damaged later) and `stop_record`
+  (a torn seal, suspension or founder control, which must be re-issued). Opening a torn ledger still fails
+  closed; nothing calls recovery automatically. Tests: `tests/unit/test_ledger_recovery.py`.
 - `proof.py` — Merkle inclusion proofs (Layer 10): `LedgerProver.
   checkpoint()` anchors a Merkle root over all prior record hashes in a
   ledger checkpoint record; `prove()/verify()` give O(log n) inclusion
@@ -34,13 +46,13 @@ Witness. Signed receipts for high-consequence records.
 ## Buildability standard (14 conditions)
 
 - **Existing mechanism**: hash-chained append-only log + HMAC signatures (Git/blockchain primitives, no token).
-- **Defined interface**: `append/verify_chain/seal/find/by_type`; `sign/verify/new_witness`.
+- **Defined interface**: `append/verify_chain/seal/find/by_type`; `sign/verify/new_witness`; `recover_torn_tail`.
 - **Bounded authority**: records only; cannot authorize or execute.
 - **Available dependencies**: Python 3 stdlib only.
 - **Security model**: tamper-evident chain; signatures verified at commit; key from environment; corrupted persistence refuses to load.
 - **Failure modes**: chain break, payload hash mismatch, sequence break, signature forgery — all detected, all terminal.
-- **Acceptance tests**: `tests/unit/test_provenance.py`.
-- **Recovery path**: rebuild by replay; seal marks shutdown propagation; corrections never rewrite history.
+- **Acceptance tests**: `tests/unit/test_provenance.py`; `tests/unit/test_ledger_recovery.py` (torn-tail recovery).
+- **Recovery path**: rebuild by replay; seal marks shutdown propagation; corrections never rewrite history; a torn final line from a crash mid-append is quarantined and recorded by `recover_torn_tail`, never re-admitted.
 - **Resource ceiling**: append O(1); verify O(n) on demand; JSONL growth bounded by event rate.
 - **Operating cost**: one SHA-256 per record; negligible.
 - **Legal operator**: records attach to the legal principal of the originating action.

@@ -233,7 +233,10 @@ def test_sigkill_inside_the_dispatch_claim_append_is_recovered_without_loss_or_r
             EvidenceLedger(compiled.constitution_hash, path=path)   # the body cannot restart on its own
 
         out = recover_torn_tail(path, compiled.constitution_hash, recovered_by="supervisor:test-harness",
-                                reason="child SIGKILLed inside the dispatch-claim append")
+                                reason="child SIGKILLed inside the dispatch-claim append",
+                                acknowledged_risks=("unanchored",))   # the harness holds no acknowledged-head anchor
+        assert out["quarantined"]["classification"] == "partial"
+        assert out["quarantined"]["torn_record_type"] == "grant_dispatch"
         torn = raw.rsplit(b"\n", 1)[1]
         with open(os.path.join(d, out["quarantined"]["quarantine_file"]), "rb") as fh:
             assert fh.read() == torn   # the torn bytes are preserved, not deleted
@@ -241,7 +244,8 @@ def test_sigkill_inside_the_dispatch_claim_append_is_recovered_without_loss_or_r
         ledger, gate, loop = _parent_stack(path)
         ok, msg = ledger.verify_chain()
         assert ok, msg
-        assert [r.payload["type"] for r in ledger.by_type("event") if r.payload.get("type") == EVENT_TYPE] == [EVENT_TYPE]
+        [event] = [r.payload for r in ledger.by_type("event") if r.payload.get("type") == EVENT_TYPE]
+        assert event["torn_record_type"] == "grant_dispatch" and event["stop_warning"] is None
         assert ledger.by_type("grant_dispatch") == []   # the claim never returned, so it never entered the chain
         route = brief_move().route_hash
         spec = loop.registry.get(goal_id)

@@ -42,7 +42,7 @@ from __future__ import annotations
 import threading
 
 # Capabilities whose adapter may run for minutes, so it runs outside the turn. Everything else stays inline.
-BACKGROUND_CAPABILITIES = frozenset({"worker.commission"})
+BACKGROUND_CAPABILITIES = frozenset({"worker.commission", "worker.team"})
 KILL_GRACE_SECONDS = 5   # after its worker's process group is killed, a dispatch records its outcome within this
 
 

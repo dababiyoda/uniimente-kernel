@@ -890,11 +890,14 @@ def test_recipe_lifts_bind_the_recipe_code_they_measured():
     live = {r for r, v in index["recipes"].items() if v.get("lift") and not C.recipe_stale(r, v)}
     # The 2026-11-17 verifier review required composition's certification consumer to check the certificate's
     # binding (_certified, _optimality and the two compositions that read them; PR #189 at 42dea08b). Those sit in
-    # identify_then_optimize's closure, so its P6 joined v1 lift no longer binds today's code and routes UNEVALUATED
-    # until a pre-registered re-measurement: the rule working as designed, not a weakened one. The other two joined
-    # v1 lifts still bind the code they measured.
-    assert live == lifts - {"identify_then_optimize"}, "a lift routes on code that differs from what it measured"
-    assert "needs re-measurement" in C.recipe_stale("identify_then_optimize", index["recipes"]["identify_then_optimize"])
+    # the closure identify_then_optimize and estimate_then_optimize share, so their P6 joined v1 lifts no longer
+    # bind today's code and route UNEVALUATED until a pre-registered re-measurement: the rule working as designed,
+    # not a weakened one. bayes_then_voi still binds the code it measured.
+    stale_by_binding_fix = {"identify_then_optimize", "estimate_then_optimize"}
+    assert live == lifts - stale_by_binding_fix == {"bayes_then_voi"}, \
+        "a lift routes on code that differs from what it measured"
+    for r in stale_by_binding_fix:
+        assert "needs re-measurement" in C.recipe_stale(r, index["recipes"][r])
     assert all(index["recipes"][r]["evidence"].startswith(joined) for r in live), \
         "a lift routes on code that differs from what it measured"
     assert all(C.recipe_stale(r, v) for r, v in index["recipes"].items()

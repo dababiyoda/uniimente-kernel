@@ -2606,8 +2606,8 @@
    "path": "tests/unit/test_cognition_optimization_certificates.py",
    "lineage": "pr158",
    "classification": "complementary",
-   "disposition": "extended",
-   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab; kept at 98a2ab0c, then changed by #158 itself (93bf43a3), joined on #196; the bytes equal #158's later head 21ae7f5a"
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab; kept at 98a2ab0c, then changed by #158 itself (93bf43a3), joined on #196; the bytes equal #158's later head 21ae7f5a, which the map pins since the #189 intake (2026-11-22), so the disposition is kept (it read extended against 98a2ab0c)"
   },
   {
    "path": "tests/unit/test_cognition_seed_gates.py",

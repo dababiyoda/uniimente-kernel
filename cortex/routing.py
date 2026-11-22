@@ -27,7 +27,7 @@ from .contracts import (CLAIM_TYPE_TO_EPISTEMIC, CORTEX_VERSION, EPISTEMIC_CLASS
 from .gates import AuthorityRecord, Option, evaluate_gates, pareto_front, rank_after_gates
 from .genome import IntelligenceRegistry, seed_registry
 from . import outcomes
-from .organs import adversarial, cpsat
+from .organs import adversarial, cpsat, formal_eval
 from .organs.cpsat import CpSatOrgan
 from .organs.deterrence import DeterrenceOrgan
 from .organs.estimation import EstimationOrgan
@@ -700,17 +700,38 @@ class Cortex:
                 second = self.organs[alt].run(problem, geometry, rest())
                 calls += second.expenditure.solver_calls
                 key = "feasible" if "feasible" in answer else "entailed"
-                agrees = second.answer is not None and second.answer.get(key) == answer.get(key)
-                attempts.append(_attempt(second, "confirmation" if agrees else "disagreement"))
-                if second.answer is not None and not agrees:
-                    proof = dict(result.proof)
-                    proof["engine_disagreement"] = {"engine": second.organ_id, "answer": second.answer}
-                    result = replace(result, state="CONTESTED", proof=proof,
-                                     notes=result.notes + (f"{second.organ_id} disagrees: {second.answer}",))
-                elif agrees:
+                # Only a conclusive second answer confirms or contests (0.2.3; review finding 5 on #196). An engine
+                # that returned nothing, or an answer in an inconclusive state, leaves the lead verdict unconfirmed.
+                # The safer direction survives: a feasibility witness the solver-independent evaluator accepts
+                # refutes an impossibility verdict whatever the second engine's state.
+                second_answer = second.answer or {}
+                conclusive = second.state in ("OK", "WORLD_UNVERIFIED") and key in second_answer
+                witness = None
+                if key == "feasible" and answer.get("feasible") is False and second_answer.get("feasible") is True \
+                        and isinstance(second_answer.get("model"), dict):
+                    try:
+                        from .organs.formal import Spec
+                        witness = formal_eval.check_assignment(Spec(model), second_answer["model"])["holds"]
+                    except Exception:  # noqa: BLE001 - an unreadable witness is not a refutation
+                        witness = False
+                if conclusive and second_answer.get(key) == answer.get(key):
+                    attempts.append(_attempt(second, "confirmation"))
                     proof = dict(result.proof)
                     proof["confirmed_by"] = {"engine": second.organ_id, "state": second.state}
                     result = replace(result, proof=proof)
+                elif (conclusive and second_answer.get(key) != answer.get(key)) or witness:
+                    attempts.append(_attempt(second, "disagreement"))
+                    proof = dict(result.proof)
+                    proof["engine_disagreement"] = {"engine": second.organ_id, "answer": second.answer,
+                                                    "state": second.state, "witness_checked": bool(witness)}
+                    result = replace(result, state="CONTESTED", proof=proof,
+                                     notes=result.notes + (f"{second.organ_id} disagrees: {second.answer}",))
+                else:
+                    attempts.append(_attempt(second, "inconclusive"))
+                    proof = dict(result.proof)
+                    proof["confirmation_inconclusive"] = {"engine": second.organ_id, "state": second.state}
+                    result = replace(result, proof=proof,
+                                     notes=result.notes + (f"{second.organ_id} did not confirm ({second.state})",))
         elif answer.get("feasible") is True or answer.get("entailed") is False:
             decisions.append({"step": "second engine", "taken": False,
                               "reason": "the returned assignment is re-checked against every source constraint by "

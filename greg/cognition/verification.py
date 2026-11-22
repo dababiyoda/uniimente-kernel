@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 from fractions import Fraction
+import hashlib
 import math
+from pathlib import Path
 import statistics
 import time
 
@@ -317,6 +319,32 @@ def _z3_certificate(data, *, integers, better_than=None, sense="max", deadline=N
     if status == z3.unsat:
         return {**out, "status": "CERTIFIED"}
     return {**out, "status": "UNKNOWN", "reason": str(solver.reason_unknown())[:200]}
+
+
+# A certificate settles one obligation for one claim about one candidate on one problem, checked by this module's
+# exact source. It binds all five, and a reader that needs certification checks every one (certified_for): a
+# status of CERTIFIED alone may belong to another problem, another answer, another claim or a changed verifier.
+VERIFIER_SOURCE = "sha256:" + hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+OBLIGATIONS = {"OPTIMAL": "no_strictly_better_assignment", "FEASIBLE": "no_assignment_beyond_its_bound",
+               "UNSAT": "no_feasible_assignment", "INFEASIBLE": "no_feasible_assignment"}
+
+
+def certificate_binding(data, proof, claim, bound=None) -> dict:
+    return {"problem": digest(data), "candidate": digest(proof), "claim": claim, "obligation": OBLIGATIONS[claim],
+            "bound": None if bound is None else str(bound),
+            "verifier": {"module": __name__, "source": VERIFIER_SOURCE}}
+
+
+def certified_for(evaluator_result, data, proof, claim) -> bool:
+    """True only for a CERTIFIED certificate bound to exactly this problem, candidate proof artifact, claim and
+    obligation, issued by this verifier's current source. Anything else (NOT_RUN, UNKNOWN, REFUTED, a missing or
+    foreign binding, a stale verifier) is not a certification."""
+    certificate = (evaluator_result or {}).get("certificate") or {}
+    binding = certificate.get("binding") or {}
+    return (certificate.get("status") == "CERTIFIED" and certificate.get("claim") == claim and claim in OBLIGATIONS
+            and binding.get("problem") == digest(data) and binding.get("candidate") == digest(proof)
+            and binding.get("claim") == claim and binding.get("obligation") == OBLIGATIONS[claim]
+            and binding.get("verifier") == {"module": __name__, "source": VERIFIER_SOURCE})
 
 
 def verify(family, data, answer, proof_class, *, deadline=None):
@@ -704,9 +732,12 @@ def verify(family, data, answer, proof_class, *, deadline=None):
                 # defect
                 "independence": "same engine as the solver (Z3), separate encoding and process" if family == "formal"
                 else "different engine from the solver (Z3 against CP-SAT)"}
-            checks["no_feasible_assignment_found" if negative else "no_strictly_better_assignment_found"
-                   if claim == "OPTIMAL" else "no_assignment_beyond_its_bound_found"] = (
-                certificate["status"] != "REFUTED")
+            certificate["binding"] = certificate_binding(data, answer["proof"], claim, beyond)
+            # The check is named for what was found, so it exists only when Z3 decided: True when it certified, False
+            # when it refuted. NOT_RUN or UNKNOWN found nothing either way: the check is inconclusive (below), the
+            # verdict stays structural and the dissent says uncertified, never a pass named as a finding.
+            if certificate["status"] in ("CERTIFIED", "REFUTED"):
+                checks[OBLIGATIONS[claim] + "_found"] = certificate["status"] == "CERTIFIED"
         if family == "formal" and claim == "UNSAT" and (certificate or {}).get("status") != "REFUTED":
             # The certificate re-checks the whole model. The reported core is a further claim, that these
             # constraints alone contradict each other (and minimally), so it is re-checked on its own; once the
@@ -763,7 +794,9 @@ def verify(family, data, answer, proof_class, *, deadline=None):
             "checks": checks, "dissent": dissent, "artifact_digest": digest(answer["proof"]),
             **({"certificate": certificate} if certificate else {}),
             "cross_checks": cross,
-            "inconclusive": sorted(k for k, v in cross.items() if v["core_unsat"] is None),
+            "inconclusive": sorted([k for k, v in cross.items() if v["core_unsat"] is None]
+                                   + ([OBLIGATIONS[certificate["claim"]] + "_found"] if certificate and
+                                      certificate["status"] not in ("CERTIFIED", "REFUTED") else [])),
             "independence": "separate verification functions in reviewed Kernel code; no independent external evaluator"}
 
 

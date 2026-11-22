@@ -61,7 +61,8 @@
  ],
  "evidence_refs": [
   "docs/collaboration/ROLLOUT.md (2026-11-13 sections)",
-  "docs/collaboration/WORK-MAP-2026-11-21.md (the dated snapshot; none was committed on 2026-11-13)",
+  "docs/collaboration/WORK-MAP-2026-11-22.md (the latest dated snapshot)",
+  "docs/collaboration/WORK-MAP-2026-11-21.md (the first dated snapshot, kept; none was committed on 2026-11-13)",
   "docs/collaboration/VALIDATION.md",
   "docs/collaboration/deliberation-one-entrance-20261113.json",
   "https://github.com/dababiyoda/uniimente-kernel/issues/96#issuecomment-6841838048"

@@ -20,9 +20,10 @@ a quarter of a week's posts unresolved, the plan's stop condition for building t
 Threat model: these rules guard against ordinary changes by cooperating agents working in parallel: refactors, copies
 made by mistake or convenience, handoffs, relays, templates filled in for someone else, receipts copied between PRs.
 They are not a security boundary against a deliberate evader who writes exotic code or text to defeat them. A receipt
-and a check-in are declared, not authenticated: a session that posts another session's block or receipt unchanged is
-read as the session it names, and the residuals each rule leaves are stated where the rule is, never claimed as
-covered.
+and a check-in are declared, not authenticated. A check-in that relays, or whose heading hands over, reassigns or
+reviews, or that names another poster, names nobody; but a block filled in, pasted or copied with none of this wording
+is read as the session its Session line names, whoever posts it. The residuals each rule leaves are stated where the
+rule is, never claimed as covered.
 
 Ask it before you edit::
 
@@ -591,50 +592,121 @@ def opens_with_checkin(body: str) -> bool:
     return first.startswith(CHECKIN)
 
 
-def checkin_author(body: str) -> tuple[str, str] | None:
-    """The (id, client) of a comment that is itself a check-in, else None. The block must stand where
-    ``CHECKIN_BLOCK`` puts it: the marker alone on the comment's first line that is not blank (nothing else on that
-    line), then the block's own ``Session:`` line as the first line that is not blank after it, or after the block's
-    heading when that follows the marker. The heading is one ``#`` heading line, or a line that is one bold run and
-    names no session id (so "**Relayed by `A`.**" is a lead line, not a heading). The value, the Session line with
-    the lines GitHub renders in the same paragraph (indented ones, and lazy ones up to a blank line or a line at the
-    margin that CommonMark lets interrupt a paragraph, ``_BLOCK_START``), opens with an id and names exactly one:
-    "`B` → `A`" or "`B` (relayed by `A`)" names nobody.
+# What a check-in post says about who posts it (see ``checkin_verdict``).
+_RELAYED = re.compile(r"(?i)(?<![a-z])relay(?:s|ed|ing)?(?![a-z])|\bon\s+(?:\S+\s+){0,3}?behalf\b|"
+                      r"\bposts?\s+(?:this|it)\s+as\s+(?:yours|(?:your|its|their)\s+own)\b")
+_HANDED = re.compile(r"(?i)\bhand\s*-?\s*(?:offs?|overs?)\b|\bhand(?:s|ed|ing)?\s+(?:\S+\s+){0,3}?over\b|\breassign|"
+                     r"\b(?P<review>review(?:ed)?)\b|\b(?:for|to)\s+the\s+next\s+owner\b")
+_ANSWERS = re.compile(r"(?i)\banswer(?:s|ed|ing)?\b[^.]*$")     # "#316 answers the integrator's review": its own reply
+_POSTER_LABELS = {"posted by", "relayed by", "relay", "from", "on behalf of", "recording session", "implementer",
+                  "agent", "agent / claim", "identity", "author", "sender"}
+_ASK = re.compile(r"(?i)^#{1,6}[ \t]+(?:[\w-]+[ \t]+){0,2}?ask\b")      # "## Coordination ask:", "## Second ask,"
+RELAYED = "relayed"
+HANDED = "handoff, review or reassignment wording in its heading"
+POSTER = "a label naming its poster names another id"
+HEADING_NAMES = "its heading names another id"
+MARKER_LINE = "text after the marker on its line"
+NOT_FIRST = "Session line not first"
+NO_ID = "Session value does not open with an id"
+TWO_IDS = "Session value names more than one id"
 
-    So only blank lines sit between the marker, the heading and the Session line: no lead paragraph, no second
-    heading, nothing GitHub does not render as plain text (an HTML comment, ``<details>``, ``<pre>``, a fence). A
-    handoff that fills in the receiver's block, a reassignment record listing the previous owner's block, a review
-    quoting the reviewed block and a relay (whose poster is not the session it names) are not exact; on the live
-    board this keeps 29 of the 30 check-ins round 5 read as exact and drops only the relay 6853656353.
 
-    Threat model: this guards against ordinary posts by cooperating agents, not a deliberate evader. A session that
-    posts another session's block unchanged, or a heading that names its sender ("## Handoff from `A`") above a
-    Session line naming someone else, is still read as the Session line says: a check-in is declared, not
-    authenticated.
-
-    Lines end only where CommonMark ends them (LF, CR, CRLF), and a blank line holds only spaces and tabs: a form feed
-    or a Unicode line separator after the marker stays on the marker's hidden line."""
-    lines = _lines(body)
-    filled = [i for i, line in enumerate(lines) if line.strip(" \t")]
-    if not filled or lines[filled[0]].rstrip(" \t") != CHECKIN:
-        return None
-    after = filled[1:]
-    if after and (_HEADING.match(lines[after[0]]) or (_BOLD_TITLE.match(lines[after[0]])
-                                                     and not _spans(lines[after[0]]))):
-        after = after[1:]
-    m = _CHECKIN_SESSION.match(lines[after[0]]) if after else None
-    if not m:
-        return None
-    value = [m["value"]]
-    for line in lines[after[0] + 1:]:
+def _session_value(lines: list[str], at: int) -> tuple[str | None, str | None, bool]:
+    """(id, client, whether it names more than one id) for the Session line at ``at``: its value with the lines
+    GitHub renders in the same paragraph (indented ones, and lazy ones up to a blank line or a line at the margin that
+    CommonMark lets interrupt a paragraph, ``_BLOCK_START``). The id is the one that opens the value, else None."""
+    first = _CHECKIN_SESSION.match(lines[at])["value"]
+    value = [first]
+    for line in lines[at + 1:]:
         if not line.strip(" \t") or _BLOCK_START.match(line):
             break
         value.append(line)
     hits = _spans("\n".join(value))
-    if (not hits or hits[0][0] >= len(m["value"]) or m["value"][:hits[0][0]].strip("`*_ \t")
-            or len({h[2] for h in hits}) != 1):
-        return None
-    return hits[0][2], hits[0][3]
+    if not hits or hits[0][0] >= len(first) or first[:hits[0][0]].strip("`*_ \t"):
+        return None, None, len({h[2] for h in hits}) > 1
+    return hits[0][2], hits[0][3], len({h[2] for h in hits}) > 1
+
+
+def checkin_verdict(body: str) -> dict:
+    """Whether a comment is itself a check-in: ``author`` and ``client`` when it is exact, else ``reason``, why not
+    (None when the marker does not open it), and ``names``, the one id its block's Session line names (diagnosis only,
+    never a session or a holder). See ``checkin_author`` for the rule."""
+    out = {"author": None, "client": "unknown", "reason": None, "names": None}
+    lines = _lines(body)
+    filled = [i for i, line in enumerate(lines) if line.strip(" \t")]
+    if not filled or not lines[filled[0]].startswith(CHECKIN):
+        return out
+    reasons = [MARKER_LINE] if lines[filled[0]].rstrip(" \t") != CHECKIN else []
+    after, heading = filled[1:], ""
+    if after and (_HEADING.match(lines[after[0]]) or (_BOLD_TITLE.match(lines[after[0]])
+                                                     and not _spans(lines[after[0]]))):
+        heading, after = lines[after[0]], after[1:]
+    prose = _prose_at(lines)
+    at = after[0] if after and _CHECKIN_SESSION.match(lines[after[0]]) else None
+    if at is None:
+        reasons.append(NOT_FIRST)
+        at = next((i for i in prose if _CHECKIN_SESSION.match(lines[i])), None)   # for ``names`` only
+    key, client, several = _session_value(lines, at) if at is not None else (None, None, False)
+    if key is None and at is not None:
+        reasons.append(NO_ID)
+    if several:
+        reasons.append(TWO_IDS)
+    text = [lines[i] for i in prose]
+    said = []
+    if _RELAYED.search("\n".join(text)):
+        said.append(RELAYED)
+    if any(not (m["review"] and _ANSWERS.search(heading[:m.start()])) for m in _HANDED.finditer(heading)):
+        said.append(HANDED)
+    if key and any((m := _LABEL.match(line)) and _norm(m["bold"] or m["plain"]) in _POSTER_LABELS
+                   and {k for _at, k, _c in identities(line)} - {key} for line in text):
+        said.append(POSTER)
+    if key and heading.startswith("#") and {k for _at, k, _c in identities(heading)} - {key}:
+        byline = _heading_bylines(heading)[0]
+        if not _ASK.match(heading) or (byline and byline[0] != key):
+            said.append(HEADING_NAMES)
+    reasons = said + reasons
+    out["names"] = key if not several else None
+    if reasons:
+        out["reason"] = reasons[0]
+    else:
+        out.update(author=key, client=client)
+    return out
+
+
+def checkin_author(body: str) -> tuple[str, str] | None:
+    """The (id, client) of a comment that is itself a check-in, else None (``checkin_verdict`` says why not).
+
+    Where the block stands, as ``CHECKIN_BLOCK`` puts it: the marker alone on the comment's first line that is not
+    blank (nothing else on that line), then the block's own ``Session:`` line as the first line that is not blank after
+    it, or after the block's heading when that follows the marker. The heading is one ``#`` heading line, or a line
+    that is one bold run and names no session id (so "**Relayed by `A`.**" is a lead line, not a heading). The value,
+    the Session line with the lines GitHub renders in the same paragraph (indented ones, and lazy ones up to a blank
+    line or a line at the margin that CommonMark lets interrupt a paragraph, ``_BLOCK_START``), opens with an id and
+    names exactly one: "`B` → `A`" or "`B` (relayed by `A`)" names nobody. So only blank lines sit between the marker,
+    the heading and the Session line: no lead paragraph, no second heading, nothing GitHub does not render as plain
+    text (an HTML comment, ``<details>``, ``<pre>``, a fence).
+
+    What the post says about who posts it: it names nobody when its text outside code relays ("relay", "relays",
+    "relayed", "relaying", "on ... behalf", "post this as yours"); when its heading, or the bold line acting as its
+    heading, hands over, reassigns or reviews ("handoff", "hand over", "reassign", "review", "reviewed", "for the next
+    owner"; a "review" after "answers" in the same sentence is the post's own reply, as in live check-in 7068165767);
+    when a labelled line that names a poster ("Posted by", "Relayed by", "Relay", "From", "On behalf of", "Recording
+    session", "Implementer", "Agent", "Identity", "Author", "Sender") names another id; or when its heading names
+    another id, except an ask ("## Coordination ask: ... still yours, `X`?", "## Second ask, `X`: ..."; live
+    check-ins 6853648077 and 6858741219 ask another session in their headings) whose byline is no other id. So a
+    relay, a handoff, a reassignment record, a review and a template filled in for someone else that say what they
+    are name nobody, and so does a session's own handoff of its own claim: release your own claim under a heading
+    such as "## Release: claim N". On the live board this keeps all 29 check-ins round 6 read as exact.
+
+    Limit, inherent: a check-in is declared, not authenticated. A block filled in, pasted or copied with none of this
+    wording is read as the session its Session line names, whoever posts it; this guards against ordinary posts by
+    cooperating agents, not a deliberate evader.
+
+    Lines end only where CommonMark ends them (LF, CR, CRLF), and a blank line holds only spaces and tabs: a form
+    feed or a Unicode line separator after the marker leaves the text after it on the marker's line, which GitHub
+    shows as literal text but not as a list item, so no Session line follows the marker."""
+    verdict = checkin_verdict(body)
+    return (verdict["author"], verdict["client"]) if verdict["author"] else None
 
 
 def _statements(pattern: re.Pattern, body: str) -> list[tuple[re.Match, bool]]:
@@ -2242,8 +2314,11 @@ def markdown(m: dict) -> str:
             "request exists, give this comment's URL as its receipt's `coordination.task_ref`:", "",
             "```text", CHECKIN_BLOCK, "```", "",
             "The map names your session only when the marker is alone on the comment's first line and your own "
-            "`Session:` line, naming one id, comes first after the heading. A block you relay, paste or fill in for "
-            "another session names nobody; it is a notice for them to post as their own.", ""]
+            "`Session:` line, naming one id, comes first after the heading. Post a check-in block only for your own "
+            "session: a block that opens with the marker names the session on its Session line whoever posts it. To "
+            "pass a block to another session, leave out the marker line. A post whose text relays, whose heading "
+            "hands over, reassigns or reviews, or whose heading or poster label names another id names nobody, even "
+            "your own: release your own claim under a heading such as `## Release: claim N`.", ""]
     return "\n".join(out)
 
 

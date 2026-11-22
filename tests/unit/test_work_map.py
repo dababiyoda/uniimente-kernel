@@ -2195,13 +2195,18 @@ def test_a_claim_its_author_withdrew_is_released_and_an_old_claim_is_not_active(
             "claims"][0]["state"]
     assert state() == ("dormant", "active", "dormant")         # its session posted today; the claim is 24 days old
     for heading, text in (("## Withdrawn: my claim 6700000001 duplicates `3d2f9cc4`", "\nI stop here.\n"),
-                          ("**Handoff and claim release**", "\nThis closes the claim in "
+                          ("**Claim release**", "\nThis closes the claim in "
                            "https://github.com/o/r/issues/96#issuecomment-6700000001.\n"),
-                          ("## Handoff: draft #290",
+                          ("## Release: draft #290",
                            "\nClaim 6700000001 is released into https://github.com/o/r/pull/290.\n"),
-                          ("## Handoff: draft #290", "\nNothing is merged, so this releases claim 6700000001.\n")):
+                          ("## Release: draft #290", "\nNothing is merged, so this releases claim 6700000001.\n")):
         assert state(_signed(heading, B, text)) == ("released", "active", "released"), text
         assert state(f"{heading} · `{B}`\n{text}")[0] == "dormant", text        # the same words under a byline
+    for heading, text in (("**Handoff and claim release**", "\nThis closes the claim in "
+                           "https://github.com/o/r/issues/96#issuecomment-6700000001.\n"),
+                          ("## Handoff: draft #290",
+                           "\nClaim 6700000001 is released into https://github.com/o/r/pull/290.\n")):
+        assert state(_signed(heading, B, text))[0] == "dormant", text          # a handoff heading names nobody
     assert state(_signed("## Note", B, "\nI do NOT release claim 6700000001; still on it.\n"))[0] == "dormant"
     assert state(_signed("## Note", B, "\nStill on claim 6700000001.\n"), at="2026-11-12T22:00:00Z")[0] == "active"
 
@@ -2959,7 +2964,7 @@ def test_a_handoff_that_pastes_the_receiver_s_block_neither_releases_nor_takes_i
 
 def test_a_check_in_block_still_counts_with_or_without_its_heading():
     for body in (f"{w.CHECKIN}\n- Session: `{A}` (claude)\n- Files: `greg/body.py`\n",
-                 f"{w.CHECKIN}\n**Handoff and claim release**\n- Session: `{A}`\n",
+                 f"{w.CHECKIN}\n**Claim release**\n- Session: `{A}`\n",
                  f"{w.CHECKIN}   \n# Check-in: x\n\n\n- **Session:** `{A}` (claude)\n",
                  f"\n{w.CHECKIN}\n\n## Check-in: x\n\n- Session: {A}\n"):
         assert w.checkin_author(body) == (A, "claude"), body
@@ -3164,3 +3169,104 @@ def test_a_line_that_cannot_interrupt_a_paragraph_is_read_with_the_session_line(
 def test_a_line_that_interrupts_a_paragraph_ends_the_session_line(line):
     body = f"{w.CHECKIN}\n## Check-in\n- Session: `{B}`\n{line.format(a=A)}\n`{A}`\n"
     assert w.checkin_author(body) == (B, "claude")
+
+
+# ------------------------------------------------------------------ round 7: what a check-in says about its poster
+# Round 6's ordinary shapes, each posted by A with B's block directly under its own heading: relays (K, R), handoffs,
+# reassignments, reviews and templates filled in for someone else (T, H). Each says what it is, so it names nobody.
+F7 = "- Files / interfaces: `greg/missions.py`\n"
+SAYS_WHAT_IT_IS = {
+    "K1": f"## Check-in (relayed by `{A}` at the author's request): WU-11\n\n- **Session:** `{B}`, started elsewhere.\n"
+          "- **Files:** `greg/missions.py`\n",
+    "K2": f"## Check-in (relayed): WU-11, the seam\n\n- **Session:** `{B}`, started elsewhere.\n{F7}",
+    "K3": f"## Check-in: WU-11\n- Session: `{B}` (Claude Code, cloud)\n- Relayed by: `{A}`, at the author's request\n{F7}",
+    "K4": f"**Relayed by the founder: the author cannot post here.**\n- Session: `{B}` (Claude Code, cloud)\n{F7}",
+    "K5": f"## Check-in: WU-11\n- **Session:** `{B}` (Claude Code, cloud)\n- **Posted by:** `{A}` on its behalf\n{F7}",
+    "K6": f"## Check-in: WU-11\n- Session: `{B}` (Claude Code, cloud)\n{F7}\n_Relayed by `{A}`: `{B}` cannot post._\n",
+    "K7": f"## Check-in: WU-11\n- Session: `{B}` (Claude Code, cloud; relayed by the founder at its request)\n{F7}",
+    "K8": f"## Check-in: WU-11\n- Session: `{B}` (relayed by `session_01FBS4KN…`)\n{F7}",
+    "K9": f"## Release (relayed): claim 7100000001\n- Session: `{B}` (Claude Code, cloud)\n{F7}\n"
+          "This releases claim 7100000001.\n",
+    "T1": f"## Claim handoff: WU-11 from `{A}` to `{B}`\n- Session: `{B}` (receiver; post this as yours when you start)\n"
+          f"{F7}",
+    "T2": f"## Claim handoff: WU-11 to `{B}`\n- Session: `{B}` (Claude Code, cloud)\n{F7}",
+    "T3": f"## Check-in for the next owner: WU-11\n- Session: `{B}` (Claude Code, cloud)\n{F7}",
+    "T4": f"## Claim handoff: WU-11\n- Session: `{B}` (receiver)\n- From: `{A}`\n{F7}",
+    "T5": f"**Handoff: WU-11 to the next owner**\n\n- Session: `{B}` (Claude Code, cloud)\n{F7}",
+    "T6": f"## Claim reassigned by the founder: WU-03 from `{B}` to `{A}`\n- **Session:** `{B}` (previous owner)\n{F7}",
+    "T7": f"## Claim review: WU-11 seam, reviewed by `{A}`\n- Session: `{B}` (Claude Code, cloud)\n{F7}",
+    "R-c": f"## Check-in: WU-11\n- Session: `{B}` (Claude Code)\n{F7}\nRelayed by `{A}` at the author's request.\n",
+    "R-e": f"## Check-in: WU-11\n- Session: `{B}`\n- Relayed by: `{A}`\n{F7}",
+    "T-b": f"## Check-in for `{B}`: WU-11 (filled in by `{A}`)\n- Session: `{B}`\n{F7}",
+    "T-c": f"## Check-in: WU-11\n- Session: `{B}`\n{F7}\n`{B}`, post this as yours when you start.\n",
+    "H-b": f"## Claim handoff: WU-11\n- Session: `{B}` (receiver; I am handing over)\n{F7}",
+    "H30": f"## Handoff from `{A}`\n- Session: `{B}`\n{F7}",
+    "byline": f"## Check-in: WU-11 (`{A}`)\n- Session: `{B}`\n{F7}",
+    "dot": f"## Check-in · `{A}` · WU-11\n- Session: `{B}`\n{F7}",
+    "hand over": f"## Check-in: I hand WU-11 over\n- Session: `{B}`\n{F7}",
+    "behalf": f"## Check-in: WU-11\n- Session: `{B}`\n{F7}\nPosted on the author's behalf.\n",
+    "sender": f"## Check-in: WU-11\n- Session: `{B}`\n- **Sender:** `{A}`\n{F7}",
+}
+
+
+@pytest.mark.parametrize("name", list(SAYS_WHAT_IT_IS))
+def test_a_relay_handoff_review_or_filled_in_block_that_says_so_names_nobody(quick, tmp_path, capsys, name):
+    body = f"{w.CHECKIN}\n{SAYS_WHAT_IT_IS[name]}"
+    assert w.checkin_author(body) is None
+    comments = [_comment(7100000002, body)]
+    m = w.build([], comments, now=NOW, use_git=False)
+    assert B not in json.dumps(m["sessions"]) and all(c["session"] is None for c in m["claims"])
+    paths, _raw = _answer(tmp_path, capsys, [], comments, "--paths", "greg/missions.py")
+    assert all(c["session"] is None for c in paths["paths"][0]["claims"])
+
+
+def test_a_relayed_handed_over_or_reviewed_release_releases_nothing(quick):
+    claim = _comment(7100000001, _signed("## Claim: WU-11 seam", B, "- Files: `greg/missions.py`\n"),
+                     at="2026-11-12T11:00:00Z")
+    relayed = _comment(7100000002, f"{w.CHECKIN}\n## Release (relayed at `{B}`'s request): claim 7100000001\n"
+                                   f"- Session: `{B}` (Claude Code, cloud)\n{F7}\nThis releases claim 7100000001.\n")
+    m = w.build([], [claim, relayed], now=NOW, use_git=False)
+    c = _claim(m, 7100000001)
+    assert (c["state"], c["released_by"], c["release_by_unverified_author"]) == ("active", [], [7100000002])
+    own = _comment(7100000001, _signed("## Claim: WU-11 seam", A, "- Files: `greg/missions.py`\n"),
+                   at="2026-11-12T11:00:00Z")
+    handed = _comment(7100000002, f"{w.CHECKIN}\n## Claim handoff: WU-11 to the next owner\n- Session: `{B}` (post "
+                                  f"this as yours)\n{F7}\nThis releases claim 7100000001 into this handoff.\n")
+    m = w.build([], [own, handed], now=NOW, use_git=False)
+    assert [s["session"] for s in m["sessions"]] == [A] and _claim(m, 7100000001)["session"] == A
+    assert _claim(m, 7100000002)["session"] is None
+    old = _comment(7100000001, _signed("## Claim: WU-11 seam", B, "- Files: `greg/missions.py`\n"),
+                   at="2026-11-01T11:00:00Z")
+    review = _comment(7100000002, f"{w.CHECKIN}\n## Claim review: is claim 7100000001 still held?\n"
+                                  f"- Session: `{B}` (Claude Code, cloud), claim 7100000001\n{F7}")
+    m = w.build([], [old, review], now=NOW, use_git=False)
+    assert (_claim(m, 7100000001)["state"], m["sessions"][0]["activity"]) == ("dormant", "DORMANT")
+
+
+def test_a_session_s_own_check_ins_still_name_it():
+    own = [f"## Check-in: WU-11\n- Session: `{B}` (Claude Code, cloud)\n{F7}",
+           f"## Check-in: WU-11 · `{B}`\n- Session: `{B}`\n{F7}",
+           f"## Check-in (resume of 6841838048): #316 answers the integrator's review\n- Session: `{B}`\n{F7}",
+           f"## Coordination ask: WU-03 — still yours, `{A}`?\n- Session: `{B}` (Claude Code, cloud)\n{F7}",
+           f"## Second ask, `{A}`: WU-03\n- Session: `{B}` (Claude Code, cloud)\n{F7}",
+           f"## Release: claim 7100000001\n- Session: `{B}`\n- Reviewer / integrator: `{A}`\n{F7}"]
+    for body in own:
+        assert w.checkin_author(f"{w.CHECKIN}\n{body}") == (B, "claude"), body
+    assert w.checkin_author(f"{w.CHECKIN}\n## Coordination ask · `{A}`\n- Session: `{B}`\n") is None   # a byline
+
+
+def test_the_limit_a_filled_in_block_that_says_nothing_is_read_as_its_session_line():
+    # Inherent: a block filled in, pasted or copied with none of this wording is read as the session it names.
+    assert w.checkin_author(f"{w.CHECKIN}\n## Check-in: WU-11\n- Session: `{B}` (Claude Code, cloud)\n{F7}") == (
+        B, "claude")
+
+
+def test_the_map_tells_posters_to_post_a_block_only_for_their_own_session(quick):
+    text = w.markdown(w.build([], [], now=NOW, use_git=False))
+    assert ("Post a check-in block only for your own session: a block that opens with the marker names the session "
+            "on its Session line whoever posts it. To pass a block to another session, leave out the marker line."
+            ) in text
+    assert "fill in for another session names nobody" not in text
+    assert "block filled in, pasted or copied with none of this wording is read as the session its Session line " \
+           "names, whoever posts it" in " ".join(w.checkin_author.__doc__.split())
+    assert "is read as the session its Session line names, whoever posts it" in " ".join(w.__doc__.split())

@@ -18,6 +18,8 @@ new file already exists, is STALE.
 from pathlib import Path
 import ast
 import copy
+import hashlib
+import json
 import os
 import shutil
 import subprocess
@@ -54,6 +56,7 @@ SEALED = "test_the_body_scan_reads_cortex_evaluation_except_the_files_a_freeze_m
 LINKS = "test_the_body_scan_reads_bom_files_follows_links_inside_the_repository_only_and_sees_pycache"
 UNDECIDED_ROLES = "test_an_undecided_record_takes_no_new_or_changed_entry_of_any_role_without_a_pin_change"
 DISTINCT_SHAPE = "test_guard_3_reports_a_structural_copy_even_where_a_distinct_entry_names_it"
+SEALS_ONLY = "test_a_freeze_manifest_seals_only_the_files_and_bytes_the_test_pins"
 REALITY_KEPT = "        kept_for: {consumer: acceptance.claims.crosswalk_problems}\n"
 # A copy of greg.organs.exchange recorded as 'distinct' in the organ-exchange record.
 DISTINCT_COPY = [("copy_body", "greg/organs.py", "exchange", "greg/organ_relay2.py", "function"),
@@ -92,8 +95,9 @@ def _flip(ruling: str = "") -> list:
 # the unique ``start`` up to the next ``end`` (None: to the end of the file), ("append", path, text),
 # ("create", path, text), ("copy_def", path, name, new_name, new_path): a top-level def copied under a new name, or
 # ("copy_body", path, name, new_path, form): a top-level def copied with every name and literal changed, as a
-# function, a method ("method") or a nested def ("nested") (``_copy_body``), or ("append_body", path, name,
-# existing_path, form): the same copy appended to a file that exists.
+# function, a method ("method") or a nested def ("nested") (``_copy_body``), ("append_body", path, name,
+# existing_path, form): the same copy appended to a file that exists, or ("seal", manifest_path, path): a new freeze
+# manifest that hashes the current bytes of ``path``.
 MUTANTS = [
     ("a registry entry removed: temporary teams",
      [("cut", MAP, "  - record_id: OWN-FN-TEMPORARY-TEAMS\n", "  - record_id: OWN-FN-COMMERCE-CLOSURE\n")], SHAPE),
@@ -426,11 +430,11 @@ MUTANTS = [
      [("replace", TESTS, 'if not relative.startswith(".") and relative not in sealed:\n',
        'if not relative.startswith(".") and not relative.startswith(SEALED_UNDER):\n')], SEALED),
     ("MW-C: a manifest seals a file by name, whatever its bytes",
-     [("replace", TESTS, '        if path.is_file() and f"sha256:{hashlib.sha256(path.read_bytes()).hexdigest()}" in recorded:\n',
-       '        if path.is_file():\n')], SEALED),
+     [("replace", TESTS, '                f"sha256:{hashlib.sha256(path.read_bytes()).hexdigest()}" == pinned):\n',
+       "                True):\n")], SEALED),
     ("MW-C: a manifest seals files outside cortex/evaluation/",
-     [("replace", TESTS, " and isinstance(digest, str) and relative.startswith(SEALED_UNDER):\n",
-       " and isinstance(digest, str):\n")], SEALED),
+     [("replace", TESTS, "        if relative.startswith(SEALED_UNDER) and path.is_file() and pinned in ",
+       "        if path.is_file() and pinned in ")], SEALED),
     # -- MW-C round 3: one-node edits normalised before fingerprinting ---------------------------------------------
     ("MW-C: pass statements kept in the fingerprint",
      [("replace", TESTS, "    return (isinstance(node, ast.Pass) or (isinstance(node, ast.Expr)",
@@ -474,6 +478,20 @@ MUTANTS = [
      [("replace", TESTS, "                    if shape in shapes:                   # a distinct entry exempts names, "
                          "never a copy\n",
        "                    if shape in shapes and (module, name) not in distinct:\n")], DISTINCT_SHAPE),
+    # -- MW-C round 4 (N3): a freeze manifest seals only what the SEALED literal pins ---------------------------------
+    ("MW-C round 4: a copy under cortex/evaluation/ hidden by a freeze manifest written in the same diff",
+     [("copy_body", "greg/business_loop.py", "reconcile", "cortex/evaluation/settle.py", "function"),
+      ("seal", "cortex/evaluation/freeze-settle-v0.1.json", "cortex/evaluation/settle.py"),
+      ("create", "greg/settle_view.py", "from cortex.evaluation.settle import reconcile_copy\n")], BODIES),
+    ("MW-C round 4: any file a freeze manifest hashes is sealed again (the SEALED literal ignored)",
+     [("replace", TESTS, "    for relative, pinned in sealed.items():\n",
+       "    for relative, pinned in {r: d for r, ds in digests.items() for d in ds}.items():\n")], SEALS_ONLY),
+    ("MW-C round 4: a pinned file skipped although no freeze manifest records its bytes",
+     [("replace", TESTS, " and path.is_file() and pinned in digests.get(relative, ()) and (\n",
+       " and path.is_file() and (\n")], SEALED),
+    ("MW-C round 4: a SEALED entry that seals nothing passes",
+     [("replace", TESTS, 'f"change" for relative, digest in sealed.items() if relative not in live]\n',
+       'f"change" for relative, digest in sealed.items() if False]\n')], SEALED),
 ]
 
 
@@ -569,6 +587,15 @@ def _apply(repo: Path, edits) -> tuple[dict, list[Path]] | None:
             created.append(target)
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text(body)
+            continue
+        if kind == "seal":
+            # a new freeze manifest at ``relative`` that hashes the current bytes of the file ``args[0]``
+            sealed = repo / args[0]
+            if path.exists() or not sealed.is_file():
+                return _restore(originals, created)
+            created.append(path)
+            path.write_text(json.dumps({"inputs": {"code": {
+                args[0]: "sha256:" + hashlib.sha256(sealed.read_bytes()).hexdigest()}}}))
             continue
         if kind == "append_body":
             name, existing, form = args

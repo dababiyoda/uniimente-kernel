@@ -1225,12 +1225,28 @@ def unrecorded(records: list[dict], root: Path = ROOT, packages=GUARDED) -> list
 
 # Not runtime code: tests (fixtures may copy a body on purpose) and documents, by full top-level path prefix, never by
 # a path segment, so a copy cannot hide in a new directory that shares one of these names. SEALED_UNDER: the only
-# other files not scanned are the frozen instruments there, each a file whose current bytes a ``MANIFESTS`` file hashes
-# (``sealed_files``); every other file under it (new files, edited ones, subdirectories) is scanned, because GREG
-# imports from it (cortex.evaluation.closure).
+# other files not scanned are the frozen instruments there (``sealed_files``); every other file under it (new files,
+# edited ones, subdirectories) is scanned, because GREG imports from it (cortex.evaluation.closure).
 NOT_RUNTIME = ("tests/", "docs/")
 SEALED_UNDER = "cortex/evaluation/"
 MANIFESTS = "freeze-*.json"
+# Round 4 (2026-11-22, N3): the frozen instruments guard 4 skips, by path and the sha256 of the bytes it skips. A file
+# is skipped only when it is here, its current bytes hash to this digest and a SEALED_UNDER/freeze-*.json manifest
+# records that digest for it: a manifest added in a diff seals nothing, and a file edited after its freeze is scanned
+# (test_a_freeze_manifest_seals_only_the_files_and_bytes_the_test_pins). An entry that seals nothing on the tree fails
+# (``sealed_problems``, test_no_copy_of_a_registered_function_body_outside_its_record). These are the 9 files the
+# manifests sealed on 2026-11-22; sealing another is a reviewed change to this literal.
+SEALED = {
+    "cortex/evaluation/__init__.py": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "cortex/evaluation/arms.py": "sha256:3142bff2aa8d5f316ea419e42afe5077e365a5c6939885454b3c080d2fbe614f",
+    "cortex/evaluation/build_suites.py": "sha256:8115c7feae736c8878e56d4c1879fe7974b06f9a87768973cb57ff6f805b9187",
+    "cortex/evaluation/crossgeo_arms.py": "sha256:d06cbf804594c5788ae4c5d154d720c1aa3e219eb293457485e24fdd314e38c8",
+    "cortex/evaluation/crossgeo_loss.py": "sha256:c36be46479a16d29a9cc929d2d07a687e9d43db93ff8c8625026e1e94c9d0457",
+    "cortex/evaluation/crossgeo_suite.py": "sha256:b5b464a62182d4dded70d9352165334cf1eeb86db2e7329f3c8206981ac85699",
+    "cortex/evaluation/generators.py": "sha256:2b302d0d01b8051eae604dec7214726c53fe6bce7deb90d4e55b5cdcc544c362",
+    "cortex/evaluation/run.py": "sha256:42460d4f95ab8c86f3be6081ba2fc8555c8a319ceebfa2d02b34bd3e88a82cdc",
+    "cortex/evaluation/scoring.py": "sha256:8cbb90aade8d73da67d3c14d673408edaf45cbc65ddf6ebe7a27bea7ed6610d7",
+}
 ERASED = "_"                     # every name and every constant of a fingerprinted body becomes this one sentinel
 # Guard 4's reviewed escape hatch for a false positive: a different function whose erased body happens to equal a
 # registered one (small registered bodies have generic shapes). (module, qualname) of the location -> (the registered
@@ -1366,10 +1382,10 @@ def fingerprint(fn) -> tuple[int, str]:
     return sum(1 for _ in ast.walk(module)) - 1, ast.dump(module)
 
 
-def sealed_files(root: Path = ROOT) -> frozenset[str]:
-    """The files under SEALED_UNDER that a SEALED_UNDER/freeze-*.json manifest hashes (``inputs.code``: path ->
-    "sha256:<hex>"), as repository-relative paths, when the file's bytes still have a hash some manifest records for
-    it. A manifest that does not parse seals nothing."""
+def sealed_files(root: Path = ROOT, sealed: dict = SEALED) -> frozenset[str]:
+    """The ``sealed`` paths (repository-relative, under SEALED_UNDER) whose current bytes hash to the pinned digest
+    when a SEALED_UNDER/freeze-*.json manifest (``inputs.code``: path -> "sha256:<hex>") records that digest for the
+    path. A manifest that does not parse seals nothing; neither does a manifest for a path or digest not pinned."""
     digests: dict[str, set[str]] = {}
     for manifest in sorted(Path(root, SEALED_UNDER).glob(MANIFESTS)):
         try:
@@ -1377,22 +1393,32 @@ def sealed_files(root: Path = ROOT) -> frozenset[str]:
         except (OSError, ValueError, AttributeError):
             continue
         for relative, digest in code.items() if isinstance(code, dict) else ():
-            if isinstance(relative, str) and isinstance(digest, str) and relative.startswith(SEALED_UNDER):
+            if isinstance(relative, str) and isinstance(digest, str):
                 digests.setdefault(relative, set()).add(digest)
-    sealed = set()
-    for relative, recorded in digests.items():
+    out = set()
+    for relative, pinned in sealed.items():
         path = Path(root, relative)
-        if path.is_file() and f"sha256:{hashlib.sha256(path.read_bytes()).hexdigest()}" in recorded:
-            sealed.add(relative)
-    return frozenset(sealed)
+        if relative.startswith(SEALED_UNDER) and path.is_file() and pinned in digests.get(relative, ()) and (
+                f"sha256:{hashlib.sha256(path.read_bytes()).hexdigest()}" == pinned):
+            out.add(relative)
+    return frozenset(out)
 
 
-def runtime_files(root: Path = ROOT):
+def sealed_problems(root: Path = ROOT, sealed: dict = SEALED) -> list[str]:
+    """A SEALED entry that seals nothing on this tree: the file moved, its bytes changed, or no manifest records them.
+    It is scanned now, and the entry must go (or be re-pinned to the new freeze) in a reviewed change."""
+    live = sealed_files(root, sealed)
+    return [f"SEALED {relative} seals nothing on this tree (moved, edited since its freeze, or no freeze manifest "
+            f"records {digest}): guard 4 scans it now; remove the entry, or pin the new freeze's digest in a reviewed "
+            f"change" for relative, digest in sealed.items() if relative not in live]
+
+
+def runtime_files(root: Path = ROOT, sealed: dict = SEALED):
     """Every runtime .py file as the filesystem lists it (no git: the mutant gate's copy of the tree has none), by
     guard 3's rule (``_walk``: directory symlinks followed only inside the repository), without NOT_RUNTIME, the
     sealed files under SEALED_UNDER and top-level hidden entries (.git, tool caches, an agent's worktree: none is
     tracked runtime code)."""
-    sealed = sealed_files(root)
+    sealed = sealed_files(root, sealed)
 
     def skip(path: Path) -> bool:
         relative = path.relative_to(root)
@@ -1487,7 +1513,7 @@ def _prints(path: Path, stamp: int, sizes: frozenset) -> tuple:
                  if _erased_size(node) in sizes)
 
 
-def body_copies(records: list[dict], root: Path = ROOT) -> tuple[list[dict], list[str]]:
+def body_copies(records: list[dict], root: Path = ROOT, sealed: dict = SEALED) -> tuple[list[dict], list[str]]:
     """(every function or method whose fingerprint is a registered body's, anywhere but that body's own registered
     module and qualname, inside its record or outside it; every runtime file that does not parse). Neither a
     'distinct' entry nor recording the module as a canonical, candidate or alternate module exempts a copy; only
@@ -1495,7 +1521,7 @@ def body_copies(records: list[dict], root: Path = ROOT) -> tuple[list[dict], lis
     bodies = registered_bodies(records, root)
     sizes = frozenset(size for size, _ in bodies)
     found, unreadable = [], []
-    for path in runtime_files(root):
+    for path in runtime_files(root, sealed):
         relative = path.relative_to(root).as_posix()
         try:
             prints = _prints(path, path.stat().st_mtime_ns, sizes)
@@ -1529,8 +1555,9 @@ def exempted(found: list[dict], exemptions: dict = BODY_EXEMPTIONS) -> tuple[lis
     return kept, sorted(problems)
 
 
-def body_copy_problems(records: list[dict], root: Path = ROOT, exemptions: dict = BODY_EXEMPTIONS) -> list[str]:
-    found, unreadable = body_copies(records, root)
+def body_copy_problems(records: list[dict], root: Path = ROOT, exemptions: dict = BODY_EXEMPTIONS,
+                       sealed: dict = SEALED) -> list[str]:
+    found, unreadable = body_copies(records, root, sealed)
     found, stale = exempted(found, exemptions)
     out = [f"{c['at']} defines {c['name']!r}, a copy of the body of {c['registered']} ({c['registered_at']}), "
            f"registered in {c['record']['record_id']} ({c['record'].get('function')}); names and constants are erased "
@@ -1951,6 +1978,7 @@ def test_no_copy_of_a_registered_function_body_outside_its_record():
     assert len(list(runtime_files())) > 400
     assert body_copy_problems(records) == []
     assert registered_twin_problems(records) == []
+    assert sealed_problems() == [] and sealed_files() == frozenset(SEALED)
 
 
 def test_no_distinct_entry_names_a_module_that_holds_a_copy_of_a_registered_body():
@@ -2294,11 +2322,20 @@ def test_the_body_scan_reads_cortex_evaluation_except_the_files_a_freeze_manifes
         "cortex/evaluation/freeze-broken.json": "{not json",
     })
     teams = next(r for r in load()["function_owner_records"] if r["record_id"] == "OWN-FN-TEMPORARY-TEAMS")
-    found = body_copy_problems([teams], root)
+    # the test's own SEALED: each path with the digest a manifest records, as the literal pins the real ones
+    pinned = {"cortex/evaluation/sealed.py": digest(sealed), "cortex/evaluation/edited.py": digest("X = 1\n"),
+              "foundry/systems/team_copy.py": digest(copied)}
+    found = body_copy_problems([teams], root, sealed=pinned)
     assert sorted(line.split(":")[0] for line in found) == [
         "cortex/evaluation/edited.py", "cortex/evaluation/settle.py", "cortex/evaluation/suites/runner.py",
         "cortex/other.py", "foundry/systems/team_copy.py"], found
-    assert sealed_files(root) == {"cortex/evaluation/sealed.py"}
+    assert sealed_files(root, pinned) == {"cortex/evaluation/sealed.py"}
+    stale = sealed_problems(root, pinned)
+    assert sorted(line.split()[1] for line in stale) == ["cortex/evaluation/edited.py", "foundry/systems/team_copy.py"]
+    # a pinned path is skipped only for the pinned bytes and only when a manifest records them
+    assert sealed_files(root, {"cortex/evaluation/sealed.py": digest(copied)}) == frozenset()
+    unrecorded_seal = _tree(tmp_path / "no-manifest", {"cortex/evaluation/sealed.py": sealed})
+    assert sealed_files(unrecorded_seal, {"cortex/evaluation/sealed.py": digest(sealed)}) == frozenset()
 
 
 # A registered body with a local import under an alias, a plain import, a nested def and an except-as name.
@@ -2557,3 +2594,28 @@ def test_guard_3_reports_a_structural_copy_even_where_a_distinct_entry_names_it(
     found = unrecorded([record], root, packages=("greg",))
     assert sorted(line.split(" defines ")[1].split(",")[0] for line in found) == ["'InboxRelay'", "'forward_envelope'"]
     assert all(line.startswith("greg/vouched.py:") and "a structural copy of greg.body." in line for line in found)
+
+
+def _sha(text: str) -> str:
+    return "sha256:" + hashlib.sha256(text.encode()).hexdigest()
+
+
+def test_a_freeze_manifest_seals_only_the_files_and_bytes_the_test_pins(tmp_path):
+    # Round 4, N3: the seal was self-issued. Any new cortex/evaluation/freeze-*.json written in the same diff hid the
+    # files whose bytes it hashed, a copy GREG imports included. A file is skipped only when SEALED (a literal here)
+    # names it with its current sha256 and a manifest records that sha256 for it; a new manifest seals nothing, and a
+    # pinned file edited and re-sealed by a new manifest is scanned.
+    copied = _disguised("foundry.systems.teams", "form", "convene")
+    root = _tree(tmp_path, {
+        **_real("foundry.systems.teams"),
+        "cortex/evaluation/planted.py": copied,                # new, sealed by a manifest written in the same diff
+        "cortex/evaluation/arms.py": copied,                   # a SEALED path, edited, re-sealed by the same manifest
+        "cortex/evaluation/freeze-v0.2.4.json": json.dumps({"inputs": {"code": {
+            "cortex/evaluation/planted.py": _sha(copied), "cortex/evaluation/arms.py": _sha(copied)}}}),
+        "greg/settle_view.py": "from cortex.evaluation.planted import convene\n",
+    })
+    teams = next(r for r in load()["function_owner_records"] if r["record_id"] == "OWN-FN-TEMPORARY-TEAMS")
+    found = body_copy_problems([teams], root)
+    assert sorted(line.split(":")[0] for line in found) == ["cortex/evaluation/arms.py",
+                                                            "cortex/evaluation/planted.py"], found
+    assert sealed_files(root) == frozenset()

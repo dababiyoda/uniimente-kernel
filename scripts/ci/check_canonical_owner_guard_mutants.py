@@ -60,6 +60,7 @@ SEALS_ONLY = "test_a_freeze_manifest_seals_only_the_files_and_bytes_the_test_pin
 LAST_BINDING = "test_a_registered_qualname_names_its_last_binding_as_python_does"
 COMPARED_PIN = "test_the_set_of_compared_registered_bodies_is_pinned"
 SHADOW = "test_a_package_shadows_a_module_of_the_same_name_and_no_two_files_share_a_module_name"
+ONCE = "test_the_walk_reads_each_real_file_once_and_follows_file_links_anywhere"
 REMOTE_SIG = "def handle(home: Path, method: str, path: str, headers, body: bytes, *, now: datetime | None = None):\n"
 REALITY_KEPT = "        kept_for: {consumer: acceptance.claims.crosswalk_problems}\n"
 # A copy of greg.organs.exchange recorded as 'distinct' in the organ-exchange record.
@@ -302,8 +303,8 @@ MUTANTS = [
        '                                         or relative.name not in GUARDED)\n')],
      CATCHES),
     ("MW-C: files skipped by a path segment (any evaluation/ directory) instead of the sealed set",
-     [("replace", TESTS, 'if not relative.startswith(".") and relative not in sealed:\n',
-       'if not relative.startswith(".") and "/evaluation/" not in "/" + relative:\n')], CATCHES),
+     [("replace", TESTS, 'return not relative.startswith(".") and relative not in sealed\n',
+       'return not relative.startswith(".") and "/evaluation/" not in "/" + relative\n')], CATCHES),
     # -- MW-C: the candidates of an undecided record are pinned exactly ---------------------------------------------
     ("MW-C: a third candidate added to the undecided goal runtime (side C)",
      [("replace", MAP, "      - side: B\n        module: greg.gravity\n",
@@ -353,11 +354,11 @@ MUTANTS = [
        "                if isinstance(child, ast.FunctionDef):\n                    out.append((name, child))\n")],
      CATCHES),
     ("MW-C: top-level .py files no longer scanned",
-     [("replace", TESTS, 'if not relative.startswith(".") and relative not in sealed:\n',
-       'if not relative.startswith(".") and relative not in sealed and "/" in relative:\n')], CATCHES),
+     [("replace", TESTS, 'return not relative.startswith(".") and relative not in sealed\n',
+       'return not relative.startswith(".") and relative not in sealed and "/" in relative\n')], CATCHES),
     ("MW-C: all of cortex/ skipped",
-     [("replace", TESTS, 'if not relative.startswith(".") and relative not in sealed:\n',
-       'if not relative.startswith(".") and not relative.startswith("cortex/"):\n')], CATCHES),
+     [("replace", TESTS, 'return not relative.startswith(".") and relative not in sealed\n',
+       'return not relative.startswith(".") and not relative.startswith("cortex/")\n')], CATCHES),
     ("MW-C: except-as names no longer erased",
      [("replace", TESTS, "        self.generic_visit(node)\n        if node.name is not None:\n            node.name = ERASED\n"
                          "        return node\n\n    def visit_alias",
@@ -431,8 +432,8 @@ MUTANTS = [
        "    for c in body_copies(records, root)[0]:\n")], EXEMPT),
     # -- MW-C round 3: cortex/evaluation/ is scanned except the files a freeze manifest seals ----------------------
     ("MW-C: cortex/evaluation/ skipped wholesale again",
-     [("replace", TESTS, 'if not relative.startswith(".") and relative not in sealed:\n',
-       'if not relative.startswith(".") and not relative.startswith(SEALED_UNDER):\n')], SEALED),
+     [("replace", TESTS, 'return not relative.startswith(".") and relative not in sealed\n',
+       'return not relative.startswith(".") and not relative.startswith(SEALED_UNDER)\n')], SEALED),
     ("MW-C: a manifest seals a file by name, whatever its bytes",
      [("replace", TESTS, '                f"sha256:{hashlib.sha256(path.read_bytes()).hexdigest()}" == pinned):\n',
        "                True):\n")], SEALED),
@@ -479,9 +480,9 @@ MUTANTS = [
      [("replace", TESTS, "        if pin is None:\n            problems.append(", "        if pin is None:\n"
        "            continue\n            problems.append(")], UNDECIDED_ROLES),
     ("MW-C round 4: guard 3's structural-copy check honours distinct entries again",
-     [("replace", TESTS, "                    if shape in shapes:                   # a distinct entry exempts names, "
+     [("replace", TESTS, "                if shape in shapes:                   # a distinct entry exempts names, "
                          "never a copy\n",
-       "                    if shape in shapes and (module, name) not in distinct:\n")], DISTINCT_SHAPE),
+       "                if shape in shapes and (module, name) not in distinct:\n")], DISTINCT_SHAPE),
     # -- MW-C round 4 (N3): a freeze manifest seals only what the SEALED literal pins ---------------------------------
     ("MW-C round 4: a copy under cortex/evaluation/ hidden by a freeze manifest written in the same diff",
      [("copy_body", "greg/business_loop.py", "reconcile", "cortex/evaluation/settle.py", "function"),
@@ -531,6 +532,19 @@ MUTANTS = [
     ("MW-C round 4: two runtime files with one module name pass",
      [("replace", TESTS, "for name, files in sorted(names.items()) if len(files) > 1]\n",
        "for name, files in sorted(names.items()) if False]\n")], SHADOW),
+    # -- MW-C round 4 (N6, N7): each real file read once; file links followed wherever they point ------------------
+    ("MW-C round 4: a real file read at every path the walk lists (no de-duplication)",
+     [("replace", TESTS, "        out += kept[:1]\n", "        out += kept\n")], ONCE),
+    ("MW-C round 4: a link path preferred to the file's real path",
+     [("replace", TESTS, "key=lambda p: (links(p), p.relative_to(root).as_posix()))\n",
+       "key=lambda p: (-links(p), p.relative_to(root).as_posix()))\n")], ONCE),
+    ("MW-C round 4: guard 3 lists each guarded package on its own again",
+     [("replace", TESTS, "    for path in python_files(root, *packages):\n        module, tree = ",
+       "    for path in [q for package in packages for q in python_files(root, package)]:\n        module, tree = ")],
+     ONCE),
+    ("MW-C round 4: file links no longer followed",
+     [("replace", TESTS, '        elif entry.name.endswith(".py") and entry.is_file():\n',
+       '        elif entry.name.endswith(".py") and entry.is_file(follow_symlinks=False):\n')], ONCE),
 ]
 
 

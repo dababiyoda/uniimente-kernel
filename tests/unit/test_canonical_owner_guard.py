@@ -521,8 +521,32 @@ def _walk(directory: Path, root: Path, skip=lambda path: False, _on_path: frozen
             yield path
 
 
-def python_files(root: Path, package: str):
-    yield from _walk(Path(root, package), root)
+def _once(paths, root: Path, scanned=lambda path: True) -> list[Path]:
+    """Each real file of ``paths`` once (round 4, N6): at its real path when the walk listed it there and
+    ``scanned`` keeps it, otherwise at one link path ``scanned`` keeps (the one through the fewest links, then the
+    first by name), which is when the target is not read where it lies (docs/, tests/, a sealed file, a package the
+    scan does not cover, or outside the repository for a file link). A sibling directory link to scanned code adds
+    nothing, so a registered body is never a copy of itself
+    (test_the_walk_reads_each_real_file_once_and_follows_file_links_anywhere). A hard link is two files."""
+    by_real: dict[Path, list[Path]] = {}
+    for path in paths:
+        by_real.setdefault(Path(path).resolve(), []).append(Path(path))
+
+    def links(path: Path) -> int:
+        parts = path.relative_to(root).parts
+        return sum(Path(root, *parts[:i]).is_symlink() for i in range(1, len(parts) + 1))
+
+    out = []
+    for listed in by_real.values():
+        kept = sorted((p for p in listed if scanned(p)), key=lambda p: (links(p), p.relative_to(root).as_posix()))
+        out += kept[:1]
+    return sorted(out, key=lambda p: p.relative_to(root).as_posix())
+
+
+def python_files(root: Path, *packages: str) -> list[Path]:
+    """Every .py file under the given packages, each real file once (``_once``): a link from one listed package to
+    another is read where it lies, a link to anywhere else at the link path."""
+    return _once([path for package in packages for path in _walk(Path(root, package), root)], root)
 
 
 # -- module-level bindings (guards 1 and 3) ----------------------------------------------------------------------
@@ -883,12 +907,11 @@ def undecided_problems(data: dict, undecided: dict = UNDECIDED_ENTRIES) -> list[
 def _guarded_index(root: Path, packages=GUARDED) -> dict[str, set[str]]:
     """Module-level name -> the guarded modules that define it (imports excluded)."""
     index: dict[str, set[str]] = {}
-    for package in packages:
-        for path in python_files(root, package):
-            module = module_name(path, root)
-            for name, (_, source) in definitions(parse(path), module, path.name == "__init__.py").items():
-                if source is None:
-                    index.setdefault(name, set()).add(module)
+    for path in python_files(root, *packages):
+        module = module_name(path, root)
+        for name, (_, source) in definitions(parse(path), module, path.name == "__init__.py").items():
+            if source is None:
+                index.setdefault(name, set()).add(module)
     return index
 
 
@@ -1219,41 +1242,40 @@ def unrecorded(records: list[dict], root: Path = ROOT, packages=GUARDED) -> list
                          exact, shapes))
     sizes = {size for *_, shapes in compiled for size, _ in shapes}
     out = []
-    for package in packages:
-        for path in python_files(root, package):
-            module, tree = module_name(path, root), parse(path)
-            here = definitions(tree, module, path.name == "__init__.py")
-            copies = {}
-            for node in statements(tree.body):
-                if isinstance(node, DEFS):
-                    raw = sum(1 for _ in ast.walk(node))          # a docstring adds two nodes to a shape's size
-                    if any(size <= raw <= size + 2 for size in sizes):
-                        copies[node.name] = (node.lineno, _shape(node))
-            for r, patterns, modules, distinct, exact, shapes in compiled:
-                if module in modules:
+    for path in python_files(root, *packages):
+        module, tree = module_name(path, root), parse(path)
+        here = definitions(tree, module, path.name == "__init__.py")
+        copies = {}
+        for node in statements(tree.body):
+            if isinstance(node, DEFS):
+                raw = sum(1 for _ in ast.walk(node))          # a docstring adds two nodes to a shape's size
+                if any(size <= raw <= size + 2 for size in sizes):
+                    copies[node.name] = (node.lineno, _shape(node))
+        for r, patterns, modules, distinct, exact, shapes in compiled:
+            if module in modules:
+                continue
+            for name, (line, source) in here.items():
+                if (module, name) in distinct:
                     continue
-                for name, (line, source) in here.items():
-                    if (module, name) in distinct:
-                        continue
-                    if source is not None:
-                        source = origin(source, root)
-                        if (source.rpartition(".")[0] in modules or source in modules
-                                or tuple(source.rsplit(".", 1)) in distinct):
-                            continue                      # importing the owner's (or a distinct) name is a use
-                    marker = next((p.pattern for p in patterns if p.fullmatch(name)), None)
-                    if marker is not None:
-                        why = f"matches the marker {marker!r} of {r['record_id']}"
-                    elif name in exact:
-                        why = f"reuses the name of {exact[name]}.{name}, registered in {r['record_id']}"
-                    else:
-                        continue
-                    out.append(f"{path.relative_to(root)}:{line} defines {name!r}, which {why} ({r['function']}); "
-                               f"its owner is {owner(r)}. " + FIX.format(record=r["record_id"]))
-                for name, (line, shape) in copies.items():
-                    if shape in shapes:                   # a distinct entry exempts names, never a copy
-                        out.append(f"{path.relative_to(root)}:{line} defines {name!r}, a structural copy of "
-                                   f"{shapes[shape]} registered in {r['record_id']} ({r['function']}); its owner is "
-                                   f"{owner(r)}. " + FIX.format(record=r["record_id"]))
+                if source is not None:
+                    source = origin(source, root)
+                    if (source.rpartition(".")[0] in modules or source in modules
+                            or tuple(source.rsplit(".", 1)) in distinct):
+                        continue                      # importing the owner's (or a distinct) name is a use
+                marker = next((p.pattern for p in patterns if p.fullmatch(name)), None)
+                if marker is not None:
+                    why = f"matches the marker {marker!r} of {r['record_id']}"
+                elif name in exact:
+                    why = f"reuses the name of {exact[name]}.{name}, registered in {r['record_id']}"
+                else:
+                    continue
+                out.append(f"{path.relative_to(root)}:{line} defines {name!r}, which {why} ({r['function']}); "
+                           f"its owner is {owner(r)}. " + FIX.format(record=r["record_id"]))
+            for name, (line, shape) in copies.items():
+                if shape in shapes:                   # a distinct entry exempts names, never a copy
+                    out.append(f"{path.relative_to(root)}:{line} defines {name!r}, a structural copy of "
+                               f"{shapes[shape]} registered in {r['record_id']} ({r['function']}); its owner is "
+                               f"{owner(r)}. " + FIX.format(record=r["record_id"]))
     return sorted(set(out))
 
 
@@ -1475,10 +1497,11 @@ def runtime_files(root: Path = ROOT, sealed: dict = SEALED):
         relative = path.relative_to(root)
         return len(relative.parts) == 1 and (relative.name.startswith(".") or f"{relative.name}/" in NOT_RUNTIME)
 
-    for path in _walk(Path(root), root, skip):
+    def scanned(path: Path) -> bool:
         relative = path.relative_to(root).as_posix()
-        if not relative.startswith(".") and relative not in sealed:
-            yield path
+        return not relative.startswith(".") and relative not in sealed
+
+    yield from _once(_walk(Path(root), root, skip), root, scanned)
 
 
 def _functions(tree: ast.Module):
@@ -2744,3 +2767,40 @@ def test_a_package_shadows_a_module_of_the_same_name_and_no_two_files_share_a_mo
     found = body_copy_problems([commerce], dotted)
     assert len(found) == 1 and "greg.business_loop.py and greg/business_loop.py are one module name" in found[0], found
     assert module_name_problems(list(runtime_files())) == []
+
+
+def test_the_walk_reads_each_real_file_once_and_follows_file_links_anywhere(tmp_path):
+    # Round 4, N6: the walk followed in-repository directory links without de-duplicating by real path, so a sibling
+    # link (examples/app/greg -> greg) made greg's own reconcile a copy of itself, and greg/foundry_compat -> foundry
+    # made guard 3 report foundry.systems.teams' own definitions. Each real file is now read once: at its real path
+    # when the scan lists it there, and at a link path only when the target is not scanned where it lies (docs/,
+    # tests/, a sealed file, outside the packages a guard scans). N7, a stated behaviour: a FILE link is followed
+    # wherever it points, out of the repository too, so the scan reads more, not less; two links to one file are
+    # read once, at the first link path.
+    recs = [next(r for r in load()["function_owner_records"] if r["record_id"] == rid)
+            for rid in ("OWN-FN-COMMERCE-CLOSURE", "OWN-FN-TEMPORARY-TEAMS")]
+    copied = _disguised("greg.business_loop", "reconcile", "settle_case")
+    root, outside = tmp_path / "repo", tmp_path / "outside"
+    _tree(root, {**_real("greg.business_loop", "foundry.systems.teams"), "greg/__init__.py": "",
+                 "docs/vendor/settle.py": copied})
+    _tree(outside, {"settle.py": copied, "broken.py": "def x(:\n"})
+    (root / "examples/app").mkdir(parents=True)
+    (root / "examples/app/greg").symlink_to("../../greg", target_is_directory=True)
+    (root / "greg/foundry_compat").symlink_to("../foundry", target_is_directory=True)
+    (root / "greg/vendor").symlink_to(root / "docs/vendor", target_is_directory=True)
+    (root / "tools").mkdir()
+    (root / "tools/settle.py").symlink_to(outside / "settle.py")
+    (root / "tools/settle_again.py").symlink_to(outside / "settle.py")
+    (root / "tools/broken.py").symlink_to(outside / "broken.py")
+    found = body_copy_problems(recs, root)
+    assert sorted(line.split(" ")[0].split(":")[0] for line in found) == ["greg/vendor/settle.py", "tools/broken.py",
+                                                                         "tools/settle.py"], found
+    listed = [p.relative_to(root).as_posix() for p in runtime_files(root)]
+    assert not any(p.startswith(("examples/app/greg/", "greg/foundry_compat/")) for p in listed), listed
+    assert "greg/business_loop.py" in listed and "foundry/systems/teams.py" in listed
+    # guards 2 and 3 list their packages by the same rule: a link to a package the guard also scans is read there
+    assert unrecorded(recs, root, packages=("greg", "foundry")) == []
+    in_greg = [p.relative_to(root).as_posix() for p in python_files(root, "greg")]
+    assert "greg/foundry_compat/systems/teams.py" in in_greg and "greg/vendor/settle.py" in in_greg
+    assert not any(p.startswith("greg/foundry_compat/") for p in
+                   (q.relative_to(root).as_posix() for q in python_files(root, "greg", "foundry")))

@@ -614,6 +614,7 @@
     "greg/textform.py",
     "greg/textquery.py",
     "greg/tribunal.py",
+    "greg/untrusted_json.py",
     "greg/venture_books.py",
     "greg/venture_rehearsal.py",
     "greg/ventures.py",

@@ -25,6 +25,7 @@ from dataclasses import dataclass
 import hashlib
 import importlib.metadata
 import json
+from greg import untrusted_json
 from pathlib import Path
 import signal
 import sys
@@ -181,7 +182,7 @@ def run(candidate: PackageCandidate, source: str, requests: list, *, location: s
     if len(proc.stdout) > MAX_OUTPUT:
         raise CapabilityError(f"capability refused: package runner for {candidate.distribution} output too large")
     try:
-        claim = json.loads(proc.stdout)
+        claim = untrusted_json.loads(proc.stdout)
     except json.JSONDecodeError as exc:
         raise CapabilityError(f"capability refused: package runner for {candidate.distribution} "
                               "produced unreadable output") from exc

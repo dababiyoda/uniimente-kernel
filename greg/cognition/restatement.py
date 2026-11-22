@@ -11,6 +11,7 @@ acceptance; finding no change is not entailment.
 from __future__ import annotations
 
 import json
+from greg import untrusted_json
 
 from .contracts import digest
 
@@ -53,7 +54,7 @@ def read_claims(raw: str, inputs: list[str]) -> tuple[list[dict], list[str]]:
 
     A bare string quote names the only input. Malformed bindings are findings, never repaired or guessed."""
     try:
-        claims = json.loads(raw)
+        claims = untrusted_json.loads(raw)
     except json.JSONDecodeError as exc:
         return [], [f"claims file is not JSON: {exc.msg}"]
     if not isinstance(claims, list) or not 1 <= len(claims) <= MAX_CLAIMS:

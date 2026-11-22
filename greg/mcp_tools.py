@@ -29,6 +29,7 @@ import asyncio
 import contextlib
 import hashlib
 import json
+from greg import untrusted_json
 import os
 from pathlib import Path
 import re
@@ -421,7 +422,7 @@ def _remote_act(params: dict, ctx: InvocationContext) -> dict:
         shutil.rmtree(scratch, ignore_errors=True)
         shutil.rmtree(sockets, ignore_errors=True)
     try:
-        answer = json.loads(done.stdout.strip().splitlines()[-1])
+        answer = untrusted_json.loads(done.stdout.strip().splitlines()[-1])
         if answer.get("renewed") and login:          # the renewed login goes back to the broker, never the record
             mcp_login.store_renewal(ctx.secrets, str(bearer), login, answer.pop("renewed"))
     except (ValueError, IndexError, RecursionError):

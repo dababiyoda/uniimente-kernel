@@ -30,6 +30,7 @@ from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import ipaddress
 import json
+from greg import untrusted_json
 from pathlib import Path
 import secrets
 import sys
@@ -168,7 +169,7 @@ def handle(home: Path, method: str, path: str, headers, body: bytes, *, now: dat
         if len(body) > MAX_COMMAND_BYTES:
             raise RemoteError(413, "command too large")
         try:
-            envelope = json.loads(body.decode("utf-8"))
+            envelope = untrusted_json.loads(body.decode("utf-8"))
         except (UnicodeDecodeError, ValueError, RecursionError):   # nested too deep is not a command either
             raise RemoteError(400, "command must be JSON")
         with _Reader(home, now=now) as reader:

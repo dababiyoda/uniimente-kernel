@@ -34,6 +34,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+from greg import untrusted_json
 import os
 from pathlib import Path
 import secrets
@@ -261,7 +262,7 @@ def _paths(params: dict, ctx: InvocationContext) -> dict:
 def _signal(path: Path) -> tuple[dict, str]:
     raw = path.read_bytes()
     try:
-        signal = json.loads(raw.decode("utf-8"))
+        signal = untrusted_json.loads(raw.decode("utf-8"))
     except (UnicodeDecodeError, json.JSONDecodeError, RecursionError) as exc:   # nested too deep: not JSON either
         raise CapabilityError(f"signal is not JSON: {exc}") from None
     if not isinstance(signal, dict) or not isinstance(signal.get("text"), str) or not signal["text"].strip():

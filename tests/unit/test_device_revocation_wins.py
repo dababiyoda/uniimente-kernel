@@ -447,3 +447,41 @@ def test_a_revocation_body_apply_refuses_holds_no_device(tmp_path):
     phone, kid = devices["phone"]
     send_signed(home, key, "DEVICE_REVOKE", {"device_key_id": kid, "suspected_compromise": False})
     assert _read(home, phone, body_id)[0] == 200
+
+
+# ---------------------------------------------- re-check of bdfca22d, L1: the count reads as the applier reads
+def _revocation_after_a_backdated_pause(tmp_path, variant):
+    import os
+    home, key, body_id, devices = _delegated(tmp_path, "phone")
+    phone, kid = devices["phone"]
+    _drop(home, sign_command(phone, "BODY_PAUSE", {}, body_id=body_id, now=_now() - BACK), "remote-body_pause")
+    raw = json.dumps(sign_command(key, "DEVICE_REVOKE", {"device_key_id": kid}, body_id=body_id))
+    target = home / "inbox" / "zzzz-revoke.json"
+    if variant == "padded":
+        target.write_text(raw + " " * (70 * 1024))     # the same signed envelope, past the count's former 64 KiB bound
+    elif variant == "linked":
+        real = tmp_path / "revoke-real.json"
+        real.write_text(raw)
+        os.symlink(real, target)
+    return home, kid
+
+
+def test_a_padded_revocation_is_counted_as_pending_and_wins(tmp_path):
+    home, kid = _revocation_after_a_backdated_pause(tmp_path, "padded")
+    with Body(home) as body:
+        assert kid in body.revoking()
+        body.tick()
+        accepted = _accepted(body)
+        assert ("DEVICE_REVOKE", "founder") in accepted and ("BODY_PAUSE", "device:phone") not in accepted
+        assert not body.paused()
+
+
+def test_a_linked_revocation_is_neither_counted_nor_applied(tmp_path):
+    """A revocation behind a symbolic link was applied without having been counted as pending, so the device's
+    backdated pause ahead of it in file order was applied first. Now the count and the applier refuse it alike."""
+    home, kid = _revocation_after_a_backdated_pause(tmp_path, "linked")
+    with Body(home) as body:
+        assert kid not in body.revoking()
+        body.tick()        # the device's pause is applied first, so the unreadable link is set aside, unread
+        assert ("DEVICE_REVOKE", "founder") not in _accepted(body)
+        assert [e.payload["file"] for e in body.journal.replay("command.faulted")] == ["zzzz-revoke.json"]

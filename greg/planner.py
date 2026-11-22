@@ -24,6 +24,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 import hashlib
 import json
+from greg import untrusted_json
 import os
 from pathlib import Path
 import re
@@ -749,7 +750,11 @@ def _first_json_object(text: str) -> dict:
                 depth -= 1
                 if depth == 0:
                     try:
-                        value = json.loads(text[start:index + 1])
+                        value = untrusted_json.loads(text[start:index + 1])
+                    except untrusted_json.TooDeep:
+                        # the whole reply is refused: retrying from each inner brace rescanned the reply once per
+                        # brace, minutes of work on a reply of a few hundred kilobytes (re-check of bdfca22d, M3)
+                        raise MissionError("model reply nests its JSON too deeply to read") from None
                     except json.JSONDecodeError:
                         break
                     if isinstance(value, dict):

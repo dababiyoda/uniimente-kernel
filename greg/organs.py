@@ -46,6 +46,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from greg import untrusted_json
 import os
 from pathlib import Path
 import secrets as _secrets
@@ -244,7 +245,7 @@ def _stage(python: Path, cwd: Path, code: str, *args, stdin=None, env: dict, tim
         raise CapabilityError(f"organ stage in {cwd.name} failed: "
                               + proc.stderr.decode("utf-8", "replace")[-600:])
     try:
-        return json.loads(proc.stdout.decode("utf-8").strip().splitlines()[-1])
+        return untrusted_json.loads(proc.stdout.decode("utf-8").strip().splitlines()[-1])
     except (ValueError, IndexError):
         raise CapabilityError(f"organ stage in {cwd.name} returned no message") from None
 

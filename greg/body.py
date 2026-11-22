@@ -24,6 +24,7 @@ from datetime import datetime, timedelta, timezone
 import errno
 import hashlib
 import json
+from greg import untrusted_json
 import os
 from pathlib import Path
 import secrets
@@ -278,7 +279,6 @@ def device_delegations(journal: Journal) -> dict[str, dict]:
     return devices
 
 
-REVOCATION_FILE_BYTES = 64 * 1024     # a DEVICE_REVOKE envelope is well under 1 KiB; greg serve takes 64 KiB at most
 
 
 def revocation_candidates(paths) -> list[dict]:
@@ -289,23 +289,9 @@ def revocation_candidates(paths) -> list[dict]:
     object is passed over (whoever applies the inbox reads it and refuses it)."""
     found = []
     for path in paths:
-        try:
-            fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
-        except OSError:
-            continue
-        try:
-            if not stat.S_ISREG(os.fstat(fd).st_mode):
-                continue
-            raw = os.read(fd, REVOCATION_FILE_BYTES + 1)
-        except OSError:
-            continue
-        finally:
-            os.close(fd)
-        if len(raw) > REVOCATION_FILE_BYTES:
-            continue
-        try:
-            envelope = json.loads(raw)
-        except (ValueError, RecursionError):      # a document nested too deep raises RecursionError, not ValueError
+        try:      # the applier's own reader and parser: a file counted here is one the inbox can apply, and back
+            envelope = _parse_inbox(_read_inbox_file(path))
+        except (OSError, ValueError):
             continue
         if isinstance(envelope, dict) and envelope.get("kind") in ("DEVICE_REVOKE", "ROTATE_FOUNDER_KEY"):
             found.append(envelope)
@@ -525,21 +511,41 @@ def egress_relay(home: Path, config: dict):
                  proxy=proxy_from_environment())
 
 
+INBOX_FILE_BYTES = 4 * 1024 * 1024    # a signed command is kilobytes; greg serve accepts 64 KiB at most
+
+
 def _read_inbox_file(path: Path) -> bytes:
-    """The text of one inbox file, opened without waiting: an entry that is not a regular file (a FIFO, a directory,
-    a device) raises at once, as a directory always did, so a running body exits on it for the crash-loop breaker
-    to count and a held body sets it aside. Read with a plain open, a FIFO with no writer held the tick forever,
-    and the BODY_STOP or BODY_RESUME behind it was never read (re-check of 48d66f5f, F3)."""
-    fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK)
+    """The bytes of one inbox file, opened without following a link and without waiting: an entry that is not one
+    bounded regular file (a FIFO, a directory, a device, a symbolic link, more than INBOX_FILE_BYTES) raises OSError
+    at once, as a directory always did, so a running body exits on it for the crash-loop breaker to count and a
+    held body sets it aside. Read with a plain open, a FIFO with no writer held the tick forever, and the BODY_STOP
+    or BODY_RESUME behind it was never read (re-check of 48d66f5f, F3).
+
+    Every reader of the inbox uses this one, the pending-revocation count included, so a file is read the same way
+    by whoever counts it and whoever applies it (re-check of bdfca22d, L1: a revocation behind a link, or padded
+    past the count's own bound, was applied without having been counted as pending)."""
+    fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK | os.O_NOFOLLOW)
     try:
-        if not stat.S_ISREG(os.fstat(fd).st_mode):
+        info = os.fstat(fd)
+        if not stat.S_ISREG(info.st_mode):
             raise OSError(errno.EINVAL, "inbox entry is not a regular file", str(path))
-        chunks = []
+        if info.st_size > INBOX_FILE_BYTES:
+            raise OSError(errno.EFBIG, f"inbox entry is larger than {INBOX_FILE_BYTES} bytes", str(path))
+        chunks, total = [], 0
         while chunk := os.read(fd, 1 << 16):
+            total += len(chunk)
+            if total > INBOX_FILE_BYTES:     # grew while being read
+                raise OSError(errno.EFBIG, f"inbox entry is larger than {INBOX_FILE_BYTES} bytes", str(path))
             chunks.append(chunk)
         return b"".join(chunks)
     finally:
         os.close(fd)
+
+
+def _parse_inbox(raw: bytes):
+    """One inbox file's JSON, decoded as the body applies it: UTF-8 only (no BOM, no UTF-16), nested too deep refused
+    as unreadable (ValueError)."""
+    return untrusted_json.loads(raw.decode("utf-8"))
 
 
 class Body:
@@ -659,7 +665,7 @@ class Body:
         (presence). Cost: a start reads and verifies the whole chain twice, here and in the writer's own open."""
         try:
             published = json.loads(self.layout.heartbeat.read_text()).get("ledger_head")
-        except (OSError, ValueError, AttributeError):
+        except (OSError, ValueError, AttributeError, RecursionError):
             return
         if not isinstance(published, str):
             return
@@ -1051,7 +1057,7 @@ class Body:
             item = None
             if why is None:
                 try:
-                    item = json.loads(raw)
+                    item = untrusted_json.loads(raw)
                 except (ValueError, RecursionError):  # nested too deep is not JSON GREG can read either
                     why = "not JSON"
             if why is None:
@@ -1085,15 +1091,17 @@ class Body:
         return {"status": "SKIPPED", "file": path.name, "reason": error}
 
     def _ingest_one(self, path: Path, *, only_kind: str | None = None, revoking=frozenset()) -> dict | None:
-        envelope = None
+        envelope = raw = None
         try:
-            envelope = json.loads(_read_inbox_file(path).decode("utf-8"))
+            raw = _read_inbox_file(path)
+            envelope = _parse_inbox(raw)
             if only_kind is not None and (not isinstance(envelope, dict) or envelope.get("kind") != only_kind):
                 return None
             outcome = self.apply(envelope, channel="inbox", revoking=revoking)
         except (FounderAuthError, MissionError, ValueError, RecursionError, KeyError, TypeError,
                 tribunal.CritiqueError) as exc:
-            raw = path.read_bytes()
+            # the bytes already read: opening the path again could wait on a FIFO renamed over it since the first
+            # read, and the BODY_STOP behind it would never be read (re-check of bdfca22d, M1)
             consumed = getattr(exc, "consumed", None)
             # the reason is part of the fact: the same file rejected again for another reason (re-dropped after the
             # state that refused it changed) is a second rejection, not a reused fact identity the ledger refuses
@@ -1169,7 +1177,7 @@ class Body:
             record["ledger_recovery"] = dict(self.ledger.unacknowledged_tail)
         try:   # read before this process overwrites it: bounds the absence since the previous process
             last = presence.previous_heartbeat(json.loads(self.layout.heartbeat.read_text()))
-        except (OSError, ValueError):
+        except (OSError, ValueError, RecursionError):
             last = None
         if last is not None:
             record["previous_heartbeat"] = last
@@ -1657,8 +1665,8 @@ def inbox_digests(layout: "Layout") -> set[str]:
     out = set()
     for path in layout.inbox.glob("*.json"):
         try:
-            out.add(sha256_json(json.loads(path.read_text())))
-        except (OSError, ValueError, RecursionError):
+            out.add(sha256_json(_parse_inbox(_read_inbox_file(path))))   # never waits on a FIFO (re-check, M2)
+        except (OSError, ValueError):
             continue
     return out
 

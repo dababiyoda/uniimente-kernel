@@ -43,6 +43,7 @@ from dataclasses import dataclass, field, asdict
 from fnmatch import fnmatchcase
 import hashlib
 import json
+from greg import untrusted_json
 import math
 import os
 from pathlib import Path
@@ -471,7 +472,7 @@ def _parse_claim(text: str) -> dict | None:
     for line in reversed(text.splitlines()):
         if REPORT_MARK in line:
             try:
-                value = json.loads(line.split(REPORT_MARK, 1)[1].strip())
+                value = untrusted_json.loads(line.split(REPORT_MARK, 1)[1].strip())
                 return value if isinstance(value, dict) else None
             except (json.JSONDecodeError, RecursionError):   # nested too deep is not a claim either
                 return None
@@ -673,7 +674,7 @@ class ClaudeCodeWorker:
                                 isolation=envelope["evidence"])
         duration = time.monotonic() - started
         try:
-            result = json.loads(proc.stdout)
+            result = untrusted_json.loads(proc.stdout)
             if not isinstance(result, dict):
                 raise ValueError("provider output is not an object")
         except (json.JSONDecodeError, ValueError):

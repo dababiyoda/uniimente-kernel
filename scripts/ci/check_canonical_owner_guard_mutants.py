@@ -8,7 +8,8 @@ the test that must fail on it. The mutants added after the 2026-10-30 review of 
 replay (F1-F8, MUH-F1-MUH-F5); those added when #196 was merged in on 2026-11-04 are marked MERGE-196; those for
 guard 4 (copies of a registered body), the exact candidate pin and the history guard (2026-11-21) are marked MW-C,
 and those for the review of 7c2b39e5 (2026-11-22) are marked MW-C round 4 with the finding they replay (N1-N7);
-those for the review of 79ef5742 (2026-11-22) are marked MW-C round 6 with the item they close (B1-B4).
+those for the review of 79ef5742 (2026-11-22) are marked MW-C round 6 with the item they close (B1-B4), and those
+for the review of 16d35caa (2026-11-22) are marked MW-C round 7 with the item they close (M1-M3).
 A ``copy_body`` edit writes a disguised copy of a registered function at run time (every name and literal changed),
 so the mutant follows the function as it is today instead of a frozen text that would stop being a copy.
 
@@ -66,6 +67,7 @@ ONCE = "test_the_walk_reads_each_real_file_once_and_follows_file_links_anywhere"
 ONE_BINDING = "test_every_registered_qualname_has_one_binding_and_its_module_no_computed_binding"
 DECOYS = "test_a_decoy_rebinding_or_star_import_of_a_registered_qualname_fails"
 NEW_RECORD = "test_a_new_record_fails_until_it_is_pinned"
+CANONICAL_EXACT = "test_a_decided_records_canonical_qualnames_equal_the_pin"
 # A new CANONICAL record that names candidate side A of the undecided goal runtime as its owner and side B as its
 # ALTERNATE (round 5's X1), with no ruling and no change to the test.
 ADOPTED_RECORD = ("  - record_id: OWN-FN-GOAL-RUNTIME-ADOPTED\n    function: the goal runtime, adopted\n"
@@ -631,6 +633,13 @@ MUTANTS = [
     ("MW-C round 6: sealed files left out of the module-name rule",
      [("replace", TESTS, "    named = files + [Path(root, relative) for relative in sorted(sealed_files(root, sealed))]\n",
        "    named = files\n")], SEALED_SHADOW),
+    # -- MW-C round 7 (M1): a decided record's canonical qualnames equal the pin ----------------------------------------
+    ("MW-C round 7: a decided record names an undecided record's candidate as canonical (greg.path EVIDENCE_STATUS)",
+     [("replace", MAP, "      - module: greg.path\n        qualnames: [business_loop_closed]\n",
+       "      - module: greg.path\n        qualnames: [business_loop_closed, EVIDENCE_STATUS]\n")], PINS),
+    ("MW-C round 7: added canonical qualnames no longer checked",
+     [("replace", TESTS, "            for name in sorted(set(names or ()) - allowed):\n",
+       "            for name in sorted(set(names or ()) - allowed - set(names or ())):\n")], CANONICAL_EXACT),
 ]
 
 

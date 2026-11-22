@@ -998,6 +998,20 @@ def pin_problems(data: dict, root: Path = ROOT, pinned: dict = PINNED,
                             f"record it as an ALTERNATE with its retirement condition"
                             + (", or cite the founder's ruling" if decision else "")
                             + "; a canonical module leaves only in a reviewed change to the pin")
+        # Round 7, M1: a decided record's canonical QUALNAMES equal the pin too (an added one failed only when it was
+        # also removed elsewhere), and a ruling promotes only qualnames its module held as a candidate
+        # (test_a_decided_records_canonical_qualnames_equal_the_pin).
+        for module, names in sorted(have["canonical"].items()):
+            allowed = set((pin["candidates"] if ruled else pin["canonical"]).get(module, ()))
+            if module not in (pin["candidates"] if ruled else pin["canonical"]):
+                continue                               # the module rule above reports it
+            for name in sorted(set(names or ()) - allowed):
+                problems.append(f"{rid}: canonical {module}.{name} was not a pinned candidate: a founder ruling makes "
+                                f"canonical only what its module held as a candidate" if ruled else
+                                f"{rid}: canonical {module}.{name} is not pinned: a decided record's canonical "
+                                f"qualnames equal PINNED exactly, so that no record names another's implementation "
+                                f"as canonical unseen. Record it as an ALTERNATE or a distinct entry, or change PINNED "
+                                f"in the same reviewed diff")
         for role, modules in pin.items():
             for module, names in modules.items():
                 where = [have[role]] + ([have["canonical"], have["alternates"]] if ruled and role == "candidates" else [])
@@ -3147,3 +3161,47 @@ def test_a_package_beside_a_sealed_file_fails_the_module_name_rule(tmp_path):
     assert found == ["cortex/evaluation/scoring.py and cortex/evaluation/scoring/__init__.py are one module name "
                      "(cortex.evaluation.scoring), so guard 4 cannot tell which is the registered module; rename or "
                      "remove one"], found
+
+
+# -- MW-C round 7: what the review of 16d35caa found ---------------------------------------------------------------
+
+def test_a_decided_records_canonical_qualnames_equal_the_pin(tmp_path):
+    # Round 7, M1 (skeptic c1.py): a decided record's canonical modules were exact, but its qualnames were pinned only
+    # against removal, so a one-word list edit could name an undecided record's candidate as canonical
+    # (OWN-FN-COMMERCE-CLOSURE's greg.path gaining EVIDENCE_STATUS, side C of the undecided evidence ladder) with no
+    # ruling and no test change. A decided record's canonical qualnames now equal PINNED exactly, and a founder ruling
+    # makes canonical only qualnames its module held as a candidate.
+    data = load()
+    decided = [r for r in data["function_owner_records"] if r["owner_status"] == "CANONICAL"]
+    assert len(decided) == 5 and all(
+        {e["module"]: set(e["qualnames"]) for e in r["canonical"]}
+        == {m: set(q) for m, q in PINNED[r["record_id"]]["canonical"].items()} for r in decided)
+    changed = copy.deepcopy(data)
+    commerce = next(r for r in changed["function_owner_records"] if r["record_id"] == "OWN-FN-COMMERCE-CLOSURE")
+    next(e for e in commerce["canonical"] if e["module"] == "greg.path")["qualnames"].append("EVIDENCE_STATUS")
+    assert shape_problems(changed) == []
+    found = pin_problems(changed)
+    assert found == ["OWN-FN-COMMERCE-CLOSURE: canonical greg.path.EVIDENCE_STATUS is not pinned: a decided record's "
+                     "canonical qualnames equal PINNED exactly, so that no record names another's implementation as "
+                     "canonical unseen. Record it as an ALTERNATE or a distinct entry, or change PINNED in the same "
+                     "reviewed diff"], found
+    # a founder ruling promotes only what was a candidate, qualname by qualname
+    record = next(r for r in data["function_owner_records"] if r["record_id"] == "OWN-FN-AUTONOMY-LEVELS")
+    side_a, side_b = sorted(record["candidates"], key=lambda c: c["side"])
+    root = _tree(tmp_path, {"docs/decisions/ADR-AUTONOMY.md":
+                            "- Status: accepted\nOWN-FN-AUTONOMY-LEVELS: section 59's five levels are canonical.\n"})
+    ruled = {**record, "owner_status": "CANONICAL", "candidates": [], "founder_ruling": "docs/decisions/ADR-AUTONOMY.md",
+             "canonical": [{"module": "greg.autonomy", "qualnames": side_b["qualnames"]}],
+             "alternates": [{"module": "autonomy.levels", "qualnames": side_a["qualnames"], "status": "ALTERNATE",
+                             "reason": "ruled", "retirement_condition": "ruled"}]}
+
+    def problems(replacement):
+        changed = copy.deepcopy(data)
+        changed["function_owner_records"] = [replacement if r["record_id"] == record["record_id"] else r
+                                             for r in changed["function_owner_records"]]
+        return [p for p in pin_problems(changed, root) if p.startswith(record["record_id"])]
+
+    assert problems(ruled) == []
+    widened = {**ruled, "canonical": [{"module": "greg.autonomy", "qualnames": [*side_b["qualnames"], "Ledger"]}]}
+    assert problems(widened) == ["OWN-FN-AUTONOMY-LEVELS: canonical greg.autonomy.Ledger was not a pinned candidate: "
+                                 "a founder ruling makes canonical only what its module held as a candidate"]

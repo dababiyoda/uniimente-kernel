@@ -225,17 +225,24 @@ architecture_ownership_records:
 # Owners were read from what greg/ and the CLI import and call at b1950be2, not chosen.
 # Checked by tests/unit/test_canonical_owner_guard.py (mutants: scripts/ci/check_canonical_owner_guard_mutants.py).
 # The test pins every record, entry and canonical module set (PINNED): removing one, or adding a second canonical
-# module, fails (test_the_registry_keeps_every_pinned_record_entry_and_founder_decision). A NEEDS_FOUNDER_DECISION
-# record is pinned whole (UNDECIDED_ENTRIES): any entry of any role (canonical, candidate, alternate, distinct) or any
-# field of one (an alternate's status, a why, an evidence line) added, removed, changed or reordered fails, and so does
-# an undecided record the literal does not hold
-# (test_an_undecided_record_takes_no_new_or_changed_entry_of_any_role_without_a_pin_change). Resolving such a record
-# without a founder_ruling (an accepted decision or active intent record that names the record) fails
-# (test_a_founder_decision_resolves_only_through_a_ruling_record_that_names_it). Each fails until the literal in the
-# test changes in the same reviewed diff. Adding an alternate or a distinct entry to a CANONICAL record needs no test
-# change; a distinct entry there exempts a name from guard 3's name checks only, never a copy (guards 3 and 4). Since
-# 2026-11-21 (MW-C) a registered function's body is also compared with every runtime function; see the note after the
-# last record.
+# module, fails (test_the_registry_keeps_every_pinned_record_entry_and_founder_decision), and since 2026-11-22 so does
+# adding a record PINNED does not hold (test_a_new_record_fails_until_it_is_pinned). The ENTRIES of a
+# NEEDS_FOUNDER_DECISION record are pinned (UNDECIDED_ENTRIES): any entry of any role (canonical, candidate, alternate,
+# distinct) or any field of one (an alternate's status, a why, an evidence line) added, removed, changed or reordered
+# fails, and so does an undecided record the literal does not hold
+# (test_an_undecided_record_takes_no_new_or_changed_entry_of_any_role_without_a_pin_change); the record's own fields
+# (decision_needed, safe_default, review_trigger, migration_path, effect) are not pinned. Each of these fails until the
+# literal in the test changes in the same reviewed diff. Resolving an undecided record without a founder_ruling (an
+# accepted decision or active intent record that names the record) fails
+# (test_a_founder_decision_resolves_only_through_a_ruling_record_that_names_it); citing such a ruling clears it with
+# no change to the test, and the check cannot tell who wrote the ruling. Adding an alternate or a distinct entry to a
+# CANONICAL record needs no test change; a distinct entry there exempts a name from guard 3's name checks only, never a
+# copy (test_guard_3_reports_a_structural_copy_even_where_a_distinct_entry_names_it,
+# test_a_distinct_entry_cannot_vouch_for_a_module_that_holds_a_copy). Since 2026-11-21 (MW-C) a registered function's
+# body, and since 2026-11-22 a registered class's whole body, is also compared with every runtime function or class;
+# see the note after the last record. Threat model: these checks catch ordinary changes by cooperating agents
+# (refactors, convenience copies, handoffs, relays, templates, copied receipts), not a deliberate evader; each residual
+# is stated as a limit.
 # Status: PROPOSED, like every record in this file. A status here attaches, activates, retires or grants nothing.
 function_owner_records:
 
@@ -573,7 +580,8 @@ function_owner_records:
       - module: greg.cognition.genomes.forecasting
         qualnames: [LEVELS]
         why: "forecast quantile levels"
-    # side B's report is a common name (nine other guarded modules define one); the structural copy check still applies
+    # side B's report is a common name (10 other guarded modules define one on 2026-11-22); the structural copy check
+    # still applies
     generic_names: [report]
     markers:
       - '_?([A-Z][A-Za-z0-9]*)?Autonomy([A-Z][A-Za-z0-9]*)?'
@@ -704,29 +712,44 @@ function_owner_records:
 # MW-C, 2026-11-21, amended 2026-11-22 after review (tests/unit/test_canonical_owner_guard.py;
 # docs/evidence/canonical-owner-guard-2026-11-21/README.md). Four rules now bind the records above, each with the test
 # that enforces it (the header comment of this section states the pins):
-# - guard 4: the body of every canonical, candidate and alternate FUNCTION a record names (names and constants erased,
-#   pass and no-op constants dropped, annotations and import aliases normalised, at least 25 AST nodes; the 27 bodies
-#   compared are pinned as COMPARED) is compared with every function and method of every runtime .py file, each real
-#   file once (everything but tests/, docs/, top-level hidden entries and the cortex/evaluation/ files the test's
-#   SEALED literal pins with the digest a freeze manifest records); a copy anywhere but the body's own registered
-#   module and qualname fails, inside its record or outside it, and two registered locations with one body fail
+# - guard 4: the body of every canonical, candidate and alternate FUNCTION a record names, and the whole body of every
+#   such CLASS (names and constants erased, pass and no-op constants dropped, annotations and import aliases
+#   normalised, at least 25 AST nodes; the 36 locations compared, 27 functions and 9 classes, are pinned as COMPARED,
+#   by location, not content) is compared with every function, method and class of every runtime .py file, each real
+#   file read once, at its real path when scanned there and otherwise at one link path (everything but tests/, docs/,
+#   top-level hidden entries and the cortex/evaluation/ files the test's SEALED literal pins with the digest a freeze
+#   manifest records); a copy anywhere but the body's own registered module and qualname fails, inside its record or
+#   outside it, two registered locations with one body fail, and two runtime or sealed files with one module name fail
 #   (test_no_copy_of_a_registered_function_body_outside_its_record,
 #   test_the_body_guard_catches_renamed_nested_relocated_and_one_line_copies,
 #   test_a_registered_body_is_exempt_only_at_its_own_location, test_two_registered_locations_with_one_body_fail,
-#   test_the_set_of_compared_registered_bodies_is_pinned, test_a_freeze_manifest_seals_only_the_files_and_bytes_the_test_pins);
+#   test_a_registered_class_body_is_compared_whole_at_its_own_location_and_for_twins,
+#   test_the_set_of_compared_registered_bodies_is_pinned, test_a_freeze_manifest_seals_only_the_files_and_bytes_the_test_pins,
+#   test_the_walk_reads_each_real_file_once_and_follows_file_links_anywhere,
+#   test_a_package_shadows_a_module_of_the_same_name_and_no_two_files_share_a_module_name,
+#   test_a_package_beside_a_sealed_file_fails_the_module_name_rule);
+# - every registered qualname has exactly one binding at its level (dead branches and TYPE_CHECKING blocks included),
+#   and its module no star import and no namespace write with a computed name, so the def or class read is the one
+#   Python binds (test_every_registered_qualname_has_one_binding_and_its_module_no_computed_binding,
+#   test_a_decoy_rebinding_or_star_import_of_a_registered_qualname_fails);
 # - a 'distinct' entry exempts no copy (guard 4; guard 3's structural-copy check) and may not name a module that holds
 #   one; only an entry in the test's BODY_EXEMPTIONS (location, the body it resembles, the reason; empty today) clears
 #   a false positive (test_a_distinct_entry_cannot_vouch_for_a_module_that_holds_a_copy,
 #   test_guard_3_reports_a_structural_copy_even_where_a_distinct_entry_names_it,
 #   test_a_pinned_exemption_clears_exactly_one_location_and_a_stale_one_fails);
-# - a NEEDS_FOUNDER_DECISION record's entries are pinned whole, as the header says
-#   (test_an_undecided_record_takes_no_new_or_changed_entry_of_any_role_without_a_pin_change);
+# - a NEEDS_FOUNDER_DECISION record's entries are pinned, and every record is in PINNED, as the header says
+#   (test_an_undecided_record_takes_no_new_or_changed_entry_of_any_role_without_a_pin_change,
+#   test_a_new_record_fails_until_it_is_pinned);
 # - a HISTORICAL or RETIRED alternate still defined in the tree carries kept_for: {consumer: <module>.<function>}
 #   outside greg/, tests/, docs/, scripts/ci/ and any conftest.py, whose source names it, or
 #   {open_decision: <its own record_id>} while that record is undecided
 #   (test_every_historical_or_retired_alternate_still_in_the_tree_says_what_keeps_it,
 #   test_kept_for_names_the_alternates_own_open_record_and_a_consumer_outside_tests_and_tools).
 # Limits, not guarantees: a copy that changes structure, renames an attribute or keyword, sits outside a def or runs by
-# exec is missed; the methods of the registered classes and the 3 registered functions below 25 nodes are not
-# compared; a function no record names has no owner check; a consumer is checked by what its source names, not by
-# whether anything calls it. The evidence README lists them all.
+# exec is missed; the fork pattern passes, including the owner's logic moved to a new helper behind a wrapper of 25
+# nodes or more (COMPARED pins locations, not contents); the methods of the registered classes one by one and the 3
+# registered functions below 25 nodes are not compared; a decorator that returns a different object, or a rebinding
+# through setattr, sys.modules or exec, is not seen; a copy reachable only through a DIRECTORY link out of the
+# repository, or in a non-.py file, is not read; an existing CANONICAL record can take a new alternate or distinct
+# entry naming an undecided record's candidate with no test change; a function no record names has no owner check; a
+# consumer is checked by what its source names, not by whether anything calls it. The evidence README lists them all.

@@ -46,8 +46,10 @@ The registry is ``function_owner_records`` in docs/collaboration/ARCHITECTURE-OW
    ``if True:``, split into two functions or with a helper inlined); an attribute or call-keyword rename
    (``row['x']`` to ``row.x``); code outside a def (at module level, in a class body or a ``__main__`` block) and
    code run by ``exec`` of a string; the fork pattern (the owner edited in the same diff that keeps its old body as a
-   copy, which then matches nothing registered); the methods of a registered CLASS (not compared: four real
-   duplicates already in the tree would fail, see the README); the 3 registered functions below ``MIN_COPY_NODES``
+   copy, which then matches nothing registered; or the owner's logic moved into a new helper behind a wrapper of at
+   least ``MIN_COPY_NODES`` nodes, which stays compared while the helper is not, so a copy of the moved logic passes);
+   the methods of a registered class one by one (four real duplicates already in the tree would fail, see the
+   README); a decorator that returns a different object; the 3 registered functions below ``MIN_COPY_NODES``
    (acceptance.rank, greg.improvement.attention_close_condition and claim_close_condition); and any function the
    registry does not record. tests/ is never scanned: fixtures may copy a body on purpose.
 
@@ -59,6 +61,11 @@ a ruling record, or narrowing a record's markers below the names it must catch f
 same reviewed diff, or, for a founder decision, until a ruling record is cited. ``kept_for_problems`` is a forward guard for section 76: a
 HISTORICAL or RETIRED alternate still in the tree names what keeps it (a consumer outside greg/, tests/, docs/,
 scripts/ci/ and any conftest.py, or its own record's open decision).
+
+Threat model: these guards catch ORDINARY changes by cooperating agents working in parallel (refactors, copies made by
+mistake or for convenience, handoffs, relays, templates filled in for someone else, receipts copied between PRs). They
+are not a security boundary against a deliberate evader who writes exotic code or text to defeat them; every such
+residual above is a stated limit, never claimed as covered.
 
 The test reads code and data. It grants, attaches, activates and retires nothing.
 """

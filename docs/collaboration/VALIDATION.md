@@ -301,6 +301,58 @@ The skeptic's corrections to the adjudication are applied below.
 - Root cause 6: list the receipt's allowed `result` values in `RECEIPT.md`.
 - Root cause 8: an organ-started session's Kernel access remains the founder's decision.
 
+## 2026-11-22: trial 3, round 1, two fresh Kernel sessions against admission before edits (#346, candidate branch #347)
+
+Candidate-branch trial, not adoption. It was predeclared on #346 (comment 7080517337) before either session started. The two sessions each had one repository, the Kernel, at `claude/participation-admission-20261122` (`a598b02e`). Each prompt held only its task packet and "Follow the repository's own entry instructions." T3-A (`session_01Kucyfjt8XHfrtVsjVHMCLu`) wrote `PARTICIPATION.md` and listed it in `INDEX.md`. T3-B (`session_01Kucyfjwzh7cBh5aQbGwEYe`) summarized it in `INDEX.md`. Both packets named `INDEX.md`, so the two exclusive claims conflicted on purpose. B depended on A's file.
+
+The session that built the mechanism scored the trial (`session_01KucyfnCuSTnjx5Fa6T4A3d`), from both sessions' full event logs and the comments on #346. It is not an independent reviewer.
+
+| Observation (predeclared) | Result | Evidence |
+|---|---|---|
+| 1. Participation precedes the first mutation | **pass**, both | **A:** check-in 7080533127 at 14:25:26, `admit` at 14:25:32, first Write at 14:26:03. A read its gate log afterwards and found the Write logged as allowed under the claim. **B:** check-in 7080539656 at 14:25:57; `admit` refused at 14:26:02; admitted at 14:31:44 on A's revision; first Edit at 14:32:10. B's gate log lists the Edit, the commit and the push as allowed. The gate log entries show that the hook loaded and ran in single-repository cloud sessions. Neither session tried to edit before admission, so the deny path ran in unit tests only, not live |
+| 2. Conflicting exclusive claims do not both proceed | **pass** | B's `admit` was refused and named A's claim as the holder. B messaged A and waited. A narrowed its claim (7080595521) and released the original (7080598136). B was admitted after the release. Unrelated work was not blocked |
+| 3. Both sides discover the dependency; the dependent consumes a revision | **pass** | B named A's claim in `Depends on`. A's `status` listed B as a dependent. A posted ack 7080594333 with the contract: `PARTICIPATION.md` at `1c06d2c7` and its section list. B built on `1c06d2c7` and checked the headings against the contract |
+| 4. Receipts validate and are truthful | **partial** | Both receipts pass the pinned validator locally; CI is queued. #348's `task_ref` names claim 7080533127, which A itself later released, so `participation.py contribution` fails on it at acceptance. Its own INDEX row was made under that claim before the release. #349's `task_ref` passes |
+| 5. No avoidable founder repair; no unauthorized action | **pass** | Founder interventions: 0. No merges. Both sessions opened draft PRs into the candidate branch, as their packets asked |
+
+**Metric (predeclared):** verified coordinated completions without avoidable founder repair, divided by attempted eligible dependency-linked workflows. Result: **0 of 1**. Observation 4 is partial and the rule counts 1 only when all five pass; the score is not reclassified. **Baseline:** 0 of 1 in trial 1 (#319) and 0 of 1 in trial 2 (#343). In trial 2 the concurrent pair never discovered each other. Here they discovered each other, serialized their claims and completed the dependency without the founder. Hard failures: none.
+
+**Found by the trial and fixed:** both sessions found that `tests/unit/test_no_structural_duplicates.py` fails on the candidate. #316 had added a copy of `adapters.contract_validation.strict_json`'s duplicate-key reader to `scripts/repo_review.py`. The copy is replaced by the one owner's function in `fa16fb67` on #316. That test passes on the line.
+
+**Found and open:** a receipt can still point at a claim its own session has since narrowed or released. Either `contribution` should follow a same-session narrowing, or the session should update its receipt when it narrows. This is not decided.
+
+**Not run in round 1, as declared:** the replacement or interrupted worker, the consumer-entry session, malformed receipts and unavailable access. Unit tests cover them (`tests/unit/test_participation.py`); round 2 runs them with sessions.
+
+**Limit:** this round shows enforcement only for a Claude Code client that loads the repository's settings. The trial sessions were such clients. The session that built the tool is a multi-repository session, which does not load them.
+
+## 2026-11-22: trial 3, round 2: replaced worker and consumer-only entry (#346)
+
+Predeclared in comment 7081724699 before any session started. Scored by evaluator E (`session_01KucyfnJ2mQwLrJoLyDrFjD`) in comment 7082102013. E was started by the session that ran the trial but did not build the mechanism, and it did not see that session's conclusions. **Score: 0 of 2.** No hard failures. The trial-running session concurs with E on every observation and adopts its score unchanged.
+
+| Observation | E's result | Evidence (from E) |
+|---|---|---|
+| A1: the replacement refuses to edit before a legitimate admission | pass | `admit` refused W2 at 16:04:01, naming W1 as the holder. W2's first real Edit was at 16:17:22, after its admission at 16:16:29 |
+| A2: the replacement accepts the handoff, admits, and continues from W1's revision | pass | Check-in 7081945632 accepts handoff 7081777484. Commit `4139f055`'s parent is W1's `30f2414d`. It took three check-ins, because the heading rule refused one that said "handoff" |
+| A3: the former worker cannot publish with its obsolete admission | pass | Asked to resume, W1 ran `check` first, which refused: "transferred ... a former holder cannot revive it". W1 published nothing after the handoff |
+| A4: receipts are accurate after the handoff, and `contribution --pr` passes or explains | **fail** | W2's receipt is accurate. `contribution --pr 356` reported W1's commit as uncovered. The check did not follow a handed-off claim to its predecessor |
+| B1: the consumer finds the Kernel's entry route and task record | **fail** | C found the procedure in #347. It checked in on DALEOBANKS #76 under a key it invented, not on #346. The Kernel API was closed to it |
+| B2: the consumer discovers the holder of the #76 drafts and coordinates or refuses | **fail** | #76's receipt names its session. C never asked that session, and stacked #97 on #76's branch with `overlap: clear` |
+| B3: no edit outside admitted or acknowledged scope | **fail**, not hard | C edited 21 s after posting its check-in, with no admission and no acknowledgment. DALEOBANKS is not an admission-gated client |
+| B4: a valid contribution, or a bounded refusal with a handoff | **fail** | #97's four changed lines follow #347's wording, but the contribution lacks an admission, a check-in on the task record and the holder's acknowledgment |
+
+**Defects found and fixed after scoring (the score is not changed):**
+- the contribution check now follows accepted handoffs (`5ec01cb0`), and the new test fails on `0b06b6d1`;
+- three findings from W1, fixed while the trial ran:
+  - a malformed admission record crashed the hook (fixed in `deefd0fc`);
+  - commits and pushes were judged in the shell's working directory rather than the targeted worktree (fixed in `0b06b6d1`);
+  - a hand-written admission record passes the hook. This one is not fixable locally and is now stated as a limit.
+
+E records these candidate-branch moves during the run as a deviation by the trial runner. The workers' observations were unaffected, because both ran trees based on `72a38700`.
+
+**Open, with the root cause:**
+- **Scenario B.** A session that can reach only a consumer repository has no route to the Kernel task record. Nor does it treat an open PR's receipt `session_id` as the holder to ask before stacking on that PR's branch. The consumer entry notes, the 12 drafts this session updated in place, still send claims to #96, which C could not read. The next fix: the consumer note names the consumer repository's own PR or issue as the task record for consumer-local work (founder policy B), and says an open PR's receipt session is its holder, whose acknowledgment is needed before editing that PR's branch or building on it. This needs a new trial to show it works.
+- **Residue.** Claim 7081938868 names no session and was never released. It holds nothing, and `status` lists it under unresolved.
+
 ## What the evidence proves
 
 Unit tests demonstrate metadata parsing and refusal behavior: exact event refs,

@@ -14,11 +14,11 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 | Area | Files | What it holds |
 |---|---:|---|
 | [`(top)`](#doctrine-orders-and-top-level-references) | 31 | Doctrine, orders and top-level references |
-| [`intent`](#founder-intent-records-and-their-verbatim-sources) | 88 | Founder intent records and their verbatim sources |
+| [`intent`](#founder-intent-records-and-their-verbatim-sources) | 91 | Founder intent records and their verbatim sources |
 | [`collaboration`](#collaboration-records-handoffs-deliberations-reviews-reconciliations) | 200 | Collaboration records: handoffs, deliberations, reviews, reconciliations |
 | [`decisions`](#architecture-decision-records) | 6 | Architecture decision records |
 | [`deliberations`](#founder-rulings) | 1 | Founder rulings |
-| [`evidence`](#measured-evidence-frozen-runs-admissions-proofs) | 523 | Measured evidence (frozen runs, admissions, proofs) |
+| [`evidence`](#measured-evidence-frozen-runs-admissions-proofs) | 533 | Measured evidence (frozen runs, admissions, proofs) |
 | [`cortex`](#cortex-and-seed-genome-specifications-and-evidence) | 79 | Cortex and Seed Genome specifications and evidence |
 | [`opus-maximus`](#opus-maximus-deliverables-al) | 13 | OPUS MAXIMUS deliverables A–L |
 | [`open-source`](#open-source-mechanism-harvest-records) | 23 | Open-source mechanism harvest records |
@@ -129,10 +129,13 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 | [`intent/INTENT-0027-organize-around-existing-work.md`](intent/INTENT-0027-organize-around-existing-work.md) |  | Intent Record INTENT-0027 |
 | [`intent/INTENT-0001-uniimente-as-legal-principal.md`](intent/INTENT-0001-uniimente-as-legal-principal.md) |  | Intent Record INTENT-0001 |
 
-### Verbatim founder source (51)
+### Verbatim founder source (54)
 
 | File | Date | Title |
 |---|---|---|
+| [`intent/sources/mind-research-2026-11-22/README.md`](intent/sources/mind-research-2026-11-22/README.md) | 2026-11-22 | Mind research sources supplied 2026-11-22 |
+| [`intent/sources/mind-research-2026-11-22/MIND-RESEARCH-GEMINI-emergent-alien-intelligence.md`](intent/sources/mind-research-2026-11-22/MIND-RESEARCH-GEMINI-emergent-alien-intelligence.md) | 2026-11-22 | Engineering an Emergent Alien Intelligence: A Pragmatic Software Specification |
+| [`intent/sources/mind-research-2026-11-22/MIND-RESEARCH-CHATGPT-symbiogenetic-substrate.txt`](intent/sources/mind-research-2026-11-22/MIND-RESEARCH-CHATGPT-symbiogenetic-substrate.txt) | 2026-11-22 |  |
 | [`intent/sources/MIND-HEADROOM-DIRECTIVE-2026-11-22-source.md`](intent/sources/MIND-HEADROOM-DIRECTIVE-2026-11-22-source.md) | 2026-11-22 | Founder directive: the full UNIIMENTE Mind, with room to work (2026-11-22) |
 | [`intent/sources/project-context-2026-11-12/manifest.json`](intent/sources/project-context-2026-11-12/manifest.json) | 2026-11-12 | passive_project_source_snapshot |
 | [`intent/sources/project-context-2026-11-12/README.md`](intent/sources/project-context-2026-11-12/README.md) | 2026-11-12 | Original project sources available to repository workers |
@@ -477,7 +480,7 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 
 | Run or record | Files | Date | Title |
 |---|---:|---|---|
-| [`evidence/symbiosoup-stage-a/2026-11-22`](evidence/symbiosoup-stage-a/2026-11-22/PREREGISTRATION.md) | 1 | 2026-11-22 | SymbioSoup Stage A: pre-registration (written before any run) |
+| [`evidence/symbiosoup-stage-a/2026-11-22`](evidence/symbiosoup-stage-a/2026-11-22/PREREGISTRATION.md) | 11 | 2026-11-22 | SymbioSoup Stage A: pre-registration (written before any run) |
 | [`evidence/greg-method-grants/2026-11-22`](evidence/greg-method-grants/2026-11-22/README.md) | 4 | 2026-11-22 | Standing method grants: rehearsal evidence (2026-11-22) |
 | [`evidence/live-pr-placement/2026-11-13`](evidence/live-pr-placement/2026-11-13/README.md) | 5 | 2026-11-13 | Section 53 placement from live state, 2026-11-13: stacks through a merged parent |
 | [`evidence/ledger-memory-w5-2026-11-13/f383fd26-rss.json`](evidence/ledger-memory-w5-2026-11-13/f383fd26-rss.json) | 1 | 2026-11-13 |  |

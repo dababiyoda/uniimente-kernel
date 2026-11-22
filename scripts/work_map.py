@@ -11,10 +11,18 @@ grants nothing. It joins sources that already exist:
 - work-board comments.
 
 Sessions and holders come from two places only: a receipt's ``session_id``, and a comment that is itself a check-in
-(the check-in marker opens it, and the block's own ``Session:`` line names an id). Every other reading of a comment's
+(the check-in marker alone on its first line, then the block's own ``Session:`` line first, after the block's heading
+when it has one; see ``checkin_author``). Every other reading of a comment's
 author (heading bylines, other labels, opening lines and the joins in ``JOINS``) is ``author_guess``, kept with its
 ``how`` for diagnosis and never used as authority, because on replay the parser named wrong authors and left more than
 a quarter of a week's posts unresolved, the plan's stop condition for building the map from receipts only.
+
+Threat model: these rules guard against ordinary changes by cooperating agents working in parallel: refactors, copies
+made by mistake or convenience, handoffs, relays, templates filled in for someone else, receipts copied between PRs.
+They are not a security boundary against a deliberate evader who writes exotic code or text to defeat them. A receipt
+and a check-in are declared, not authenticated: a session that posts another session's block or receipt unchanged is
+read as the session it names, and the residuals each rule leaves are stated where the rule is, never claimed as
+covered.
 
 Ask it before you edit::
 
@@ -539,6 +547,8 @@ def comment_author(body: str) -> dict:
 # The block's own Session line, in CHECKIN_BLOCK's format ("- Session: <id> (<client>)", the label also in bold).
 _CHECKIN_SESSION = re.compile(r"^-[ \t]+(?:\*\*Session:\*\*|Session:)[ \t]+(?P<value>\S.*)$")
 _LIST_ITEM = re.compile(r"^[ \t]*(?:[-*+]|\d{1,3}[.)])[ \t]")
+_HEADING = re.compile(r"^#{1,6}(?:[ \t]|$)")       # an ATX heading at the margin, as CHECKIN_BLOCK's "## Check-in"
+_BOLD_TITLE = re.compile(r"^\*\*(?:[^*\n]|\*(?!\*))+\*\*[ \t]*$")   # a line that is one bold run: "**Handoff**"
 
 
 def opens_with_checkin(body: str) -> bool:
@@ -549,24 +559,35 @@ def opens_with_checkin(body: str) -> bool:
 
 
 def checkin_author(body: str) -> tuple[str, str] | None:
-    """The (id, client) of a comment that is itself a check-in, else None: the marker opens the comment
-    (``opens_with_checkin``) and the block's first list item, outside code, before any second marker, is its own
-    ``Session:`` line (``CHECKIN_BLOCK``), whose value opens with an id. A pasted, quoted or later block names
-    nobody."""
-    if not opens_with_checkin(body):
+    """The (id, client) of a comment that is itself a check-in, else None. The block must stand where
+    ``CHECKIN_BLOCK`` puts it: the marker alone on the comment's first line that is not blank (nothing else on that
+    line), then the block's own ``Session:`` line as the first line that is not blank after it, or after the block's
+    heading when that follows the marker; the value opens with an id. The heading is one ``#`` heading line, or a
+    line that is one bold run and names no session id (so "**Relayed by `A`.**" is a lead line, not a heading).
+
+    So only blank lines sit between the marker, the heading and the Session line: no lead paragraph, no second
+    heading, nothing GitHub does not render as plain text (an HTML comment, ``<details>``, ``<pre>``, a fence). A
+    handoff that fills in the receiver's block, a reassignment record listing the previous owner's block, a review
+    quoting the reviewed block and a relay (whose poster is not the session it names) are not exact; on the live
+    board this keeps 29 of the 30 check-ins round 5 read as exact and drops only the relay 6853656353.
+
+    Threat model: this guards against ordinary posts by cooperating agents, not a deliberate evader. A session that
+    posts another session's block unchanged, or a heading that names its sender ("## Handoff from `A`") above a
+    Session line naming someone else, is still read as the Session line says: a check-in is declared, not
+    authenticated."""
+    lines = _text(body).splitlines()
+    filled = [i for i, line in enumerate(lines) if line.strip()]
+    if not filled or lines[filled[0]].rstrip() != CHECKIN:
         return None
-    rest = _text(body).split(CHECKIN, 1)[1].split("\n", 1)
-    for line in _prose(rest[1] if len(rest) > 1 else ""):
-        if CHECKIN in line:
-            return None
-        if not _LIST_ITEM.match(line):
-            continue
-        m = _CHECKIN_SESSION.match(line)
-        hits = _spans(m["value"]) if m else []
-        if not hits or m["value"][:hits[0][0]].strip("`*_ \t"):
-            return None
-        return hits[0][2], hits[0][3]
-    return None
+    after = filled[1:]
+    if after and (_HEADING.match(lines[after[0]]) or (_BOLD_TITLE.match(lines[after[0]])
+                                                     and not _spans(lines[after[0]]))):
+        after = after[1:]
+    m = _CHECKIN_SESSION.match(lines[after[0]]) if after else None
+    hits = _spans(m["value"]) if m else []
+    if not hits or m["value"][:hits[0][0]].strip("`*_ \t"):
+        return None
+    return hits[0][2], hits[0][3]
 
 
 def _statements(pattern: re.Pattern, body: str) -> list[tuple[re.Match, bool]]:

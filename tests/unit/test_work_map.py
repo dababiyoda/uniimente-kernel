@@ -2905,3 +2905,79 @@ def test_a_release_by_an_author_that_is_not_exact_does_not_release(quick):
                                        at="2026-11-12T06:00:00Z")], now=NOW, use_git=False)
     c = _claim(m, 7100000020)
     assert (c["state"], c["session"], c["release_by_unverified_author"]) == ("active", None, [7100000021])
+
+
+# ------------------------------------------------------------------ round 6: where a check-in's own Session line stands
+# Threat model: these rules guard against ordinary changes by cooperating agents working in parallel (handoffs,
+# relays, reviews, templates filled in for someone else, receipts copied between PRs). They are not a security
+# boundary against a deliberate evader; a session that posts another's block unchanged is still read as that session.
+# A check-in names its session only when the marker stands alone on the comment's first line and the block's own
+# Session line is the first line that is not blank after it, or after the block's heading when one follows the marker.
+
+HANDOFF_FILLED = (f"{w.CHECKIN}\n## Claim handoff: WU-11 from `{A}` to `{B}`\n\nI stop here. Receiver, this is your "
+                  f"check-in, filled in; post it as yours when you start:\n\n- Session: `{B}` (Claude Code, cloud)\n"
+                  "- Files / interfaces: `greg/missions.py`\n")
+NOT_ITS_OWN_BLOCK = [
+    HANDOFF_FILLED,
+    (f"{w.CHECKIN}\n## Founder reassignment, recorded: WU-11 now owned by `{A}`\n\nThe previous owner's block, for the "
+     f"record:\n\n- **Session:** `{B}` (previous owner)\n- **Files:** `greg/missions.py`\n"),
+    (f"{w.CHECKIN}\n## Review of claim 7100000001\nThe reviewed block:\n- Session: `{B}` (Claude Code, cloud)\n"
+     "- Files: `greg/missions.py`\n"),
+    f"{w.CHECKIN} **Relayed by `{A}`.**\n- Session: `{B}`\n- Files: `greg/missions.py`\n",     # text on the marker line
+    f"{w.CHECKIN}\n## Check-in: x\n<details>\n\n- Session: `{B}`\n\n</details>\n\n- Files: `greg/missions.py`\n",
+    f"{w.CHECKIN}\n## Check-in: x\n<pre>\n- Session: `{B}`\n</pre>\n- Files: `greg/missions.py`\n",
+    f"{w.CHECKIN}\n<!--\n- Session: `{B}`\n-->\n- Files: `greg/missions.py`\n",                 # GitHub hides it
+    f"{w.CHECKIN}\n## Check-in: x\n```text\n    ```\n- Session: `{B}`\n```\n- Files: `greg/missions.py`\n",
+    f"{w.CHECKIN}\n## Check-in: x\n```text\n\t```\n- Session: `{B}`\n```\n- Files: `greg/missions.py`\n",
+    f"{w.CHECKIN}\n## Handoff\n## Your check-in\n- Session: `{B}`\n- Files: `greg/missions.py`\n",   # a second heading
+    f"{w.CHECKIN}\n**Relayed by `{A}`.**\n- Session: `{B}`\n- Files: `greg/missions.py`\n",   # a bold lead names A
+]
+
+
+@pytest.mark.parametrize("body", NOT_ITS_OWN_BLOCK, ids=range(len(NOT_ITS_OWN_BLOCK)))
+def test_a_session_line_that_is_not_the_block_s_own_first_line_names_nobody(quick, tmp_path, capsys, body):
+    assert w.checkin_author(body) is None
+    comments = [_comment(7100000002, body)]
+    m = w.build([], comments, now=NOW, use_git=False)
+    assert m["sessions"] == [] and [c["session"] for c in m["claims"]] == [None] * len(m["claims"])
+    paths, _raw = _answer(tmp_path, capsys, [], comments, "--paths", "greg/missions.py")
+    assert all(c["session"] is None for c in paths["paths"][0]["claims"])
+
+
+def test_a_handoff_that_pastes_the_receiver_s_block_neither_releases_nor_takes_its_claim(quick):
+    claim = _comment(7100000010, _signed("## Check-in: seam", B, "- **Files:** `greg/authority.py`\n"),
+                     at="2026-11-12T00:00:00Z")
+    takeover = _comment(7100000011, f"{w.CHECKIN}\n## Takeover: WU-11\n\nI take this over. Their block, kept:\n\n"
+                                    f"- Session: `{B}` (Claude Code, cloud)\n- Files: `greg/authority.py`\n\n"
+                                    "This releases claim 7100000010.\n", at="2026-11-12T06:00:00Z")
+    m = w.build([], [claim, takeover], now=NOW, use_git=False)
+    c = _claim(m, 7100000010)
+    assert (c["session"], c["state"], c["released_by"]) == (B, "active", [])
+    assert c["release_by_unverified_author"] == [7100000011]
+    assert [s["session"] for s in m["sessions"]] == [B] and m["sessions"][0]["checkin"] == 7100000010
+
+
+def test_a_check_in_block_still_counts_with_or_without_its_heading():
+    for body in (f"{w.CHECKIN}\n- Session: `{A}` (claude)\n- Files: `greg/body.py`\n",
+                 f"{w.CHECKIN}\n**Handoff and claim release**\n- Session: `{A}`\n",
+                 f"{w.CHECKIN}   \n# Check-in: x\n\n\n- **Session:** `{A}` (claude)\n",
+                 f"\n{w.CHECKIN}\n\n## Check-in: x\n\n- Session: {A}\n"):
+        assert w.checkin_author(body) == (A, "claude"), body
+
+
+# Trimmed real comment 6853656353 (issue #96): a check-in relayed by one session for another.
+RELAYER, RELAYED = "session_01KucyfnCuSTnjx5Fa6T4A3d", "session_012idQXWUrVAMHPo3iZpSfmv"
+RELAY_6853656353 = f"""{w.CHECKIN}
+## Check-in (relayed): WealthMachineIntelligence #43, the UAT swarm runtime from the founder's master plan
+
+**Relayed by `{RELAYER}` at the author's request.** The author, `{RELAYED}`, cannot read or post Kernel issues.
+
+- **Session:** `{RELAYED}`, started in WealthMachineIntelligence.
+- **Files:** `src/services/uat_governor.py`, `src/swarm/`
+"""
+
+
+def test_a_relayed_check_in_is_never_exact(quick):
+    assert w.checkin_author(RELAY_6853656353) is None
+    m = w.build([], [_comment(6853656353, RELAY_6853656353)], now=NOW, use_git=False)
+    assert m["sessions"] == [] and all(c["session"] is None for c in m["claims"])

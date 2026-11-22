@@ -2,6 +2,15 @@
 
 # Founder Intent Ledger
 
+## The full Mind, with room to work: standing method grants — 2026-11-22
+
+Directive preserved verbatim at [MIND-HEADROOM-DIRECTIVE-2026-11-22-source.md](intent/sources/MIND-HEADROOM-DIRECTIVE-2026-11-22-source.md) (sha256 `112913ed…`). It asks GREG to push every part of a mission it can lawfully advance, and to give verified tools room to work under one signed, bounded, revocable grant, while consequential actions keep their own authority.
+
+- **Built (item 2):** `METHOD_GRANT` / `METHOD_GRANT_REVOKE` (founder key only). Read-only missions use a reviewed set of read-only cognition methods through a per-call registry view. Nothing is attached, and revocation, expiry, use-up or a founder detach stops the grant on the next call. `greg grant suggest` previews which methods the compiler would use.
+- **Measured** ([evidence](evidence/greg-method-grants/2026-11-22/README.md)): with a suggested grant, the transfer set took 1 founder action against 5, 1 unanswered mission-tick against 11 and 0 body-wide attaches against 5, with 10/10 achieved in both arms. A grant from the families alone did worse (6/10); that result is kept.
+- **Not run:** the Tampa task and the three-way comparison with Claude (no model key; public data hosts refused by the network policy).
+- State: active. Authority delta: none beyond the founder's own signed grant. VEPMC: 0.
+
 ## Convergence, then a useful operational path — 2026-11-12
 
 `INTENT-20261112-CONVERGENCE-USEFUL-PATH` ([record](intent/INTENT-20261112-CONVERGENCE-USEFUL-PATH.json), [verbatim source](intent/sources/CONVERGENCE-CLARIFICATION-2026-11-12-source.md)): the founder's clarification of 2026-11-12 in session `session_01Kucyfm9exT5imDVYvHTYSv`. It is chat intent evidence, not founder authentication.

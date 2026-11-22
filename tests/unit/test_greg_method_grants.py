@@ -214,3 +214,27 @@ def test_the_founder_issues_lists_and_revokes_a_grant_from_the_command_line(tmp_
     assert json.loads(capsys.readouterr().out)[0]["status"] == "REVOKED"
     assert main(["--home", str(home), "grant", "issue", "g:bad", "--method", "cognition.*", "--target", "x",
                  "--purpose", "p", "--key", keyfile, "--no-passphrase"]) != 0
+
+
+def test_suggest_names_the_methods_the_compiler_would_use_and_records_nothing(tmp_path, index, capsys):
+    """A grant must name what the compiler actually routes to (the transfer rehearsal found game_minimax questions
+    answered by game_lp_dual): the preview says so before anything is signed."""
+    from greg.cli import main
+    from greg.cognition.cortex import registry_view
+    game = library.executables()["game_minimax"]
+    request = {"problem_id": "preview:game", "compile": {"geometry": {"geometry": game.genome.epistemic_class},
+                                                         "data": game.instance(0)[0]}}
+    out = method_grants.suggest(registry_view(), [request, {"problem_id": "bad"}])
+    assert out["requests"][0]["state"] == "ANSWERED" and out["requests"][0]["would_use"]
+    assert set(out["requests"][0]["would_use"]) <= set(out["methods_to_review"])
+    assert out["requests"][1]["would_use"] == [] and out["authority_created"] is False
+    home, key, body_id, _ = make_body(tmp_path)
+    path = tmp_path / "q.json"
+    path.write_text(json.dumps(request))
+    with Body(home) as body:
+        records = len(body.ledger.records)
+    assert main(["--home", str(home), "grant", "suggest", str(path)]) == 0
+    shown = json.loads(capsys.readouterr().out)
+    assert shown["methods_to_review"] == out["methods_to_review"]
+    with Body(home) as body:
+        assert len(body.ledger.records) == records and not body.journal.replay("method_grant.")

@@ -205,5 +205,33 @@ def summary(journal, now: datetime) -> list[dict]:
             for g in sorted(grants(journal).values(), key=lambda g: g["grant_id"])]
 
 
+def suggest(registry, requests: list[dict]) -> dict:
+    """Read-only: which registered, verified, read-only methods the Competency Compiler would use for these sample
+    requests if they were usable, so the founder reviews the exact set a grant must name.
+
+    The compiler runs in-process with no journal (nothing is recorded) on a view in which every such method counts
+    as usable; nothing is attached or granted. A request the compiler would still not answer is listed with why."""
+    from greg.cognition.cortex import reason
+    every = [{"grant_id": "preview", "capabilities": sorted(c for c, m in registry.manifests.items()
+                                                            if c.startswith("cognition.")
+                                                            and m.consequence_class == "read_only")}]
+    preview = GrantView(registry, every)
+    rows, methods = [], set()
+    for request in requests:
+        try:
+            out = reason(request, registry=preview, journal=None)
+        except Exception as exc:                 # a malformed sample is reported, never guessed at
+            rows.append({"problem_id": (request or {}).get("problem_id"), "would_use": [], "state": "REFUSED",
+                         "why": str(exc)[:300]})
+            continue
+        out = out if isinstance(out, dict) else {}
+        used = sorted(_selected(out) & set(preview.lifted))
+        methods.update(used)
+        rows.append({"problem_id": out.get("problem_id", (request or {}).get("problem_id")), "would_use": used,
+                     "state": out.get("state"), "already_usable": sorted(_selected(out) - set(preview.lifted))})
+    return {"methods_to_review": sorted(methods), "requests": rows,
+            "note": "a preview, not a grant: nothing was recorded, attached or authorized", "authority_created": False}
+
+
 def describe(grant: dict) -> str:
     return json.dumps({k: grant[k] for k in ("grant_id", "capabilities", "targets", "until", "max_uses")})

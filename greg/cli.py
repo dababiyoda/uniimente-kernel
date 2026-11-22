@@ -492,6 +492,8 @@ def main(argv=None) -> int:
     gv = grs.add_parser("revoke", help="sign a METHOD_GRANT_REVOKE; the grant ends at once")
     gv.add_argument("grant_id"); gv.add_argument("--reason", default="")
     grs.add_parser("list", help="read-only: every grant, its status, coverage and uses")
+    gs = grs.add_parser("suggest", help="read-only preview: the methods the compiler would use for sample requests")
+    gs.add_argument("request", nargs="+", help="a sample cognition request JSON file (repeatable)")
     for g in (gi, gv):
         g.add_argument("--key"); g.add_argument("--no-passphrase", action="store_true")
         g.add_argument("--ttl-hours", type=int, default=24)
@@ -1179,7 +1181,13 @@ def main(argv=None) -> int:
             print(_drop(home, "CAPABILITY_" + args.cmd.upper(), {"capability_id": args.capability_id}, args))
         elif args.cmd == "grant":
             from greg import method_grants
-            if args.grant_cmd == "list":
+            if args.grant_cmd == "suggest":
+                from greg.cognition.cortex import registry_view
+                with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                    registry = registry_view(journal)
+                print(json.dumps(method_grants.suggest(registry, [json.loads(Path(p).read_text())
+                                                                  for p in args.request]), indent=2))
+            elif args.grant_cmd == "list":
                 with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
                     print(json.dumps(method_grants.summary(journal, datetime.now(timezone.utc)), indent=2))
             elif args.grant_cmd == "revoke":

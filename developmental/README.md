@@ -106,7 +106,10 @@ Found so far:
 Not yet done:
 
 - **Canonical-scale reproduction at the report's statistical power.** This needs 131,072 programs, 16,000 epochs and
-  50–100 seeds. A first CPU run of CuBFF itself covered fewer seeds; see the differential README for its outcome.
+  50–100 seeds. A first run of CuBFF itself on CPU, on 2026-11-22, finished 8 seeds.
+  - 3 of them transitioned: 37.5%, with an exact 95% interval of 8.5% to 75.5%.
+  - The interval contains the paper's ~40%, but 8 seeds are inconclusive.
+
   Pure Python takes about 0.18 s per 1,024-program epoch, so this stays a job for CuBFF.
 
 The compression measure uses `lzma`, not CuBFF's Brotli, so its numbers are not the paper's.

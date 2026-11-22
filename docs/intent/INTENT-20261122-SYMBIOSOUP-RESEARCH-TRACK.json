@@ -28,6 +28,7 @@
     "tests/unit/test_developmental_bff.py",
     "tests/unit/test_developmental_bff_differential.py (re-checks the recorded CuBFF output without the binary)",
     "tests/evidence/bff-reference-2026-11-22/differential/ (2026-11-22: CuBFF f212e849 built with make CUDA=0, g++ 13.3.0; 12 of 12 soup checkpoints byte-identical for seeds 0 and 1 at 1,024 programs through 321 epochs; 800 of 800 tapes identical in final bytes and operation count; 114 of 114 CheckSelfRep scores identical, including full replicators scoring 64)",
+    "tests/evidence/bff-reference-2026-11-22/differential/scale.json and scale-logs/ (Stage A scale, 8 seeds, inconclusive)",
     "tests/evidence/bff-reference-2026-11-22/ (bounded emergence runs)"
   ],
   "failure_evidence": [
@@ -35,7 +36,7 @@
   ],
   "dependencies": [
     "differential test against the CuBFF binary: DONE 2026-11-22, after the founder asked for it in this session's chat ('build CuBFF with make CUDA=0 and run the differential test'); no mismatch was found, so developmental/bff.py was not changed",
-    "canonical-scale reproduction (131,072 programs, 16,000 epochs, 50-100 seeds): run with CuBFF itself on CPU, see tests/evidence/bff-reference-2026-11-22/differential/README.md for the seeds completed; 50-100 seeds were not reached"
+    "canonical-scale reproduction (131,072 programs, 16,000 epochs, 50-100 seeds): a first run of CuBFF itself on CPU, 2026-11-22, finished 8 seeds; 3 transitioned (37.5%, exact 95% interval 8.5%-75.5%), which contains the paper's ~40% but is inconclusive at 8 seeds; 50-100 seeds remain open (about 17 CPU-minutes on 4 cores per non-transitioning seed)"
   ],
   "conflicts": [
     "Gemini specification: self-rewriting agent code and a Darwin Gödel Machine archive conflict with the authority rules unless confined to a consequence-inert sandbox with external evaluators; preserved as leads",

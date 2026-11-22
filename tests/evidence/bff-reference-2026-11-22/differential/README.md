@@ -74,4 +74,43 @@ and `index=0`.
 
 ## Stage A scale run (CuBFF itself, CPU)
 
-See `scale.json` and the section below it. That file was written after the run ended.
+The report's Stage A scale was 131,072 programs, up to 16,000 epochs per seed. Seeds 0 to 7 were run one after
+another on 4 CPU cores. Each run used
+`bin/main --lang bff_noheads --num 131072 --seed S --max_epochs 16000 --print_interval 256 --save_interval 256 --clear_interval 2048 --eval_selfrep --stopping_selfrep_count 13108 --disable_output --log seedS.csv`.
+CuBFF's own logs and wall times are in `scale-logs/`. `scale.py` summarised them into `scale.json`.
+
+**Criterion, fixed before any seed was looked at:** at least 13,108 programs (10% of the soup) score ≥ 5 on CuBFF's
+`CheckSelfRep` at a logged epoch (every 256 epochs). Higher-order entropy is recorded beside it.
+
+| Seed | Outcome | First epoch meeting the criterion | Replicators then | Higher-order entropy, before → at |
+| ---: | --- | ---: | ---: | --- |
+| 0 | transition | 2,817 | 43,052 | 0.72 → 2.53 |
+| 1 | none by 16,129 | — | 0 throughout | max 0.36 |
+| 2 | transition | 12,033 | 129,053 | 1.19 → 4.02 |
+| 3 | none by 16,129 | — | 0 throughout | max 0.38 |
+| 4 | none by 16,129 | — | 0 throughout | max 0.38 |
+| 5 | none by 16,129 | — | 0 throughout | max 0.37 |
+| 6 | none by 16,129 | — | 0 throughout | max 0.36 |
+| 7 | transition | 12,545 | 14,825 | 0.12 → 3.05 |
+
+- **Rate:** 3 transitions in 8 finished seeds, 37.5%. The exact (Clopper–Pearson) 95% interval is 8.5% to 75.5%.
+- **Against the paper:** the paper reports about 40% within 16,000 epochs, which lies inside the interval.
+- **Verdict:** inconclusive. Eight seeds cannot distinguish 40% from rates anywhere between about 9% and 75%. The
+  report asks for 50 to 100 seeds.
+
+The three transitions are abrupt. Within one or two 256-epoch intervals:
+
+- **Seed 0:** replicators went from 0 to 949 to 43,052.
+- **Seed 2:** from 3 to 4,544 to 129,053.
+- **Seed 7:** from 0 to 14,825.
+
+In each, higher-order entropy rose to between 2.5 and 4. In the five seeds
+without a transition, no program ever scored as a replicator and higher-order entropy stayed below 0.4.
+
+Each seed took 5 to 23 minutes. A seed stops early once it transitions; one that never does runs all 16,000 epochs,
+about 17 minutes on 4 cores. The seed-1 time includes contention with the differential test, which ran at the same
+time.
+
+Seed 7 was first started at the end of the sequential loop. That attempt was stopped at epoch 2,305, before the
+loop's time limit could cut it off, and was discarded unread. Seed 7 was then rerun from epoch 0 on its own, and that
+rerun is the one recorded.

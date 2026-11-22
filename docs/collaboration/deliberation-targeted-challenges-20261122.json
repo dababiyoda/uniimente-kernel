@@ -1,0 +1,234 @@
+{
+ "decision_id": "DELIB-20261122-TARGETED-CHALLENGES",
+ "title": "Evidence-package responses name the committed claims they contest (SG-A42)",
+ "problem": "A response to a GREG evidence package records only coarse grounds, so the record never says which committed assumption, evidence pointer or inference an outside actor disputes. The Seed Genome reviews require that disagreement attack explicit evidence, assumptions, models or values.",
+ "founder_intent_refs": [
+  "INTENT-20261001-greg-seed-genome",
+  "INTENT-20261019-UPWARD-ASCENT",
+  "INTENT-0030"
+ ],
+ "baseline": "Canonical 9b931994: record_response(grounds=...) with no link from a response to the package's commitments.",
+ "alternatives": [
+  {
+   "name": "Free-text claim names",
+   "description": "The response lists field names as text.",
+   "advantages": [
+    "No holder file needed"
+   ],
+   "disadvantages": [
+    "Not bound to the package's commitments; a response can name a claim that was never made"
+   ],
+   "revival_evidence": "Recipients cannot compute digests in practice"
+  },
+  {
+   "name": "Contest moves settlement now",
+   "description": "A targeted contest withholds competence credit from the receipt.",
+   "advantages": [
+    "The contest has an immediate effect"
+   ],
+   "disadvantages": [
+    "Treats a dispute as a refutation; an outside actor could steer GREG's routing"
+   ],
+   "revival_evidence": "A founder-signed resolution path for contested claims exists"
+  }
+ ],
+ "do_nothing_option": {
+  "expected_outcome": "Disputes stay unaddressed and SG-A42 stays open.",
+  "advantages": [
+   "No new code"
+  ],
+  "disadvantages": [
+   "Proof-bearing accountability stays prose"
+  ]
+ },
+ "roles": [
+  {
+   "role": "Founder-Intent Steward",
+   "position": "Applies the 2026-11-22 repeat by closing an open residual on the canonical path, as the earlier repeats were applied.",
+   "material_concerns": [
+    "Do not build a parallel cortex",
+    "Preserve the lineage without copying text already preserved"
+   ],
+   "evidence_refs": [
+    "docs/intent/sources/GREG-SEED-GENOME-DIRECTIVE-REISSUE-2026-10-13-source.md"
+   ],
+   "recommendation": "RETAIN"
+  },
+  {
+   "role": "Systems Architect",
+   "position": "Extends greg/cognition/disclosure.py and reuses the disclosure.response record; no new ledger type, route or authority path.",
+   "material_concerns": [
+    "Merge order with #221 in _measured_trust"
+   ],
+   "evidence_refs": [
+    "git merge-tree against #221: gravity.py clean"
+   ],
+   "recommendation": "RETAIN"
+  },
+  {
+   "role": "Adversarial Reviewer",
+   "position": "Six new mutants; one survived at first (cross-package untargeted disputes) and the test was strengthened.",
+   "material_concerns": [
+    "Author-written tests only"
+   ],
+   "evidence_refs": [
+    "scripts/ci/check_cognition_residual_mutants.py: 101 of 101"
+   ],
+   "recommendation": "RETAIN"
+  },
+  {
+   "role": "Operator and Maintainer",
+   "position": "Read-only surfaces; rollback leaves old responses readable.",
+   "material_concerns": [
+    "No console write path yet"
+   ],
+   "evidence_refs": [
+    "tests/unit/test_cognition_disclosure.py::test_a_dispute_names_the_committed_claim_it_attacks_and_the_map_shows_what_stands"
+   ],
+   "recommendation": "RETAIN"
+  },
+  {
+   "role": "Evidence and Welfare Guardian",
+   "position": "A recipient learns what it disputed without seeing withheld values; uncontested is never presented as true.",
+   "material_concerns": [
+    "A contest must never be read as a refutation"
+   ],
+   "evidence_refs": [
+    "tests/unit/test_cognition_disclosure.py::test_a_dispute_names_the_committed_claim_it_attacks_and_the_map_shows_what_stands"
+   ],
+   "recommendation": "RETAIN"
+  }
+ ],
+ "evidence": [
+  {
+   "claim": "Targets bind to committed claims; decoys, foreign holders and tampered holders are refused",
+   "tier": "unit_test",
+   "reference": "tests/unit/test_cognition_disclosure.py::test_a_dispute_names_the_committed_claim_it_attacks_and_the_map_shows_what_stands",
+   "finding": "passes on a real body run"
+  },
+  {
+   "claim": "Each new safeguard is load-bearing",
+   "tier": "unit_test",
+   "reference": "scripts/ci/check_cognition_residual_mutants.py",
+   "finding": "101 mutants, 0 survived"
+  }
+ ],
+ "counterevidence": [
+  {
+   "claim": "No real institution has responded to a package",
+   "tier": "other",
+   "reference": "this session",
+   "finding": "the workflow is tested, not used"
+  }
+ ],
+ "pass_1": {
+  "intended_outcome": "Every recorded dispute either names the committed claims it attacks or is labelled untargeted, and the founder sees per claim what stands.",
+  "advantages": [
+   {
+    "id": "A1",
+    "statement": "A disagreement gets an address in GREG's own record",
+    "amplified_value": "Later corrections can target only the receipts resting on a contested assumption"
+   }
+  ],
+  "disadvantages": [
+   {
+    "id": "D-1",
+    "statement": "Targets need the holder file",
+    "severity": "low",
+    "response_type": "protective",
+    "redesigned_response": "Correct by design: only the holder knows what a digest commits to"
+   },
+   {
+    "id": "D-2",
+    "statement": "Uncontested could be read as validated",
+    "severity": "medium",
+    "response_type": "evidence",
+    "redesigned_response": "Every output states that uncontested is not true and contested is not refuted"
+   }
+  ],
+  "comparisons": {
+   "baseline": "coarse grounds only",
+   "do_nothing": "residual stays open",
+   "simplest_viable_alternative": "free-text claim names (rejected: unbound)",
+   "strongest_competing_architecture": "contest withholds settlement credit (deferred)",
+   "reversible_experiment": "additive fields; revert restores the old behavior"
+  },
+  "rejected_alternatives": [
+   {
+    "name": "Free-text claim names",
+    "rejection_reason": "Not bound to the package's commitments",
+    "revival_evidence": "Recipients cannot compute digests"
+   }
+  ]
+ },
+ "pass_2": {
+  "attack_summary": "Attacked the bindings and the read surfaces as deployed.",
+  "new_weaknesses": [
+   {
+    "id": "W1",
+    "category": "gaming",
+    "statement": "A recorder could attach responses to a package they do not hold",
+    "strengthening_response": "The holder must match the package digest and its own digest; mutants cover both"
+   },
+   {
+    "id": "W2",
+    "category": "fragility",
+    "statement": "Responses for one package could leak into another's map",
+    "strengthening_response": "Filtered by package digest; the strengthened test catches the cross-package mutant"
+   }
+  ],
+  "pass_1_disadvantage_dispositions": [
+   {
+    "disadvantage_id": "D-1",
+    "outcome": "accepted",
+    "rationale": "Inherent to salted commitments",
+    "owner": "GREG cognition maintainers",
+    "review_trigger": "A recipient-side challenge format"
+   },
+   {
+    "disadvantage_id": "D-2",
+    "outcome": "resolved",
+    "rationale": "Stated on every output",
+    "owner": "GREG cognition maintainers",
+    "review_trigger": "Any change to challenge_map"
+   }
+  ],
+  "final_design": "Digest-bound targets on record_response, a read-only challenge map per package, a cross-package contested-receipts count in Goal Gravity and a read-only CLI view.",
+  "residual_risks": [
+   {
+    "risk": "No founder-signed console command records a response yet",
+    "mitigation": "Listed as the next action; the API is unchanged for callers without targets",
+    "owner": "Alfonso Lopez",
+    "review_trigger": "Founder review"
+   }
+  ],
+  "recommendation": "RETAIN"
+ },
+ "dissent": {
+  "present": false,
+  "handling": "None recorded.",
+  "entries": []
+ },
+ "authority_impact": {
+  "level": "standard",
+  "changes_authority": false,
+  "requires_authorized_human": false,
+  "approval_status": "not_required",
+  "approver": null
+ },
+ "migration_plan": "Additive: responses without targets read as before. Merging is the founder's separate decision.",
+ "rollback_plan": {
+  "possible": true,
+  "steps": [
+   "git revert the branch's commits"
+  ],
+  "reason_impossible": null
+ },
+ "kill_criteria": [
+  "A contest changes a receipt, route or competence",
+  "A decoy or foreign digest is accepted as a claim"
+ ],
+ "decision": "RETAIN",
+ "decision_owner": "Alfonso Lopez",
+ "review_trigger": "Founder review of the draft PR"
+}

@@ -1,0 +1,29 @@
+{
+  "task": "Tampa business search: find an expensive recurring problem a solo operator could solve, identify who pays, estimate net economics, and name the cheapest test that could disprove the opportunity.",
+  "provenance": "STAND-IN. The founder's own Tampa business search was not found in any repository this session can reach (uniimente-kernel, WealthMachineIntelligence, DALEOBANKS, build-your-own-x; searched 2026-11-22). Every figure below is SYNTHETIC, written for this rehearsal so that answers can be scored exactly. None is a fact about Tampa.",
+  "candidate": "commercial kitchen exhaust-hood cleaning for independent restaurants (a recurring, code-driven service)",
+  "evidence": [
+    {"id": "E1", "kind": "trade survey (synthetic)", "date": "2024-05", "claim": "price per hood-cleaning job", "low": 350, "central": 450, "high": 650, "unit": "USD/job"},
+    {"id": "E2", "kind": "competitor web page (synthetic)", "date": "2026-10", "claim": "'$299 first-clean special'", "value": 299, "unit": "USD/job", "note": "promotional, first visit only"},
+    {"id": "E3", "kind": "forum post (synthetic)", "date": "2019-03", "claim": "price per job", "low": 800, "central": 950, "high": 1200, "unit": "USD/job"},
+    {"id": "E4", "kind": "county license extract (synthetic)", "date": "2026-09", "claim": "food-service licences in the county", "value": 3200, "note": "includes chains that contract nationally"},
+    {"id": "E5", "kind": "operator interviews, n=3 (synthetic)", "date": "2026-08", "claim": "jobs one solo crew completes per month", "low": 18, "central": 24, "high": 30, "unit": "jobs/month"},
+    {"id": "E6", "kind": "cost notes (synthetic)", "date": "2026-10", "claim": "variable cost per job (chemicals, disposal, fuel)", "low": 60, "central": 85, "high": 110, "unit": "USD/job"},
+    {"id": "E7", "kind": "cost notes (synthetic)", "date": "2026-10", "claim": "fixed cost per month (insurance, truck, equipment lease)", "low": 1500, "central": 2000, "high": 2500, "unit": "USD/month"},
+    {"id": "E8", "kind": "vendor brochure (synthetic)", "date": "2025-01", "claim": "'restaurants that use our degreaser have 30% fewer fire claims'", "design": "observational, self-selected customers, no comparison group", "treated": [], "control": []},
+    {"id": "E9", "kind": "outreach log (synthetic)", "date": "2026-11", "claim": "independent restaurants contacted who agreed to book a first cleaning", "successes": 3, "failures": 22},
+    {"id": "E10", "kind": "duplicate of E1 with a typo (synthetic)", "date": "2024-05", "claim": "price per hood-cleaning job", "low": 350, "central": 4500, "high": 650, "unit": "USD/job"},
+    {"id": "E11", "kind": "planning note (synthetic)", "date": "2026-11", "claim": "launch decision model", "reachable_accounts": 400, "annual_gross_margin_per_account": 730, "launch_fixed_cost": 18000, "pilot": {"pilot_size": 30, "pilot_cost": 300}, "note": "value per account = 2 cleanings a year x (450 - 85); the pilot contacts 30 more independents"}
+  ],
+  "correction_midway": {
+    "from": "founder",
+    "text": "E3 is a 2019 forum post and is wrong for today: drop it. And only 250 of the accounts are reachable, not 400: the chains contract nationally.",
+    "changes": {"drop": ["E3"], "E11.reachable_accounts": 250}
+  },
+  "scoring": {
+    "net_monthly_usd": "the interval must enclose the truth computed from E1, E5, E6, E7 by truth.py (E2, E3, E10 excluded: promotional, stale after the correction, and a typo)",
+    "recommendation": "the exact expected-value optimum among launch / abandon / pilot under the corrected decision model (truth.py)",
+    "unsupported_conclusions": "any statement that E8's 30% claim is an established effect, any figure taken from E3 after the correction, or E10's 4500 used as a price",
+    "interruptions": "questions or approvals the operator had to answer before the answer was usable"
+  }
+}

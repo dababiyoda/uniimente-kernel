@@ -1765,6 +1765,27 @@ def _mechanism_summary(provenance: dict) -> dict:
                                for k in ("verdict", "class", "reason", "obligations")}}
 
 
+def chain_deficit(receipt: dict, registry) -> dict:
+    """The withheld methods a composed chain's recipe needs, shaped as the receipt ``_cognition_ask`` reads.
+
+    A chain stops at its first abstaining stage, so asking only for that stage's method would interrupt the founder
+    once per stage. Every operation the recipe lists is mapped to the catalogued families that run it; those built
+    and verified but not attached are named together."""
+    from greg.cognition.catalog import FAMILIES
+    from greg.cognition.composition import RECIPES
+    recipe = receipt.get("recipe")
+    operations = RECIPES.get(recipe, {}).get("operations", ()) if isinstance(recipe, str) else ()
+    rows = []
+    for family, spec in sorted(FAMILIES.items()):
+        cid = "cognition." + family
+        if set(spec[1]) & set(operations) and cid in registry.manifests and registry.state.get(cid) != "ATTACHED":
+            rows.append({"method": cid, "eligible": False, "reason": f"state {registry.state.get(cid)}"})
+    stage = next((st.get("stage") for st in receipt.get("stages") or []
+                  if st.get("abstention_state") == "CAPABILITY_DEFICIT"), None)
+    return {"alternative_methods_considered": rows, "chain_recipe": recipe, "abstained_stage": stage,
+            "epistemic_class": f"composed ({recipe})", "missing_information": [str(receipt.get("reason", ""))]}
+
+
 class MissionEngine:
     """One tick = one bounded turn of every active mission's feedback loop."""
 
@@ -2227,6 +2248,10 @@ class MissionEngine:
                 return False, "the request was withdrawn: " + str(self.book.withdrawn[b["request_id"]].get("why"))[:200]
             answer = self.book.answers.get(b["request_id"])
             return (answer is not None, f"founder answered {answer['answer']}" if answer else "awaiting founder")
+        if b["type"] == "capability" and b.get("capabilities"):     # a chain's withheld methods: every one must run
+            unusable = [c for c in b["capabilities"] if not self.registry.usable(c)[0]]
+            return (not unusable, f"every method the chain needs is attached" if not unusable
+                    else f"still withheld: {', '.join(unusable)}")
         if b["type"] == "capability":
             ok, why = self.registry.usable(b["capability_id"]) if b.get("capability_id") else (False, "none")
             if not ok and self.genesis is not None and b.get("function"):
@@ -3825,11 +3850,22 @@ class MissionEngine:
         order = ("DEFAULT_FOR_GEOMETRY", "NICHE_CAPABILITY", "EXPERIMENTAL", "NOT_INVENTORIED")
         admissible = sorted((f for f in families if f["admission"] in order), key=lambda f: order.index(f["admission"]))
         best = admissible[0] if admissible else None
+        chain = receipt.get("chain_recipe")
+        # More than one method, or a chain whose stages only work together: one grant over all of them, signed
+        # once, instead of one attach (and one more interruption) per method (greg/method_grant.py).
+        together = ("greg grant --id " + f"{m.mission_id.removeprefix('m:')}-{aid}"[:64] + " "
+                    + " ".join(f"--capability {c}" for c in waiting)
+                    + f" --days 7 --purpose 'read-only methods for {aid} of {m.mission_id}' --print-only"
+                    " (review it, then sign it without --print-only)") if chain or len(waiting) > 1 else None
         return self._request(
             m, kind="CAPABILITY_ATTACH", scope_digest=sha256_json({"cognition": waiting}), action_id=aid,
-            why=f"{aid} needed {receipt.get('epistemic_class')} cognition; the eligible families are built and "
+            why=(f"{aid} composes {chain}; its stages need {len(waiting)} built, verified methods that are not "
+                 f"attached, so the chain abstained at {receipt.get('abstained_stage')}") if chain else
+                f"{aid} needed {receipt.get('epistemic_class')} cognition; the eligible families are built and "
                 "verified but not attached, so the receipt abstained",
-            recommendation=(f"attach {best['capability']} (native-benchmark admission: {best['admission']}) with: "
+            recommendation=(f"attach the {len(waiting)} methods together, once, in one bounded read-only grant: "
+                            f"{together}") if together else
+                           (f"attach {best['capability']} (native-benchmark admission: {best['admission']}) with: "
                             f"greg attach {best['capability']}") if best else
                            "do not attach: every eligible family lost to a simpler method on its own benchmark; "
                            "revise the mission's operation",
@@ -3839,7 +3875,12 @@ class MissionEngine:
                       "expected_effect": "the next attempt is answered by the attached family and re-verified by the "
                                          "independent checker; the mission's own success checks still decide",
                       "uncertainty": "admission was measured on synthetic native benchmarks, not on this mission's data",
-                      "options": [{"option": f"greg attach {f['capability']}", "cost": "none in money",
+                      "options": ([{"option": together, "cost": "none in money; read-only methods only, for 7 "
+                                                                 "days, revocable with greg grant-revoke",
+                                    "expected_effect": "every listed method becomes routable at once; the mission "
+                                                       "selects and combines them without asking again"}]
+                                  if together else []) +
+                                 [{"option": f"greg attach {f['capability']}", "cost": "none in money",
                                    "expected_effect": f"{f['capability']} becomes routable ({f['admission']})"}
                                   for f in admissible[:3]] +
                                  [{"option": "do nothing: the mission tries its other strategies", "cost": "none",
@@ -4229,6 +4270,25 @@ class MissionEngine:
         if outcome.status == "DONE" and isinstance(outcome.output, dict) \
                 and outcome.output.get("abstention_state") == "CAPABILITY_DEFICIT":
             self._cognition_ask(m, aid, outcome.output, now)
+        # A composed chain that abstained at a stage for want of an attached method (2026-11-22): it used to raise
+        # no attach ask at all, so the mission ran out of strategies and asked NO_STRATEGY, which no founder answer
+        # could resolve. Now one ask names every withheld method the chain's stages need.
+        elif outcome.status == "DONE" and isinstance(outcome.output, dict) \
+                and outcome.output.get("state") == "STAGE_ABSTAINED" and any(
+                    st.get("abstention_state") == "CAPABILITY_DEFICIT" for st in outcome.output.get("stages") or []):
+            need = chain_deficit(outcome.output, self.registry)
+            rid = self._cognition_ask(m, aid, need, now)
+            waiting = [r["method"] for r in need["alternative_methods_considered"]]
+            if rid and waiting:
+                # The mission waits on those methods, not on its strategy: the strategy did not fail, its methods were
+                # withheld. Blaming it would leave the mission on NO_STRATEGY, which a later attach or grant could
+                # not lift. It resumes once every named method can run, however they were attached.
+                self._block(m, {"type": "capability", "request_id": rid, "action_id": aid,
+                                "capability_id": waiting[0], "capabilities": waiting,
+                                "why": f"{aid} waits on {len(waiting)} withheld methods its {need['chain_recipe']} "
+                                       "chain needs",
+                                "reconsider": "every listed method is attached (one greg grant, or greg attach each)"})
+                return {"state": "BLOCKED", "blocker": m.blocker}
         deficit = outcome.output.get("capability_deficit") if outcome.status == "DONE" and \
             isinstance(outcome.output, dict) and outcome.output.get("state") == "CAPABILITY_DEFICIT" else None
         if isinstance(deficit, dict) and deficit.get("function"):

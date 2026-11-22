@@ -1,0 +1,63 @@
+{
+  "answers": {
+    "supply:order-after": {
+      "answer": {
+        "optimality": "proven",
+        "plan": [
+          [
+            51
+          ],
+          [
+            51
+          ]
+        ],
+        "products": [
+          "degreaser"
+        ],
+        "solver_status": [
+          "OPTIMAL",
+          "OPTIMAL"
+        ]
+      },
+      "state": "ANSWERED"
+    },
+    "supply:order-before": {
+      "answer": {
+        "optimality": "proven",
+        "plan": [
+          [
+            65
+          ],
+          [
+            65
+          ]
+        ],
+        "products": [
+          "degreaser"
+        ],
+        "solver_status": [
+          "OPTIMAL",
+          "OPTIMAL"
+        ]
+      },
+      "state": "ANSWERED"
+    }
+  },
+  "arm": "current",
+  "asks": [
+    {
+      "kind": "CAPABILITY_ATTACH",
+      "recommendation": "attach the 2 methods together, once, in one bounded read-only grant: greg grant --id staffing-first-order_before --capability cognition.forecast_quantile --capability cognition.newsvendor_compile --days 7 --purpose 'read-only methods for order_before of m:staffing-first' --print-only (review it, the",
+      "why": "order_before composes forecast_then_allocate; its stages need 2 built, verified methods that are not attached, so the chain abstained at forecast:degreaser"
+    }
+  ],
+  "corrected_mission_achieved": true,
+  "cpu_s": 14.18,
+  "first_mission_achieved": true,
+  "founder_acts_after_start": 3,
+  "interruptions": 1,
+  "model_calls": 0,
+  "money_usd": 0.0,
+  "task": "staffing",
+  "wall_s": 15.92
+}

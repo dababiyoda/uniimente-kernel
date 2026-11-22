@@ -41,6 +41,8 @@ COMMAND_KINDS = (
     "CRITIQUE",           # morning-tribunal critique of retained evidence
     "CAPABILITY_ATTACH",  # attach a verified capability under a stated ceiling
     "CAPABILITY_DETACH",
+    "CAPABILITY_GRANT",   # attach a reviewed set of read-only methods for a bounded window (greg/method_grant.py)
+    "CAPABILITY_GRANT_REVOKE",  # end one such grant at once; founder key only, like the grant
     "BODY_PAUSE", "BODY_RESUME", "BODY_STOP",
     "BODY_DESIGNATE",  # founder names this body as the intended first execution body
     "NODE_ENROLL",        # admit another compute node with its own bounded identity

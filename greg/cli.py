@@ -203,6 +203,37 @@ def _drop(home: str, kind: str, body: dict, args) -> Path:
     return send_signed(home, key, kind, body, ttl=timedelta(hours=getattr(args, "ttl_hours", 24)))
 
 
+def _grant(home: str, args):
+    """The CAPABILITY_GRANT body, each capability bound to the digest of the manifest this body holds for it."""
+    from greg import method_grant
+    from greg.cognition.cortex import registry_view
+    from greg.journal import iso
+    if Layout(home).ledger.exists():
+        with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+            registry = registry_view(journal)
+    else:
+        registry = registry_view()
+    caps = list(dict.fromkeys(args.capability))
+    if args.withheld_read_only:
+        caps += [cid for cid, m in sorted(registry.manifests.items()) if registry.state[cid] != "ATTACHED"
+                 and method_grant.eligibility(m, registry.state[cid], args.data_class) is None and cid not in caps]
+    unknown = [c for c in caps if c not in registry.manifests]
+    if not caps or unknown:
+        raise BodyError(f"name registered capabilities to grant (unknown: {unknown})" if unknown
+                        else "name at least one capability, or --withheld-read-only")
+    refused = [w for c in caps if (w := method_grant.eligibility(registry.manifests[c], registry.state[c],
+                                                                 args.data_class))]
+    if refused:
+        raise BodyError("not grantable: " + "; ".join(refused))
+    start = datetime.now(timezone.utc)
+    body = {"grant_id": args.id, "capabilities": {c: registry.manifests[c].digest() for c in caps},
+            "data_classes": sorted(set(args.data_class)), "not_before": iso(start),
+            "expires_at": iso(start + timedelta(days=args.days)), "max_uses": args.max_uses, "purpose": args.purpose}
+    if args.print_only:
+        return json.dumps(body, indent=2, sort_keys=True)
+    return _drop(home, "CAPABILITY_GRANT", body, args)
+
+
 def _json_or_text(value):
     if value is None:
         return None
@@ -478,6 +509,23 @@ def main(argv=None) -> int:
     cm.add_argument("--equals", default="NONE", help="expected JSON value (or a plain string)")
     cm.add_argument("--key"); cm.add_argument("--no-passphrase", action="store_true")
     cm.add_argument("--print-only", action="store_true")
+
+    gr = sub.add_parser("grant", help="sign one bounded, revocable grant over reviewed read-only methods")
+    gr.add_argument("--id", required=True, help="a name for the grant (never reused)")
+    gr.add_argument("--capability", action="append", default=[], help="a capability id (repeat)")
+    gr.add_argument("--withheld-read-only", action="store_true",
+                    help="propose every withheld method the grant rules admit (review it with --print-only)")
+    gr.add_argument("--data-class", action="append", default=[])
+    gr.add_argument("--days", type=float, default=7.0)
+    gr.add_argument("--max-uses", type=int, default=500)
+    gr.add_argument("--purpose", required=True)
+    gr.add_argument("--print-only", action="store_true", help="print the exact body that would be signed")
+    gr.add_argument("--key"); gr.add_argument("--no-passphrase", action="store_true")
+    gr.add_argument("--ttl-hours", type=int, default=24)
+    gv = sub.add_parser("grant-revoke", help="end one method grant at once")
+    gv.add_argument("grant_id"); gv.add_argument("--reason", required=True)
+    gv.add_argument("--key"); gv.add_argument("--no-passphrase", action="store_true")
+    gv.add_argument("--ttl-hours", type=int, default=24)
 
     for name in ("mission", "decide", "critique", "pause", "resume", "stop", "attach", "detach", "lifecycle",
                  "accept", "realize"):
@@ -1160,6 +1208,10 @@ def main(argv=None) -> int:
                 print(_drop(home, "BODY_STOP", {}, args))
         elif args.cmd in ("attach", "detach"):
             print(_drop(home, "CAPABILITY_" + args.cmd.upper(), {"capability_id": args.capability_id}, args))
+        elif args.cmd == "grant":
+            print(_grant(home, args))
+        elif args.cmd == "grant-revoke":
+            print(_drop(home, "CAPABILITY_GRANT_REVOKE", {"grant_id": args.grant_id, "reason": args.reason}, args))
         elif args.cmd == "realize" and args.resolves:
             if not args.note.strip():
                 raise BodyError("--note states the basis of the resolution: the record that decides it")

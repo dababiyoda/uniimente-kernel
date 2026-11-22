@@ -1,0 +1,25 @@
+{
+  "net_monthly_usd": {"low": 1820, "central": 6760, "high": 16200},
+  "payer": "Independent restaurant owners/operators: the food-service licence holder buys the cleaning. Chains contract nationally and are not reachable payers (per the founder).",
+  "recommendation": "pilot",
+  "cheapest_test": {
+    "description": "Run E11's pilot: contact 30 more independents for $300. With 250 reachable accounts, launch value is 250*730 = $182,500 per unit of booking rate, so launch breaks even at a booking rate of 18000/182500 = 9.86%. With a uniform prior and E9's 3/25, the posterior is Beta(4,23), with mean 14.8% and 90% interval 5.4%-27.2%. P(rate < break-even) is about 25%. Decision rule: 0 or 1 bookings out of 30 gives a posterior mean of 7.0% or 8.8%, below break-even, so abandon. 2 or more bookings means launch. P(0 or 1 bookings) is about 13.5%. EVSI = $398, so the expected net value is $398 - $300 = +$98. EV of launching now is $9,037 and EVPI is about $1,242. The test is worth running, but only narrowly.",
+    "expected_net_value_usd": 98
+  },
+  "e8_established": false,
+  "excluded": [
+    {"id": "E3", "why": "A 2019 forum post that the founder confirms is wrong for today. It was also stale and outside the 2024 survey range."},
+    {"id": "E2", "why": "Promotional first-visit price ($299). It is not the recurring price."},
+    {"id": "E8", "why": "An observational vendor claim with self-selected customers, no comparison group and empty treated/control data. Not established, and it does not bear on the economics."},
+    {"id": "E10", "why": "A duplicate of E1 with a typo (central 4500 lies above its own high of 650)."},
+    {"id": "E4", "why": "Not used directly. It includes chains that contract nationally, and the founder's corrected figure of 250 reachable accounts replaces E11's 400."}
+  ],
+  "questions_for_founder": [
+    "Is a demand-limited business acceptable? With 250 reachable accounts at E9's 12-15% booking rate and 2 cleanings a year, a solo crew gets about 5-6 jobs a month, which nets about -$175 to +$250 a month after E7's fixed costs. The capacity figure of 24 jobs a month would need 144 accounts, or 58% of the 250. How would you reach more accounts, or raise cleaning frequency?",
+    "Will booked accounts repeat at 2 cleanings a year at about $450, or were first bookings made at promo prices?",
+    "What horizon does E11's $730 per account cover: one year or the account's lifetime? And does the $18,000 launch cost overlap with E7's monthly fixed costs?"
+  ],
+  "transfer_order_litres": [48.0, 42.6],
+  "transfer_method": "First I corrected the last 7 values (x0.8). The original series followed an exact weekly profile plus 1.75 per week. The corrected final week equals exactly 0.8 times what that pattern predicted, on all 7 days, which is a clean multiplicative level shift. Forecast with the shift persisting: day 1 = 46.6 + 0.8*1.75 = 48.0, and day 2 = 41.2 + 1.4 = 42.6 (equivalently 0.8 x 60.0 and 0.8 x 53.25). The newsvendor critical ratio is 30/34 = 0.882, and there is no within-regime noise, so the order equals the forecast. The 400 L limit does not bind. Caveat: the only real uncertainty is whether demand reverts to the old level (60.0 and 53.25). Shortage costs 30 and overage costs 4, so it is optimal to stock the old level instead if P(revert) > 4/34 = 11.8%. One week of evidence cannot settle that probability, so the founder's judgment on why demand dropped matters.",
+  "notes": "Capacity-based net monthly is unchanged, because E3 was already excluded: low 18*(350-110)-2500 = 1820; central 24*(450-85)-2000 = 6760; high 30*(650-60)-1500 = 16200. It assumes full booking. With 250 reachable accounts, demand-limited central is about 5-6 jobs a month, or roughly break-even (about -$175 to +$250 a month). Treat that as the dominant risk. The recommendation changed from launch to pilot because the 250-account correction raised break-even from 6.2% to 9.9%. Now 0 or 1 bookings out of 30 would flip the decision, so the pilot has positive value: EVSI $398 against a $300 cost. Small samples (E5 n=3, E9 n=25) and synthetic data apply throughout."
+}

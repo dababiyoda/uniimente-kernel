@@ -730,6 +730,10 @@ class Body:
             if record.get("epistemic"):   # founder evidence advances the held-out learning loop now
                 improvement.learn(self.journal, self.ledger, self.clock())
             return record
+        if kind in ("CAPABILITY_GRANT", "CAPABILITY_GRANT_REVOKE"):
+            from greg import method_grant
+            apply = method_grant.apply_grant if kind == "CAPABILITY_GRANT" else method_grant.apply_revoke
+            return apply(self, body, digest, now or self.clock())
         if kind in ("CAPABILITY_ATTACH", "CAPABILITY_DETACH"):
             cid = body.get("capability_id")
             if cid not in self.registry.manifests:
@@ -1083,6 +1087,10 @@ class Body:
         self.engine.interrupt_withdrawn(now)   # a cancel or detach that arrived while a worker ran stops it, paused too
         if self.stop_requested:
             return {"commands": commands, "stopped": True}
+        # A method grant that expired, ran out of uses or was revoked detaches what it attached before anything is
+        # selected (paused or not: it narrows authority); one whose window just opened attaches its methods.
+        from greg import method_grant
+        method_grant.sweep(self, now)
         # The trail of a device revocation (what it voided, the review a suspected compromise opens), finished here
         # if the body stopped between the revocation and its trail. Paused or not: it is a record, not an action.
         revocation.settle(self.journal, self.engine.book)

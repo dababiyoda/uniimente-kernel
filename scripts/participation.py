@@ -61,6 +61,11 @@ INDEX = "<!-- uniimente:index -->"
 RELEASE = "<!-- uniimente:release -->"
 HANDOFF = "<!-- uniimente:handoff -->"
 ACK = "<!-- uniimente:ack -->"
+RECOVERY = "<!-- uniimente:recovery -->"
+RECOVERY_GRACE = timedelta(hours=24)   # a claim is stale only this long after its own Recheck time
+# Sessions whose recovery comment ends a stale claim. Recovery admits nobody and transfers nothing. A session id is
+# declared, not authenticated. Changing this set is the integrator's and the founder's decision (#346, Decision A).
+MAINTAINER_SESSIONS = frozenset({"session_01FBS4KNJR59nSbdGbxo8Mbx"})
 
 EDIT_TOOLS = {"Edit", "Write", "MultiEdit", "NotebookEdit"}
 GITHUB_WRITES = re.compile(r"^mcp__github__(push_files|create_or_update_file|delete_file|create_pull_request|"
@@ -79,6 +84,7 @@ TO_RE = re.compile(_LABEL.format(r"To"), re.M | re.I)
 ACCEPTS_RE = re.compile(_LABEL.format(r"Accepts handoff"), re.M | re.I)
 SESSION_RE = re.compile(_LABEL.format(r"Session"), re.M | re.I)
 RECORD_RE = re.compile(_LABEL.format(r"Task record"), re.M | re.I)
+RECHECK_RE = re.compile(_LABEL.format(r"Recheck \(UTC\)"), re.M | re.I)
 DEPENDENCY_OF_RE = re.compile(_LABEL.format(r"Dependency of"), re.M | re.I)
 CONTRACT_RE = re.compile(_LABEL.format(r"Contract"), re.M | re.I)
 ID_RE = re.compile(r"session_[A-Za-z0-9]{8,}")
@@ -146,7 +152,8 @@ def parse(comment: dict, issue: str) -> dict:
         item.update(kind="claim", session=who, session_reason=why, task=key[0] if key else None,
                     subtask=key[1] if key else None, exclusive=concerns(_first(EXCL_RE, body)),
                     shared=concerns(_first(SHARED_RE, body)), depends=_first(DEPENDS_RE, body),
-                    accepts=_ids(_first(ACCEPTS_RE, body)))
+                    accepts=_ids(_first(ACCEPTS_RE, body)),
+                    recheck=(re.search(r"\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ", _first(RECHECK_RE, body)) or [None])[0])
     elif head == RELEASE:
         item.update(kind="release", claims=_ids(_first(CLAIM_RE, body)),
                     session=_one(_first(SESSION_RE, body)))
@@ -157,6 +164,8 @@ def parse(comment: dict, issue: str) -> dict:
         item.update(kind="index", records=[(m["repo"] or REPO, int(m["n"]))
                                            for m in ISSUE_RE.finditer(_first(RECORD_RE, body))],
                     task=(task_key(_first(TASK_RE, body)) or (None,))[0])
+    elif head == RECOVERY:
+        item.update(kind="recovery", claims=_ids(_first(CLAIM_RE, body)), session=_one(_first(SESSION_RE, body)))
     elif head == ACK:
         item.update(kind="ack", of=_ids(_first(DEPENDENCY_OF_RE, body)), contract=_first(CONTRACT_RE, body),
                     session=_one(_first(SESSION_RE, body)))
@@ -257,6 +266,15 @@ def resolve(items: list[dict]) -> dict[int, dict]:
             if event["kind"] == "release" and event["session"] and event["session"] == c["holder"]:
                 c.update(state="released", why=f"released by comment {event['id']}", ended_at=event["created_at"],
                          ended_by=event["id"])
+    maintainers = _maintainers()
+    for event in sorted((i for i in items if i["kind"] == "recovery"), key=lambda i: i["id"]):
+        if event["session"] not in maintainers:
+            continue          # recorded, ineffective: only a listed maintainer session may recover a claim
+        for cid in event["claims"]:
+            c = claims.get(cid)
+            if c and c["state"] == "active" and c["id"] < event["id"] and _claim_stale(c, event["created_at"]):
+                c.update(state="recovered", ended_at=event["created_at"], ended_by=event["id"],
+                         why=f"recovered as stale by maintainer {event['session']} in comment {event['id']}")
     for c in sorted(claims.values(), key=lambda c: c["id"]):
         for hid in c.get("accepts") or []:
             h = handoffs.get(hid)
@@ -269,6 +287,20 @@ def resolve(items: list[dict]) -> dict[int, dict]:
                                  ended_at=c["created_at"], ended_by=c["id"])
                     c["order"] = min(c["order"], prior["order"])
     return claims
+
+
+def _maintainers() -> frozenset[str]:
+    return MAINTAINER_SESSIONS
+
+
+def _claim_stale(claim: dict, at: str) -> bool:
+    """A claim is stale when ``at`` is more than RECOVERY_GRACE past its own Recheck time; no Recheck, never."""
+    try:
+        due = datetime.strptime(claim.get("recheck") or "", "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+        when = datetime.strptime(at, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+    except ValueError:
+        return False
+    return when - due > RECOVERY_GRACE
 
 
 def decide(claims: dict[int, dict], mine: int) -> dict:

@@ -402,3 +402,49 @@ def test_pr_contribution_judges_each_commit_and_leaves_a_stacked_dependency_to_i
     assert out["attributed_to"] == {"aaa": 340}
     monkeypatch.setattr(P, "_get", lambda path: (None, "fake"))
     assert P.pr_contribution("r", 348, replay())["result"] == "not_run"
+
+
+# ---------------------------------------------------------------- maintainer recovery of a stale claim
+
+def stale_claim(cid, session, recheck):
+    c = checkin(cid, session, "T-1/a", "`scripts/`")
+    c["body"] += f"\n- Recheck (UTC): {recheck}"
+    return c
+
+
+def recovery(cid, claim, session, at):
+    r = other(cid, P.RECOVERY, f"- Claim: {claim}", f"- Session: {session}")
+    r["created_at"] = at
+    return r
+
+
+@pytest.fixture()
+def maintainer(monkeypatch):
+    monkeypatch.setattr(P, "_maintainers", lambda: {C})
+
+
+def test_a_listed_maintainer_ends_a_stale_claim_and_admits_nobody(repo, maintainer):
+    comments = [stale_claim(1000001, A, "2026-11-22T16:00:00Z"),
+                recovery(1000002, 1000001, C, "2026-11-23T16:00:01Z"),
+                checkin(1000003, B, "T-2/b", "`scripts/a.py`")]
+    claims = P.resolve([P.parse(x, "r#500") for x in comments])
+    assert claims[1000001]["state"] == "recovered"
+    with pytest.raises(P.Refused, match="recovered"):
+        P.admit((REPO, 500), 1000001, source(comments), cwd=str(repo), write=False)
+    assert P.admit((REPO, 500), 1000003, source(comments), cwd=str(repo), write=False)   # B claims it anew
+
+
+def test_recovery_needs_a_listed_maintainer_and_a_stale_claim(repo, maintainer):
+    early = [stale_claim(1000001, A, "2026-11-23T12:00:00Z"), recovery(1000002, 1000001, C, "2026-11-24T00:00:00Z")]
+    assert P.resolve([P.parse(x, "r#500") for x in early])[1000001]["state"] == "active"      # within the grace
+    norecheck = [checkin(1000001, A, "T-1/a", "`scripts/`"), recovery(1000002, 1000001, C, "2026-12-30T00:00:00Z")]
+    assert P.resolve([P.parse(x, "r#500") for x in norecheck])[1000001]["state"] == "active"
+    imposter = [stale_claim(1000001, A, "2026-11-22T16:00:00Z"), recovery(1000002, 1000001, B, "2026-11-24T01:00:00Z")]
+    assert P.resolve([P.parse(x, "r#500") for x in imposter])[1000001]["state"] == "active"
+
+
+def test_work_done_before_a_recovery_keeps_its_historical_evidence(maintainer):
+    comments = [stale_claim(1000001, A, "2026-11-22T16:00:00Z"), recovery(1000002, 1000001, C, "2026-11-23T16:00:01Z")]
+    ref = f"https://github.com/{REPO}/issues/500#issuecomment-1000001"
+    out = P.contribution(ref, A, source(comments), ["scripts/a.py"], "2026-11-22T16:30:00Z")
+    assert out["result"] == "pass" and out["assurance"] == "admitted-historical"

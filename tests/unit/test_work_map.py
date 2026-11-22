@@ -2981,3 +2981,26 @@ def test_a_relayed_check_in_is_never_exact(quick):
     assert w.checkin_author(RELAY_6853656353) is None
     m = w.build([], [_comment(6853656353, RELAY_6853656353)], now=NOW, use_git=False)
     assert m["sessions"] == [] and all(c["session"] is None for c in m["claims"])
+
+
+TWO_IDS = [f"- Session: `{B}` → `{A}` (container replaced; I resume its work)",
+           f"- Session: _`{B}`_ (relayed by `{A}`)",
+           f"- **Session:** `{B}`, for `{A}`",
+           f"- Session: `{B}`\n  (relayed by `{A}`)",                      # its continuation line, rendered with it
+           f"- Session: `{B}`\nrelayed by `{A}`"]                          # a lazy continuation line
+
+
+@pytest.mark.parametrize("line", TWO_IDS, ids=range(len(TWO_IDS)))
+def test_a_session_line_that_names_two_ids_names_nobody(quick, line):
+    body = f"{w.CHECKIN}\n## Check-in: WU-11 resumed after a container loss\n{line}\n- Files: `greg/missions.py`\n"
+    assert w.checkin_author(body) is None
+    m = w.build([], [_comment(7100000030, body)], now=NOW, use_git=False)
+    assert m["sessions"] == [] and all(c["session"] is None for c in m["claims"])
+
+
+def test_one_id_named_twice_or_another_id_on_the_next_item_is_still_exact():
+    assert w.checkin_author(f"{w.CHECKIN}\n## Check-in\n- Session: `{B}` (Claude Code). `{B}` opened #290.\n") == (
+        B, "claude")
+    assert w.checkin_author(f"{w.CHECKIN}\n## Check-in\n- Session: `{B}`\n- Reviewer / integrator: `{A}`\n") == (
+        B, "claude")
+    assert w.checkin_author(f"{w.CHECKIN}\n## Check-in\n- Session: `{B}`\n\nAsked by `{A}`.\n") == (B, "claude")

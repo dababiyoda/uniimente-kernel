@@ -3579,3 +3579,28 @@ def test_a_poster_wording_that_names_the_session_or_no_id_or_sits_in_code_still_
         assert w.checkin_author(body) == (B, "claude"), text
     assert "or that names another id as its poster" in " ".join(w.__doc__.split())
     assert "names another poster" not in " ".join(w.__doc__.split())
+
+
+# ------------------------------------------------------------------ round 8: a template that tells its receiver to post
+TEMPLATE_NOTES = {
+    "N16": f"`{B}`: please post this as your check-in when you start.",
+    "N17": f"Repost this as your own, `{B}`.",
+    "reposts": "The receiver reposts it as its checkin.",
+    "their check-in": "Whoever takes this posts it as their check-in.",
+}
+
+
+@pytest.mark.parametrize("name", list(TEMPLATE_NOTES))
+def test_a_template_that_tells_its_receiver_to_post_it_names_nobody(quick, name):
+    body = f"{w.CHECKIN}\n## Check-in: WU-11\n- Session: `{B}` (Claude Code, cloud)\n{F7}\n{TEMPLATE_NOTES[name]}\n"
+    assert w.checkin_verdict(body)["reason"] == "relayed"
+    m = w.build([], [_comment(7100000002, body)], now=NOW, use_git=False)
+    assert m["sessions"] == [] and all(c["session"] is None for c in m["claims"])
+
+
+def test_the_check_in_summary_lists_words_not_meanings():
+    doc = " ".join(w.checkin_author.__doc__.split())
+    assert "that say what they are" not in doc
+    assert ('"(re)post(s) this/it as yours", "... as your/its/their own" or "... as your/its/their check-in"' in doc)
+    assert w.checkin_author(f"{w.CHECKIN}\n## Check-in: WU-11\n- Session: `{B}`\n{F7}\nI will post this as a "
+                            "follow-up.\n") == (B, "claude")

@@ -624,7 +624,7 @@ def opens_with_checkin(body: str) -> bool:
 # What a check-in post says about who posts it (see ``checkin_verdict``).
 _RELAYED = re.compile(r"(?i)(?<![a-z])relay(?:s|ed|ing|er)?(?![a-z])|\bon\s+(?:\S+\s+){0,3}?behalf\b|"
                       r"(?<![a-z])posted\s+for\b|"
-                      r"\bposts?\s+(?:this|it)\s+as\s+(?:yours|(?:your|its|their)\s+own)\b")
+                      r"(?<![a-z])(?:re)?posts?\s+(?:this|it)\s+as\s+(?:yours|(?:your|its|their)\s+(?:own|check-?in))\b")
 _HANDED = re.compile(r"(?i)\bhand\s*-?\s*(?:offs?|overs?)\b|\bhand(?:s|ed|ing)?\s+(?:\S+\s+){0,3}?(?:over|off)\b|"
                      r"\breassign|\b(?P<review>(?:re-?)?review(?:s|ed|ing)?)\b|\b(?:for|to)\s+the\s+next\s+owner\b")
 _ANSWERS = re.compile(r"(?i)\banswer(?:s|ed|ing)?\b[^.]*$")     # "#316 answers the integrator's review": its own reply
@@ -727,24 +727,24 @@ def checkin_author(body: str) -> tuple[str, str] | None:
     text (an HTML comment, ``<details>``, ``<pre>``, a fence).
 
     What the post says about who posts it: it names nobody when its text outside code relays ("relay", "relays",
-    "relayed", "relaying", "relayer", "on ... behalf", "posted for", "post this as yours"); when its heading, or the
-    bold line acting as its heading, says "handoff", "hand-off", "handover", "hand over", "hand(s/ed/ing) ... over" or
-    "hand(s/ed/ing) ... off" (up to three words between), "reassign" (and words it begins), "review", "reviews",
-    "reviewed", "reviewing", "re-review" (and its inflections) or "for/to the next owner"; a review word after
-    "answers" in the same sentence is the post's own reply, as in live check-in 7068165767 ("transfer" is not read:
-    live claim 6474889018 is a "transfer test"); when a labelled line that names a poster, its label in any case
-    ("Posted by", "Relayed by", "Relay", "Relayer", "From", "On behalf of", "Recording session", "Implementer",
-    "Agent", "Agent / claim", "Identity", "Author", "Sender", "Poster", "Submitted by", "Sent by", "Written by"),
-    names another id; when its text outside code says "posted by", "submitted by", "sent by" or "written by" right
-    before an id that is not the Session id ("Posted by `A` for `B`."); or when its heading names another id, except
-    an ask: a heading that opens with up to two words and then "ask" ("## Coordination ask: ... still yours, `X`?",
-    "## Second ask, `X`: ..."; live check-ins 6853648077 and 6858741219 ask another session in their headings) may
-    name the session it asks, unless its byline is another id: an id right after "from", "by", "·" or "(" ("##
-    Coordination ask from `A`", "## Second ask · `A`", "asked by `A`"), or one in a signature place of
-    ``_heading_bylines``. So a relay, a handoff, a reassignment record, a review and a template filled in for someone
-    else that say what they are name nobody, and so does a session's own handoff of its own claim: release your own
-    claim under a heading such as "## Release: claim N". On the live board this keeps all 29 check-ins round 6 read as
-    exact.
+    "relayed", "relaying", "relayer", "on ... behalf", "posted for", "(re)post(s) this/it as yours", "... as
+    your/its/their own" or "... as your/its/their check-in"); when its heading, or the bold line acting as its
+    heading, says "handoff", "hand-off", "handover", "hand over", "hand(s/ed/ing) ... over" or "hand(s/ed/ing) ...
+    off" (up to three words between), "reassign" (and words it begins), "review", "reviews", "reviewed", "reviewing",
+    "re-review" (and its inflections) or "for/to the next owner"; a review word after "answers" in the same sentence
+    is the post's own reply, as in live check-in 7068165767 ("transfer" is not read: live claim 6474889018 is a
+    "transfer test"); when a labelled line that names a poster, its label in any case ("Posted by", "Relayed by",
+    "Relay", "Relayer", "From", "On behalf of", "Recording session", "Implementer", "Agent", "Agent / claim",
+    "Identity", "Author", "Sender", "Poster", "Submitted by", "Sent by", "Written by"), names another id; when its
+    text outside code says "posted by", "submitted by", "sent by" or "written by" right before an id that is not the
+    Session id ("Posted by `A` for `B`."); or when its heading names another id, except an ask: a heading that opens
+    with up to two words and then "ask" ("## Coordination ask: ... still yours, `X`?", "## Second ask, `X`: ..."; live
+    check-ins 6853648077 and 6858741219 ask another session in their headings) may name the session it asks, unless
+    its byline is another id: an id right after "from", "by", "·" or "(" ("## Coordination ask from `A`", "## Second
+    ask · `A`", "asked by `A`"), or one in a signature place of ``_heading_bylines``. So a relay, a handoff, a
+    reassignment record, a review and a template filled in for someone else name nobody when they use these words or
+    labels, and so does a session's own handoff of its own claim: release your own claim under a heading such as "##
+    Release: claim N". On the live board this keeps all 29 check-ins round 6 read as exact.
 
     Limit, inherent: a check-in is declared, not authenticated. A block filled in, pasted or copied with none of this
     wording is read as the session its Session line names, whoever posts it; this guards against ordinary posts by

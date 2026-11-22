@@ -61,7 +61,8 @@ check refuses its ``session_id`` or its PR comes from a fork (then it names no s
 map names no session for a receipt the check accepts (``receipt_session``, or its ``task_ref`` cites a check-in by
 another session than its ``session_id``, then ``task_ref_cites`` is that comment), ``handed_over_from``, the session that
 handed the PR over when its ``handoff.acknowledgment.status`` is ``accepted`` (the PR's session is then the receiver's
-one id, or none), ``receipt_head_stale``,
+one id; none when the receiver is not one id, or when the receipt check refuses the acknowledgment, and then
+``session_unnamed`` holds the check's words), ``receipt_head_stale``,
 whether the receipt's ``head_sha`` is not the PR's head (it keeps its session: a push lands before its description
 is updated; only a receipt copied with its ``head_sha`` unchanged shows here, never one whose SHAs were fixed to pass
 the receipt check), ``changed``, the files it changes
@@ -1291,7 +1292,7 @@ def _receipt_fields(r: dict | None) -> tuple[dict, list[str]]:
            "overlap": text(overlap, "status", "overlap.status") if isinstance(overlap, dict) else None,
            "scope": text(r, "scope", "scope") or "", "intent_refs": strings(r, "intent_refs", "intent_refs"),
            "handoff": text(ack, "status", "handoff.acknowledgment.status"),
-           "receiver": receiver if isinstance(receiver, str) else None}
+           "receiver": receiver if isinstance(receiver, str) else None, "reference": ack.get("reference")}
     return out, problems
 
 
@@ -1340,6 +1341,26 @@ def _session_refused(value: str | None) -> str | None:
     return None
 
 
+def _handoff_refused(f: dict, problems: list[str]) -> str | None:
+    """Why the receipt check refuses an accepted handoff's acknowledgment, in the check's words and order; None when
+    it accepts it. Copied from ``.github/workflows/collaboration-receipt.yml`` for the reason ``_files_refused``
+    gives: the receiver is None or text, and when accepted the receiver and the reference are text (not blank), the
+    receiver differs from ``session_id`` (stripped, casefolded), is not unknown, unassigned, none or pending, and has
+    no "<" or ">". Such a PR names no session."""
+    receiver, reference, sender = f["receiver"], f["reference"], f["session_id"]
+    if "handoff.acknowledgment.receiver_session" in problems or (receiver is not None and not receiver.strip()):
+        return "invalid receiver session"
+    if not (receiver and isinstance(reference, str) and reference.strip()):
+        return "accepted handoff requires receiver session and acknowledgment reference"
+    if isinstance(sender, str) and receiver.strip().casefold() == sender.strip().casefold():
+        return "a worker cannot acknowledge its own handoff"
+    if receiver.strip().casefold() in ("unknown", "unassigned", "none", "pending"):
+        return "accepted handoff requires an actual receiver session"
+    if "<" in receiver or ">" in receiver:
+        return "replace receiver session placeholders"
+    return None
+
+
 def _ids(text: str) -> set[str]:
     """Unit ids (``WU-11``, ``S42-A``) and ask ids (``S42.A1``) in a text."""
     return set(UNIT.findall(text)) | set(ASK.findall(text))
@@ -1367,7 +1388,9 @@ def _row(pull: dict, root: Path, use_git: bool, line: str = LINE) -> dict:
     if f["handoff"] == "accepted" and not refused:   # another session acknowledged this head: the PR is now its
         handed = sid
         sid, client, unnamed = receipt_session(f["receiver"])
-        if not (sid and _spans(f["receiver"])):       # an opaque value is no known-form id
+        if (why := _handoff_refused(f, problems)):     # the receipt check refuses this acknowledgment
+            sid, client, unnamed = None, "unknown", why
+        elif not (sid and _spans(f["receiver"])):     # an opaque value is no known-form id
             sid, client, unnamed = None, "unknown", RECEIVER_NOT_ONE_ID
     if sid and not same_repo:                 # a receipt from another repository is no session's declaration here
         refused = "fork: " + ("the head repository is not the base repository" if pull["head_repo"] else
@@ -2344,7 +2367,8 @@ def markdown(m: dict) -> str:
                 f"the receipt check refuses their session_id or they come from a fork: "
                 f"{len(g['receipts_with_refused_session'])}; receipts the check accepts that name no session (their "
                 f"session_id names more than one id or an id it does not open with, their task_ref cites another "
-                f"session's check-in, or their accepted handoff's receiver is not one id; `session_unnamed` in the "
+                f"session's check-in, or their accepted handoff's receiver is not one id or is refused by the receipt "
+                f"check; `session_unnamed` in the "
                 f"JSON): "
                 f"{len(g['receipts_naming_no_session'])}; receipts written for another head than the PR's (normal "
                 f"for minutes after a push): {len(g['receipts_with_stale_head'])}"

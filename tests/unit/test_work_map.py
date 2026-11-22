@@ -3043,7 +3043,8 @@ def test_a_receipt_session_id_names_only_the_one_id_it_opens_with_and_otherwise_
         assert (hit["session"], hit["session_unnamed"]) == (None, why), value
         assert ("receipts the check accepts that name no session (their session_id names more than one id or an id "
                 "it does not open with, their task_ref cites another session's check-in, or their accepted handoff's "
-                "receiver is not one id; `session_unnamed` in the JSON): 1") in w.markdown(m)
+                "receiver is not one id or is refused by the receipt check; `session_unnamed` in the JSON): 1") in (
+            w.markdown(m))
 
 
 REFUSED_SESSION_IDS = [("pending", "actual session identifier required"),
@@ -3358,7 +3359,7 @@ def test_an_accepted_handoff_names_its_receiver_and_leaves_the_sender_out(quick,
     assert (pending["prs"][0]["session"], pending["prs"][0]["handed_over_from"]) == (B, None)
 
 
-@pytest.mark.parametrize("receiver", [f"{A} (from {B})", "uat-vulcan", f"next: {A}", "", 7])
+@pytest.mark.parametrize("receiver", [f"{A} (from {B})", "uat-vulcan", f"next: {A}"])   # "" and 7: the check refuses
 def test_an_accepted_handoff_whose_receiver_is_not_one_id_names_no_session(quick, receiver):
     prs = [_pr(300, "b/seam", body=_handed(B, receiver)), _pr(301, "a/other", body=_receipt(C, ["greg/missions.py"]))]
     m = w.build(prs, [], now=NOW, use_git=False)
@@ -3604,3 +3605,36 @@ def test_the_check_in_summary_lists_words_not_meanings():
     assert ('"(re)post(s) this/it as yours", "... as your/its/their own" or "... as your/its/their check-in"' in doc)
     assert w.checkin_author(f"{w.CHECKIN}\n## Check-in: WU-11\n- Session: `{B}`\n{F7}\nI will post this as a "
                             "follow-up.\n") == (B, "claude")
+
+
+# ------------------------------------------------------------------ round 8: a receiver the receipt check refuses
+# The accepted-handoff branch names the receiver only when the receipt check (collaboration-receipt.yml) would accept
+# the acknowledgment; otherwise the PR names no session, labelled with the check's own words (round 7's RH1).
+REFUSED_HANDOFFS = [(A, None), (A, "  "), ("", "https://x/96#c1"), (7, "https://x/96#c1"),
+                    ("pending", "https://x/96#c1"), (" Unknown ", "https://x/96#c1"), ("none", "https://x/96#c1"),
+                    (f"<{A}>", "https://x/96#c1"), (B, "https://x/96#c1"), (B.upper(), "https://x/96#c1")]
+
+
+@pytest.mark.parametrize("receiver,reference", REFUSED_HANDOFFS, ids=[repr(r) for r in REFUSED_HANDOFFS])
+def test_an_accepted_handoff_the_receipt_check_refuses_names_no_session(quick, tmp_path, capsys, receiver, reference):
+    check, data = _receipt_check(), _checked_receipt()
+    data["coordination"]["session_id"] = B
+    data["handoff"]["acknowledgment"] = {"status": "accepted", "receiver_session": receiver, "reference": reference}
+    said = _check_refusal(check, data)
+    assert said is not None
+    prs = [_pr(300, "b/seam", body=_body(json.dumps(data)))]
+    m = w.build(prs, [], now=NOW, use_git=False)
+    row = m["prs"][0]
+    assert (row["session"], row["session_unnamed"], row["handed_over_from"]) == (None, said, B)
+    assert m["sessions"] == [] and m["gaps"]["receipts_naming_no_session"] == [300]
+    paths, _raw = _answer(tmp_path, capsys, prs, [], "--paths", "docs/x.md")
+    assert [(p["pr"], p["session"]) for p in paths["paths"][0]["prs"]] == [(300, None)]
+
+
+def test_an_accepted_handoff_the_receipt_check_accepts_names_its_receiver(quick):
+    check, data = _receipt_check(), _checked_receipt()
+    data["coordination"]["session_id"] = B
+    data["handoff"]["acknowledgment"] = {"status": "accepted", "receiver_session": f"`{A}`", "reference": "https://x/1"}
+    assert _check_refusal(check, data) is None
+    row = w.build([_pr(300, "b/seam", body=_body(json.dumps(data)))], [], now=NOW, use_git=False)["prs"][0]
+    assert (row["session"], row["session_unnamed"], row["handed_over_from"]) == (A, None, B)

@@ -73,3 +73,34 @@ The rules and thresholds are immutable during a benchmark run so the system cann
 No mechanism in this directory becomes canonical merely because it is biologically elegant or passes its own benchmark.
 
 Promotion requires a named external or institutional CapabilityDeficit, a strong simpler baseline, evidence that the mechanism improves the underlying effect, bounded cost/complexity, and preserved authority. Otherwise retain it as research.
+## SymbioSoup research track, Stage A: a byte-exact CuBFF reference (2026-11-22)
+
+Source: `INTENT-20261122-SYMBIOSOUP-RESEARCH-TRACK` (two research reports the founder attached on 2026-11-22). Both
+reports put the same first step first: reproduce the Computational Life / CuBFF phenomenon and build a trusted
+measurement kernel before inventing anything.
+
+`developmental/bff.py` is that kernel's slow reference half. It was read from the CuBFF source at `f212e849` and
+covers the `bff_noheads` interpreter, CuBFF's SplitMix64 initialisation, mutation and pairing streams, and its
+`CheckSelfRep` rule.
+
+Tests are in `tests/unit/test_developmental_bff.py`. Bounded emergence runs are in
+`tests/evidence/bff-reference-2026-11-22/`.
+
+Found so far:
+
+- **The cited replicator works, conditionally.** The Gemini specification's 12-byte palindrome `{[<},]],}<[{` copies
+  itself fully (score 64 of 64) at any offset in a program of non-zero inert bytes, and not at all among zero bytes,
+  because zero is the loop-exit byte.
+- **One seeded copy persists or dies out by chance.** A single copy in a 64-program soup with no mutation ends with
+  26, 0, 30, 0 or 24 copies after 30 epochs, depending on the seed.
+
+Not yet done:
+
+- **The differential test against the CuBFF binary.** Building and running it was refused in this session.
+- **Canonical-scale reproduction.** This needs 131,072 programs, 16,000 epochs and 50–100 seeds. Pure Python takes
+  about 0.18 s per 1,024-program epoch.
+
+The compression measure uses `lzma`, not CuBFF's Brotli, so its numbers are not the paper's.
+
+Containment: evolved bytes are data to the host, never code, paths, commands or messages. No stage result authorizes
+anything.

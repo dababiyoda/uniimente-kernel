@@ -32,7 +32,7 @@ jobs:
         with:
           python-version: "3.11"
       - name: Lint tool for the trend line, and YAML for the work map (report only)
-        run: python -m pip install ruff==0.16.9 "pyyaml>=6,<7"
+        run: python -m pip install ruff==0.16.9 "pyyaml>=6,<7" "jsonschema>=4.20,<5"  # receipts use the contract owner's strict JSON
       - name: Structural review and PR-flow proxies
         env:
           GITHUB_TOKEN: ${{ github.token }}

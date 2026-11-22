@@ -194,15 +194,39 @@
     "id": "D2",
     "statement": "Shown-down cannot see a body still running on another machine",
     "severity": "medium",
-    "response_type": "observability",
+    "response_type": "evidence",
     "redesigned_response": "The report says what it judged from (last boot, stop record, heartbeat) and a live copy reports not shown down; an external anchor (greg/anchor.py) is the stronger signal"
    },
    {
     "id": "D3",
     "statement": "Whole-ledger read",
     "severity": "low",
-    "response_type": "bound",
+    "response_type": "protective",
     "redesigned_response": "Read-only and offline; same cost as greg status"
+   }
+  ],
+  "comparisons": {
+   "baseline": "#196 line: greg/recovery.py restores from a seed (a writer); greg status reads a live home; no read-only reader of a stopped copy.",
+   "do_nothing": "black_start_environment stays NOT RUN; the founder has no executable stage-1 path.",
+   "simplest_viable_alternative": "greg status --black-start: rejected because status is the live projection and greg/body.py is heavily contended.",
+   "strongest_competing_architecture": "A core holding the founder key that revokes directly: rejected, it widens authority.",
+   "reversible_experiment": "This draft: a new module and CLI entry, reverted by its commits."
+  },
+  "rejected_alternatives": [
+   {
+    "name": "greg status --black-start",
+    "rejection_reason": "Couples the copy-mode escalate rule into the live projection and edits contended greg/body.py",
+    "revival_evidence": "status gains a copy mode for another reason"
+   },
+   {
+    "name": "The core signs the revocations",
+    "rejection_reason": "A recovery tool holding the founder key widens authority",
+    "revival_evidence": "none"
+   },
+   {
+    "name": "The core sends the notification",
+    "rejection_reason": "Outside contact is founder-only and needs an authorized channel",
+    "revival_evidence": "Founder authorizes a notification channel"
    }
   ]
  },
@@ -217,22 +241,56 @@
    },
    {
     "id": "W2",
-    "category": "clock",
+    "category": "other",
     "statement": "An expired delegation might be omitted on a trusted-clock assumption",
     "strengthening_response": "device_delegations lists expired keys; the core lists them for revocation (unit test)"
    },
    {
     "id": "W3",
-    "category": "write",
+    "category": "fragility",
     "statement": "Notification written into the home or over evidence",
     "strengthening_response": "Refused inside the home; O_EXCL refuses overwrite (unit and integration tests)"
    }
   ],
-  "pass_1_disadvantage_disposition": {
-   "D1": "resolved by shared records",
-   "D2": "accepted with owner this workstream; residual recorded in H.G13 closed_by",
-   "D3": "accepted"
-  }
+  "pass_1_disadvantage_dispositions": [
+   {
+    "disadvantage_id": "D1",
+    "outcome": "resolved",
+    "rationale": "Both readers use the same records (main-loop body.booted, body.stopped, heartbeat)",
+    "owner": "this workstream",
+    "review_trigger": "greg status changes its shutdown rule"
+   },
+   {
+    "disadvantage_id": "D2",
+    "outcome": "accepted",
+    "rationale": "A copy cannot observe another machine; the report names its basis and a live copy is not shown down",
+    "owner": "this workstream",
+    "review_trigger": "an external anchor witness is configured on a body"
+   },
+   {
+    "disadvantage_id": "D3",
+    "outcome": "accepted",
+    "rationale": "Offline read-only use; same cost as greg status",
+    "owner": "this workstream",
+    "review_trigger": "a ledger large enough that the read is measured as a problem"
+   }
+  ],
+  "final_design": "greg/black_start.py and `greg --home COPY black-start [--out N.json]`: read-only stage-1/stage-2 report over a copied home, unsigned revocation commands, NOT_SENT notification outside the home, exit 0/1/3.",
+  "residual_risks": [
+   {
+    "risk": "The notification is not sent",
+    "mitigation": "Marked NOT_SENT; exact text written for an authorized channel",
+    "owner": "Alfonso Lopez",
+    "review_trigger": "a founder-authorized notification channel"
+   },
+   {
+    "risk": "A rollback within the heartbeat's one-turn window is undetected",
+    "mitigation": "Same limit as the boot guard; anchor witnesses cover it",
+    "owner": "this workstream",
+    "review_trigger": "anchor witnesses enabled on the body"
+   }
+  ],
+  "recommendation": "EXPERIMENT"
  },
  "dissent": {
   "present": false,

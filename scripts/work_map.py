@@ -48,7 +48,8 @@ comment) and ``claims`` (``session`` is the check-in's session or None, ``how`` 
 one by another exact author is ``release_stated_by_another_author`` and one by an author that is not exact
 ``release_by_unverified_author``), ``claims_without_pr``,
 ``older_claims_without_pr``, ``line_checks``, ``gaps`` (``None`` where its source was not read; what git could not
-check is listed there, never counted as zero) and ``prs`` (one row per open pull request, read once however often
+check is listed there, never counted as zero; in ``recent_posts_unresolved`` a post that opens with the check-in marker
+but is not exact has its ``reason`` and ``names``, the one id its Session line names, never a session or a holder) and ``prs`` (one row per open pull request, read once however often
 given: its receipt's fields as declared, ``files`` cut to the first ``FILES_LIMIT`` with ``files_cut`` counting the
 rest, ``receipt_problems`` for fields of the wrong type, ``files_refused``, why the receipt check refuses its
 coordination or its files (then its files are unknown, never an empty list), ``session_refused``, why the receipt
@@ -742,7 +743,8 @@ def unit_refs(heading: str, body: str) -> list[str]:
 def parse_comment(c: dict, tracked: set[str], dirs: set[str]) -> dict:
     body = "\n".join(_lines(c.get("body")))           # one line ending, so every reader splits where GitHub does
     found, heading = fields(body), heading_of(body)
-    who, exact = comment_author(body), checkin_author(body)
+    who, verdict = comment_author(body), checkin_verdict(body)
+    exact = (verdict["author"], verdict["client"]) if verdict["author"] else None
     kind = comment_kind(heading)
     route = _field(found, "route")
     node = _ROUTE.search(body)
@@ -778,6 +780,7 @@ def parse_comment(c: dict, tracked: set[str], dirs: set[str]) -> dict:
         "unit_refs": unit_refs(heading, body), "heading_units": sorted(_ids(heading)),
         "heading_ids": sorted({k for _at, k, _c in identities(heading)}),
         "is_checkin": opens_with_checkin(body), "marker": who["marker"],
+        "checkin_reason": verdict["reason"], "checkin_names": verdict["names"],
     }
 
 
@@ -2020,7 +2023,8 @@ def build(prs: list[dict] | None, comments: list[dict] | None, *, root: Path = R
             "recent_posts_unresolved": if_comments([{"comment": c["cid"], "at": c["at"], "heading": c["heading"],
                                                      "team": c["team"], "author_guess": c["author_guess"],
                                                      "author_guess_how": c["author_guess_how"],
-                                                     "opens_with_marker": c["is_checkin"]}
+                                                     "opens_with_marker": c["is_checkin"],
+                                                     "reason": c["checkin_reason"], "names": c["checkin_names"]}
                                                     for c in recent if not c["author"]]),
             "recent_posts": if_comments(len(recent)),
             "live_sessions": if_both(len(live)),
@@ -2263,10 +2267,16 @@ def markdown(m: dict) -> str:
     if src["comments_read"]:
         unread = g["claims_without_readable_files"]
         marked = sum(u["opens_with_marker"] for u in g["recent_posts_unresolved"])
+        reasons: dict[str, int] = {}
+        for u in g["recent_posts_unresolved"]:
+            if u.get("reason"):
+                reasons[u["reason"]] = reasons.get(u["reason"], 0) + 1
         out += [f"- Board posts in the last 7 days with no check-in block of their own (the marker alone on the first "
                 f"line, then the block's own Session line first), so they name no verified author: "
                 f"{len(g['recent_posts_unresolved'])} of {g['recent_posts']}; {marked} of them "
-                f"open{'s' if marked == 1 else ''} with the check-in marker.",
+                f"open{'s' if marked == 1 else ''} with the check-in marker"
+                + (" (" + "; ".join(f"{_cell(why)}: {n}" for why, n in sorted(reasons.items(), key=lambda x: -x[1]))
+                   + "; `reason` and `names` in the JSON)" if reasons else "") + ".",
                 f"- Claims whose file list could not be read: {len(unread)}"
                 + (f" ({_cell(', '.join(map(str, unread[-12:])))}{_more(12, len(unread))})" if unread else "") + ".",
                 f"- Unreadable board comments: {len(g['unreadable_comments'])}"

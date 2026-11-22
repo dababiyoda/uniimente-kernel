@@ -3102,7 +3102,7 @@ def test_the_gaps_line_says_what_its_unresolved_posts_lack(quick):
     text = w.markdown(m)
     assert ("- Board posts in the last 7 days with no check-in block of their own (the marker alone on the first "
             "line, then the block's own Session line first), so they name no verified author: 2 of 3; 1 of them "
-            "opens with the check-in marker.") in text
+            "opens with the check-in marker (relayed: 1; `reason` and `names` in the JSON).") in text
     assert "that are not a check-in block" not in text
 
 
@@ -3270,3 +3270,37 @@ def test_the_map_tells_posters_to_post_a_block_only_for_their_own_session(quick)
     assert "block filled in, pasted or copied with none of this wording is read as the session its Session line " \
            "names, whoever posts it" in " ".join(w.checkin_author.__doc__.split())
     assert "is read as the session its Session line names, whoever posts it" in " ".join(w.__doc__.split())
+
+
+# ------------------------------------------------------------------ round 7: why a post that opens with the marker
+# names nobody. ``names`` is the one id its Session line names, for diagnosis only: never a session or a holder.
+HANDED, POSTER = "handoff, review or reassignment wording in its heading", "a label naming its poster names another id"
+NOT_FIRST = "Session line not first"
+WHY_NOT_EXACT = [
+    (RELAY_6853656353, "relayed", RELAYED),
+    (f"{w.CHECKIN}\n## Claim handoff: WU-11\n- Session: `{B}`\n{F7}", HANDED, B),
+    (f"{w.CHECKIN}\n## Check-in: WU-11\n- Session: `{B}`\n- **Posted by:** `{A}`\n{F7}", POSTER, B),
+    (f"{w.CHECKIN}\n## Check-in: WU-11 for `{A}`\n- Session: `{B}`\n{F7}", "its heading names another id", B),
+    (f"{w.CHECKIN} note\n## Check-in\n- Session: `{B}`\n{F7}", "text after the marker on its line", B),
+    (f"{w.CHECKIN}\n## Check-in\nResuming after a container loss.\n- Session: `{B}`\n{F7}", NOT_FIRST, B),
+    (f"{w.CHECKIN}\n**Check-in: `{B}`, 2026-11-21.** Claiming S70-A.\n- **Base:** #196\n", NOT_FIRST, None),
+    (f"{w.CHECKIN}\n## Check-in\n- Session: for `{B}`\n{F7}", "Session value does not open with an id", None),
+    (f"{w.CHECKIN}\n## Check-in\n- Session: `{B}` → `{C}`\n{F7}", "Session value names more than one id", None),
+]
+
+
+def test_each_post_that_opens_with_the_marker_but_is_not_exact_says_why_and_which_id_it_names(quick, tmp_path, capsys):
+    comments = [_comment(7100000060 + i, body) for i, (body, _why, _names) in enumerate(WHY_NOT_EXACT)]
+    comments.append(_comment(7100000079, f"## Note · `{B}`\n\nNo marker here.\n"))
+    m = w.build([], comments, now=NOW, use_git=False)
+    got = [(u["comment"], u.get("reason"), u.get("names")) for u in m["gaps"]["recent_posts_unresolved"]]
+    assert got == [(7100000060 + i, why, names) for i, (_b, why, names) in enumerate(WHY_NOT_EXACT)] + [
+        (7100000079, None, None)]
+    assert m["sessions"] == [] and all(c["session"] is None for c in m["claims"])
+    paths, raw = _answer(tmp_path, capsys, [], comments, "--paths", "greg/missions.py")
+    assert B not in json.dumps([c["session"] for c in paths["paths"][0]["claims"]])
+    assert ("9 of them open with the check-in marker (Session line not first: 2; relayed: 1; "
+            "handoff, review or reassignment wording in its heading: 1; a label naming its poster names another "
+            "id: 1; its heading names another id: 1; text after the marker on its line: 1; Session value does not "
+            "open with an id: 1; Session value names more than one id: 1; `reason` and `names` in the JSON).") in (
+        w.markdown(m))

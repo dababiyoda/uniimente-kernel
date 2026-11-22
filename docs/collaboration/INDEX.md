@@ -21,6 +21,7 @@ A dated file here is evidence of what was true on that date.
 | File | What it is |
 |---|---|
 | `START_HERE.md` | Team entry, claims, the six SOPs. Note: its line pinning the SOP to commit `eb795c7d` "while those files are absent from main" is provenance; both files are present in this tree at `docs/PROJECT_COGNITION_SOP.md` and `docs/PROJECT_COGNITION_CONTINUITY.md`. |
+| `PARTICIPATION.md` | How-to for `scripts/participation.py`: check in on the task issue, admit before editing, check, status, release, handoff and dependency ack |
 | `RECEIPT.md` | The version-2 PR receipt (checked by `.github/workflows/collaboration-receipt.yml`) |
 | `ROLLOUT.md`, `VALIDATION.md` | Repository routing/adoption, and the measured results of the collaboration process |
 | `TEAM-ENTRY-DECISION-2026-10-21.md` | Why the team-entry process exists, with its two-pass decision |

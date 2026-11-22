@@ -14,7 +14,10 @@ What `scripts/participation.py` does in each case, and the step that gets you ad
 - **A record with some fields missing** behaves unevenly:
   - without `checked_at`, every push is denied (`Refresh before publishing`);
   - without `exclusive` and `shared`, every edit is out of scope;
-  - without `claim`, the hook crashes with `KeyError` and exits 1, where a denial exits 2.
+  - without `claim`, the hook crashes with `KeyError` and exits 1, where a denial exits 2;
+  - without `task_record`, `check` crashes with `KeyError`;
+  - a record that is valid JSON but not an object (`"x"`) crashes the hook with `AttributeError`, exit 1.
+- **A crash is not a denial.** The client blocks on exit 2. Whether `onFailure: "block"` also blocks exit 1 was not tested, so treat a crash as unsafe and repair the record at once.
 - **Recover.** Run `python scripts/participation.py admit --issue <task issue> --claim <your check-in comment id>` in that worktree. Each worktree needs its own record.
 
 ## 3. python3 is missing
@@ -29,4 +32,5 @@ What `scripts/participation.py` does in each case, and the step that gets you ad
 
 - **What happens.** `admit` and `check` refuse with `claim <id> is released (...)` or `is transferred (handed off by <h>, accepted by <c>)`, adding "a former holder cannot revive it". A failed `check` sets `refresh_required`, so an old admission stops allowing edits and pushes. Edits made before that `check` are not caught.
 - **Recover, former holder.** Stop. To work again, post a new check-in on the task issue and admit it. It is ordered after every claim posted before it.
-- **Recover, receiver.** Post a check-in that keeps the same concerns and adds `- Accepts handoff: <handoff comment id>`. The handoff must name you in `To:` and your predecessor in `From:`. Then admit your new check-in. It keeps the original claim's place in the order.
+- **Recover, receiver.** Post a check-in that keeps the same concerns and adds `- Accepts handoff: <handoff comment id>`. The handoff must name you in `To:` and your predecessor in `From:`, and your check-in must be posted after the handoff; an earlier one does not accept it. Then admit your new check-in. It keeps the original claim's place in the order.
+- **Keep the heading plain.** A check-in whose heading says "handoff", "review" or "reassignment" is refused as `names no session`. Name the work instead ("continue RECOVERY.md"), and keep the word for the `Accepts handoff:` line.

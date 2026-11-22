@@ -3,9 +3,10 @@
 Unit MW-C of `acceptance/directive-sections.json` ("Canonical-owner guard: a function-to-canonical-module registry
 whose test fails when a new module re-implements a registered function"). It bears on three asks of the 2026-10-28
 directive. It answers S69.A3 ("reconcile architectural ownership; remove competing active ownership") and S76.A2 ("Do
-not keep obsolete implementations merely to preserve history") in part. It adds no evidence to S52.A1 ("For every
-major mechanism identify: CANONICAL IMPLEMENTATION, ALTERNATIVES ... RETIREMENT CONDITION"): it only rewrites that
-ask's reason to name the three anchors that are still unsettled (below). All three stay open (`partial`,
+not keep obsolete implementations merely to preserve history") in part. To S52.A1 ("For every major mechanism
+identify: CANONICAL IMPLEMENTATION, ALTERNATIVES ... RETIREMENT CONDITION") it adds one evidence node,
+`test_a_decided_records_canonical_qualnames_equal_the_pin` (round 7), and rewrites the ask's reason to name the three
+anchors that are still unsettled (below); it does not choose among them. All three stay open (`partial`,
 BUILDABLE_NOT_BUILT, unit MW-C).
 
 Branch `claude/mw-c-owner-guard-20261121`, draft PR #341 into `claude/greg-full-machine-completion-whgiee`. The first
@@ -460,6 +461,16 @@ a starred name; `importlib.import_module(...).x = f`; `getattr(...)` and `type(.
 through another name; `sys.modules[__name__]`, also with its `__dict__` bound to a name; and a literal `vars()` key at
 module level.
 
+Round 8's review, of `5bbd9a95` (2026-11-22). A verifier and a skeptic, run as separate subagents this session
+launched and briefed (the same model; no other session or person has reviewed this branch), re-ran the attacks of
+rounds 5, 6 and 7 on Python 3.13 and 3.11, ran the full mutant gate (180/180 on both) and re-measured 12 of the open heads, every one that conflicts among them.
+They found no blocking gap. Their findings were sentences that described a rule by meaning or wrote a list of limits as
+complete, ordinary forms called exotic, and rebinding forms that pass every test but that no list named yet (among
+them a second import used as an accelerator, a computed-name timing helper, an in-place change to a registered
+constant, `__globals__` and `f_globals` writes and a comprehension target). `3ac3e9d8` states them by form as open
+limits under "Static resolution"; it changes text only, and its guard code is the same as `5bbd9a95`'s apart from
+docstrings. On `3ac3e9d8` the mutant gate catches 180/180 on 3.13 (786 s) and on 3.11 (883 s).
+
 ## Compatibility with the line and with the open heads
 
 WU-03 (#338) is now on the line, at `d776ca13`, and it added a real `greg/teams.py`. Two mutants from #253 create
@@ -643,7 +654,8 @@ Which list counts as "every major mechanism" is not settled, and no build can sh
 is. The candidates are the 18 completion-contract functions (`acceptance/completion-contract.json`), the Foundry's
 numbered systems (`foundry/systems/__init__.py` `SYSTEMS`, numbered 1-55, 54 entries) and the 10 concern records of
 `docs/collaboration/ARCHITECTURE-OWNERSHIP-MAP.yaml`. That is a question for the integrator or the founder. MW-C
-records it in S52.A1's reason and adds no evidence to S52.A1. It does not choose.
+records it in S52.A1's reason. Its one S52.A1 evidence node (round 7) pins a decided record's canonical qualnames; it
+does not choose the list.
 
 ## What was not done
 

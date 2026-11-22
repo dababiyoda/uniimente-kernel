@@ -1222,6 +1222,27 @@ FOUNDER_KEY_MUTANTS = [
      "private key ({str(exc)[:160]}); nothing \"\n"),
 ]
 
+# Cortex 0.2.3 (review findings 4 and 5 on #196): what proves an optimum, and what a second engine's answer settles.
+PROOF_ACCEPTANCE_TESTS = ["tests/unit/test_cortex_proof_acceptance.py", "tests/unit/test_cortex_formal_engines.py"]
+PROOF_ACCEPTANCE_MUTANTS = [
+    ("a certificate need not bind the answer", "cortex/organs/adversarial.py",
+     'bound = cert.get("binding") == expected', "bound = True"),
+    ("native OPTIMAL alone counts as independent proof", "cortex/organs/adversarial.py",
+     "            elif not certified:\n", "            elif False:\n"),
+    ("the claimant may assert an optimum without its own basis", "cortex/organs/adversarial.py",
+     "            if not (own_proof or native):\n", "            if not (own_proof or native or certified):\n"),
+    ("the certificate carries no binding", "cortex/organs/cpsat.py",
+     '"version": z3.get_version_string(), "binding": binding,\n                "claim"',
+     '"version": z3.get_version_string(),\n                "claim"'),
+    ("an inconclusive engine confirms", "cortex/routing.py",
+     'conclusive = second.state in ("OK", "WORLD_UNVERIFIED") and key in second_answer',
+     "conclusive = key in second_answer"),
+    ("an unchecked witness contests", "cortex/routing.py",
+     'witness = formal_eval.check_assignment(Spec(model), second_answer["model"])["holds"]', "witness = True"),
+    ("a checked witness from an inconclusive engine is ignored", "cortex/routing.py",
+     "or witness:\n", "or False:\n"),
+]
+
 GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),
           ("open-source genesis", OSS_TESTS, OSS_MUTANTS),
           ("open-source metabolism", METABOLISM_TESTS, METABOLISM_MUTANTS), ("recombine", RECOMBINE_TESTS, RECOMBINE_MUTANTS),
@@ -1239,7 +1260,8 @@ GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),
           ("attach authorization", ATTACH_AUTH_TESTS, ATTACH_AUTH_MUTANTS),
           ("budgeted selection", BUDGETED_TESTS, BUDGETED_MUTANTS),
           ("seed ports", PORT_TESTS, PORT_MUTANTS),
-          ("founder key errors", FOUNDER_KEY_TESTS, FOUNDER_KEY_MUTANTS)]
+          ("founder key errors", FOUNDER_KEY_TESTS, FOUNDER_KEY_MUTANTS),
+          ("proof acceptance", PROOF_ACCEPTANCE_TESTS, PROOF_ACCEPTANCE_MUTANTS)]
 
 
 def _run_one(work: Path, group: str, tests: list, name: str, rel: str, old: str, new: str) -> tuple[bool, str]:

@@ -94,11 +94,20 @@ Found so far:
 - **One seeded copy persists or dies out by chance.** A single copy in a 64-program soup with no mutation ends with
   26, 0, 30, 0 or 24 copies after 30 epochs, depending on the seed.
 
+- **The reference is byte-exact against CuBFF.** CuBFF `f212e849` was built on CPU (`make CUDA=0`, g++ 13.3.0) and
+  compared on 2026-11-22. Every result was identical:
+  - 12 of 12 soup checkpoints (seeds 0 and 1, 1,024 programs, through 321 epochs);
+  - 800 of 800 tapes, final bytes and operation counts;
+  - 114 of 114 `CheckSelfRep` scores, including full replicators.
+
+  The record is in `tests/evidence/bff-reference-2026-11-22/differential/`, and
+  `tests/unit/test_developmental_bff_differential.py` re-checks it without the binary.
+
 Not yet done:
 
-- **The differential test against the CuBFF binary.** Building and running it was refused in this session.
-- **Canonical-scale reproduction.** This needs 131,072 programs, 16,000 epochs and 50–100 seeds. Pure Python takes
-  about 0.18 s per 1,024-program epoch.
+- **Canonical-scale reproduction at the report's statistical power.** This needs 131,072 programs, 16,000 epochs and
+  50–100 seeds. A first CPU run of CuBFF itself covered fewer seeds; see the differential README for its outcome.
+  Pure Python takes about 0.18 s per 1,024-program epoch, so this stays a job for CuBFF.
 
 The compression measure uses `lzma`, not CuBFF's Brotli, so its numbers are not the paper's.
 

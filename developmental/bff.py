@@ -17,9 +17,13 @@ https://github.com/paradigms-of-intelligence/cubff; ``bff.inc.h``, ``bff_noheads
 * ``CheckSelfRep``: 13 noise partners, 4 extra generations, a byte counts when more than a quarter of the trials agree
   on it, and the score is the smaller of the two halves' counts (CuBFF calls a program self-replicating at 5).
 
-What it is not. It is a deliberately slow specification interpreter, not CuBFF: it has not yet been differentially
-tested against the CuBFF binary (building and running that binary in this session was not permitted), and pure Python
-runs a soup of thousands of programs, not CuBFF's 131,072. The compression measure uses ``lzma`` because the Python
+Differentially verified, 2026-11-22, against the CuBFF binary built at that commit with ``make CUDA=0``: the soup
+bytes of every checkpoint (seeds 0 and 1, 1,024 programs, through 321 epochs), 800 single tapes (final bytes and
+operation counts) and 114 CheckSelfRep scores were identical (tests/evidence/bff-reference-2026-11-22/differential/;
+re-checked without the binary by tests/unit/test_developmental_bff_differential.py).
+
+What it is not. It is a deliberately slow specification interpreter, not CuBFF: pure Python runs a soup of thousands
+of programs, not CuBFF's 131,072. The compression measure uses ``lzma`` because the Python
 ``brotli`` module is not installed here; its "higher-order entropy" is therefore not comparable to the paper's.
 Nothing here is a production capability. It is consequence-inert: evolved bytes are data to the host, never code,
 paths, commands or messages (the reports' non-negotiable containment rule).

@@ -3047,4 +3047,41 @@ def test_a_session_id_the_receipt_check_refuses_names_no_session(quick, tmp_path
     paths, _raw = _answer(tmp_path, capsys, prs, [], "--paths", "greg/missions.py")
     hit = paths["paths"][0]["prs"][0]
     assert (hit["session"], hit.get("session_refused")) == (None, reason)
-    assert "receipts naming no session because the receipt check refuses their session_id: 1" in w.markdown(m)
+    assert ("receipts naming no session because the receipt check refuses their session_id or they come from a "
+            "fork: 1") in w.markdown(m)
+
+
+@pytest.mark.parametrize("head_repo,reason", [
+    ("someone/uniimente-kernel", "fork: the head repository is not the base repository"),
+    (None, "fork: the head repository is unknown, so it is not known to be the base repository")])
+def test_a_receipt_on_a_fork_pr_names_no_session(quick, tmp_path, capsys, head_repo, reason):
+    prs = [_pr(300, "a/seam", head_repo=head_repo, body=_receipt(B, ["greg/missions.py"])),
+           _pr(301, "a/other", body=_receipt(A, ["greg/missions.py"]))]
+    m = w.build(prs, [], now=NOW, use_git=False)
+    row = next(r for r in m["prs"] if r["pr"] == 300)
+    assert (row["session"], row.get("session_refused")) == (None, reason)
+    assert [s["session"] for s in m["sessions"]] == [A]
+    assert m["gaps"]["receipts_with_refused_session"] == [300]
+    assert B not in json.dumps(m["contended"])
+    paths, raw = _answer(tmp_path, capsys, prs, [], "--paths", "greg/missions.py")
+    assert B not in raw and [p["session"] for p in paths["paths"][0]["prs"]] == [None, A]
+    assert ("receipts naming no session because the receipt check refuses their session_id or they come from a "
+            "fork: 1") in w.markdown(m)
+
+
+def test_a_receipt_written_for_another_head_keeps_its_session_and_is_flagged(quick, tmp_path, capsys):
+    def body(sha: str | None) -> str:
+        data = json.loads(_coord(session_id=B))
+        if sha:
+            data["head_sha"] = sha
+        return _body(json.dumps(data))
+    prs = [_pr(300, "a/seam", sha="1" * 40, body=body("2" * 40)), _pr(301, "a/same", sha="3" * 40, body=body("3" * 40)),
+           _pr(302, "a/none", body=body(None))]
+    m = w.build(prs, [], now=NOW, use_git=False)
+    assert sorted((r["pr"], r["session"], r.get("receipt_head_stale")) for r in m["prs"]) == [
+        (300, B, True), (301, B, False), (302, B, None)]
+    assert m["gaps"].get("receipts_with_stale_head") == [300]
+    paths, _raw = _answer(tmp_path, capsys, prs, [], "--paths", "greg/missions.py")
+    assert sorted((p["pr"], p.get("receipt_head_stale")) for p in paths["paths"][0]["prs"]) == [
+        (300, True), (301, None), (302, None)]
+    assert "receipts written for another head than the PR's (normal for minutes after a push): 1" in w.markdown(m)

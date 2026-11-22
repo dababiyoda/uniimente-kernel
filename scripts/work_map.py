@@ -51,7 +51,9 @@ check is listed there, never counted as zero) and ``prs`` (one row per open pull
 given: its receipt's fields as declared, ``files`` cut to the first ``FILES_LIMIT`` with ``files_cut`` counting the
 rest, ``receipt_problems`` for fields of the wrong type, ``files_refused``, why the receipt check refuses its
 coordination or its files (then its files are unknown, never an empty list), ``session_refused``, why the receipt
-check refuses its ``session_id`` (then it names no session), ``changed``, the files it changes
+check refuses its ``session_id`` or its PR comes from a fork (then it names no session), ``receipt_head_stale``,
+whether the receipt's ``head_sha`` is not the PR's head (it keeps its session: a push lands before its description
+is updated), ``changed``, the files it changes
 itself, and ``changed_via``, where they came from: ``diff`` for local git, ``api`` for the GitHub API (``--github``, a
 PR into the line that this clone cannot diff), None when neither said; ``line_bound`` and ``carried``).
 
@@ -1196,19 +1198,27 @@ def _row(pull: dict, root: Path, use_git: bool, line: str = LINE) -> dict:
     body = pull["body"]
     r = receipt_of(body)
     f, problems = _receipt_fields(r)
+    same_repo = pull["head_repo"] is not None and pull["head_repo"] == pull["base_repo"]
     refused = _session_refused(f["session_id"])
     sid, client = (None, "unknown") if refused else canonical_identity(f["session_id"])
+    if sid and not same_repo:                 # a receipt from another repository is no session's declaration here
+        refused = "fork: " + ("the head repository is not the base repository" if pull["head_repo"] else
+                              "the head repository is unknown, so it is not known to be the base repository")
+        sid, client = None, "unknown"
+    stated_head = r.get("head_sha") if r else None
     refs = " ".join(f["intent_refs"])
     node = _ROUTE.search(refs)
     named = _ids(pull["title"]) | _ids(f["scope"]) | _ids(refs)
     return {
         "pr": pull["number"], "title": pull["title"][:110], "base": pull["base"], "head": pull["head"],
         "head_sha": pull["head_sha"], "head_repo": pull["head_repo"], "base_repo": pull["base_repo"],
-        "same_repo": pull["head_repo"] is not None and pull["head_repo"] == pull["base_repo"],
+        "same_repo": same_repo,
         "draft": pull["draft"], "updated": pull["updated_at"], "receipt": r is not None,
         "older_receipt": r is None and receipt_of(body, version=1) is not None, "receipt_problems": problems,
         "files_refused": _files_refused(r),
-        "session": sid, "client": client, "session_refused": refused, "task_ref": f["task_ref"],
+        "session": sid, "client": client, "session_refused": refused,
+        "receipt_head_stale": stated_head != pull["head_sha"] if isinstance(stated_head, str) else None,
+        "task_ref": f["task_ref"],
         "files": f["files"][:FILES_LIMIT], "files_cut": max(0, len(f["files"]) - FILES_LIMIT),
         **_changed(pull, root, use_git, line),
         "overlap": f["overlap"], "recheck": f["recheck_at"], "scope": f["scope"][:200],
@@ -1521,6 +1531,7 @@ def who_touches(paths: list[str], rows: list[dict] | None, claims: list[dict] | 
         prs = None if rows is None else [
             {"pr": r["pr"], "session": r["session"],
              **({"session_refused": r["session_refused"]} if r.get("session_refused") else {}),
+             **({"receipt_head_stale": True} if r.get("receipt_head_stale") else {}),
              "base": r["base"], "overlap": r["overlap"], "title": r["title"],
              "updated": r["updated"], "line_bound": r.get("line_bound", r["pr"] in bound),
              "carried_by_line": r.get("carried"),
@@ -1900,6 +1911,7 @@ def build(prs: list[dict] | None, comments: list[dict] | None, *, root: Path = R
             "receipts_with_unreadable_fields": if_prs(sorted(r["pr"] for r in rows if r["receipt_problems"])),
             "receipts_refused_for_files": if_prs(sorted(r["pr"] for r in rows if r["files_refused"])),
             "receipts_with_refused_session": if_prs(sorted(r["pr"] for r in rows if r.get("session_refused"))),
+            "receipts_with_stale_head": if_prs(sorted(r["pr"] for r in rows if r.get("receipt_head_stale"))),
             "line_bound_prs_without_diff": if_prs(sorted(r["pr"] for r in bound if r["changed"] is None)),
             "line_bound_prs_carried_by_line": if_prs(sorted(r["pr"] for r in bound if r["carried"])),
             "line_bound_prs_not_checked_against_line": if_prs(unchecked_prs),
@@ -2126,7 +2138,9 @@ def markdown(m: dict) -> str:
                 f"receipt: {len(g['open_prs_with_older_receipt'])}; receipts with fields of the wrong type: "
                 f"{len(g['receipts_with_unreadable_fields'])}; receipts the receipt check refuses for their "
                 f"coordination or files: {len(g['receipts_refused_for_files'])}; receipts naming no session because "
-                f"the receipt check refuses their session_id: {len(g['receipts_with_refused_session'])}"
+                f"the receipt check refuses their session_id or they come from a fork: "
+                f"{len(g['receipts_with_refused_session'])}; receipts written for another head than the PR's (normal "
+                f"for minutes after a push): {len(g['receipts_with_stale_head'])}"
                 + (f"; receipts listing more than {FILES_LIMIT} files, the rest not read: "
                    f"{_prs(g['receipts_with_files_cut'], 12)}" if g["receipts_with_files_cut"] else "") + ".",
                 _carried_line(m),
@@ -2324,6 +2338,7 @@ def _answer_sources(m: dict) -> dict:
             "receipts_with_unreadable_fields": g["receipts_with_unreadable_fields"],
             "receipts_refused_for_files": g["receipts_refused_for_files"],
             "receipts_with_refused_session": g["receipts_with_refused_session"],
+            "receipts_with_stale_head": g["receipts_with_stale_head"],
             "line_bound_prs_without_diff": g["line_bound_prs_without_diff"],
             "open_prs_without_diff": sorted(r["pr"] for r in m["prs"] if r["changed"] is None)
             if src["prs_read"] else None,

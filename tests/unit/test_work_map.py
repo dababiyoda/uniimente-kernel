@@ -3638,3 +3638,36 @@ def test_an_accepted_handoff_the_receipt_check_accepts_names_its_receiver(quick)
     assert _check_refusal(check, data) is None
     row = w.build([_pr(300, "b/seam", body=_body(json.dumps(data)))], [], now=NOW, use_git=False)["prs"][0]
     assert (row["session"], row["session_unnamed"], row["handed_over_from"]) == (A, None, B)
+
+
+# ------------------------------------------------------------------ round 8: a task_ref citing the receiver or itself
+# A cited check-in agrees when it names the receipt's session_id or, with an accepted handoff, its receiver; a
+# receipt names no session only when every cited marker post names another session than both (round 7's RH3, RH7,
+# RH8 and probes7b: the receiver cites its own check-in, as RECEIPT.md tells it to).
+CTASK = f"https://github.com/{REPO}/issues/96#issuecomment-7100000083"
+CHECKINS_ABC = CHECKINS_AB + [_comment(7100000083, _signed("## Check-in: elsewhere", C, F7), at="2026-11-12T09:40:00Z")]
+CITING = [  # (handoff to A accepted?, task_ref, expected session, expected task_ref_cites)
+    (True, ATASK, A, None),                                   # RH3 / probes7b: the receiver's own check-in
+    (True, f"{BTASK} (acknowledged in {ATASK})", A, None),    # RH7: the sender's, then the receiver's
+    (True, BTASK, A, None),                                   # the sender's
+    (False, f"split acknowledged in {ATASK}; check-in {BTASK}", B, None),   # RH8: the counterpart's first, then its own
+    (True, CTASK, None, 7100000083),                          # a third session's only
+    (True, f"{CTASK} and {CTASK[:-1]}4", None, 7100000083),   # a third session's and one that is not on the board
+    (False, ATASK, None, 7100000082),                         # no handoff: another session's only
+]
+
+
+@pytest.mark.parametrize("accepted,task,session,cites", CITING, ids=range(len(CITING)))
+def test_a_task_ref_agrees_when_any_cited_check_in_names_the_sender_or_the_receiver(quick, accepted, task, session,
+                                                                                    cites):
+    data = json.loads(_coord(session_id=B, task_ref=task))
+    if accepted:
+        data["handoff"] = {"owner": "unassigned", "next_action": "continue", "stop_condition": "merged",
+                           "acknowledgment": {"status": "accepted", "receiver_session": A,
+                                              "reference": "https://x/96#c1"}}
+    m = w.build([_pr(300, "b/seam", body=_body(json.dumps(data)))], CHECKINS_ABC, now=NOW, use_git=False)
+    row = m["prs"][0]
+    assert (row["session"], row["task_ref_cites"]) == (session, cites)
+    assert row["session_unnamed"] == (None if session else "receipt session_id and task_ref disagree")
+    doc = " ".join(w.disagreeing_task_refs.__doc__.split())
+    assert "only when every cited post that opens with the check-in marker names a session other than" in doc

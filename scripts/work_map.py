@@ -1790,23 +1790,26 @@ def _said(o: dict) -> tuple[str | None, str]:
 
 
 def disagreeing_task_refs(parsed: list[dict], rows: list[dict]) -> None:
-    """Name no session for a receipt whose ``task_ref`` cites a post that opens with the check-in marker and whose
-    Session line names another session than its ``session_id`` (the sender's, when a handoff is accepted): the one
-    id the cited post's check-in Session line names (``checkin_verdict``'s ``names``), whether or not the post is an
-    exact check-in, so a copier's own check-in whose heading says review or handoff still counts. That is a receipt
-    copied from another PR with its ``task_ref`` repointed, or one started from another session's check-in. Such a PR
-    is its own holder, labelled ``TASK_REF_DISAGREES``, and ``task_ref_cites`` names the comment. This only ever
+    """Name no session for a receipt whose ``task_ref`` cites posts that open with the check-in marker, only when every
+    cited post that opens with the check-in marker names a session other than its ``session_id`` and, when a handoff
+    is accepted, other than its receiver too: the one id the cited post's check-in Session line names
+    (``checkin_verdict``'s ``names``), whether or not the post is an exact check-in, so a copier's own check-in whose
+    heading says review or handoff still counts. A cited post that names the sender or the receiver agrees, so a
+    receiver that cites its own check-in, as ``docs/collaboration/RECEIPT.md`` tells it to, keeps its session, and so
+    does a receipt citing a counterpart's check-in beside its own. What is named no session is a receipt copied from
+    another PR with its ``task_ref`` repointed, or one started from another session's check-in. Such a PR is its own
+    holder, labelled ``TASK_REF_DISAGREES``, and ``task_ref_cites`` names the first cited comment. This only ever
     removes a session. Limit: a copied receipt whose ``task_ref`` cites the same session's check-in, or nothing on
     the board, keeps the session it names."""
     named = {c["cid"]: c["checkin_names"] for c in parsed if c["checkin_names"]}
     for r in rows:
-        declared = r.get("handed_over_from") or r["session"]
         if not r["session"]:
             continue
-        for run in re.findall(r"(?<!\d)\d{10}(?!\d)", r["task_ref"] or ""):
-            if named.get(int(run)) not in (None, declared):
-                r.update(session=None, client="unknown", session_unnamed=TASK_REF_DISAGREES, task_ref_cites=int(run))
-                break
+        agree = {r["session"], r.get("handed_over_from")} - {None}
+        cited = [(int(run), named[int(run)]) for run in re.findall(r"(?<!\d)\d{10}(?!\d)", r["task_ref"] or "")
+                 if int(run) in named]
+        if cited and all(key not in agree for _cid, key in cited):
+            r.update(session=None, client="unknown", session_unnamed=TASK_REF_DISAGREES, task_ref_cites=cited[0][0])
 
 
 def join_authors(parsed: list[dict], rows: list[dict]) -> None:

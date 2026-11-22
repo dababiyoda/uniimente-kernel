@@ -1919,7 +1919,8 @@ def build(prs: list[dict] | None, comments: list[dict] | None, *, root: Path = R
                                                                 if c["kind"] in CLAIM_KINDS and not c["files"])),
             "recent_posts_unresolved": if_comments([{"comment": c["cid"], "at": c["at"], "heading": c["heading"],
                                                      "team": c["team"], "author_guess": c["author_guess"],
-                                                     "author_guess_how": c["author_guess_how"]}
+                                                     "author_guess_how": c["author_guess_how"],
+                                                     "opens_with_marker": c["is_checkin"]}
                                                     for c in recent if not c["author"]]),
             "recent_posts": if_comments(len(recent)),
             "live_sessions": if_both(len(live)),
@@ -2161,8 +2162,11 @@ def markdown(m: dict) -> str:
         out += ["- Sessions active in the last 7 days: not read (it needs both pull requests and board comments)."]
     if src["comments_read"]:
         unread = g["claims_without_readable_files"]
-        out += [f"- Board posts in the last 7 days that are not a check-in block, so name no verified author: "
-                f"{len(g['recent_posts_unresolved'])} of {g['recent_posts']}.",
+        marked = sum(u["opens_with_marker"] for u in g["recent_posts_unresolved"])
+        out += [f"- Board posts in the last 7 days with no check-in block of their own (the marker alone on the first "
+                f"line, then the block's own Session line first), so they name no verified author: "
+                f"{len(g['recent_posts_unresolved'])} of {g['recent_posts']}; {marked} of them "
+                f"open{'s' if marked == 1 else ''} with the check-in marker.",
                 f"- Claims whose file list could not be read: {len(unread)}"
                 + (f" ({_cell(', '.join(map(str, unread[-12:])))}{_more(12, len(unread))})" if unread else "") + ".",
                 f"- Unreadable board comments: {len(g['unreadable_comments'])}"

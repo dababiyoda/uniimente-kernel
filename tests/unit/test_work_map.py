@@ -3085,3 +3085,17 @@ def test_a_receipt_written_for_another_head_keeps_its_session_and_is_flagged(qui
     assert sorted((p["pr"], p.get("receipt_head_stale")) for p in paths["paths"][0]["prs"]) == [
         (300, True), (301, None), (302, None)]
     assert "receipts written for another head than the PR's (normal for minutes after a push): 1" in w.markdown(m)
+
+
+def test_the_gaps_line_says_what_its_unresolved_posts_lack(quick):
+    comments = [_comment(7100000040, HANDOFF_FILLED), _comment(7100000041, "## Note\n\nNo marker here.\n"),
+                _comment(7100000042, _signed("## Check-in: x", A, "- Files: `greg/body.py`\n"))]
+    m = w.build([], comments, now=NOW, use_git=False)
+    unresolved = m["gaps"]["recent_posts_unresolved"]
+    assert [(u["comment"], u.get("opens_with_marker")) for u in unresolved] == [(7100000040, True),
+                                                                               (7100000041, False)]
+    text = w.markdown(m)
+    assert ("- Board posts in the last 7 days with no check-in block of their own (the marker alone on the first "
+            "line, then the block's own Session line first), so they name no verified author: 2 of 3; 1 of them "
+            "opens with the check-in marker.") in text
+    assert "that are not a check-in block" not in text

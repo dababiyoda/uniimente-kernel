@@ -1104,7 +1104,7 @@ class Body:
         The item is data only, and re-reading it after a restart returns the fact already retained."""
         try:
             _move(path, folder)
-        except OSError as exc:
+        except Exception as exc:        # any fault filing it, not only OSError (re-check of 37a8e43c)
             unfiled.add(path.name)
             reason = f"{type(exc).__name__}: {exc}"[:300]
             key = [path.name[:120], folder.name, reason]
@@ -1663,9 +1663,20 @@ def _fresh_name(name: str) -> str:
         stem, suffix = name, ""
     suffix = f".{suffix}" if dot else ""
     tag = f".{secrets.token_hex(4)}"
-    room = NAME_MAX - len((tag + suffix).encode())
-    cut = stem.encode()[:max(room, 1)].decode("utf-8", "ignore") or "entry"
-    return f"{cut}{tag}{suffix}"
+    # bytes as the file system has them: a name that is not UTF-8 reaches Python with lone surrogates, and a strict
+    # str.encode() raised UnicodeEncodeError out of the filing (re-check of 37a8e43c)
+    room = NAME_MAX - len(os.fsencode(tag + suffix))
+    raw = os.fsencode(stem)[:max(room, 1)]
+    while raw:
+        try:
+            cut = os.fsdecode(raw)
+            os.fsencode(cut)          # a cut inside a multibyte character does not round-trip
+            break
+        except (UnicodeError, ValueError):
+            raw = raw[:-1]
+    else:
+        cut = ""
+    return f"{cut or 'entry'}{tag}{suffix}"
 
 
 def _file_into(path: Path, folder: Path, *, taken=frozenset()) -> Path:

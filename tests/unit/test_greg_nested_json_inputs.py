@@ -657,20 +657,26 @@ def test_the_mcp_clients_own_error_line_is_a_refusal_with_its_reason(tmp_path):
             mcp_tools._client_answer(ctx, done, server="notes", token="t", bearer=None, login=None)
 
 
-def test_a_reply_that_keeps_every_scan_inside_a_string_is_refused_in_linear_time():
+def test_a_reply_that_keeps_every_scan_inside_a_string_is_refused_within_the_budget(monkeypatch):
     """Re-check of 02efc535, finding 1: with escapes read correctly, a reply of {\\" repeated keeps every scan inside a
-    string, so nothing is remembered and every brace rescans to the end: 40 KB took 13.6 s. A work budget linear in
-    the reply refuses it."""
-    import time
+    string, so nothing is remembered and every brace rescans to the end: 40 KB took 13.6 s. The scan's work budget
+    refuses it. Counted, not timed: the ceiling is lowered so the test is fast and its result does not depend on the
+    machine's speed (test_the_scan_budget_bounds_the_visits pins the real ceiling)."""
     import pytest
+    from greg import planner
     from greg.missions import MissionError
-    from greg.planner import _first_json_object
-    started = time.monotonic()
+    monkeypatch.setattr(planner, "SCAN_WORK_CEILING", 1 << 16)
     for reply in ('{\\"' * 13_000, 'x{"\\"' * 8_000):
         with pytest.raises(MissionError, match="too irregular"):
-            _first_json_object(reply)
-    assert time.monotonic() - started < 2.0
-    assert _first_json_object("prose " * 20_000 + '{"steps": [1]}') == {"steps": [1]}
+            planner._first_json_object(reply)
+    assert planner._first_json_object("prose " * 20_000 + '{"steps": [1]}') == {"steps": [1]}
+
+
+def test_the_scan_budget_is_the_ceiling_or_linear_in_the_reply():
+    """The real bound: at most max(8 per character, 2**24) characters visited, about 2.5 s of scanning on the slowest
+    shape; a reply past it is refused. Pinned so a change to either constant is a reviewed change."""
+    from greg import planner
+    assert (planner.SCAN_WORK_PER_CHAR, planner.SCAN_WORK_CEILING) == (8, 1 << 24)
 
 
 def test_a_long_name_is_filed_again_and_a_stuck_intake_item_never_crashes_the_tick(tmp_path):
@@ -702,3 +708,91 @@ def test_a_long_name_is_filed_again_and_a_stuck_intake_item_never_crashes_the_ti
         body.tick()                     # raised OSError on every tick before
         assert [e.payload["folder"] for e in body.journal.replay("external.intake_unfiled")] == [done.name]
     assert list(victim.iterdir()) == []
+
+
+def test_a_name_that_is_not_utf8_is_filed_again_in_the_inbox_and_in_intake(tmp_path):
+    """Re-check of 37a8e43c, high: a file name that is not UTF-8 reaches Python with lone surrogates, and the fresh
+    name's strict str.encode() raised UnicodeEncodeError, not OSError, the second time the same name was filed: out
+    of every tick of intake, and out of a running body's tick for the inbox."""
+    import os
+    from greg.body import Body, drop_intake
+    home, key, body_id, _ = make_body(tmp_path)
+    inbox = os.fsencode(home / "inbox")
+    for _ in range(2):
+        with open(inbox + b"/\xffbad.json", "wb") as handle:
+            handle.write(b"not json")
+        with Body(home) as body:
+            body.tick()                 # raised UnicodeEncodeError on the second round before
+    assert len(os.listdir(inbox + b"/rejected")) == 2
+    layout = Layout(home)
+    drop_intake(home, source="web", content="hello", channel="feed")
+    with Body(home) as body:
+        body.tick()
+    intake = os.fsencode(layout.intake)
+    for _ in range(2):
+        with open(intake + b"/\xffitem.json", "wb") as handle:
+            handle.write(b"not json")
+        with Body(home) as body:
+            body.tick()
+            body.tick()
+    assert len(os.listdir(os.fsencode(layout.intake_refused))) == 2
+
+
+def test_an_intake_item_whose_filing_raises_anything_is_recorded_and_skipped(tmp_path, monkeypatch):
+    """Intake has no set-aside, so any exception filing an item (not only OSError: the UnicodeEncodeError above was
+    one) was raised out of every tick. It is recorded once and the item skipped for the life of the process."""
+    from greg import body as body_module
+    from greg.body import Body, drop_intake
+    home, key, body_id, _ = make_body(tmp_path)
+    drop_intake(home, source="web", content="hello", channel="feed")
+
+    def broken(path, folder):
+        raise UnicodeEncodeError("utf-8", "x", 0, 1, "surrogates not allowed")
+    monkeypatch.setattr(body_module, "_move", broken)
+    with Body(home) as body:
+        body.tick()
+        body.tick()
+        assert len(body.journal.replay("external.intake_unfiled")) == 1
+
+
+def test_a_corrected_draft_after_a_bad_one_holding_escaped_json_is_still_read():
+    """Re-check of 37a8e43c, medium: an invalid first draft whose arguments are stringified JSON, then the corrected
+    draft, cost about rows x span visits, and the budget linear in the reply refused it (11 KB, 150 rows: 39 visits
+    per character against 8)."""
+    import json as _json
+    from greg.planner import _first_json_object
+    rows = [{"id": i, "name": f"row {i}"} for i in range(150)]
+    arg = _json.dumps({"rows": rows})
+    good = {"title": "x", "strategies": [{"action_id": "s1", "capability": "mcp.act",
+                                          "params": {"arguments": arg}}]}
+    bad = ('{"title":"x","strategies":[{"action_id":"s1","capability":"mcp.act","params":{"arguments":'
+           + _json.dumps(arg) + ',}}]}')
+    assert _first_json_object(bad + "\nSorry, trailing comma. Corrected:\n" + _json.dumps(good)) == good
+
+
+def test_a_renewal_that_overflows_or_cannot_be_stored_is_a_refusal(tmp_path, monkeypatch):
+    """Re-check of 37a8e43c, medium: float() of a 401-digit expires_in raises OverflowError, and a full disk raises
+    OSError from the broker; both escaped _client_answer instead of refusing the call."""
+    import json as _json
+    import subprocess
+    from types import SimpleNamespace
+    import pytest
+    from greg import mcp_tools
+    from greg.capabilities import CapabilityError, SecretBroker
+    login = {"kind": "oauth", "tokens": {"access_token": "old", "refresh_token": "old"}}
+    ok = {"value": 1, "provider_claims_read_only": False}
+    broker = SecretBroker(tmp_path / "s.json")
+    huge = {"access_token": "n", "refresh_token": "r", "expires_in": int("9" * 401)}
+    done = subprocess.CompletedProcess([], 0, stdout=_json.dumps({"ok": ok, "renewed": huge}), stderr="")
+    with pytest.raises(CapabilityError, match="renewed could not be read"):
+        mcp_tools._client_answer(SimpleNamespace(secrets=broker), done, server="n", token="t", bearer="mcp:n",
+                                 login=login)
+
+    def full(*args, **kwargs):
+        raise OSError(28, "No space left on device")
+    monkeypatch.setattr(broker, "put", full)
+    fine = {"access_token": "n", "refresh_token": "r", "expires_in": 60}
+    done = subprocess.CompletedProcess([], 0, stdout=_json.dumps({"ok": ok, "renewed": fine}), stderr="")
+    with pytest.raises(CapabilityError, match="renewed could not be read"):
+        mcp_tools._client_answer(SimpleNamespace(secrets=broker), done, server="n", token="t", bearer="mcp:n",
+                                 login=login)

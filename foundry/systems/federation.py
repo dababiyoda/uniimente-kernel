@@ -248,6 +248,8 @@ class Instance:
             return 202, {"accepted": True}
         if kind == "Accept" and isinstance(activity.get("object"), dict) and activity["object"].get("type") == "Follow":
             target = activity["object"].get("object")
+            if not isinstance(target, str):     # a list or object here raised TypeError on .pop (re-check of 37a8e43c)
+                return 400, {"error": "the accepted Follow names no actor"}
             if a["pending_follows"].pop(target, None) is not None or target in a["following"]:
                 if target not in a["following"]:
                     a["following"].append(target)
@@ -270,6 +272,8 @@ class Instance:
             self._save(s)
             return 202, {"accepted": True}
         if kind == "Move" and activity.get("object") == sender["id"]:
+            if not isinstance(activity.get("target"), str):   # a non-string target raised AttributeError
+                return 400, {"error": "a Move must name its target actor"}
             return self._handle_move(s, name, sender, activity)
         return 400, {"error": f"unsupported activity {kind!r}"}
 

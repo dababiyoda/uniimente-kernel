@@ -476,7 +476,8 @@ def _store_renewal(ctx, bearer, login, tokens) -> bool:
     from greg import mcp_login
     try:
         mcp_login.store_renewal(ctx.secrets, str(bearer), login, tokens)
-    except (ValueError, TypeError, KeyError, AttributeError):
+    except (ValueError, TypeError, KeyError, AttributeError, OverflowError, OSError):
+        # a 401-digit expires_in overflows float(); a full disk fails the broker (re-check of 37a8e43c)
         return False
     return True
 

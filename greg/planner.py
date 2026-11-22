@@ -732,7 +732,7 @@ def _prompt(text: str, ctx: PlannerContext) -> str:
 
 
 SCAN_WORK_PER_CHAR = 8          # characters _first_json_object may visit, per character of the reply
-SCAN_WORK_FLOOR = 1 << 16
+SCAN_WORK_CEILING = 1 << 24     # ...or this many in all, whichever is larger: about 2.5 s of scanning
 
 
 def _first_json_object(text: str) -> dict:
@@ -753,9 +753,14 @@ def _first_json_object(text: str) -> dict:
     close = {}           # index of a "{" -> index of its "}", or None when it never closes
     # The memo covers a later "{" only when a scan meets it outside a string. A reply that keeps every scan inside a
     # string ({\" repeated) is still rescanned from each brace: 40 KB took 13.6 s (re-check of 02efc535, finding 1).
-    # A work budget, linear in the reply, makes the whole search linear; a reply that exhausts it is refused, as an
-    # unreadable one is. Every reply in the tests and the fuzz used on this scan stays far inside it.
-    budget = SCAN_WORK_PER_CHAR * len(text) + SCAN_WORK_FLOOR
+    # A work budget bounds the whole search; a reply that exhausts it is refused, as an unreadable one is.
+    # A budget linear in the reply alone refused a legitimate reply: an invalid first draft holding stringified JSON
+    # arguments, then the corrected draft, costs about rows x span (11 KB with 150 rows: 39 visits per character),
+    # and no fixed multiplier is enough as the draft grows (re-check of 37a8e43c). So the old, rescanning search is
+    # allowed up to a fixed ceiling, and a reply past it is refused after a bounded few seconds. Ordinary replies
+    # cost about 1.1 visits per character. A search linear in every case would need the scan's state memoised per
+    # position and tokenizer state; that is not built.
+    budget = max(SCAN_WORK_PER_CHAR * len(text), SCAN_WORK_CEILING)
     start = text.find("{")
     while start != -1:
         if start not in close:

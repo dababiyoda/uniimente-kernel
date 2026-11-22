@@ -222,6 +222,13 @@ _SESSION_OPENS = re.compile(r"(?i)(?:^[#*_\s]*|\.[*_]*\s+[*_]*)session[\s`*_]*$"
 _ADDRESSED = re.compile(r"(?i)^[#*_\s]*(?:@|to\b|for\b[^(\n]{0,80}\()[\s`]*")
 _FENCE = re.compile(r"^[ \t]*(`{3,}|~{3,})")
 _INDENTED = re.compile(r"^(?: {4}|\t| {0,3}\t)")
+_MD_LINES = re.compile(r"\r\n|\r|\n")                # the only line endings CommonMark (and so GitHub) knows
+
+
+def _lines(text: str) -> list[str]:
+    """The lines of a text where CommonMark ends them (LF, CR, CRLF): never at a form feed, a vertical tab or a
+    Unicode line separator, which Python's ``splitlines`` also splits at."""
+    return _MD_LINES.split(_text(text))
 
 
 def _spans(text: str) -> list[tuple[int, int, str, str]]:
@@ -327,7 +334,7 @@ UNVERIFIED = "unverified"    # the ``how`` of every other comment
 def heading_of(body: str) -> str:
     """The first non-empty line after any leading HTML comments, at most ``HEADING_LIMIT`` characters."""
     text = _HTML.sub("", _text(body))
-    return next((line.strip() for line in text.splitlines() if line.strip()), "")[:HEADING_LIMIT]
+    return next((line.strip() for line in _lines(text) if line.strip()), "")[:HEADING_LIMIT]
 
 
 def comment_kind(heading: str) -> str:
@@ -378,7 +385,7 @@ def files_parts(body: str) -> list[tuple[str, bool]]:
     every list item that limits itself to a path ("- `x.json` and its pin only")."""
     segs = segments(body)
     named = [(t, True) for label, t in segs if re.search(r"\bfiles?\b", label)]
-    for line in _text(body).splitlines():
+    for line in _lines(body):
         found = list(_INLINE_FILES.finditer(line))
         for i, m in enumerate(found):                    # from its sentence's start to the next inline label
             floor = max(found[i - 1].end() if i else 0, m.start() - SENTENCE_LIMIT)
@@ -452,11 +459,12 @@ def _addressed(heading: str) -> set[int]:
     return {at for at, _k, _c in identities(heading) if m and at <= m.end() + 1}
 
 
-def _prose(text: str) -> list[str]:
-    """The lines of a text outside code: a fence closes only on a run of its own character at least as long as the one
-    that opened it, with nothing after it, and a line indented four spaces after a blank line is an indented block."""
+def _prose_at(lines: list[str]) -> list[int]:
+    """The indices of the lines outside code: a fence closes only on a run of its own character at least as long as
+    the one that opened it, with nothing after it, and a line indented four spaces after a blank line is an indented
+    block."""
     out, fence, blank, block = [], None, True, False
-    for line in text.splitlines():
+    for i, line in enumerate(lines):
         f = _FENCE.match(line)
         if fence:
             if f and f[1][0] == fence[0] and len(f[1]) >= len(fence) and not line[f.end():].strip():
@@ -468,8 +476,14 @@ def _prose(text: str) -> list[str]:
         block = bool(line.strip()) and bool(_INDENTED.match(line)) and (blank or block)
         blank = not line.strip()
         if not block:
-            out.append(line)
+            out.append(i)
     return out
+
+
+def _prose(text: str) -> list[str]:
+    """The lines of a text outside code (``_prose_at``), split where CommonMark ends lines."""
+    lines = _lines(text)
+    return [lines[i] for i in _prose_at(lines)]
 
 
 def _signature(heading: str, at: int, end: int, key: str) -> bool:
@@ -538,7 +552,7 @@ def comment_author(body: str) -> dict:
         if found:
             author = (*found, "heading")
     if author is None:                                   # "Session `...`." as the comment's opening line
-        rest = [ln for ln in _HTML.sub("", body).splitlines() if ln.strip()][1:2]
+        rest = [ln for ln in _lines(_HTML.sub("", body)) if ln.strip()][1:2]
         opening = _OPENING.match(rest[0]) if rest and not _INDENTED.match(rest[0]) else None
         hits = identities(rest[0]) if opening else []
         if hits and hits[0][0] <= opening.end():
@@ -553,7 +567,6 @@ def comment_author(body: str) -> dict:
 # The block's own Session line, in CHECKIN_BLOCK's format ("- Session: <id> (<client>)", the label also in bold).
 _CHECKIN_SESSION = re.compile(r"^-[ \t]+(?:\*\*Session:\*\*|Session:)[ \t]+(?P<value>\S.*)$")
 _LIST_ITEM = re.compile(r"^[ \t]*(?:[-*+]|\d{1,3}[.)])[ \t]")
-_MD_LINES = re.compile(r"\r\n|\r|\n")                # the only line endings CommonMark (and so GitHub) knows
 _HEADING = re.compile(r"^#{1,6}(?:[ \t]|$)")       # an ATX heading at the margin, as CHECKIN_BLOCK's "## Check-in"
 _BOLD_TITLE = re.compile(r"^\*\*(?:[^*\n]|\*(?!\*))+\*\*[ \t]*$")   # a line that is one bold run: "**Handoff**"
 # A line that starts another block, so it is not a lazy continuation of the Session line's item.
@@ -563,7 +576,7 @@ _BLOCK_START = re.compile(r"^(?:[ \t]*(?:[-*+]|\d{1,3}[.)])(?:[ \t]|$)| {0,3}(?:
 def opens_with_checkin(body: str) -> bool:
     """Whether the check-in marker opens the comment: its first line that is not blank starts with it, at the margin
     (never inside a quote, a fence or an indented block, never later in the body)."""
-    first = next((line for line in _text(body).splitlines() if line.strip()), "")
+    first = next((line for line in _lines(body) if line.strip(" \t")), "")
     return first.startswith(CHECKIN)
 
 
@@ -590,7 +603,7 @@ def checkin_author(body: str) -> tuple[str, str] | None:
 
     Lines end only where CommonMark ends them (LF, CR, CRLF), and a blank line holds only spaces and tabs: a form feed
     or a Unicode line separator after the marker stays on the marker's hidden line."""
-    lines = _MD_LINES.split(_text(body))
+    lines = _lines(body)
     filled = [i for i, line in enumerate(lines) if line.strip(" \t")]
     if not filled or lines[filled[0]].rstrip(" \t") != CHECKIN:
         return None
@@ -644,7 +657,7 @@ def unit_refs(heading: str, body: str) -> list[str]:
 
 
 def parse_comment(c: dict, tracked: set[str], dirs: set[str]) -> dict:
-    body = _text(c.get("body"))
+    body = "\n".join(_lines(c.get("body")))           # one line ending, so every reader splits where GitHub does
     found, heading = fields(body), heading_of(body)
     who, exact = comment_author(body), checkin_author(body)
     kind = comment_kind(heading)

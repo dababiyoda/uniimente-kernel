@@ -3120,3 +3120,24 @@ def test_the_map_tells_posters_where_their_session_line_must_stand(quick):
     text = w.markdown(w.build([], [], now=NOW, use_git=False))
     assert ("The map names your session only when the marker is alone on the comment's first line and your own "
             "`Session:` line, naming one id, comes first after the heading.") in text
+
+
+# ------------------------------------------------------------------ round 7: one line split for every reader
+
+def test_a_check_in_with_bare_cr_or_crlf_endings_has_its_claim_files_and_plan_read_with_its_session(quick):
+    for end in ("\n", "\r\n", "\r"):
+        body = end.join([w.CHECKIN, "## Claim: the seam", f"- Session: `{B}` (Claude Code, cloud)",
+                         "- Plan: one step", "- Files / interfaces: `greg/missions.py`",
+                         "- Recheck (UTC): 2026-11-13T04:00:00Z", ""])
+        m = w.build([], [_comment(7100000050, body)], now=NOW, use_git=False)
+        c = _claim(m, 7100000050)
+        assert (c["session"], c["files"], c["recheck"]) == (B, ["greg/missions.py"], "2026-11-13T04:00:00Z"), repr(end)
+        assert (m["sessions"][0]["session"], m["sessions"][0]["plan"]) == (B, "one step"), repr(end)
+        assert w.heading_of(body) == "## Claim: the seam" and w.opens_with_checkin(body), repr(end)
+
+
+def test_a_form_feed_or_line_separator_ends_no_line_for_any_reader():
+    body = f"{w.CHECKIN}\x0c## Check-in\n- Session: `{B}`\n"
+    assert not w.opens_with_checkin("\x0c\n" + body) and w.checkin_author(body) is None
+    assert w.heading_of(f"## Claim - Files: `greg/missions.py`") == "## Claim - Files: `greg/missions.py`"
+    assert w._prose("a\x0cb c\nd") == ["a\x0cb c", "d"]

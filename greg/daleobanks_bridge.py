@@ -136,7 +136,8 @@ def _behind_door(argv: list, request: dict, env: dict, ctx: InvocationContext, *
     try:
         _backend(require_bubblewrap=True)
     except WorkerIsolationError as exc:
-        raise CapabilityError(f"confined egress needs bubblewrap network namespaces here: {exc}") from None
+        raise CapabilityError(f"confined egress needs bubblewrap network namespaces here: {exc}",
+                              failure_class="transient") from None   # isolation the host lacks is the host's
     identity, hosts = ctx.manifest.capability_id, tuple(ctx.manifest.egress_allowlist or ())
     scoped = Relay({identity: {"allow": [[h, 443] for h in hosts], "external": bool(hosts)}}, ctx.egress.journal,
                    connect=ctx.egress.connect, proxy=ctx.egress.proxy)

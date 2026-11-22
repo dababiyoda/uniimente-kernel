@@ -49,6 +49,22 @@ def test_a_greg_chromium_that_is_not_an_executable_file_is_passed_over(tmp_path,
         assert computer.chromium() == str(build), bad
 
 
+def test_a_greg_chromium_too_long_to_look_at_is_passed_over_never_an_oserror(tmp_path, monkeypatch):
+    """The class of #311's review M1, in the session's lookup: Path.is_file raises OSError [Errno 36] on a name longer
+    than the system allows (and on a directory the body cannot search), and that left the session run as an
+    exception the Gate cannot type. Such a value is passed over, as any value that is not an executable file is."""
+    build = executable(tmp_path / "pw")
+    only_these_builds(monkeypatch, {"/opt/pw-browsers/chromium-1243/chrome-linux64/chrome": build})
+    monkeypatch.setenv("GREG_CHROMIUM", "/" + "a" * 300)
+    assert computer.chromium() == str(build)
+
+
+def test_a_trust_bundle_too_long_to_look_at_imports_nothing_and_raises_nothing(tmp_path, monkeypatch):
+    """The same class for the operator's CA bundle variable: a value GREG cannot look at is no bundle."""
+    monkeypatch.setenv(computer.TRUST_BUNDLE_ENV, "/" + "b" * 300)
+    assert computer._trust_profile(tmp_path) == 0
+
+
 def test_playwrights_chrome_for_testing_layout_is_found_newest_first(tmp_path, monkeypatch):
     monkeypatch.delenv("GREG_CHROMIUM", raising=False)
     new = executable(tmp_path / "1243" / "chrome")

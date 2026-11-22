@@ -116,3 +116,28 @@ python3 tests/unit/test_collaboration_receipt.py
 No runtime dependencies or repository runtime import are needed. Tests execute
 only the reviewed inline validator, which is the single implementation shared by
 consumers. Old receipts and negative results remain inspectable in prior commits.
+
+## What enforces participation, by client (2026-11-22, #346)
+
+Each layer has a single job. A layer that is absent in a client is stated here, not assumed.
+
+| Client | Before an edit | Before publishing | At contribution acceptance | Evidence |
+|---|---|---|---|---|
+| Claude Code, cloud, one repository | The PreToolUse hook withholds Edit, Write, MultiEdit and NotebookEdit until `participation.py admit` succeeds. Shell writes other than `git commit` and `git push` are not withheld | The hook withholds `git commit`, `git push` and GitHub write tools; a push needs a `check` within 30 minutes | The `participation-contribution` workflow judges every commit against the task record | Trial 3 rounds 1 and 2: every gate log shows allow-after-admission. W2's denial before admission was a simulated Write, not a real one |
+| Claude Code, cloud, several repositories, or a project thread | None. The repository's hooks do not load (Claude Code settings documentation) | None | The workflow, as above | The session that built this tool was ungated, and that is recorded on #346 |
+| Claude Code, local CLI or IDE | The hook, if `.claude/settings.json` loads and the folder is trusted. Not tested | As above. Not tested | The workflow | none |
+| Other clients (Codex, ChatGPT, people) | Guidance only | Guidance only | The workflow | none |
+
+**Assurance classes the workflow reports:**
+- `admitted-current`: a claim held now covers every changed file.
+- `admitted-historical`: a claim covered each commit when it was made, and has since ended. That includes a claim handed off and accepted.
+- `legacy-declared`: a board #96 check-in with no Task line. It is declared coordination, not an admission.
+- `none`: no claim covered the work.
+
+**What this check is not:**
+- It is not authentication. Session ids are declared.
+- It is not a lock. Two claims posted within the API's read-after-write window can both be admitted until the next `check`.
+- Commit times are committer dates, which are declared values.
+- The local admission record is a cooperative guard: a hand-written one passes the hook. The workflow is the enforcement point.
+
+Until the integrator and the founder make the workflow a required check, it reports and enforces nothing.

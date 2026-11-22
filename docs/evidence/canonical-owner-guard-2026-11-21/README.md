@@ -330,14 +330,14 @@ checkout as rootdir. The container's disk was full during round 4, so the mutant
 
 | Command | Python 3.13 | Python 3.11 |
 |---|---|---|
-| `pytest tests/unit/test_canonical_owner_guard.py` | **50 passed**, no warnings | **50 passed**, no warnings |
-| `pytest tests/unit/test_canonical_owner_guard.py tests/unit/test_no_structural_duplicates.py tests/unit/test_repo_health_gates.py tests/unit/test_import_layering.py`, in the worktree (`test_no_structural_duplicates` lists files with `git ls-files`) | **78 passed** | **78 passed**; the 2 DeprecationWarnings come from `test_no_structural_duplicates.py`, which parses the same script and is not in this unit |
-| `python scripts/ci/check_canonical_owner_guard_mutants.py`, in an export without `.git` | BASELINE_PASSES (50 passed), **167/167 caught**, 0 STALE, rc 0 | BASELINE_PASSES (50 passed), **167/167 caught**, 0 STALE, rc 0 |
+| `pytest tests/unit/test_canonical_owner_guard.py` | **54 passed**, no warnings | **54 passed**, no warnings |
+| `pytest tests/unit/test_canonical_owner_guard.py tests/unit/test_no_structural_duplicates.py tests/unit/test_repo_health_gates.py tests/unit/test_import_layering.py`, in the worktree (`test_no_structural_duplicates` lists files with `git ls-files`) | **82 passed** | **82 passed**; the 2 DeprecationWarnings come from `test_no_structural_duplicates.py`, which parses the same script and is not in this unit |
+| `python scripts/ci/check_canonical_owner_guard_mutants.py`, in an export without `.git` | BASELINE_PASSES (54 passed), **180/180 caught**, 0 STALE, 0 SURVIVED, rc 0 | BASELINE_PASSES (54 passed), **180/180 caught**, 0 STALE, 0 SURVIVED, rc 0; the CAUGHT lines are identical on the two Pythons |
 | `python scripts/repo_review.py --check` | rc 0, 0 hard findings, 1,008 literal anchors in 40 gate scripts checked | rc 0, the same |
 | `python -m acceptance.claims` | PASS: 6,021 claims in 641 files, 0 crosswalk problems, 0 violations | PASS, the same |
-| `python -B -m acceptance directive --collect --against 357b353d` | rc 0: the pinned asks hold, every ask closed since cites new or changed evidence, all 204 cited nodes collect; 82/272 asks met; S52.A1, S69.A3 and S76.A2 each `UNIT_VERIFIED of UNIT_VERIFIED (partial)`, BUILDABLE_NOT_BUILT MW-C | not run (round 4: rc 2, because this venv lacks `cryptography`; none of the nodes that collect nothing is a node of this unit) |
+| `python -B -m acceptance directive --collect --against 357b353d` | rc 0: the pinned asks hold, every ask closed since cites new or changed evidence, all 208 cited nodes collect (204 and the 4 round-8 tests); 82/272 asks met; S52.A1, S69.A3 and S76.A2 each `UNIT_VERIFIED of UNIT_VERIFIED (partial)`, BUILDABLE_NOT_BUILT MW-C | not run (round 4: rc 2, because this venv lacks `cryptography`; none of the nodes that collect nothing is a node of this unit) |
 
-`repo_review --check` prints 17 advisories in round 7, as in round 6 (round 7's edits add none), two more than at `79ef5742` (round 6's `copy_class` edit of
+`repo_review --check` prints 17 advisories in round 8, as in rounds 6 and 7 (the edits of rounds 7 and 8 add none), two more than at `79ef5742` (round 6's `copy_class` edit of
 `CommercialLoop`, read in `business/commercial_loop.py`, and its `copy_body` edit of `handle` in `greg/remote.py`), and five more at `79ef5742` than at `7c2b39e5` ("anchor occurs at 3 sites" in
 `greg/business_loop.py` and `greg/remote.py`): its static reader takes the function name a round-4 `copy_body` edit
 copies (`reconcile`, `handle`) for a text anchor. Advisories are not findings, and those edits read the function from
@@ -350,7 +350,9 @@ each new rule (B1: five tree edits and four code mutants; B2: one of each; B3: t
 B4: one of each), none removed, and one re-anchored ("async defs no longer scanned", on the line of `_functions` that
 round 6 rewrote), each caught. After round 7 it holds 167 (108 MW-C): 10 new (M1: one tree edit and one code mutant;
 M2: three tree edits, the shim of E1/E2, the method swap of N2 and the namespace alias of E3, and three code mutants;
-M3: one of each), none removed or re-anchored. The merge of the line brought `a82b0d38`, the same
+M3: one of each), none removed or re-anchored. After round 8 it holds 180 (121 MW-C): 13 new (M6: two tree edits and
+one code mutant; M7: one of each; M8: one of each; M9: two tree edits and four code mutants), none removed or
+re-anchored. The merge of the line brought `a82b0d38`, the same
 `greg/teams.py` to `greg/team_forming.py` change this branch already had, so the gate file merged without a conflict. The gate's `create` edit now makes a missing directory and removes it again, which
 the B4 tree edit needs.
 
@@ -443,6 +445,19 @@ to `foundry/pipeline.py`, the X2b shim in a new `greg/quick_drop.py`) and one co
 installer with a literal key appended to `greg/business_loop.py`) and one code mutant; for M8 one tree edit (a
 `globals()` default argument there) and one code mutant; for M9 two tree edits (`greg/accel.py` writing through
 `__dict__`, `greg/reconcile_patch.py` calling `mock.patch`) and four code mutants (one per form). Each is caught.
+
+Every earlier attack was re-run at round 8 on both Pythons, with identical counts: round 5's scripts, round 6's
+reviewers' scripts (`e2e_new.py`, `c1.py`, `lib6.py`, `new6.py`), and round 7's `e2e7.py`, `new7.py` and library
+probes, against an export of `ce7fc937` with this branch's guard file copied in. Every attack that failed at round 7
+still fails, and X1, X2b, X3b, X4, X5, X5b, X5c and F1-F4 now fail too (the table above). Still passing, each a
+stated limit: round 6's skeptic E3 (base-class extraction) and E4 (a class copy plus one method), round 6's verifier
+E1 (B2a's stopped cross-record rule), round 5's R1 (a wrapper of 25 nodes or more, the fork pattern) and round 5's
+`alias_g2` (an import through a file link to a HISTORICAL module). The library probes that still pass are each in the
+"Static resolution" list: a `__code__` swap; a class or module reached by assignment (`R = Relay`, `m = greg.body`)
+or through a function parameter (`def install(cls=Relay)`); `object.__setattr__`; `builtins.setattr`; `setattr` with
+a starred name; `importlib.import_module(...).x = f`; `getattr(...)` and `type(...)` as write targets; `globals`
+through another name; `sys.modules[__name__]`, also with its `__dict__` bound to a name; and a literal `vars()` key at
+module level.
 
 ## Compatibility with the line and with the open heads
 
@@ -558,7 +573,8 @@ The `_deliver` question below applies to both.
   (`sys.modules[__name__].__dict__`, or a different module object put in `sys.modules`); `exec`;
   `importlib.import_module`, `__import__` and `runpy.run_path`; a module or class reached by assignment
   (`m = greg.body; m.send_signed = f`, `_R = Relay; _R.send = f`), a consumer's name bound by assignment included
-  (`send = send_signed` in a consumer, then `_cli.send = f`); `getattr(greg, "body").x = f`; `type(obj).m = f`;
+  (`send = send_signed` in a consumer, then `_cli.send = f`); a module or class reached through a function parameter
+  (`def install(cls=Relay): cls.send = f`); `getattr(greg, "body").x = f`; `type(obj).m = f`;
   `object.__setattr__` and `builtins.setattr`; a `__code__` swap; a decorator on the one def or class that returns a
   different object (`@functools.lru_cache` and `@dataclass` are allowed); a re-export through a star import
   (`from .engine import *`) or more than four hops, which `origin()` does not follow; a module rebinding its own

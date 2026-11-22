@@ -29,7 +29,8 @@ The registry is ``function_owner_records`` in docs/collaboration/ARCHITECTURE-OW
    do not read are: ``setattr`` or ``delattr`` with a computed name; ``sys.modules`` (``sys.modules[__name__]``, or
    another module object put there); ``exec``; ``importlib.import_module``, ``__import__`` and ``runpy.run_path``; a
    module or class reached by assignment (``m = greg.body; m.send_signed = f``, ``_R = Relay; _R.send = f``), a
-   consumer's name bound by assignment included (``send = send_signed``); ``getattr(greg, "body").x = f``;
+   consumer's name bound by assignment included (``send = send_signed``); a module or class reached through a
+   function parameter (``def install(cls=Relay): cls.send = f``); ``getattr(greg, "body").x = f``;
    ``type(obj).m = f``; ``object.__setattr__`` and ``builtins.setattr``; a ``__code__`` swap; a decorator that returns
    a different object; a re-export through a star import or more than four hops, which ``origin`` does not follow; a
    module rebinding its own imported name (``from greg.body import send_signed`` then ``send_signed = f`` there); a

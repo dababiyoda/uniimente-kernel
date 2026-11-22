@@ -1666,16 +1666,15 @@ def _fresh_name(name: str) -> str:
     # bytes as the file system has them: a name that is not UTF-8 reaches Python with lone surrogates, and a strict
     # str.encode() raised UnicodeEncodeError out of the filing (re-check of 37a8e43c)
     room = NAME_MAX - len(os.fsencode(tag + suffix))
-    raw = os.fsencode(stem)[:max(room, 1)]
-    while raw:
-        try:
-            cut = os.fsdecode(raw)
-            os.fsencode(cut)          # a cut inside a multibyte character does not round-trip
-            break
-        except (UnicodeError, ValueError):
-            raw = raw[:-1]
+    raw = os.fsencode(stem)
+    try:
+        raw.decode("utf-8")
+    except UnicodeDecodeError:
+        cut = os.fsdecode(raw[:max(room, 1)])     # bytes the file system already has as they are
     else:
-        cut = ""
+        # a valid UTF-8 name is cut at a character boundary: surrogateescape round-trips a dangling byte, so a byte
+        # cut kept half a character and filed a name APFS refuses (re-check of e030a628, M1)
+        cut = raw[:max(room, 1)].decode("utf-8", "ignore")
     return f"{cut or 'entry'}{tag}{suffix}"
 
 

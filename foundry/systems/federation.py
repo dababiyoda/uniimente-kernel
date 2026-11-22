@@ -286,7 +286,13 @@ class Instance:
             target = self.fetch_actor(target_id)
         except FederationError as exc:
             return 400, {"error": str(exc)[:120]}
-        if sender["id"] not in target.get("alsoKnownAs", []) or sender.get("movedTo") != target_id:
+        # checked before anything changes: a list target, an int alsoKnownAs or a target without an inbox raised
+        # out of the handler, the last after the old follow was already removed (re-check of e030a628, L1)
+        aliases = target.get("alsoKnownAs", []) if isinstance(target, dict) else None
+        if (not isinstance(aliases, list) or not isinstance(target.get("id"), str)
+                or not isinstance(target.get("inbox"), str) or not isinstance(sender.get("inbox"), str)):
+            return 400, {"error": "the Move's target actor document is not readable"}
+        if sender["id"] not in aliases or sender.get("movedTo") != target_id:
             self._journal(s, "move.refused", actor=name, why="alias not confirmed on both actors")
             self._save(s)
             return 403, {"error": "move not confirmed by both actors (alsoKnownAs and movedTo)"}

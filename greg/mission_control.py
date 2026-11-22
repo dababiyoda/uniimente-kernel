@@ -700,7 +700,11 @@ def _when(epoch) -> str:
     if not epoch:
         return "—"
     from datetime import datetime, timezone
-    return datetime.fromtimestamp(float(epoch), timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    try:
+        return datetime.fromtimestamp(float(epoch), timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    except (ValueError, TypeError, OverflowError, OSError):
+        # a stored expiry of inf or 1e308 raised OverflowError on every render (re-check of e030a628, L2)
+        return "unreadable"
 
 
 def _night(console, p, form) -> str:

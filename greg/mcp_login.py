@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import math
 import time
 from urllib.parse import parse_qs, urlsplit
 
@@ -49,12 +50,29 @@ def expired(login: dict, *, now: float | None = None, margin: float = 60.0) -> b
     return at is not None and (now if now is not None else time.time()) + margin >= float(at)
 
 
+LONGEST_LIFETIME = 10 * 365 * 86400   # seconds; a token said to live longer is a service's answer GREG cannot use
+
+
+def expires_at(expires_in, *, now: float | None = None) -> float | None:
+    """When a token the service says lives ``expires_in`` seconds expires, or None when it gave none; a value that is
+    not a finite positive number of at most ten years is ValueError. An inf or 1e308 was stored, and the Authority
+    view then raised OverflowError on every render (re-check of e030a628, L2)."""
+    if expires_in is None or expires_in == "" or expires_in == 0:
+        return None
+    if isinstance(expires_in, bool):
+        raise ValueError("expires_in is not a number")
+    seconds = float(expires_in)
+    if not math.isfinite(seconds) or not 0 < seconds <= LONGEST_LIFETIME:
+        raise ValueError("expires_in is out of range")
+    return (now if now is not None else time.time()) + seconds
+
+
 def store_renewal(broker, handle: str, login: dict, tokens: dict) -> None:
     """Keep a renewed token response (rotating the refresh token when the service sent a new one)."""
     fresh = {**login["tokens"], **{k: v for k, v in tokens.items() if v is not None}}
     expires_in = tokens.get("expires_in")
     broker.put(handle, json.dumps({**login, "tokens": fresh, "scope": tokens.get("scope", login.get("scope")),
-                                   "expires_at": time.time() + float(expires_in) if expires_in else None}))
+                                   "expires_at": expires_at(expires_in)}))
 
 
 class _Storage:
@@ -70,7 +88,7 @@ class _Storage:
     async def set_tokens(self, tokens) -> None:
         self.data["tokens"] = tokens.model_dump(mode="json", exclude_none=True)
         self.data["scope"] = tokens.scope
-        self.data["expires_at"] = time.time() + tokens.expires_in if tokens.expires_in else None
+        self.data["expires_at"] = expires_at(tokens.expires_in)
 
     async def get_client_info(self):
         from mcp.shared.auth import OAuthClientInformationFull

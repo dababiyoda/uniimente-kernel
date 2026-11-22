@@ -10,6 +10,7 @@ level, quarantined together with the construction, and replaced.
 """
 from __future__ import annotations
 
+import importlib
 import random
 from dataclasses import replace
 
@@ -111,19 +112,165 @@ def test_an_impossible_deadline_is_proved_without_any_engine():
         recombine.certify_crash(p, {**shortcut, "chain": ["Design", "Test"]})
 
 
+# Four units of flow along Design -> Build -> Test price the deadline at 4 (Design's cost per unit, the
+# dearest shortening the optimum uses): sum of g(t) is 20 + 26 + 12 + 0 = 58, minus 12 x 4, bounds every
+# on-time plan at 10.
+CRASH_FLOW = {"start": [["Design", 4]], "arcs": [["Design", "Build", 4], ["Build", "Test", 4]],
+              "finish": [["Test", 4]]}
+
+
 def test_a_crash_plan_that_breaks_a_limit_or_overpays_is_refused():
     p = recombine.normalize_crash(CRASH)
     good = {"feasible": True, "plan": [["Build", 4, 9], ["Design", 0, 4], ["Docs", 4, 8], ["Test", 9, 12]],
-            "lp_objective": 10}
+            "lp_objective": 10, "deadline_flow": CRASH_FLOW}
     assert recombine.certify_crash(p, good)["cost"] == 10 == recombine.crash_brute_force(p)
     assert recombine.certify_crash(p, good)["shorten"] == {"Build": 3, "Design": 1}
+    assert recombine.certify_crash(p, good)["certificate"]["lower_bound"] == 10
     with pytest.raises(recombine.ReductionError, match="duration bounds"):
         recombine.certify_crash(p, {**good, "plan": [["Build", 4, 8]] + good["plan"][1:]})
     overpaid = {**good, "plan": [["Build", 3, 9], ["Design", 0, 3], ["Docs", 3, 7], ["Test", 9, 12]]}
-    with pytest.raises(recombine.ReductionError, match="plan cost 12 differs from the certified optimum"):
+    with pytest.raises(recombine.ReductionError, match="plan cost 12 differs from the proved lower bound 10"):
         recombine.certify_crash(p, overpaid)              # feasible, but not the cheapest
+    with pytest.raises(recombine.ReductionError, match="plan cost 12 differs from the proved lower bound 10"):
+        recombine.certify_crash(p, {**overpaid, "lp_objective": 12})   # the engine's objective is not trusted
     with pytest.raises(recombine.ReductionError, match="starts before"):
         recombine.certify_crash(p, {**good, "plan": good["plan"][:3] + [["Test", 8, 11]]})
+
+
+def test_without_a_deadline_flow_no_crash_plan_is_called_cheapest():
+    p = recombine.normalize_crash(CRASH)
+    plan = [["Build", 4, 9], ["Design", 0, 4], ["Docs", 4, 8], ["Test", 9, 12]]
+    with pytest.raises(recombine.ReductionError, match="no deadline flow"):
+        recombine.certify_crash(p, {"feasible": True, "plan": plan, "lp_objective": 10})
+
+
+@pytest.mark.parametrize("flow, why", [
+    ({**CRASH_FLOW, "finish": [["Test", 3]]}, "not conserved at Test"),
+    ({**CRASH_FLOW, "arcs": [["Design", "Test", 4], ["Build", "Test", 4]]}, "not a precedence"),
+    ({**CRASH_FLOW, "arcs": CRASH_FLOW["arcs"] + [["Build", "Test", 0]]}, "not a precedence"),
+    ({"start": [["Design", -4]], "arcs": [], "finish": [["Design", -4]]}, "nonnegative integer"),
+    ({"start": [["Design", 4.0]], "arcs": [], "finish": [["Design", 4.0]]}, "nonnegative integer"),
+    ({"start": [["Design", True]], "arcs": [], "finish": [["Design", True]]}, "nonnegative integer"),
+    ({**CRASH_FLOW, "start": [["Design", 2], ["Design", 2]]}, "malformed"),
+    ({**CRASH_FLOW, "start": [["Nobody", 4]]}, "malformed"),
+    ({**CRASH_FLOW, "extra": []}, "no deadline flow"),
+])
+def test_a_flow_that_does_not_prove_its_bound_is_refused(flow, why):
+    p = recombine.normalize_crash(CRASH)
+    plan = [["Build", 4, 9], ["Design", 0, 4], ["Docs", 4, 8], ["Test", 9, 12]]
+    with pytest.raises(recombine.ReductionError, match=why):
+        recombine.certify_crash(p, {"feasible": True, "plan": plan, "deadline_flow": flow})
+
+
+def test_the_issue_217_counterexample_suboptimal_vertices_are_refused_at_large_durations():
+    """#217: one task of duration 1e8 that may shorten by 10 at 3 per unit, deadline 1e8 - 5; the optimum costs
+    15. An engine hands back the optimum's exact prices with one of three points. GREG's LP certificate accepts
+    all three, because its floating-point gap tolerance scales with the absolute times (about 30 here). The
+    crash certificate must accept only the optimum."""
+    from greg.cognition import linear
+    d = 10 ** 8
+    p = recombine.normalize_crash({"tasks": [{"id": "A", "duration": d, "min_duration": d - 10,
+                                              "cost_per_unit": 3}], "deadline": d - 5})
+    req = linear.normalize_lp(recombine.encode_crash(p))
+    outcomes = {}
+    for start, finish in ((0, d - 5), (0, d - 10), (1, d - 5)):
+        claim = {"status": "optimal", "x": [start, finish], "y_ub": [0, 0], "y_eq": [], "z_l": [3, 0],
+                 "z_u": [0, -3]}
+        lp = linear.certify_lp(req, claim)
+        assert lp["certified"] is True                          # the engine-level check passes all three
+        try:
+            outcomes[(start, finish)] = recombine.certify_crash(p, recombine.decode_crash(p, lp))["cost"]
+        except recombine.ReductionError as exc:
+            outcomes[(start, finish)] = str(exc)
+    assert outcomes == {(0, d - 5): 15,
+                        (0, d - 10): "plan cost 30 differs from the proved lower bound 15",
+                        (1, d - 5): "plan cost 18 differs from the proved lower bound 15"}
+    assert recombine.crash_brute_force(p) == 15
+
+
+def _random_crash(rng, scale=0, tasks=4):
+    """A small project; with scale, every duration is shifted up by 10**scale (the spans stay small)."""
+    n = rng.randint(1, tasks)
+    out = []
+    for k in range(n):
+        d = rng.randint(0, 4)
+        out.append({"id": f"T{k}", "duration": d + (10 ** scale if scale else 0),
+                    "min_duration": max(0, d - rng.randint(0, 3)) + (10 ** scale if scale else 0),
+                    "cost_per_unit": rng.randint(0, 9)})
+    precedences = [[f"T{a}", f"T{b}"] for a in range(n) for b in range(a + 1, n) if rng.random() < 0.5]
+    normal = recombine._longest({"order": [t["id"] for t in out], "precedences": precedences},
+                                {t["id"]: t["duration"] for t in out})[0]
+    return {"tasks": out, "precedences": precedences, "deadline": max(0, normal - rng.randint(0, 6))}
+
+
+def _random_flow(rng, p):
+    """Any nonnegative integer flow from start to finish along the precedences: unit paths, random weights."""
+    succ = {t[0]: [b for a, b in p["precedences"] if a == t[0]] for t in p["tasks"]}
+    start, arcs, finish = {}, {}, {}
+    for _ in range(rng.randint(0, 4)):
+        node, amount = rng.choice([t[0] for t in p["tasks"]]), rng.randint(1, 12)
+        start[node] = start.get(node, 0) + amount
+        while succ[node] and rng.random() < 0.7:
+            nxt = rng.choice(succ[node])
+            arcs[(node, nxt)] = arcs.get((node, nxt), 0) + amount
+            node = nxt
+        finish[node] = finish.get(node, 0) + amount
+    return {"start": [[t, x] for t, x in start.items()], "arcs": [[a, b, x] for (a, b), x in arcs.items()],
+            "finish": [[t, x] for t, x in finish.items()]}
+
+
+def test_no_flow_bounds_above_the_true_optimum():
+    """Weak duality, checked against exhaustive enumeration: every conserving nonnegative flow, however it was
+    chosen, bounds the cheapest on-time plan from below, so a forged flow cannot certify an overpriced plan."""
+    rng = random.Random(217)
+    checked = 0
+    for _ in range(400):
+        p = recombine.normalize_crash(_random_crash(rng))
+        best = recombine.crash_brute_force(p)
+        if best is None:
+            continue
+        for _ in range(6):
+            assert recombine._deadline_bound(p, _random_flow(rng, p)) <= best
+            checked += 1
+    assert checked > 1000
+
+
+@pytest.mark.parametrize("scale", [0, 6, 8])
+def test_the_real_lp_engines_prices_round_to_an_exact_certificate(scale):
+    """GREG's own engine runners (SciPy's HiGHS, and OR-Tools' GLOP when installed), at small and at large
+    absolute durations (the LP engine takes coefficients up to 1e9): GREG's LP certificate, then decode and
+    the exact crash certificate. Every on-time optimum is certified and equals exhaustive enumeration."""
+    from greg.cognition import linear
+    engines = []
+    for runner, module in (("scipy.lp", "scipy.optimize"), ("ortools.lp", "ortools.linear_solver.pywraplp")):
+        try:
+            namespace = {"MODULE": importlib.import_module(module)}   # test-only: the body never does this
+        except ImportError:
+            continue
+        exec(linear.RUNNERS[runner], namespace)
+        engines.append((runner, namespace["solve"]))
+    rng = random.Random(1000 + scale)
+    certified, refused = 0, []
+    for _ in range(80):
+        p = recombine.normalize_crash(_random_crash(rng, scale=scale))
+        best = recombine.crash_brute_force(p)
+        if recombine.direct_crash(p) is not None:
+            assert best is None
+            continue
+        req = linear.normalize_lp(recombine.encode_crash(p))
+        for runner, solve in engines:
+            decoded = recombine.decode_crash(p, linear.certify_lp(req, solve(req)))
+            try:
+                answer = recombine.certify_crash(p, decoded)
+            except recombine.ReductionError as exc:
+                refused.append(str(exc))
+                continue
+            assert answer["cost"] == best, runner
+            certified += 1
+    # A refusal may only be the exact plan check catching an engine's floating-point plan (GLOP at 1e8 can
+    # finish a task one unit short); the deadline flow itself never fails an engine's optimal plan.
+    assert all("breaks its duration bounds" in why or "starts before" in why for why in refused), refused
+    assert certified >= 30 and len(refused) <= certified // 10
 
 
 def test_the_chain_compiler_is_bounded_and_ends_only_at_a_catalogued_engine():

@@ -65,6 +65,10 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install -r requirements-dev.txt -r requirements-cognition.txt
+      # Runs first so an invalid escape fails in seconds, not after the two-hour suite (#343). The full
+      # suite below runs it again; that costs about four seconds.
+      - name: No invalid escape sequences in tracked Python files
+        run: python -m pytest -q tests/unit/test_invalid_escape_sequences.py
       - name: Measure actual host isolation facilities
         run: python scripts/ci/probe_isolation.py
       - name: OS filesystem confinement and escape regression checks

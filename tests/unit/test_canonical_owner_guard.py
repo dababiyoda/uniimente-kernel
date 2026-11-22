@@ -3283,6 +3283,10 @@ def test_a_registered_class_body_is_compared_whole_at_its_own_location_and_for_t
     data = {r["record_id"]: r for r in load()["function_owner_records"]}
     goal, commerce = data["OWN-FN-GOAL-RUNTIME"], copy.deepcopy(data["OWN-FN-COMMERCE-CLOSURE"])
     real = _real("egregore.gravity", "greg.gravity", "business.commercial_loop", "greg.business_loop")
+    # Round 7, M5: the copy takes a name no live module holds, and only what the fixture adds is asserted (the
+    # problems on the live files alone are subtracted), so the exact assertion does not depend on the live tree
+    copy_name = "ClassCopyMadeByTheGuardTest"
+    assert not any(copy_name in text for text in real.values())
     loop = definition_node("egregore.gravity", "GoalGravityLoop")
     one_method = copy.deepcopy(next(n for n in loop.body if isinstance(n, FUNCTIONS) and fingerprint(n)[0] >= 100))
     one_method.name, one_method.decorator_list = "lone_method", []
@@ -3290,11 +3294,11 @@ def test_a_registered_class_body_is_compared_whole_at_its_own_location_and_for_t
     disguised.name, disguised.decorator_list = "Settlement", []
     _Disguise().visit(disguised)
     ast.fix_missing_locations(disguised)
-    root = _tree(tmp_path, {
+    root = _tree(tmp_path / "fixture", {
         **real,
         # R2a: a verbatim copy of candidate side A's class in side B's own module, no registry edit
         "greg/gravity.py": real["greg/gravity.py"] + "\n\n" + _class_source("egregore.gravity", "GoalGravityLoop",
-                                                                             "PullLoop"),
+                                                                             copy_name),
         # R2b: a verbatim copy of an alternate's class, recorded as a new ALTERNATE of the decided commerce record
         "greg/commerce_runner.py": _class_source("business.commercial_loop", "CommercialLoop", "CommerceRunner"),
         # a disguised class copy (every name and literal changed) outside the six packages
@@ -3304,12 +3308,13 @@ def test_a_registered_class_body_is_compared_whole_at_its_own_location_and_for_t
     })
     commerce["alternates"].append({"module": "greg.commerce_runner", "qualnames": ["CommerceRunner"],
                                    "status": "ALTERNATE", "reason": "r", "retirement_condition": "c"})
-    found = body_copy_problems([goal, commerce], root)
+    live = set(body_copy_problems([goal, commerce], _tree(tmp_path / "live", real)))
+    found = [line for line in body_copy_problems([goal, commerce], root) if line not in live]
     where = sorted({line.split(" defines ")[0].split(":")[0] + " " + line.split(" defines ")[1].split(",")[0]
                     for line in found})
     # the recorded copy and the original are each a copy of the other's registered body, as with a function twin
     assert where == ["business/commercial_loop.py 'CommercialLoop'", "greg/commerce_runner.py 'CommerceRunner'",
-                     "greg/gravity.py 'PullLoop'", "tools/settlement.py 'Settlement'"], found
+                     f"greg/gravity.py '{copy_name}'", "tools/settlement.py 'Settlement'"], found
     assert any("egregore.gravity.GoalGravityLoop" in line for line in found if line.startswith("greg/gravity.py"))
     twins = registered_twin_problems([goal, commerce], root)
     assert len(twins) == 1 and "business.commercial_loop.CommercialLoop" in twins[0] and (

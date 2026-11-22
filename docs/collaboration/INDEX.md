@@ -27,6 +27,11 @@ A dated file here is evidence of what was true on that date.
 | `TEAM-ENTRY-DECISION-2026-10-21.md` | Why the team-entry process exists, with its two-pass decision |
 | `CONTEXT-ROUTE-2026-11-12.md` | Dated inspection, source access, overlap and propagation receipt for the complete context route; adoption remains separately verified |
 
+`PARTICIPATION.md` in three lines:
+1. Check in (§1) with a new comment on the task issue naming your session, `Task:` key and concerns, then admit (§2) in the worktree you will edit; overlapping exclusive claims are decided by comment order, and an incomplete read refuses.
+2. Work under the hook (§3), which withholds edits, commits, pushes and GitHub writes until admission and edits outside your concerns; pushes also need `check` (§4) within 30 minutes, and `status` (§5) lists matching claims with coverage.
+3. Release (§6), hand off (§7) or acknowledge a dependency (§8) with a marked comment; Limits: sessions are declared, not authenticated, other shell writes are ungated, and clients that ignore `.claude/settings.json` are checked at acceptance with `contribution`.
+
 ## Live registries (machine-read; edit only through their owning process)
 
 | File | Read by |

@@ -19,7 +19,10 @@ conflict-resolution hierarchy).
    `curl -sS https://api.github.com/repos/dababiyoda/uniimente-kernel/discussions/89`);
    `docs/collaboration/START_HERE.md`; the **newest** comments on work board #96 (the comment
    API pages oldest first); the open PRs for what you will touch. Work on the integration
-   branch the board names, not `main`. Post a bounded claim before editing.
+   branch the board names, not `main`. Post a bounded claim before editing: a check-in
+   on the task's own work issue (board #96 keeps only an index line linking it), with
+   `- Task:` and `- Concern (exclusive):` lines, then `python scripts/participation.py admit`.
+   Existing board claims stay valid as written; a claim never expires into permission.
 2. **Latest founder corrections and complete destination.** Read the top entries of
    `docs/FOUNDER_INTENT_LEDGER.md` (newest first), then
    [the current full-machine source route](docs/BACKCAST_GPS.md#source-route).

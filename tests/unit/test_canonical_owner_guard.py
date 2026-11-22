@@ -39,7 +39,7 @@ The registry is ``function_owner_records`` in docs/collaboration/ARCHITECTURE-OW
    bytes still match the digest pinned there and a cortex/evaluation/freeze-*.json manifest; directory links are
    followed only inside the repository, file links wherever they point. A copy anywhere but the body's own
    registered module and qualname fails, inside its record or outside it, whatever it is called; two registered
-   locations with one body fail (``registered_twin_problems``); two runtime files with one module name fail
+   locations with one body fail (``registered_twin_problems``); two runtime or sealed files with one module name fail
    (``module_name_problems``); a ``distinct`` entry exempts none (``distinct_copy_problems``: and may not name a
    module that holds one); only a ``BODY_EXEMPTIONS`` entry clears a reviewed false positive. Stated limits, missed:
    a rewrite that changes structure (a statement reordered or added, such as ``_unused = 0``, a body wrapped in
@@ -1768,7 +1768,11 @@ def body_copies(records: list[dict], root: Path = ROOT, sealed: dict = SEALED) -
     bodies = registered_bodies(records, root)
     sizes = frozenset(size for size, _ in bodies)
     files = list(runtime_files(root, sealed))
-    found, unreadable = [], module_name_problems(files, root)
+    # round 6, B4: a sealed file takes part in the module-name rule too, so that a package beside a frozen
+    # instrument (cortex/evaluation/scoring/ beside scoring.py) fails instead of shadowing it unseen
+    # (test_a_package_beside_a_sealed_file_fails_the_module_name_rule)
+    named = files + [Path(root, relative) for relative in sorted(sealed_files(root, sealed))]
+    found, unreadable = [], module_name_problems(named, root)
     for path in files:
         relative = path.relative_to(root).as_posix()
         try:
@@ -3116,3 +3120,23 @@ def test_a_registered_class_body_is_compared_whole_at_its_own_location_and_for_t
     assert {(m, q) for m, q in COMPARED if isinstance(_compared_node(m, q), ast.ClassDef)} == {
         (e["module"], q) for r in data.values() for role, e in entries(r) if role != "distinct"
         for q in e.get("qualnames") or [] if isinstance(binding(e["module"], q), ast.ClassDef)}
+
+
+def test_a_package_beside_a_sealed_file_fails_the_module_name_rule(tmp_path):
+    # Round 6, B4 (skeptic sealed_shadow): the module-name rule ran over runtime files only, and a SEALED file is not
+    # one, so a package cortex/evaluation/scoring/ beside the sealed scoring.py shadowed the frozen instrument (Python
+    # imports the package) while the guard still counted it sealed.
+    scoring = "def score(x):\n    return x\n"
+    pinned = {"cortex/evaluation/scoring.py": _sha(scoring)}
+    files = {**_real("foundry.systems.teams"), "cortex/evaluation/scoring.py": scoring,
+             "cortex/evaluation/freeze-v1.json": json.dumps({"inputs": {"code": pinned}})}
+    teams = next(r for r in load()["function_owner_records"] if r["record_id"] == "OWN-FN-TEMPORARY-TEAMS")
+    clean = _tree(tmp_path / "clean", files)
+    assert sealed_files(clean, pinned) == {"cortex/evaluation/scoring.py"}
+    assert body_copy_problems([teams], clean, sealed=pinned) == []
+    shadowed = _tree(tmp_path / "shadowed", {**files, "cortex/evaluation/scoring/__init__.py": "def score(x):\n    return 1\n"})
+    assert sealed_files(shadowed, pinned) == {"cortex/evaluation/scoring.py"}
+    found = body_copy_problems([teams], shadowed, sealed=pinned)
+    assert found == ["cortex/evaluation/scoring.py and cortex/evaluation/scoring/__init__.py are one module name "
+                     "(cortex.evaluation.scoring), so guard 4 cannot tell which is the registered module; rename or "
+                     "remove one"], found

@@ -78,6 +78,7 @@ ADOPTED_RECORD = ("  - record_id: OWN-FN-GOAL-RUNTIME-ADOPTED\n    function: the
 INBOX_RECORD_START = "  - record_id: OWN-FN-INBOX-TRANSPORT\n"
 CLASS_WHOLE = "test_a_registered_class_body_is_compared_whole_at_its_own_location_and_for_twins"
 COMMERCIAL_ALTERNATE = "      - module: business.commercial_loop\n        qualnames: [CommercialLoop, STAGES]\n"
+SEALED_SHADOW = "test_a_package_beside_a_sealed_file_fails_the_module_name_rule"
 REMOTE_SIG = "def handle(home: Path, method: str, path: str, headers, body: bytes, *, now: datetime | None = None):\n"
 REALITY_KEPT = "        kept_for: {consumer: acceptance.claims.crosswalk_problems}\n"
 # A copy of greg.organs.exchange recorded as 'distinct' in the organ-exchange record.
@@ -624,6 +625,12 @@ MUTANTS = [
     ("MW-C round 6: classes not listed by the scan",
      [("replace", TESTS, "for name, node in _functions(_parse(path, stamp), DEFS)",
        "for name, node in _functions(_parse(path, stamp))")], CLASS_WHOLE),
+    # -- MW-C round 6 (B4): sealed files take part in the module-name rule ----------------------------------------------
+    ("MW-C round 6: a package cortex/evaluation/scoring/ beside the sealed scoring.py",
+     [("create", "cortex/evaluation/scoring/__init__.py", "def score(x):\n    return 1.0\n")], BODIES),
+    ("MW-C round 6: sealed files left out of the module-name rule",
+     [("replace", TESTS, "    named = files + [Path(root, relative) for relative in sorted(sealed_files(root, sealed))]\n",
+       "    named = files\n")], SEALED_SHADOW),
 ]
 
 
@@ -696,6 +703,10 @@ def _apply(repo: Path, edits) -> tuple[dict, list[Path]] | None:
         if kind == "create":
             if path.exists():
                 return _restore(originals, created)
+            missing = [d for d in reversed(path.parents) if not d.exists()]
+            for directory in missing:                  # a new package directory is removed again on restore
+                directory.mkdir()
+                created.append(directory)
             created.append(path)
             path.write_text(args[0])
             continue
@@ -781,8 +792,11 @@ def _apply(repo: Path, edits) -> tuple[dict, list[Path]] | None:
 def _restore(originals: dict, created: list[Path]) -> None:
     for path, text in originals.items():
         path.write_text(text)
-    for path in created:
-        path.unlink(missing_ok=True)
+    for path in reversed(created):
+        if path.is_dir() and not path.is_symlink():
+            path.rmdir()
+        else:
+            path.unlink(missing_ok=True)
     return None
 
 

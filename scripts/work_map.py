@@ -22,8 +22,11 @@ made by mistake or convenience, handoffs, relays, templates filled in for someon
 They are not a security boundary against a deliberate evader who writes exotic code or text to defeat them. A receipt
 and a check-in are declared, not authenticated. A check-in that relays, or whose heading hands over, reassigns or
 reviews, or that names another poster, names nobody; but a block filled in, pasted or copied with none of this wording
-is read as the session its Session line names, whoever posts it. The residuals each rule leaves are stated where the
-rule is, never claimed as covered.
+is read as the session its Session line names, whoever posts it. A receipt copied to another PR with its ``head_sha``
+unchanged is flagged (``receipt_head_stale``), and one whose ``task_ref`` cites another session's check-in names no
+session; but one whose SHAs were fixed to pass the receipt check, with its ``session_id`` and a ``task_ref`` citing
+nothing else, is read as the session it names. The residuals each rule leaves are stated where the rule is, never
+claimed as covered.
 
 Ask it before you edit::
 
@@ -54,11 +57,13 @@ given: its receipt's fields as declared, ``files`` cut to the first ``FILES_LIMI
 rest, ``receipt_problems`` for fields of the wrong type, ``files_refused``, why the receipt check refuses its
 coordination or its files (then its files are unknown, never an empty list), ``session_refused``, why the receipt
 check refuses its ``session_id`` or its PR comes from a fork (then it names no session), ``session_unnamed``, why the
-map names no session for a receipt the check accepts (``receipt_session``), ``handed_over_from``, the session that
+map names no session for a receipt the check accepts (``receipt_session``, or its ``task_ref`` cites a check-in by
+another session than its ``session_id``, then ``task_ref_cites`` is that comment), ``handed_over_from``, the session that
 handed the PR over when its ``handoff.acknowledgment.status`` is ``accepted`` (the PR's session is then the receiver's
 one id, or none), ``receipt_head_stale``,
 whether the receipt's ``head_sha`` is not the PR's head (it keeps its session: a push lands before its description
-is updated), ``changed``, the files it changes
+is updated; only a receipt copied with its ``head_sha`` unchanged shows here, never one whose SHAs were fixed to pass
+the receipt check), ``changed``, the files it changes
 itself, and ``changed_via``, where they came from: ``diff`` for local git, ``api`` for the GitHub API (``--github``, a
 PR into the line that this clone cannot diff), None when neither said; ``line_bound`` and ``carried``).
 
@@ -251,6 +256,7 @@ def identities(text: str) -> list[tuple[int, str, str]]:
 
 OPENS_WITH_ANOTHER = "receipt session_id names an id it does not open with"
 NAMES_SEVERAL = "receipt session_id names more than one id"
+TASK_REF_DISAGREES = "receipt session_id and task_ref disagree"
 RECEIVER_NOT_ONE_ID = "accepted handoff's receiver_session is not one id"
 
 
@@ -1357,7 +1363,7 @@ def _row(pull: dict, root: Path, use_git: bool, line: str = LINE) -> dict:
         "older_receipt": r is None and receipt_of(body, version=1) is not None, "receipt_problems": problems,
         "files_refused": _files_refused(r),
         "session": sid, "client": client, "session_refused": refused, "session_unnamed": unnamed,
-        "handed_over_from": handed,
+        "handed_over_from": handed, "task_ref_cites": None,
         "receipt_head_stale": stated_head != pull["head_sha"] if isinstance(stated_head, str) else None,
         "task_ref": f["task_ref"],
         "files": f["files"][:FILES_LIMIT], "files_cut": max(0, len(f["files"]) - FILES_LIMIT),
@@ -1679,6 +1685,7 @@ def who_touches(paths: list[str], rows: list[dict] | None, claims: list[dict] | 
              **({"session_refused": r["session_refused"]} if r.get("session_refused") else {}),
              **({"session_unnamed": r["session_unnamed"]} if r.get("session_unnamed") else {}),
              **({"handed_over_from": r["handed_over_from"]} if r.get("handed_over_from") else {}),
+             **({"task_ref_cites": r["task_ref_cites"]} if r.get("task_ref_cites") else {}),
              **({"receipt_head_stale": True} if r.get("receipt_head_stale") else {}),
              "base": r["base"], "overlap": r["overlap"], "title": r["title"],
              "updated": r["updated"], "line_bound": r.get("line_bound", r["pr"] in bound),
@@ -1736,6 +1743,23 @@ def _said(o: dict) -> tuple[str | None, str]:
     return (o["author"], o["client"]) if o["author"] else (o["author_guess"], o["author_guess_client"])
 
 
+def disagreeing_task_refs(parsed: list[dict], rows: list[dict]) -> None:
+    """Name no session for a receipt whose ``task_ref`` cites a comment that is an exact check-in by another session
+    than its ``session_id`` (the sender's, when a handoff is accepted): a receipt copied from another PR with its
+    ``task_ref`` kept, or one started from another session's check-in. Such a PR is its own holder, labelled
+    ``TASK_REF_DISAGREES``, and ``task_ref_cites`` names the comment. Limit: a copied receipt whose ``task_ref`` cites
+    the same session's check-in, or nothing on the board, keeps the session it names."""
+    exact = {c["cid"]: c["author"] for c in parsed if c["author"]}
+    for r in rows:
+        declared = r.get("handed_over_from") or r["session"]
+        if not r["session"]:
+            continue
+        for run in re.findall(r"(?<!\d)\d{10}(?!\d)", r["task_ref"] or ""):
+            if exact.get(int(run)) not in (None, declared):
+                r.update(session=None, client="unknown", session_unnamed=TASK_REF_DISAGREES, task_ref_cites=int(run))
+                break
+
+
 def join_authors(parsed: list[dict], rows: list[dict]) -> None:
     """Give a comment that neither is a check-in nor suggests an author an ``author_guess`` from what it points to,
     labelled by how: its first-person claim ("my claim N", "claim N released into", "Correction to N"), a shared
@@ -1777,12 +1801,11 @@ def sessions_of(rows: list[dict], parsed: list[dict], now: datetime) -> dict[str
     works on. Its ``last`` is the newest of its check-ins and of its PRs' ``updated_at``, which anyone's comment,
     review or push moves; the session that handed a PR over gets nothing from that PR."""
     sessions: dict[str, dict] = {}
-    stated = {c["cid"]: c for c in parsed if c["author"]}
 
     def slot(key: str, client: str) -> dict:
         return sessions.setdefault(key, {"session": key, "client": client, "how": set(), "prs": [], "comments": 0,
                                          "last": "", "prompt": "", "plan": "", "route": None, "guidance": "",
-                                         "overlap": set(), "checkin": None, "checkin_block": False, "task_refs": []})
+                                         "overlap": set(), "checkin": None, "checkin_block": False})
 
     def seen(s: dict, at: str) -> None:
         s["last"] = max(s["last"], at)
@@ -1795,10 +1818,6 @@ def sessions_of(rows: list[dict], parsed: list[dict], now: datetime) -> dict[str
             if r["overlap"]:
                 s["overlap"].add(r["overlap"])
             s["route"] = s["route"] or r["route"]
-            for run in re.findall(r"(?<!\d)\d{10}(?!\d)", r["task_ref"] or ""):
-                cited = stated.get(int(run))
-                if cited and cited["author"] != r["session"]:
-                    s["task_refs"].append({"pr": r["pr"], "comment": int(run), "author": cited["author"]})
     for c in sorted(parsed, key=lambda x: x["at"]):
         if not c["author"]:
             continue
@@ -2006,6 +2025,7 @@ def build(prs: list[dict] | None, comments: list[dict] | None, *, root: Path = R
             parsed.append(parse_comment(c, tracked, dirs))
         except Exception:  # noqa: BLE001 - one unreadable comment never stops the map
             bad_comments.append(_ident(raw, i, "id"))
+    disagreeing_task_refs(parsed, rows)
     join_authors(parsed, rows)
     sessions = sessions_of(rows, parsed, now)
     claims = claims_of(parsed, rows, sessions, now, line)
@@ -2277,8 +2297,7 @@ def markdown(m: dict) -> str:
         for s in m["sessions"]:
             if s["activity"] == "DORMANT":
                 continue
-            how = _cell(", ".join(s["how"])) + "".join(f"; #{t['pr']} task_ref cites comment {t['comment']} by "
-                                                       f"{_untrusted(t['author'], 40)}" for t in s["task_refs"][:2])
+            how = _cell(", ".join(s["how"]))
             out.append(f"| {_untrusted(s['session'])} | {_cell(s['client'])} | {how} | "
                        f"{s['activity']} {_cell(s['last'][:16])} | "
                        f"{_untrusted(s['prompt'])} | {_untrusted(s['plan'])} | "
@@ -2297,8 +2316,9 @@ def markdown(m: dict) -> str:
                 f"coordination or files: {len(g['receipts_refused_for_files'])}; receipts naming no session because "
                 f"the receipt check refuses their session_id or they come from a fork: "
                 f"{len(g['receipts_with_refused_session'])}; receipts the check accepts that name no session (their "
-                f"session_id names more than one id or an id it does not open with, or their accepted handoff's "
-                f"receiver is not one id; `session_unnamed` in the JSON): "
+                f"session_id names more than one id or an id it does not open with, their task_ref cites another "
+                f"session's check-in, or their accepted handoff's receiver is not one id; `session_unnamed` in the "
+                f"JSON): "
                 f"{len(g['receipts_naming_no_session'])}; receipts written for another head than the PR's (normal "
                 f"for minutes after a push): {len(g['receipts_with_stale_head'])}"
                 + (f"; receipts listing more than {FILES_LIMIT} files, the rest not read: "

@@ -1785,7 +1785,7 @@ def test_each_join_resolves_what_no_other_join_can_and_is_labelled(quick):
     assert _guesses(review) == {2: (None, "unresolved"), 3: (None, "unresolved")}
 
 
-def test_a_joined_comment_adds_no_activity_and_a_cited_check_in_shows_on_the_session_row(quick):
+def test_a_joined_comment_adds_no_activity_and_a_task_ref_citing_another_session_names_no_session(quick):
     prs = [_pr(206, "codex/entry", body=_receipt("codex/root/collab-20261030", ["scripts/x.py"],
                                                  task="https://x/issues/96#issuecomment-6398846416"),
                updated="2026-11-10T00:00:00Z")]
@@ -1797,12 +1797,12 @@ def test_a_joined_comment_adds_no_activity_and_a_cited_check_in_shows_on_the_ses
                          at="2026-11-12T00:00:00Z")]
     m = w.build(prs, comments, now=NOW, use_git=False)
     rows = {s["session"]: s for s in m["sessions"]}
-    assert rows["codex/root/collab-20261030"]["task_refs"] == [{"pr": 206, "comment": 6398846416, "author": B}]
-    assert sorted(rows) == sorted(["codex/root/collab-20261030", B])        # C's guessed claim and its join: nobody
+    assert sorted(rows) == [B]                    # #206's receipt and B's check-in disagree; C's guessed claim: nobody
     assert rows[B]["last"] == "2026-11-09T00:00:00Z"
-    text = w.markdown(m)
-    assert "#206 task_ref cites comment 6398846416 by `" + B + "`" in text
-    assert "(inferred)" not in text
+    row = m["prs"][0]
+    assert (row["session"], row["session_unnamed"], row["task_ref_cites"]) == (
+        None, "receipt session_id and task_ref disagree", 6398846416)
+    assert "(inferred)" not in w.markdown(m)
 
 
 # ------------------------------------------------------------------ releases, stops and claim state
@@ -3042,8 +3042,8 @@ def test_a_receipt_session_id_names_only_the_one_id_it_opens_with_and_otherwise_
         hit = next(p for p in paths["paths"][0]["prs"] if p["pr"] == 300)
         assert (hit["session"], hit["session_unnamed"]) == (None, why), value
         assert ("receipts the check accepts that name no session (their session_id names more than one id or an id "
-                "it does not open with, or their accepted handoff's receiver is not one id; `session_unnamed` in the "
-                "JSON): 1") in w.markdown(m)
+                "it does not open with, their task_ref cites another session's check-in, or their accepted handoff's "
+                "receiver is not one id; `session_unnamed` in the JSON): 1") in w.markdown(m)
 
 
 REFUSED_SESSION_IDS = [("pending", "actual session identifier required"),
@@ -3362,3 +3362,49 @@ def test_an_accepted_handoff_whose_receiver_is_not_one_id_names_no_session(quick
     assert [s["session"] for s in m["sessions"]] == [C]
     assert [sorted(c["holders"]) for c in m["contended"]] == [
         sorted([C, "(accepted handoff's receiver_session is not one id) #300"])]
+
+
+# ------------------------------------------------------------------ round 7: a receipt copied into another PR
+BTASK, ATASK = (f"https://github.com/{REPO}/issues/96#issuecomment-7100000081",
+                f"https://github.com/{REPO}/issues/96#issuecomment-7100000082")
+CHECKINS_AB = [_comment(7100000081, _signed("## Check-in: WU-11 seam", B, "- Files: `greg/missions.py`\n"),
+                        at="2026-11-12T09:00:00Z"),
+               _comment(7100000082, _signed("## Check-in: WU-12 follow-up", A, "- Files: `greg/missions.py`\n"),
+                        at="2026-11-12T09:30:00Z")]
+
+
+def _copied(task_301: str) -> list[dict]:
+    """B's PR #300 and A's own PR #301, whose receipt was copied from #300's with its head_sha fixed for the receipt
+    check and its session_id left as B's."""
+    def body(sha: str, task: str) -> str:
+        data = json.loads(_coord(session_id=B, task_ref=task))
+        data["head_sha"] = sha
+        return _body(json.dumps(data))
+    return [_pr(300, "b/seam", sha="b" * 40, body=body("b" * 40, BTASK)),
+            _pr(301, "a/other", sha="c" * 40, body=body("c" * 40, task_301))]
+
+
+def test_a_copied_receipt_whose_task_ref_cites_another_session_s_check_in_names_no_session(quick, tmp_path, capsys):
+    prs = _copied(ATASK)
+    m = w.build(prs, CHECKINS_AB, now=NOW, use_git=False)
+    rows = {r["pr"]: r for r in m["prs"]}
+    assert rows[301]["session"] is None
+    assert (rows[301]["session"], rows[301]["session_unnamed"], rows[301]["task_ref_cites"]) == (
+        None, "receipt session_id and task_ref disagree", 7100000082)
+    assert (rows[300]["session"], rows[300]["receipt_head_stale"], rows[301]["receipt_head_stale"]) == (B, False, False)
+    assert {s["session"]: s["prs"] for s in m["sessions"]} == {B: [300], A: []}
+    assert m["gaps"]["receipts_naming_no_session"] == [301]
+    assert [(c["file"], c["holders"]) for c in m["contended"]] == [
+        ("greg/missions.py", {B: [300], "(receipt session_id and task_ref disagree) #301": [301]})]
+    paths, _raw = _answer(tmp_path, capsys, prs, CHECKINS_AB, "--paths", "greg/missions.py")
+    assert sorted((p["pr"], p["session"], p.get("task_ref_cites")) for p in paths["paths"][0]["prs"]) == [
+        (300, B, None), (301, None, 7100000082)]
+
+
+def test_the_limit_a_copied_receipt_with_its_task_ref_kept_reads_as_the_session_it_names(quick):
+    # Stated in the module docstring: the SHAs fixed, session_id and task_ref left as B's, so #301 reads as B's.
+    m = w.build(_copied(BTASK), CHECKINS_AB, now=NOW, use_git=False)
+    assert [(r["pr"], r["session"], r["receipt_head_stale"]) for r in m["prs"]] == [(300, B, False), (301, B, False)]
+    assert m["contended"] == []
+    assert "receipt_head_stale" in w.__doc__ and "one whose SHAs were fixed to pass the receipt check" in " ".join(
+        w.__doc__.split())

@@ -1087,13 +1087,13 @@ class Body:
         self.engine.interrupt_withdrawn(now)   # a cancel or detach that arrived while a worker ran stops it, paused too
         if self.stop_requested:
             return {"commands": commands, "stopped": True}
-        # The trail of a device revocation (what it voided, the review a suspected compromise opens), finished here
-        # if the body stopped between the revocation and its trail. Paused or not: it is a record, not an action.
-        revocation.settle(self.journal, self.engine.book)
         # A method grant that expired, ran out of uses or was revoked detaches what it attached before anything is
         # selected (paused or not: it narrows authority); one whose window just opened attaches its methods.
         from greg import method_grant
         method_grant.sweep(self, now)
+        # The trail of a device revocation (what it voided, the review a suspected compromise opens), finished here
+        # if the body stopped between the revocation and its trail. Paused or not: it is a record, not an action.
+        revocation.settle(self.journal, self.engine.book)
         if self.paused():
             hold = crash_loop_hold(self.journal)
             self._heartbeat("HELD" if hold else "PAUSED", [])

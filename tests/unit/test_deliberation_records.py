@@ -36,7 +36,7 @@ KEPT_INVALID = {
         "progress by its author (#96 comment 6799013915)",
 }
 
-MIN_RECORDS = 55  # measured on #196 f383fd26: 54 named deliberation*, plus docs/decisions/SR001-COMPAT-01.json
+MIN_RECORDS = 60  # measured on #196 at the #327 intake: 59 named deliberation*, plus docs/decisions/SR001-COMPAT-01.json
 
 
 def _validator():
@@ -83,10 +83,22 @@ def deliberation_records() -> list[str]:
     return sorted(found)
 
 
-def errors_of(rel: str) -> list[str]:
+def errors_of_record(record) -> list[str]:
+    """The validator's refusals, with a crash on a malformed record reported as a refusal.
+
+    The vendored validator must stay byte-identical, and a list or dict where it expects a string raises
+    instead of refusing. Reporting the crash keeps one malformed record from hiding every other record's result.
+    """
     module = _validator()
     schema = module.load_json(SCHEMA)
-    return module.validate_record(module.load_json(ROOT / rel), schema)
+    try:
+        return module.validate_record(record, schema)
+    except Exception as exc:  # noqa: BLE001 - any crash is a refusal, never a pass
+        return [f"validator crashed on this record: {type(exc).__name__}: {exc}"]
+
+
+def errors_of(rel: str) -> list[str]:
+    return errors_of_record(_validator().load_json(ROOT / rel))
 
 
 def test_the_vendored_validator_is_the_founders_bytes():
@@ -154,3 +166,10 @@ def test_each_named_defect_is_refused(defect):
         # A record that never declares dissent and lists none passes; whether that is honest is for review.
         bad["dissent"]["entries"] = []
     assert module.validate_record(bad, schema), defect
+
+
+def test_a_malformed_record_is_refused_not_crashed_on():
+    base = json.loads((ROOT / "docs/decisions/SR001-COMPAT-01.json").read_text(encoding="utf-8"))
+    base["decision"] = ["RETAIN"]   # the vendored validator raises on a list here instead of refusing it
+    errors = errors_of_record(base)
+    assert errors and "validator crashed" in errors[0]

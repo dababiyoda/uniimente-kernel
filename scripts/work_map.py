@@ -8,7 +8,13 @@ grants nothing. It joins sources that already exist:
   77-section directive: buildable units in dependency order, at the static ceiling);
 - ``foundry/completion.yaml`` (the 55 obligations) and ``scripts/mind_status.py``;
 - open pull requests and their version-2 receipts (read as declared, not re-validated here);
-- work-board comments (heuristic, and labelled so).
+- work-board comments.
+
+Sessions and holders come from two places only: a receipt's ``session_id``, and a comment that is itself a check-in
+(the check-in marker opens it, and the block's own ``Session:`` line names an id). Every other reading of a comment's
+author (heading bylines, other labels, opening lines and the joins in ``JOINS``) is ``author_guess``, kept with its
+``how`` for diagnosis and never used as authority, because on replay the parser named wrong authors and left more than
+a quarter of a week's posts unresolved, the plan's stop condition for building the map from receipts only.
 
 Ask it before you edit::
 
@@ -25,11 +31,13 @@ The JSON (``--json``) holds ``generated``, ``line``, ``authority`` ("none"), ``s
 None when git did not answer or the files API was not asked; the flags ``prs_read``, ``comments_read`` and
 ``git_read``, and ``notes``/``note``: what was not read), ``position``, ``units``
 (``state``; ``named_by``, the PRs headed for the line whose title or receipt names the unit or one of its asks;
-``carried_by_line``; ``mentioned_by``; ``named_on_board``; ``claimed_on_board``), ``contended``, ``sessions`` and
-``claims`` (each with ``how``: how its author was resolved; an author a join inferred is a session's
-``inferred_comments`` and a claim's ``inferred_session``, never its stated one; a session's ``checkin`` is its latest
-claim or check-in comment; a claim's ``state`` is its own, its session's is ``session_activity``, and a release only a
-circular join attributes to its author is ``release_by_inferred_author``), ``claims_without_pr``,
+``carried_by_line``; ``mentioned_by``; ``named_on_board``; ``claimed_on_board``), ``contended``, ``sessions`` (one
+per receipt session or check-in session; ``how`` is ``receipt`` or ``check-in block``, ``checkin`` its latest check-in
+comment) and ``claims`` (``session`` is the check-in's session or None, ``how`` is ``check-in block`` or
+``unverified``; ``author_guess`` and ``author_guess_how`` are what the text suggests, for diagnosis only; a claim's
+``state`` is its own, its session's is ``session_activity``; a release counts only from the claim's own exact author,
+one by another exact author is ``release_stated_by_another_author`` and one by an author that is not exact
+``release_by_unverified_author``), ``claims_without_pr``,
 ``older_claims_without_pr``, ``line_checks``, ``gaps`` (``None`` where its source was not read; what git could not
 check is listed there, never counted as zero) and ``prs`` (one row per open pull request, read once however often
 given: its receipt's fields as declared, ``files`` cut to the first ``FILES_LIMIT`` with ``files_cut`` counting the
@@ -39,8 +47,8 @@ itself, and ``changed_via``, where they came from: ``diff`` for local git, ``api
 PR into the line that this clone cannot diff), None when neither said; ``line_bound`` and ``carried``).
 
 A snapshot, not a lock. A claim coordinates work; an expired one never permits
-overwriting someone's files (``docs/collaboration/START_HERE.md``). What the
-parser cannot resolve is listed as unresolved, never guessed. Text from pull
+overwriting someone's files (``docs/collaboration/START_HERE.md``). A comment
+whose author is not exact has no session; its guess is labelled and never used. Text from pull
 requests and comments is printed as code, so it cannot format the map. It exits 0 whatever it reads, also when it
 cannot build the map or write a file (it says so on stderr, so check the files you named, not the exit code); a
 malformed command line is a usage error (exit 2).
@@ -171,7 +179,8 @@ _OPENING = re.compile(r"(?i)^[^\w>|]*(?:session|implementer|from|posted by)\b[\s
 # Checked by test_a_heading_names_its_poster_or_nobody_never_another_party: 148 headings posted by one session and
 # naming others give that session or unresolved, never another id. Limit: a signature place is still read as the
 # poster's when a poster puts another party there ("## Review · #300 · `id`", "## Seam review (`id`)", a relayed
-# "## From `id`: ..."); those wordings are not in the probes.
+# "## From `id`: ..."); those wordings are not in the probes. So a byline is only ever ``author_guess`` (see
+# ``checkin_author`` for the one comment author the map uses).
 _BYLINE = re.compile(r"(?i)(·|\(|\bsession|\bfrom|\bintegrator|\bowner)[\s`*_:,]*$")
 _ROLES = ("integrator", "owner")
 _FOR = re.compile(r"(?i)\b(?:for|to|cc|with)\b[^.:;·]*$")
@@ -294,9 +303,11 @@ _ALIASES = {
 }
 _SCOPE_LABELS = {"owned", "scope", "bounded scope", "remaining scope"}
 CLAIM_KINDS = ("claim", "check-in", "claim+handoff")
-# Authors taken from another comment or a pull request rather than stated in the comment itself. Such a comment
-# counts toward its session's activity, never toward its prompt, plan, route, check-in or file claims.
+# Authors taken from another comment or a pull request rather than stated in the comment itself. Like every reading
+# of ``comment_author``, a join gives only ``author_guess``: it never makes a session, a claim's session or a release.
 JOINS = ("claim reference", "shared marker", "pr receipt", "pr task_ref")
+EXACT = "check-in block"     # the ``how`` of a comment author the map uses (``checkin_author``)
+UNVERIFIED = "unverified"    # the ``how`` of every other comment
 
 
 def heading_of(body: str) -> str:
@@ -525,6 +536,39 @@ def comment_author(body: str) -> dict:
             "marker": next(iter(re.findall(r"<!--\s*(UNIIMENTE-[A-Za-z0-9-]+)\s*-->", lead[0] if lead else "")), None)}
 
 
+# The block's own Session line, in CHECKIN_BLOCK's format ("- Session: <id> (<client>)", the label also in bold).
+_CHECKIN_SESSION = re.compile(r"^-[ \t]+(?:\*\*Session:\*\*|Session:)[ \t]+(?P<value>\S.*)$")
+_LIST_ITEM = re.compile(r"^[ \t]*(?:[-*+]|\d{1,3}[.)])[ \t]")
+
+
+def opens_with_checkin(body: str) -> bool:
+    """Whether the check-in marker opens the comment: its first line that is not blank starts with it, at the margin
+    (never inside a quote, a fence or an indented block, never later in the body)."""
+    first = next((line for line in _text(body).splitlines() if line.strip()), "")
+    return first.startswith(CHECKIN)
+
+
+def checkin_author(body: str) -> tuple[str, str] | None:
+    """The (id, client) of a comment that is itself a check-in, else None: the marker opens the comment
+    (``opens_with_checkin``) and the block's first list item, outside code, before any second marker, is its own
+    ``Session:`` line (``CHECKIN_BLOCK``), whose value opens with an id. A pasted, quoted or later block names
+    nobody."""
+    if not opens_with_checkin(body):
+        return None
+    rest = _text(body).split(CHECKIN, 1)[1].split("\n", 1)
+    for line in _prose(rest[1] if len(rest) > 1 else ""):
+        if CHECKIN in line:
+            return None
+        if not _LIST_ITEM.match(line):
+            continue
+        m = _CHECKIN_SESSION.match(line)
+        hits = _spans(m["value"]) if m else []
+        if not hits or m["value"][:hits[0][0]].strip("`*_ \t"):
+            return None
+        return hits[0][2], hits[0][3]
+    return None
+
+
 def _statements(pattern: re.Pattern, body: str) -> list[tuple[re.Match, bool]]:
     """Each match of ``pattern`` with whether its clause negates it ("I do NOT release claim ...", "Nothing here
     releases claim ..."; not "Nothing is merged, so this releases claim ...")."""
@@ -558,7 +602,7 @@ def unit_refs(heading: str, body: str) -> list[str]:
 def parse_comment(c: dict, tracked: set[str], dirs: set[str]) -> dict:
     body = _text(c.get("body"))
     found, heading = fields(body), heading_of(body)
-    who = comment_author(body)
+    who, exact = comment_author(body), checkin_author(body)
     kind = comment_kind(heading)
     route = _field(found, "route")
     node = _ROUTE.search(body)
@@ -574,7 +618,10 @@ def parse_comment(c: dict, tracked: set[str], dirs: set[str]) -> dict:
         files += [f for f in declared_files(text, tracked, dirs, globs=labelled) if f not in files]
     return {
         "cid": c.get("id"), "at": _text(c.get("created_at")), "heading": heading[:160],
-        "kind": kind, **who,
+        "kind": kind, "author": exact[0] if exact else None, "client": exact[1] if exact else "unknown",
+        "how": EXACT if exact else UNVERIFIED,
+        "author_guess": who["author"], "author_guess_client": who["client"], "author_guess_how": who["how"],
+        "addressees": who["addressees"], "team": who["team"],
         "prompt": _field(found, "prompt")[:400], "plan": _field(found, "plan")[:400],
         "route": node[1] if node else (in_label or in_heading or [None])[0],
         "guidance": _field(found, "guidance")[:160],
@@ -590,7 +637,7 @@ def parse_comment(c: dict, tracked: set[str], dirs: set[str]) -> dict:
         "branch_refs": sorted(set(_BRANCH.findall(body))),
         "unit_refs": unit_refs(heading, body), "heading_units": sorted(_ids(heading)),
         "heading_ids": sorted({k for _at, k, _c in identities(heading)}),
-        "is_checkin": CHECKIN in body, "marker": who["marker"],
+        "is_checkin": opens_with_checkin(body), "marker": who["marker"],
     }
 
 
@@ -1403,7 +1450,9 @@ def who_touches(paths: list[str], rows: list[dict] | None, claims: list[dict] | 
     ``tracked`` is None when the tracked files were not given. A path is placed in the worktree that holds it
     (``_place``). One in no worktree of this repository is marked ``outside_repository``; one that could not be placed
     has ``outside_repository`` None and ``not_placed``, the reason. For both, all four are None: nothing here answers
-    for them, and the other paths are still answered. The integration PR is left out."""
+    for them, and the other paths are still answered. The integration PR is left out. A claim's ``session`` is exact or
+    None; one whose author is not verified still answers for its files, with a ``note`` saying so (the risk is a wrong
+    name, not a wrong file)."""
     dirs = {"/".join(f.split("/")[:i]) for f in tracked for i in range(1, f.count("/") + 1)} if tracked else set()
     bound = {r["pr"] for r in line_bound(rows or [], line)}
     hits, worktrees = [], {}
@@ -1428,10 +1477,11 @@ def who_touches(paths: list[str], rows: list[dict] | None, claims: list[dict] | 
                      "unknown_prs": None if prs is None else sorted(p["pr"] for p in prs if p["unknown"]
                                                                     and not p["via"]) + list(unread or []),
                      "claims": None if claims is None else [
-                         {"comment": c["comment"], "session": c["session"], "inferred_session": c["inferred_session"],
-                          "how": c["how"], "at": c["at"], "state": c["state"], "posted": c["posted"],
-                          "session_activity": c["session_activity"],
-                          "cited_by_receipts": c["cited_by_receipts"], "names_prs": c["names_prs"]}
+                         {"comment": c["comment"], "session": c["session"], "how": c["how"], "at": c["at"],
+                          "state": c["state"], "posted": c["posted"], "session_activity": c["session_activity"],
+                          "cited_by_receipts": c["cited_by_receipts"], "names_prs": c["names_prs"],
+                          **({} if c["session"] else
+                             {"note": f"claimed by a comment whose author is not verified: comment {c['comment']}"})}
                          for c in claims if any(_covers(f, path) for f in c["files"])]})
     return hits
 
@@ -1465,20 +1515,26 @@ def _tracked(root: Path) -> tuple[set[str], str | None]:
         return set(repo_review.tracked_files(root)), note
 
 
+def _said(o: dict) -> tuple[str | None, str]:
+    """A comment's author as far as anything says: its exact author, else its guess."""
+    return (o["author"], o["client"]) if o["author"] else (o["author_guess"], o["author_guess_client"])
+
+
 def join_authors(parsed: list[dict], rows: list[dict]) -> None:
-    """Give a comment that states no author the stated author of what it points to, labelled by how: its first-person
-    claim ("my claim N", "claim N released into", "Correction to N"), a shared ``UNIIMENTE-`` marker, the receipt of
-    the draft PR its heading hands off, or the receipt whose task_ref cites it. Review, intake, acknowledgment and
-    team posts are never joined to a PR or a claim, and no join contradicts an id the comment's heading names."""
-    by_id = {c["cid"]: c for c in parsed if c["author"]}
+    """Give a comment that neither is a check-in nor suggests an author an ``author_guess`` from what it points to,
+    labelled by how: its first-person claim ("my claim N", "claim N released into", "Correction to N"), a shared
+    ``UNIIMENTE-`` marker, the receipt of the draft PR its heading hands off, or the receipt whose task_ref cites it.
+    Review, intake, acknowledgment and team posts are never joined to a PR or a claim, and no join contradicts an id
+    the comment's heading names. A join is a guess even when what it points to is exact."""
+    by_id = {c["cid"]: c for c in parsed if _said(c)[0]}
     by_pr = {r["pr"]: r for r in rows}
     by_task = _by_task_ref(rows)
     marked: dict[str, dict] = {}
     for o in parsed:
-        if o["marker"] and o["author"]:
+        if o["marker"] and _said(o)[0]:
             marked.setdefault(o["marker"], o)
     for c in parsed:
-        if c["author"]:
+        if _said(c)[0]:
             continue
         plain = not re.search(r"(?i)review|intake|acknowledg", c["heading"]) and not c["team"]
         ref = next((by_id[int(x)] for x in c["own_claim_refs"] if int(x) in by_id and int(x) != c["cid"]), None)
@@ -1486,37 +1542,38 @@ def join_authors(parsed: list[dict], rows: list[dict]) -> None:
         twin = marked.get(c["marker"]) if c["marker"] else None
         task = by_task.get(str(c["cid"])) if c["kind"] in CLAIM_KINDS else None
         fits = set(c["heading_ids"]).__contains__ if c["heading_ids"] else (lambda _author: True)
-        if ref and plain and fits(ref["author"]):
-            c.update(author=ref["author"], client=ref["client"], how="claim reference")
-        elif twin and fits(twin["author"]):
-            c.update(author=twin["author"], client=twin["client"], how="shared marker")
+        found = None
+        if ref and plain and fits(_said(ref)[0]):
+            found = (*_said(ref), "claim reference")
+        elif twin and fits(_said(twin)[0]):
+            found = (*_said(twin), "shared marker")
         elif pr and pr["session"] and plain and fits(pr["session"]):
-            c.update(author=pr["session"], client=pr["client"], how="pr receipt")
+            found = (pr["session"], pr["client"], "pr receipt")
         elif task and plain and fits(task["session"]):
-            c.update(author=task["session"], client=task["client"], how="pr task_ref")
+            found = (task["session"], task["client"], "pr task_ref")
+        if found:
+            c.update(author_guess=found[0], author_guess_client=found[1], author_guess_how=found[2])
 
 
 def sessions_of(rows: list[dict], parsed: list[dict], now: datetime) -> dict[str, dict]:
-    """One row per session id: its PRs, the comments it states (and those a join infers, which count toward its last
-    update only), and what its own comments say it was asked, plans and works on."""
+    """One row per session id that a receipt or a check-in block names (never a guess): its PRs, its check-in
+    comments, and what they say it was asked, plans and works on."""
     sessions: dict[str, dict] = {}
-    stated = {c["cid"]: c for c in parsed if c["author"] and c["how"] not in JOINS}
+    stated = {c["cid"]: c for c in parsed if c["author"]}
 
     def slot(key: str, client: str) -> dict:
         return sessions.setdefault(key, {"session": key, "client": client, "how": set(), "prs": [], "comments": 0,
-                                         "inferred_comments": 0, "last": "", "last_inferred": False, "prompt": "",
-                                         "plan": "", "route": None, "guidance": "", "overlap": set(),
-                                         "checkin": None, "checkin_block": False, "task_refs": []})
+                                         "last": "", "prompt": "", "plan": "", "route": None, "guidance": "",
+                                         "overlap": set(), "checkin": None, "checkin_block": False, "task_refs": []})
 
-    def seen(s: dict, at: str, inferred: bool) -> None:
-        if at > s["last"] or (at == s["last"] and not inferred):
-            s["last"], s["last_inferred"] = at, inferred
+    def seen(s: dict, at: str) -> None:
+        s["last"] = max(s["last"], at)
     for r in rows:
         if r["session"]:
             s = slot(r["session"], r["client"])
             s["how"].add("receipt")
             s["prs"].append(r["pr"])
-            seen(s, r["updated"], False)
+            seen(s, r["updated"])
             if r["overlap"]:
                 s["overlap"].add(r["overlap"])
             s["route"] = s["route"] or r["route"]
@@ -1529,19 +1586,14 @@ def sessions_of(rows: list[dict], parsed: list[dict], now: datetime) -> dict[str
             continue
         s = slot(c["author"], c["client"])
         s["how"].add(c["how"])
-        if c["how"] in JOINS:
-            s["inferred_comments"] += 1
-            seen(s, c["at"], True)
-            continue
         s["comments"] += 1
-        seen(s, c["at"], False)
+        seen(s, c["at"])
         s["prompt"] = c["prompt"] or s["prompt"]
         s["plan"] = c["plan"] or s["plan"]
         s["guidance"] = c["guidance"] or s["guidance"]
         s["route"] = c["route"] or s["route"]
         s["checkin_block"] = s["checkin_block"] or c["is_checkin"]
-        if c["kind"] in CLAIM_KINDS:
-            s["checkin"] = c["cid"]
+        s["checkin"] = c["cid"]
     for s in sessions.values():
         s["activity"] = activity(s["last"], now)
     return sessions
@@ -1564,13 +1616,13 @@ def _naming(rows: list[dict], line: str = LINE):
 
 def claims_of(parsed: list[dict], rows: list[dict], sessions: dict[str, dict], now: datetime,
               line: str = LINE) -> list[dict]:
-    """Claim and check-in comments that declare files. A release or stop counts only when its author is the claim's
-    and its clause does not negate it; "the X half of claim N" is a partial release. An author that a "claim
-    reference" join took from the very claim being released is circular: such a release counts only when a pull
-    request it names has a receipt whose session is the claim's author, and is otherwise listed under
-    ``release_by_inferred_author``. The state is the activity of the claim or of its author's newest comment citing
-    it; ``session_activity`` is the claiming session's. ``names_prs`` are the PRs the claim, or a handoff citing it,
-    names."""
+    """Claim and check-in comments that declare files. ``session`` is the claim's exact author (a check-in block) or
+    None; a claim whose author is not exact keeps its files, comment, state and time. A release or stop counts only
+    when its comment's exact author is the claim's exact author and its clause does not negate it; "the X half of
+    claim N" is a partial release. One by another exact author is ``release_stated_by_another_author``; one where
+    either author is not exact is ``release_by_unverified_author``, and changes nothing. The state is the activity of
+    the claim or of its exact author's newest check-in citing it; ``session_activity`` is the claiming session's.
+    ``names_prs`` are the PRs the claim, or a handoff citing it, names."""
     said: dict[str, dict[str, list[dict]]] = {"releases": {}, "partial_releases": {}, "stops": {}}
     cites: dict[str, list[dict]] = {}
     for c in parsed:
@@ -1592,20 +1644,17 @@ def claims_of(parsed: list[dict], rows: list[dict], sessions: dict[str, dict], n
             cited_by.setdefault(x, []).append(c)
 
     def counts(o: dict, who: str | None) -> bool:
-        if not who or o["author"] != who:
-            return False
-        return o["how"] != "claim reference" or any(by_pr[n]["session"] == who for n in named(o) if n in by_pr)
+        return bool(who) and o["author"] == who
     out = []
     for c in sorted(parsed, key=lambda x: x["at"]):
         if c["kind"] not in CLAIM_KINDS or not c["files"]:
             continue
         cid, who = str(c["cid"]), c["author"]
         mine = {k: [o for o in said[k].get(cid, []) if counts(o, who)] for k in said}
-        inferred = sorted({o["cid"] for k in said for o in said[k].get(cid, [])
-                           if who and o["author"] == who and o not in mine[k]})
-        others = sorted({o["cid"] for k in said for o in said[k].get(cid, []) if o not in mine[k]} - set(inferred))
-        fresh = max([c["at"]] + [o["at"] for o in cited_by.get(cid, []) if who and o["author"] == who
-                                 and o["how"] not in JOINS])
+        unverified = sorted({o["cid"] for k in said for o in said[k].get(cid, [])
+                             if o not in mine[k] and not (who and o["author"])})
+        others = sorted({o["cid"] for k in said for o in said[k].get(cid, []) if o not in mine[k]} - set(unverified))
+        fresh = max([c["at"]] + [o["at"] for o in cited_by.get(cid, []) if counts(o, who)])
         state = ("released" if mine["releases"] else "stopped" if mine["stops"] else activity(fresh, now).lower())
         prs = {n: str(c["cid"]) for n in named(c)}
         for o in cites.get(cid, []):
@@ -1614,14 +1663,14 @@ def claims_of(parsed: list[dict], rows: list[dict], sessions: dict[str, dict], n
         cited = sorted(receipts.get(cid, []))
         names_prs = [{"pr": n, "state": "open" if n in by_pr else "closed", "named_in": int(src)}
                      for n, src in sorted(prs.items())]
-        out.append({"comment": c["cid"], "session": who if c["how"] not in JOINS else None,
-                    "inferred_session": who if c["how"] in JOINS else None, "how": c["how"],
+        out.append({"comment": c["cid"], "session": who, "how": c["how"],
+                    "author_guess": c["author_guess"], "author_guess_how": c["author_guess_how"],
                     "addressees": c["addressees"], "at": c["at"], "posted": activity(c["at"], now).lower(),
                     "files": c["files"], "recheck": c["recheck"], "state": state,
                     "session_activity": activity(sessions[who]["last"], now).lower() if who in sessions else None,
                     "released_by": [{"comment": o["cid"], "how": o["how"]} for o in mine["releases"] + mine["stops"]],
                     "partly_released_by": [o["cid"] for o in mine["partial_releases"]],
-                    "release_stated_by_another_author": others, "release_by_inferred_author": inferred,
+                    "release_stated_by_another_author": others, "release_by_unverified_author": unverified,
                     "cited_by_receipts": cited, "names_prs": names_prs,
                     "has_pr": bool(cited or names_prs), "units": c["unit_refs"], "heading": c["heading"]})
     return out
@@ -1799,7 +1848,9 @@ def build(prs: list[dict] | None, comments: list[dict] | None, *, root: Path = R
             "claims_without_readable_files": if_comments(sorted(c["cid"] for c in parsed
                                                                 if c["kind"] in CLAIM_KINDS and not c["files"])),
             "recent_posts_unresolved": if_comments([{"comment": c["cid"], "at": c["at"], "heading": c["heading"],
-                                                     "team": c["team"]} for c in recent if not c.get("author")]),
+                                                     "team": c["team"], "author_guess": c["author_guess"],
+                                                     "author_guess_how": c["author_guess_how"]}
+                                                    for c in recent if not c["author"]]),
             "recent_posts": if_comments(len(recent)),
             "live_sessions": if_both(len(live)),
             "live_sessions_stating_prompt": if_both(sum(bool(s["prompt"]) for s in live)),
@@ -1859,12 +1910,8 @@ def _not_read(m: dict) -> list[str]:
 
 
 def _who(c: dict) -> str:
-    """A claim's session cell: the stated author, or the one a join inferred, marked as inferred."""
-    if c["session"]:
-        return _untrusted(c["session"])
-    if c["inferred_session"]:
-        return f"unresolved; inferred {_untrusted(c['inferred_session'])}"
-    return "unresolved"
+    """A claim's session cell: its check-in's session, else "not verified" (a guess is never shown as a name)."""
+    return _untrusted(c["session"]) if c["session"] else "not verified"
 
 
 def _named_prs(c: dict) -> str:
@@ -1893,12 +1940,15 @@ def markdown(m: dict) -> str:
         "`git diff origin/<base>...<head>` (for a PR not based on the line, only the files that also differ from the "
         "line and that one of its own commits touches) for the PRs whose commits are in this clone, from the GitHub "
         "API for the open PRs into the line that this clone cannot diff (with `--github`), and from the receipt "
-        "otherwise. Work-board comments are "
-        "parsed heuristically: the board shares one GitHub login, so the author is read from a labelled line or the "
-        "byline of the first line; where neither names one it is inferred from a claim it cites or a PR it names "
-        "(marked inferred; the *Resolved by* columns say how). Text from pull requests and comments is shown as code. "
-        "What could not be resolved is counted under Gaps and listed in the JSON output. Regenerate it; do not "
-        "hand-edit it.", "",
+        "otherwise. The board shares one GitHub login, so sessions and holders come only from receipts and from "
+        "check-in blocks: a comment that opens with the check-in marker and whose block's own `Session:` line names "
+        "an id. Anything else a comment seems to say about its author (a byline, another label, its opening line, a "
+        "claim or PR it points to) is kept in the JSON as `author_guess` for diagnosis and never used, because on "
+        "replay the parser named wrong authors and left over a quarter of a week's posts unresolved, the stop "
+        "condition for building the map from receipts only. A claim whose author is not verified still holds its "
+        "files. Text from "
+        "pull requests and comments is shown as code. What could not be verified is counted under Gaps and listed in "
+        "the JSON output. Regenerate it; do not hand-edit it.", "",
         f"Sources: {'; '.join(read)}.", "",
     ]
     missing = _not_read(m)
@@ -1995,7 +2045,7 @@ def markdown(m: dict) -> str:
         if not (src["prs_read"] and src["comments_read"]):
             out += [("Board comments" if src["prs_read"] else "Pull requests") + " were not read: this table is "
                     "partial.", ""]
-        out += ["| Session | Client | Resolved by | Last update seen (PR updated_at or board comment) | Asked to | "
+        out += ["| Session | Client | Resolved by | Last update seen (PR updated_at or check-in) | Asked to | "
                 "Plan | Route | Open PRs | Overlap declared |", "|---|---|---|---|---|---|---|---|---|"]
         for s in m["sessions"]:
             if s["activity"] == "DORMANT":
@@ -2003,13 +2053,13 @@ def markdown(m: dict) -> str:
             how = _cell(", ".join(s["how"])) + "".join(f"; #{t['pr']} task_ref cites comment {t['comment']} by "
                                                        f"{_untrusted(t['author'], 40)}" for t in s["task_refs"][:2])
             out.append(f"| {_untrusted(s['session'])} | {_cell(s['client'])} | {how} | "
-                       f"{s['activity']} {_cell(s['last'][:16])}{' (inferred)' if s['last_inferred'] else ''} | "
+                       f"{s['activity']} {_cell(s['last'][:16])} | "
                        f"{_untrusted(s['prompt'])} | {_untrusted(s['plan'])} | "
                        f"{_untrusted(s['route'] or '')} | {_prs(sorted(s['prs']), 12)} | "
                        f"{', '.join(_untrusted(o, 40) for o in s['overlap'])} |")
         dormant = sum(s["activity"] == "DORMANT" for s in m["sessions"])
-        out += ["", f"{dormant} dormant sessions (no update seen for 7 days) are in the JSON output. *(inferred)* "
-                "marks a last update taken from a comment whose author a join inferred."]
+        out += ["", f"{dormant} dormant sessions (no update seen for 7 days) are in the JSON output. Only receipts "
+                "and check-in blocks name a session here."]
 
     out += ["", "## 5. Gaps: documented is not demonstrated", ""]
     if src["prs_read"]:
@@ -2038,7 +2088,7 @@ def markdown(m: dict) -> str:
         out += ["- Sessions active in the last 7 days: not read (it needs both pull requests and board comments)."]
     if src["comments_read"]:
         unread = g["claims_without_readable_files"]
-        out += [f"- Board posts in the last 7 days whose author could not be resolved: "
+        out += [f"- Board posts in the last 7 days that are not a check-in block, so name no verified author: "
                 f"{len(g['recent_posts_unresolved'])} of {g['recent_posts']}.",
                 f"- Claims whose file list could not be read: {len(unread)}"
                 + (f" ({_cell(', '.join(map(str, unread[-12:])))}{_more(12, len(unread))})" if unread else "") + ".",

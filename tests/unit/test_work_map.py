@@ -359,7 +359,8 @@ def test_fields_files_recheck_and_stops():
               .replace("<paths in backticks>; read-only: <...>", "`greg/path.json` is read-only; `AGENTS.md`"))
     block = w.parse_comment(_comment(6, filled), tracked, dirs)
     assert block["is_checkin"] and block["kind"] == "check-in" and block["route"] == "WU-11"
-    assert (block["author"], block["how"]) == (A, "label") and block["files"] == ["AGENTS.md"]
+    assert (block["author"], block["how"], block["author_guess_how"]) == (A, "check-in block", "label")
+    assert block["files"] == ["AGENTS.md"]
     assert block["prompt"] and block["plan"] and block["guidance"]
     both = w.parse_comment(_comment(7, CLAIM_HANDOFF_6664831144), tracked | {
         "identity/machine_passport.py", "greg/authority.py", "tests/unit/test_resource_bounds.py",
@@ -405,19 +406,23 @@ def test_build_joins_authors_names_owners_and_counts_gaps():
     unit = next(u for u in m["units"] if u["unit"] == "WU-11")
     assert unit["state"] == "named" and unit["named_by"][0]["pr"] == 290
     assert {u["state"] for u in m["units"]} <= {"named", "waits", "unclaimed", "prerequisite, no completion record"}
-    by_session = {s["session"]: s for s in m["sessions"]}
-    assert by_session[B]["prs"] == [290] and by_session[B]["comments"] == 1      # the handoff joined its claim,
-    assert by_session[B]["inferred_comments"] == 1                               # as activity only
-    kimi = by_session["kimi-weekly-review-ownership-20261111"]
-    assert (kimi["comments"], kimi["inferred_comments"]) == (1, 1)               # the stop joined by its marker
-    assert by_session["codex:5bcf356971dc"]["prompt"]
-    unresolved = [g["comment"] for g in m["gaps"]["recent_posts_unresolved"]]
-    assert unresolved == [6670909400]                                            # listed, not guessed
+    # No comment here is a check-in block, so only the receipt names a session; what the comments suggest is kept
+    # as a guess, labelled by how.
+    assert [(s["session"], s["prs"], s["comments"], s["how"]) for s in m["sessions"]] == [(B, [290], 0, ["receipt"])]
+    claims = {c["comment"]: c for c in m["claims"]}
+    guesses = {cid: (c["session"], c["author_guess"], c["author_guess_how"]) for cid, c in claims.items()}
+    assert guesses == {6794587797: (None, B, "opening line"),
+                       6796102804: (None, "kimi-weekly-review-ownership-20261111", "label"),
+                       6841194389: (None, "codex:5bcf356971dc", "label")}
+    unresolved = {g["comment"]: g["author_guess_how"] for g in m["gaps"]["recent_posts_unresolved"]}
+    assert unresolved == {6794587797: "opening line", 6795485396: "claim reference", 6796102804: "label",
+                          6796931006: "shared marker", 6670909400: "unresolved", 6841194389: "label"}
     assert m["gaps"]["open_prs_without_receipt"] == [7]
     assert m["gaps"]["live_sessions_stating_plan"] == 0                          # nobody states a plan yet
-    claims = {c["comment"]: c for c in m["claims"]}
-    assert claims[6794587797]["has_pr"] and claims[6796102804]["state"] == "stopped"
-    assert [c["comment"] for c in m["claims_without_pr"]] == [6841194389]
+    assert claims[6794587797]["has_pr"]
+    stopped = claims[6796102804]                                                 # a stop whose author is a guess
+    assert (stopped["state"], stopped["release_by_unverified_author"]) == ("active", [6796931006])
+    assert [c["comment"] for c in m["claims_without_pr"]] == [6796102804, 6841194389]
 
 
 def test_position_reads_the_existing_sources():
@@ -845,8 +850,8 @@ def test_a_timestamp_that_is_not_one_is_read_as_unknown_and_cannot_format_the_ma
            _pr(8, "x/eight", body=_receipt(A, ["greg/b.py"]), updated=forged),
            _pr(9, "x/nine", body=_receipt(B, ["greg/c.py"]), title="real"),
            _pr(9, "x/nine", body=_receipt(B, ["greg/c.py"]), title="forged copy", updated=forged)]
-    comments = [_comment(6000000301, f"## Claim · `{C}`\n- **Files:** `greg/d.py`\n"),
-                _comment(6000000302, f"## Note · `{C}`\n\nStill here.\n", at=forged)]
+    comments = [_comment(6000000301, _signed("## Claim", C, "- **Files:** `greg/d.py`\n")),
+                _comment(6000000302, _signed("## Note", C, "\nStill here.\n"), at=forged)]
     m = w.build(prs, comments, now=NOW, use_git=False)
     sessions = {s["session"]: s for s in m["sessions"]}
     assert (sessions[A]["last"], sessions[A]["activity"]) == ("2026-11-12T10:00:00Z", "ACTIVE")
@@ -869,8 +874,8 @@ def test_a_time_in_other_digits_or_on_no_calendar_is_read_as_unknown(quick):
                _pr(7, "x/seven", body=_receipt(A, ["greg/a.py"])),
                _pr(9, "x/nine", body=_receipt(B, ["greg/c.py"]), title="real"),
                _pr(9, "x/nine", body=_receipt(B, ["greg/c.py"]), title="forged copy", updated=forged)]
-        comments = [_comment(6000000301, f"## Claim · `{C}`\n- **Files:** `greg/d.py`\n"),
-                    _comment(6000000302, f"## Note · `{C}`\n\nStill here.\n", at=forged)]
+        comments = [_comment(6000000301, _signed("## Claim", C, "- **Files:** `greg/d.py`\n")),
+                    _comment(6000000302, _signed("## Note", C, "\nStill here.\n"), at=forged)]
         m = w.build(prs, comments, now=NOW, use_git=False)
         sessions = {s["session"]: s for s in m["sessions"]}
         assert (sessions[A]["last"], sessions[A]["activity"]) == ("2026-11-12T10:00:00Z", "ACTIVE"), forged
@@ -1084,12 +1089,13 @@ def test_how_is_kept_and_a_join_or_another_author_never_speaks_for_a_session(qui
     m = w.build(prs, comments, now=NOW, use_git=False)
     assert all("how" in s for s in m["sessions"]) and all("how" in c for c in m["claims"])
     sessions = {s["session"]: s for s in m["sessions"]}
-    assert sessions[B]["plan"] == "" and "claim reference" not in sessions[B]["how"]   # "Re claim N" is not "my claim"
+    assert (sessions[B]["plan"], sessions[B]["how"]) == ("", ["receipt"])        # the spoof's plan is nobody's
     claim = next(c for c in m["claims"] if c["comment"] == 6794587797)
-    assert claim["state"] == "active" and claim["release_stated_by_another_author"] == [7000000300]
+    assert claim["state"] == "active" and claim["release_by_unverified_author"] == [7000000300]
     assert not claim["has_pr"]                                   # 16794587797 is another number
     spoof = next(c for c in m["claims"] if c["comment"] == 7000000100)
-    assert (spoof["how"], spoof["session"], spoof["inferred_session"]) == ("unresolved", None, None)
+    assert (spoof["how"], spoof["session"], spoof["author_guess"], spoof["author_guess_how"]) == (
+        "unverified", None, None, "unresolved")
     assert w.comment_author(BYLINE_6516604355)["author"] == "session_013k41DnwrjzpXL33r3j9BgB"
     text = w.markdown(m)
     assert "| Session | Client | Resolved by |" in text and "| Comment | Session | Resolved by |" in text
@@ -1503,7 +1509,8 @@ def test_an_addressee_a_dead_launch_or_a_team_relay_is_never_the_author():
     assert (pair["author"], pair["how"]) == (None, "unresolved")
     m = w.build([], [_comment(6900000001, f"## Claim: WU-11, split agreed with session `{B}` · `{A}`\n\n"
                                           "- **Files:** `greg/missions.py`\n")], now=NOW, use_git=False)
-    assert [s["session"] for s in m["sessions"]] == [A] and m["claims"][0]["session"] == A
+    # The byline is right, and still only a guess: no session, and the claim's session is None.
+    assert m["sessions"] == [] and (m["claims"][0]["session"], m["claims"][0]["author_guess"]) == (None, A)
 
 
 def test_a_receiver_a_role_held_by_another_or_a_party_that_acts_is_never_the_byline(quick):
@@ -1513,7 +1520,7 @@ def test_a_receiver_a_role_held_by_another_or_a_party_that_acts_is_never_the_byl
         got = w.comment_author(REAL[cid])
         assert (got["author"], got["how"], A in got["addressees"]) == (author, how, True), cid
     m = w.build([], [_comment(6802820715, REAL[6802820715])], now=NOW, use_git=False)
-    assert (m["claims"][0]["session"], [s["session"] for s in m["sessions"]]) == (M9E, [M9E])
+    assert (m["claims"][0]["session"], m["claims"][0]["author_guess"], m["sessions"]) == (None, M9E, [])
     # Without a "·" byline, an owner who asked, a party who agreed, a session taken over from, one whose half is
     # meant or one work was inherited or split from is still not the author: the opening line is, or nobody.
     for heading in ("## Claim: WU-11 (owner `{b}` asked me)", "## Claim: WU-11 (`{b}` agreed the split)",
@@ -1728,6 +1735,11 @@ def test_an_opening_line_names_the_author_only_as_session_id(quick):
         assert w.comment_author(f"## Note\n\n{second}\n")["author"] is None, second
 
 
+def _guesses(m: dict) -> dict:
+    """Each recent comment without an exact author, with its author guess and how (diagnosis only)."""
+    return {g["comment"]: (g["author_guess"], g["author_guess_how"]) for g in m["gaps"]["recent_posts_unresolved"]}
+
+
 def test_joins_need_first_person_wording_and_never_name_the_addressee(quick):
     m = w.build([], [_comment(6334679268, f"## Claim: the predicate patch · `{C}`\n- **Files:** `greg/missions.py`\n"),
                      _comment(6335455896, REAL[6335455896]),
@@ -1735,48 +1747,49 @@ def test_joins_need_first_person_wording_and_never_name_the_addressee(quick):
                      _comment(6474691470, REAL[6474691470]),
                      _comment(6685585240, REAL[6685585240]), _comment(6686305056, REAL[6686305056])],
                 now=NOW, use_git=False)
-    authors = {c["comment"]: (c["session"], c["inferred_session"]) for c in m["claims"]}
-    assert authors[6334679268] == (C, None) and authors[6473380596] == (B, None)
-    assert [g["comment"] for g in m["gaps"]["recent_posts_unresolved"]] == [6335455896, 6474691470, 6685585240,
-                                                                            6686305056]
-    assert {s["session"] for s in m["sessions"]} == {B, C}
-    assert all(s["comments"] == 1 and s["inferred_comments"] == 0 for s in m["sessions"])
+    assert _guesses(m) == {6334679268: (C, "heading"), 6335455896: (None, "unresolved"),
+                           6473380596: (B, "heading"), 6474691470: (None, "unresolved"),
+                           6685585240: (None, "unresolved"), 6686305056: (None, "unresolved")}
+    assert m["sessions"] == [] and all(c["session"] is None for c in m["claims"])
 
 
 def test_each_join_resolves_what_no_other_join_can_and_is_labelled(quick):
     claim = f"## Claim: the authority seam · `{B}`\n- **Files:** `greg/authority.py`\n"
     handoff = "**Handoff: claim 6794587797 released into draft PR #999.**\n"         # #999 is no open PR
     by_ref = w.build([], [_comment(6794587797, claim), _comment(6795485396, handoff)], now=NOW, use_git=False)
-    joined = {s["session"]: s for s in by_ref["sessions"]}[B]
-    assert (joined["comments"], joined["inferred_comments"]) == (1, 1)
+    assert _guesses(by_ref)[6795485396] == (B, "claim reference") and by_ref["sessions"] == []
     by_marker = w.build([], [_comment(6796102804, REAL[6796102804]), _comment(6796931006, REAL[6796931006])],
                         now=NOW, use_git=False)
-    assert next(c for c in by_marker["claims"] if c["comment"] == 6796102804)["state"] == "stopped"
+    assert _guesses(by_marker)[6796931006] == ("kimi-weekly-review-ownership-20261111", "shared marker")
+    stop = next(c for c in by_marker["claims"] if c["comment"] == 6796102804)
+    assert (stop["state"], stop["release_by_unverified_author"]) == ("active", [6796931006])   # a guess stops nothing
     relay = "## Handoff: #278 rebased\n\nDraft #278 stays draft.\n"
     prs = [_pr(278, "c/fix", body=_receipt("uat-fix-278", ["greg/x.py"]))]
     by_pr = w.build(prs, [_comment(1, relay)], now=NOW, use_git=False)
-    assert {s["session"]: s["inferred_comments"] for s in by_pr["sessions"]} == {"uat-fix-278": 1}
+    assert _guesses(by_pr)[1] == ("uat-fix-278", "pr receipt")
+    assert {s["session"]: s["comments"] for s in by_pr["sessions"]} == {"uat-fix-278": 0}
     hegemony = w.build(prs, [_comment(6669679691, REAL[6669679691])], now=NOW, use_git=False)
     assert hegemony["gaps"]["recent_posts_unresolved"][0]["team"] == "Hegemony"        # "Posted by Hegemony"
     cite = "https://x/issues/96#issuecomment-6000000001"
     task = w.build([_pr(290, "b/x", body=_receipt(B, ["greg/a.py"], task=cite))],
                    [_comment(6000000001, "## Claim: the seam\n- **Files:** `greg/authority.py`\n")], now=NOW,
                    use_git=False)
-    assert task["claims"][0]["inferred_session"] == B and task["claims"][0]["how"] == "pr task_ref"
+    assert (task["claims"][0]["author_guess"], task["claims"][0]["author_guess_how"]) == (B, "pr task_ref")
     assert task["claims"][0]["session"] is None                              # a join never sets a file claim
     review = w.build([_pr(290, "b/x", body=_receipt(B, ["greg/a.py"]))],
                      [_comment(2, "## Review of draft #290: two findings\n"),
                       _comment(3, "## Claim: fix the CI failure on PR #290\n- **Plan:** abandon\n")], now=NOW,
                      use_git=False)
     owner = {s["session"]: s for s in review["sessions"]}[B]
-    assert (owner["comments"], owner["inferred_comments"], owner["plan"]) == (0, 0, "")
+    assert (owner["comments"], owner["plan"]) == (0, "")
+    assert _guesses(review) == {2: (None, "unresolved"), 3: (None, "unresolved")}
 
 
-def test_inferred_activity_is_marked_and_a_cited_comment_shows_on_the_session_row(quick):
+def test_a_joined_comment_adds_no_activity_and_a_cited_check_in_shows_on_the_session_row(quick):
     prs = [_pr(206, "codex/entry", body=_receipt("codex/root/collab-20261030", ["scripts/x.py"],
                                                  task="https://x/issues/96#issuecomment-6398846416"),
                updated="2026-11-10T00:00:00Z")]
-    comments = [_comment(6398846416, f"## Claim: workspace entry · `{B}`\n- **Files:** `scripts/x.py`\n",
+    comments = [_comment(6398846416, _signed("## Claim: workspace entry", B, "- **Files:** `scripts/x.py`\n"),
                          at="2026-11-09T00:00:00Z"),
                 _comment(6794587797, f"## Claim: seam · `{C}`\n- **Files:** `greg/authority.py`\n",
                          at="2026-11-11T00:00:00Z"),
@@ -1785,19 +1798,20 @@ def test_inferred_activity_is_marked_and_a_cited_comment_shows_on_the_session_ro
     m = w.build(prs, comments, now=NOW, use_git=False)
     rows = {s["session"]: s for s in m["sessions"]}
     assert rows["codex/root/collab-20261030"]["task_refs"] == [{"pr": 206, "comment": 6398846416, "author": B}]
-    assert rows[C]["last_inferred"] and not rows[B]["last_inferred"]
+    assert sorted(rows) == sorted(["codex/root/collab-20261030", B])        # C's guessed claim and its join: nobody
+    assert rows[B]["last"] == "2026-11-09T00:00:00Z"
     text = w.markdown(m)
     assert "#206 task_ref cites comment 6398846416 by `" + B + "`" in text
-    assert "ACTIVE 2026-11-12T00:00 (inferred)" in text
+    assert "(inferred)" not in text
 
 
 # ------------------------------------------------------------------ releases, stops and claim state
 
 def test_a_release_counts_only_from_the_claims_author_unnegated_and_whole(quick):
-    claim = f"## Claim: seam · `{B}`\n- **Files:** `greg/authority.py`, `greg/body.py`\n"
+    claim = _signed("## Claim: seam", B, "- **Files:** `greg/authority.py`, `greg/body.py`\n")
 
     def state(text: str, by: str = B) -> dict:
-        m = w.build([], [_comment(6794587797, claim), _comment(7000000001, f"## Note · `{by}`\n\n{text}\n")],
+        m = w.build([], [_comment(6794587797, claim), _comment(7000000001, _signed("## Note", by, f"\n{text}\n"))],
                     now=NOW, use_git=False)
         return next(c for c in m["claims"] if c["comment"] == 6794587797)
     assert state("This releases claim 6794587797.")["state"] == "released"
@@ -1812,9 +1826,10 @@ def test_a_release_counts_only_from_the_claims_author_unnegated_and_whole(quick)
 
 
 def test_claim_state_follows_its_session_and_a_named_pull_request_counts(quick):
-    old = f"## Claim: seam · `{B}`\n- **Files:** `greg/authority.py`\n- **Draft child:** [#278]({REPO_URL}/pull/278)\n"
-    later = f"## Note · `{B}`\n\nStill here.\n"
-    quiet = f"## Claim: other · `{C}`\n- **Files:** `greg/body.py`. Draft #209 holds it.\n"
+    old = _signed("## Claim: seam", B,
+                  f"- **Files:** `greg/authority.py`\n- **Draft child:** [#278]({REPO_URL}/pull/278)\n")
+    later = _signed("## Note", B, "\nStill here.\n")
+    quiet = _signed("## Claim: other", C, "- **Files:** `greg/body.py`. Draft #209 holds it.\n")
     m = w.build([_pr(278, "c/fix", body="no receipt")],
                 [_comment(6400000001, old, at="2026-11-04T00:00:00Z"), _comment(6400000002, later,
                                                                                 at="2026-11-13T01:00:00Z"),
@@ -1841,13 +1856,14 @@ def test_a_handoff_citing_a_claim_names_its_pull_request(quick):
 
 
 def test_released_stopped_and_old_claims_stay_out_of_the_live_table(quick):
-    claim = "## Claim: x · `{}`\n- **Files:** `greg/{}.py`\n"
-    m = w.build([], [_comment(6000000001, claim.format(B, "a")),
-                     _comment(6000000002, f"## Note · `{B}`\n\nThis releases claim 6000000001.\n"),
-                     _comment(6000000003, claim.format(C, "b")),
-                     _comment(6000000004, f"## N · `{C}`\n\nDelivery under claim 6000000003 is stopped."),
-                     _comment(6000000005, claim.format(A, "c"), at="2026-10-01T00:00:00Z"),
-                     _comment(6000000006, claim.format(A, "d"))], now=NOW, use_git=False)
+    def claim(who: str, name: str) -> str:
+        return _signed("## Claim: x", who, f"- **Files:** `greg/{name}.py`\n")
+    m = w.build([], [_comment(6000000001, claim(B, "a")),
+                     _comment(6000000002, _signed("## Note", B, "\nThis releases claim 6000000001.\n")),
+                     _comment(6000000003, claim(C, "b")),
+                     _comment(6000000004, _signed("## N", C, "\nDelivery under claim 6000000003 is stopped.")),
+                     _comment(6000000005, claim(A, "c"), at="2026-10-01T00:00:00Z"),
+                     _comment(6000000006, claim(A, "d"))], now=NOW, use_git=False)
     assert [c["comment"] for c in m["claims_without_pr"]] == [6000000006]
 
 
@@ -2096,25 +2112,25 @@ def test_a_release_whose_author_a_join_took_from_the_released_claim_does_not_cou
                  "## Note\n\nOn my claim `6805031119`: delivery under claim `6805031119` is stopped.\n"):
         m = w.build([], [claim, _comment(7000000500, body, at="2026-11-13T01:40:00Z")], now=NOW, use_git=False)
         c = _claim(m, 6805031119)
-        assert (c["state"], c["released_by"], c["release_by_inferred_author"]) == ("active", [], [7000000500]), body
+        assert (c["state"], c["released_by"], c["release_by_unverified_author"]) == ("active", [], [7000000500]), body
         assert 6805031119 in [x["comment"] for x in m["claims_without_pr"]]
         hit = w.who_touches(["greg/cognition/compiler.py"], [], m["claims"])[0]["claims"]
         assert [(x["comment"], x["state"]) for x in hit] == [(6805031119, "active")]
 
 
-def test_a_joined_release_counts_only_when_a_pr_it_names_is_the_claim_author_s(quick):
+def test_a_joined_release_never_counts_even_when_a_pr_it_names_is_the_claim_author_s(quick):
+    # Before the stop condition took effect, the handoff released the claim when PR #290's receipt named the
+    # claim's guessed author. Neither author is exact, so it never does now, with any PR or none.
     claim = _comment(6794587797, OPENING_6794587797, at="2026-11-12T00:00:00Z")
     handoff = _comment(6795485396, HANDOFF_6795485396, at="2026-11-12T06:00:00Z")
     own = _pr(290, "b/authority", body=_receipt(B, ["greg/authority.py"]))
-    c = _claim(w.build([own], [claim, handoff], now=NOW, use_git=False), 6794587797)
-    assert (c["state"], c["released_by"]) == ("released", [{"comment": 6795485396, "how": "claim reference"}])
-    for prs in ([], [_pr(290, "b/authority", body=_receipt(C, ["greg/authority.py"]))]):   # no PR, another's PR
+    for prs in ([own], [], [_pr(290, "b/authority", body=_receipt(C, ["greg/authority.py"]))]):
         c = _claim(w.build(prs, [claim, handoff], now=NOW, use_git=False), 6794587797)
-        assert (c["state"], c["released_by"], c["release_by_inferred_author"]) == ("active", [], [6795485396])
+        assert (c["state"], c["released_by"], c["release_by_unverified_author"]) == ("active", [], [6795485396])
     reviewer = "## Handoff: claim 6794587797 released into draft PR #999\n\nI am the reviewer of #290; I took this over.\n"
     c = _claim(w.build([own], [claim, _comment(7000000006, reviewer, at="2026-11-12T10:00:00Z")], now=NOW,
                        use_git=False), 6794587797)
-    assert (c["state"], c["released_by"], c["release_by_inferred_author"]) == ("active", [], [7000000006])
+    assert (c["state"], c["released_by"], c["release_by_unverified_author"]) == ("active", [], [7000000006])
 
 
 # ------------------------------------------------------------------ quoted text is not its author
@@ -2133,7 +2149,7 @@ def test_quoted_text_a_table_or_a_code_block_never_names_the_author(quick):
     assert w.comment_author(f"## Note\n\n````text\n```\n````\n- **Implementer:** `{A}`\n")["author"] == A
     m = w.build([], [_comment(7000000600, QUOTE_REPLY, at="2026-11-13T01:40:00Z")], now=NOW, use_git=False)
     hit = w.who_touches(["greg/body.py"], [], m["claims"])[0]["claims"]
-    assert [(x["comment"], x["session"], x["how"]) for x in hit] == [(7000000600, None, "unresolved")]
+    assert [(x["comment"], x["session"], x["how"]) for x in hit] == [(7000000600, None, "unverified")]
     assert m["sessions"] == []                                     # no row lends A the replier's prompt and plan
 
 
@@ -2166,9 +2182,9 @@ def test_real_withdrawals_and_handoffs_release_the_claims_they_give_up():
 
 
 def test_a_claim_its_author_withdrew_is_released_and_an_old_claim_is_not_active(quick):
-    claim = _comment(6700000001, f"## Claim: deny execution of an unattached capability · `{B}`\n\n"
-                                 "- **Files:** `greg/authority.py`\n", at="2026-10-20T10:00:00Z")
-    alive = _comment(6800000009, f"## Update: other work · `{B}`\n\nprogress on something else.\n",
+    claim = _comment(6700000001, _signed("## Claim: deny execution of an unattached capability", B,
+                                         "\n- **Files:** `greg/authority.py`\n"), at="2026-10-20T10:00:00Z")
+    alive = _comment(6800000009, _signed("## Update: other work", B, "\nprogress on something else.\n"),
                      at="2026-11-12T23:00:00Z")
 
     def state(text: str | None = None, at: str = "2026-10-21T10:00:00Z") -> tuple:
@@ -2178,14 +2194,16 @@ def test_a_claim_its_author_withdrew_is_released_and_an_old_claim_is_not_active(
         return c["state"], c["session_activity"], w.who_touches(["greg/authority.py"], [], m["claims"])[0][
             "claims"][0]["state"]
     assert state() == ("dormant", "active", "dormant")         # its session posted today; the claim is 24 days old
-    for text in (f"## Withdrawn: my claim 6700000001 duplicates `3d2f9cc4` · `{B}`\n\nI stop here.\n",
-                 f"**Handoff and claim release** · session `{B}`\n\nThis closes the claim in "
-                 "https://github.com/o/r/issues/96#issuecomment-6700000001.\n",
-                 f"## Handoff: draft #290 · `{B}`\n\nClaim 6700000001 is released into https://github.com/o/r/pull/290.\n",
-                 f"## Handoff: draft #290 · `{B}`\n\nNothing is merged, so this releases claim 6700000001.\n"):
-        assert state(text) == ("released", "active", "released"), text
-    assert state(f"## Note · `{B}`\n\nI do NOT release claim 6700000001; still on it.\n")[0] == "dormant"
-    assert state(f"## Note · `{B}`\n\nStill on claim 6700000001.\n", at="2026-11-12T22:00:00Z")[0] == "active"
+    for heading, text in (("## Withdrawn: my claim 6700000001 duplicates `3d2f9cc4`", "\nI stop here.\n"),
+                          ("**Handoff and claim release**", "\nThis closes the claim in "
+                           "https://github.com/o/r/issues/96#issuecomment-6700000001.\n"),
+                          ("## Handoff: draft #290",
+                           "\nClaim 6700000001 is released into https://github.com/o/r/pull/290.\n"),
+                          ("## Handoff: draft #290", "\nNothing is merged, so this releases claim 6700000001.\n")):
+        assert state(_signed(heading, B, text)) == ("released", "active", "released"), text
+        assert state(f"{heading} · `{B}`\n{text}")[0] == "dormant", text        # the same words under a byline
+    assert state(_signed("## Note", B, "\nI do NOT release claim 6700000001; still on it.\n"))[0] == "dormant"
+    assert state(_signed("## Note", B, "\nStill on claim 6700000001.\n"), at="2026-11-12T22:00:00Z")[0] == "active"
 
 
 # ------------------------------------------------------------------ what a claim's files are
@@ -2324,7 +2342,7 @@ def test_receipts_declaring_thousands_of_globs_are_cut_and_stay_fast(quick):
 def test_a_pull_request_or_comment_given_twice_is_read_once(quick):
     p = _pr(290, "b/x", body=_receipt(B, ["greg/a.py"]), title="WU-11: attack stage")
     newer = {**p, "title": "WU-11: attack stage, rebased", "updated_at": "2026-11-12T11:00:00Z"}
-    c = _comment(6794587797, OPENING_6794587797)
+    c = _comment(6794587797, _signed("## Claim: the attach seam", B, "- **Files:** `greg/authority.py`\n"))
     m = w.build([p, newer, p], [c, c], now=NOW, use_git=False)
     assert (m["sources"]["open_prs"], m["sources"]["board_comments"]) == (1, 1)
     assert m["prs"][0]["title"].endswith("rebased")
@@ -2714,16 +2732,16 @@ def test_a_task_ref_joins_only_a_claim_and_never_against_its_heading(quick):
     update = w.build(prs, [_comment(6000000002, "## Update: CI is red on #9\n\nRe-run pending.\n")], now=NOW,
                      use_git=False)
     assert [g["comment"] for g in update["gaps"]["recent_posts_unresolved"]] == [6000000002]
-    assert {s["session"]: s["inferred_comments"] for s in update["sessions"]} == {B: 0}
+    assert {s["session"]: s["comments"] for s in update["sessions"]} == {B: 0}
     other = w.build(prs, [_comment(6000000002, f"## Claim: finish `{C}`'s seam\n- **Files:** `greg/a.py`\n")],
                     now=NOW, use_git=False)
-    assert (other["claims"][0]["how"], other["claims"][0]["inferred_session"]) == ("unresolved", None)
+    assert (other["claims"][0]["author_guess_how"], other["claims"][0]["author_guess"]) == ("unresolved", None)
 
 
 def test_a_unit_named_by_an_old_claim_is_not_claimed_on_the_board(quick):
-    claim = _comment(6400000101, f"## Claim: WU-05 node revocation · `{B}`\n- **Files:** `greg/nodes.py`\n",
+    claim = _comment(6400000101, _signed("## Claim: WU-05 node revocation", B, "- **Files:** `greg/nodes.py`\n"),
                      at="2026-11-04T00:00:00Z")
-    for later in (f"## Note · `{B}`\n\nStill here.\n", f"## Note · `{B}`\n\nStill on claim 6400000101.\n"):
+    for later in (_signed("## Note", B, "\nStill here.\n"), _signed("## Note", B, "\nStill on claim 6400000101.\n")):
         m = w.build([], [claim, _comment(6400000102, later, at="2026-11-13T01:00:00Z")], now=NOW, use_git=False)
         unit = next(u for u in m["units"] if u["unit"] == "WU-05")
         assert (unit["state"], unit["claimed_on_board"]) == ("unclaimed", []), later
@@ -2739,10 +2757,11 @@ def test_each_disclaiming_cue_drops_only_its_own_path():
 
 
 def test_a_comment_whose_author_a_join_inferred_does_not_refresh_a_claim(quick):
-    claim = _comment(6400000201, f"## Claim: seam · `{B}`\n- **Files:** `greg/authority.py`\n", at="2026-11-04T00:00:00Z")
+    claim = _comment(6400000201, _signed("## Claim: seam", B, "- **Files:** `greg/authority.py`\n"),
+                     at="2026-11-04T00:00:00Z")
     note = _comment(6400000202, "## Note\n\nRe my claim 6400000201: still working on it.\n", at="2026-11-13T01:00:00Z")
     c = _claim(w.build([], [claim, note], now=NOW, use_git=False), 6400000201)
-    assert (c["state"], c["session_activity"]) == ("dormant", "active")       # the join counts as activity only
+    assert (c["state"], c["session_activity"]) == ("dormant", "dormant")     # a join is not even activity now
 
 
 def test_a_pull_request_whose_row_cannot_be_built_is_cited_not_fatal(quick, monkeypatch):
@@ -2756,3 +2775,133 @@ def test_a_pull_request_whose_row_cannot_be_built_is_cited_not_fatal(quick, monk
     m = w.build([_pr(1, "a/one", body=_receipt(A, ["greg/a.py"])), _pr(2, "b/two", body="boom")], [], now=NOW,
                 use_git=False)
     assert [r["pr"] for r in m["prs"]] == [1] and m["gaps"]["unreadable_prs"] == [2]
+
+
+# ------------------------------------------------------------------ exact authorship: receipts and check-in blocks
+# The plan's stop condition held on replay (wrong authors, most of a week's posts unresolved), so a session or a holder
+# comes only from a receipt's session_id or from a check-in block that opens its comment. What the comment's text
+# otherwise suggests is author_guess, kept for diagnosis and never used.
+
+def _signed(heading: str, session: str, rest: str = "") -> str:
+    """A comment that is itself a check-in: the marker opens it and the block's own Session line names ``session``."""
+    return f"{w.CHECKIN}\n{heading}\n- Session: `{session}` (Claude Code, cloud)\n{rest}"
+
+
+def _answer(tmp_path, capsys, prs: list, comments: list, *args: str) -> tuple[dict, str]:
+    """The ``--paths`` or ``--unit`` answer the command line prints for these saved pull requests and comments."""
+    (tmp_path / "prs.json").write_text(json.dumps(prs))
+    (tmp_path / "comments.json").write_text(json.dumps(comments))
+    capsys.readouterr()
+    assert w.main(["--prs-json", str(tmp_path / "prs.json"), "--comments-json", str(tmp_path / "comments.json"),
+                   *args]) == 0
+    out = capsys.readouterr().out
+    return json.loads(out), out
+
+
+# The three wordings round 4 showed are still read as the poster's byline although a poster (here A) names another
+# party there: a reviewer naming whose seam it reviewed, and a relayed "From `id`".
+MISREAD = [("## Review · #300 · `{b}`", "## Review · #300 · `{b}` · claim on WU-11"),
+           ("## Seam review (`{b}`)", "## Seam review (`{b}`): claim on WU-11"),
+           ("## From `{b}`: WU-11 is free", "## From `{b}`: WU-11 is free, claim it")]
+
+
+@pytest.mark.parametrize("posted,claim", MISREAD, ids=[p for p, _c in MISREAD])
+def test_a_heading_that_names_another_party_makes_no_session_or_holder(quick, tmp_path, capsys, posted, claim):
+    prs = [_pr(300, "a/seam", body=_receipt(A, ["greg/body.py"]))]
+    comments = [_comment(7100000001, posted.format(b=B) + "\n\nTwo findings.\n"),
+                _comment(7100000002, claim.format(b=B) + "\n\n- **Files:** `greg/missions.py`\n")]
+    assert w.comment_author(comments[0]["body"])["author"] == B             # the guess is still made, and kept
+    m = w.build(prs, comments, now=NOW, use_git=False)
+    assert [s["session"] for s in m["sessions"]] == [A]
+    c = _claim(m, 7100000002)
+    assert (c["session"], c["files"], c["state"], c["at"]) == (None, ["greg/missions.py"], "active",
+                                                                "2026-11-12T12:00:00Z")
+    assert (c["author_guess"], c["author_guess_how"]) == (B, "heading")    # diagnosis only
+    assert B not in json.dumps(m["contended"])
+    paths, raw = _answer(tmp_path, capsys, prs, comments, "--paths", "greg/missions.py", "greg/body.py")
+    assert B not in raw
+    hit = paths["paths"][0]["claims"]
+    assert [(x["comment"], x["session"]) for x in hit] == [(7100000002, None)]
+    assert hit[0]["note"] == "claimed by a comment whose author is not verified: comment 7100000002"
+    assert [p["session"] for p in paths["paths"][1]["prs"]] == [A]
+    unit, raw = _answer(tmp_path, capsys, prs, comments, "--unit", "WU-11")
+    assert B not in raw and unit["rows"][0]["claimed_on_board"] == [7100000002]   # still claimed, by nobody named
+
+
+def test_a_quoted_pasted_or_later_check_in_is_not_its_session(quick):
+    block = (f"{w.CHECKIN}\n## Check-in: the seam\n- Session: `{B}` (Claude Code, cloud)\n"
+             "- **Files:** `greg/missions.py`\n")
+    quoted = "\n".join("> " + line for line in block.splitlines())
+    indented = "\n".join("    " + line for line in block.splitlines())
+    bodies = (f"## Relay\n\n{quoted}\n", f"## Relay\n\n```text\n{block}```\n", f"## Relay\n\nPasted:\n\n{indented}\n",
+              f"## Relay of a check-in\n\n{block}",                       # the marker later in the body
+              f"  {block}",                                               # the marker indented, not opening it
+              f"<!-- uniimente:receipt -->\n{block}",                     # another comment opens the body
+              f"{w.CHECKIN}\n## Check-in: relay\n> - Session: `{B}`\n- **Files:** `greg/missions.py`\n",
+              f"{w.CHECKIN}\n## Check-in: relay\n- Relayed for: x\n- Session: `{B}`\n",   # not the block's own line
+              f"{w.CHECKIN}\n## Check-in: relay\n- Session: for `{B}`, relayed\n",       # no id opens the value
+              f"{w.CHECKIN}\n## Check-in: relay\n```text\n- Session: `{B}`\n```\n- Prompt: x\n")
+    for body in bodies:
+        m = w.build([], [_comment(7100000003, body)], now=NOW, use_git=False)
+        assert m["sessions"] == [], body
+        assert all(c["session"] is None for c in m["claims"]), body
+    assert [w.checkin_author(body) for body in bodies] == [None] * len(bodies)
+    two = (f"{w.CHECKIN}\n## Check-in: mine\n- Session: `{A}` (claude)\n- **Files:** `greg/body.py`\n\n"
+           f"And theirs, pasted:\n\n{block}")
+    m = w.build([], [_comment(7100000004, two)], now=NOW, use_git=False)
+    assert [s["session"] for s in m["sessions"]] == [A] and m["claims"][0]["session"] == A
+
+
+def test_a_check_in_block_that_opens_its_comment_is_exact(quick):
+    plain = (f"\n\n{w.CHECKIN}\n## Check-in: #319 Task A\n- Session: {A} (Claude Code, cloud)\n- Prompt: do Task A\n"
+             "- Plan: one check\n- Files / interfaces: `greg/missions.py`\n")
+    bold = (f"{w.CHECKIN}\n## Check-in: W2\n\n- **Session:** `{C}` (Claude Code, cloud).\n"
+            "- **Files:** `greg/body.py`\n")
+    m = w.build([], [_comment(7100000005, plain), _comment(7100000006, bold, at="2026-11-12T13:00:00Z")], now=NOW,
+                use_git=False)
+    sessions = {s["session"]: s for s in m["sessions"]}
+    assert sorted(sessions) == sorted([A, C]) and sessions[A]["how"] == ["check-in block"]
+    assert (sessions[A]["comments"], sessions[A]["prompt"], sessions[A]["checkin"], sessions[A]["checkin_block"]) == (
+        1, "do Task A", 7100000005, True)
+    assert [(c["comment"], c["session"], c["how"]) for c in m["claims"]] == [
+        (7100000005, A, "check-in block"), (7100000006, C, "check-in block")]
+    assert w.checkin_author(plain) == (A, "claude") and w.checkin_author(bold) == (C, "claude")
+
+
+def test_a_receipt_session_stays_exact_and_a_guess_never_adds_to_it(quick):
+    prs = [_pr(290, "b/authority", body=_receipt(B, ["greg/authority.py"]))]
+    comments = [_comment(7100000007, f"## Claim: the seam · `{B}`\n\n- **Plan:** abandon #196\n"
+                                     "- **Files:** `greg/missions.py`\n", at="2026-11-13T01:00:00Z"),
+                _comment(7100000008, "## Handoff: draft #290\n\nReleased into #290.\n", at="2026-11-13T01:30:00Z")]
+    m = w.build(prs, comments, now=NOW, use_git=False)
+    s = {x["session"]: x for x in m["sessions"]}[B]
+    assert (s["how"], s["prs"], s["comments"], s["last"], s["plan"]) == (
+        ["receipt"], [290], 0, "2026-11-12T10:00:00Z", "")
+    assert _claim(m, 7100000007)["session"] is None
+    hit = w.who_touches(["greg/authority.py"], m["prs"], m["claims"])[0]
+    assert [(p["pr"], p["session"]) for p in hit["prs"]] == [(290, B)] and hit["claims"] == []
+
+
+def test_a_release_by_an_author_that_is_not_exact_does_not_release(quick):
+    claim = _comment(7100000010, _signed("## Claim: seam", B, "- **Files:** `greg/authority.py`\n"),
+                     at="2026-11-12T00:00:00Z")
+
+    def state(*later) -> dict:
+        m = w.build([], [claim, *[_comment(7100000011 + i, b, at="2026-11-12T06:00:00Z")
+                                  for i, b in enumerate(later)]], now=NOW, use_git=False)
+        return _claim(m, 7100000010)
+    for text in (f"## Note · `{B}`\n\nThis releases claim 7100000010.\n",            # a heading guess
+                 f"## Note\n\n- **Session:** `{B}`\n\nThis releases claim 7100000010.\n",   # a label guess
+                 "## Note\n\nRe my claim 7100000010: I release claim 7100000010.\n"):      # a join guess
+        c = state(text)
+        assert (c["state"], c["released_by"]) == ("active", []), text
+        assert c["release_by_unverified_author"] == [7100000011], text
+    c = state(_signed("## Note", C, "\nThis releases claim 7100000010.\n"))
+    assert (c["state"], c["release_stated_by_another_author"]) == ("active", [7100000011])
+    c = state(_signed("## Note", B, "\nThis releases claim 7100000010.\n"))
+    assert (c["state"], c["released_by"]) == ("released", [{"comment": 7100000011, "how": "check-in block"}])
+    guessed = _comment(7100000020, f"## Claim: seam · `{B}`\n- **Files:** `greg/body.py`\n", at="2026-11-12T00:00:00Z")
+    m = w.build([], [guessed, _comment(7100000021, f"## Note · `{B}`\n\nThis releases claim 7100000020.\n",
+                                       at="2026-11-12T06:00:00Z")], now=NOW, use_git=False)
+    c = _claim(m, 7100000020)
+    assert (c["state"], c["session"], c["release_by_unverified_author"]) == ("active", None, [7100000021])

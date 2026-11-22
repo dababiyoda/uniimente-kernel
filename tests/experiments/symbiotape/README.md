@@ -56,3 +56,16 @@ compatible with population-level disagreement and offers no measurement of
 symbiogenesis or intelligence. Revisit at a separately specified, powered
 population result. **Disposition: EXPERIMENT.** No production authority,
 deployment or purchase is part of this increment.
+
+## Expanded parity gate
+
+The initial headed corpus matched all 10,000,000 pairs. Two limitations
+require expansion before using this port for paper replication. Section 2 of
+the paper initializes both heads and the instruction pointer at zero, which
+matches `bff_noheads`. The headed and headless variants require separate
+receipts. Also, the original generator tied two cycles with a common divisor:
+every eighth case was operator-rich, while fuel was selected modulo six, so
+operator-rich inputs missed three caps. Keep the initial result as qualified
+evidence. In the expanded corpus select the cap by group of eight, so both
+input distributions visit all caps. Require 10,000,000 zero-mismatch pairs
+**per variant** on the expanded protocol.

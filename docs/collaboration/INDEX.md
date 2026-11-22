@@ -21,10 +21,16 @@ A dated file here is evidence of what was true on that date.
 | File | What it is |
 |---|---|
 | `START_HERE.md` | Team entry, claims, the six SOPs. Note: its line pinning the SOP to commit `eb795c7d` "while those files are absent from main" is provenance; both files are present in this tree at `docs/PROJECT_COGNITION_SOP.md` and `docs/PROJECT_COGNITION_CONTINUITY.md`. |
+| `PARTICIPATION.md` | How-to for `scripts/participation.py`: check in on the task issue, admit before editing, check, status, release, handoff and dependency ack |
 | `RECEIPT.md` | The version-2 PR receipt (checked by `.github/workflows/collaboration-receipt.yml`) |
 | `ROLLOUT.md`, `VALIDATION.md` | Repository routing/adoption, and the measured results of the collaboration process |
 | `TEAM-ENTRY-DECISION-2026-10-21.md` | Why the team-entry process exists, with its two-pass decision |
 | `CONTEXT-ROUTE-2026-11-12.md` | Dated inspection, source access, overlap and propagation receipt for the complete context route; adoption remains separately verified |
+
+`PARTICIPATION.md` in three lines:
+1. Check in (§1) with a new comment on the task issue naming your session, `Task:` key and concerns, then admit (§2) in the worktree you will edit; overlapping exclusive claims are decided by comment order, and an incomplete read refuses.
+2. Work under the hook (§3), which withholds edits, commits, pushes and GitHub writes until admission and edits outside your concerns; pushes also need `check` (§4) within 30 minutes, and `status` (§5) lists matching claims with coverage.
+3. Release (§6), hand off (§7) or acknowledge a dependency (§8) with a marked comment; Limits: sessions are declared, not authenticated, other shell writes are ungated, and clients that ignore `.claude/settings.json` are checked at acceptance with `contribution`.
 
 ## Live registries (machine-read; edit only through their owning process)
 

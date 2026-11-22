@@ -800,6 +800,72 @@ def _computed_namespace_writes(tree: ast.Module) -> list[tuple[int, str]]:
     return sorted(set(out))
 
 
+def _parents(tree: ast.AST) -> dict[int, ast.AST]:
+    return {id(child): node for node in ast.walk(tree) for child in ast.iter_child_nodes(node)}
+
+
+def _literal_keys(call: ast.Call) -> list[str] | None:
+    """The keys ``<mapping>.update(...)`` or ``<mapping>.setdefault(...)`` writes when every key is a literal: keyword
+    arguments and dict literals with constant keys for ``update``, a constant first argument for ``setdefault``;
+    None when any key is computed."""
+    if call.func.attr == "update":
+        if all(k.arg for k in call.keywords) and all(isinstance(a, ast.Dict) and all(
+                isinstance(k, ast.Constant) for k in a.keys) for a in call.args):
+            return [k.arg for k in call.keywords] + [str(k.value) for a in call.args for k in a.keys]
+        return None
+    if call.func.attr == "setdefault" and call.args and isinstance(call.args[0], ast.Constant):
+        return [str(call.args[0].value)]
+    return None
+
+
+def _globals_uses(tree: ast.Module) -> tuple[list[tuple[int, str, ast.AST]], list[tuple[int, str]]]:
+    """Round 8 (M7, M8). Every ``globals()`` call in a module, anywhere, sorted in two:
+
+    - (line, key, node) for each write with a literal key: ``globals()[<constant>] = ...`` (``+=`` and ``del``
+      included, in any target position), ``globals().update(<keywords or dict literals with constant keys>)`` and
+      ``globals().setdefault(<constant>, ...)``;
+    - (line, text) for every other use of a ``globals()`` call, except the two the older rules report: a write with a
+      computed key that ``_computed_namespace_writes`` reads (a direct assignment target, ``.update`` or
+      ``.setdefault``) and a ``globals()`` that is the whole value of an assignment or walrus (round 7, M2 (c)).
+    A name bound to ``globals`` itself (``g = globals``) is not followed."""
+    parents = _parents(tree)
+    writes, others = [], []
+    for node in ast.walk(tree):
+        if not _is_globals(node):
+            continue
+        parent = parents.get(id(node))
+        if isinstance(parent, ast.Subscript) and parent.value is node and isinstance(parent.ctx, (ast.Store, ast.Del)):
+            if isinstance(parent.slice, ast.Constant):
+                writes.append((parent.lineno, str(parent.slice.value), parent))
+                continue
+            above = parents.get(id(parent))
+            if isinstance(above, (ast.Assign, ast.AugAssign, ast.AnnAssign)) and parent in (
+                    above.targets if isinstance(above, ast.Assign) else [above.target]):
+                continue                               # _computed_namespace_writes reports it
+        elif isinstance(parent, ast.Attribute) and parent.value is node and parent.attr in ("update", "setdefault"):
+            call = parents.get(id(parent))
+            if isinstance(call, ast.Call) and call.func is parent:
+                keys = _literal_keys(call)
+                writes += [(call.lineno, key, call) for key in keys or ()]
+                continue                               # a computed key: _computed_namespace_writes reports it
+        elif isinstance(parent, (ast.Assign, ast.AnnAssign, ast.NamedExpr)) and parent.value is node:
+            continue                                   # round 7, M2 (c) reports it
+        others.append((node.lineno, ast.unparse(parent if parent is not None else node)[:80]))
+    return writes, others
+
+
+def _top_level_globals_writes(tree: ast.Module) -> set[int]:
+    """The ids of the ``globals()`` writes ``bound_names`` already counts at module level (``_globals_keys``): a
+    direct subscript target of a module-level assignment, and the call of a module-level expression statement."""
+    out = set()
+    for node in statements(tree.body):
+        if isinstance(node, (ast.Assign, ast.AnnAssign, ast.AugAssign)):
+            out.update(id(t) for t in (node.targets if isinstance(node, ast.Assign) else [node.target]))
+        elif isinstance(node, ast.Expr):
+            out.add(id(node.value))
+    return out
+
+
 def binding_problems(records: list[dict], root: Path = ROOT) -> list[str]:
     """Round 6, B1. Every canonical, candidate and alternate qualname a record names has exactly ONE binding at its
     level in its module: one def or class statement (or, for a constant, one assignment), and no other def, class,
@@ -834,6 +900,14 @@ def binding_problems(records: list[dict], root: Path = ROOT) -> list[str]:
                         dotted = _dotted(item) if isinstance(item, ast.Attribute) else None
                         if dotted:
                             attributes.setdefault(dotted, []).append(node.lineno)
+        # Round 8, M7: a literal globals() key written inside a def, a lambda or a class body (or in any target
+        # position) binds the module-level name, as a ``global`` declaration does
+        # (test_a_literal_globals_key_inside_a_function_binds_the_module_level_name).
+        literal_writes, other_uses = _globals_uses(tree)
+        counted = _top_level_globals_writes(tree)
+        for line, key, write in literal_writes:
+            if id(write) not in counted:
+                declared.setdefault(key, []).append(line)
         for qualname in sorted(names[module]):
             body, node, parts = tree.body, None, qualname.split(".")
             for depth, part in enumerate(parts):
@@ -3565,3 +3639,37 @@ def test_a_registered_qualname_rebound_through_a_re_export_or_a_consumers_import
                for line in found if line.startswith("tools/consumer.py")), found
     assert any("sets send of the registered class greg.body.Relay" in line
                for line in found if line.startswith("tools/reexported_class.py")), found
+
+
+def test_a_literal_globals_key_inside_a_function_binds_the_module_level_name(tmp_path):
+    # Round 8, M7 (skeptic X1): a literal ``globals()["X"] = ...`` counted as a binding of X only in a module-level
+    # statement, so an accelerator installer function in the registered module rebound it unseen while the same
+    # installer with ``global X`` failed. A literal key anywhere in the module is now a binding of the module-level
+    # name: inside a def, a lambda or a class body, and in any target position.
+    variants = {
+        "in_def": "def install(f):\n    globals()['send_signed'] = f\n",
+        "in_def_update": "def install(f):\n    globals().update(send_signed=f)\n",
+        "in_def_update_dict": "def install(f):\n    globals().update({'send_signed': f})\n",
+        "in_def_setdefault": "def install(f):\n    globals().setdefault('send_signed', f)\n",
+        "in_def_augmented": "def install(f):\n    globals()['send_signed'] += f\n",
+        "in_def_deleted": "def install():\n    del globals()['send_signed']\n",
+        "in_lambda": "install = lambda f: globals().update(send_signed=f)\n",
+        "in_class": "class Installer:\n    def run(self, f):\n        globals()['send_signed'] = f\n",
+        "tuple_target": "globals()['send_signed'], _other = print, 1\n",
+        "as_a_value": "_done = globals().update(send_signed=print)\n",
+    }
+    controls = {
+        "other_key": "def install(f):\n    globals()['OTHER'] = f\n    globals().update(MORE=f)\n",
+        "top_level_other": "globals()['OTHER'] = 1\n",
+    }
+    root = _tree(tmp_path, {"greg/__init__.py": "",
+                            **{f"greg/{key}.py": OWNER_BODY + "\n\n" + text for key, text in {**variants, **controls}.items()}})
+
+    def record(module):
+        return {"record_id": "OWN-FN-X", "canonical": [{"module": f"greg.{module}", "qualnames": ["send_signed"]}]}
+
+    for key in variants:
+        found = binding_problems([record(key)], root)
+        assert len(found) == 1 and "send_signed is bound 2 times at its level" in found[0], (key, found)
+    for key in controls:
+        assert binding_problems([record(key)], root) == [], key

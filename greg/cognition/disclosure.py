@@ -27,6 +27,11 @@ What a package commits to, and how it can be checked:
   ledger record; nothing else is accepted.
 * An institution's response (accepted, disputed, declined) is appended to the journal as its own record.
   The package is never edited, and the response creates no authority.
+* A response can name the committed claims it addresses, by the digest the recipient sees: an assumption,
+  an evidence pointer, an inference (the proof type or artifact), a method, a classification or the
+  conclusion. `challenge_map` then shows, per committed claim, who contested it on what grounds, and which
+  claims no recorded response has contested. A dispute that names no claim is kept and labelled
+  untargeted: it can be answered only as a whole. Uncontested is not true, and contested is not refuted.
 
 The package is unsigned: GREG holds no issuer key of its own. A recipient can therefore check that the
 revealed values match the package's commitments, but not, cryptographically, that GREG issued it; that rests
@@ -57,6 +62,16 @@ DISAGREEMENT_FIELDS = ("output", "abstention_state", "formal_validity")
 RESPONSES = ("accepted", "partially_accepted", "disputed", "declined", "no_response")
 GROUNDS = ("data", "model", "jurisdiction", "completeness", "relevance", "other")
 ACTION_RECORD_TYPES = ("decision", "witness", "event")
+# What a committed receipt field is, as a claim someone can attack. Fields not named here are "other".
+CLAIM_KINDS = {"assumptions": "assumption", "excluded_variables": "assumption", "missing_information": "assumption",
+               "evidence_refs": "evidence", "input_digest": "evidence",
+               "proof_type": "inference", "proof_artifact": "inference", "formal_validity": "inference",
+               "evaluator": "inference", "evaluator_result": "inference",
+               "method": "method", "method_version": "method", "policy_version": "method",
+               "epistemic_class": "classification", "consequence_class": "classification",
+               "output": "conclusion", "uncertainty": "conclusion", "abstention_state": "conclusion",
+               "outcome_state": "conclusion"}
+CONTESTING = ("disputed", "partially_accepted", "declined")
 LIMITATIONS = (
     "Integrity only: each revealed value matches a commitment in this package. The package is unsigned (GREG "
     "holds no issuer key), so that GREG issued it rests on the channel it arrived through.",
@@ -229,22 +244,56 @@ def verify_presentation(presentation: dict) -> dict:
             "does_not_prove": list(LIMITATIONS)}
 
 
+def committed_claims(holder: dict) -> dict:
+    """Digest -> the committed claim it stands for, from the holder file (decoys stand for nothing)."""
+    package = holder.get("package") if isinstance(holder, dict) else None
+    if not isinstance(package, dict) or sha256_json(package) != holder.get("package_digest"):
+        raise CognitionError("the holder file's package does not match its digest")
+    claims = {}
+    for index, (item, fields) in enumerate(zip(package["items"], holder["disclosures"])):
+        committed = set(item["digests"])
+        for name, text in fields.items():
+            digest = disclosure_digest(text)
+            if digest in committed:
+                claims[digest] = {"item": index, "receipt_record": item["receipt_record"], "field": name,
+                                  "claim_kind": CLAIM_KINDS.get(name, "other"), "digest": digest}
+    return claims
+
+
 def record_response(journal, package_digest: str, *, actor: str, response: str, scope: str, reported_by: str,
-                    grounds=(), evidence_ref: str | None = None, note: str = ""):
-    """Append an institution's response to a package. Nothing is rewritten; nothing is authorized."""
+                    grounds=(), evidence_ref: str | None = None, note: str = "", targets=(), holder=None):
+    """Append an institution's response to a package. Nothing is rewritten; nothing is authorized.
+
+    ``targets`` are digests of the package's committed claims (a recipient computes one from a revealed
+    disclosure, or reads it from the package). Naming them needs the holder file, which says what each
+    digest commits to; a decoy digest or another package's digest is refused."""
     if response not in RESPONSES:
         raise CognitionError(f"response must be one of {RESPONSES}")
     grounds = list(dict.fromkeys(grounds))
     if set(grounds) - set(GROUNDS):
         raise CognitionError(f"grounds must come from {GROUNDS}")
-    if response in ("disputed", "declined", "partially_accepted") and not grounds and not note:
+    if response in CONTESTING and not grounds and not note:
         raise CognitionError("a dispute, decline or partial acceptance records its grounds or a note")
     if not all(isinstance(x, str) and x.strip() for x in (package_digest, actor, scope, reported_by)):
         raise CognitionError("package digest, responding actor, scope and reporter are required")
     if evidence_ref is not None and journal.ledger.find(evidence_ref) is None:
         raise CognitionError("an evidence reference must be a retained ledger record")
+    targets = list(dict.fromkeys(targets))
+    named = []
+    if targets:
+        if response == "no_response":
+            raise CognitionError("an absent response addresses no claim")
+        if holder is None or holder.get("package_digest") != package_digest:
+            raise CognitionError("naming the claims a response addresses needs this package's holder file")
+        claims = committed_claims(holder)
+        unknown = [t for t in targets if t not in claims]
+        if unknown:
+            raise CognitionError(f"{unknown[0]} is not a committed claim of this package (a decoy, or another "
+                                 "package's digest)")
+        named = [claims[t] for t in targets]
     payload = {"package_digest": package_digest, "actor": actor, "response": response, "grounds": grounds,
                "scope": scope, "reported_by": reported_by, "evidence_ref": evidence_ref, "note": note[:2000],
+               "targets": named, "targeted": bool(named),
                "status": "reported; the response is the actor's, verified only as far as evidence_ref shows",
                "authority_created": False}
     return journal.record("disclosure.response", payload, key=["disclosure.response", package_digest, actor, response,
@@ -253,3 +302,59 @@ def record_response(journal, package_digest: str, *, actor: str, response: str, 
 
 def responses(journal, package_digest: str) -> list[dict]:
     return [e.payload for e in journal.replay("disclosure.response") if e.payload.get("package_digest") == package_digest]
+
+
+def challenge_map(journal, holder: dict) -> dict:
+    """Read-only: per committed claim of one package, the recorded responses that address it.
+
+    A disagreement then has an address: which assumption, evidence pointer, inference or conclusion an actor
+    contests, on what grounds. Untargeted disputes are listed apart. Neither list is a finding: a contested
+    claim is not refuted, an uncontested one is not true, and nothing here changes a receipt or a route."""
+    claims = committed_claims(holder)
+    package_digest = holder["package_digest"]
+    rows = {d: {**c, "contested_by": [], "accepted_by": []} for d, c in claims.items()}
+    untargeted = []
+    for event in journal.replay("disclosure.response"):
+        data = event.payload
+        if data.get("package_digest") != package_digest:
+            continue
+        entry = {"event": event.event_id, "actor": data["actor"], "response": data["response"],
+                 "grounds": data.get("grounds", []), "evidence_ref": data.get("evidence_ref")}
+        if not data.get("targeted"):
+            if data["response"] in CONTESTING:
+                untargeted.append(entry)
+            continue
+        for target in data.get("targets", []):
+            row = rows.get(target.get("digest"))
+            if row is not None:
+                row["contested_by" if data["response"] in CONTESTING else "accepted_by"].append(entry)
+    items = []
+    for index, item in enumerate(holder["package"]["items"]):
+        mine = sorted((r for r in rows.values() if r["item"] == index), key=lambda r: r["field"])
+        items.append({"item": index, "receipt_record": item["receipt_record"],
+                      "contested": [r for r in mine if r["contested_by"]],
+                      "not_contested": [r["field"] for r in mine if not r["contested_by"]]})
+    return {"package_digest": package_digest, "items": items, "untargeted_disputes": untargeted,
+            "contested_claims": sum(len(i["contested"]) for i in items),
+            "note": "a contested claim is not refuted and an uncontested one is not true; this changes no receipt, "
+                    "route or authority",
+            "authority_created": False}
+
+
+def contested_receipts(journal) -> list[dict]:
+    """Read-only, across every package: receipts with at least one claim a recorded response contests."""
+    replay = getattr(journal, "replay", None)
+    if replay is None:  # a ledger-only view carries no disclosure responses
+        return []
+    out = {}
+    for event in replay("disclosure.response"):
+        data = event.payload
+        if not data.get("targeted") or data.get("response") not in CONTESTING:
+            continue
+        for target in data.get("targets", []):
+            row = out.setdefault(target["receipt_record"], {"receipt_record": target["receipt_record"],
+                                                            "claims": set(), "actors": set()})
+            row["claims"].add(f"{target['claim_kind']}:{target['field']}")
+            row["actors"].add(data["actor"])
+    return [{"receipt_record": r["receipt_record"], "claims": sorted(r["claims"]), "actors": sorted(r["actors"]),
+             "authority_created": False} for r in out.values()]

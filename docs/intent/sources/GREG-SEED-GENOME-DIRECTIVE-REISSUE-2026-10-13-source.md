@@ -70,3 +70,21 @@ The new line asks for continued building; it creates no authority and changes no
 next residual: §14's antifragility test, with stress, a frozen holdout, a pre-stress twin and a no-learning
 control. That test found that settled competence never heard failures, and the fix makes it hear them
 (`tests/evidence/antifragility-2026-10-15/`).
+
+## Repeated 2026-11-22
+
+Alfonso sent the directive again in Claude Code session `session_01CLMsAqMfeDxCT9iN1dnaMh`, at transcript
+timestamp 2026-11-22T13:51:48Z, opening "Build this:" and followed by the goal-set quotations, the founder's
+interpretation paragraphs and both review passes. It was extracted from the session transcript, not retyped. The
+whole message has SHA-256 `a1f3efcaac7edcbb39e942cbbf2358a2d378092a26633938b97ca646fb873e56` (97,218
+characters). Each of its 303 paragraphs longer than 80 characters already appears, whitespace-normalized, in
+the preserved sources of this directory: almost all of it in
+[`POLYINTELLIGENCE-CORTEX-REVIEW-PASS-1-2026-09-30.md`](POLYINTELLIGENCE-CORTEX-REVIEW-PASS-1-2026-09-30.md) and
+[`POLYINTELLIGENCE-CORTEX-REVIEW-PASS-2-2026-09-30.md`](POLYINTELLIGENCE-CORTEX-REVIEW-PASS-2-2026-09-30.md).
+No new text is copied here.
+
+Repetition adds no authority. It was applied by closing the SG-A42 residual (sections 35 and 42 of the reviews:
+"an opponent must attack a specific assumption, evidence item or inference rather than dismissing an opaque AI
+conclusion"). A response to an evidence package can now name the committed claims it addresses, and
+`greg cognition challenges <holder.json>` shows, per claim, who contests it and on what grounds. The same work
+corrected SG-B63: the eight corrections it said were missing are section 63 of the second review pass.

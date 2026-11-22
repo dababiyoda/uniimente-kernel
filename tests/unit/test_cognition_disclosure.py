@@ -222,3 +222,75 @@ def test_the_cli_exports_without_sending_and_the_recipient_check_needs_no_greg_s
     (out / "tampered.json").write_text(json.dumps(shown))
     capsys.readouterr()
     assert main(["--home", str(home), "cognition", "verify-package", str(out / "tampered.json")]) == 1
+    capsys.readouterr()
+    assert main(["--home", str(home), "cognition", "challenges", str(out / "holder.json")]) == 0
+    view = json.loads(capsys.readouterr().out)
+    assert view["contested_claims"] == 0 and view["authority_created"] is False
+    assert "assumptions" in view["items"][0]["not_contested"]
+    with Body(home) as b:
+        assert not b.journal.replay("disclosure.")      # reading the challenge map records nothing
+
+
+def _digest_of(holder, field):
+    return D.disclosure_digest(holder["disclosures"][0][field])
+
+
+def test_a_dispute_names_the_committed_claim_it_attacks_and_the_map_shows_what_stands(tmp_path):
+    home, key, body_id, _ = make_body(tmp_path)
+    spec = mission("m:challenge", checks=[{
+        "check_id": "exact", "description": "exact arithmetic",
+        "sensor": {"capability": "cognition.solve", "target": "cognition:arithmetic", "params": PARAMS},
+        "predicate": {"op": "equals", "field": "output.exact", "value": "1/4"}}],
+        strategies=[], capabilities=["cognition.solve"], targets=("cognition:*",), ceiling="read_only")
+    drop(home, signed(key, body_id, "MISSION", spec))
+    with Body(home) as b:
+        b.boot()
+        b.tick()
+        journal = b.journal
+        refs = D.receipts_for_mission(journal, "m:challenge")
+        holder = D.build_package(journal, refs, recipient="Example Clerk", purpose="p")
+        before = json.dumps(holder["package"], sort_keys=True)
+        assumption, output = _digest_of(holder, "assumptions"), _digest_of(holder, "output")
+        decoys = set(holder["package"]["items"][0]["digests"]) - set(D.committed_claims(holder))
+        assert len(decoys) == 2                          # decoys commit to nothing and cannot be targeted
+        with pytest.raises(CognitionError, match="not a committed claim"):
+            D.record_response(journal, holder["package_digest"], actor="Example Clerk", response="disputed",
+                              scope="s", reported_by="founder", grounds=["data"], targets=[sorted(decoys)[0]],
+                              holder=holder)
+        with pytest.raises(CognitionError, match="holder file"):
+            D.record_response(journal, holder["package_digest"], actor="Example Clerk", response="disputed",
+                              scope="s", reported_by="founder", grounds=["data"], targets=[assumption])
+        other = D.build_package(journal, refs, recipient="Someone else", purpose="p")
+        with pytest.raises(CognitionError, match="holder file"):     # another package's holder does not vouch
+            D.record_response(journal, holder["package_digest"], actor="Example Clerk", response="disputed",
+                              scope="s", reported_by="founder", grounds=["data"], targets=[assumption],
+                              holder=other)
+        with pytest.raises(CognitionError, match="addresses no claim"):
+            D.record_response(journal, holder["package_digest"], actor="Example Clerk", response="no_response",
+                              scope="s", reported_by="founder", targets=[assumption], holder=holder)
+        D.record_response(journal, holder["package_digest"], actor="Example Clerk", response="disputed",
+                          scope="the assumption list", reported_by="founder", grounds=["model"],
+                          targets=[assumption], holder=holder)
+        D.record_response(journal, holder["package_digest"], actor="Auditor", response="accepted",
+                          scope="the result", reported_by="founder", targets=[output], holder=holder)
+        D.record_response(journal, holder["package_digest"], actor="Third Party", response="disputed",
+                          scope="all of it", reported_by="founder", grounds=["relevance"])
+        view = D.challenge_map(journal, holder)
+        item = view["items"][0]
+        assert [(r["field"], r["claim_kind"]) for r in item["contested"]] == [("assumptions", "assumption")]
+        assert item["contested"][0]["contested_by"][0]["actor"] == "Example Clerk"
+        assert item["contested"][0]["contested_by"][0]["grounds"] == ["model"]
+        assert "output" in item["not_contested"] and "assumptions" not in item["not_contested"]
+        assert [d["actor"] for d in view["untargeted_disputes"]] == ["Third Party"]
+        assert view["contested_claims"] == 1 and view["authority_created"] is False
+        foreign = D.challenge_map(journal, other)                          # responses stay with their package
+        assert foreign["contested_claims"] == 0 and foreign["untargeted_disputes"] == []
+        assert D.contested_receipts(journal) == [{"receipt_record": refs[0], "claims": ["assumption:assumptions"],
+                                                  "actors": ["Example Clerk"], "authority_created": False}]
+        assert json.dumps(holder["package"], sort_keys=True) == before      # nothing is edited into the package
+        tampered = json.loads(json.dumps(holder))
+        tampered["package"]["purpose"] = "changed"
+        with pytest.raises(CognitionError, match="does not match its digest"):
+            D.challenge_map(journal, tampered)
+        from greg.gravity import _measured_trust
+        assert _measured_trust(journal)["contested_receipts"] == 1

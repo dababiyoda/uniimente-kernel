@@ -280,6 +280,7 @@ def _measured_trust(journal) -> dict:
     # a conflicted construction claim is listed beside what awaits a report, but no further report settles it
     waiting = awaiting_realization(journal)
     conflicted = sum(1 for row in waiting if row.get("kind") == "objective_conflict")
+    from greg.cognition.disclosure import contested_receipts
     return {"source": "greg.cognition.settlement over the canonical journal",
             "forecast_calibration": calibration["verdict"], "forecasts_scored": calibration["n"],
             "per_method": {k: ("MISCALIBRATED" if "MISCALIBRATED" in v else "INSUFFICIENT_EVIDENCE"
@@ -294,6 +295,9 @@ def _measured_trust(journal) -> dict:
             "decisions_to_recheck": len(decisions_to_recheck(journal)),
             "settled_outcomes": sum(r["count"] for r in rows.values()),
             "settled_correct": sum(r["correct"] for r in rows.values()),
+            # receipts whose committed claims an outside actor's response to an evidence package contests, claim by
+            # claim (SG-A42); a contest is not a refutation and moves nothing
+            "contested_receipts": len(contested_receipts(journal)),
             "note": "competence and calibration are evidence about methods, never authority"}
 
 

@@ -972,10 +972,35 @@ def _import_targets(tree: ast.Module, module: str, is_package: bool) -> dict[str
     return out
 
 
+PATCH_OBJECT = ("patch.object", "mock.patch.object", "unittest.mock.patch.object")
+PATCH = ("patch", "mock.patch", "unittest.mock.patch")
+
+
+def _namespace_of(node) -> str | None:
+    """``A.b`` for ``A.b.__dict__`` or ``vars(A.b)`` (one argument, a name or an attribute chain), else None."""
+    if isinstance(node, ast.Attribute) and node.attr == "__dict__":
+        return _dotted(node.value)
+    if (isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "vars"
+            and len(node.args) == 1 and not node.keywords):
+        return _dotted(node.args[0])
+    return None
+
+
+def _call_arg(call: ast.Call, index: int, keyword: str):
+    if len(call.args) > index:
+        return call.args[index]
+    return next((k.value for k in call.keywords if k.arg == keyword), None)
+
+
 def _attribute_writes(tree: ast.Module) -> list[tuple[int, str, str]]:
     """(line, ``A.b.c``, statement) for every attribute an assignment, augmented or annotated assignment, ``del``,
     for or with target writes, and every ``setattr``/``delattr`` call whose object is a name or attribute chain and
-    whose attribute name is a string literal."""
+    whose attribute name is a string literal. Since round 8 (M9), on a name or attribute chain ``A.b`` and a string
+    literal ``c``, also ``A.b.__dict__["c"]`` and ``vars(A.b)["c"]`` as a target of those statements (``del``
+    included), ``A.b.__dict__.update(c=...)`` and ``vars(A.b).update(c=...)`` (keyword or dict-literal keys), and a
+    call of ``patch.object``, ``mock.patch.object`` or ``unittest.mock.patch.object`` with ``A.b`` and ``"c"`` as its
+    first two arguments (``target=``/``attribute=`` too), wherever the call is: a decorator, a ``with`` item, a
+    ``.start()`` receiver."""
     out = []
     for node in ast.walk(tree):
         if isinstance(node, (ast.Assign, ast.Delete)):
@@ -991,12 +1016,44 @@ def _attribute_writes(tree: ast.Module) -> list[tuple[int, str, str]]:
             if dotted:
                 out.append((node.lineno, f"{dotted}.{node.args[1].value}", ast.unparse(node)[:80]))
             continue
+        elif (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr == "update"
+              and _namespace_of(node.func.value)):
+            keys = [k.arg for k in node.keywords if k.arg] + [k.value for a in node.args if isinstance(a, ast.Dict)
+                                                              for k in a.keys if isinstance(k, ast.Constant)]
+            out += [(node.lineno, f"{_namespace_of(node.func.value)}.{key}", ast.unparse(node)[:80])
+                    for key in keys if isinstance(key, str)]
+            continue
+        elif isinstance(node, ast.Call) and _dotted(node.func) in PATCH_OBJECT:
+            target, attribute = _call_arg(node, 0, "target"), _call_arg(node, 1, "attribute")
+            if (target is not None and _dotted(target) and isinstance(attribute, ast.Constant)
+                    and isinstance(attribute.value, str)):
+                out.append((node.lineno, f"{_dotted(target)}.{attribute.value}", ast.unparse(node)[:80]))
+            continue
         else:
             continue
         for target in targets:
             for item in ast.walk(target):
                 if isinstance(item, ast.Attribute) and isinstance(item.ctx, (ast.Store, ast.Del)) and _dotted(item):
                     out.append((node.lineno, _dotted(item), ast.unparse(node)[:80]))
+                elif (isinstance(item, ast.Subscript) and isinstance(item.ctx, (ast.Store, ast.Del))
+                      and _namespace_of(item.value) and isinstance(item.slice, ast.Constant)
+                      and isinstance(item.slice.value, str)):
+                    out.append((node.lineno, f"{_namespace_of(item.value)}.{item.slice.value}", ast.unparse(node)[:80]))
+    return out
+
+
+def _patch_targets(tree: ast.Module) -> list[tuple[int, str, str]]:
+    """Round 8, M9. (line, ``a.b.c``, call) for every call of ``patch``, ``mock.patch`` or ``unittest.mock.patch``
+    whose first argument (or ``target=``) is a string literal of dotted identifiers: the object ``mock`` replaces,
+    wherever the call is (a decorator, a ``with`` item, a ``.start()`` receiver)."""
+    out = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call) and _dotted(node.func) in PATCH:
+            target = _call_arg(node, 0, "target")
+            if isinstance(target, ast.Constant) and isinstance(target.value, str):
+                parts = target.value.split(".")
+                if len(parts) > 1 and all(part.isidentifier() for part in parts):
+                    out.append((node.lineno, target.value, ast.unparse(node)[:80]))
     return out
 
 
@@ -1035,16 +1092,19 @@ def attribute_writes(root: Path = ROOT, files=None) -> list[str]:
             head, _, rest = dotted.partition(".")
             out += [f"{path.relative_to(root).as_posix()}:{line} {dotted} -> {target}.{rest}"
                     for target in sorted(imported.get(head, ()))]
+        out += [f"{path.relative_to(root).as_posix()}:{line} {dotted} -> {dotted}"
+                for line, dotted, _ in _patch_targets(tree)]
     return out
 
 
 def attribute_rebinding_problems(records: list[dict], root: Path = ROOT, files=None) -> list[str]:
-    """Round 7, M2 (a) and (b), widened in round 8 (M6). In every runtime file (``runtime_files``), a write is an
-    assignment, augmented assignment, ``del``, for or with target, or a ``setattr``/``delattr`` with a literal name
-    (``_attribute_writes``). Its chain is read as written through an imported name (``import a.b as X``, ``from a
-    import b as X``, the dotted ``import a.b``, or, in a registered class's own module, the class's name) and, since
-    round 8, with every prefix resolved through ``origin`` (``_chains``: package re-exports and a consumer's imported
-    names followed). Rule (a): no chain is ``<a registered module>.<a registered qualname of it>``. Rule
+    """Round 7, M2 (a) and (b), widened in round 8 (M6, M9). In every runtime file (``runtime_files``), a write is an
+    assignment, augmented assignment, ``del``, for or with target, a ``setattr``/``delattr`` with a literal name, or
+    one of the namespace and ``mock`` forms ``_attribute_writes`` and ``_patch_targets`` list. Its chain is read as
+    written through an imported name (``import a.b as X``, ``from a import b as X``, the dotted ``import a.b``, or, in a
+    registered class's own module, the class's name) and, since round 8, with every prefix resolved through
+    ``origin`` (``_chains``: package re-exports and a consumer's imported names followed); a ``patch("a.b.c")`` target
+    is read as that dotted name. Rule (a): no chain is ``<a registered module>.<a registered qualname of it>``. Rule
     (b): no chain sets an attribute of a registered class outside that class's own body. Either makes Python run
     something the guards never read. What these rules do not read is listed in the module docstring, item 1."""
     owners: dict[tuple[str, str], str] = {}
@@ -1073,6 +1133,9 @@ def attribute_rebinding_problems(records: list[dict], root: Path = ROOT, files=N
             head, *rest = dotted.split(".")
             for target in sorted(imported.get(head, ())):
                 writes.append((line, text, tuple(target.split(".") + rest), _chains(target, rest, root)))
+        for line, dotted, text in _patch_targets(tree):
+            head, *rest = dotted.split(".")
+            writes.append((line, text, tuple(dotted.split(".")), _chains(head, rest, root)))
         for line, text, raw, chains in writes:
             for parts in sorted(chains):
                 written = "" if parts == raw else f" (written as {'.'.join(raw)}, re-exports followed)"
@@ -3714,3 +3777,46 @@ def test_globals_used_as_a_value_in_a_module_that_holds_a_registered_qualname_fa
     for key in controls:
         assert binding_problems([record(key)], root) == [], key
     assert binding_problems([record("literal")], root) == []          # tools/elsewhere.py holds no registered qualname
+
+
+def test_a_registered_qualname_written_through_a_namespace_or_a_mock_patcher_fails(tmp_path):
+    # Round 8, M9 (skeptic X4, verifier F1, F2): a write through another module's ``__dict__`` or ``vars()``, and a
+    # ``mock`` patcher with a literal target, rebound a registered qualname unseen. Each is now a write of
+    # ``<alias>.<literal>`` (a ``patch("<dotted>")`` target is read as that dotted name, re-exports followed).
+    rebinds = {
+        "tools/dict_set.py": "import greg.body as _b\n_b.__dict__['send_signed'] = print\n",
+        "tools/dict_del.py": "import greg.body as _b\ndel _b.__dict__['send_signed']\n",
+        "tools/dict_update.py": "import greg.body as _b\n_b.__dict__.update(send_signed=print)\n",
+        "tools/dict_update_literal.py": "import greg.body as _b\n_b.__dict__.update({'send_signed': print})\n",
+        "tools/vars_set.py": "import greg.body as _b\nvars(_b)['send_signed'] = print\n",
+        "tools/vars_update.py": "import greg.body as _b\nvars(_b).update(send_signed=print)\n",
+        "tools/patch_object_start.py": "from unittest import mock\nimport greg.body as _b\n"
+                                       "mock.patch.object(_b, 'send_signed', print).start()\n",
+        "tools/patch_object_with.py": "from unittest.mock import patch\nimport greg.body as _b\n"
+                                      "with patch.object(_b, 'send_signed', print):\n    pass\n",
+        "tools/patch_object_keywords.py": "import unittest.mock\nimport greg.body as _b\n"
+                                          "unittest.mock.patch.object(target=_b, attribute='send_signed', new=print).start()\n",
+        "tools/patch_object_class.py": "from unittest import mock\nfrom greg.body import Relay\n"
+                                       "@mock.patch.object(Relay, 'send', print)\ndef run():\n    pass\n",
+        "tools/patch_string.py": "from unittest.mock import patch\npatch('greg.body.send_signed', print).start()\n",
+        "tools/patch_string_consumer.py": "import unittest.mock\n"
+                                          "unittest.mock.patch('greg.cli.send_signed', print).start()\n",
+        "tools/patch_string_decorator.py": "from unittest import mock\n@mock.patch('greg.body.Relay.send', print)\n"
+                                           "def run():\n    pass\n",
+    }
+    controls = {
+        "tools/other_key.py": "import greg.body as _b\n_b.__dict__['OTHER'] = 1\nvars(_b)['MORE'] = 2\n",
+        "tools/instance_dict.py": "class Box:\n    def set(self):\n        self.__dict__['send_signed'] = 1\n",
+        "tools/patch_other.py": "from unittest.mock import patch\npatch('greg.body.OTHER', 1).start()\n",
+        "tools/http_patch.py": "import requests\nrequests.patch('greg.body.send_signed')\n",
+        # stated limits: a computed attribute name, patch.dict and patch.multiple are not read
+        "tools/patch_computed.py": "from unittest import mock\nimport greg.body as _b\nname = 'send_signed'\n"
+                                   "mock.patch.object(_b, name, print).start()\n",
+        "tools/patch_dict.py": "from unittest import mock\nimport greg.body as _b\n"
+                               "mock.patch.dict(_b.__dict__, {'send_signed': print}).start()\n",
+    }
+    root = _tree(tmp_path, {"greg/__init__.py": "", "greg/body.py": REEXPORT_OWNER,
+                            "greg/cli.py": "from greg.body import send_signed\n", **rebinds, **controls})
+    record = {**INBOX_RECORD, "canonical": [{"module": "greg.body", "qualnames": ["send_signed", "Relay"]}]}
+    found = attribute_rebinding_problems([record], root)
+    assert sorted({line.split(":")[0] for line in found}) == sorted(rebinds), found

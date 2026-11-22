@@ -316,3 +316,89 @@ def test_a_handoff_from_someone_other_than_the_holder_moves_nothing(repo):
     with pytest.raises(P.Refused, match="held by session_01AAAA"):
         P.admit((REPO, 500), 1000003, source(comments), cwd=str(repo), write=False)
     assert P.admit((REPO, 500), 1000001, source(comments), cwd=str(repo), write=False)
+
+
+# ---------------------------------------------------------------- trial 3, round 1: the released-claim receipt defect
+
+FIXTURE = Path(__file__).resolve().parents[1] / "fixtures" / "participation" / "issue346-trial3-round1.json"
+T3A = "session_01Kucyfjt8XHfrtVsjVHMCLu"
+REF = f"https://github.com/{REPO}/issues/346#issuecomment-"
+WORK = ["docs/collaboration/PARTICIPATION.md", "docs/collaboration/INDEX.md"]
+
+
+def replay():
+    return P.Source(json.loads(FIXTURE.read_text()))
+
+
+def test_the_trial_receipt_cites_authority_that_held_when_its_work_was_committed():
+    """#348 cites claim 7080533127, released at 14:30:44 after its commit at 14:29:26 (the real #346 record).
+    Before this fix the check failed it; it now passes as historical authority, kept apart from a current one."""
+    out = P.contribution(REF + "7080533127", T3A, replay(), WORK, "2026-11-22T14:29:26Z")
+    assert out["result"] == "pass" and out["assurance"] == "admitted-historical"
+    assert out["lineage"][0] == {"claim": 7080533127, "state": "released", "created_at": "2026-11-22T14:25:26Z",
+                                 "ended_at": "2026-11-22T14:30:44Z", "ended_by": 7080598136}
+    assert [o["claim"] for o in out["lineage"]] == [7080533127, 7080595521]
+    assert out["holders_now"]["docs/collaboration/INDEX.md"] == ["session_01Kucyfjwzh7cBh5aQbGwEYe"]
+
+
+def test_a_released_claim_still_admits_nothing_now(repo):
+    with pytest.raises(P.Refused, match="released"):
+        P.admit(("dababiyoda/uniimente-kernel", 346), 7080533127, replay(), cwd=str(repo), write=False)
+
+
+def test_work_committed_after_the_claim_ended_or_without_a_time_shows_no_authority():
+    late = P.contribution(REF + "7080533127", T3A, replay(), WORK, "2026-11-22T14:31:00Z")
+    assert late["result"] == "fail" and late["assurance"] == "none"
+    untimed = P.contribution(REF + "7080533127", T3A, replay(), WORK, None)
+    assert untimed["result"] == "fail"
+
+
+def test_a_file_the_lineage_no_longer_covered_fails_even_while_another_claim_is_active():
+    out = P.contribution(REF + "7080595521", T3A, replay(), WORK, "2026-11-22T14:35:00Z")
+    assert out["result"] == "fail"
+    assert out["uncovered"] == [{"file": "docs/collaboration/INDEX.md", "committed_at": "2026-11-22T14:35:00Z"}]
+
+
+def test_a_receipt_repointed_at_the_narrowed_claim_still_finds_the_authority_of_its_predecessor():
+    """T3-A repointed #348's receipt at its narrowed claim 7080595521, posted after the commit. The lineage
+    (same session, same task and subtask) still shows the original claim covering both files at 14:29:26."""
+    out = P.contribution(REF + "7080595521", T3A, replay(), WORK, "2026-11-22T14:29:26Z")
+    assert out["result"] == "pass" and out["assurance"] == "admitted-historical"
+    assert out["covered_by"] == {f: 7080533127 for f in WORK}
+
+
+def test_another_sessions_claim_on_the_same_task_is_not_lineage():
+    out = P.contribution(REF + "7080539656", T3A, replay(), WORK[1:], "2026-11-22T14:35:00Z")
+    assert out["result"] == "fail" and "not session_01Kucyfjt8" in out["reason"]
+
+
+def test_the_current_claim_covering_its_files_is_current_assurance():
+    out = P.contribution(REF + "7080595521", T3A, replay(), WORK[:1], "2026-11-22T14:35:00Z")
+    assert out["result"] == "pass" and out["assurance"] == "admitted-current"
+
+
+def test_a_legacy_check_in_is_declared_coordination_not_admission():
+    legacy = {"id": 6000001, "created_at": "2026-11-01T00:00:00Z", "user": {"login": "x"},
+              "html_url": f"https://github.com/{REPO}/issues/96#issuecomment-6000001",
+              "body": "\n".join([P.CHECKIN, "## Check-in: old work", f"- Session: {A} (test)",
+                                 "- Files / interfaces: `scripts/a.py`"])}
+    out = P.contribution(f"https://github.com/{REPO}/issues/96#issuecomment-6000001", A,
+                         P.Source({f"{REPO}#96": [legacy]}), ["scripts/a.py"], "2026-11-02T00:00:00Z")
+    assert out["result"] == "pass" and out["assurance"] == "legacy-declared"
+
+
+def test_pr_contribution_judges_each_commit_and_leaves_a_stacked_dependency_to_its_own_pr(monkeypatch):
+    receipt = {"version": 2, "coordination": {"task_ref": REF + "7080533127", "session_id": T3A}}
+    body = "x\n<!-- uniimente:receipt -->\n```json\n" + json.dumps(receipt) + "\n```\n<!-- /uniimente:receipt -->\n"
+    objects = {"repos/r/pulls/348": {"body": body, "head": {"sha": "bbb"}, "base": {"ref": "cand"}},
+               "repos/r/commits/bbb": {"parents": [{}], "commit": {"committer": {"date": "2026-11-22T14:29:26Z"}},
+                                       "files": [{"filename": f} for f in WORK]}}
+    lists = {"repos/r/pulls/348/commits?per_page=100": [{"sha": "aaa"}, {"sha": "bbb"}],
+             "repos/r/pulls?state=open&base=cand&per_page=100": [{"number": 340, "head": {"sha": "aaa"}}]}
+    monkeypatch.setattr(P, "_get_obj", lambda path: (objects.get(path), "fake"))
+    monkeypatch.setattr(P, "_get", lambda path: (lists.get(path), "fake"))
+    out = P.pr_contribution("r", 348, replay())
+    assert out["result"] == "pass" and out["assurance"] == "admitted-historical"
+    assert out["attributed_to"] == {"aaa": 340}
+    monkeypatch.setattr(P, "_get", lambda path: (None, "fake"))
+    assert P.pr_contribution("r", 348, replay())["result"] == "not_run"

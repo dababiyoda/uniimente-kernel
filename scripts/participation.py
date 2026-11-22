@@ -50,7 +50,7 @@ import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-REPO = "dababiyoda/uniimente-kernel"
+REPO = os.environ.get("GITHUB_REPOSITORY", "dababiyoda/uniimente-kernel")
 INDEX_ISSUE = 96
 FRESH_MINUTES = 30
 PAGE = 100
@@ -255,7 +255,8 @@ def resolve(items: list[dict]) -> dict[int, dict]:
             if not c or c["state"] != "active":
                 continue
             if event["kind"] == "release" and event["session"] and event["session"] == c["holder"]:
-                c.update(state="released", why=f"released by comment {event['id']}")
+                c.update(state="released", why=f"released by comment {event['id']}", ended_at=event["created_at"],
+                         ended_by=event["id"])
     for c in sorted(claims.values(), key=lambda c: c["id"]):
         for hid in c.get("accepts") or []:
             h = handoffs.get(hid)
@@ -264,7 +265,8 @@ def resolve(items: list[dict]) -> dict[int, dict]:
             for cid in h["claims"]:
                 prior = claims.get(cid)
                 if prior and prior["state"] == "active" and h["frm"] == prior["holder"] and prior["id"] < h["id"]:
-                    prior.update(state="transferred", why=f"handed off by {h['id']}, accepted by {c['id']}")
+                    prior.update(state="transferred", why=f"handed off by {h['id']}, accepted by {c['id']}",
+                                 ended_at=c["created_at"], ended_by=c["id"])
                     c["order"] = min(c["order"], prior["order"])
     return claims
 
@@ -564,20 +566,129 @@ def status(task_issue, source: Source, task: str | None, concern: list[str]) -> 
     return out
 
 
-def contribution(task_ref: str, session: str, source: Source) -> dict:
-    """At contribution acceptance: is ``task_ref`` an active, admitted claim of ``session`` on its task record?"""
+def _covers(scope: list[str], path: str) -> bool:
+    path = norm(path)
+    return any(c == "." or path == c or path.startswith(c + "/") for c in scope)
+
+
+ASSURANCE = {
+    "admitted-current": "the cited claim is active now and its concerns cover every changed file",
+    "admitted-historical": "the cited claim covered every changed file and was active when the work was committed; it "
+                           "ended later (released or handed off), so it is evidence of past authority, not current admission",
+    "legacy-declared": "the task_ref is a check-in without a Task line (board #96 format before 2026-11-22); "
+                       "it is accepted as declared coordination, not as an admitted claim",
+    "none": "no claim covered the work",
+}
+
+
+def contribution(task_ref: str, session: str, source: Source, files: list[str] | None = None,
+                 worked_at: str | None = None, changes: list[tuple[str | None, list[str]]] | None = None) -> dict:
+    """At contribution acceptance: what authorized the work when it was done, and what holds it now.
+
+    ``changes`` lists (commit time, files) pairs, one per commit; ``files`` and ``worked_at`` are the single-commit
+    form. The cited claim (``task_ref``) names a lineage: the citing session's claims on the same task and subtask.
+    A narrowed or renewed claim belongs to the same lineage as the one it replaced. Each file of each commit must be
+    covered by a claim of that lineage that was active at the commit's time. Commit times are declared values, the
+    committer dates.
+    - ``admitted-current``: every file is held now by an active claim of the lineage.
+    - ``admitted-historical``: every file was covered when it was committed, and some covering claim has since
+      ended (released or handed off). That is evidence of past authority, not a current admission.
+    A later release never rewrites the earlier evidence. Work outside every covering claim's life is ``none``."""
     m = re.search(r"github\.com/([\w.-]+/[\w.-]+)/issues/(\d+)#issuecomment-(\d+)", task_ref or "")
     if not m:
-        return {"result": "fail", "reason": "task_ref is not an issue comment URL"}
+        return {"result": "fail", "assurance": "none", "reason": "task_ref is not an issue comment URL"}
+    cid = int(m[3])
     try:
-        claims = resolve(board(source, (m[1], int(m[2])), (REPO, INDEX_ISSUE)))
-        decide(claims, int(m[3]))
+        items = board(source, (m[1], int(m[2])), (REPO, INDEX_ISSUE))
     except Refused as exc:
-        return {"result": "not_run" if str(exc).startswith("incomplete") else "fail", "reason": str(exc)}
-    holder = claims[int(m[3])]["holder"]
-    if holder != session:
-        return {"result": "fail", "reason": f"claim {m[3]} is held by {holder}, not {session}"}
-    return {"result": "pass", "claim": int(m[3])}
+        return {"result": "not_run", "assurance": "none", "reason": str(exc)}
+    claims = resolve(items)
+    c = claims.get(cid)
+    if not c:
+        return {"result": "fail", "assurance": "none", "reason": f"comment {cid} is not a check-in on {m[1]}#{m[2]}"}
+    if not c["task"] or not c["session"]:
+        if c["session"] and c["session"] == session:
+            return {"result": "pass", "assurance": "legacy-declared", "claim": cid, "reason": ASSURANCE["legacy-declared"]}
+        return {"result": "fail", "assurance": "none",
+                "reason": f"claim {cid} names no session or task ({c.get('session_reason') or 'no Task line'})"}
+    if c["session"] != session:
+        return {"result": "fail", "assurance": "none", "reason": f"claim {cid} was posted by {c['session']}, not {session}"}
+    lineage = sorted((o for o in claims.values() if o["session"] == session and o["task"] == c["task"]
+                      and o["subtask"] == c["subtask"]), key=lambda o: o["id"])
+    if changes is None:
+        changes = [(worked_at, files or [])]
+    per_file, uncovered, historical = {}, [], False
+    for when, paths in changes:
+        for f in paths:
+            ok = [o for o in lineage if _covers(o["exclusive"] + o["shared"], f) and o["holder"] == session
+                  and when and o["created_at"] <= when and (o["state"] == "active" or when < (o.get("ended_at") or ""))]
+            if not ok:
+                uncovered.append({"file": f, "committed_at": when})
+                continue
+            per_file[f] = ok[-1]["id"]
+            historical |= all(o["state"] != "active" for o in ok) or not any(
+                o["state"] == "active" and _covers(o["exclusive"] + o["shared"], f) for o in lineage)
+    out = {"claim": cid, "lineage": [{"claim": o["id"], "state": o["state"], "created_at": o["created_at"],
+                                      "ended_at": o.get("ended_at"), "ended_by": o.get("ended_by")} for o in lineage],
+           "covered_by": per_file, "uncovered": uncovered,
+           "holders_now": {f: sorted({o["holder"] for o in claims.values() if o["state"] == "active" and o["holder"]
+                                      and _covers(o["exclusive"] + o["shared"], f)})
+                           for _, paths in changes for f in paths}}
+    if uncovered:
+        return dict(out, result="fail", assurance="none",
+                    reason="no claim of this session's lineage covered these files when they were committed")
+    kind = "admitted-historical" if historical else "admitted-current"
+    return dict(out, result="pass", assurance=kind, reason=ASSURANCE[kind])
+
+
+def pr_contribution(repo: str, number: int, source: Source) -> dict:
+    """``contribution`` for a pull request: its receipt's task_ref and session, and its own commits.
+
+    Each commit is judged at its committer time with its own files. A commit that is also the head, or an
+    ancestor of the head, of another open PR into the same base belongs to that PR: a stacked dependency. It is
+    listed under ``attributed_to`` and checked there, not here."""
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import repo_review  # the one receipt reader
+    pr, _ = _get_obj(f"repos/{repo}/pulls/{number}")
+    commits, _ = _get(f"repos/{repo}/pulls/{number}/commits?per_page=100")
+    if pr is None or commits is None:
+        return {"result": "not_run", "assurance": "none", "reason": f"could not read {repo}#{number} or its commits"}
+    receipt = repo_review.receipt_of(pr.get("body"))
+    if not receipt:
+        return {"result": "fail", "assurance": "none", "reason": "no readable receipt in the PR body"}
+    others, _ = _get(f"repos/{repo}/pulls?state=open&base={pr['base']['ref']}&per_page=100")
+    shas = [c["sha"] for c in commits]
+    attributed = {}
+    for other in others or []:
+        if other["number"] == number or other["head"]["sha"] not in shas:
+            continue
+        for sha in shas[: shas.index(other["head"]["sha"]) + 1]:
+            attributed.setdefault(sha, other["number"])
+    changes = []
+    for c in commits:
+        if c["sha"] in attributed:
+            continue
+        detail, _ = _get_obj(f"repos/{repo}/commits/{c['sha']}")
+        if detail is None:
+            return {"result": "not_run", "assurance": "none", "reason": f"could not read commit {c['sha']}"}
+        if len(detail.get("parents") or []) > 1:
+            continue        # a merge brings others' reviewed work; its own resolution edits are a stated limit
+        changes.append((detail["commit"]["committer"]["date"], [f["filename"] for f in detail.get("files") or []]))
+    coord = receipt.get("coordination") or {}
+    out = contribution(coord.get("task_ref", ""), coord.get("session_id", ""), source, changes=changes)
+    return dict(out, pr=number, head=pr["head"]["sha"],
+                attributed_to={sha[:8]: n for sha, n in attributed.items()})
+
+
+def _get_obj(path: str) -> tuple[dict | None, str]:
+    for cmd in (["gh", "api", path], ["curl", "-fsS", "--max-time", "20", f"https://api.github.com/{path}"]):
+        try:
+            done = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            if done.returncode == 0 and isinstance(data := json.loads(done.stdout), dict):
+                return data, cmd[0]
+        except (OSError, subprocess.TimeoutExpired, ValueError):
+            continue
+    return None, "unavailable"
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -594,8 +705,11 @@ def main(argv: list[str] | None = None) -> int:
             p.add_argument("--task")
             p.add_argument("--concern", action="append", default=[])
         if name == "contribution":
-            p.add_argument("--task-ref", required=True)
-            p.add_argument("--session", required=True)
+            p.add_argument("--task-ref")
+            p.add_argument("--session")
+            p.add_argument("--files", nargs="*")
+            p.add_argument("--worked-at", help="the work's commit time, ISO 8601 UTC")
+            p.add_argument("--pr", type=int, help="read task_ref, session, files and commit time from this PR")
     sub.add_parser("hook")
     sub.add_parser("resume")
     args = ap.parse_args(argv)
@@ -608,8 +722,10 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(status(_issue(args.issue), source, args.task, args.concern), indent=2))
         return 0
     if args.cmd == "contribution":
-        print(json.dumps(contribution(args.task_ref, args.session, source), indent=2))
-        return 0
+        out = (pr_contribution(REPO, args.pr, source) if args.pr else
+               contribution(args.task_ref, args.session, source, args.files, args.worked_at))
+        print(json.dumps(out, indent=2))
+        return 0 if out["result"] == "pass" else (2 if out["result"] == "not_run" else 1)
     try:
         if args.cmd == "admit":
             rec = admit(_issue(args.issue), args.claim, source)

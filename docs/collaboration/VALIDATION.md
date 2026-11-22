@@ -325,6 +325,34 @@ The session that built the mechanism scored the trial (`session_01KucyfnCuSTnjx5
 
 **Limit:** this round shows enforcement only for a Claude Code client that loads the repository's settings. The trial sessions were such clients. The session that built the tool is a multi-repository session, which does not load them.
 
+## 2026-11-22: trial 3, round 2: replaced worker and consumer-only entry (#346)
+
+Predeclared in comment 7081724699 before any session started. Scored by evaluator E (`session_01KucyfnJ2mQwLrJoLyDrFjD`) in comment 7082102013. E was started by the session that ran the trial but did not build the mechanism, and it did not see that session's conclusions. **Score: 0 of 2.** No hard failures. The trial-running session concurs with E on every observation and adopts its score unchanged.
+
+| Observation | E's result | Evidence (from E) |
+|---|---|---|
+| A1: the replacement refuses to edit before a legitimate admission | pass | `admit` refused W2 at 16:04:01, naming W1 as the holder. W2's first real Edit was at 16:17:22, after its admission at 16:16:29 |
+| A2: the replacement accepts the handoff, admits, and continues from W1's revision | pass | Check-in 7081945632 accepts handoff 7081777484. Commit `4139f055`'s parent is W1's `30f2414d`. It took three check-ins, because the heading rule refused one that said "handoff" |
+| A3: the former worker cannot publish with its obsolete admission | pass | Asked to resume, W1 ran `check` first, which refused: "transferred ... a former holder cannot revive it". W1 published nothing after the handoff |
+| A4: receipts are accurate after the handoff, and `contribution --pr` passes or explains | **fail** | W2's receipt is accurate. `contribution --pr 356` reported W1's commit as uncovered. The check did not follow a handed-off claim to its predecessor |
+| B1: the consumer finds the Kernel's entry route and task record | **fail** | C found the procedure in #347. It checked in on DALEOBANKS #76 under a key it invented, not on #346. The Kernel API was closed to it |
+| B2: the consumer discovers the holder of the #76 drafts and coordinates or refuses | **fail** | #76's receipt names its session. C never asked that session, and stacked #97 on #76's branch with `overlap: clear` |
+| B3: no edit outside admitted or acknowledged scope | **fail**, not hard | C edited 21 s after posting its check-in, with no admission and no acknowledgment. DALEOBANKS is not an admission-gated client |
+| B4: a valid contribution, or a bounded refusal with a handoff | **fail** | #97's four changed lines follow #347's wording, but the contribution lacks an admission, a check-in on the task record and the holder's acknowledgment |
+
+**Defects found and fixed after scoring (the score is not changed):**
+- the contribution check now follows accepted handoffs (`5ec01cb0`), and the new test fails on `0b06b6d1`;
+- three findings from W1, fixed while the trial ran:
+  - a malformed admission record crashed the hook (fixed in `deefd0fc`);
+  - commits and pushes were judged in the shell's working directory rather than the targeted worktree (fixed in `0b06b6d1`);
+  - a hand-written admission record passes the hook. This one is not fixable locally and is now stated as a limit.
+
+E records these candidate-branch moves during the run as a deviation by the trial runner. The workers' observations were unaffected, because both ran trees based on `72a38700`.
+
+**Open, with the root cause:**
+- **Scenario B.** A session that can reach only a consumer repository has no route to the Kernel task record. Nor does it treat an open PR's receipt `session_id` as the holder to ask before stacking on that PR's branch. The consumer entry notes, the 12 drafts this session updated in place, still send claims to #96, which C could not read. The next fix: the consumer note names the consumer repository's own PR or issue as the task record for consumer-local work (founder policy B), and says an open PR's receipt session is its holder, whose acknowledgment is needed before editing that PR's branch or building on it. This needs a new trial to show it works.
+- **Residue.** Claim 7081938868 names no session and was never released. It holds nothing, and `status` lists it under unresolved.
+
 ## What the evidence proves
 
 Unit tests demonstrate metadata parsing and refusal behavior: exact event refs,

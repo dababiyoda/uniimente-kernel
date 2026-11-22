@@ -402,3 +402,98 @@ def test_pr_contribution_judges_each_commit_and_leaves_a_stacked_dependency_to_i
     assert out["attributed_to"] == {"aaa": 340}
     monkeypatch.setattr(P, "_get", lambda path: (None, "fake"))
     assert P.pr_contribution("r", 348, replay())["result"] == "not_run"
+
+
+# ---------------------------------------------------------------- maintainer recovery of a stale claim
+
+def stale_claim(cid, session, recheck):
+    c = checkin(cid, session, "T-1/a", "`scripts/`")
+    c["body"] += f"\n- Recheck (UTC): {recheck}"
+    return c
+
+
+def recovery(cid, claim, session, at):
+    r = other(cid, P.RECOVERY, f"- Claim: {claim}", f"- Session: {session}")
+    r["created_at"] = at
+    return r
+
+
+@pytest.fixture()
+def maintainer(monkeypatch):
+    monkeypatch.setattr(P, "_maintainers", lambda: {C})
+
+
+def test_a_listed_maintainer_ends_a_stale_claim_and_admits_nobody(repo, maintainer):
+    comments = [stale_claim(1000001, A, "2026-11-22T16:00:00Z"),
+                recovery(1000002, 1000001, C, "2026-11-23T16:00:01Z"),
+                checkin(1000003, B, "T-2/b", "`scripts/a.py`")]
+    claims = P.resolve([P.parse(x, "r#500") for x in comments])
+    assert claims[1000001]["state"] == "recovered"
+    with pytest.raises(P.Refused, match="recovered"):
+        P.admit((REPO, 500), 1000001, source(comments), cwd=str(repo), write=False)
+    assert P.admit((REPO, 500), 1000003, source(comments), cwd=str(repo), write=False)   # B claims it anew
+
+
+def test_recovery_needs_a_listed_maintainer_and_a_stale_claim(repo, maintainer):
+    early = [stale_claim(1000001, A, "2026-11-23T12:00:00Z"), recovery(1000002, 1000001, C, "2026-11-24T00:00:00Z")]
+    assert P.resolve([P.parse(x, "r#500") for x in early])[1000001]["state"] == "active"      # within the grace
+    norecheck = [checkin(1000001, A, "T-1/a", "`scripts/`"), recovery(1000002, 1000001, C, "2026-12-30T00:00:00Z")]
+    assert P.resolve([P.parse(x, "r#500") for x in norecheck])[1000001]["state"] == "active"
+    imposter = [stale_claim(1000001, A, "2026-11-22T16:00:00Z"), recovery(1000002, 1000001, B, "2026-11-24T01:00:00Z")]
+    assert P.resolve([P.parse(x, "r#500") for x in imposter])[1000001]["state"] == "active"
+
+
+def test_work_done_before_a_recovery_keeps_its_historical_evidence(maintainer):
+    comments = [stale_claim(1000001, A, "2026-11-22T16:00:00Z"), recovery(1000002, 1000001, C, "2026-11-23T16:00:01Z")]
+    ref = f"https://github.com/{REPO}/issues/500#issuecomment-1000001"
+    out = P.contribution(ref, A, source(comments), ["scripts/a.py"], "2026-11-22T16:30:00Z")
+    assert out["result"] == "pass" and out["assurance"] == "admitted-historical"
+
+
+@pytest.mark.parametrize("record", ["{}", "[]", '{"claim": "x"}', "not json"])
+def test_a_malformed_admission_record_denies_with_a_reason_and_never_crashes(repo, record):
+    """Found by trial 3, round 2 worker W1: a record without `claim` crashed the hook (exit 1, not a denial)."""
+    gitdir = Path(subprocess.run(["git", "-C", str(repo), "rev-parse", "--absolute-git-dir"], capture_output=True,
+                                 text=True, check=True).stdout.strip())
+    P.record_path(gitdir).parent.mkdir(parents=True, exist_ok=True)
+    P.record_path(gitdir).write_text(record)
+    ok, why = edit(repo / "scripts" / "a.py", repo)
+    assert not ok and ("malformed" in why or "No admission" in why)
+    ok, why = bash("git push", repo)
+    assert not ok
+
+
+def test_a_commit_is_judged_in_the_worktree_it_targets_not_the_shells_cwd(repo, tmp_path_factory):
+    """Found by trial 3, round 2 worker W1: `cd <admitted worktree> && git commit` was denied by the shell's cwd."""
+    elsewhere = tmp_path_factory.mktemp("unadmitted")
+    subprocess.run(["git", "init", "-q", str(elsewhere)], check=True)
+    P.admit((REPO, 500), 1000001, source([checkin(1000001, A, "T-1/a", "`scripts/`")]), cwd=str(repo))
+    assert bash(f"cd {repo} && git commit -m x", elsewhere)[0]
+    assert bash(f"git -C {repo} push", elsewhere)[0]
+    assert not bash(f"cd {repo} && cd {elsewhere} && git commit -m x", repo)[0]
+    assert not bash(f"git -C {elsewhere} commit -m x", repo)[0]
+
+
+ROUND2 = Path(__file__).resolve().parents[1] / "fixtures" / "participation" / "issue346-trial3-round2.json"
+
+
+def test_a_handed_off_claim_authorizes_its_holders_commits_in_the_receivers_pr():
+    """Trial 3, round 2: W2 (accepting check-in 7081945632) continued W1's branch, and PR #356 holds W1's
+    commit 30f2414d (16:03:13, under W1's claim 7081742357, handed off by 7081777484). Before this fix the
+    check found no claim of W2's lineage covering that commit."""
+    src = P.Source(json.loads(ROUND2.read_text()))
+    w2 = "session_01KucyfnQL2Z7WrrYbfrzNkh"
+    out = P.contribution(REF + "7081945632", w2, src, changes=[
+        ("2026-11-22T16:03:13Z", ["docs/collaboration/RECOVERY.md"]),
+        ("2026-11-22T16:17:46Z", ["docs/collaboration/RECOVERY.md"])])
+    assert out["result"] == "pass" and out["assurance"] == "admitted-historical"
+    assert {o["claim"] for o in out["lineage"]} >= {7081742357, 7081945632}
+    late = P.contribution(REF + "7081945632", w2, src, changes=[("2026-11-22T16:03:00Z", ["scripts/x.py"])])
+    assert late["result"] == "fail"
+
+
+def test_a_handoff_never_lets_the_former_holder_cite_the_receivers_claim():
+    src = P.Source(json.loads(ROUND2.read_text()))
+    out = P.contribution(REF + "7081945632", "session_01Kucyfnk1i211wFFZpETRgv", src,
+                         ["docs/collaboration/RECOVERY.md"], "2026-11-22T16:20:00Z")
+    assert out["result"] == "fail"

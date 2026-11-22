@@ -36,6 +36,9 @@ Limits, stated, not solved:
   says cloud sessions with several repositories, and project threads, do not load it. There the rule is guidance,
   and it is detected when the contribution is accepted (``contribution``).
 - A declared session id is not an authenticated principal.
+- The local admission record is a cooperative guard against accidents, not a security boundary. A hand-written
+  record passes the hook. The truth lives in the GitHub task record, and ``contribution``, run in CI on every PR,
+  judges each commit against it. Found by trial 3, round 2.
 - A claim created while another is still invisible to the API can be admitted on both sides. ``check`` detects
   this on the next read.
 """
@@ -61,6 +64,11 @@ INDEX = "<!-- uniimente:index -->"
 RELEASE = "<!-- uniimente:release -->"
 HANDOFF = "<!-- uniimente:handoff -->"
 ACK = "<!-- uniimente:ack -->"
+RECOVERY = "<!-- uniimente:recovery -->"
+RECOVERY_GRACE = timedelta(hours=24)   # a claim is stale only this long after its own Recheck time
+# Sessions whose recovery comment ends a stale claim. Recovery admits nobody and transfers nothing. A session id is
+# declared, not authenticated. Changing this set is the integrator's and the founder's decision (#346, Decision A).
+MAINTAINER_SESSIONS = frozenset({"session_01FBS4KNJR59nSbdGbxo8Mbx"})
 
 EDIT_TOOLS = {"Edit", "Write", "MultiEdit", "NotebookEdit"}
 GITHUB_WRITES = re.compile(r"^mcp__github__(push_files|create_or_update_file|delete_file|create_pull_request|"
@@ -79,6 +87,7 @@ TO_RE = re.compile(_LABEL.format(r"To"), re.M | re.I)
 ACCEPTS_RE = re.compile(_LABEL.format(r"Accepts handoff"), re.M | re.I)
 SESSION_RE = re.compile(_LABEL.format(r"Session"), re.M | re.I)
 RECORD_RE = re.compile(_LABEL.format(r"Task record"), re.M | re.I)
+RECHECK_RE = re.compile(_LABEL.format(r"Recheck \(UTC\)"), re.M | re.I)
 DEPENDENCY_OF_RE = re.compile(_LABEL.format(r"Dependency of"), re.M | re.I)
 CONTRACT_RE = re.compile(_LABEL.format(r"Contract"), re.M | re.I)
 ID_RE = re.compile(r"session_[A-Za-z0-9]{8,}")
@@ -146,7 +155,8 @@ def parse(comment: dict, issue: str) -> dict:
         item.update(kind="claim", session=who, session_reason=why, task=key[0] if key else None,
                     subtask=key[1] if key else None, exclusive=concerns(_first(EXCL_RE, body)),
                     shared=concerns(_first(SHARED_RE, body)), depends=_first(DEPENDS_RE, body),
-                    accepts=_ids(_first(ACCEPTS_RE, body)))
+                    accepts=_ids(_first(ACCEPTS_RE, body)),
+                    recheck=(re.search(r"\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ", _first(RECHECK_RE, body)) or [None])[0])
     elif head == RELEASE:
         item.update(kind="release", claims=_ids(_first(CLAIM_RE, body)),
                     session=_one(_first(SESSION_RE, body)))
@@ -157,6 +167,8 @@ def parse(comment: dict, issue: str) -> dict:
         item.update(kind="index", records=[(m["repo"] or REPO, int(m["n"]))
                                            for m in ISSUE_RE.finditer(_first(RECORD_RE, body))],
                     task=(task_key(_first(TASK_RE, body)) or (None,))[0])
+    elif head == RECOVERY:
+        item.update(kind="recovery", claims=_ids(_first(CLAIM_RE, body)), session=_one(_first(SESSION_RE, body)))
     elif head == ACK:
         item.update(kind="ack", of=_ids(_first(DEPENDENCY_OF_RE, body)), contract=_first(CONTRACT_RE, body),
                     session=_one(_first(SESSION_RE, body)))
@@ -257,6 +269,15 @@ def resolve(items: list[dict]) -> dict[int, dict]:
             if event["kind"] == "release" and event["session"] and event["session"] == c["holder"]:
                 c.update(state="released", why=f"released by comment {event['id']}", ended_at=event["created_at"],
                          ended_by=event["id"])
+    maintainers = _maintainers()
+    for event in sorted((i for i in items if i["kind"] == "recovery"), key=lambda i: i["id"]):
+        if event["session"] not in maintainers:
+            continue          # recorded, ineffective: only a listed maintainer session may recover a claim
+        for cid in event["claims"]:
+            c = claims.get(cid)
+            if c and c["state"] == "active" and c["id"] < event["id"] and _claim_stale(c, event["created_at"]):
+                c.update(state="recovered", ended_at=event["created_at"], ended_by=event["id"],
+                         why=f"recovered as stale by maintainer {event['session']} in comment {event['id']}")
     for c in sorted(claims.values(), key=lambda c: c["id"]):
         for hid in c.get("accepts") or []:
             h = handoffs.get(hid)
@@ -269,6 +290,20 @@ def resolve(items: list[dict]) -> dict[int, dict]:
                                  ended_at=c["created_at"], ended_by=c["id"])
                     c["order"] = min(c["order"], prior["order"])
     return claims
+
+
+def _maintainers() -> frozenset[str]:
+    return MAINTAINER_SESSIONS
+
+
+def _claim_stale(claim: dict, at: str) -> bool:
+    """A claim is stale when ``at`` is more than RECOVERY_GRACE past its own Recheck time; no Recheck, never."""
+    try:
+        due = datetime.strptime(claim.get("recheck") or "", "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+        when = datetime.strptime(at, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+    except ValueError:
+        return False
+    return when - due > RECOVERY_GRACE
 
 
 def decide(claims: dict[int, dict], mine: int) -> dict:
@@ -392,11 +427,20 @@ def admit(task_issue: tuple[str, int], claim: int, source: Source, cwd: str = ".
     return rec
 
 
+REQUIRED = {"claim": int, "task_record": str, "exclusive": list, "shared": list, "checked_at": str}
+
+
 def load(gitdir: Path) -> dict | None:
+    """The worktree's admission record; None when absent or unreadable; ``{"malformed": reason}`` when its shape is
+    wrong, so the hook denies with a reason rather than crashing (a crash exits 1, not the 2 that denies)."""
     try:
-        return json.loads(record_path(gitdir).read_text())
+        rec = json.loads(record_path(gitdir).read_text())
     except (OSError, ValueError):
         return None
+    if not isinstance(rec, dict):
+        return {"malformed": "the record is not a JSON object"}
+    bad = [k for k, t in REQUIRED.items() if not isinstance(rec.get(k), t) or isinstance(rec.get(k), bool)]
+    return {"malformed": f"missing or wrong fields: {bad}"} if bad else rec
 
 
 # ---------------------------------------------------------------- the hook
@@ -435,6 +479,9 @@ def gate(event: dict) -> tuple[bool, str]:
         rec = load(gitdir)
         if not rec:
             return _deny(gitdir, tool, target, f"No admission in {top}. {HOW}")
+        if "malformed" in rec:
+            return _deny(gitdir, tool, target, f"The admission record in {top} is malformed ({rec['malformed']}); "
+                         "run `python scripts/participation.py admit` again. Never edit it by hand.")
         if rec.get("refresh_required"):
             return _deny(gitdir, tool, target, "This session resumed; refresh first: "
                          "`python scripts/participation.py check`.")
@@ -449,13 +496,14 @@ def gate(event: dict) -> tuple[bool, str]:
         command = data.get("command", "") if tool == "Bash" else ""
         if tool == "Bash" and not GIT_WRITE.search(command):
             return True, "not a commit or push"
-        where = worktree_of(cwd)
+        where = worktree_of(_git_target(command, cwd) if tool == "Bash" else cwd)
         if not where:
             return True, "outside git"
         top, gitdir = where
         rec = load(gitdir)
-        if not rec:
-            return _deny(gitdir, tool, command or tool, f"No admission in {top}. {HOW}")
+        if not rec or "malformed" in rec:
+            return _deny(gitdir, tool, command or tool,
+                         f"No valid admission in {top} ({(rec or {}).get('malformed', 'none')}). {HOW}")
         publishing = tool != "Bash" or GIT_PUSH.search(command)
         if rec.get("refresh_required") or (publishing and _stale(rec)):
             return _deny(gitdir, tool, command or tool, f"Refresh before publishing: "
@@ -463,6 +511,24 @@ def gate(event: dict) -> tuple[bool, str]:
         _log(gitdir, {"tool": tool, "target": command[:200] or tool, "decision": "allow", "claim": rec["claim"]})
         return True, "admitted"
     return True, "not gated"
+
+
+_CD = re.compile(r"(?:^|[;&|]\s*)cd\s+(\"[^\"]+\"|'[^']+'|[^\s;&|]+)")
+_DASH_C = re.compile(r"\bgit\s+-C\s+(\"[^\"]+\"|'[^']+'|[^\s;&|]+)")
+
+
+def _git_target(command: str, cwd: str) -> str:
+    """The directory a commit or push in ``command`` acts on: ``git -C <dir>``, else the last ``cd <dir>`` before
+    the git word, else the hook's cwd. Shell text is not fully parsed (variables, subshells, aliases are not
+    followed), so this narrows the target; it is not a proof of it."""
+    m = GIT_WRITE.search(command)
+    head = command[: m.start() + 1] if m else command
+    dash = _DASH_C.search(command[m.start():] if m else "")
+    raw = dash[1] if dash else (_CD.findall(head) or [None])[-1]
+    if not raw:
+        return cwd
+    raw = os.path.expanduser(raw.strip("\"'"))
+    return raw if os.path.isabs(raw) else os.path.join(cwd, raw)
 
 
 def _stale(rec: dict) -> bool:
@@ -511,7 +577,7 @@ def resume_main() -> int:
                 continue
             wt = worktree_of(line[9:])
             rec = wt and load(wt[1])
-            if rec:
+            if rec and "malformed" not in rec:
                 rec["refresh_required"] = True
                 record_path(wt[1]).write_text(json.dumps(rec, indent=2) + "\n")
                 print(f"participation: claim {rec['claim']} in {wt[0]} needs `python scripts/participation.py "
@@ -615,12 +681,25 @@ def contribution(task_ref: str, session: str, source: Source, files: list[str] |
         return {"result": "fail", "assurance": "none", "reason": f"claim {cid} was posted by {c['session']}, not {session}"}
     lineage = sorted((o for o in claims.values() if o["session"] == session and o["task"] == c["task"]
                       and o["subtask"] == c["subtask"]), key=lambda o: o["id"])
+    # A claim handed to this lineage and accepted by one of its check-ins is part of it: the work its holder did
+    # before the handoff was authorized by that claim (found by trial 3, round 2: W2's PR #356 carries W1's commit).
+    seen = {o["id"] for o in lineage}
+    frontier = list(lineage)
+    while frontier:
+        nxt = []
+        for o in claims.values():
+            if o["id"] not in seen and o["state"] == "transferred" and o.get("ended_by") in {f["id"] for f in frontier}:
+                seen.add(o["id"])
+                nxt.append(o)
+        lineage += nxt
+        frontier = nxt
+    lineage.sort(key=lambda o: o["id"])
     if changes is None:
         changes = [(worked_at, files or [])]
     per_file, uncovered, historical = {}, [], False
     for when, paths in changes:
         for f in paths:
-            ok = [o for o in lineage if _covers(o["exclusive"] + o["shared"], f) and o["holder"] == session
+            ok = [o for o in lineage if _covers(o["exclusive"] + o["shared"], f)
                   and when and o["created_at"] <= when and (o["state"] == "active" or when < (o.get("ended_at") or ""))]
             if not ok:
                 uncovered.append({"file": f, "committed_at": when})
@@ -732,14 +811,14 @@ def main(argv: list[str] | None = None) -> int:
         else:
             where = worktree_of(os.getcwd())
             prior = where and load(where[1])
-            if not prior:
+            if not prior or "malformed" in prior:
                 raise Refused(f"no admission here. {HOW}")
             rec = admit(_issue(prior["task_record"]), prior["claim"], source)
             rec["admitted_at"] = prior["admitted_at"]
             record_path(where[1]).write_text(json.dumps(rec, indent=2) + "\n")
     except Refused as exc:
         where = worktree_of(os.getcwd())
-        if args.cmd == "check" and where and load(where[1]):
+        if args.cmd == "check" and where and (load(where[1]) or {}).get("claim"):
             rec = load(where[1])
             rec["refresh_required"] = True
             record_path(where[1]).write_text(json.dumps(rec, indent=2) + "\n")

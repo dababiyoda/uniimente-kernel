@@ -9,7 +9,8 @@ replay (F1-F8, MUH-F1-MUH-F5); those added when #196 was merged in on 2026-11-04
 guard 4 (copies of a registered body), the exact candidate pin and the history guard (2026-11-21) are marked MW-C,
 and those for the review of 7c2b39e5 (2026-11-22) are marked MW-C round 4 with the finding they replay (N1-N7);
 those for the review of 79ef5742 (2026-11-22) are marked MW-C round 6 with the item they close (B1-B4), and those
-for the review of 16d35caa (2026-11-22) are marked MW-C round 7 with the item they close (M1-M3).
+for the review of 16d35caa (2026-11-22) are marked MW-C round 7 with the item they close (M1-M3), and those for
+the review of ce7fc937 (2026-11-22) are marked MW-C round 8 with the item they close (M6-M9).
 A ``copy_body`` edit writes a disguised copy of a registered function at run time (every name and literal changed),
 so the mutant follows the function as it is today instead of a frozen text that would stop being a copy.
 
@@ -71,6 +72,10 @@ CANONICAL_EXACT = "test_a_decided_records_canonical_qualnames_equal_the_pin"
 REBIND_TREE = "test_no_runtime_file_rebinds_a_registered_qualname_or_a_registered_class_attribute"
 REBIND = "test_a_registered_qualname_rebound_from_another_module_or_through_a_namespace_alias_fails"
 IMPORTED_TESTS = "test_a_tests_module_that_runtime_code_imports_is_scanned_as_runtime"
+REEXPORT = "test_a_registered_qualname_rebound_through_a_re_export_or_a_consumers_imported_name_fails"
+GLOBALS_KEY = "test_a_literal_globals_key_inside_a_function_binds_the_module_level_name"
+GLOBALS_VALUE = "test_globals_used_as_a_value_in_a_module_that_holds_a_registered_qualname_fails"
+NAMESPACE_PATCH = "test_a_registered_qualname_written_through_a_namespace_or_a_mock_patcher_fails"
 # A new CANONICAL record that names candidate side A of the undecided goal runtime as its owner and side B as its
 # ALTERNATE (round 5's X1), with no ruling and no change to the test.
 ADOPTED_RECORD = ("  - record_id: OWN-FN-GOAL-RUNTIME-ADOPTED\n    function: the goal runtime, adopted\n"
@@ -666,6 +671,48 @@ MUTANTS = [
      [("append_body", "greg/body.py", "send_signed", "tests/greg_fixtures.py", "function")], BODIES),
     ("MW-C round 7: tests/ modules imported by runtime code no longer scanned",
      [("replace", TESTS, "            if parts[0] != TESTS_PACKAGE:\n", "            if True:\n")], IMPORTED_TESTS),
+    # -- MW-C round 8 (M6): a rebinding through a re-export or a consumer's imported name -------------------------------
+    ("MW-C round 8: a timing shim on OmnimorphEngine.simulate through foundry/pipeline.py's package re-export (X5)",
+     [("append", "foundry/pipeline.py", "\n\nOmnimorphEngine.simulate = OmnimorphEngine.simulate\n")], REBIND_TREE),
+    ("MW-C round 8: a shim rebinds greg.cli's imported send_signed (X2b)",
+     [("create", "greg/quick_drop.py", "import greg.cli as _cli\n\n\ndef quick_drop(*args, **kwargs):\n"
+                                      "    return None\n\n\n_cli.send_signed = quick_drop\n")], REBIND_TREE),
+    ("MW-C round 8: written chains no longer resolved through re-exports",
+     [("replace", TESTS, "        return origin(dotted, root)\n", "        return dotted\n")], REEXPORT),
+    # -- MW-C round 8 (M7): a literal globals() key inside a function is a binding ------------------------------------
+    ("MW-C round 8: an installer function in greg/business_loop.py rebinds reconcile with a literal globals() key (X1)",
+     [("append", "greg/business_loop.py", "\n\ndef _install_native(fast):\n    globals()[\"reconcile\"] = fast\n")],
+     ONE_BINDING),
+    ("MW-C round 8: literal globals() keys outside module-level statements no longer counted",
+     [("replace", TESTS, "            if id(write) not in counted:\n", "            if False:\n")], GLOBALS_KEY),
+    # -- MW-C round 8 (M8): globals() used as a value ------------------------------------------------------------------
+    ("MW-C round 8: greg/business_loop.py takes its namespace as a default argument (F3, F4)",
+     [("append", "greg/business_loop.py", "\n\ndef _install_native(fast, namespace=globals()):\n"
+                                          "    namespace[\"reconcile\"] = fast\n")], ONE_BINDING),
+    ("MW-C round 8: globals() used as a value no longer checked",
+     [("replace", TESTS, "                for line, text in other_uses]\n",
+       "                for line, text in other_uses if False]\n")], GLOBALS_VALUE),
+    # -- MW-C round 8 (M9): namespace writes and mock patchers ---------------------------------------------------------
+    ("MW-C round 8: greg/accel.py writes reconcile through greg.business_loop.__dict__ (X4)",
+     [("create", "greg/accel.py", "import greg.business_loop as _bl\n\n\ndef _fast(*args, **kwargs):\n"
+                                 "    return None\n\n\n_bl.__dict__[\"reconcile\"] = _fast\n")], REBIND_TREE),
+    ("MW-C round 8: greg/reconcile_patch.py patches greg.business_loop.reconcile with mock (F1)",
+     [("create", "greg/reconcile_patch.py", "from unittest import mock\n\n\ndef _fast(*args, **kwargs):\n"
+                                           "    return None\n\n\n"
+                                           "mock.patch(\"greg.business_loop.reconcile\", _fast).start()\n")],
+     REBIND_TREE),
+    ("MW-C round 8: __dict__ and vars() subscript writes no longer read",
+     [("replace", TESTS, "                      and _namespace_of(item.value) and isinstance(item.slice, ast.Constant)\n",
+       "                      and False and isinstance(item.slice, ast.Constant)\n")], NAMESPACE_PATCH),
+    ("MW-C round 8: __dict__.update and vars().update no longer read",
+     [("replace", TESTS, '        elif (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr == "update"\n',
+       '        elif (False and isinstance(node.func, ast.Attribute) and node.func.attr == "update"\n')], NAMESPACE_PATCH),
+    ("MW-C round 8: patch.object no longer read",
+     [("replace", TESTS, "        elif isinstance(node, ast.Call) and _dotted(node.func) in PATCH_OBJECT:\n",
+       "        elif False:\n")], NAMESPACE_PATCH),
+    ("MW-C round 8: patch('<dotted>') no longer read",
+     [("replace", TESTS, "        if isinstance(node, ast.Call) and _dotted(node.func) in PATCH:\n", "        if False:\n")],
+     NAMESPACE_PATCH),
 ]
 
 

@@ -211,8 +211,14 @@ def test_composition_families_are_declared_as_the_frozen_runs_describe_them_and_
         return "BUILT" if recipe_stale(recipe, record) else label
     for recipe in ("estimate_then_optimize", "identify_then_optimize", "bayes_then_voi"):    # F1, F2R, F4
         assert rows[f"recipe.{recipe}"]["label"] == expected(recipe, "SIMULATED"), recipe
-    # P6 joined v1 decides F1 on the joined code: 35-0 with no false answer (converged v1 had one and read UNRESOLVED)
-    assert rows["recipe.estimate_then_optimize"]["label"] == "SIMULATED"
+    # P6 joined v1 decided F1 on the joined code: 35-0 with no false answer (converged v1 had one and read UNRESOLVED).
+    # That record stays; #189's certificate-binding fix (#196 dc61929a) changed the recipe's code, so the label is
+    # BUILT until F1 is re-measured, and SIMULATED again once a fresh run binds the current closure.
+    f1 = index["recipes"]["estimate_then_optimize"]
+    assert f1["evidence"].endswith("results-joined-v1.json#summary.F1")
+    assert (f1["status"], f1["wins"], f1["losses"]) == ("VPL_LIFT", 35, 0)
+    assert rows["recipe.estimate_then_optimize"]["label"] == expected("estimate_then_optimize", "SIMULATED")
+    assert rows["recipe.estimate_then_optimize"]["label"] in ("SIMULATED", "BUILT")
     assert rows["recipe.graph_then_allocate"]["label"] == "UNRESOLVED"
     for recipe in ("forecast_then_staff", "graph_then_allocate", "track_then_staff"):        # F6, F7, F8: real data
         assert rows[f"recipe.{recipe}"]["label"] == expected(recipe, "HELDOUT_SUPPORTED"), recipe

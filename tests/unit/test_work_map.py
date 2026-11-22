@@ -3282,8 +3282,9 @@ def test_the_map_tells_posters_to_post_a_block_only_for_their_own_session(quick)
     assert ("Post a check-in block only for your own session; to pass a block to another session, leave out the "
             "marker line. A post names nobody, even your own, when:") in text
     assert "fill in for another session names nobody" not in text
-    assert ("- its text outside fenced and indented code blocks says relay, relays, relayed, relaying, relayer, "
-            "on ... behalf (up to three words between), posted for,") in text
+    assert ("- its text outside fenced code blocks (an indented line is read: inside a list item GitHub shows it as "
+            "text) says relay, relays, relayed, relaying, relayer, on ... behalf (up to three words between), posted "
+            "for,") in text
     assert "block filled in, pasted or copied with none of this wording is read as the session its Session line " \
            "names, whoever posts it" in " ".join(w.checkin_author.__doc__.split())
     assert "is read as the session its Session line names, whoever posts it" in " ".join(w.__doc__.split())
@@ -3467,9 +3468,10 @@ def test_the_ask_exception_is_stated_with_its_live_comments(quick):
         assert w.checkin_author(f"{w.CHECKIN}\n{body}\n- Session: `{B}` (Claude Code, cloud)\n{F7}") == (B, "claude")
     text = " ".join(w.markdown(w.build([], [], now=NOW, use_git=False)).split())
     assert ("An ask is the exception: a heading that opens with up to two words and then \"ask\" (`## Coordination "
-            "ask`, `## Second ask`) may name the session it asks, as live check-ins 6853648077 and 6858741219 do, "
-            "unless its byline, an id right after from, by, · or ( or one the map reads as the heading's signature, is "
-            "another id.") in text
+            "ask`, `## Second ask`) may name ids other than your Session id, as live check-ins 6853648077 and "
+            "6858741219 do, except an id right after from, by, · or (, or one the map reads as the heading's "
+            "signature: then it names nobody.") in text
+    assert "may name the session it asks" not in text and "may name the session it asks" not in _flat(w.__doc__)
     assert "when its heading or a poster label (Posted by, From, Sender, ...) names another id" not in text
     doc = " ".join(w.checkin_author.__doc__.split())
     assert "6853648077" in doc and "an id right after \"from\", \"by\", \"·\" or \"(\"" in doc
@@ -3495,8 +3497,8 @@ def test_a_copied_receipt_citing_the_copier_s_check_in_that_is_not_exact_names_n
         ("greg/missions.py", {B: [300], "(receipt session_id and task_ref disagree) #301": [301]})]
     paths, _raw = _answer(tmp_path, capsys, prs, checkins, "--paths", "greg/missions.py")
     assert sorted((p["pr"], p["session"]) for p in paths["paths"][0]["prs"]) == [(300, B), (301, None)]
-    assert "the one id the cited post's check-in Session line names" in " ".join(
-        w.disagreeing_task_refs.__doc__.split())
+    assert "check-in Session line names one id (``checkin_verdict``'s ``names``, whether or not the post is an exact " \
+           "check-in" in " ".join(w.disagreeing_task_refs.__doc__.split())
 
 
 # ------------------------------------------------------------------ round 8: inflections of the heading words
@@ -3532,11 +3534,13 @@ def test_the_heading_words_are_listed_with_their_inflections(quick):
     assert w.checkin_author(f"{w.CHECKIN}\n## Claim: transfer test for WU-11\n- Session: `{B}`\n{F7}") == (B, "claude")
     doc = " ".join(w.checkin_author.__doc__.split())
     assert ('"hand", "hands", "handed" or "handing" then up to three words then "over" or "off"' in doc and
-            '"review", "reviews", "reviewed", "reviewing" (each also after "re" or "re-", as in "re-review")' in doc)
+            '"reassign", the word "review", "reviews", "reviewed", "reviewing", "reviewer" or "reviewers" (each also '
+            'after "re" or "re-", as in "re-review")' in doc)
     text = " ".join(w.markdown(w.build([], [], now=NOW, use_git=False)).split())
     assert ("says hand off, handoff, hand-off, hand over, handover or hand-over (or their plurals), hand, hands, "
-            "handed or handing then up to three words then over or off, a word that begins with reassign, review, "
-            "reviews, reviewed or reviewing (each also after re or re-), or for/to the next owner.") in text
+            "handed or handing then up to three words then over or off, a word that begins with reassign, the word "
+            "review, reviews, reviewed, reviewing, reviewer or reviewers (each also after re or re-), or for/to the "
+            "next owner.") in text
 
 
 # ------------------------------------------------------------------ round 8: poster labels in any case, and prose
@@ -3574,10 +3578,11 @@ def test_a_poster_label_in_any_case_or_posted_by_in_prose_naming_another_id_name
 
 def test_a_poster_wording_that_names_the_session_or_no_id_or_sits_in_code_still_names_it():
     for text in (f"- posted by: `{B}`", "- Posted by: the founder, for this session", f"Posted by `{B}` itself.",
-                 f"    posted by `{A}` (an indented block)", f"```\nsubmitted by `{A}`\n```"):
+                 f"```\nsubmitted by `{A}`\n```", f"```\n- Posted by: `{A}`\n```"):
         body = f"{w.CHECKIN}\n## Check-in: WU-11\n- Session: `{B}` (Claude Code, cloud)\n{F7}\n{text}\n"
         assert w.checkin_author(body) == (B, "claude"), text
-    assert "poster labels or poster wording that ``checkin_author`` lists" in " ".join(w.__doc__.split())
+    assert ("none of the relay, heading or poster wording that ``checkin_author`` lists and no poster label naming "
+            "another id") in " ".join(w.__doc__.split())
     assert "names another poster" not in " ".join(w.__doc__.split())
 
 
@@ -3640,16 +3645,19 @@ def test_an_accepted_handoff_the_receipt_check_accepts_names_its_receiver(quick)
 
 
 # ------------------------------------------------------------------ round 8: a task_ref citing the receiver or itself
-# A cited check-in agrees when it names the receipt's session_id or, with an accepted handoff, its receiver; a
-# receipt names no session only when every cited marker post names another session than both (round 7's RH3, RH7,
-# RH8 and probes7b: the receiver cites its own check-in, as RECEIPT.md tells it to).
+# A cited check-in agrees when it names the receipt's session_id or, with an accepted handoff, its receiver (round 7's
+# RH3, RH7 and probes7b: the receiver cites its own check-in, as RECEIPT.md tells it to); one cited marker post naming
+# any other id names no session (round 8's R1: a copy citing the copier's check-in beside the original session's).
 CTASK = f"https://github.com/{REPO}/issues/96#issuecomment-7100000083"
 CHECKINS_ABC = CHECKINS_AB + [_comment(7100000083, _signed("## Check-in: elsewhere", C, F7), at="2026-11-12T09:40:00Z")]
 CITING = [  # (handoff to A accepted?, task_ref, expected session, expected task_ref_cites)
     (True, ATASK, A, None),                                   # RH3 / probes7b: the receiver's own check-in
     (True, f"{BTASK} (acknowledged in {ATASK})", A, None),    # RH7: the sender's, then the receiver's
     (True, BTASK, A, None),                                   # the sender's
-    (False, f"split acknowledged in {ATASK}; check-in {BTASK}", B, None),   # RH8: the counterpart's first, then its own
+    (False, f"split acknowledged in {ATASK}; check-in {BTASK}", None, 7100000082),   # RH8: names none, the safe way
+    (False, f"{ATASK} (follow-up to {BTASK})", None, 7100000082),     # round 8 R1: a copy citing the copier and B
+    (False, f"started from {BTASK}; my check-in {ATASK}", None, 7100000082),   # R5: B's first, then the copier's
+    (True, f"{BTASK}; {ATASK}; {CTASK}", None, 7100000083),   # sender and receiver agree, a third session does not
     (True, CTASK, None, 7100000083),                          # a third session's only
     (True, f"{CTASK} and {CTASK[:-1]}4", None, 7100000083),   # a third session's and one that is not on the board
     (False, ATASK, None, 7100000082),                         # no handoff: another session's only
@@ -3669,7 +3677,9 @@ def test_a_task_ref_agrees_when_any_cited_check_in_names_the_sender_or_the_recei
     assert (row["session"], row["task_ref_cites"]) == (session, cites)
     assert row["session_unnamed"] == (None if session else "receipt session_id and task_ref disagree")
     doc = " ".join(w.disagreeing_task_refs.__doc__.split())
-    assert "only when every cited post that opens with the check-in marker names a session other than" in doc
+    assert ("one cited post naming any other id is enough, so a copied receipt whose ``task_ref`` cites the copier's "
+            "check-in beside the original session's names no session") in doc
+    assert "only when every cited post" not in doc and "(this list is not complete)" in doc
 
 
 # ------------------------------------------------------------------ round 8: every sentence about a rule is exact
@@ -3677,16 +3687,19 @@ def _flat(text: str) -> str:
     return " ".join(text.split())
 
 
-def test_outside_code_means_outside_fenced_and_indented_blocks_and_inline_code_counts(quick):
+def test_outside_code_means_outside_fenced_blocks_and_inline_code_and_indented_lines_count(quick):
     # The false negative is stated: a genuine check-in naming `relay.py` in backticks names nobody.
     for files in ("- Files: `foundry/systems/relay_door.py`", "- Plan: build the event `relay`"):
         assert w.checkin_verdict(f"{w.CHECKIN}\n## Check-in: WU-11\n- Session: `{B}`\n{files}\n")["reason"] == "relayed"
-    for code in ("```text\nrelayed by someone\n```", "    relayed by someone (an indented block)"):
-        assert w.checkin_author(f"{w.CHECKIN}\n## Check-in: WU-11\n- Session: `{B}`\n{F7}\n{code}\n") == (B, "claude")
+    assert w.checkin_author(f"{w.CHECKIN}\n## Check-in: WU-11\n- Session: `{B}`\n{F7}\n```text\nrelayed by someone"
+                            f"\n```\n") == (B, "claude")
+    # Round 8: a line indented four spaces after a blank line continues a list item, which GitHub renders as text.
+    assert w.checkin_verdict(f"{w.CHECKIN}\n## Check-in: WU-11\n- Session: `{B}`\n{F7}\n\n    relayed by someone"
+                             "\n")["reason"] == "relayed"
     doc, text = _flat(w.checkin_author.__doc__), _flat(w.markdown(w.build([], [], now=NOW, use_git=False)))
     for said in (doc, text):
-        assert "outside fenced and indented code blocks" in said and "outside code" not in said.replace(
-            "outside fenced and indented code", "")
+        assert "outside fenced code blocks (an indented line is read: inside a list item GitHub shows it as text)" in said
+        assert "indented code blocks" not in said
     assert "Inline code counts, so a genuine check-in that names a file such as `relay.py` names nobody" in doc
     assert "Inline code counts, so a genuine check-in that names a file such as `relay.py` names nobody" in text
 
@@ -3699,9 +3712,10 @@ def test_the_gaps_line_counts_receipts_that_name_no_session_whatever_else_the_ch
     text = _flat(w.markdown(m))
     assert "the check accepts" not in text and "the check accepts" not in _flat(w.__doc__)
     assert ("receipts that name no session for another reason, whatever else the receipt check refuses in them "
-            "(their session_id names more than one id or an id it does not open with, their task_ref cites only "
-            "posts whose check-in Session line names neither their session_id nor their accepted handoff's "
-            "receiver, or their accepted handoff's receiver is not one id or is refused by the receipt check; "
+            "(their session_id names more than one id or an id it does not open with, their task_ref cites a post "
+            "that opens with the check-in marker and whose Session line names one id other than their session_id "
+            "and their accepted handoff's receiver, or their accepted handoff's receiver is not one id or is refused "
+            "by the receipt check; "
             "`session_unnamed` in the JSON): 1") in text
     assert ("``session_unnamed``, why the map names no session for a receipt whose ``session_id`` the receipt check "
             "does not refuse, whatever else the check refuses in it") in _flat(w.__doc__)
@@ -3717,8 +3731,11 @@ def test_the_check_in_section_states_the_rule_then_each_word_then_what_is_not_re
             "own reply, as live check-in 7068165767 is.") in text
     assert ("Among the wordings not read (this list is not complete) are forwarded, takeover, claim transferred "
             "to, passing, copied from the previous owner, a heading that names only the Session id (``## Check-in for "
-            "`B` ``), a relay word only inside a fenced block, and handoff or review wording outside the heading: such "
-            "a post names the session on its Session line, whoever posts it.") in text
+            "`B` ``), a relay word only inside a fenced block, handoff or review wording outside the heading, posting "
+            "for, post this block as your check-in, posted on the board by, a poster label or posted by naming a name "
+            "that is not an id (Posted by Hegemony), and an ask heading that names its poster another way (``## "
+            "Coordination ask — `A`: ...``, signed `A`): such a post names the session on its Session line, whoever "
+            "posts it.") in text
     assert "..., names another" not in text and "(Posted by, From, Sender, ...)" not in text
     for said in (_flat(w.__doc__), _flat(w.checkin_author.__doc__)):
         assert ('Among the wordings not read (this list is not complete) are "forwarded", "takeover", "claim '
@@ -3727,12 +3744,83 @@ def test_the_check_in_section_states_the_rule_then_each_word_then_what_is_not_re
 
 def test_the_module_docstring_lists_every_condition_and_both_release_authors():
     doc = _flat(w.__doc__)
-    assert ("in a post with none of the relay words, heading words, poster labels or poster wording that "
-            "``checkin_author`` lists, whose heading names no other id (an ask heading may name the session it asks, "
-            "unless its byline is another id)") in doc
+    assert ("in a post that has none of the relay, heading or poster wording that ``checkin_author`` lists and no "
+            "poster label naming another id, and whose heading names no other id (an ask heading may name other ids, "
+            "except one in a byline place that ``checkin_author`` lists)") in doc
+    assert ("The residuals found so far are stated where each rule is, and none is claimed as covered; no list of "
+            "them is complete.") in doc and "citing nothing else" not in doc
     assert "does not relay, hand over, reassign or review" not in doc
     assert "A check-in that relays, or whose heading hands over" not in doc
     assert ("one where either author, the release's or the claim's, is not exact is "
             "``release_by_unverified_author``") in doc
     text = _flat(w.markdown(w.build([], [], now=NOW, use_git=False)))
     assert "relay, hand over, reassign or review" not in text
+
+
+# ------------------------------------------------------------------ round 8 review: the last fixes, each measured at 0
+# live cost before it was made (no live exact check-in, receipt session or contended row changes).
+@pytest.mark.parametrize("heading", ["## Reviewer check: is claim 7100000001 still held?",
+                                     "## Check-in: WU-11, reviewer pass on claim 7100000001",
+                                     "## Reviewers' note: WU-11"])
+def test_a_reviewer_heading_names_nobody(quick, heading):
+    body = f"{w.CHECKIN}\n{heading}\n- Session: `{B}` (Claude Code, cloud), claim 7100000001\n{F7}"
+    assert w.checkin_verdict(body)["reason"] == "handoff, review or reassignment wording in its heading"
+    old = _comment(7100000001, _signed("## Claim: WU-11 seam", B, F7), at="2026-11-01T11:00:00Z")
+    m = w.build([], [old, _comment(7100000002, body)], now=NOW, use_git=False)
+    assert [(s["session"], s["activity"]) for s in m["sessions"]] == [(B, "DORMANT")]
+    assert _claim(m, 7100000001)["state"] == "dormant"
+    # The answers exception covers the new words too: the post's own reply to its reviewer.
+    assert w.checkin_author(f"{w.CHECKIN}\n## Check-in: WU-11, answering the reviewer's findings\n- Session: `{B}`\n"
+                            f"{F7}") == (B, "claude")
+
+
+@pytest.mark.parametrize("text", [f"Relayed for `{B}` by `{A}`; `{B}` cannot post here.",
+                                  f"- Posted by: `{A}`", f"Posted by `{A}` for `{B}`."])
+def test_a_line_indented_under_a_list_item_is_read_as_the_text_github_shows(quick, tmp_path, capsys, text):
+    # CommonMark renders a line indented four spaces after a blank line inside a list item as text in that item.
+    body = (f"{w.CHECKIN}\n## Check-in: WU-11\n- Session: `{B}` (Claude Code, cloud), claim 7100000001\n"
+            f"- Files / interfaces: `greg/missions.py`\n\n    {text}\n")
+    assert w.checkin_author(body) is None and w.checkin_verdict(body)["names"] == B
+    old = _comment(7100000001, _signed("## Claim: WU-11 seam", B, F7), at="2026-11-01T11:00:00Z")
+    comments = [old, _comment(7100000002, body)]
+    m = w.build([], comments, now=NOW, use_git=False)
+    assert [(s["session"], s["activity"]) for s in m["sessions"]] == [(B, "DORMANT")]
+    assert _claim(m, 7100000001)["state"] == "dormant"
+    paths, _raw = _answer(tmp_path, capsys, [], comments, "--paths", "greg/missions.py")
+    assert [(c["comment"], c["state"]) for c in paths["paths"][0]["claims"] if c["comment"] == 7100000001] == [
+        (7100000001, "dormant")]
+
+
+ACK_FIELD_CASES = [{"status": "accepted", "receiver_session": A, "reference": "https://x/96#c1", "note": "today"},
+                   {"status": "accepted", "receiver_session": A, "reference": "https://x/96#c1",
+                    "accepted_at": "2026-11-21T10:00:00Z"},
+                   {"status": "accepted", "receiver_session": A},
+                   {"status": "accepted", "reference": "https://x/96#c1"}]
+
+
+@pytest.mark.parametrize("ack", ACK_FIELD_CASES, ids=range(len(ACK_FIELD_CASES)))
+def test_an_acknowledgment_with_missing_or_extra_fields_names_no_session_in_the_check_s_words(quick, ack):
+    check, data = _receipt_check(), _checked_receipt()
+    data["coordination"]["session_id"] = B
+    data["handoff"]["acknowledgment"] = ack
+    said = _check_refusal(check, data)
+    assert said == "handoff acknowledgment: missing or unexpected fields"
+    m = w.build([_pr(300, "b/seam", body=_body(json.dumps(data)))], [], now=NOW, use_git=False)
+    row = m["prs"][0]
+    assert (row["session"], row["session_unnamed"], row["handed_over_from"]) == (None, said, B)
+    assert m["sessions"] == [] and m["gaps"]["receipts_naming_no_session"] == [300]
+
+
+@pytest.mark.parametrize("task", [f"{ATASK} (follow-up to {BTASK})", f"{BTASK} (follow-up); my check-in {ATASK}"])
+def test_a_copied_receipt_citing_the_copier_s_check_in_beside_the_original_s_names_no_session(quick, tmp_path, capsys,
+                                                                                             task):
+    prs = _copied(task)
+    m = w.build(prs, CHECKINS_AB, now=NOW, use_git=False)
+    rows = {r["pr"]: r for r in m["prs"]}
+    assert (rows[301]["session"], rows[301]["session_unnamed"], rows[301]["task_ref_cites"]) == (
+        None, "receipt session_id and task_ref disagree", 7100000082)
+    assert {s["session"]: s["prs"] for s in m["sessions"]} == {B: [300], A: []}
+    assert [(c["file"], c["holders"]) for c in m["contended"]] == [
+        ("greg/missions.py", {B: [300], "(receipt session_id and task_ref disagree) #301": [301]})]
+    paths, _raw = _answer(tmp_path, capsys, prs, CHECKINS_AB, "--paths", "greg/missions.py")
+    assert sorted((p["pr"], p["session"]) for p in paths["paths"][0]["prs"]) == [(300, B), (301, None)]

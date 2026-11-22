@@ -316,18 +316,12 @@ def receipt_of(body: str | None, version: int = 2) -> dict | None:
     if block is None:
         return None
 
-    def non_finite(name: str):
-        raise ValueError(f"non-finite JSON number {name}")
-
-    def unique(pairs: list) -> dict:
-        out = {}
-        for key, value in pairs:
-            if key in out:
-                raise ValueError("duplicate JSON key")
-            out[key] = value
-        return out
+    # One strict JSON reader for the Kernel: the contract owner's (duplicate keys and NaN/Infinity refused).
+    if str(ROOT) not in sys.path:
+        sys.path.insert(0, str(ROOT))
+    from adapters.contract_validation import strict_json
     try:
-        data = json.loads(block[1], object_pairs_hook=unique, parse_constant=non_finite)
+        data = strict_json(block[1])
     except (ValueError, RecursionError):
         return None
     if not isinstance(data, dict) or type(data.get("version")) is not int or data["version"] != version:

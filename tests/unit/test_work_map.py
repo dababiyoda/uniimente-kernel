@@ -3141,3 +3141,26 @@ def test_a_form_feed_or_line_separator_ends_no_line_for_any_reader():
     assert not w.opens_with_checkin("\x0c\n" + body) and w.checkin_author(body) is None
     assert w.heading_of(f"## Claim - Files: `greg/missions.py`") == "## Claim - Files: `greg/missions.py`"
     assert w._prose("a\x0cb c\nd") == ["a\x0cb c", "d"]
+
+
+# ------------------------------------------------------------------ round 7: what ends the Session line's paragraph
+# GitHub (CommonMark) ends a paragraph only at a blank line or a line that may interrupt one. Each line here is read
+# with the Session line, so the second id it names makes the block name nobody. "2." is read with it too: CommonMark
+# may open a new list there, and reading the line is the safe direction.
+CONTINUES_THE_SESSION_LINE = ["#317 opened by `{a}`", "<sub>`{a}`</sub>", "|`{a}` |", "***`{a}`***", "2. `{a}`",
+                              "**Note:** `{a}`", "#317 relayed by `{a}`", "<sub>relayed by `{a}`</sub>",
+                              "|relayed by `{a}`", "***relayed by `{a}`***"]
+ENDS_THE_SESSION_LINE = ["# Note `{a}`", "###### `{a}`", "> `{a}`", "1. `{a}`", "1) `{a}`", "- `{a}`", "* `{a}`",
+                         "<div>`{a}`</div>", "<!-- `{a}` -->", "<details>", "```", "~~~", "---", "***", "_ _ _"]
+
+
+@pytest.mark.parametrize("line", CONTINUES_THE_SESSION_LINE, ids=range(len(CONTINUES_THE_SESSION_LINE)))
+def test_a_line_that_cannot_interrupt_a_paragraph_is_read_with_the_session_line(line):
+    body = f"{w.CHECKIN}\n## Check-in\n- Session: `{B}`\n{line.format(a=A)}\n- Files: `greg/missions.py`\n"
+    assert w.checkin_author(body) is None
+
+
+@pytest.mark.parametrize("line", ENDS_THE_SESSION_LINE, ids=range(len(ENDS_THE_SESSION_LINE)))
+def test_a_line_that_interrupts_a_paragraph_ends_the_session_line(line):
+    body = f"{w.CHECKIN}\n## Check-in\n- Session: `{B}`\n{line.format(a=A)}\n`{A}`\n"
+    assert w.checkin_author(body) == (B, "claude")

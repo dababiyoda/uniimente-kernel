@@ -569,8 +569,19 @@ _CHECKIN_SESSION = re.compile(r"^-[ \t]+(?:\*\*Session:\*\*|Session:)[ \t]+(?P<v
 _LIST_ITEM = re.compile(r"^[ \t]*(?:[-*+]|\d{1,3}[.)])[ \t]")
 _HEADING = re.compile(r"^#{1,6}(?:[ \t]|$)")       # an ATX heading at the margin, as CHECKIN_BLOCK's "## Check-in"
 _BOLD_TITLE = re.compile(r"^\*\*(?:[^*\n]|\*(?!\*))+\*\*[ \t]*$")   # a line that is one bold run: "**Handoff**"
-# A line that starts another block, so it is not a lazy continuation of the Session line's item.
-_BLOCK_START = re.compile(r"^(?:[ \t]*(?:[-*+]|\d{1,3}[.)])(?:[ \t]|$)| {0,3}(?:#|>|`{3,}|~{3,}|<|\||[-*_]{3,}))")
+# A line at the margin that starts another block, so it is not a lazy continuation of the Session line's paragraph:
+# what CommonMark lets interrupt a paragraph. An ATX heading ("#" to "######", then a space, a tab or the end), a
+# thematic break, a fence, a block quote, a list item that is not empty (an ordered one only from 1), and an HTML
+# block of types 1 to 6 (its tag in both CommonMark 0.29's and 0.31's lists). Anything else is read with the Session
+# line, the safe direction: "#317", inline HTML ("<sub>"), a "|" row, an emphasis run, an item numbered "2.".
+_HTML_BLOCK = ("address|article|aside|base|basefont|blockquote|body|caption|center|col|colgroup|dd|details|dialog|dir|"
+               "div|dl|dt|fieldset|figcaption|figure|footer|form|frame|frameset|h[1-6]|head|header|hr|html|iframe|"
+               "legend|li|link|main|menu|menuitem|nav|noframes|ol|optgroup|option|p|param|section|summary|table|"
+               "tbody|td|tfoot|th|thead|title|tr|track|ul")
+_BLOCK_START = re.compile(r"^(?:#{1,6}(?:[ \t]|$)|(?:\*[ \t]*){3,}$|(?:-[ \t]*){3,}$|(?:_[ \t]*){3,}$|`{3,}[^`]*$|~{3,}|>"
+                          r"|[-*+][ \t]+\S|1[.)][ \t]+\S"
+                          r"|(?i:<(?:script|pre|style|textarea)(?:[ \t>]|$)|<!--|<\?|<![a-z]|<!\[CDATA\[|"
+                          rf"</?(?:{_HTML_BLOCK})(?:[ \t>]|/>|$)))")
 
 
 def opens_with_checkin(body: str) -> bool:
@@ -586,9 +597,9 @@ def checkin_author(body: str) -> tuple[str, str] | None:
     line), then the block's own ``Session:`` line as the first line that is not blank after it, or after the block's
     heading when that follows the marker. The heading is one ``#`` heading line, or a line that is one bold run and
     names no session id (so "**Relayed by `A`.**" is a lead line, not a heading). The value, the Session line with
-    the lines GitHub renders in the same paragraph (indented ones, and lazy ones up to a blank line or a line that
-    starts another block), opens with an id and names exactly one: "`B` → `A`" or "`B` (relayed by `A`)" names
-    nobody.
+    the lines GitHub renders in the same paragraph (indented ones, and lazy ones up to a blank line or a line at the
+    margin that CommonMark lets interrupt a paragraph, ``_BLOCK_START``), opens with an id and names exactly one:
+    "`B` → `A`" or "`B` (relayed by `A`)" names nobody.
 
     So only blank lines sit between the marker, the heading and the Session line: no lead paragraph, no second
     heading, nothing GitHub does not render as plain text (an HTML comment, ``<details>``, ``<pre>``, a fence). A
@@ -616,7 +627,7 @@ def checkin_author(body: str) -> tuple[str, str] | None:
         return None
     value = [m["value"]]
     for line in lines[after[0] + 1:]:
-        if not line.strip(" \t") or (_BLOCK_START.match(line) and line[:1] not in " \t"):
+        if not line.strip(" \t") or _BLOCK_START.match(line):
             break
         value.append(line)
     hits = _spans("\n".join(value))

@@ -68,3 +68,44 @@ keeping the outcome record.
 From the repository root, run
 `python tests/experiments/reconstitution/experiment.py`. Tests use the standard
 library and can also be collected by the repository's ordinary test runner.
+
+## Recorded results
+
+Design and measures were committed at `a94de42b` before execution.
+The frozen implementation is `c24d671785b5879ea609ebd7b2ef726cc55ea2c2`.
+The first unrecorded-result attempt stopped on a Python type error in source
+membership. The corrected version ran to completion, and the fixture and
+scoring rules stayed fixed. The retained [first result](results.json) and
+[independent result](independent-result.json) are reproducible byte for byte.
+
+| Comparison | Outcome |
+| --- | --- |
+| Adaptive local vs frozen links after source + operator loss | Local restored the decision at the first observation. Frozen failed through six rounds. Both retracted the unsupported claim and kept the unrelated claim. |
+| Adaptive local vs adaptive central | Both recovered correct support. Central used three rule checks to recompute closure. Local checked five rules by the first answer and 30 over six observation rounds. No compute or speed advantage established. |
+| Author-exposed transfer | The role preference avoided one rewire, with the same first answer (round two) and checks (30). |
+| Independently authored transfer | Same result across five required proofs. The role preference avoided one rewire, with the same main first answer (round three) and checks (36). |
+
+The independent fixture was authored by a separate agent session using the same
+model family. It saw the interface and role vocabulary, and withheld fixture
+details until the implementation was committed. The fixture has a multi-input
+decision, a deeper support chain, and a separately supported control. Run
+`python tests/experiments/reconstitution/independent_trial.py` to reproduce.
+
+The recovered rule was **prefer a corroborating provider at the first input of
+a decision**. It is a role preference derived from observed rewiring, not a
+saved answer or a newly invented reasoning operator. The alternate route had
+already computed support before the loss, so this experiment shows rebinding
+and lineage-aware retraction. It does not yet show cold reconstruction or
+a sustained gain net of the 66 rule checks used to acquire the preference.
+
+## Handoff
+
+Decision: **EXPERIMENT**. Keep the controls and the two measured limitations.
+The next developmental test withholds the useful alternative until after a
+source and operator are lost, then changes the shape of the surviving evidence.
+Compare learning against a static rule that already prefers corroboration, as
+well as the incremental central evaluator. An event-driven local arm should
+skip rechecking unchanged inputs. Score equivalent support, recovery through
+further changes, and work to correct closure. Separate author and evaluator,
+and hold a second domain out until implementation is fixed. Carry competing
+interpretations and costs forward. [Claim and coordinate on #350](https://github.com/dababiyoda/uniimente-kernel/issues/350).

@@ -1,0 +1,256 @@
+{
+  "decision_id": "DELIB-20261122-COGNITIVE-RECONSTITUTION",
+  "title": "Test local reconstitution and inherited reasoning in isolation",
+  "problem": "GREG has local transport repair and a directed construction path. The missing evidence is useful reasoning formed by local interaction and retained for later work.",
+  "founder_intent_refs": [
+    "https://github.com/dababiyoda/uniimente-kernel/issues/350",
+    "INTENT-20261021-MIND-MAXIMUM-CONTINUATION",
+    "INTENT-20261111-ABSOLUTE-OPUS-MAXIMUS"
+  ],
+  "baseline": "The recorded MICA/CDPE transport parity and the incremental central reasoning arm on the new fixture.",
+  "alternatives": [
+    {
+      "name": "Adaptive central",
+      "description": "Incremental proof-tracking worklist.",
+      "advantages": [
+        "Simple exact recovery on these fixtures."
+      ],
+      "disadvantages": [
+        "A coordinating component is required in the model."
+      ],
+      "revival_evidence": "Retain as the active comparison and prefer it if it continues to win."
+    },
+    {
+      "name": "Frozen local links",
+      "description": "Same local operators with original links preserved.",
+      "advantages": [
+        "Separates rewiring from effects of the operators."
+      ],
+      "disadvantages": [
+        "Cannot select an alternate provider after loss."
+      ],
+      "revival_evidence": "Retain as an ablation until a better isolation design exists."
+    },
+    {
+      "name": "Adaptive local links",
+      "description": "Local receivers bind matching offers and export a role preference from an observed proof.",
+      "advantages": [
+        "Recovery can happen by local reactions."
+      ],
+      "disadvantages": [
+        "Polling and extracted preference may cost more than they return."
+      ],
+      "revival_evidence": "Repeat with dormant alternatives, an event-driven arm and hidden transfer."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Keep existing repair and Genesis; the transfer hypothesis stays untested.",
+    "advantages": [
+      "No new maintenance burden."
+    ],
+    "disadvantages": [
+      "No contrast between reasoning repair and transport repair."
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Keep emergent and inherited reasoning as the target; label local rerouting a precursor.",
+      "material_concerns": [
+        "A known backup can make recovery look like new competence."
+      ],
+      "evidence_refs": [
+        "https://github.com/dababiyoda/uniimente-kernel/issues/350",
+        "README.md"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Exercise typed offers and live proofs in the existing isolated evaluation surface.",
+      "material_concerns": [
+        "Local polling can cost more than an incremental central evaluator."
+      ],
+      "evidence_refs": [
+        "https://github.com/dababiyoda/uniimente-kernel/issues/350",
+        "README.md"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Require frozen-edge, adaptive central and cold controls, plus a separate evaluator; a known backup does not establish generation.",
+      "material_concerns": [
+        "A known backup can make recovery look like new competence."
+      ],
+      "evidence_refs": [
+        "https://github.com/dababiyoda/uniimente-kernel/issues/350",
+        "README.md"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Use pure in-memory state and deterministic receipts so the probe is easy to run or remove.",
+      "material_concerns": [
+        "Local polling can cost more than an incremental central evaluator."
+      ],
+      "evidence_refs": [
+        "https://github.com/dababiyoda/uniimente-kernel/issues/350",
+        "README.md"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Use synthetic data and cost and provenance checks; qualified runtime work remains separately governed.",
+      "material_concerns": [
+        "A one-position preference may be equivalent to a static rule."
+      ],
+      "evidence_refs": [
+        "https://github.com/dababiyoda/uniimente-kernel/issues/350",
+        "README.md"
+      ],
+      "recommendation": "EXPERIMENT"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "Rewiring restores support after loss",
+      "tier": "deterministic_fixture",
+      "reference": "results.json",
+      "finding": "The local arm recovered and the frozen control did not."
+    },
+    {
+      "claim": "A learned preference applies to another authored domain",
+      "tier": "deterministic_fixture",
+      "reference": "independent-result.json",
+      "finding": "All five proofs agree; the inherited arm makes zero rather than one rewire."
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "Central recovery required fewer checks",
+      "tier": "deterministic_fixture",
+      "reference": "results.json",
+      "finding": "Three checks for central closure; local checked five by first answer and 30 across its observation phase."
+    },
+    {
+      "claim": "Transfer had no speed or rule-check gain",
+      "tier": "deterministic_fixture",
+      "reference": "independent-result.json",
+      "finding": "Both arms reached the main target at round three and used 36 checks."
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "Recover a proof with partial loss and measure whether an extracted arrangement helps on a new task.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "Local recombination is causally identifiable.",
+        "amplified_value": "Pair identical operators with frozen connections and retain the failed arm."
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "A known backup can make recovery look like new competence.",
+        "severity": "high",
+        "response_type": "evidence",
+        "redesigned_response": "Keep provenance and compare a frozen-network control; state whether the alternate was available already."
+      }
+    ],
+    "comparisons": {
+      "baseline": "Historical transport repair is parity.",
+      "do_nothing": "Preserves history and leaves the question open.",
+      "simplest_viable_alternative": "Frozen positive-rule composition.",
+      "strongest_competing_architecture": "Central incremental worklist.",
+      "reversible_experiment": "Synthetic test program with an independently prepared transfer case."
+    },
+    "rejected_alternatives": [
+      {
+        "name": "Direct runtime attachment",
+        "rejection_reason": "Synthetic evidence cannot justify attachment.",
+        "revival_evidence": "Predeclared advantage against matched strong alternatives, canonical approval and integrated replay."
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Attack mislabeled transport repair, route memorization, and central advantage under normal execution.",
+    "new_weaknesses": [
+      {
+        "id": "N1",
+        "category": "overfit",
+        "statement": "A one-position preference may be equivalent to a static rule.",
+        "strengthening_response": "Freeze code before a separate agent supplies a different dependency shape; keep a static corroboration policy for the successor comparison."
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "accepted",
+        "rationale": "The present experiment measures local rebinding to corroborated evidence, with cold reconstruction explicitly open.",
+        "owner": "Task #350 implementer; intake owner decides any later integration",
+        "review_trigger": "Separately authored novel-topology benchmark compares event-driven local and adaptive central at matched cost."
+      }
+    ],
+    "final_design": "Bounded positive-rule proof experiment, frozen links and central comparison, role-only preference with separately authored transfer.",
+    "residual_risks": [
+      {
+        "risk": "A known backup can make recovery look like new competence.",
+        "mitigation": "Preserve the limitation, run the next controlled comparison before any active integration.",
+        "owner": "Task #350 implementer; intake owner decides any later integration",
+        "review_trigger": "Separately authored novel-topology benchmark compares event-driven local and adaptive central at matched cost."
+      },
+      {
+        "risk": "A one-position preference may be equivalent to a static rule.",
+        "mitigation": "Preserve the limitation, run the next controlled comparison before any active integration.",
+        "owner": "Task #350 implementer; intake owner decides any later integration",
+        "review_trigger": "Separately authored novel-topology benchmark compares event-driven local and adaptive central at matched cost."
+      },
+      {
+        "risk": "Local polling can cost more than an incremental central evaluator.",
+        "mitigation": "Preserve the limitation, run the next controlled comparison before any active integration.",
+        "owner": "Task #350 implementer; intake owner decides any later integration",
+        "review_trigger": "Separately authored novel-topology benchmark compares event-driven local and adaptive central at matched cost."
+      }
+    ],
+    "recommendation": "EXPERIMENT"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Keep the skeptic's objections and counterevidence as acceptance requirements for the next trial.",
+    "entries": [
+      {
+        "role": "Adversarial Reviewer",
+        "position": "No demonstrated broad cognitive advantage.",
+        "rationale": "Central was cheaper and successful, and a simple hand-coded policy might reproduce the transfer.",
+        "evidence_threshold": "Beat the static corroboration policy and central comparator on new topology with material net benefit.",
+        "owner": "Task #350 implementer; intake owner decides any later integration",
+        "review_trigger": "Separately authored novel-topology benchmark compares event-driven local and adaptive central at matched cost."
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": false,
+    "approval_status": "not_required",
+    "approver": null
+  },
+  "migration_plan": "Isolated simulation; no consumer migration. Any candidate integration uses existing Genesis and appraisal after a distinct intake decision.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Close the draft or revert the experiment commits, keeping the issue and evidence history."
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "Any stale proof presented as supported.",
+    "Any repeated realistic comparison shows no useful attributable benefit over a simpler route."
+  ],
+  "decision": "EXPERIMENT",
+  "decision_owner": "Task #350 implementer; intake owner decides any later integration",
+  "review_trigger": "Separately authored novel-topology benchmark compares event-driven local and adaptive central at matched cost."
+}

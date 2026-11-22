@@ -1,0 +1,45 @@
+{
+  "fixture_sha256": "c3e1c97f71a3b0a26307ea9ca59c1a2f1d4ece624181a33f490b4e6b1efe7096",
+  "implementation_commit": "c24d671785b5879ea609ebd7b2ef726cc55ea2c2",
+  "outcome": {
+    "cold": {
+      "binding_changes": [
+        [
+          "r66",
+          0,
+          "r09",
+          "r42"
+        ]
+      ],
+      "correct_terminal_support": {
+        "asset-cleared": true,
+        "asset-ready": true,
+        "desk-ready": true,
+        "handoff-approved": true,
+        "room-open-for-training": true
+      },
+      "first_target_round": {
+        "handoff-approved": 3,
+        "room-open-for-training": 1
+      },
+      "rewires": 1,
+      "rule_checks": 36
+    },
+    "inherited": {
+      "binding_changes": [],
+      "correct_terminal_support": {
+        "asset-cleared": true,
+        "asset-ready": true,
+        "desk-ready": true,
+        "handoff-approved": true,
+        "room-open-for-training": true
+      },
+      "first_target_round": {
+        "handoff-approved": 3,
+        "room-open-for-training": 1
+      },
+      "rewires": 0,
+      "rule_checks": 36
+    }
+  }
+}

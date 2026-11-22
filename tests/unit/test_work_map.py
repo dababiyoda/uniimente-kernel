@@ -3116,15 +3116,17 @@ def test_the_gaps_line_says_what_its_unresolved_posts_lack(quick):
                                                                                (7100000041, False)]
     text = w.markdown(m)
     assert ("- Board posts in the last 7 days with no check-in block of their own (the marker alone on the first "
-            "line, then the block's own Session line first), so they name no verified author: 2 of 3; 1 of them "
-            "opens with the check-in marker (relayed: 1; `reason` and `names` in the JSON).") in text
+            "line that is not blank, then the block's own Session line first, naming one id, in a post that does not "
+            "relay, hand over, reassign or review), so they name no verified author: 2 of 3; 1 of them opens with "
+            "the check-in marker (relayed: 1; `reason` and `names` in the JSON).") in text
     assert "that are not a check-in block" not in text
 
 
 @pytest.mark.parametrize("sep", ["\x0c", "\x0b", "\x1c", "\x85", " ", " "])
 def test_only_a_markdown_line_ending_ends_the_marker_line_or_the_session_line(sep):
-    # GitHub (CommonMark) ends a line only at LF, CR or CRLF: anything after the marker on its line is inside the
-    # hidden HTML comment's line, and a second id after the Session value is on the same rendered line.
+    # GitHub (CommonMark) ends a line only at LF, CR or CRLF: anything after the marker on its line stays on the
+    # marker's line, shown as literal text but never as a list item, and a second id after the Session value is on
+    # the same rendered line.
     assert w.checkin_author(f"{w.CHECKIN}{sep}- Session: `{B}`\n- Files: `greg/missions.py`\n") is None
     assert w.checkin_author(f"{w.CHECKIN}\n## Check-in\n- Session: `{B}`{sep}relayed by `{A}`\n") is None
     assert w.checkin_author(f"{w.CHECKIN}\n## Check-in\n{sep}\n- Session: `{B}`\n") is None   # not a blank line
@@ -3138,8 +3140,8 @@ def test_lf_cr_and_crlf_line_endings_all_read_the_same_block():
 
 def test_the_map_tells_posters_where_their_session_line_must_stand(quick):
     text = w.markdown(w.build([], [], now=NOW, use_git=False))
-    assert ("The map names your session only when the marker is alone on the comment's first line and your own "
-            "`Session:` line, naming one id, comes first after the heading.") in text
+    assert ("The map names your session only when the marker is alone on the comment's first line that is not "
+            "blank and your own `Session:` line, naming one id, comes first after the heading.") in text
 
 
 # ------------------------------------------------------------------ round 7: one line split for every reader
@@ -3408,3 +3410,25 @@ def test_the_limit_a_copied_receipt_with_its_task_ref_kept_reads_as_the_session_
     assert m["contended"] == []
     assert "receipt_head_stale" in w.__doc__ and "one whose SHAs were fixed to pass the receipt check" in " ".join(
         w.__doc__.split())
+
+
+# ------------------------------------------------------------------ round 7: the words the map uses
+def test_a_fork_pr_is_its_own_holder_labelled_as_a_fork(quick):
+    prs = [_pr(300, "a/seam", head_repo="someone/uniimente-kernel", body=_receipt(B, ["greg/missions.py"])),
+           _pr(301, "a/other", body=_receipt(A, ["greg/missions.py"])),
+           _pr(302, "a/third", body=_receipt("pending", ["greg/missions.py"]))]
+    m = w.build(prs, [], now=NOW, use_git=False)
+    assert [c["holders"] for c in m["contended"]] == [{"(fork PR) #300": [300], "(refused session id) #302": [302],
+                                                       A: [301]}]
+
+
+def test_the_map_defines_a_check_in_block_by_the_rule_it_applies(quick):
+    text = " ".join(w.markdown(w.build([], [], now=NOW, use_git=False)).split())
+    assert ("check-in blocks: a comment whose first line that is not blank is the check-in marker alone, whose "
+            "block's own `Session:` line comes first after it (or after the block's heading) and names one id, and "
+            "that does not relay, hand over, reassign or review") in text
+    doc = " ".join(w.__doc__.split())
+    assert "the check-in marker alone on its first line that is not blank" in doc
+    assert "Tolerantly parsed" not in Path(w.__file__).read_text(encoding="utf-8")
+    assert "shows as literal text but not as a list item" in " ".join(w.checkin_author.__doc__.split())
+    assert "which is not the check's" in " ".join(w._session_refused.__doc__.split())

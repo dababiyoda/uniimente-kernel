@@ -10,9 +10,10 @@ grants nothing. It joins sources that already exist:
 - open pull requests and their version-2 receipts (read as declared, not re-validated here);
 - work-board comments.
 
-Sessions and holders come from two places only: a receipt's ``session_id``, and a comment that is itself a check-in
-(the check-in marker alone on its first line, then the block's own ``Session:`` line first, after the block's heading
-when it has one; see ``checkin_author``). Every other reading of a comment's
+Sessions and holders come from two places only: a receipt's ``session_id`` (or the receiver of its accepted handoff),
+and a comment that is itself a check-in (the check-in marker alone on its first line that is not blank, then the
+block's own ``Session:`` line first, after the block's heading when it has one, naming one id, in a post that does not
+relay, hand over, reassign or review; see ``checkin_author``). Every other reading of a comment's
 author (heading bylines, other labels, opening lines and the joins in ``JOINS``) is ``author_guess``, kept with its
 ``how`` for diagnosis and never used as authority, because on replay the parser named wrong authors and left more than
 a quarter of a week's posts unresolved, the plan's stop condition for building the map from receipts only.
@@ -106,7 +107,8 @@ LINE = branch_catalog.LINE
 CHECKIN = "<!-- uniimente:checkin -->"
 
 # The check-in a session posts on the work board before it edits. Printed by the map
-# so the block has one source. Tolerantly parsed: older claims use other labels.
+# so the block has one source. Its Session line is read exactly (``checkin_author``); its other labels are read
+# tolerantly, since older claims use other labels.
 CHECKIN_BLOCK = """\
 <!-- uniimente:checkin -->
 ## Check-in: <one-line outcome>
@@ -1306,7 +1308,8 @@ def _files_refused(r: dict | None) -> str | None:
 def _session_refused(value: str | None) -> str | None:
     """Why the receipt check refuses a receipt's ``session_id`` text, in the check's words; None when it does not (or
     the value is not text, which ``receipt_problems`` names). Copied from ``.github/workflows/collaboration-receipt.yml``
-    for the reason ``_files_refused`` gives. Such a value names no session."""
+    for the reason ``_files_refused`` gives. Such a value names no session. A row's ``session_refused`` holds these
+    words, or the map's own "fork: ..." reason, which is not the check's."""
     if not isinstance(value, str):
         return None
     if not value.strip():
@@ -1450,8 +1453,9 @@ def _holder(r: dict) -> str:
     one and their overlap still shows."""
     if r["session"]:
         return r["session"]
-    why = ("no receipt" if not r["receipt"] else "refused session id" if r.get("session_refused")
-           else r.get("session_unnamed") or "no session id")
+    refused = r.get("session_refused") or ""
+    why = ("no receipt" if not r["receipt"] else "fork PR" if refused.startswith("fork:") else "refused session id"
+           if refused else r.get("session_unnamed") or "no session id")
     return f"({why}) #{r['pr']}"
 
 
@@ -2184,8 +2188,9 @@ def markdown(m: dict) -> str:
         "line and that one of its own commits touches) for the PRs whose commits are in this clone, from the GitHub "
         "API for the open PRs into the line that this clone cannot diff (with `--github`), and from the receipt "
         "otherwise. The board shares one GitHub login, so sessions and holders come only from receipts and from "
-        "check-in blocks: a comment that opens with the check-in marker and whose block's own `Session:` line names "
-        "an id. Anything else a comment seems to say about its author (a byline, another label, its opening line, a "
+        "check-in blocks: a comment whose first line that is not blank is the check-in marker alone, whose block's own "
+        "`Session:` line comes first after it (or after the block's heading) and names one id, and that does not "
+        "relay, hand over, reassign or review (see the check-in section at the end). Anything else a comment seems to say about its author (a byline, another label, its opening line, a "
         "claim or PR it points to) is kept in the JSON as `author_guess` for diagnosis and never used, because on "
         "replay the parser named wrong authors and left over a quarter of a week's posts unresolved, the stop "
         "condition for building the map from receipts only. A claim whose author is not verified still holds its "
@@ -2347,7 +2352,8 @@ def markdown(m: dict) -> str:
             if u.get("reason"):
                 reasons[u["reason"]] = reasons.get(u["reason"], 0) + 1
         out += [f"- Board posts in the last 7 days with no check-in block of their own (the marker alone on the first "
-                f"line, then the block's own Session line first), so they name no verified author: "
+                f"line that is not blank, then the block's own Session line first, naming one id, in a post that does "
+                f"not relay, hand over, reassign or review), so they name no verified author: "
                 f"{len(g['recent_posts_unresolved'])} of {g['recent_posts']}; {marked} of them "
                 f"open{'s' if marked == 1 else ''} with the check-in marker"
                 + (" (" + "; ".join(f"{_cell(why)}: {n}" for why, n in sorted(reasons.items(), key=lambda x: -x[1]))
@@ -2398,8 +2404,8 @@ def markdown(m: dict) -> str:
             "Post this on the work board before any edit, commit or push, and again when you resume. When the pull "
             "request exists, give this comment's URL as its receipt's `coordination.task_ref`:", "",
             "```text", CHECKIN_BLOCK, "```", "",
-            "The map names your session only when the marker is alone on the comment's first line and your own "
-            "`Session:` line, naming one id, comes first after the heading. Post a check-in block only for your own "
+            "The map names your session only when the marker is alone on the comment's first line that is not blank "
+            "and your own `Session:` line, naming one id, comes first after the heading. Post a check-in block only for your own "
             "session: a block that opens with the marker names the session on its Session line whoever posts it. To "
             "pass a block to another session, leave out the marker line. A post whose text relays, whose heading "
             "hands over, reassigns or reviews, or whose heading or poster label names another id names nobody, even "

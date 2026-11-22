@@ -36,6 +36,9 @@ Limits, stated, not solved:
   says cloud sessions with several repositories, and project threads, do not load it. There the rule is guidance,
   and it is detected when the contribution is accepted (``contribution``).
 - A declared session id is not an authenticated principal.
+- The local admission record is a cooperative guard against accidents, not a security boundary. A hand-written
+  record passes the hook. The truth lives in the GitHub task record, and ``contribution``, run in CI on every PR,
+  judges each commit against it. Found by trial 3, round 2.
 - A claim created while another is still invisible to the API can be admitted on both sides. ``check`` detects
   this on the next read.
 """
@@ -493,7 +496,7 @@ def gate(event: dict) -> tuple[bool, str]:
         command = data.get("command", "") if tool == "Bash" else ""
         if tool == "Bash" and not GIT_WRITE.search(command):
             return True, "not a commit or push"
-        where = worktree_of(cwd)
+        where = worktree_of(_git_target(command, cwd) if tool == "Bash" else cwd)
         if not where:
             return True, "outside git"
         top, gitdir = where
@@ -508,6 +511,24 @@ def gate(event: dict) -> tuple[bool, str]:
         _log(gitdir, {"tool": tool, "target": command[:200] or tool, "decision": "allow", "claim": rec["claim"]})
         return True, "admitted"
     return True, "not gated"
+
+
+_CD = re.compile(r"(?:^|[;&|]\s*)cd\s+(\"[^\"]+\"|'[^']+'|[^\s;&|]+)")
+_DASH_C = re.compile(r"\bgit\s+-C\s+(\"[^\"]+\"|'[^']+'|[^\s;&|]+)")
+
+
+def _git_target(command: str, cwd: str) -> str:
+    """The directory a commit or push in ``command`` acts on: ``git -C <dir>``, else the last ``cd <dir>`` before
+    the git word, else the hook's cwd. Shell text is not fully parsed (variables, subshells, aliases are not
+    followed), so this narrows the target; it is not a proof of it."""
+    m = GIT_WRITE.search(command)
+    head = command[: m.start() + 1] if m else command
+    dash = _DASH_C.search(command[m.start():] if m else "")
+    raw = dash[1] if dash else (_CD.findall(head) or [None])[-1]
+    if not raw:
+        return cwd
+    raw = os.path.expanduser(raw.strip("\"'"))
+    return raw if os.path.isabs(raw) else os.path.join(cwd, raw)
 
 
 def _stale(rec: dict) -> bool:

@@ -461,3 +461,14 @@ def test_a_malformed_admission_record_denies_with_a_reason_and_never_crashes(rep
     assert not ok and ("malformed" in why or "No admission" in why)
     ok, why = bash("git push", repo)
     assert not ok
+
+
+def test_a_commit_is_judged_in_the_worktree_it_targets_not_the_shells_cwd(repo, tmp_path_factory):
+    """Found by trial 3, round 2 worker W1: `cd <admitted worktree> && git commit` was denied by the shell's cwd."""
+    elsewhere = tmp_path_factory.mktemp("unadmitted")
+    subprocess.run(["git", "init", "-q", str(elsewhere)], check=True)
+    P.admit((REPO, 500), 1000001, source([checkin(1000001, A, "T-1/a", "`scripts/`")]), cwd=str(repo))
+    assert bash(f"cd {repo} && git commit -m x", elsewhere)[0]
+    assert bash(f"git -C {repo} push", elsewhere)[0]
+    assert not bash(f"cd {repo} && cd {elsewhere} && git commit -m x", repo)[0]
+    assert not bash(f"git -C {elsewhere} commit -m x", repo)[0]

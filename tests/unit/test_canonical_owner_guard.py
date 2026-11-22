@@ -942,6 +942,15 @@ def binding_problems(records: list[dict], root: Path = ROOT) -> list[str]:
                 f"literal keys, or move it to a module the registry does not name"
                 for node in ast.walk(tree) if isinstance(node, (ast.Assign, ast.AnnAssign, ast.NamedExpr))
                 and node.value is not None and id(node.value) in namespace]
+        # Round 8, M8: globals() used as a value (passed to a helper, unpacked, stored in a container, a default
+        # argument, ``globals().__setitem__``, ``.get``, a read) hands the namespace to code these rules do not read
+        # (test_globals_used_as_a_value_in_a_module_that_holds_a_registered_qualname_fails).
+        out += [f"{where}:{line}: `{text}` uses globals() as a value in {module}, which holds registered qualnames "
+                f"({', '.join(sorted(names[module]))}); whatever receives the namespace can replace a registered object "
+                f"at run time while the guards read its def. Use globals() only as `globals()[<literal>] = ...`, "
+                f"`globals().update(<literal keys>)` or `globals().setdefault(<literal>, ...)`, or move it to a module "
+                f"the registry does not name"
+                for line, text in other_uses]
     return out
 
 
@@ -3673,3 +3682,35 @@ def test_a_literal_globals_key_inside_a_function_binds_the_module_level_name(tmp
         assert len(found) == 1 and "send_signed is bound 2 times at its level" in found[0], (key, found)
     for key in controls:
         assert binding_problems([record(key)], root) == [], key
+
+
+def test_globals_used_as_a_value_in_a_module_that_holds_a_registered_qualname_fails(tmp_path):
+    # Round 8, M8 (verifier F3, F4): a module that holds a registered qualname could hand its namespace to a helper
+    # (``_install(globals(), _native)``) or unpack it (``_ns, _ = globals(), None``), and the helper's write was read by
+    # no rule. In such a module, a globals() call is now allowed only as the base of a literal-key subscript write or of
+    # ``.update``/``.setdefault`` with literal keys (and the forms the older rules report); every other use fails.
+    variants = {
+        "passed": "def _install(ns, f):\n    ns['send_signed'] = f\n\n\n_install(globals(), print)\n",
+        "unpacked": "_ns, _unused = globals(), None\n",
+        "default_argument": "def install(f, ns=globals()):\n    ns['send_signed'] = f\n",
+        "setitem": "globals().__setitem__('send_signed', print)\n",
+        "in_a_container": "_spaces = [globals()]\n",
+        "returned": "def namespace():\n    return globals()\n",
+        "read": "_current = globals().get('send_signed')\n",
+        "read_subscript": "_current = globals()['send_signed']\n",
+    }
+    controls = {
+        "literal": "globals()['OTHER'] = 1\nglobals().update(MORE=2)\nglobals().setdefault('LAST', 3)\n",
+    }
+    root = _tree(tmp_path, {"greg/__init__.py": "", "tools/elsewhere.py": "_ns = [globals()]\n",
+                            **{f"greg/{key}.py": OWNER_BODY + "\n\n" + text for key, text in {**variants, **controls}.items()}})
+
+    def record(module):
+        return {"record_id": "OWN-FN-X", "canonical": [{"module": f"greg.{module}", "qualnames": ["send_signed"]}]}
+
+    for key in variants:
+        found = binding_problems([record(key)], root)
+        assert len(found) == 1 and "uses globals() as a value in greg." + key in found[0], (key, found)
+    for key in controls:
+        assert binding_problems([record(key)], root) == [], key
+    assert binding_problems([record("literal")], root) == []          # tools/elsewhere.py holds no registered qualname

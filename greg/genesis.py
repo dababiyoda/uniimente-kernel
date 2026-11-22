@@ -56,6 +56,7 @@ settles like any method's.
 """
 from __future__ import annotations
 
+import copy
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 import hashlib
@@ -72,6 +73,7 @@ import time
 from greg.capabilities import (CapabilityError, CapabilityManifest, InvocationContext, installed_binary,
                                run_isolated)
 from greg.artifacts import ArtifactStore
+from greg.background import BuildHandedOff
 from greg import builders, documents, licensing, mechanisms, recombine
 from greg.cognition import assignment, linear, network
 from greg.journal import Journal, iso
@@ -866,6 +868,9 @@ class Genesis:
         self.store = self.workspace_root.parent / "capabilities" / "built"   # content-addressed built sources
         self.objects = ArtifactStore(self.store, legacy_source_suffix=".py")  # preserve existing bodies' paths
         self._form_only = None   # goal id while forming on a goal's request (form_for_goal)
+        # greg.background.OffTurnBuilds while the Body's main loop steps a mission: the builder call then runs off
+        # the turn. None (every other caller) calls the builder inline.
+        self.off_turn = None
 
     # -- queries used by the mission engine --------------------------------------
     def find_attached(self, function: str):
@@ -1961,7 +1966,11 @@ class Genesis:
         # A paid candidate an outage left unjudged is judged first and never paid for again; judging costs
         # nothing, so it is judged even when its own bill used up the budget.
         pending = self._unjudged_builds(deficit_id)
-        if not pending and (contract["build_budget_usd"] <= 0 or round(contract["build_budget_usd"] - spent, 6) <= 0):
+        # A call that finished off the turn (greg.background.OffTurnBuilds) is already reserved and paid for: like an
+        # unjudged candidate, it is taken even when its own reservation used up the budget.
+        ready = self.off_turn is not None and self.off_turn.ready(deficit_id)
+        if not pending and not ready and (contract["build_budget_usd"] <= 0
+                                          or round(contract["build_budget_usd"] - spent, 6) <= 0):
             self._route(deficit_id, "builder", "no founder-signed build budget remains", None)
             self._route(deficit_id, "founder", "escalated", None)
             return None
@@ -1970,7 +1979,7 @@ class Genesis:
         # reservation too: an uncertain dispatch at its worst case and a build the body died inside.
         cone_left = mission.cone.budget_usd - getattr(mission, "committed_usd", getattr(mission, "spent_usd", 0.0))
         spent_at_entry = spent
-        if not pending and cone_left <= 0:
+        if not pending and not ready and cone_left <= 0:
             self._route(deficit_id, "builder", "the mission's light cone has no budget left for a build", None)
             self._route(deficit_id, "founder", "escalated", None)
             return None
@@ -1996,27 +2005,53 @@ class Genesis:
                 source = built["source"]
                 digest = hashlib.sha256(source.encode()).hexdigest()
             else:
-                remaining = round(min(contract["build_budget_usd"] - spent, cone_left - (spent - spent_at_entry)), 6)
-                if remaining <= 0:   # re-checked per attempt: every attempt is spend
-                    self._route(deficit_id, "builder", "no founder-signed build budget remains", None)
-                    break
-                if self.builder_cap is not None:   # per attempt: this function's remaining signed budget
-                    self.builder.max_budget_usd = min(self.builder_cap, remaining)
-                # Each builder call is its own fact, numbered per deficit, so a call made again after a restart is
-                # charged again and never collides with the call before it. Its start is recorded first, with the
-                # most it may spend: a call interrupted inside the builder never reports its cost, and _build_spend
-                # charges it at that ceiling instead of at zero (acceptance H.G7).
-                build = 1 + sum(1 for e in self.journal.replay("genesis.build_started")
-                                if e.payload["deficit_id"] == deficit_id)
-                self.journal.record("genesis.build_started", {
-                    "deficit_id": deficit_id, "build": build, "attempt": attempt,
-                    "builder": getattr(self.builder, "identity", type(self.builder).__name__),
-                    "reserved_usd": min(self.builder_cap, remaining) if self.builder_cap is not None else remaining,
-                    "reserved_as": "the builder's per-call ceiling" if self.builder_cap is not None
-                                   else "what remains of the signed build budget (the builder declares no ceiling)"},
-                    key=[deficit_id, "build_started", build])
+                # A call that ran off the Body's turn (greg.background.OffTurnBuilds) and has finished is taken
+                # first: it is this deficit's build in flight, already reserved, so no new build starts.
+                done = self.off_turn.take(deficit_id) if self.off_turn is not None else None
+                if done is not None:
+                    build, attempt = done["build"], done["attempt"]
+                    self._replay_route_effects(done)
+                    # spent counted the unsettled reservation; the record below settles it at the reported cost
+                    spent -= next((e.payload["reserved_usd"] for e in self.journal.replay("genesis.build_started")
+                                   if e.payload["deficit_id"] == deficit_id and e.payload["build"] == build), 0.0)
+                else:
+                    remaining = round(min(contract["build_budget_usd"] - spent,
+                                          cone_left - (spent - spent_at_entry)), 6)
+                    if remaining <= 0:   # re-checked per attempt: every attempt is spend
+                        self._route(deficit_id, "builder", "no founder-signed build budget remains", None)
+                        break
+                    ceiling = min(self.builder_cap, remaining) if self.builder_cap is not None else None
+                    # Each builder call is its own fact, numbered per deficit, so a call made again after a restart is
+                    # charged again and never collides with the call before it. Its start is recorded first, with
+                    # the most it may spend: a call interrupted inside the builder never reports its cost, and
+                    # _build_spend charges it at that ceiling instead of at zero (acceptance H.G7).
+                    build = 1 + sum(1 for e in self.journal.replay("genesis.build_started")
+                                    if e.payload["deficit_id"] == deficit_id)
+                    self.journal.record("genesis.build_started", {
+                        "deficit_id": deficit_id, "build": build, "attempt": attempt,
+                        "builder": getattr(self.builder, "identity", type(self.builder).__name__),
+                        "reserved_usd": ceiling if ceiling is not None else remaining,
+                        "reserved_as": "the builder's per-call ceiling" if self.builder_cap is not None
+                                       else "what remains of the signed build budget (the builder declares no "
+                                            "ceiling)"},
+                        key=[deficit_id, "build_started", build])
+                    if self.off_turn is not None:
+                        # Off the turn, missions build at once: each call gets its own copy of the builder carrying
+                        # its own mission's ceiling, so one mission never runs under another's signed limit.
+                        call_builder, effects = self._off_turn_builder(ceiling)
+                        self.off_turn.start(mission_id=mission.mission_id, function=function, deficit_id=deficit_id,
+                                            build=build, attempt=attempt, effects=effects,
+                                            call=lambda b=call_builder: b.build(request, feedback))
+                        raise BuildHandedOff(mission.mission_id, function, deficit_id, build)
+                    if ceiling is not None:   # per attempt: this function's remaining signed budget
+                        self.builder.max_budget_usd = ceiling
                 try:
-                    built = self.builder.build(request, feedback)
+                    if done is None:
+                        built = self.builder.build(request, feedback)
+                    elif "error" in done:
+                        raise done["error"]
+                    else:
+                        built = done["value"]
                 except Exception as exc:  # the builder is untrusted; its failure is evidence
                     why = f"attempt {attempt} failed: {type(exc).__name__}: {exc}"[:300]
                     self.journal.record("genesis.build_failed", {"deficit_id": deficit_id, "build": build,
@@ -2120,6 +2155,81 @@ class Genesis:
             self._route(deficit_id, "builder", f"attempt {attempt} failed verification", None)
         self._route(deficit_id, "founder", "escalated", None)
         return None
+
+    def settle_served_builds(self, mission_id: str, now) -> None:
+        """Calls that finished off the turn for needs something else served meanwhile (another mission's build was
+        attached first): record what each cost, so its reservation settles at the reported bill instead of staying
+        charged at its ceiling. Such a candidate is not retained and never judged or attached: the need is served.
+        A finished call whose need is still open is left for ``_builder_route`` to take. Called on the turn."""
+        if self.off_turn is None:
+            return
+        opened = {e.payload["deficit_id"]: e.payload["function"] for e in self.journal.replay("deficit.opened")
+                  if e.payload["mission_id"] == mission_id}
+        for deficit_id in self.off_turn.ready_for(mission_id):
+            found = self.find_attached(opened[deficit_id]) if deficit_id in opened else None
+            if found is not None:
+                self._settle_unused_build(deficit_id, opened[deficit_id], found.capability_id, now)
+
+    def _off_turn_builder(self, ceiling):
+        """A builder for one call off the Body's turn: its own copy, its own mission's ceiling, and no shared state.
+
+        A builder that reaches models through a router (``ModelBuilder``) gets its own copy of the router too: the
+        shared one keeps route health and the latest call's spend (``last``), and its ``record`` callback writes
+        ``model.route`` to the journal (greg.model_keys.attach) and benches a refused key. Off the turn the copy only
+        collects those events; the mission's next step, on the turn, replays them into the shared router
+        (``_replay_route_effects``), so the journal is written and the route benched exactly as an inline call would,
+        and one mission's error never reads another mission's spend."""
+        call_builder = copy.copy(self.builder)
+        if ceiling is not None:
+            call_builder.max_budget_usd = ceiling
+        effects: list = []
+        router = getattr(self.builder, "router", None)
+        if router is not None:
+            private = copy.copy(router)
+            for name in ("health", "routes"):
+                if hasattr(router, name):
+                    setattr(private, name, copy.deepcopy(getattr(router, name)) if name == "health"
+                            else list(getattr(router, name)))
+            if hasattr(router, "last"):
+                private.last = None
+            private.record = effects.append
+            call_builder.router = private
+        return call_builder, effects
+
+    def _replay_route_effects(self, done: dict) -> None:
+        """On the turn: what an off-turn call's router noted, applied to the shared router as the inline call did."""
+        router = getattr(self.builder, "router", None)
+        for event in done.get("effects") or ():
+            if router is None:
+                break
+            if hasattr(router, "observe"):
+                router.observe(event)
+            if getattr(router, "record", None) is not None:
+                router.record(event)
+
+    def _settle_unused_build(self, deficit_id: str, function: str, served_by: str, now) -> None:
+        done = self.off_turn.take(deficit_id)
+        if done is None:
+            return
+        build, attempt = done["build"], done["attempt"]
+        self._replay_route_effects(done)
+        why = f"call {build} finished after {served_by} came to serve {function}; its candidate is not used"
+        if "error" in done:
+            exc = done["error"]
+            self.journal.record("genesis.build_failed", {"deficit_id": deficit_id, "build": build, "attempt": attempt,
+                                                         "error": f"{type(exc).__name__}: {exc}"[:300]},
+                                key=[deficit_id, "build_failed", build])
+            if getattr(exc, "cost_usd", None):
+                self.journal.record("genesis.unbuilt", {"deficit_id": deficit_id, "build": build, "attempt": attempt,
+                                                        "cost_usd": exc.cost_usd, "why": why, "at": iso(now)})
+        else:
+            built = done["value"]
+            self.journal.record("genesis.built", {
+                "deficit_id": deficit_id, "build": build, "attempt": attempt, "builder": built.get("builder"),
+                "prompt_sha256": built.get("prompt_sha256"),
+                "source_sha256": hashlib.sha256(str(built.get("source", "")).encode()).hexdigest(),
+                "cost_usd": built.get("cost_usd"), "unused": why}, key=[deficit_id, "built", build])
+        self._route(deficit_id, "builder", why, served_by)
 
     def _unjudged_builds(self, deficit_id: str) -> list[tuple[dict, int]]:
         """Paid candidates of this deficit that an outage left without a verdict, with their retained source."""

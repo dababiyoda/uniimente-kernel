@@ -3285,7 +3285,7 @@ def test_the_map_tells_posters_to_post_a_block_only_for_their_own_session(quick)
             ) in text
     assert "fill in for another session names nobody" not in text
     assert ("A post names nobody, even your own, when its text outside code says relay, relayed or on ... behalf, "
-            "when its heading says handoff, hand over, reassign or review") in text
+            "when its heading says handoff, hand-off, handover, hand over") in text
     assert "block filled in, pasted or copied with none of this wording is read as the session its Session line " \
            "names, whoever posts it" in " ".join(w.checkin_author.__doc__.split())
     assert "is read as the session its Session line names, whoever posts it" in " ".join(w.__doc__.split())
@@ -3498,3 +3498,42 @@ def test_a_copied_receipt_citing_the_copier_s_check_in_that_is_not_exact_names_n
     assert sorted((p["pr"], p["session"]) for p in paths["paths"][0]["prs"]) == [(300, B), (301, None)]
     assert "the one id the cited post's check-in Session line names" in " ".join(
         w.disagreeing_task_refs.__doc__.split())
+
+
+# ------------------------------------------------------------------ round 8: inflections of the heading words
+HEADING_INFLECTIONS = {
+    "N1": f"## Handing off WU-11 to `{B}`",
+    "N2": f"## WU-11 handed off to `{B}`",
+    "N3": "## Check-in: A hands off WU-11",
+    "hands the work off": "## Check-in: A hands the seam work off",
+    "N7": "## Reviewing claim 7100000001: still held?",
+    "N8": "## Claim reviews: WU-11",
+    "N9": "## Re-review of claim 7100000001",
+    "rereviewed": "## Claim rereviewed: WU-11",
+    "re-reviewing": "## Check-in: re-reviewing WU-11",
+}
+
+
+@pytest.mark.parametrize("name", list(HEADING_INFLECTIONS))
+def test_inflections_of_hand_off_and_review_in_a_heading_name_nobody(quick, tmp_path, capsys, name):
+    body = (f"{w.CHECKIN}\n{HEADING_INFLECTIONS[name]}\n"
+            f"- Session: `{B}` (Claude Code, cloud), claim 7100000001\n{F7}\nNo reply since 2026-11-04.\n")
+    assert w.checkin_verdict(body)["reason"] == "handoff, review or reassignment wording in its heading"
+    old = _comment(7100000001, _signed("## Claim: WU-11 seam", B, F7), at="2026-11-01T11:00:00Z")
+    comments = [old, _comment(7100000002, body)]
+    m = w.build([], comments, now=NOW, use_git=False)
+    assert [(s["session"], s["activity"]) for s in m["sessions"]] == [(B, "DORMANT")]
+    assert _claim(m, 7100000001)["state"] == "dormant"
+    paths, _raw = _answer(tmp_path, capsys, [], comments, "--paths", "greg/missions.py")
+    assert [(c["comment"], c["session"], c["state"]) for c in paths["paths"][0]["claims"]
+            if c["comment"] == 7100000001] == [(7100000001, B, "dormant")]
+
+
+def test_the_heading_words_are_listed_with_their_inflections(quick):
+    assert w.checkin_author(f"{w.CHECKIN}\n## Claim: transfer test for WU-11\n- Session: `{B}`\n{F7}") == (B, "claude")
+    doc = " ".join(w.checkin_author.__doc__.split())
+    assert ('"hand(s/ed/ing) ... off" (up to three words between)' in doc and
+            '"review", "reviews", "reviewed", "reviewing", "re-review"' in doc)
+    text = " ".join(w.markdown(w.build([], [], now=NOW, use_git=False)).split())
+    assert ("its heading says handoff, hand-off, handover, hand over, hand(s/ed/ing) ... over, hand(s/ed/ing) ... off, "
+            "reassign, review, reviews, reviewed, reviewing, re-review or for/to the next owner") in text

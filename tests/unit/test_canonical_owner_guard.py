@@ -28,10 +28,12 @@ The registry is ``function_owner_records`` in docs/collaboration/ARCHITECTURE-OW
    re-implementation under an unmarked, unregistered name, a method inside a class, or code outside those six
    packages passes;
 4. (MW-C, 2026-11-21) the body of every canonical, candidate and alternate FUNCTION a record names (a dotted
-   qualname may name a method), with every name and every constant erased, ``pass`` and no-op constant statements
+   qualname may name a method), and since round 6 the whole body of every such CLASS (compared with classes only,
+   ``body_shape``), with every name and every constant erased, ``pass`` and no-op constant statements
    dropped, an annotated assignment read as the plain one and every import alias erased (``fingerprint``, from a
    fresh copy) and at least ``MIN_COPY_NODES`` nodes, is compared with every function and method at any depth of every
-   runtime file the filesystem lists (``runtime_files``). The bodies compared are exactly ``COMPARED``
+   runtime file the filesystem lists (``runtime_files``). The bodies compared are exactly ``COMPARED`` (by location,
+   not by content)
    (test_the_set_of_compared_registered_bodies_is_pinned). The files are every .py file under the repository root,
    each real file once (``_once``), except tests/, docs/, top-level hidden entries and the ``SEALED`` files whose
    bytes still match the digest pinned there and a cortex/evaluation/freeze-*.json manifest; directory links are
@@ -1449,8 +1451,12 @@ ERASED = "_"                     # every name and every constant of a fingerprin
 # is a reviewed change to this file.
 BODY_EXEMPTIONS: dict[tuple[str, str], tuple[str, str]] = {}
 # Round 4 (2026-11-22, N4): the registered bodies guard 4 compares, by (module, qualname). Exact: one that leaves the
-# comparison (a helper extracted, overload stubs, a body shrunk below MIN_COPY_NODES) or joins it fails until this
-# literal changes in the same reviewed diff (``compared_problems``, test_the_set_of_compared_registered_bodies_is_pinned).
+# comparison (its last binding no longer a def or class, a body shrunk below MIN_COPY_NODES, the record no longer
+# naming it) or joins it fails until this literal changes in the same reviewed diff (``compared_problems``,
+# test_the_set_of_compared_registered_bodies_is_pinned). It pins WHERE the compared bodies are, not what they hold: a
+# wrapper of at least MIN_COPY_NODES nodes that calls a new helper holding the old logic stays compared, and the
+# helper is not (the fork pattern, a stated limit; round 6, B5). Round 6 (B3): the 9 registered classes, compared
+# whole, are the last 9 entries.
 COMPARED = frozenset({
     ("foundry.systems.teams", "act"), ("foundry.systems.teams", "dissolve"), ("foundry.systems.teams", "form"),
     ("foundry.systems.teams", "report"), ("greg.autonomy", "earned_level"), ("greg.autonomy", "regress"),
@@ -1462,6 +1468,10 @@ COMPARED = frozenset({
     ("greg.path", "business_loop_closed"), ("greg.remote", "handle"), ("greg.remote", "make_server"),
     ("greg.templates", "business_case"), ("greg.templates", "business_loop_amount"), ("greg.venture_rehearsal", "plan"),
     ("greg.venture_rehearsal", "venture_rehearsal"),
+    ("autonomy.levels", "AutonomyAuthority"), ("autonomy.levels", "AutonomyTuple"),
+    ("business.commercial_loop", "CommercialLoop"), ("egregore.goal_chase", "GoalChase"),
+    ("egregore.goals", "GoalRegistry"), ("egregore.goals", "GoalSpec"), ("egregore.gravity", "GoalGravityLoop"),
+    ("omnimorph.engine", "OmnimorphEngine"), ("omnimorph.engine", "OrganManifest"),
 })
 FIX_COPY = ("Import the owner's function instead and remove the copy. Recording it does not exempt it: a body is "
             "exempt only at its own registered location, a 'distinct' entry exempts nothing, and two registered "
@@ -1640,15 +1650,16 @@ def runtime_files(root: Path = ROOT, sealed: dict = SEALED):
     yield from _once(_walk(Path(root), root, skip), root, scanned)
 
 
-def _functions(tree: ast.Module):
-    """(dotted scope name, node) for every function and method at any depth."""
+def _functions(tree: ast.Module, kinds=FUNCTIONS):
+    """(dotted scope name, node) for every function and method (or, with ``kinds=DEFS``, every class too) at any
+    depth."""
     out = []
 
     def visit(node, prefix):
         for child in ast.iter_child_nodes(node):
             if isinstance(child, DEFS):
                 name = f"{prefix}.{child.name}" if prefix else child.name
-                if isinstance(child, FUNCTIONS):
+                if isinstance(child, kinds):
                     out.append((name, child))
                 visit(child, name)
             else:
@@ -1657,11 +1668,27 @@ def _functions(tree: ast.Module):
     return out
 
 
+CLASS_SHAPE = "class "          # prefixes a class body's fingerprint dump: a class is compared with classes only
+
+
+def body_shape(node) -> tuple[int, str]:
+    """Guard 4's key for a def (``fingerprint``) or a whole class body (round 6, B3: its fingerprint, every method
+    included, tagged CLASS_SHAPE so that a function body never matches a class body)."""
+    size, dump = fingerprint(node)
+    return (size, CLASS_SHAPE + dump) if isinstance(node, ast.ClassDef) else (size, dump)
+
+
 def _function_node(module: str, qualname: str, root: Path = ROOT):
     """The def a registered (dotted) qualname is last bound to (``binding``), or None for a class, a constant, a
     missing name or a name whose last binding is not a def."""
     node = binding(module, qualname, root)
     return node if isinstance(node, FUNCTIONS) else None
+
+
+def _compared_node(module: str, qualname: str, root: Path = ROOT):
+    """The def or class (round 6, B3) a registered qualname is last bound to, or None."""
+    node = binding(module, qualname, root)
+    return node if isinstance(node, DEFS) else None
 
 
 class Body(NamedTuple):
@@ -1677,18 +1704,18 @@ class Body(NamedTuple):
 
 
 def registered_bodies(records: list[dict], root: Path = ROOT) -> dict[tuple[int, str], list[Body]]:
-    """fingerprint -> [Body] for every canonical, candidate and alternate qualname that names a function of at least
-    MIN_COPY_NODES erased nodes. Classes and constants are guard 3's."""
+    """``body_shape`` -> [Body] for every canonical, candidate and alternate qualname that names a function, or
+    (round 6, B3) a class whose whole body, at least MIN_COPY_NODES erased nodes. Constants are guard 3's."""
     out: dict[tuple[int, str], list[Body]] = {}
     for r in records:
         for role, e in entries(r):
             if role == "distinct":
                 continue
             for q in e.get("qualnames") or []:
-                node = _function_node(e["module"], q, root)
+                node = _compared_node(e["module"], q, root)
                 if node is None:
                     continue
-                shape = fingerprint(node)
+                shape = body_shape(node)
                 if shape[0] >= MIN_COPY_NODES:
                     where = f"{module_file(e['module'], root).relative_to(root).as_posix()}:{node.lineno}"
                     out.setdefault(shape, []).append(Body(r, e["module"], q, where))
@@ -1712,11 +1739,11 @@ def registered_twin_problems(records: list[dict], root: Path = ROOT) -> list[str
 
 def compared_problems(records: list[dict], root: Path = ROOT, compared: frozenset = None) -> list[str]:
     """The registered (module, qualname) locations guard 4 compares must equal COMPARED: a body that leaves the
-    comparison (a helper extracted, overload stubs, a def rebound, the body shrunk below MIN_COPY_NODES) or joins it
-    fails until COMPARED changes in the same reviewed diff."""
+    comparison (its last binding no longer a def or class, the body shrunk below MIN_COPY_NODES, a thin delegation
+    left behind) or joins it fails until COMPARED changes in the same reviewed diff."""
     compared = COMPARED if compared is None else compared
     have = {(b.module, b.qualname) for found in registered_bodies(records, root).values() for b in found}
-    out = [f"{m}.{q} is pinned in COMPARED and is no longer compared by guard 4: its last binding is not a def, or its "
+    out = [f"{m}.{q} is pinned in COMPARED and is no longer compared by guard 4: its last binding is not a def or class, or its "
            f"body is below MIN_COPY_NODES ({MIN_COPY_NODES} erased nodes), or the record no longer names it, so a "
            f"copy of it would pass. Restore it, or change COMPARED in the same reviewed diff and say why"
            for m, q in sorted(compared - have)]
@@ -1727,9 +1754,9 @@ def compared_problems(records: list[dict], root: Path = ROOT, compared: frozense
 
 @lru_cache(maxsize=None)
 def _prints(path: Path, stamp: int, sizes: frozenset) -> tuple:
-    """(scope name, line, fingerprint) for every function of one file whose erased size is one of ``sizes``; the
-    rest are never copied."""
-    return tuple((name, node.lineno, fingerprint(node)) for name, node in _functions(_parse(path, stamp))
+    """(scope name, line, ``body_shape``) for every function and class of one file whose erased size is one of
+    ``sizes``; the rest are never copied."""
+    return tuple((name, node.lineno, body_shape(node)) for name, node in _functions(_parse(path, stamp), DEFS)
                  if _erased_size(node) in sizes)
 
 
@@ -2193,9 +2220,10 @@ def test_a_stale_qualname_or_module_is_reported(tmp_path):
 
 def test_no_copy_of_a_registered_function_body_outside_its_record():
     records = load()["function_owner_records"]
-    # not vacuous: the 27 registered function bodies COMPARED pins (compared_problems), compared with every function
-    # and method of about 550 runtime files; each is exempt only at its own location
-    assert compared_problems(records) == [] and len(COMPARED) == 27
+    # not vacuous: the 36 registered bodies COMPARED pins (compared_problems: 27 functions and, since round 6, the 9
+    # registered classes whole), compared with every function, method and class of about 550 runtime files; each is
+    # exempt only at its own location
+    assert compared_problems(records) == [] and len(COMPARED) == 36
     assert len(list(runtime_files())) > 400
     assert body_copy_problems(records) == []
     assert registered_twin_problems(records) == []
@@ -3035,3 +3063,56 @@ def test_a_new_record_fails_until_it_is_pinned():
     pinned = {**PINNED, adopted["record_id"]: {"canonical": {"greg.goal_gravity": ("tick",)}, "candidates": {},
                                                "alternates": {"greg.gravity": ("select", "step")}, "distinct": {}}}
     assert pin_problems(changed, pinned=pinned) == []       # the reviewed change; review must then judge it
+
+
+def _class_source(module: str, name: str, new_name: str) -> str:
+    node = definition_node(module, name)
+    text = module_file(module).read_text()
+    return ast.get_source_segment(text, node).replace(f"class {name}", f"class {new_name}", 1) + "\n"
+
+
+def test_a_registered_class_body_is_compared_whole_at_its_own_location_and_for_twins(tmp_path):
+    # Round 6, B3 (skeptic R2a, R2b): guard 4 compared registered FUNCTIONS only, and guard 3 skips a record's own
+    # modules, so a verbatim copy of a registered class in a module its record already names, or recorded as a new
+    # alternate of a decided record, passed. A registered class is now compared whole (every method included in one
+    # fingerprint, names and constants erased), with the own-location and twin rules of a function body. Its methods
+    # are still not compared one by one (four real duplicates; see the README), so a copy of one method passes.
+    data = {r["record_id"]: r for r in load()["function_owner_records"]}
+    goal, commerce = data["OWN-FN-GOAL-RUNTIME"], copy.deepcopy(data["OWN-FN-COMMERCE-CLOSURE"])
+    real = _real("egregore.gravity", "greg.gravity", "business.commercial_loop", "greg.business_loop")
+    loop = definition_node("egregore.gravity", "GoalGravityLoop")
+    one_method = copy.deepcopy(next(n for n in loop.body if isinstance(n, FUNCTIONS) and fingerprint(n)[0] >= 100))
+    one_method.name, one_method.decorator_list = "lone_method", []
+    disguised = copy.deepcopy(definition_node("business.commercial_loop", "CommercialLoop"))
+    disguised.name, disguised.decorator_list = "Settlement", []
+    _Disguise().visit(disguised)
+    ast.fix_missing_locations(disguised)
+    root = _tree(tmp_path, {
+        **real,
+        # R2a: a verbatim copy of candidate side A's class in side B's own module, no registry edit
+        "greg/gravity.py": real["greg/gravity.py"] + "\n\n" + _class_source("egregore.gravity", "GoalGravityLoop",
+                                                                             "PullLoop"),
+        # R2b: a verbatim copy of an alternate's class, recorded as a new ALTERNATE of the decided commerce record
+        "greg/commerce_runner.py": _class_source("business.commercial_loop", "CommercialLoop", "CommerceRunner"),
+        # a disguised class copy (every name and literal changed) outside the six packages
+        "tools/settlement.py": ast.unparse(disguised) + "\n",
+        # one method of the class copied on its own: methods are not compared (stated limit)
+        "tools/lone.py": ast.unparse(one_method) + "\n",
+    })
+    commerce["alternates"].append({"module": "greg.commerce_runner", "qualnames": ["CommerceRunner"],
+                                   "status": "ALTERNATE", "reason": "r", "retirement_condition": "c"})
+    found = body_copy_problems([goal, commerce], root)
+    where = sorted({line.split(" defines ")[0].split(":")[0] + " " + line.split(" defines ")[1].split(",")[0]
+                    for line in found})
+    # the recorded copy and the original are each a copy of the other's registered body, as with a function twin
+    assert where == ["business/commercial_loop.py 'CommercialLoop'", "greg/commerce_runner.py 'CommerceRunner'",
+                     "greg/gravity.py 'PullLoop'", "tools/settlement.py 'Settlement'"], found
+    assert any("egregore.gravity.GoalGravityLoop" in line for line in found if line.startswith("greg/gravity.py"))
+    twins = registered_twin_problems([goal, commerce], root)
+    assert len(twins) == 1 and "business.commercial_loop.CommercialLoop" in twins[0] and (
+        "greg.commerce_runner.CommerceRunner" in twins[0]), twins
+    # a class never matches a function: the kind is part of the key
+    assert body_shape(loop)[1].startswith(CLASS_SHAPE) and not body_shape(one_method)[1].startswith(CLASS_SHAPE)
+    assert {(m, q) for m, q in COMPARED if isinstance(_compared_node(m, q), ast.ClassDef)} == {
+        (e["module"], q) for r in data.values() for role, e in entries(r) if role != "distinct"
+        for q in e.get("qualnames") or [] if isinstance(binding(e["module"], q), ast.ClassDef)}

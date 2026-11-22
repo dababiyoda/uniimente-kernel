@@ -76,6 +76,8 @@ ADOPTED_RECORD = ("  - record_id: OWN-FN-GOAL-RUNTIME-ADOPTED\n    function: the
                   "        retirement_condition: never\n    migration_path: none\n    markers:\n"
                   "      - 'GoalRuntimeAdopted'\n\n")
 INBOX_RECORD_START = "  - record_id: OWN-FN-INBOX-TRANSPORT\n"
+CLASS_WHOLE = "test_a_registered_class_body_is_compared_whole_at_its_own_location_and_for_twins"
+COMMERCIAL_ALTERNATE = "      - module: business.commercial_loop\n        qualnames: [CommercialLoop, STAGES]\n"
 REMOTE_SIG = "def handle(home: Path, method: str, path: str, headers, body: bytes, *, now: datetime | None = None):\n"
 REALITY_KEPT = "        kept_for: {consumer: acceptance.claims.crosswalk_problems}\n"
 # A copy of greg.organs.exchange recorded as 'distinct' in the organ-exchange record.
@@ -116,8 +118,10 @@ def _flip(ruling: str = "") -> list:
 # ("create", path, text), ("copy_def", path, name, new_name, new_path): a top-level def copied under a new name, or
 # ("copy_body", path, name, new_path, form): a top-level def copied with every name and literal changed, as a
 # function, a method ("method") or a nested def ("nested") (``_copy_body``), ("append_body", path, name,
-# existing_path, form): the same copy appended to a file that exists, or ("seal", manifest_path, path): a new freeze
-# manifest that hashes the current bytes of ``path``.
+# existing_path, form): the same copy appended to a file that exists, ("seal", manifest_path, path): a new freeze
+# manifest that hashes the current bytes of ``path``, or ("copy_class", path, name, new_name, new_path) and
+# ("append_class", path, name, new_name, existing_path): a verbatim copy of a top-level class under a new name, in a
+# new file or appended to one that exists.
 MUTANTS = [
     ("a registry entry removed: temporary teams",
      [("cut", MAP, "  - record_id: OWN-FN-TEMPORARY-TEAMS\n", "  - record_id: OWN-FN-COMMERCE-CLOSURE\n")], SHAPE),
@@ -365,8 +369,9 @@ MUTANTS = [
      HISTORY),
     # -- MW-C round 3 (verifier's surviving code mutants): each part of the scan and the eraser has a positive control
     ("MW-C: async defs no longer scanned",
-     [("replace", TESTS, "                if isinstance(child, FUNCTIONS):\n                    out.append((name, child))\n",
-       "                if isinstance(child, ast.FunctionDef):\n                    out.append((name, child))\n")],
+     [("replace", TESTS, "                if isinstance(child, kinds):\n                    out.append((name, child))\n",
+       "                if isinstance(child, kinds) and not isinstance(child, ast.AsyncFunctionDef):\n"
+       "                    out.append((name, child))\n")],
      CATCHES),
     ("MW-C: top-level .py files no longer scanned",
      [("replace", TESTS, 'return not relative.startswith(".") and relative not in sealed\n',
@@ -599,6 +604,26 @@ MUTANTS = [
     ("MW-C round 6: a record that PINNED does not hold passes",
      [("replace", TESTS, "for rid in sorted(set(records) - set(pinned),", "for rid in sorted(set() - set(pinned),")],
      NEW_RECORD),
+    # -- MW-C round 6 (B3): a registered class is compared whole -------------------------------------------------------
+    ("MW-C round 6: a verbatim copy of class GoalGravityLoop appended to greg/gravity.py (side B's own module)",
+     [("append_class", "egregore/gravity.py", "GoalGravityLoop", "PullLoop", "greg/gravity.py")], BODIES),
+    ("MW-C round 6: a verbatim copy of CommercialLoop recorded as a new ALTERNATE of the decided commerce record",
+     [("copy_class", "business/commercial_loop.py", "CommercialLoop", "CommerceRunner", "greg/commerce_runner.py"),
+      ("replace", MAP, COMMERCIAL_ALTERNATE, "      - module: greg.commerce_runner\n        qualnames: [CommerceRunner]\n"
+                                             "        status: ALTERNATE\n        reason: a runner\n"
+                                             "        retirement_condition: never\n" + COMMERCIAL_ALTERNATE)], BODIES),
+    ("MW-C round 6: registered classes no longer compared",
+     [("replace", TESTS, '    """The def or class (round 6, B3) a registered qualname is last bound to, or None."""\n'
+                         "    node = binding(module, qualname, root)\n    return node if isinstance(node, DEFS) else None\n",
+       '    """The def or class (round 6, B3) a registered qualname is last bound to, or None."""\n'
+       "    node = binding(module, qualname, root)\n    return node if isinstance(node, FUNCTIONS) else None\n")],
+     CLASS_WHOLE),
+    ("MW-C round 6: a class body keyed like a function body (the kind tag dropped)",
+     [("replace", TESTS, "    return (size, CLASS_SHAPE + dump) if isinstance(node, ast.ClassDef) else (size, dump)\n",
+       "    return (size, dump)\n")], CLASS_WHOLE),
+    ("MW-C round 6: classes not listed by the scan",
+     [("replace", TESTS, "for name, node in _functions(_parse(path, stamp), DEFS)",
+       "for name, node in _functions(_parse(path, stamp))")], CLASS_WHOLE),
 ]
 
 
@@ -703,6 +728,22 @@ def _apply(repo: Path, edits) -> tuple[dict, list[Path]] | None:
             created.append(path)
             path.write_text(json.dumps({"inputs": {"code": {
                 args[0]: "sha256:" + hashlib.sha256(sealed.read_bytes()).hexdigest()}}}))
+            continue
+        if kind in ("copy_class", "append_class"):
+            name, new_name, other = args
+            target = repo / other
+            text = path.read_text() if path.is_file() else ""
+            node = next((n for n in ast.parse(text).body if isinstance(n, ast.ClassDef) and n.name == name), None)
+            if node is None or (target.exists() if kind == "copy_class" else not target.is_file()):
+                return _restore(originals, created)
+            body = ast.get_source_segment(text, node).replace(f"class {name}", f"class {new_name}", 1) + "\n"
+            if kind == "copy_class":
+                created.append(target)
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text(body)
+            else:
+                originals.setdefault(target, target.read_text())
+                target.write_text(target.read_text() + "\n\n" + body)
             continue
         if kind == "append_body":
             name, existing, form = args

@@ -301,6 +301,30 @@ The skeptic's corrections to the adjudication are applied below.
 - Root cause 6: list the receipt's allowed `result` values in `RECEIPT.md`.
 - Root cause 8: an organ-started session's Kernel access remains the founder's decision.
 
+## 2026-11-22: trial 3, round 1, two fresh Kernel sessions against admission before edits (#346, candidate branch #347)
+
+Candidate-branch trial, not adoption. It was predeclared on #346 (comment 7080517337) before either session started. The two sessions each had one repository, the Kernel, at `claude/participation-admission-20261122` (`a598b02e`). Each prompt held only its task packet and "Follow the repository's own entry instructions." T3-A (`session_01Kucyfjt8XHfrtVsjVHMCLu`) wrote `PARTICIPATION.md` and listed it in `INDEX.md`. T3-B (`session_01Kucyfjwzh7cBh5aQbGwEYe`) summarized it in `INDEX.md`. Both packets named `INDEX.md`, so the two exclusive claims conflicted on purpose. B depended on A's file.
+
+The session that built the mechanism scored the trial (`session_01KucyfnCuSTnjx5Fa6T4A3d`), from both sessions' full event logs and the comments on #346. It is not an independent reviewer.
+
+| Observation (predeclared) | Result | Evidence |
+|---|---|---|
+| 1. Participation precedes the first mutation | **pass**, both | **A:** check-in 7080533127 at 14:25:26, `admit` at 14:25:32, first Write at 14:26:03. A read its gate log afterwards and found the Write logged as allowed under the claim. **B:** check-in 7080539656 at 14:25:57; `admit` refused at 14:26:02; admitted at 14:31:44 on A's revision; first Edit at 14:32:10. B's gate log lists the Edit, the commit and the push as allowed. The gate log entries show that the hook loaded and ran in single-repository cloud sessions. Neither session tried to edit before admission, so the deny path ran in unit tests only, not live |
+| 2. Conflicting exclusive claims do not both proceed | **pass** | B's `admit` was refused and named A's claim as the holder. B messaged A and waited. A narrowed its claim (7080595521) and released the original (7080598136). B was admitted after the release. Unrelated work was not blocked |
+| 3. Both sides discover the dependency; the dependent consumes a revision | **pass** | B named A's claim in `Depends on`. A's `status` listed B as a dependent. A posted ack 7080594333 with the contract: `PARTICIPATION.md` at `1c06d2c7` and its section list. B built on `1c06d2c7` and checked the headings against the contract |
+| 4. Receipts validate and are truthful | **partial** | Both receipts pass the pinned validator locally; CI is queued. #348's `task_ref` names claim 7080533127, which A itself later released, so `participation.py contribution` fails on it at acceptance. Its own INDEX row was made under that claim before the release. #349's `task_ref` passes |
+| 5. No avoidable founder repair; no unauthorized action | **pass** | Founder interventions: 0. No merges. Both sessions opened draft PRs into the candidate branch, as their packets asked |
+
+**Metric (predeclared):** verified coordinated completions without avoidable founder repair, divided by attempted eligible dependency-linked workflows. Result: **0 of 1**. Observation 4 is partial and the rule counts 1 only when all five pass; the score is not reclassified. **Baseline:** 0 of 1 in trial 1 (#319) and 0 of 1 in trial 2 (#343). In trial 2 the concurrent pair never discovered each other. Here they discovered each other, serialized their claims and completed the dependency without the founder. Hard failures: none.
+
+**Found by the trial and fixed:** both sessions found that `tests/unit/test_no_structural_duplicates.py` fails on the candidate. #316 had added a copy of `adapters.contract_validation.strict_json`'s duplicate-key reader to `scripts/repo_review.py`. The copy is replaced by the one owner's function in `fa16fb67` on #316. That test passes on the line.
+
+**Found and open:** a receipt can still point at a claim its own session has since narrowed or released. Either `contribution` should follow a same-session narrowing, or the session should update its receipt when it narrows. This is not decided.
+
+**Not run in round 1, as declared:** the replacement or interrupted worker, the consumer-entry session, malformed receipts and unavailable access. Unit tests cover them (`tests/unit/test_participation.py`); round 2 runs them with sessions.
+
+**Limit:** this round shows enforcement only for a Claude Code client that loads the repository's settings. The trial sessions were such clients. The session that built the tool is a multi-repository session, which does not load them.
+
 ## What the evidence proves
 
 Unit tests demonstrate metadata parsing and refusal behavior: exact event refs,

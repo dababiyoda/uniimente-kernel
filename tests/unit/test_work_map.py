@@ -3042,7 +3042,8 @@ def test_a_receipt_session_id_names_only_the_one_id_it_opens_with_and_otherwise_
         hit = next(p for p in paths["paths"][0]["prs"] if p["pr"] == 300)
         assert (hit["session"], hit["session_unnamed"]) == (None, why), value
         assert ("receipts the check accepts that name no session (their session_id names more than one id or an id "
-                "it does not open with): 1") in w.markdown(m)
+                "it does not open with, or their accepted handoff's receiver is not one id; `session_unnamed` in the "
+                "JSON): 1") in w.markdown(m)
 
 
 REFUSED_SESSION_IDS = [("pending", "actual session identifier required"),
@@ -3318,3 +3319,46 @@ def test_each_post_that_opens_with_the_marker_but_is_not_exact_says_why_and_whic
             "id: 1; its heading names another id: 1; text after the marker on its line: 1; Session value does not "
             "open with an id: 1; Session value names more than one id: 1; `reason` and `names` in the JSON).") in (
         w.markdown(m))
+
+
+# ------------------------------------------------------------------ round 7: an accepted handoff names its receiver
+# The receipt check refuses session_id == receiver_session while a handoff is accepted, so a receiver that keeps the
+# acknowledgment on the PR leaves the sender's session_id there (docs/collaboration/RECEIPT.md).
+
+def _handed(sender: str, receiver, status: str = "accepted") -> str:
+    data = json.loads(_coord(session_id=sender))
+    data["handoff"] = {"owner": "unassigned", "next_action": "continue on this PR", "stop_condition": "merged",
+                       "acknowledgment": {"status": status, "receiver_session": receiver,
+                                          "reference": None if status == "pending" else "https://x/96#c1"}}
+    return _body(json.dumps(data))
+
+
+def test_an_accepted_handoff_names_its_receiver_and_leaves_the_sender_out(quick, tmp_path, capsys):
+    prs = [_pr(300, "b/seam", body=_handed(B, A), updated="2026-11-13T01:00:00Z")]
+    old = _comment(7100000070, _signed("## Check-in: WU-11 seam", B, "- Files: `greg/body.py`\n"),
+                   at="2026-11-02T00:00:00Z")
+    m = w.build(prs, [old], now=NOW, use_git=False)
+    row = m["prs"][0]
+    assert row["session"] == A
+    assert (row["session"], row["handed_over_from"], row["session_unnamed"]) == (A, B, None)
+    sessions = {s["session"]: s for s in m["sessions"]}
+    assert (sessions[A]["prs"], sessions[A]["activity"], sessions[A]["last"]) == ([300], "ACTIVE", "2026-11-13T01:00:00Z")
+    assert (sessions[B]["prs"], sessions[B]["activity"]) == ([], "DORMANT")       # the PR's updated_at is A's now
+    paths, _raw = _answer(tmp_path, capsys, prs, [old], "--paths", "greg/missions.py")
+    assert [(p["session"], p["handed_over_from"]) for p in paths["paths"][0]["prs"]] == [(A, B)]
+    assert "a PR's `updated_at` moves with anyone's comment, review or push" in w.markdown(m)
+    pending = w.build([_pr(300, "b/seam", body=_handed(B, None, "pending"))], [], now=NOW, use_git=False)
+    assert (pending["prs"][0]["session"], pending["prs"][0]["handed_over_from"]) == (B, None)
+
+
+@pytest.mark.parametrize("receiver", [f"{A} (from {B})", "uat-vulcan", f"next: {A}", "", 7])
+def test_an_accepted_handoff_whose_receiver_is_not_one_id_names_no_session(quick, receiver):
+    prs = [_pr(300, "b/seam", body=_handed(B, receiver)), _pr(301, "a/other", body=_receipt(C, ["greg/missions.py"]))]
+    m = w.build(prs, [], now=NOW, use_git=False)
+    row = next(r for r in m["prs"] if r["pr"] == 300)
+    assert row["session"] is None
+    assert (row["session"], row["session_unnamed"], row["handed_over_from"]) == (
+        None, "accepted handoff's receiver_session is not one id", B)
+    assert [s["session"] for s in m["sessions"]] == [C]
+    assert [sorted(c["holders"]) for c in m["contended"]] == [
+        sorted([C, "(accepted handoff's receiver_session is not one id) #300"])]

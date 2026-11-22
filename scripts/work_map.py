@@ -54,7 +54,9 @@ given: its receipt's fields as declared, ``files`` cut to the first ``FILES_LIMI
 rest, ``receipt_problems`` for fields of the wrong type, ``files_refused``, why the receipt check refuses its
 coordination or its files (then its files are unknown, never an empty list), ``session_refused``, why the receipt
 check refuses its ``session_id`` or its PR comes from a fork (then it names no session), ``session_unnamed``, why the
-map names no session for a receipt the check accepts (``receipt_session``), ``receipt_head_stale``,
+map names no session for a receipt the check accepts (``receipt_session``), ``handed_over_from``, the session that
+handed the PR over when its ``handoff.acknowledgment.status`` is ``accepted`` (the PR's session is then the receiver's
+one id, or none), ``receipt_head_stale``,
 whether the receipt's ``head_sha`` is not the PR's head (it keeps its session: a push lands before its description
 is updated), ``changed``, the files it changes
 itself, and ``changed_via``, where they came from: ``diff`` for local git, ``api`` for the GitHub API (``--github``, a
@@ -249,6 +251,7 @@ def identities(text: str) -> list[tuple[int, str, str]]:
 
 OPENS_WITH_ANOTHER = "receipt session_id names an id it does not open with"
 NAMES_SEVERAL = "receipt session_id names more than one id"
+RECEIVER_NOT_ONE_ID = "accepted handoff's receiver_session is not one id"
 
 
 def receipt_session(value: str | None) -> tuple[str | None, str, str | None]:
@@ -1247,10 +1250,21 @@ def _receipt_fields(r: dict | None) -> tuple[dict, list[str]]:
     overlap = coord.get("overlap")
     if "overlap" in coord and not isinstance(overlap, dict):
         problems.append("overlap")
+    handoff = r.get("handoff", {})
+    if not isinstance(handoff, dict):
+        handoff, problems = {}, problems + ["handoff"]
+    ack = handoff.get("acknowledgment", {})
+    if not isinstance(ack, dict):
+        ack, problems = {}, problems + ["handoff.acknowledgment"]
+    receiver = ack.get("receiver_session")
+    if receiver is not None and not isinstance(receiver, str):
+        problems.append("handoff.acknowledgment.receiver_session")
     out = {"session_id": text(coord, "session_id", "session_id"), "task_ref": text(coord, "task_ref", "task_ref"),
            "recheck_at": text(coord, "recheck_at", "recheck_at"), "files": strings(coord, "files", "files"),
            "overlap": text(overlap, "status", "overlap.status") if isinstance(overlap, dict) else None,
-           "scope": text(r, "scope", "scope") or "", "intent_refs": strings(r, "intent_refs", "intent_refs")}
+           "scope": text(r, "scope", "scope") or "", "intent_refs": strings(r, "intent_refs", "intent_refs"),
+           "handoff": text(ack, "status", "handoff.acknowledgment.status"),
+           "receiver": receiver if isinstance(receiver, str) else None}
     return out, problems
 
 
@@ -1321,6 +1335,12 @@ def _row(pull: dict, root: Path, use_git: bool, line: str = LINE) -> dict:
     same_repo = pull["head_repo"] is not None and pull["head_repo"] == pull["base_repo"]
     refused = _session_refused(f["session_id"])
     sid, client, unnamed = (None, "unknown", None) if refused else receipt_session(f["session_id"])
+    handed = None
+    if f["handoff"] == "accepted" and not refused:   # another session acknowledged this head: the PR is now its
+        handed = sid
+        sid, client, unnamed = receipt_session(f["receiver"])
+        if not (sid and _spans(sid)):
+            sid, client, unnamed = None, "unknown", RECEIVER_NOT_ONE_ID
     if sid and not same_repo:                 # a receipt from another repository is no session's declaration here
         refused = "fork: " + ("the head repository is not the base repository" if pull["head_repo"] else
                               "the head repository is unknown, so it is not known to be the base repository")
@@ -1337,6 +1357,7 @@ def _row(pull: dict, root: Path, use_git: bool, line: str = LINE) -> dict:
         "older_receipt": r is None and receipt_of(body, version=1) is not None, "receipt_problems": problems,
         "files_refused": _files_refused(r),
         "session": sid, "client": client, "session_refused": refused, "session_unnamed": unnamed,
+        "handed_over_from": handed,
         "receipt_head_stale": stated_head != pull["head_sha"] if isinstance(stated_head, str) else None,
         "task_ref": f["task_ref"],
         "files": f["files"][:FILES_LIMIT], "files_cut": max(0, len(f["files"]) - FILES_LIMIT),
@@ -1657,6 +1678,7 @@ def who_touches(paths: list[str], rows: list[dict] | None, claims: list[dict] | 
             {"pr": r["pr"], "session": r["session"],
              **({"session_refused": r["session_refused"]} if r.get("session_refused") else {}),
              **({"session_unnamed": r["session_unnamed"]} if r.get("session_unnamed") else {}),
+             **({"handed_over_from": r["handed_over_from"]} if r.get("handed_over_from") else {}),
              **({"receipt_head_stale": True} if r.get("receipt_head_stale") else {}),
              "base": r["base"], "overlap": r["overlap"], "title": r["title"],
              "updated": r["updated"], "line_bound": r.get("line_bound", r["pr"] in bound),
@@ -1750,8 +1772,10 @@ def join_authors(parsed: list[dict], rows: list[dict]) -> None:
 
 
 def sessions_of(rows: list[dict], parsed: list[dict], now: datetime) -> dict[str, dict]:
-    """One row per session id that a receipt or a check-in block names (never a guess): its PRs, its check-in
-    comments, and what they say it was asked, plans and works on."""
+    """One row per session id that a receipt (its ``session_id``, or the receiver of its accepted handoff) or a
+    check-in block names (never a guess): its PRs, its check-in comments, and what they say it was asked, plans and
+    works on. Its ``last`` is the newest of its check-ins and of its PRs' ``updated_at``, which anyone's comment,
+    review or push moves; the session that handed a PR over gets nothing from that PR."""
     sessions: dict[str, dict] = {}
     stated = {c["cid"]: c for c in parsed if c["author"]}
 
@@ -2244,7 +2268,11 @@ def markdown(m: dict) -> str:
         if not (src["prs_read"] and src["comments_read"]):
             out += [("Board comments" if src["prs_read"] else "Pull requests") + " were not read: this table is "
                     "partial.", ""]
-        out += ["| Session | Client | Resolved by | Last update seen (PR updated_at or check-in) | Asked to | "
+        out += ["One row per session a receipt's `session_id` (or the receiver of its accepted handoff) or a check-in "
+                "block names. Its last update is the newest of its check-ins and of its open PRs' `updated_at`, and a "
+                "PR's `updated_at` moves with anyone's comment, review or push, so a session can show as active after "
+                "it has left. A session that handed a PR over gets nothing from that PR.", "",
+                "| Session | Client | Resolved by | Last update seen (PR updated_at or check-in) | Asked to | "
                 "Plan | Route | Open PRs | Overlap declared |", "|---|---|---|---|---|---|---|---|---|"]
         for s in m["sessions"]:
             if s["activity"] == "DORMANT":
@@ -2269,7 +2297,8 @@ def markdown(m: dict) -> str:
                 f"coordination or files: {len(g['receipts_refused_for_files'])}; receipts naming no session because "
                 f"the receipt check refuses their session_id or they come from a fork: "
                 f"{len(g['receipts_with_refused_session'])}; receipts the check accepts that name no session (their "
-                f"session_id names more than one id or an id it does not open with): "
+                f"session_id names more than one id or an id it does not open with, or their accepted handoff's "
+                f"receiver is not one id; `session_unnamed` in the JSON): "
                 f"{len(g['receipts_naming_no_session'])}; receipts written for another head than the PR's (normal "
                 f"for minutes after a push): {len(g['receipts_with_stale_head'])}"
                 + (f"; receipts listing more than {FILES_LIMIT} files, the rest not read: "

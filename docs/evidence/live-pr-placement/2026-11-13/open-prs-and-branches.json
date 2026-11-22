@@ -1,0 +1,2985 @@
+[
+ {
+  "number": 322,
+  "sha": "3aab26b2deb0dc2fa33c30b3ecafb82e177ddb29",
+  "ref": "claude/browser-render-host-typed-20261113",
+  "base": "claude/greg-full-machine-completion-whgiee",
+  "title": "browser.render: a path GREG cannot look at is not a browser; a render timeout and missing namespaces are the host's (#311's review findings, ported onto #293)",
+  "draft": true,
+  "created": "2026-11-13",
+  "updated": "2026-11-13"
+ },
+ {
+  "number": 321,
+  "sha": "7be151b91e3a6af62e1598cf786339175c3b7ab5",
+  "ref": "claude/scripts-readme-unlisted-20261113",
+  "base": "claude/greg-full-machine-completion-whgiee",
+  "title": "List every top-level script in scripts/README.md (#319 Task B)",
+  "draft": true,
+  "created": "2026-11-13",
+  "updated": "2026-11-13"
+ },
+ {
+  "number": 320,
+  "sha": "ba264e420a3e31a87edd4ebae5e9d510623e7a45",
+  "ref": "claude/scripts-readme-ci-row-20261113",
+  "base": "claude/greg-full-machine-completion-whgiee",
+  "title": "scripts/README.md: the ci/check_*.py row counts 39 scripts and names the jobs that run them (#319 Task A)",
+  "draft": true,
+  "created": "2026-11-13",
+  "updated": "2026-11-13"
+ },
+ {
+  "number": 318,
+  "sha": "738a339ad4673fb75323cd8867f2e3fb40cf8ee3",
+  "ref": "claude/founder-passphrase-one-line-20261113",
+  "base": "claude/greg-full-machine-completion-whgiee",
+  "title": "A founder key that does not open is one plain line and exit 2, naming the right cause (root cause of #299's job-9 failure)",
+  "draft": true,
+  "created": "2026-11-13",
+  "updated": "2026-11-13"
+ },
+ {
+  "number": 317,
+  "sha": "bd77a0a6ded6dc25f461b491a9ecb3e0e79035bd",
+  "ref": "claude/whole-machine-trace-ask-order-20261113",
+  "base": "claude/greg-full-machine-completion-whgiee",
+  "title": "Whole-machine trace test: accept the order where the founder answers before the loop asks (job 1 race on #295)",
+  "draft": true,
+  "created": "2026-11-13",
+  "updated": "2026-11-13"
+ },
+ {
+  "number": 316,
+  "sha": "edbe8963e41b60d020db5e6cd3d55f0ffba0a864",
+  "ref": "claude/structural-review-live",
+  "base": "claude/greg-full-machine-completion-whgiee",
+  "title": "One entrance: default-branch cutover prepared, the work map, and the check-in",
+  "draft": true,
+  "created": "2026-11-13",
+  "updated": "2026-11-13"
+ },
+ {
+  "number": 314,
+  "sha": "6608b774aadc8a78907b21d6bd444833671f1e1c",
+  "ref": "claude/operational-slice-request-case-20261112",
+  "base": "claude/greg-full-machine-completion-whgiee",
+  "title": "Operational slice: a request-led payment case from intake to reconciliation, and a second withheld case",
+  "draft": true,
+  "created": "2026-11-13",
+  "updated": "2026-11-13"
+ },
+ {
+  "number": 313,
+  "sha": "7474e937f565a1bb4b18a428743fb08b534bdda1",
+  "ref": "claude/ledger-torn-tail-race-20261112",
+  "base": "claude/greg-full-machine-completion-whgiee",
+  "title": "Readers of a live ledger leave out the line still being written (root cause of #304's job-1 failure; greg serve no longer drops the phone's request)",
+  "draft": true,
+  "created": "2026-11-12",
+  "updated": "2026-11-13"
+ },
+ {
+  "number": 312,
+  "sha": "8abbfa7fa038eef80a77006652be6c3f5ba27de1",
+  "ref": "claude/recovery-through-alternative-line-20261112",
+  "base": "claude/revoked-device-authority-20261111",
+  "title": "A mission whose preferred tool the founder detached finishes through its next signed strategy (stacked on #300)",
+  "draft": true,
+  "created": "2026-11-12",
+  "updated": "2026-11-12"
+ },
+ {
+  "number": 311,
+  "sha": "e3f431f32d1ed7487312adc28fdde736047f1a6f",
+  "ref": "claude/browser-render-smallest-20261112",
+  "base": "claude/greg-full-machine-completion-whgiee",
+  "title": "browser.render: the smallest repair that passes the declared requirements (an alternative to #293)",
+  "draft": true,
+  "created": "2026-11-12",
+  "updated": "2026-11-13"
+ },
+ {
+  "number": 310,
+  "sha": "2a75c58d3b2699786e97164f7ee74f1aa9d10a39",
+  "ref": "claude/appraisal-readers-closure-keyed-20261112",
+  "base": "claude/appraiser-detached-sensor-20261111",
+  "title": "Every appraisal reader asks about the closure it means, not the mission's latest record",
+  "draft": true,
+  "created": "2026-11-12",
+  "updated": "2026-11-13"
+ },
+ {
+  "number": 307,
+  "sha": "128f0cde14708ca21843b5cafb695d3491f4cc01",
+  "ref": "claude/directive-map-s69a6-20261111",
+  "base": "claude/greg-full-machine-completion-whgiee",
+  "title": "Mutation gates: the shared runner judges no mutant when its tests already fail and takes no catch from a parallel run alone; gate-rules pins and directive-map corrections",
+  "draft": true,
+  "created": "2026-11-12",
+  "updated": "2026-11-13"
+ },
+ {
+  "number": 305,
+  "sha": "da8ccb0d8638b7f94e6f73f58f538f3aa6c3cf71",
+  "ref": "claude/intake-recommendation-mission-20261112",
+  "base": "claude/compose-rehearsal-20261111",
+  "title": "GREG's first mission for its own development: an intake recommendation for selected open heads, as a signed mission",
+  "draft": true,
+  "created": "2026-11-12",
+  "updated": "2026-11-13"
+ },
+ {
+  "number": 304,
+  "sha": "e069d03822bace35f951af854a8ca827546ec639",
+  "ref": "claude/compile-unanswered-unread-20261112",
+  "base": "claude/greg-full-machine-completion-whgiee",
+  "title": "A compiled question the host never answered is unknown: not a measured failure, not a pass; a stall is retried before anyone is asked",
+  "draft": true,
+  "created": "2026-11-12",
+  "updated": "2026-11-13"
+ },
+ {
+  "number": 303,
+  "sha": "53dfd0f76709a179ed8e45405d0ad69850578e47",
+  "ref": "claude/correction-containment-credit-20261111",
+  "base": "claude/greg-full-machine-completion-whgiee",
+  "title": "An answer the founder rejected stops earning credit; the rejection is scoped to that answer and can be lifted by a signed acceptance",
+  "draft": true,
+  "created": "2026-11-12",
+  "updated": "2026-11-13"
+ },
+ {
+  "number": 299,
+  "sha": "31e80c0e336843b5da77ffeb6e4cf57bfd925c6b",
+  "ref": "candidate/composed-20261112",
+  "base": "claude/greg-full-machine-completion-whgiee",
+  "title": "Composition candidate 2026-11-12: open heads on one tree, for checks on the exact revision (evidence only, not for merge)",
+  "draft": true,
+  "created": "2026-11-12",
+  "updated": "2026-11-13"
+ },
+ {
+  "number": 292,
+  "sha": "3d161191e976ebfaf107bd8c845076f6ce4464ad",
+  "ref": "claude/genesis-attack-stage",
+  "base": "claude/genesis-failure-corpus",
+  "title": "S22.A2/S35.A3: every built candidate is attacked before it registers (hostile input, determinism, CPU share)",
+  "draft": true,
+  "created": "2026-11-11",
+  "updated": "2026-11-11"
+ },
+ {
+  "number": 291,
+  "sha": "41fcc41f04911ccb1f0f8d5dfc18158999a18def",
+  "ref": "egregore/fervent-mayer-syy5d6",
+  "base": "claude/authority-attach-state-20261111",
+  "title": "The authority office runs a capability's own registered adapter, or nothing (child of #290)",
+  "draft": true,
+  "created": "2026-11-11",
+  "updated": "2026-11-11"
+ },
+ {
+  "number": 289,
+  "sha": "4957190ea2e7d7006b739ffa1709c63c0c7a0cd4",
+  "ref": "claude/genesis-failure-corpus",
+  "base": "claude/greg-full-machine-completion-whgiee",
+  "title": "S17.A1: every input that broke a formed capability binds every later candidate for its function",
+  "draft": true,
+  "created": "2026-11-11",
+  "updated": "2026-11-11"
+ },
+ {
+  "number": 288,
+  "sha": "25f8da5e5afc07aa985a3fcd3bcdc3c49fc7cc6b",
+  "ref": "claude/greg-uninitialised-home-readers-20261111",
+  "base": "claude/greg-full-machine-completion-whgiee",
+  "title": "Reader commands before greg init: one-line refusal, not a traceback",
+  "draft": true,
+  "created": "2026-11-11",
+  "updated": "2026-11-11"
+ },
+ {
+  "number": 285,
+  "sha": "650de5e57c2bb19692f11adcd53b05a80e13d93f",
+  "ref": "codex/business-path-process",
+  "base": "cursor/rehearse-path-one-body-1210",
+  "title": "Verify the business path on a real GREG process across a hard restart",
+  "draft": true,
+  "created": "2026-11-06",
+  "updated": "2026-11-06"
+ },
+ {
+  "number": 283,
+  "sha": "88e0a2244db6d34452e9f4cbe32cc85d97608be2",
+  "ref": "cursor/section5-authority-seam-8e94",
+  "base": "claude/greg-full-machine-completion-whgiee",
+  "title": "One section-5 disposition per material path, then an AST check for a second Gate",
+  "draft": true,
+  "created": "2026-11-06",
+  "updated": "2026-11-06"
+ },
+ {
+  "number": 282,
+  "sha": "e049bcd470a045993274ba46aa7ff26079a96d15",
+  "ref": "cursor/scout-package-4-reading-1344",
+  "base": "claude/greg-full-machine-completion-whgiee",
+  "title": "Scout 4: a coverage card, a labelled reading, and one Goal Gravity count per source",
+  "draft": true,
+  "created": "2026-11-06",
+  "updated": "2026-11-06"
+ },
+ {
+  "number": 281,
+  "sha": "7ac508b50c67bda8e950deab7345e4bd5891f77b",
+  "ref": "claude/genesis-attach-authorization-20261105",
+  "base": "claude/greg-full-machine-completion-whgiee",
+  "title": "Attack attach authorization: quarantined, unknown, out-of-cone, forged and model-drafted attaches (C.G8)",
+  "draft": true,
+  "created": "2026-11-05",
+  "updated": "2026-11-05"
+ },
+ {
+  "number": 280,
+  "sha": "4f9b64d99c876f9a00c51aa4c1a663de26f6b2a4",
+  "ref": "claude/genesis-binary-package-provenance-20261105",
+  "base": "claude/greg-full-machine-completion-whgiee",
+  "title": "Record an acquired binary's owning package and version beside its licence (C.G12)",
+  "draft": true,
+  "created": "2026-11-05",
+  "updated": "2026-11-05"
+ },
+ {
+  "number": 279,
+  "sha": "507d4be5ffd48c0807e59eec92f00a99963b25b6",
+  "ref": "claude/b-join-243",
+  "base": "cursor/receipt-pinned-appraisal-ba20",
+  "title": "Unit B joined onto #243's pin channel: the appraiser re-reads every legitimate closure on its own route",
+  "draft": true,
+  "created": "2026-11-05",
+  "updated": "2026-11-06"
+ },
+ {
+  "number": 278,
+  "sha": "a639add726df949c36a554aa87ba7c60cdabe66a",
+  "ref": "cursor/resource-bounds-ci-fix-f7ea",
+  "base": "cursor/resource-bounds-3248",
+  "title": "Fix round: green CI and current base for resource bounds (child of #240)",
+  "draft": true,
+  "created": "2026-11-05",
+  "updated": "2026-11-13"
+ },
+ {
+  "number": 277,
+  "sha": "f81a86c30990cac4e0172001fa704dfd53c233f0",
+  "ref": "cursor/license-hold-no-crash-5192",
+  "base": "cursor/model-license-route-e3ac",
+  "title": "Fix round: license hold must not crash the body (child of #245)",
+  "draft": true,
+  "created": "2026-11-05",
+  "updated": "2026-11-05"
+ },
+ {
+  "number": 276,
+  "sha": "6f33b60268176cbba531c64d32163e538bcc23c6",
+  "ref": "claude/genesis-oracle-frozen-20261105",
+  "base": "claude/genesis-pipeline-composition-20261105",
+  "title": "Prove from the journal that Genesis freezes its oracle before any candidate (C.G7)",
+  "draft": true,
+  "created": "2026-11-05",
+  "updated": "2026-11-06"
+ },
+ {
+  "number": 270,
+  "sha": "d45110142a047266d1c834cf2dc346aac8b01aae",
+  "ref": "claude/evidence-corrections-20261104",
+  "base": "claude/greg-full-machine-completion-whgiee",
+  "title": "S45-A: propagate evidence corrections through what rests on a reading (behaviour B)",
+  "draft": true,
+  "created": "2026-11-05",
+  "updated": "2026-11-05"
+ },
+ {
+  "number": 268,
+  "sha": "3c0a132d9df8b15bb8c15703bda271d05033ca32",
+  "ref": "claude/structural-clarity-pass",
+  "base": "main",
+  "title": "[Superseded by #271] Structural clarity pass against stale main: shared primitives, repository map",
+  "draft": true,
+  "created": "2026-11-05",
+  "updated": "2026-11-05"
+ },
+ {
+  "number": 267,
+  "sha": "bfcbf02a1069a5802db687915bbd2640e0329faa",
+  "ref": "claude/genesis-pipeline-composition-20261105",
+  "base": "claude/greg-full-machine-completion-whgiee",
+  "title": "Genesis composes two existing tools, attached capabilities first, before it builds (C.G4)",
+  "draft": true,
+  "created": "2026-11-05",
+  "updated": "2026-11-06"
+ },
+ {
+  "number": 266,
+  "sha": "6c7c18f33f1c2824a6bec2ec623aa9f1e9273ece",
+  "ref": "claude/greg-inventory-oct22",
+  "base": "claude/greg-full-machine-completion-whgiee",
+  "title": "Record the October 22 directive's part 1 verbatim; refresh the requirement-to-evidence inventory on d35d92a5",
+  "draft": true,
+  "created": "2026-11-05",
+  "updated": "2026-11-05"
+ },
+ {
+  "number": 261,
+  "sha": "22b16c6348c385239c99cda1595eeed6b0ca02b2",
+  "ref": "claude/close-extraction-check",
+  "base": "claude/live-pr-placement",
+  "title": "S53.A2: closing a PR runs section 53's nine-item check",
+  "draft": true,
+  "created": "2026-11-04",
+  "updated": "2026-11-05"
+ },
+ {
+  "number": 260,
+  "sha": "37d074c4f64ea9f169daef7e6f49b7d9f314b991",
+  "ref": "claude/capability-disposition-20261104",
+  "base": "claude/greg-full-machine-completion-whgiee",
+  "title": "Post-outcome disposition review: RETAIN, REPAIR, REGRESS or REMOVE proposed, never self-applied (S22-B)",
+  "draft": true,
+  "created": "2026-11-04",
+  "updated": "2026-11-05"
+ },
+ {
+  "number": 258,
+  "sha": "3367b621a2438cf5ac793b79eee3381bf23fcb31",
+  "ref": "claude/emergence-gate-20261104",
+  "base": "claude/greg-full-machine-completion-whgiee",
+  "title": "Emergence gate: a construction must beat its runnable baseline, or Genesis refuses it as integration (S20-A)",
+  "draft": true,
+  "created": "2026-11-04",
+  "updated": "2026-11-05"
+ },
+ {
+  "number": 257,
+  "sha": "90825a21fb5c4a8f9e43ec5519e39fb7b41c0d69",
+  "ref": "claude/live-pr-placement",
+  "base": "claude/intake-delta-audit",
+  "title": "S53-A: place every open PR and branch from live state with section 53's twelve dispositions",
+  "draft": true,
+  "created": "2026-11-04",
+  "updated": "2026-11-05"
+ },
+ {
+  "number": 255,
+  "sha": "79a282502800a107015c29a3bc4b402206cfff69",
+  "ref": "claude/text-cut-inspect-review-250",
+  "base": "cursor/text-interpretation-fix-round-4f3e",
+  "title": "Review of #250: a cut-end hit is presence only when the kept text closes it; inspect hands on the reading's contract",
+  "draft": true,
+  "created": "2026-11-04",
+  "updated": "2026-11-04"
+ },
+ {
+  "number": 250,
+  "sha": "3758cfe418e95938e1a64f16bc3b3e5639fee5e4",
+  "ref": "cursor/text-interpretation-fix-round-4f3e",
+  "base": "cursor/text-interpretation-contract-bddd",
+  "title": "Fix round: text interpretation false closures (child of #244)",
+  "draft": true,
+  "created": "2026-10-30",
+  "updated": "2026-11-04"
+ },
+ {
+  "number": 245,
+  "sha": "0ecd091fafd1ce87f75f658b29cc528332c4ae3b",
+  "ref": "cursor/model-license-route-e3ac",
+  "base": "claude/oss-201-fix-licensing",
+  "title": "Select an Ollama model only when its license permits use",
+  "draft": true,
+  "created": "2026-10-30",
+  "updated": "2026-11-05"
+ },
+ {
+  "number": 244,
+  "sha": "56dcdf7f3c3f3d331406dac9f0750646d16c73be",
+  "ref": "cursor/text-interpretation-contract-bddd",
+  "base": "claude/greg-full-machine-completion-whgiee",
+  "title": "One text interpretation contract for extraction, PDF reading, judgment, and appraisal",
+  "draft": true,
+  "created": "2026-10-30",
+  "updated": "2026-10-30"
+ },
+ {
+  "number": 243,
+  "sha": "ea22dddbfcd131ae6021ffb614556a7f44a1b7f7",
+  "ref": "cursor/receipt-pinned-appraisal-ba20",
+  "base": "claude/greg-full-machine-completion-whgiee",
+  "title": "Replay a compiled cognition check on the method, route and version its receipt pinned",
+  "draft": true,
+  "created": "2026-10-30",
+  "updated": "2026-11-05"
+ },
+ {
+  "number": 241,
+  "sha": "c7bd36bc1aad116a11fc2913374d9b020ff95876",
+  "ref": "cursor/concurrent-enrollment-harness-7826",
+  "base": "coordination/worker-claims-20261030",
+  "title": "Harness: two processes claim through the shared enrollment registry",
+  "draft": true,
+  "created": "2026-10-30",
+  "updated": "2026-10-30"
+ },
+ {
+  "number": 240,
+  "sha": "4441bcb53894bbc21c9fbc2eb6877d88b8570fc8",
+  "ref": "cursor/resource-bounds-3248",
+  "base": "claude/greg-full-machine-completion-whgiee",
+  "title": "Bound remaining passport, queue, journal and supervisor-log growth",
+  "draft": true,
+  "created": "2026-10-30",
+  "updated": "2026-11-05"
+ },
+ {
+  "number": 237,
+  "sha": "4b5774af7f3bd828c9df3c230cea9e258997f8c6",
+  "ref": "claude/capability-readiness-ladder-20261030",
+  "base": "claude/greg-full-machine-completion-whgiee",
+  "title": "Show each capability's readiness, KNOWN to VERIFIED, with evidence (greg readiness)",
+  "draft": true,
+  "created": "2026-10-30",
+  "updated": "2026-11-04"
+ },
+ {
+  "number": 233,
+  "sha": "7666b6e05414333176f873648a728cfa1657e479",
+  "ref": "claude/browser-method-gate-20261030",
+  "base": "claude/greg-full-machine-completion-whgiee",
+  "title": "browser.session: no write reaches an allowlisted site unless the founder signs it",
+  "draft": true,
+  "created": "2026-10-30",
+  "updated": "2026-10-30"
+ },
+ {
+  "number": 230,
+  "sha": "3358d660b76ee4955a0891a25fc474bbca280eba",
+  "ref": "claude/oss-201-fix-licensing",
+  "base": "claude/oss-metabolism-capability-pw6dew",
+  "title": "licensing: one expression tree, model-weight licenses, verification fixes (child of #201)",
+  "draft": true,
+  "created": "2026-10-30",
+  "updated": "2026-10-30"
+ },
+ {
+  "number": 229,
+  "sha": "5968013e7ed1542ee288da7af8b0bc8c3fb2850f",
+  "ref": "claude/greg-bounded-text-query",
+  "base": "claude/greg-faithful-text-evidence",
+  "title": "Bounded text query: a question about a large file, answered over all of it within stated limits",
+  "draft": true,
+  "created": "2026-10-30",
+  "updated": "2026-10-30"
+ },
+ {
+  "number": 228,
+  "sha": "a7990bc1f14215429b4987dcd9effebb46da1dfc",
+  "ref": "claude/greg-faithful-text-evidence",
+  "base": "claude/greg-whole-output-judgment",
+  "title": "Faithful text evidence: one normalization form, no lossy decode, refusal before buffering",
+  "draft": true,
+  "created": "2026-10-30",
+  "updated": "2026-10-30"
+ },
+ {
+  "number": 226,
+  "sha": "14d36484e2bed30da24aaeaf578eaed95d8c1d60",
+  "ref": "claude/seed-gate-constraint-isolation",
+  "base": "claude/greg-full-machine-completion-whgiee",
+  "title": "Seed gate: catch the constraint mutant with a constraint-only violation",
+  "draft": true,
+  "created": "2026-10-30",
+  "updated": "2026-10-30"
+ },
+ {
+  "number": 221,
+  "sha": "65f1b388746722c2ef06e4d08462fad31193cb7e",
+  "ref": "claude/greg-founder-operable-xvidnn",
+  "base": "claude/greg-full-machine-completion-whgiee",
+  "title": "Second review of #219: settlement fixes F1-F8, the N2 guard tested, experiment test record items",
+  "draft": true,
+  "created": "2026-10-29",
+  "updated": "2026-11-05"
+ },
+ {
+  "number": 220,
+  "sha": "be8fbd0949ce0ae75b3bac38f6223b610d97bc55",
+  "ref": "claude/outcome-correction-record-20261029",
+  "base": "claude/greg-full-machine-completion-whgiee",
+  "title": "Outcome-correction record: correct R1-R6 of the second review of #219, and fix the review mutant gate",
+  "draft": true,
+  "created": "2026-10-29",
+  "updated": "2026-10-29"
+ },
+ {
+  "number": 218,
+  "sha": "be70c0cf7605cb7f90d5762558717b60582c42e0",
+  "ref": "claude/crash-exact-certificate-20261028",
+  "base": "claude/greg-full-machine-completion-whgiee",
+  "title": "project.crash: prove the cheapest plan exactly from a deadline flow, not from the LP's floating-point gap (closes #217)",
+  "draft": true,
+  "created": "2026-10-28",
+  "updated": "2026-10-28"
+ },
+ {
+  "number": 214,
+  "sha": "f8b603c774a385da2d7505fa393aefe663cea0e1",
+  "ref": "claude/greg-repair-once-per-incident",
+  "base": "claude/greg-full-machine-completion-whgiee",
+  "title": "Repair a capability once per incident, so an unreadable input cannot crash-loop the body",
+  "draft": true,
+  "created": "2026-10-28",
+  "updated": "2026-10-28"
+ },
+ {
+  "number": 207,
+  "sha": "8bb1457d4fe534597dca9926b541978c76d5b5a8",
+  "ref": "kimi/full-mind-completion-matrix-20261003",
+  "base": "kimi/cortex-npart-composition-20261003",
+  "title": "cortex: account for the full polyintelligence mind",
+  "draft": true,
+  "created": "2026-10-26",
+  "updated": "2026-10-30"
+ },
+ {
+  "number": 206,
+  "sha": "31d0c57af90d714da7d9be2c6d6317a41fdc9ca3",
+  "ref": "codex/workspace-entry-20261025",
+  "base": "claude/greg-full-machine-completion-whgiee",
+  "title": "Coordinate enrolled workers across local and cloud workspaces before edits",
+  "draft": true,
+  "created": "2026-10-25",
+  "updated": "2026-11-13"
+ },
+ {
+  "number": 204,
+  "sha": "f435937f84fdd9d254dd42d9831bd405a396ff48",
+  "ref": "claude/r2a-confinement-tier",
+  "base": "claude/opus-maximus-one-greg-20261014",
+  "title": "R2-A part (b): worker confinement tier on every receipt, checked by the appraiser",
+  "draft": true,
+  "created": "2026-10-22",
+  "updated": "2026-10-22"
+ },
+ {
+  "number": 200,
+  "sha": "0954e8fdf9b0ab8e5899b2d2c689d918f8a80f77",
+  "ref": "claude/r1a-worker-independent-acceptance",
+  "base": "claude/opus-maximus-one-greg-20261014",
+  "title": "R1-A: worker-independent acceptance (#190's first capability dividend), pre-registered; two floors failed, NEEDS_FOUNDER_DECISION",
+  "draft": true,
+  "created": "2026-10-22",
+  "updated": "2026-11-13"
+ },
+ {
+  "number": 196,
+  "sha": "f383fd26d345c8ce745476086fd7126eb2608175",
+  "ref": "claude/greg-full-machine-completion-whgiee",
+  "base": "claude/greg-integration-178-184-20261021",
+  "title": "Integration candidate 2: #192 + portfolio (#187-#195) + Cortex 0.2.2 (#194) + Track B (#180-#189, #179, #158) on one tree",
+  "draft": true,
+  "created": "2026-10-22",
+  "updated": "2026-11-13"
+ },
+ {
+  "number": 195,
+  "sha": "0d5e0b123193384903860d3378a3b80a540fb4a3",
+  "ref": "claude/greg-budgeted-portfolio",
+  "base": "claude/greg-portfolio-words",
+  "title": "GREG: portfolio under a spending cap \u2014 selection.budgeted, a certified search over selection.closure",
+  "draft": true,
+  "created": "2026-10-21",
+  "updated": "2026-10-21"
+ },
+ {
+  "number": 194,
+  "sha": "c0a502f2b84853aac8bfdb0249ea2661ee2bf8aa",
+  "ref": "claude/seed-cortex-prerequisites-on-184",
+  "base": "claude/opus-maximus-one-greg-20261014",
+  "title": "Cortex 0.2.2 on GREG's path: the Seed Cortex repairs, 28 verified findings and an adversarial review of the port",
+  "draft": true,
+  "created": "2026-10-21",
+  "updated": "2026-10-21"
+ },
+ {
+  "number": 193,
+  "sha": "2ccbbe2bf553df45df3dac777dc45f825760dd45",
+  "ref": "codex/team-entry-discussions-20261021",
+  "base": "main",
+  "title": "Complete shared collaboration entry, scoped claims and tested handoffs",
+  "draft": true,
+  "created": "2026-10-21",
+  "updated": "2026-11-13"
+ },
+ {
+  "number": 192,
+  "sha": "397a38e39d678adbfaac770081b3a3d3913ec18f",
+  "ref": "claude/greg-integration-178-184-20261021",
+  "base": "claude/opus-maximus-one-greg-20261014",
+  "title": "Integration candidate: #178 reconciled into #184 (one machine, one spend state, both proofs on real organs)",
+  "draft": true,
+  "created": "2026-10-21",
+  "updated": "2026-10-22"
+ },
+ {
+  "number": 191,
+  "sha": "2e958009cd852eeafe8a1e353c2aa6e5d5e739f9",
+  "ref": "claude/greg-portfolio-words",
+  "base": "claude/greg-goal-requests-formation",
+  "title": "GREG: portfolio questions in plain words, answered by the constructed selection.closure",
+  "draft": true,
+  "created": "2026-10-21",
+  "updated": "2026-10-21"
+ },
+ {
+  "number": 190,
+  "sha": "4ff2f044a43893687fd608e241d287a373b5b796",
+  "ref": "agent/upward-recombination-20261019",
+  "base": "main",
+  "title": "Founder correction: turn all substrate upward into integrated capability; full vision is the acceptance floor",
+  "draft": true,
+  "created": "2026-10-19",
+  "updated": "2026-10-19"
+ },
+ {
+  "number": 189,
+  "sha": "93badaffb0ea2cbdfec7c1a8a0f76e683d330042",
+  "ref": "claude/greg-antifragility-on-convergence-20261015",
+  "base": "claude/greg-restore-drill-on-convergence-20261015",
+  "title": "GREG \u00a711/\u00a714: the outcome plane hears verified failures; antifragility pre-registered and run twice (NO_GAIN)",
+  "draft": true,
+  "created": "2026-10-15",
+  "updated": "2026-10-21"
+ },
+ {
+  "number": 188,
+  "sha": "6d3889e6a9d78bf01c3283cfa8b2fbbbe68432ba",
+  "ref": "claude/greg-goal-requests-formation",
+  "base": "claude/greg-selection-closure",
+  "title": "GREG: a goal asks Genesis to form the function its plan requires (formation only)",
+  "draft": true,
+  "created": "2026-10-15",
+  "updated": "2026-10-21"
+ },
+ {
+  "number": 187,
+  "sha": "73ed34e7af25847f7a67d9b58d8aac0c0691eb31",
+  "ref": "claude/greg-selection-closure",
+  "base": "claude/greg-construction-on-full-convergence",
+  "title": "Portfolio decisions under prerequisites (selection.closure) and capability formation as Goal Gravity perception",
+  "draft": true,
+  "created": "2026-10-15",
+  "updated": "2026-10-21"
+ },
+ {
+  "number": 186,
+  "sha": "9263f2ee64077a25aef98ae907f40b1d4f1e5a9d",
+  "ref": "claude/greg-restore-drill-on-convergence-20261015",
+  "base": "claude/greg-task-fabric-on-convergence-20261015",
+  "title": "GREG \u00a714 restore from a tested backup: the restored body holds; stale authority cannot drive it",
+  "draft": true,
+  "created": "2026-10-15",
+  "updated": "2026-10-21"
+ },
+ {
+  "number": 185,
+  "sha": "a7b24ca5c0c246fb5de9677d0b037ad2f848fc24",
+  "ref": "claude/greg-task-fabric-on-convergence-20261015",
+  "base": "claude/greg-media-case-on-convergence-20261015",
+  "title": "GREG \u00a716 Task Fabric: the evaluator of a worker's document asks the Mind",
+  "draft": true,
+  "created": "2026-10-15",
+  "updated": "2026-10-21"
+ },
+ {
+  "number": 184,
+  "sha": "55e6d74af4c0e4e24c410dec3f443675e60e5571",
+  "ref": "claude/opus-maximus-one-greg-20261014",
+  "base": "claude/greg-one-machine",
+  "title": "OPUS MAXIMUS on #178: #175, #173, #169, the Track B Mind and its descendants joined on #178's trunk; review rounds; worker confinement composed; standing reconciliation; ten-step proof",
+  "draft": true,
+  "created": "2026-10-15",
+  "updated": "2026-10-22"
+ },
+ {
+  "number": 183,
+  "sha": "fbace064497bda255316e71d6acb8cee4066e32e",
+  "ref": "claude/greg-media-case-on-convergence-20261015",
+  "base": "claude/greg-venture-case-on-convergence-20261015",
+  "title": "Section 16 media case: a DALEOBANKS paraphrase may not change what its source says, checked by the Mind on the real organ (stacked on #181)",
+  "draft": true,
+  "created": "2026-10-15",
+  "updated": "2026-10-21"
+ },
+ {
+  "number": 182,
+  "sha": "2f6a5b527978035998d7c01c782736a7d5e888ce",
+  "ref": "claude/greg-gate-hardening-20261015",
+  "base": "claude/greg-full-machine-convergence-20261013",
+  "title": "Consequence Gate hardening (#55 CASE 27, #21, #12): awaiting Alfonso's INTEGRITY_AUTHORIZE",
+  "draft": true,
+  "created": "2026-10-15",
+  "updated": "2026-10-15"
+ },
+ {
+  "number": 181,
+  "sha": "a422496a11cc06bb39ec0d9e711419a51a7708c2",
+  "ref": "claude/greg-venture-case-on-convergence-20261015",
+  "base": "claude/greg-mind-residuals-on-convergence-20261014",
+  "title": "Section 16 venture case on the converged Mind: a revenue figure may not outrun its causal support, on real organs (stacked on #180)",
+  "draft": true,
+  "created": "2026-10-15",
+  "updated": "2026-10-21"
+ },
+ {
+  "number": 180,
+  "sha": "632e1059e27a85b525fc976923a902da20b61e8d",
+  "ref": "claude/greg-mind-residuals-on-convergence-20261014",
+  "base": "claude/greg-mind-lineage-convergence",
+  "title": "Converged Mind: carry #161 and #163 onto Track B, and put the Capability Genesis route on the thinking budget (stacked on #179)",
+  "draft": true,
+  "created": "2026-10-15",
+  "updated": "2026-10-21"
+ },
+ {
+  "number": 179,
+  "sha": "866d477000379d6133520689cc582877a8a50be0",
+  "ref": "claude/greg-mind-lineage-convergence",
+  "base": "claude/greg-one-mind-converged",
+  "title": "Track B: converge the #155 and #158 Mind lineages into one GREG Mind",
+  "draft": true,
+  "created": "2026-10-14",
+  "updated": "2026-10-22"
+ },
+ {
+  "number": 178,
+  "sha": "e410977d94d301bdaba9dc9fe45ff7dae7bbdb16",
+  "ref": "claude/greg-one-machine",
+  "base": "claude/greg-construction-on-full-convergence",
+  "title": "One machine: one signed mission across Mind, Genesis, organs, Hands, interruption and independent appraisal (integration trunk)",
+  "draft": true,
+  "created": "2026-10-14",
+  "updated": "2026-10-21"
+ },
+ {
+  "number": 175,
+  "sha": "ddcab38e445a148dcc35e49b609f58a8a8a3db4d",
+  "ref": "claude/greg-construction-on-full-convergence",
+  "base": "claude/greg-full-machine-convergence-20261013",
+  "title": "Capability construction on #173, plus governed recovery (REA-harvested) and a re-escalation crash fix",
+  "draft": true,
+  "created": "2026-10-14",
+  "updated": "2026-10-21"
+ },
+ {
+  "number": 174,
+  "sha": "e25326229e0c3871f2fe141c4c8887d0903f0187",
+  "ref": "claude/per-organ-bridge-keys",
+  "base": "main",
+  "title": "Per-organ bridge keys: isolated sender identity without breaking pinned organs",
+  "draft": true,
+  "created": "2026-10-14",
+  "updated": "2026-10-14"
+ },
+ {
+  "number": 173,
+  "sha": "4a7343d278263a4c15f0f200be42f34925ae1827",
+  "ref": "claude/greg-full-machine-convergence-20261013",
+  "base": "main",
+  "title": "GREG full-machine convergence: one canonical lineage from #158, #159, #160, #132, #141, #172 and the Goal Gravity binding",
+  "draft": true,
+  "created": "2026-10-14",
+  "updated": "2026-10-21"
+ },
+ {
+  "number": 172,
+  "sha": "d15acf40ce383202ae5b065dcdcaf2690082f175",
+  "ref": "claude/greg-mind-capability-closure",
+  "base": "claude/greg-whole-machine-convergence",
+  "title": "Mind constructs its missing capability: compiler deficit \u2192 Genesis \u2192 certified answer",
+  "draft": true,
+  "created": "2026-10-14",
+  "updated": "2026-10-21"
+ },
+ {
+  "number": 171,
+  "sha": "98143d69dbccc1190ccdd02a54ff8a5e2406d90a",
+  "ref": "claude/organ-bridge-observability",
+  "base": "claude/foundry-55",
+  "title": "Make organ bridge exchanges observable by Foundry #44; fix dataplane redelivery crash",
+  "draft": true,
+  "created": "2026-10-14",
+  "updated": "2026-10-14"
+ },
+ {
+  "number": 169,
+  "sha": "ebfc5f7e89ce15fae0e44ad3448aaacd51039f74",
+  "ref": "claude/greg-whole-machine-convergence",
+  "base": "main",
+  "title": "GREG whole-machine convergence: Founder's First Mission and Mission Control",
+  "draft": true,
+  "created": "2026-10-14",
+  "updated": "2026-10-16"
+ },
+ {
+  "number": 168,
+  "sha": "0fd430f3de82290f5ee1a939f7de3ee5318fe6d9",
+  "ref": "claude/greg-one-installable-mind-20261013",
+  "base": "claude/uniimente-greg-reconciliation-39syff",
+  "title": "[child of #137] The installed GREG carries the Mind: one installable tree, two product defects fixed by rehearsing the founder's runbook",
+  "draft": true,
+  "created": "2026-10-14",
+  "updated": "2026-11-05"
+ },
+ {
+  "number": 167,
+  "sha": "dba14ac8b49036788dde05efe0325fbe1cc3e69e",
+  "ref": "claude/polyintelligence-seed-genome-v0.1-20261013",
+  "base": "main",
+  "title": "Polyintelligence Seed Genome v0.1: Seed Cortex 0.1.6 converged, declared baselines run (GAIN_ABSENT; 0 vs 2/1 critical errors)",
+  "draft": true,
+  "created": "2026-10-14",
+  "updated": "2026-10-21"
+ },
+ {
+  "number": 166,
+  "sha": "6dd27fdaec0938207b2f0774032238d4e4f992fb",
+  "ref": "claude/append-only-witness",
+  "base": "main",
+  "title": "Witnessed append-only ledger checkpoints and one cross-organ mission through real organ code",
+  "draft": true,
+  "created": "2026-10-14",
+  "updated": "2026-10-14"
+ },
+ {
+  "number": 164,
+  "sha": "7c2d75c5ac71f8236d3caf4a0289981392ec207a",
+  "ref": "claude/greg-recombine-capability-construction",
+  "base": "claude/greg-mind-residual-safeguards-20261013",
+  "title": "Genesis RECOMBINE: construct new capabilities by certified reduction",
+  "draft": true,
+  "created": "2026-10-13",
+  "updated": "2026-10-21"
+ },
+ {
+  "number": 163,
+  "sha": "aa39996b22dd24da0c27281069d6ae6ed8e8c5d7",
+  "ref": "claude/greg-seed-genome-residuals-20261013",
+  "base": "claude/greg-mind-residual-safeguards-20261013",
+  "title": "Seed Genome residuals: selective-disclosure evidence packages (RFC 9901), a measured characterization harness and a decision-aware thinking budget (stacked on #161)",
+  "draft": true,
+  "created": "2026-10-13",
+  "updated": "2026-10-21"
+ },
+ {
+  "number": 162,
+  "sha": "0de6d77b88afc8120863d73da34890599045cba9",
+  "ref": "claude/greg-cortex-convergence-20261001",
+  "base": "codex/polyintelligence-founder-directive-20260930",
+  "title": "Evidence only, do not merge: 2026-10-01 cortex convergence onto #140 (superseded; mechanisms ported to #161)",
+  "draft": true,
+  "created": "2026-10-13",
+  "updated": "2026-10-13"
+ },
+ {
+  "number": 161,
+  "sha": "35480b0bbb2ee0b8c7126c0633b2b0e153a5879e",
+  "ref": "claude/greg-mind-residual-safeguards-20261013",
+  "base": "claude/greg-polyintelligence-mind",
+  "title": "Mind verifier: Z3 cross-checks on CP-SAT optimality/infeasibility and unsat cores; evidence-backed legitimacy gates (stacked on #158)",
+  "draft": true,
+  "created": "2026-10-13",
+  "updated": "2026-10-21"
+ },
+ {
+  "number": 160,
+  "sha": "637b976fe6b5da368f7de5bb6a65a465f7e7c3d1",
+  "ref": "claude/goal-gravity-loop-20261013",
+  "base": "main",
+  "title": "Goal Gravity loop on the canonical standing runtime: persistent goals as attractors, Gate-only execution, founder attention routing (INTENT-20261013-GOAL-GRAVITY)",
+  "draft": true,
+  "created": "2026-10-13",
+  "updated": "2026-10-14"
+ },
+ {
+  "number": 159,
+  "sha": "e125168be81890b12937a7894123f11efcd358ee",
+  "ref": "codex/full-machine-continuation-20261013",
+  "base": "codex/full-machine-convergence-20261007",
+  "title": "Bind worker appraisal to commissioned acceptance and retain truthful spend evidence",
+  "draft": true,
+  "created": "2026-10-13",
+  "updated": "2026-10-13"
+ },
+ {
+  "number": 158,
+  "sha": "21ae7f5a37af4e7aac7a98eb13895080510ebfeb",
+  "ref": "claude/greg-polyintelligence-mind",
+  "base": "claude/greg-mind-base-92bc6e3",
+  "title": "Polyintelligence Mind continuation: admissions v5-v7 (50 of 68 admitted, 11 absent coverage items filled), repair hybrid, natural-ops family (exact practitioner wins), P8 under a committed freeze (cycle 6 RETAIN; successor pilots NOT_VIABLE), stress-gate audit, whole-machine trace, exposure ledger",
+  "draft": true,
+  "created": "2026-10-08",
+  "updated": "2026-10-22"
+ },
+ {
+  "number": 157,
+  "sha": "f66f860a1932f5047d2c35bf765376efea8fcc17",
+  "ref": "codex/full-machine-continuation-20261002",
+  "base": "claude/greg-hands-execution-fabric",
+  "title": "Connect signed browser evidence, Cortex acquisition and confined cancellable workers",
+  "draft": true,
+  "created": "2026-10-07",
+  "updated": "2026-10-07"
+ },
+ {
+  "number": 156,
+  "sha": "62d625c4bc39e717cd8844f67641cb8b6dd59dc3",
+  "ref": "codex/full-machine-convergence-20261007",
+  "base": "codex/full-machine-integration-20261001",
+  "title": "Converge GREG Cortex and Hands with typed handoffs, native appraisal and bounded cognition",
+  "draft": true,
+  "created": "2026-10-07",
+  "updated": "2026-10-07"
+ },
+ {
+  "number": 155,
+  "sha": "ef5f078013b549a51458dc9f6b5f34b324ea70b0",
+  "ref": "claude/greg-one-mind-converged",
+  "base": "claude/greg-hands-execution-fabric",
+  "title": "One GREG Mind: converged cognition; P6 VPL = 5 families; P4 NO_GAIN (demoted); P8 protected evolution; Layer 1/2/4 repertoire; goal-gravity asks; lawful advantage compiler",
+  "draft": true,
+  "created": "2026-10-07",
+  "updated": "2026-10-14"
+ },
+ {
+  "number": 154,
+  "sha": "d282d2e337c9301a081435f28446b70a05198d4b",
+  "ref": "kimi/one-mind-surface-20261003",
+  "base": "claude/greg-hands-execution-fabric",
+  "title": "One Mind surface: reconcile cortex 0.4.0 with the execution fabric (INTENT-0037)",
+  "draft": true,
+  "created": "2026-10-04",
+  "updated": "2026-10-07"
+ },
+ {
+  "number": 153,
+  "sha": "91703729a64e27ac6045360e36539ca8839f45b4",
+  "ref": "kimi/cortex-npart-composition-20261003",
+  "base": "kimi/cortex-formed-function-routing-20261002",
+  "title": "cortex 0.4.0: bounded n-part composition with cap honesty (stacked on 0.3.0)",
+  "draft": true,
+  "created": "2026-10-02",
+  "updated": "2026-10-07"
+ },
+ {
+  "number": 152,
+  "sha": "5ce2f37417534045b399496ce62d6b33e0102f29",
+  "ref": "codex/full-machine-entry-correction-20261002",
+  "base": "main",
+  "title": "Keep full Body + Organs + Mind completion binding at default agent entry",
+  "draft": true,
+  "created": "2026-10-02",
+  "updated": "2026-11-13"
+ },
+ {
+  "number": 151,
+  "sha": "c5801136ff80becbc206465b4a20575c22116c2a",
+  "ref": "kimi/cortex-formed-function-routing-20261002",
+  "base": "claude/greg-seed-genome-build-y43kmg",
+  "title": "cortex 0.3.0: route graph/LP payloads to formed-function organs with GREG-only certification",
+  "draft": true,
+  "created": "2026-10-02",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 150,
+  "sha": "00b9fe7917116b126d87190de564565405d6d79b",
+  "ref": "greg/add-a-read-only-function-compu",
+  "base": "claude/greg-hands-execution-fabric",
+  "title": "[GREG WorkOrder] computer_use_ready() readiness probe (worker: Claude Code; produced across a body crash)",
+  "draft": true,
+  "created": "2026-10-02",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 149,
+  "sha": "1c52ebe129561e15bbe10f23611d702e4203f6af",
+  "ref": "greg/greg-doctor-should-also-report",
+  "base": "claude/greg-hands-execution-fabric",
+  "title": "[GREG WorkOrder] greg doctor reports installed frontier workers (worker: Claude Code)",
+  "draft": true,
+  "created": "2026-10-02",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 148,
+  "sha": "1aab4132fa4cb4064a01d5c02613b930467fbee3",
+  "ref": "claude/greg-hands-execution-fabric",
+  "base": "codex/full-machine-integration-20261001",
+  "title": "Give GREG hands: real worker delegation, live browser use, governed self-development, DALEOBANKS gate",
+  "draft": true,
+  "created": "2026-10-02",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 147,
+  "sha": "32003ed00cd9eb76ed127867b1396cae3ab9ba06",
+  "ref": "codex/full-machine-integration-20261001",
+  "base": "codex/full-machine-doctrine-20261001",
+  "title": "Integrate GREG guarded execution, owned products, signed delivery and company performance",
+  "draft": true,
+  "created": "2026-10-01",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 146,
+  "sha": "9d9f1f9cb2304a1a10a278e6641b0517503a4d8c",
+  "ref": "codex/full-machine-doctrine-20261001",
+  "base": "codex/polyintelligence-seed",
+  "title": "Preserve full Body + Organs + Mind boundary across execution doctrine",
+  "draft": true,
+  "created": "2026-10-01",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 145,
+  "sha": "680a0d438e94a004ab596ab3287e28878bfb747d",
+  "ref": "codex/cortex-seed-delivery-20261001",
+  "base": "codex/polyintelligence-founder-directive-20260930",
+  "title": "Complete GREG machinery: native cognition, governed recovery and continuing integration",
+  "draft": true,
+  "created": "2026-10-01",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 144,
+  "sha": "f83b31da0f3b382ced34c59297f4655b408aed95",
+  "ref": "founder/open-source-mechanism-harvest-20261001",
+  "base": "main",
+  "title": "Founder correction: harvest open-source mechanisms before inventing the full machine",
+  "draft": true,
+  "created": "2026-10-01",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 143,
+  "sha": "6fa9b89a9d73f29e46f83ea89c7c1a7cd3f6f35b",
+  "ref": "claude/greg-seed-genome-build-y43kmg",
+  "base": "claude/uniimente-greg-reconciliation-39syff",
+  "title": "GREG seed genome: the Competency Compiler on the mission path (frozen gain verified vs run baselines, narrow; EXPERIMENT)",
+  "draft": true,
+  "created": "2026-10-01",
+  "updated": "2026-10-14"
+ },
+ {
+  "number": 142,
+  "sha": "3de9f950ec49e1f7a320216200004983ee8926b6",
+  "ref": "codex/polyintelligence-seed",
+  "base": "claude/uniimente-greg-reconciliation-39syff",
+  "title": "Bounded Polyintelligence Seed Genome on canonical GREG",
+  "draft": true,
+  "created": "2026-10-01",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 141,
+  "sha": "ebc21301e6af1998e1df3bc92564e89f546fd908",
+  "ref": "claude/polyintelligence-cortex-primitives-20260930",
+  "base": "main",
+  "title": "Add GREG Polyintelligence Cortex seed (frozen eval INCONCLUSIVE, unpromoted)",
+  "draft": true,
+  "created": "2026-10-01",
+  "updated": "2026-10-13"
+ },
+ {
+  "number": 140,
+  "sha": "3ced61db403a3d16908c915aef2e6d2acc8eda38",
+  "ref": "codex/polyintelligence-founder-directive-20260930",
+  "base": "claude/uniimente-greg-reconciliation-39syff",
+  "title": "Add bounded cognitive solvers to GREG signed missions",
+  "draft": true,
+  "created": "2026-10-01",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 139,
+  "sha": "30d162b6016a2edc1a8c2e87cd54aa4ec3609d86",
+  "ref": "codex/polyintelligence-seed-v0.1",
+  "base": "main",
+  "title": "Add governed polyintelligence seed with typed proofs and outcome hooks",
+  "draft": true,
+  "created": "2026-09-30",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 138,
+  "sha": "11ba6610752c0a313f98441fa66fb154f20357a3",
+  "ref": "codex/greg-vepmc-proof-integrity-20260930",
+  "base": "claude/uniimente-greg-reconciliation-39syff",
+  "title": "Repair GREG closure proof and founder signer enrollment",
+  "draft": true,
+  "created": "2026-09-30",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 137,
+  "sha": "51ad3c80d295670cd65d1f10eb78ef1f7f18ffdf",
+  "ref": "claude/uniimente-greg-reconciliation-39syff",
+  "base": "main",
+  "title": "One GREG: converge the lineages; developmental path; one-command Body 1; asks on the merits (incl. professionals); N2 without a model; every open PR placed",
+  "draft": true,
+  "created": "2026-09-30",
+  "updated": "2026-10-30"
+ },
+ {
+  "number": 134,
+  "sha": "1391e04feebb54e183606b6cb89382f67635d175",
+  "ref": "codex/greg-foundry-artifact-store",
+  "base": "codex/greg-foundry-precedent-tool",
+  "title": "GREG: receipt-bound content-addressed artifacts across missions",
+  "draft": true,
+  "created": "2026-09-28",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 133,
+  "sha": "19d30ca888394cac484bd08d359cd6378546767e",
+  "ref": "codex/greg-foundry-precedent-tool",
+  "base": "codex/greg-detach-respects-founder",
+  "title": "Make canonical action precedents usable by signed GREG missions",
+  "draft": true,
+  "created": "2026-09-27",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 132,
+  "sha": "4eff574cd1a8086da7a28ea92bae780cc209f342",
+  "ref": "claude/foundry-55",
+  "base": "codex/one-greg-vepmc-convergence",
+  "title": "Foundry: 55-system completion contract + 52/55 systems built and integrated with GREG",
+  "draft": true,
+  "created": "2026-09-27",
+  "updated": "2026-10-13"
+ },
+ {
+  "number": 131,
+  "sha": "23cb3d669334519e67cd0aa4952b1e56dc46a3c7",
+  "ref": "codex/greg-detach-respects-founder",
+  "base": "codex/greg-local-open-model-route",
+  "title": "Keep founder-detached tools detached when GREG discovers replacements",
+  "draft": true,
+  "created": "2026-09-27",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 130,
+  "sha": "e7dac6ffebb9f0fa1162f0c4b39407c9bcd855d3",
+  "ref": "codex/greg-local-open-model-route",
+  "base": "codex/arsenal-02-ucl-duplicate-field-refusal",
+  "title": "Add founder-swappable local model cognition to canonical GREG router",
+  "draft": true,
+  "created": "2026-09-27",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 129,
+  "sha": "9309fd86a2876886308cf1958c6a0486eb36f7ea",
+  "ref": "claude/opensource-llm-integration-rkr14o",
+  "base": "main",
+  "title": "Egregore: swappable parts + Capability Genesis Loop (deficit \u2192 ladder \u2192 shadow \u2192 dossier \u2192 ratified bind)",
+  "draft": true,
+  "created": "2026-09-27",
+  "updated": "2026-10-13"
+ },
+ {
+  "number": 128,
+  "sha": "03217e41f29423a251fcc60d088fd9dde3136074",
+  "ref": "claude/greg-venture-bridge-122",
+  "base": "codex/one-greg-vepmc-convergence",
+  "title": "ONE-GREG child: standing missions appraised per closure; venture.assess (verdict may not outrun evidence)",
+  "draft": true,
+  "created": "2026-09-27",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 127,
+  "sha": "0a99a71ec560423d229d6c70b533361756c5d16f",
+  "ref": "codex/arsenal-02-ucl-duplicate-field-refusal",
+  "base": "codex/arsenal-01-verified-sop-compiler",
+  "title": "Refuse duplicate constitutional DSL assignments",
+  "draft": true,
+  "created": "2026-09-27",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 126,
+  "sha": "0097eb55a20e885436fd0c2f70ce75ddcbd94144",
+  "ref": "codex/arsenal-01-verified-sop-compiler",
+  "base": "codex/chromebook-first-body",
+  "title": "Guard reusable GREG procedures with current mission appraisal",
+  "draft": true,
+  "created": "2026-09-27",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 125,
+  "sha": "e169e57814f2bf09ffde3a53dbeb217973d3eedb",
+  "ref": "codex/chromebook-first-body",
+  "base": "codex/one-greg-vepmc-convergence",
+  "title": "Draft: founder-designated Chromebook first body and honest VEPMC gate",
+  "draft": true,
+  "created": "2026-09-27",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 124,
+  "sha": "e6131ff7e0354bfb96902cb60a48e3ce99685475",
+  "ref": "claude/greg-venture-bridge",
+  "base": "claude/greg-correction-loop",
+  "title": "GREG venture watch: preserved evidence and mechanisms carried into #128",
+  "draft": true,
+  "created": "2026-09-27",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 122,
+  "sha": "3edbcfe32c2bc1192ddf504e79e03ab929fb7c72",
+  "ref": "codex/one-greg-vepmc-convergence",
+  "base": "claude/greg-persistent-mission-build-t0vqu7",
+  "title": "ONE GREG frontier: #114 + routing (#118) + witness (#115) + one learning engine (#120, #119 metabolized) \u2014 first Mac mission path",
+  "draft": true,
+  "created": "2026-09-26",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 121,
+  "sha": "cb53196325330ea9e9753a9864dc8d5bf4060acb",
+  "ref": "claude/greg-correction-loop",
+  "base": "claude/55-tech-arsenal-docs-ne5v2b",
+  "title": "GREG: founder corrections become bounded, evidence-tested routing knowledge",
+  "draft": true,
+  "created": "2026-09-26",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 120,
+  "sha": "19f59b3c87ad8d005c60aec3a9dd2f138b57e682",
+  "ref": "claude/greg-114-learning-gate",
+  "base": "claude/greg-persistent-mission-build-t0vqu7",
+  "title": "[child of #114] One learning substrate: brief changes kept only if they beat the unchanged brief on later labelled briefs (absorbs #119)",
+  "draft": true,
+  "created": "2026-09-26",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 119,
+  "sha": "7086a8aaf99668130cc57df7a25f11d0dc6285d2",
+  "ref": "claude/greg-founder-learning-t0vqu7",
+  "base": "claude/greg-persistent-mission-build-t0vqu7",
+  "title": "[evidence \u2014 not for merge; learning owner is #122] GREG learns from founder corrections, only when a later held-out case proves it (child of #114)",
+  "draft": true,
+  "created": "2026-09-26",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 118,
+  "sha": "7766b0784198d2669a480c8b62f2f50ece7498c6",
+  "ref": "claude/greg-114-routing-integrity",
+  "base": "claude/greg-persistent-mission-build-t0vqu7",
+  "title": "[child of #114] Routing integrity: provider policy verdicts are refusals, not outages; record the served model",
+  "draft": true,
+  "created": "2026-09-26",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 115,
+  "sha": "6c32edd2450eb44179bd7fc9422a383109ad6feb",
+  "ref": "claude/55-tech-arsenal-docs-ne5v2b",
+  "base": "claude/greg-persistent-mission-build-t0vqu7",
+  "title": "GREG: externally detectable rewrite/rollback of witnessed ledger history (RFC 3161 + independent witness)",
+  "draft": true,
+  "created": "2026-09-26",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 114,
+  "sha": "14b44e5128a18bb00e46e5f5132c1e8b29eac7f9",
+  "ref": "claude/greg-persistent-mission-build-t0vqu7",
+  "base": "claude/egregore-project-overview-btn5y2",
+  "title": "GREG product path: one interface, useful mission, building + self-repairing Genesis, any model vendor, power-loss continuity",
+  "draft": true,
+  "created": "2026-09-26",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 113,
+  "sha": "51c1374ab2b23ecf6ade765bd448e55f582d3f93",
+  "ref": "claude/egregore-project-overview-btn5y2",
+  "base": "main",
+  "title": "GREG Body 1 + Spider-Web + phone & browser: persistent founder-sovereign operating layer (converges #101/#102/#110, #108/#109, #111; ports #112/#70 fixes)",
+  "draft": true,
+  "created": "2026-09-25",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 111,
+  "sha": "527153f13d46c65b389f48f94c38a9d17649586b",
+  "ref": "feat/institutional-leverage-paths",
+  "base": "main",
+  "title": "Build institutional leverage paths into egregore cognition",
+  "draft": true,
+  "created": "2026-09-23",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 110,
+  "sha": "27c3c2a283237764dec528938b8aaab438debc49",
+  "ref": "codex/host-failure-reconciliation-20260923",
+  "base": "agent/opus-reconciliation-20260911",
+  "title": "Retain bounded host startup failures as explicit mission blockers",
+  "draft": true,
+  "created": "2026-09-23",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 109,
+  "sha": "955f07e62bbea61ffb945667d2c7b04ebf40b7fb",
+  "ref": "codex/goal-chase-main-convergence-20260922",
+  "base": "codex/intent-first-body-20260922",
+  "title": "Integrate sandbox GoalChase with current Kernel recovery",
+  "draft": true,
+  "created": "2026-09-22",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 108,
+  "sha": "7c24afaac503b321798a6a6ff36453ff39d6e87e",
+  "ref": "codex/intent-first-body-20260922",
+  "base": "main",
+  "title": "Record first-body founder intent and bounded product decision",
+  "draft": true,
+  "created": "2026-09-22",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 105,
+  "sha": "d3b014fc02c347a70b6d6de241f9dc911d6658b7",
+  "ref": "codex/provider-change-intake-2026-09-15",
+  "base": "main",
+  "title": "Govern weekly model-provider change intake",
+  "draft": true,
+  "created": "2026-09-15",
+  "updated": "2026-11-10"
+ },
+ {
+  "number": 102,
+  "sha": "57b7aa4cace86b43d21fd5cfc2a08c0d1f02a150",
+  "ref": "agent/opus-reconciliation-20260911",
+  "base": "agent/greg-persistent-mission-proof-20260910",
+  "title": "Reconcile embodied GREG intent and retain morning evidence review",
+  "draft": true,
+  "created": "2026-09-11",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 101,
+  "sha": "d4ee7b6cc37c16479e7122c7809a6e9f3b28cc52",
+  "ref": "agent/greg-persistent-mission-proof-20260910",
+  "base": "main",
+  "title": "Prove one bounded local GREG mission with durable recovery and appraisal",
+  "draft": true,
+  "created": "2026-09-11",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 97,
+  "sha": "ca4ae479485d6636baa1a5f2ddd8542f9eba4423",
+  "ref": "codex/goal-chase-verification-2026-09-07",
+  "base": "agent/founder-goal-chase-sandbox-v0",
+  "title": "Fix Goal Chase duplicate founder interruptions and expired delivery",
+  "draft": true,
+  "created": "2026-09-08",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 95,
+  "sha": "8d62edf0fa4744d45e7a750ced2f539d387ffaa4",
+  "ref": "agent/collaboration-bootstrap-20260907",
+  "base": "main",
+  "title": "Stage canonical AI collaboration bootstrap and SOP entrypoint",
+  "draft": true,
+  "created": "2026-09-07",
+  "updated": "2026-10-22"
+ },
+ {
+  "number": 94,
+  "sha": "5e2f221b1911309db10de26246065553c1bdcbfc",
+  "ref": "agent/cathedral-metabolism-closure-phase4",
+  "base": "agent/omnimorph-zero-trust-compiler-phase3",
+  "title": "fix(cmc): protected evidence appraisal and reconciled Phase 4 experiment",
+  "draft": true,
+  "created": "2026-09-05",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 93,
+  "sha": "21fb21ed803f43e47acb8e6420f6cdc4f74925cd",
+  "ref": "agent/founder-goal-chase-sandbox-v0",
+  "base": "main",
+  "title": "Infinite Goal Chase: founder-facing persistent sandbox closure",
+  "draft": true,
+  "created": "2026-09-05",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 92,
+  "sha": "c137e863851f0f7d8dce7bcb060b4e1d5066ea80",
+  "ref": "agent/omnimorph-zero-trust-compiler-phase3",
+  "base": "agent/organizational-task-fabric-phase2",
+  "title": "Phase 3: compile zero-trust organization hypotheses",
+  "draft": true,
+  "created": "2026-09-04",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 90,
+  "sha": "8c01c800978ca1dde8352359607546b3638e2cf6",
+  "ref": "agent/organizational-task-fabric-phase2",
+  "base": "agent/organizational-morphogenesis-experiment-v1",
+  "title": "Phase 2: add replay-derived organizational task fabric",
+  "draft": true,
+  "created": "2026-08-30",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 88,
+  "sha": "3dfe6fd90fcacd11032398327e6fd184ba15a01a",
+  "ref": "agent/organizational-morphogenesis-experiment-v1",
+  "base": "claude/uniimente-infinite-goal-chase-rjxvzo",
+  "title": "Phase 1: organizational morphogenesis contracts and falsification plan",
+  "draft": true,
+  "created": "2026-08-28",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 87,
+  "sha": "dfd491d8b34fa963e4902008b5d8dc7690fdde63",
+  "ref": "claude/uniimente-infinite-goal-chase-rjxvzo",
+  "base": "claude/opus-maximus-audit-eay0ek",
+  "title": "FOUNDER-RULING-2026-08-23: 0002, 0003, Witness v2 live, identity adopted, goal chase recomputed",
+  "draft": true,
+  "created": "2026-08-23",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 86,
+  "sha": "06024204910a0cae1f35937106fef83f94a5e64b",
+  "ref": "chatgpt/infinite-goal-chase-protocol-2026-08-22",
+  "base": "main",
+  "title": "Codify Infinite Goal Chase living goal graph",
+  "draft": true,
+  "created": "2026-08-22",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 85,
+  "sha": "d611771a38b2679f6f8b5c6c57e819ff0d433b53",
+  "ref": "kimi/verifier-run-record-head-binding",
+  "base": "main",
+  "title": "verifier: bind run records to the tree they measure (Finding 3 repair proposal)",
+  "draft": true,
+  "created": "2026-08-21",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 83,
+  "sha": "8ef0b1ad32b41082355992fa8b066ebfe7104e61",
+  "ref": "kimi/independent-verification-8cb3074a",
+  "base": "main",
+  "title": "Independent verification of canonical-v1 (main @ 8cb3074a): 291/291 byte-exact mirror, full battery re-run, v1 C2 stale-canary defect + separable repair",
+  "draft": true,
+  "created": "2026-08-21",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 81,
+  "sha": "69af80db2d2fd6410ba87790a020dfdef16600e9",
+  "ref": "build/fast-evolution",
+  "base": "build/evolution-cycle",
+  "title": "WP-06: Fast Capability Evolution \u2014 first automated cycle (matrix protocol, mechanical audit, founder-ratified adoption)",
+  "draft": false,
+  "created": "2026-08-21",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 79,
+  "sha": "b3bcc4314463b628ad48e48db53eb932fe4ded5b",
+  "ref": "build/evolution-cycle",
+  "base": "build/pg-spine",
+  "title": "WP-05: First evolution cycle \u2014 closure loop, governed self-improvement, baseline beaten",
+  "draft": false,
+  "created": "2026-08-21",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 78,
+  "sha": "5b45be9a22d8836050571398365fc4fd3ad31cf8",
+  "ref": "build/pg-spine",
+  "base": "build/real-adapter-loop",
+  "title": "WP-04: Postgres spine backend + rebuild-from-spine drill",
+  "draft": false,
+  "created": "2026-08-21",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 77,
+  "sha": "02e67603e371fbc3341111b2179ba17f826cb9d5",
+  "ref": "connect-railscout-repo-2026-08-19",
+  "base": "main",
+  "title": "Connect RailScout organ to repository",
+  "draft": true,
+  "created": "2026-08-20",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 76,
+  "sha": "ff54b9cf451971484066ac08c49eb718dfa9ab2e",
+  "ref": "railscout-recurring-cognition-2026-08-19",
+  "base": "main",
+  "title": "Connect RailScout organ to dedicated repository",
+  "draft": true,
+  "created": "2026-08-20",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 73,
+  "sha": "622d76f6285061212fe1aa14fe3a94d382f687de",
+  "ref": "agent/opus-part2-governed-boundary",
+  "base": "claude/opus-maximus-audit-eay0ek",
+  "title": "Build inert Part 2 loader, MCP/A2A boundaries, and containment",
+  "draft": true,
+  "created": "2026-08-17",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 72,
+  "sha": "4648e1c27dc8c65ce2bcbd342ebffb8083f9e0e4",
+  "ref": "agent/railscout-cognitive-refinery-canon",
+  "base": "main",
+  "title": "Canonize RailScout as the multi-agent cognitive refinery",
+  "draft": true,
+  "created": "2026-08-15",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 71,
+  "sha": "2221705421eed655e5edcb0608593cdf9d3cd72b",
+  "ref": "claude/opus-maximus-audit-eay0ek",
+  "base": "main",
+  "title": "Opus Maximus: blueprint, bridges, and the 2026-08-22 founder rulings",
+  "draft": true,
+  "created": "2026-08-12",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 70,
+  "sha": "c6b3f351d351cc5f5bc32b2c4456be43079ec303",
+  "ref": "claude/track-a-runtime-spine",
+  "base": "main",
+  "title": "Track A: INERT runtime spine and P3 linker-controlled Route B",
+  "draft": true,
+  "created": "2026-08-08",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 68,
+  "sha": "ffd9df9d5bfc2d18dab495fcbe6c3b0b95c6ae0d",
+  "ref": "claude/super-planning-prompt-h8l0oj",
+  "base": "main",
+  "title": "Super-planning round: whole-system reconciliation and the developmental-machine decision (PLANNING ONLY)",
+  "draft": true,
+  "created": "2026-08-08",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 66,
+  "sha": "a6f14d344f2ca073fd334a885e5c2bdb921d082e",
+  "ref": "claude/uniimente-repo-audit-jpytcy",
+  "base": "main",
+  "title": "Phase 3G: author-direction classification + canonical decision authority (Gates F/G UNMEASURED, R8 NOT RUN)",
+  "draft": true,
+  "created": "2026-07-31",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 64,
+  "sha": "45254207a19ce573abc946d2df3e1d53aa98ccea",
+  "ref": "agent/autonomous-interior-reinitiation-v1",
+  "base": "main",
+  "title": "Phase 3F: autonomous interior re-initiation achieved; restoration fails on an over-broad provenance fence (CONTINUE)",
+  "draft": true,
+  "created": "2026-07-29",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 63,
+  "sha": "a5d0722d3d7602bec1266cf7c79c9f8eaf1cc6d0",
+  "ref": "agent/bidirectional-developmental-demand-v1",
+  "base": "main",
+  "title": "Phase 3E: bidirectional developmental demand, real function semantics, measured phenotypes (CONTINUE \u2014 gates still open)",
+  "draft": true,
+  "created": "2026-07-29",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 62,
+  "sha": "1dd43f05d07e6ad838a392f79fa9ff111e9ed068",
+  "ref": "agent/bounded-local-multibranch-morphogenesis-v1",
+  "base": "main",
+  "title": "Phase 3D: bounded-local multi-branch developmental substrate (both gates FAILED, two bottlenecks named)",
+  "draft": true,
+  "created": "2026-07-29",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 60,
+  "sha": "b5bc990d47c687c298a6a767c4e40b855e97c52e",
+  "ref": "agent/motif-conditional-causal-escape-v2",
+  "base": "main",
+  "title": "Phase 3C: motif channel fixes the defect; Gate F REOPENED under real qualification",
+  "draft": true,
+  "created": "2026-07-28",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 59,
+  "sha": "3105c0fa5480365872a3285460cb000dbdfc2f7b",
+  "ref": "agent/failure-causal-morphological-escape-v1",
+  "base": "main",
+  "title": "Causal escape: correct what the gate measures (Gate F CLOSED, Gate G OPEN)",
+  "draft": true,
+  "created": "2026-07-28",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 58,
+  "sha": "e2384223cb6b128db585e382b26ae0f277c166f4",
+  "ref": "agent/local-competency-regeneration-v1",
+  "base": "main",
+  "title": "Gate F attempt: constraint-gated diffusion (OPEN at 6/10 held-out)",
+  "draft": true,
+  "created": "2026-07-28",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 57,
+  "sha": "977fd1f08542a65602a1c4df48e095bffb37c88e",
+  "ref": "agent/governed-functional-regeneration-v1",
+  "base": "main",
+  "title": "Gate E: governed functional regeneration (function identity that outlives organs)",
+  "draft": true,
+  "created": "2026-07-28",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 56,
+  "sha": "dae5578f1b88021bea4a430cece524437c289919",
+  "ref": "agent/canonical-authority-rc1",
+  "base": "main",
+  "title": "RC1: Reality Aperture \u2014 proof-carrying authorization supersedes Strategy C",
+  "draft": true,
+  "created": "2026-07-28",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 55,
+  "sha": "e44dbdee61cfef813f236946b7601bb37932cfdb",
+  "ref": "claude/integration-canonicalization-audit",
+  "base": "main",
+  "title": "Merge-train recovery: the integration merges nearly clean (analysis only)",
+  "draft": true,
+  "created": "2026-07-27",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 54,
+  "sha": "caa7acfd749b3fe6322ef8f25b78a0f9913728e1",
+  "ref": "claude/uniimente-system-design-hczheq",
+  "base": "main",
+  "title": "Single Bottleneck Metric, PumpStation as fourth organ, and the founder-intent protocol",
+  "draft": true,
+  "created": "2026-07-27",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 53,
+  "sha": "7a7846559f23682983898975ba89174a99c50c10",
+  "ref": "strategy/cvo-001-venture-selection",
+  "base": "main",
+  "title": "CVO-001 venture selection \u2014 C9 recommended (PLAN ONLY)",
+  "draft": true,
+  "created": "2026-07-27",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 52,
+  "sha": "6fe785cc42f4ba06ba246dfe1bb73899f0cc8cb5",
+  "ref": "governance/founder-command-ordering-plan",
+  "base": "main",
+  "title": "Founder Command Ordering Guard design + CVO-001 readiness packet (PLAN ONLY)",
+  "draft": true,
+  "created": "2026-07-27",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 51,
+  "sha": "db9ce00a8b0da0fcd4694f175601d1254cb446f5",
+  "ref": "agent/cognitive-kingmaker-protocol",
+  "base": "release/canonical-v1",
+  "title": "Add governed Cognitive Kingmaker and Opus novelty routing",
+  "draft": true,
+  "created": "2026-07-26",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 46,
+  "sha": "9f88800f5dd57782b0e4bca8c6f6d194cdc7b71d",
+  "ref": "agent/register-pumpstation-venture-cell",
+  "base": "main",
+  "title": "Propose inactive PumpStation Venture Cell registration",
+  "draft": true,
+  "created": "2026-07-26",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 44,
+  "sha": "1b4ffbc5df11d0e9246a3ee607ef67610e2e9326",
+  "ref": "claude/disruptive-design-configs-hi1ab0",
+  "base": "main",
+  "title": "feat: two-track architecture + morphogenetic runtime \u2014 Stage 2 run, does not pass",
+  "draft": true,
+  "created": "2026-07-25",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 35,
+  "sha": "e09c20885176183ccd88fd499d8b431a00ca747c",
+  "ref": "agent/proof-to-settlement-trust-rail",
+  "base": "main",
+  "title": "Add the OpenClaw proof-to-settlement trust rail",
+  "draft": true,
+  "created": "2026-07-22",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 26,
+  "sha": "87480072069beb69d02d8e3f8726241f5df04549",
+  "ref": "build/real-adapter-loop",
+  "base": "build/ucl-compiler",
+  "title": "WP-03: Real Adapter Loop \u2014 first verified external consequence (Proof Capsule)",
+  "draft": false,
+  "created": "2026-07-19",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 25,
+  "sha": "640ec9d24d2a282bd062ea0dbcab1baa46758867",
+  "ref": "phase7/fast-capability-evolution",
+  "base": "phase6/first-evolution-cycle",
+  "title": "Phase 3: Fast Capability Evolution \u2014 automated loop + first automated cycle (RETAIN)",
+  "draft": false,
+  "created": "2026-07-19",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 24,
+  "sha": "bb1a62e5fb84ba4c591c5e2c5046ee5585197b3a",
+  "ref": "build/ucl-compiler",
+  "base": "build/consequence-gate",
+  "title": "WP-02: UCL Constitutional Compiler \u2014 the constitution becomes gate law",
+  "draft": false,
+  "created": "2026-07-19",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 23,
+  "sha": "a9c176ef815a5d8eb0ccb393a491b833fba4a848",
+  "ref": "phase6/first-evolution-cycle",
+  "base": "phase5/consequence-gate",
+  "title": "Phase 2: First Evolution Cycle \u2014 machinery + first machine-recorded cycle (RETAIN)",
+  "draft": false,
+  "created": "2026-07-19",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 22,
+  "sha": "9afd22169587fea25d830dff89eef8ce2af32771",
+  "ref": "phase5/consequence-gate",
+  "base": "phase4/commit-witness",
+  "title": "Phase 1 complete: the Consequence Gate (SDK v0.8.0)",
+  "draft": false,
+  "created": "2026-07-19",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 21,
+  "sha": "5b70e2459f215a64689d31de864d6ee3d84b92e6",
+  "ref": "build/consequence-gate",
+  "base": "main",
+  "title": "WP-01: Consequence Gate vertical slice (Order One, Phase 1 consequence integrity)",
+  "draft": false,
+  "created": "2026-07-19",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 20,
+  "sha": "cf4a63a0f6933d485912c9d62a1623b3b3cf4be3",
+  "ref": "docs/egregore",
+  "base": "phase4/commit-witness",
+  "title": "Docs: THE EGREGORE \u2014 grand vision and the complete 55-technology asymmetry stack",
+  "draft": false,
+  "created": "2026-07-19",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 19,
+  "sha": "e5a28987c685f49e3f1e3bae984101413c584140",
+  "ref": "phase4/commit-witness",
+  "base": "phase4/event-spine",
+  "title": "Phase 1 (consequence integrity): commit witness + event spine contract repairs",
+  "draft": false,
+  "created": "2026-07-19",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 18,
+  "sha": "bec8c74ac0e2ecc416a5176d5711275f5daf483d",
+  "ref": "phase4/event-spine",
+  "base": "phase3/signal-contracts",
+  "title": "Phase 4 (1/2): durable event spine (events module, v0.6.0)",
+  "draft": false,
+  "created": "2026-07-19",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 17,
+  "sha": "15c7d4908afdcf9044428c67e625e0d97fa1106f",
+  "ref": "phase3/signal-contracts",
+  "base": "phase2/sdk-package-absorption",
+  "title": "Phase 3: unified signal wire contracts (venture-signal/signal-assessment + contracts module, v0.5.0)",
+  "draft": false,
+  "created": "2026-07-19",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 16,
+  "sha": "3e23cd2572907fed77491af80ab1a918bfce4cd3",
+  "ref": "phase2/sdk-package-absorption",
+  "base": "phase2/sdk-packaging",
+  "title": "Absorb constitution guard, heartbeat, approval queue into the SDK package (v0.4.0)",
+  "draft": false,
+  "created": "2026-07-19",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 15,
+  "sha": "c1deb5f77bda9099b70ea33fbb6aa1efdaf89acc",
+  "ref": "phase2/sdk-packaging",
+  "base": "phase2/guard-heartbeat-approval-extraction",
+  "title": "Phase 2: make SDK pip-installable + verifier v3 (C10)",
+  "draft": false,
+  "created": "2026-07-19",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 14,
+  "sha": "e55a9da191e191d17488bc18143028053d6ee0ca",
+  "ref": "phase2/guard-heartbeat-approval-extraction",
+  "base": "phase2/firewall-context-extraction",
+  "title": "Phase 2: Extract constitution guard, heartbeat, and approval queue",
+  "draft": false,
+  "created": "2026-07-19",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 13,
+  "sha": "b5e58577110d5402353ff5cabe1429576b69ca20",
+  "ref": "phase2/firewall-context-extraction",
+  "base": "phase2/raw-vault-capability-extraction",
+  "title": "Phase 2: Extract prompt firewall and ContextPacket builders into uniimente_kernel SDK",
+  "draft": false,
+  "created": "2026-07-19",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 12,
+  "sha": "f53b975467911a4f224afd6f940ea1f485aa13ce",
+  "ref": "phase2/raw-vault-capability-extraction",
+  "base": "phase2/decision-ledger-extraction",
+  "title": "Phase 2: Extract raw vault and capability service into uniimente_kernel SDK",
+  "draft": false,
+  "created": "2026-07-19",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": 11,
+  "sha": "88906a576a4e6cac31a81244d685887e517aebce",
+  "ref": "phase2/decision-ledger-extraction",
+  "base": "main",
+  "title": "Phase 2: Extract decision ledger from DALEOBANKS into uniimente_kernel SDK",
+  "draft": false,
+  "created": "2026-07-19",
+  "updated": "2026-10-02"
+ },
+ {
+  "number": "branch:agent/ade1-standing-cognition-runtime",
+  "sha": "5ff33e5e83df69259815ef270bea9990875c6dd0",
+  "ref": "agent/ade1-standing-cognition-runtime",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:agent/cathedral-dual-proof-gates-v1",
+  "sha": "261243425e4f561a0c0560c25c343ac48c08f364",
+  "ref": "agent/cathedral-dual-proof-gates-v1",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:agent/developmental-substrate-v1",
+  "sha": "e96388b26b4f36b4b1539654f98301970e45b396",
+  "ref": "agent/developmental-substrate-v1",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:agent/egregore-founder-intent-2026-09-07",
+  "sha": "0e6d696c8eb4d58ccb46935dbf1659c385481fde",
+  "ref": "agent/egregore-founder-intent-2026-09-07",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:agent/egregore-foundry-omnimorph-integration",
+  "sha": "5b39e2d8797380b1c2b4f1410e36e8a5c2c3bb89",
+  "ref": "agent/egregore-foundry-omnimorph-integration",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:agent/event-driven-local-repair-v1",
+  "sha": "4bb0460bf56a73c1063c7004e5ae6723a192bcaf",
+  "ref": "agent/event-driven-local-repair-v1",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:agent/first-goal-chase-runtime",
+  "sha": "95744790d915645d0976393c0ef49d343106af82",
+  "ref": "agent/first-goal-chase-runtime",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:agent/foundry-composer-v0",
+  "sha": "5aa59ef6c0a84a03022c15042d98c0cefd2c1a2a",
+  "ref": "agent/foundry-composer-v0",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:agent/iconoclastic-integrity-kernel",
+  "sha": "3d9b5779a7093d6ddd07f225c8329ead6d0c6393",
+  "ref": "agent/iconoclastic-integrity-kernel",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:agent/introduce-railscout-refinery",
+  "sha": "3d9b5779a7093d6ddd07f225c8329ead6d0c6393",
+  "ref": "agent/introduce-railscout-refinery",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:agent/morphogenetic-control-contract",
+  "sha": "6c282eb4e1184cedffa18d3ca84200689d498354",
+  "ref": "agent/morphogenetic-control-contract",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:agent/phase6-mechanical-egregore",
+  "sha": "ba92fde19d3ed4da13ddb0b2a8ed8fb29ace431e",
+  "ref": "agent/phase6-mechanical-egregore",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:agent/railscout-r0-integration",
+  "sha": "fc711325846c29f146378bbf439766f5089a8ea2",
+  "ref": "agent/railscout-r0-integration",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:agent/recursive-collaboration-protocol",
+  "sha": "100b817066b3f1bd9dd395cc789b7e36291ad089",
+  "ref": "agent/recursive-collaboration-protocol",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:agent/shared-integrity-recovery",
+  "sha": "df22ad52eb30f58ceefee23358d1b049fc491d57",
+  "ref": "agent/shared-integrity-recovery",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:agent/technology-anatomy-substrate",
+  "sha": "3d9b5779a7093d6ddd07f225c8329ead6d0c6393",
+  "ref": "agent/technology-anatomy-substrate",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:agent/uniimente-opus-intelligence",
+  "sha": "2a97f14239180b2e5bf31a060c25811f937a8979",
+  "ref": "agent/uniimente-opus-intelligence",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:agent/venture-scout-control-layer-v1",
+  "sha": "33eb20b23a9c2cca11c0ec5742311d6250af1f58",
+  "ref": "agent/venture-scout-control-layer-v1",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:archive/main-2026-07-19",
+  "sha": "3d9b5779a7093d6ddd07f225c8329ead6d0c6393",
+  "ref": "archive/main-2026-07-19",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:checkpoint/candidate-b27e81f5",
+  "sha": "b27e81f5c35b1936f575c642a6b1d0c7b15eeec4",
+  "ref": "checkpoint/candidate-b27e81f5",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:checkpoint/correction-containment-credit-fix-wip-20261112",
+  "sha": "29c6c2cc7ce6462c2f2e020096d7d287dc7a85ca",
+  "ref": "checkpoint/correction-containment-credit-fix-wip-20261112",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:checkpoint/intake-recommendation-mission-wip-20261112",
+  "sha": "7b2bee410667cd2cf79243f0e9cc0cb92bfc4d2b",
+  "ref": "checkpoint/intake-recommendation-mission-wip-20261112",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:checkpoint/intent-register-20261112",
+  "sha": "d01f2f0784be5668a802f590b7924192a82ef337",
+  "ref": "checkpoint/intent-register-20261112",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:checkpoint/retained-negative-receipt-a01997fd",
+  "sha": "a01997fd60ad89b939fd13891fb1c8526c63face",
+  "ref": "checkpoint/retained-negative-receipt-a01997fd",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:checkpoint/revoked-device-fix-wip-20261111",
+  "sha": "d1f69b25bd3e17242527300f0f23edf61e2b0323",
+  "ref": "checkpoint/revoked-device-fix-wip-20261111",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/acceptance-founder-tier-label",
+  "sha": "ef6049dddb86de72bcdac336cf06f731d222c217",
+  "ref": "claude/acceptance-founder-tier-label",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/acceptance-locks-20261111",
+  "sha": "1f4bf62dececc655bdfc5dda0ac6bc3182e1346d",
+  "ref": "claude/acceptance-locks-20261111",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/antifragility-v3-condition-competence",
+  "sha": "47ac8d5fa0b9ca322370c975380b92adda8fc608",
+  "ref": "claude/antifragility-v3-condition-competence",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/appraiser-detached-sensor-20261111",
+  "sha": "d8702a1fda6f2f4e99733041ae2f8fa1f0140e36",
+  "ref": "claude/appraiser-detached-sensor-20261111",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/authority-attach-state-20261111",
+  "sha": "facea1703dded45e495d0e6dfe059e001ffc9565",
+  "ref": "claude/authority-attach-state-20261111",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/background-dispatch-20261105",
+  "sha": "331de165898ed5779ba87fc1532089a8f763dd4d",
+  "ref": "claude/background-dispatch-20261105",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/bounded-body-memory-arm-engines",
+  "sha": "50cf3f75dc508c4e00d5cdc6e149bcc4f2b560b8",
+  "ref": "claude/bounded-body-memory-arm-engines",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/bounded-predicates",
+  "sha": "b1d2ae255cadd9e0adc99afeb70737de6422760f",
+  "ref": "claude/bounded-predicates",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/browser-render-qualified-binary-20261111",
+  "sha": "32ca8de75bd2764251800df67932d1c3dc0522a8",
+  "ref": "claude/browser-render-qualified-binary-20261111",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/browser-tests-run-in-ci-20261112",
+  "sha": "f17835e2c76aa89ac093c5c15170073879e748bf",
+  "ref": "claude/browser-tests-run-in-ci-20261112",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/canonical-owner-guard-20261030",
+  "sha": "db52f75bb54ee13131d8d9c745b5349ace4cf6b9",
+  "ref": "claude/canonical-owner-guard-20261030",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/cathedral-detector-20261030",
+  "sha": "ae21337299817a4763c27ec199cd610314544b20",
+  "ref": "claude/cathedral-detector-20261030",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/ci-mutation-gates-time-limit-20261112",
+  "sha": "dca1a032d63a352c54de2048167b20a7f85ca193",
+  "ref": "claude/ci-mutation-gates-time-limit-20261112",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/competency-compiler-router",
+  "sha": "c433471efbe9c6fa151cf8f7ae38176ee9719a2b",
+  "ref": "claude/competency-compiler-router",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/compose-rehearsal-20261111",
+  "sha": "0b0bb6d3d70c6000805c62dbb8ec70551076db5c",
+  "ref": "claude/compose-rehearsal-20261111",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/composed-machine-acceptance-20261112",
+  "sha": "1a3c2b5deaf3abafef5138851301b308e6b81b43",
+  "ref": "claude/composed-machine-acceptance-20261112",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/compute-closure-20261030",
+  "sha": "e78e5ef0487fd5d237c76dd7f1549cd000c70248",
+  "ref": "claude/compute-closure-20261030",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/consistent-backup-restore-drill-20261030",
+  "sha": "496099605bda01a6b6da03985d869280e4757a5a",
+  "ref": "claude/consistent-backup-restore-drill-20261030",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/directive-completion-contract-20261030",
+  "sha": "f2856a2e36ad4334806917115ccb90650d73113f",
+  "ref": "claude/directive-completion-contract-20261030",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/directive-ratchet-evidence-20261105",
+  "sha": "6db7056b21cca0199a10d45008abdcdbacf4aa75",
+  "ref": "claude/directive-ratchet-evidence-20261105",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/effect-call-allowlist-20261030",
+  "sha": "e024d38614fd0959d193aa7cb529c5ff814e3d30",
+  "ref": "claude/effect-call-allowlist-20261030",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/egregore-audit-consolidate-5sdzd9",
+  "sha": "a38777add4ee969c309abe477803eeb394f651ca",
+  "ref": "claude/egregore-audit-consolidate-5sdzd9",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/evidence-strength-data-tables-20261105",
+  "sha": "5502651a0b0992c3a50716a4315e641436bf23d6",
+  "ref": "claude/evidence-strength-data-tables-20261105",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/fail-closed-build-instrument-20261030",
+  "sha": "89133c8c7461e1e2eefebd22059acbcebd637259",
+  "ref": "claude/fail-closed-build-instrument-20261030",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/fix-confined-egress-fixed-clock",
+  "sha": "1c109ff9ae9081b3a53cdf4adcc7bf3ca7099c03",
+  "ref": "claude/fix-confined-egress-fixed-clock",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/fix-worker-appraisal-mutant-envelope",
+  "sha": "cfc7a955a776b9b6f485ed4be60078caa73621e3",
+  "ref": "claude/fix-worker-appraisal-mutant-envelope",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/founder-correction-build-before-device-20261030",
+  "sha": "feb531d25780fc6544f49325d9f68f0b1ad76039",
+  "ref": "claude/founder-correction-build-before-device-20261030",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/genesis-behaviour-discovery-20261104",
+  "sha": "0fe656c6ba2a48b7e19244b3c67eab75f0dc52a9",
+  "ref": "claude/genesis-behaviour-discovery-20261104",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/goal-intake-accumulation-20261111",
+  "sha": "c9ec07c889352b22accd379e11660213ec692612",
+  "ref": "claude/goal-intake-accumulation-20261111",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/greg-122-heldout-independence-t0vqu7",
+  "sha": "6bf768766bc0a67adce3161812ba94b85ec656f9",
+  "ref": "claude/greg-122-heldout-independence-t0vqu7",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/greg-ask-terms-surfaces",
+  "sha": "e55f030d4c479bba2d6b42249080179239677790",
+  "ref": "claude/greg-ask-terms-surfaces",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/greg-mind-base-92bc6e3",
+  "sha": "92bc6e31e0baa8fd507833e0f272b4a5e532e4d3",
+  "ref": "claude/greg-mind-base-92bc6e3",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/greg-mind-status-cited-settlement",
+  "sha": "9b85f9fca42ec0df70ee98c53609b11532be6901",
+  "ref": "claude/greg-mind-status-cited-settlement",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/greg-transfer-eval-20261028",
+  "sha": "8a35d3399e114e10489c5fa456b16d1ad53af6cd",
+  "ref": "claude/greg-transfer-eval-20261028",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/greg-whole-output-judgment",
+  "sha": "a13eb463fe69d8e16aa8312e2e4a481f10c3813b",
+  "ref": "claude/greg-whole-output-judgment",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/hotfix-resume-authority",
+  "sha": "784606cb554a745c1d0f72dfdce4363dcf8fdc56",
+  "ref": "claude/hotfix-resume-authority",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/intake-delta-audit",
+  "sha": "f9449839a3f67bdcdc9e680aa745d06000c1f75f",
+  "ref": "claude/intake-delta-audit",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/intent-20261111-absolute-opus-maximus",
+  "sha": "d0bf3c744ee2d45b995a57c01672984a39f57d9e",
+  "ref": "claude/intent-20261111-absolute-opus-maximus",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/intent-record-schema-20261030",
+  "sha": "ce56b67ee4842e75d9d702ca3d276690c895583a",
+  "ref": "claude/intent-record-schema-20261030",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/issue-197-task-a-mac-runbook",
+  "sha": "162e388b85f2ef999536d8d85706ec6c2b782b6c",
+  "ref": "claude/issue-197-task-a-mac-runbook",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/issue-197-task-b-drift-guard",
+  "sha": "70b1f21abe8f0e2fdbaea83ca26e412abd965dcc",
+  "ref": "claude/issue-197-task-b-drift-guard",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/lineage-snapshot-pr155-ba8d990",
+  "sha": "ba8d990a676ccb6e0ef6fea3a69d38dd1abe1069",
+  "ref": "claude/lineage-snapshot-pr155-ba8d990",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/lineage-snapshot-pr158-7e0daaf",
+  "sha": "7e0daaf08838fb6a7a6ecf7ced9c1c61d187122e",
+  "ref": "claude/lineage-snapshot-pr158-7e0daaf",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/liveness-abstain-clock-20261112",
+  "sha": "dfc3e6d7ecf51a86ae497c44e9ccf0c78bff17f6",
+  "ref": "claude/liveness-abstain-clock-20261112",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/loop15-settlement-method-20261028",
+  "sha": "881b1e3fbffe08a30544a90d16fb38325d810b47",
+  "ref": "claude/loop15-settlement-method-20261028",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/node-revoke-20261030",
+  "sha": "5a2198612e84070f847b19c40d26c3b9fc5f679a",
+  "ref": "claude/node-revoke-20261030",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/ollama-v2-licence-reader",
+  "sha": "e6aa2e55aba6cb13935a2ffec95a367fd5c4003c",
+  "ref": "claude/ollama-v2-licence-reader",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/organ-exchange-binding-verdict",
+  "sha": "7c228e7970bee361b291e759f02f1793cd88da89",
+  "ref": "claude/organ-exchange-binding-verdict",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/oss-201-fix-documents",
+  "sha": "4fa3ea8593aaf9a2085d51379021eb3bcc87e221",
+  "ref": "claude/oss-201-fix-documents",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/oss-metabolism-capability-pw6dew",
+  "sha": "9977ae2657da322f6008af22675812c623c3e890",
+  "ref": "claude/oss-metabolism-capability-pw6dew",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/outcome-correction-gate-f-fixes-20261029",
+  "sha": "f00943884ef99be9459d5c8841179360c377e2d0",
+  "ref": "claude/outcome-correction-gate-f-fixes-20261029",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/outcome-correction-gate-review3-20261029",
+  "sha": "934a51255a9f62232ba4f2fc5c4eb0fa8703f95e",
+  "ref": "claude/outcome-correction-gate-review3-20261029",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/outcome-correction-gate-review4-20261029",
+  "sha": "9c1f1c44aaceded8efc531cac09f3d7db0e01e58",
+  "ref": "claude/outcome-correction-gate-review4-20261029",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/outcome-correction-gate-review5-20261030",
+  "sha": "33c2b8ef52c19dd6d9a476ef95be22e195752e56",
+  "ref": "claude/outcome-correction-gate-review5-20261030",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/outcome-correction-gate-review7-20261030",
+  "sha": "9a500960a66722d146ca599a8ae3f49f6ed2e8ac",
+  "ref": "claude/outcome-correction-gate-review7-20261030",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/path-build-frontier-20261030",
+  "sha": "44b3df9698a10d054b4ade4bb2ef77b244c3e0d9",
+  "ref": "claude/path-build-frontier-20261030",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/pdf-not-answered-over-syntax",
+  "sha": "f4a3b956608af7a3eea91ab66152b4a14bf7659b",
+  "ref": "claude/pdf-not-answered-over-syntax",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/representation-repair-decision-20261112",
+  "sha": "c89d478aea0643ea514d0142a1b32ed4c9482b15",
+  "ref": "claude/representation-repair-decision-20261112",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/retained-capability-compounding",
+  "sha": "6ac00ac29f3fe4b8d99e3cca125574e3dd6d5a0d",
+  "ref": "claude/retained-capability-compounding",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/retained-negative-receipt-20261111",
+  "sha": "1643932e43759908959f7fe460fac762bc76a4cf",
+  "ref": "claude/retained-negative-receipt-20261111",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/revoked-device-authority-20261111",
+  "sha": "b1f157fe533ec81e33830dfe36f656601eb19fe1",
+  "ref": "claude/revoked-device-authority-20261111",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/router-non-canonical",
+  "sha": "f0345aa4b47970b99dc74b6f461b00624598a96e",
+  "ref": "claude/router-non-canonical",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/seed-path-collection-clock-20261111",
+  "sha": "0454ab62c2203d8a8384f7ceb3fdc4785b3c649c",
+  "ref": "claude/seed-path-collection-clock-20261111",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/session-evidence-20261111",
+  "sha": "bcef686373edbeac04fbed6d75f104a7b5b7030b",
+  "ref": "claude/session-evidence-20261111",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/standing-approval-regression-20261030",
+  "sha": "ac5ff82ff62cab4ea5fb7f734ef5fd719a4b4111",
+  "ref": "claude/standing-approval-regression-20261030",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/typed-blockers-20261030",
+  "sha": "31a9abe3778cec5a3603ad5b821f85342c932dc4",
+  "ref": "claude/typed-blockers-20261030",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/uniimente-integration-architecture-1qyrbv",
+  "sha": "fc711325846c29f146378bbf439766f5089a8ea2",
+  "ref": "claude/uniimente-integration-architecture-1qyrbv",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/uniimente-kernel-build-4uglfq",
+  "sha": "6a696aa458ed0a02495c5afe50eb57dadd0dd8d9",
+  "ref": "claude/uniimente-kernel-build-4uglfq",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/unmeasured-check-not-pursued-20261111",
+  "sha": "b9a34259543fa64465d40e1c1dea8e90e327f11f",
+  "ref": "claude/unmeasured-check-not-pursued-20261111",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/v10-lane-A",
+  "sha": "a8194a0f3d931689921260bab6b03a675e8f0452",
+  "ref": "claude/v10-lane-A",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/v10-lane-B",
+  "sha": "d19d8fef3e9a532145dcc6f9ccb86d3545bf3c55",
+  "ref": "claude/v10-lane-B",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/v10-lane-C",
+  "sha": "daf003c4dd81b20a3bb0d23c8fa3a0804bccc44d",
+  "ref": "claude/v10-lane-C",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/v10-meta-wave",
+  "sha": "7c0774053e464b256895623a766dabe767f5201f",
+  "ref": "claude/v10-meta-wave",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/v8-lane-A",
+  "sha": "9dc91c68d86202ab0e1a61b94198ac4cea235f1f",
+  "ref": "claude/v8-lane-A",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/v8-lane-B",
+  "sha": "66e6e2e2cf60c4244f26c02a085c076dd7256623",
+  "ref": "claude/v8-lane-B",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/v8-lane-C",
+  "sha": "3483dd832717c78ef4f7dc1903ef2ad9f3dd4ee4",
+  "ref": "claude/v8-lane-C",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/v8-lane-D",
+  "sha": "159248102a29696736d03878494b15ef20111182",
+  "ref": "claude/v8-lane-D",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/v8-lane-E",
+  "sha": "7bc031564a09d2958741a6643ec139d6f9d28a09",
+  "ref": "claude/v8-lane-E",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/v8-wave",
+  "sha": "21ae7f5a37af4e7aac7a98eb13895080510ebfeb",
+  "ref": "claude/v8-wave",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/wmi-staffing-figures-step9-20261028",
+  "sha": "034e41c57d0e9cf8e1549c516637908f77eb8eab",
+  "ref": "claude/wmi-staffing-figures-step9-20261028",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:claude/worker-evidence-integrity-20261105",
+  "sha": "5b074b5d5c1c51fb0c16b45cb8c6009d37b5d9ff",
+  "ref": "claude/worker-evidence-integrity-20261105",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:cleanup/fixture-erasure",
+  "sha": "e94052df8e6d30e53f41bdc023a1df66e7c3ac7b",
+  "ref": "cleanup/fixture-erasure",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:cleanup/remove-retired-domain-references",
+  "sha": "eb3a1401dbe67e609e713a846c328211449a1c6f",
+  "ref": "cleanup/remove-retired-domain-references",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:cleanup/source-erasure",
+  "sha": "af6b03519dac36ff76075c0ad64f0892cca2a0f4",
+  "ref": "cleanup/source-erasure",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:codex/construction-realization-intake-20261023",
+  "sha": "583e5f3156b7ae941a3ec8cf381b3fef572f9748",
+  "ref": "codex/construction-realization-intake-20261023",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:codex/context-route-20261112",
+  "sha": "2a5970e40e29a96936f66bc3aa431569fe94fda3",
+  "ref": "codex/context-route-20261112",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:codex/greg-foundry-mission-compiler",
+  "sha": "1391e04feebb54e183606b6cb89382f67635d175",
+  "ref": "codex/greg-foundry-mission-compiler",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:codex/open-source-ai-2026-09-30",
+  "sha": "dfc1f3394060226023c92140bfcb6a7b322f129e",
+  "ref": "codex/open-source-ai-2026-09-30",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:codex/open-source-research-line-2026-09-30",
+  "sha": "25a7052499f8a2fcb81cb0af9429717d3537b070",
+  "ref": "codex/open-source-research-line-2026-09-30",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:codex/provider-change-intake-2026-09-01",
+  "sha": "c779892751b43a1c4bfa03e2eda80d61e5a527f7",
+  "ref": "codex/provider-change-intake-2026-09-01",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:coordination/worker-claims-20261030",
+  "sha": "ced55921752dffbe70b83dcdbf3d90be1eed46cc",
+  "ref": "coordination/worker-claims-20261030",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:cursor/evidence-bounded-business-verdict-3cfb",
+  "sha": "09ddab3fd005dfc6d44fc25f2f63c1e8da4bf53b",
+  "ref": "cursor/evidence-bounded-business-verdict-3cfb",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:cursor/observation-competence-c0d4",
+  "sha": "954677a494963cae0777cb7ace038022ad4e96d3",
+  "ref": "cursor/observation-competence-c0d4",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:cursor/rehearse-dir-home-guard-56e0",
+  "sha": "4b37f1d9437eb67bd2e1fb326c8e99a4f6e76d97",
+  "ref": "cursor/rehearse-dir-home-guard-56e0",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:cursor/rehearse-path-one-body-1210",
+  "sha": "3bcd3eb2309a67506b51401b00bf09407e535e76",
+  "ref": "cursor/rehearse-path-one-body-1210",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:docs/add-github-platform-reference",
+  "sha": "c5a581dfb4dea18ee0cceacaddc180d84ac26316",
+  "ref": "docs/add-github-platform-reference",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:doctrine/governed-evidence-loop",
+  "sha": "3d9b5779a7093d6ddd07f225c8329ead6d0c6393",
+  "ref": "doctrine/governed-evidence-loop",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:draft/packet-004-activation-receipt-ordering",
+  "sha": "6955b3d3b35e65216b48f066994d415221065b0d",
+  "ref": "draft/packet-004-activation-receipt-ordering",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:feature/todo-app",
+  "sha": "4a10b704baef70b357fde2f4219a542663a8570d",
+  "ref": "feature/todo-app",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:founder-intent/full-machine-before-critique-20261001",
+  "sha": "19fa33c22684a8953e3607e3aaf0e5fbd926bd88",
+  "ref": "founder-intent/full-machine-before-critique-20261001",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:founder-intent/railscout-discovery-refinery-2026-08-19",
+  "sha": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1",
+  "ref": "founder-intent/railscout-discovery-refinery-2026-08-19",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:founder-intent/railsout-dmepos-control-layer-20260819",
+  "sha": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1",
+  "ref": "founder-intent/railsout-dmepos-control-layer-20260819",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:founder-intent/six-month-revision-gate",
+  "sha": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1",
+  "ref": "founder-intent/six-month-revision-gate",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:founder/effect-not-metaphor-2026-09-09",
+  "sha": "b45ec20d8c105531e8098047b012d07b9fa07e7b",
+  "ref": "founder/effect-not-metaphor-2026-09-09",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:founder/interview-media-identity-2026-09-24",
+  "sha": "04b1b7e3bce5fd8ea6fbaf978719249cae8ef90a",
+  "ref": "founder/interview-media-identity-2026-09-24",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:greg/usable-local-loop-20260925",
+  "sha": "d0d0a3447bedf653f0649881cf63b3f1630ed118",
+  "ref": "greg/usable-local-loop-20260925",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:integration/commercial-metabolism-v1",
+  "sha": "8468be153a642f231a303fb3bba10893b3467fee",
+  "ref": "integration/commercial-metabolism-v1",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:integration/developmental-substrate-v1",
+  "sha": "dcd8d22bc7989e10f934ae9556f78a1f796ed57d",
+  "ref": "integration/developmental-substrate-v1",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:integration/foundry-omnimorph-v1",
+  "sha": "e984e0ff3b524a34efe3c6abedf02a15bf43bdd9",
+  "ref": "integration/foundry-omnimorph-v1",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:integration/uniimente-egregore-v1",
+  "sha": "a4fa43e8c74b56130314c21736dfaf767567f3de",
+  "ref": "integration/uniimente-egregore-v1",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:kimi/collaboration-reconciliation-2026-08-22",
+  "sha": "b65c0a364d67dfc2b6e8b9ad3fecbc1d0519e04f",
+  "ref": "kimi/collaboration-reconciliation-2026-08-22",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:kimi/foundry-completion-20261026",
+  "sha": "d6d7bfc21aa9157403eed62b429326b5f07525a8",
+  "ref": "kimi/foundry-completion-20261026",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:kimi/greg-decision-linked-voi-20261026",
+  "sha": "8bb1457d4fe534597dca9926b541978c76d5b5a8",
+  "ref": "kimi/greg-decision-linked-voi-20261026",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:kimi/greg-image-text-ocr-20261109",
+  "sha": "f16462094aee6dbf89e1d415f754cd5c1bfd9e2d",
+  "ref": "kimi/greg-image-text-ocr-20261109",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:kimi/weekly-review-ownership-20261111",
+  "sha": "8d20532464b1533b28d71d8331ca3412a90dbb11",
+  "ref": "kimi/weekly-review-ownership-20261111",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:package2/venture-neutral-core",
+  "sha": "a9663f0de36ed885a95829ee0cdc5ad8c944a0d2",
+  "ref": "package2/venture-neutral-core",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:package3/governed-functional-replacement",
+  "sha": "97e1a8e7deecbe7972d675910d43ab39c9c4f14c",
+  "ref": "package3/governed-functional-replacement",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:package3/plan",
+  "sha": "5a1f744ee13d11eeb772ab3667ea4ebf697be73a",
+  "ref": "package3/plan",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:package4/plan",
+  "sha": "961f6fc5798588f0aaeda039b5feee4365a7ce85",
+  "ref": "package4/plan",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:package4/stateful-canonical-replacement",
+  "sha": "954556eeaa2b30a2cef74583078a3ecc1038f0f1",
+  "ref": "package4/stateful-canonical-replacement",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:railscout-doctrine-2026-08-19",
+  "sha": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1",
+  "ref": "railscout-doctrine-2026-08-19",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:release/canonical-v1",
+  "sha": "526e320475d7b1175c546d48147f9f49f53831e1",
+  "ref": "release/canonical-v1",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:release/canonical-v1-manifest",
+  "sha": "a58daec61d9140de3705dd8e2dba7e6760787d3e",
+  "ref": "release/canonical-v1-manifest",
+  "base": null,
+  "title": ""
+ },
+ {
+  "number": "branch:wip/construction-settlement",
+  "sha": "be58b2b540977fd118402b21e5167e6c786cb224",
+  "ref": "wip/construction-settlement",
+  "base": null,
+  "title": ""
+ }
+]

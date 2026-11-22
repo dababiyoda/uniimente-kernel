@@ -15,7 +15,7 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 |---|---:|---|
 | [`(top)`](#doctrine-orders-and-top-level-references) | 31 | Doctrine, orders and top-level references |
 | [`intent`](#founder-intent-records-and-their-verbatim-sources) | 87 | Founder intent records and their verbatim sources |
-| [`collaboration`](#collaboration-records-handoffs-deliberations-reviews-reconciliations) | 197 | Collaboration records: handoffs, deliberations, reviews, reconciliations |
+| [`collaboration`](#collaboration-records-handoffs-deliberations-reviews-reconciliations) | 199 | Collaboration records: handoffs, deliberations, reviews, reconciliations |
 | [`decisions`](#architecture-decision-records) | 6 | Architecture decision records |
 | [`deliberations`](#founder-rulings) | 1 | Founder rulings |
 | [`evidence`](#measured-evidence-frozen-runs-admissions-proofs) | 513 | Measured evidence (frozen runs, admissions, proofs) |
@@ -25,7 +25,7 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 | [`release`](#release-records) | 15 | Release records |
 | [`mechanisms`](#mechanism-cards) | 3 | Mechanism Cards |
 | [`developmental`](#developmental-mechanism-research) | 1 | Developmental mechanism research |
-| Elsewhere (`*.md`) | 82 | READMEs and notes beside code |
+| Elsewhere (`*.md`) | 83 | READMEs and notes beside code |
 
 ## Doctrine, orders and top-level references
 
@@ -186,10 +186,12 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 
 ## Collaboration records: handoffs, deliberations, reviews, reconciliations
 
-### Deliberation (five lenses, two passes) (49)
+### Deliberation (five lenses, two passes) (51)
 
 | File | Date | Title |
 |---|---|---|
+| [`collaboration/deliberation-worker-team-20261121.json`](collaboration/deliberation-worker-team-20261121.json) | 2026-11-21 | worker.team: one signed action fields a temporary worker team (Foundry #48) under one grant |
+| [`collaboration/deliberation-genesis-build-off-turn-20261121.json`](collaboration/deliberation-genesis-build-off-turn-20261121.json) | 2026-11-21 | Run a Genesis builder call off the Body's turn (S38-A follow-up) |
 | [`collaboration/deliberation-w5-ledger-memory-20261113.json`](collaboration/deliberation-w5-ledger-memory-20261113.json) | 2026-11-13 | Whiteboard W5: what bounds a body's evidence-ledger memory, after option 1 (#211) halved it. Outcome: RETAIN the correct |
 | [`collaboration/deliberation-w3-ledger-hot-path-20261113.json`](collaboration/deliberation-w3-ledger-hot-path-20261113.json) | 2026-11-13 | Whiteboard W3: keep or revert the ledger hot-path changes e2440a6, bd0c17d and 3884493 on the #196 line |
 | [`collaboration/deliberation-autonomy-signed-issuance-20261113.json`](collaboration/deliberation-autonomy-signed-issuance-20261113.json) | 2026-11-13 | Autonomy above A0 is issued only on the founder's signed AUTONOMY_GRANT for that exact subject, tuple and level (accepta |
@@ -1007,6 +1009,7 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 | [`tests/evidence/antifragility-v3b-2026-10-22/README.md`](../tests/evidence/antifragility-v3b-2026-10-22/README.md) | Antifragility v3b: result |
 | [`tests/evidence/append-only-witness-20261014/results.md`](../tests/evidence/append-only-witness-20261014/results.md) | Append-only witness — evidence (2026-10-14) |
 | [`tests/evidence/cognition-residual-2026-10-13/README.md`](../tests/evidence/cognition-residual-2026-10-13/README.md) | Residual cognition safeguards — 2026-10-13 |
+| [`tests/evidence/cortex-seed-v0.2.3/README.md`](../tests/evidence/cortex-seed-v0.2.3/README.md) | Cortex 0.2.3: optimality proofs are bound, and only a conclusive engine confirms |
 | [`tests/evidence/cross-organ-mission-20261014/results.md`](../tests/evidence/cross-organ-mission-20261014/results.md) | Cross-organ mission — evidence (2026-10-14) |
 | [`tests/evidence/goal-gravity-20261013/README.md`](../tests/evidence/goal-gravity-20261013/README.md) | Evidence bundle: Goal Gravity (INTENT-20261013-GOAL-GRAVITY) |
 | [`tests/evidence/greg-body/README.md`](../tests/evidence/greg-body/README.md) | GREG body evidence — 2026-09-25 (refreshed 2026-09-26: Spider-Web; then reconciliation, phone, browser) |

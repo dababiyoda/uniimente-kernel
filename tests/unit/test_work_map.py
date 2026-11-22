@@ -3349,6 +3349,9 @@ def test_an_accepted_handoff_names_its_receiver_and_leaves_the_sender_out(quick,
     paths, _raw = _answer(tmp_path, capsys, prs, [old], "--paths", "greg/missions.py")
     assert [(p["session"], p["handed_over_from"]) for p in paths["paths"][0]["prs"]] == [(A, B)]
     assert "a PR's `updated_at` moves with anyone's comment, review or push" in w.markdown(m)
+    codex = w.build([_pr(300, "b/seam", body=_handed(B, "Codex /root, workspace 5bcf356971dc"))], [], now=NOW,
+                    use_git=False)
+    assert (codex["prs"][0]["session"], codex["prs"][0]["client"]) == ("codex:5bcf356971dc", "codex")
     pending = w.build([_pr(300, "b/seam", body=_handed(B, None, "pending"))], [], now=NOW, use_git=False)
     assert (pending["prs"][0]["session"], pending["prs"][0]["handed_over_from"]) == (B, None)
 

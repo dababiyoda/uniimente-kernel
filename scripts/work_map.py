@@ -1348,7 +1348,7 @@ def _row(pull: dict, root: Path, use_git: bool, line: str = LINE) -> dict:
     if f["handoff"] == "accepted" and not refused:   # another session acknowledged this head: the PR is now its
         handed = sid
         sid, client, unnamed = receipt_session(f["receiver"])
-        if not (sid and _spans(sid)):
+        if not (sid and _spans(f["receiver"])):       # an opaque value is no known-form id
             sid, client, unnamed = None, "unknown", RECEIVER_NOT_ONE_ID
     if sid and not same_repo:                 # a receipt from another repository is no session's declaration here
         refused = "fork: " + ("the head repository is not the base repository" if pull["head_repo"] else

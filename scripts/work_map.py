@@ -152,21 +152,26 @@ _AUTHOR_LABELS = {"implementer", "agent / claim", "agent", "identity", "session"
 _ADDRESSEE_LABELS = {"receiver", "next owner", "reviewer", "integration owner", "reviewer / integrator",
                      "reviewer / integrator · destination"}
 _OPENING = re.compile(r"(?i)^[^\w>|]*(?:session|implementer|from|posted by)\b[\s`*:]*")   # never a quote or a table
-# A heading names its author only as a byline: right after "·", "(" (a Claude session id), "session" or "from" (the
-# sender: "Handoff from", "From"), or after the role a poster gives itself ("(integrator `id`)", "Owner: `id`"). An
-# id is another party, never a byline, when it is addressed ("for", "to", "cc" or "with" earlier in its clause, except
-# right after "·" or "from"), named as the receiver ("The receiver is ..."), named by a role in a definite phrase
-# ("the #196 integrator, `id`"), named as where work came from ("taking over from `id`", "split from `id`", "handed
-# over from `id`"), or the subject of what follows it ("owner `id` asked me", "(`id` agreed the split)", "`id`'s").
-# Two of these name the poster itself and stay bylines: an id that opens the heading or follows "·" (also after
-# "session" or a role) and is the subject of a verb that follows, unless that clause speaks of the poster as "me",
-# "my", "we" or "us" ("**Session `id` replied**", "## Claim · `id` agreed with ..."; never "· `id`'s", which names
-# whose work it is as readily as who posts); and a definite role
-# right after "from" or "(" whose id ends its clause ("From the #196 integrator, `id`:", "(the integrator, `id`)").
-# The author is the one id the bylines name. When they name several, of one kind or of different kinds, it is
-# unresolved, never guessed: a "from `id`" or "(`id`)" can name where a PR came from as well as who posts, and a role
-# can be the poster's or another's, so no kind of byline outranks another. A heading that opens with "@", "To" or
-# "For ... (" names its addressee there.
+# A heading names its author only as a signature, in one of four places:
+#   "· `id`" or "· session `id`" closed by the end, "·" or "(", and not right after a party ("the integrator ·
+#     `id`"): "## Claim: x · `id` · 2026", "... · `id` (2026-10-30)";
+#   "(`id`)" or "(session `id`)" closed by ")" or ";" and attached to the heading itself, not to a number, a party,
+#     a possessive or a phrase after a preposition: "**Resumed (`id`).**", "## Wave 3 (session `id`)";
+#   the sender that opens the heading, "From ...", "Hand over from ..." or "Handing ... over from ...", with only
+#     "the", "#196's", a role word or "session" before the id: "**From the #196 integrator, `id`**";
+#   "Session `id`" opening the heading or one of its sentences, closed by the end, "·" or ".": "**x.** Session `id`.".
+# Nothing else is a byline. "from `id`" after a noun or a verb ("#300 from", "handoff from", "picked up from",
+# "forwarded from") names where work came from; a role ("integrator `id`", "Owner: `id`", "the integrator, `id`")
+# names whoever holds it; an id that a verb or "'s" follows names who acted or whose work it is ("**Session `id`
+# replied**"); and "#300 (`id`)", "the integrator (`id`)" or "status of WU-11 (`id`)" name whose that thing is. Each
+# is as plausible from a poster naming someone else, so none is recovered. The author is the one id the signatures
+# name; when they name several it is unresolved, never ranked. An id named as acting, as the receiver, as a role in
+# a definite phrase, as taken over or split from, or after "for", "to", "cc" or "with" in its clause is listed as
+# another party. A heading that opens with "@", "To" or "For ... (" names its addressee there.
+# Checked by test_a_heading_names_its_poster_or_nobody_never_another_party: 148 headings posted by one session and
+# naming others give that session or unresolved, never another id. Limit: a signature place is still read as the
+# poster's when a poster puts another party there ("## Review · #300 · `id`", "## Seam review (`id`)", a relayed
+# "## From `id`: ..."); those wordings are not in the probes.
 _BYLINE = re.compile(r"(?i)(·|\(|\bsession|\bfrom|\bintegrator|\bowner)[\s`*_:,]*$")
 _ROLES = ("integrator", "owner")
 _FOR = re.compile(r"(?i)\b(?:for|to|cc|with)\b[^.:;·]*$")
@@ -178,12 +183,22 @@ _TAKEN_FROM = re.compile(r"(?i)\b(?:(?:tak(?:e|es|en|ing)|took|pick(?:s|ed|ing)?
 _ACTS = re.compile(r"(?i)^[`*_]*(?:['’]s\b|[^\S\n]+(?:(?:has|had|have)\s+(?:not\s+|already\s+|now\s+|also\s+)?)?"
                    r"(?:asked|agreed|agrees|approved|approves|accepted|accepts|acknowledged|acknowledges|requested|"
                    r"confirmed|confirms|proposed|suggested|offered|assigned|answered|decided|said|wrote|replied)\b)")
-_LEAD_START = re.compile(r"(?i)^[#*_\s]*(?:(?:session|integrator|owner)\b[\s`*_:,]*)?$")   # before an opening id
-_LEAD_DOT = re.compile(r"(?i)·[\s`*_]*(?:(?:session|integrator|owner)\b[\s`*_:,]*)?$")     # before a "·" byline id
-_FIRST_PERSON = re.compile(r"\b(?:[Mm]e|[Mm]y|[Ww]e|[Uu]s|[Oo]ur|I)\b")
-_CLAUSE_END = re.compile(r"[.;:·()—–]")
-_SELF_THE = re.compile(r"(?i)(?:\bfrom|\()[\s*_]*$")                    # "From the ...", "(the ..."
-_ENDS = re.compile(r"^[`*_]*(?:\s*$|\s*[):;.·—–])")                    # the id ends its clause
+_AFTER_DOT = re.compile(r"·[\s`*_]*(?:session\b[\s`*_]*)?$")                  # "· `", "· session `"
+_AFTER_PAREN = re.compile(r"\([\s`*_]*(?:session\b[\s`*_]*)?$")               # "(`", "(session `"
+_SEGMENT_ENDS = re.compile(r"^[`*_]*\s*(?:$|[·(])")                           # "· `id` ·", "· `id` (date)"
+_SENTENCE_ENDS = re.compile(r"^[`*_]*(?:\s*$|\s*·|\.(?:[\s*_]|$))")    # "Session `id`.", "**Session `id`** ·"
+_PAREN_ENDS = re.compile(r"^[`*_]*\s*[);]")
+# What a "(" must not follow to be the heading's own: a number ("#300", a comment id), a party ("the integrator",
+# "receiver", "session"), a possessive, or a phrase after a preposition in its clause ("status of WU-11").
+_PARTY = re.compile(r"(?i)\b(?:integrators?|owners?|receivers?|reviewers?|sessions?)[\s`*_]*$")
+_PAREN_OWNED = re.compile(r"(?i)(?:#\d+|\d{6,}|\b(?:integrators?|owners?|receivers?|reviewers?|sessions?)|['’]s)"
+                          r"[\s`*_]*$|\b(?:of|on|about|for|to|with|by|from|in|into|at|before|after)\b"
+                          r"(?:[^:;·.—–,()]|\.(?=\S))*$")                     # "genesis.py" ends no clause
+_SENDER = re.compile(r"(?i)^[#*_\s]*(?:from|hand(?:ing)?\s+over\b[^`·;:()\n]{0,60}?\bfrom|"
+                     r"handing\b[^`·;:()\n]{1,60}?\bover\s+from)\b"
+                     r"[\s`*_:,]*(?:the\s+)?(?:#\d+(?:['’]s)?\s+)?(?:(?:integration\s+)?(?:integrator|owner)\b)?"
+                     r"[\s`*_:,(]*(?:session\b)?[\s`*_:,]*$")
+_SESSION_OPENS = re.compile(r"(?i)(?:^[#*_\s]*|\.[*_]*\s+[*_]*)session[\s`*_]*$")   # "**Session `", ".** Session `"
 _ADDRESSED = re.compile(r"(?i)^[#*_\s]*(?:@|to\b|for\b[^(\n]{0,80}\()[\s`]*")
 _FENCE = re.compile(r"^[ \t]*(`{3,}|~{3,})")
 _INDENTED = re.compile(r"^(?: {4}|\t| {0,3}\t)")
@@ -432,8 +447,24 @@ def _prose(text: str) -> list[str]:
     return out
 
 
+def _signature(heading: str, at: int, end: int, key: str) -> bool:
+    """Whether the id at ``at``-``end`` stands where only the poster's signature stands (see the rules above)."""
+    before, after = heading[:at], heading[end:end + 16]
+    if _SENDER.match(before):
+        return True
+    dot = _AFTER_DOT.search(before)
+    if dot:                                              # "to the integrator · `id`" names the integrator
+        return bool(_SEGMENT_ENDS.match(after)) and not _PARTY.search(before[max(0, dot.start() - 32):dot.start()])
+    if _SESSION_OPENS.search(before):
+        return bool(_SENTENCE_ENDS.match(after))
+    paren = _AFTER_PAREN.search(before)
+    if paren and key.startswith("session_") and _PAREN_ENDS.match(after):
+        return not _PAREN_OWNED.search(heading[max(0, paren.start() - 200):paren.start()].rstrip("`*_ \t"))
+    return False
+
+
 def _heading_bylines(heading: str) -> tuple[tuple[str, str] | None, list[str]]:
-    """The (id, client) a heading's bylines name as its author, or None, and the ids it names as other parties."""
+    """The (id, client) a heading's signatures name as its author, or None, and the ids it names as other parties."""
     bylines, others = [], []
     for at, end, key, client in _spans(heading):
         window = max(0, at - 48)
@@ -442,20 +473,14 @@ def _heading_bylines(heading: str) -> tuple[tuple[str, str] | None, list[str]]:
             continue
         word, before = by[1].lower(), heading[max(0, at - 64):at]
         role_at = window + by.start()
-        acts = _ACTS.match(heading[end:end + 64])
-        verb = acts and acts[0].lstrip("`*_")[:1] not in "'’"   # "replied", not "'s"
-        if verb and ((at <= 48 and _LEAD_START.match(heading[:at])) or _LEAD_DOT.search(heading[window:at])):
-            acts = _FIRST_PERSON.search(_CLAUSE_END.split(heading[end:end + 64], maxsplit=1)[0])   # "me": not the poster
-        the = _DEFINITE.search(heading[max(0, role_at - 64):role_at]) if word in _ROLES else None
-        if the and _ENDS.match(heading[end:end + 16]):
-            the_at = max(0, role_at - 64) + the.start()
-            the = None if _SELF_THE.search(heading[max(0, the_at - 16):the_at]) else the
-        if (acts or _RECEIVER.search(before) or _TAKEN_FROM.search(before) or the
+        sender = bool(_SENDER.match(heading[:at]))
+        the = _DEFINITE.search(heading[max(0, role_at - 64):role_at]) if word in _ROLES and not sender else None
+        if (_ACTS.match(heading[end:end + 64]) or _RECEIVER.search(before) or _TAKEN_FROM.search(before) or the
                 or (word not in ("·", "from") and _FOR.search(before))):
             others.append(key)
-            continue
-        bylines.append((key, client))
-    if len(set(bylines)) != 1:                           # none, or several ids of any kinds: unresolved, not guessed
+        elif _signature(heading, at, end, key):
+            bylines.append((key, client))
+    if len(set(bylines)) != 1:                           # none, or several ids: unresolved, not guessed
         return None, others
     [(key, client)] = set(bylines)
     return (key, client), [k for k in others if k != key]

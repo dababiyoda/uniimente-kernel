@@ -331,7 +331,8 @@ def test_author_comes_from_the_heading_or_a_labelled_line_never_the_first_id():
     assert (codex["author"], codex["how"], codex["addressees"]) == ("codex:5bcf356971dc", "label", [A])
     assert w.comment_author(KIMI_6735108906)["author"] == "kimi-a2-20261109-01"
     note = w.comment_author(NOTE_6657787629)
-    assert (note["author"], note["addressees"]) == (B, [A])            # "For ... (A)" is the addressee
+    assert (note["author"], note["addressees"]) == (None, [A])         # "For ... (A)" is the addressee; the "From
+    # `B`" sentence after the title is not at the heading's start, so it names no sender
     assert w.comment_author(OPENING_6794587797)["how"] == "opening line"
     relay = w.comment_author(RELAY_6670909400)
     assert (relay["author"], relay["team"]) == (None, "UAT")           # a team relay is a label, not an identity
@@ -1478,12 +1479,13 @@ def test_an_addressee_a_dead_launch_or_a_team_relay_is_never_the_author():
     filled = w.CHECKIN_BLOCK.replace("<one-line outcome>", f"review of {B}'s #290 authority seam").replace(
         "<actual session or task id> (<client>)", f"`{C}` (claude)")
     assert (w.comment_author(filled)["author"], w.comment_author(filled)["how"]) == (C, "label")   # the label wins
-    for byline in ("## Claim: x · `{}` · 2026", "**Handoff from `{}`**", "**Resumed (`{}`). Two claims.**",
-                   "**#196 intake batch** (integrator `{}`)", "## Wave 3 (session `{}`)",
-                   "**Fix round for #240 from `{}`**"):
+    for byline in ("## Claim: x · `{}` · 2026", "**From `{}`**", "**Resumed (`{}`). Two claims.**",
+                   "## Wave 3 (session `{}`)", "**Claim: x.** Session `{}`."):
         assert w.comment_author(byline.format(B))["author"] == B, byline
+    # A noun before "from" makes it an origin, and a role names whoever holds it: neither is a byline.
     for other in ("## Blocked by `{}`: x", "## Handoff to session `{}`", "Plain text from `{}`",
-                  "**Claim C: {}, wave 2**", "## Check-in · stand down <!-- {} -->"):
+                  "**Claim C: {}, wave 2**", "## Check-in · stand down <!-- {} -->", "**Handoff from `{}`**",
+                  "**#196 intake batch** (integrator `{}`)", "**Fix round for #240 from `{}`**"):
         assert w.comment_author(other.format(B))["author"] is None, other
     for body in ("## Handoff: #279 is green (bc-8e2ec3d3 ran it)\n", f"**UAT relay · `{A}` reported #279 green**\n",
                  f"## Note\n\n```text\n## Check-in: x\n- Session: `{A}`\n```\n"):
@@ -1505,10 +1507,11 @@ def test_an_addressee_a_dead_launch_or_a_team_relay_is_never_the_author():
 
 
 def test_a_receiver_a_role_held_by_another_or_a_party_that_acts_is_never_the_byline(quick):
-    # Real handoffs name the receiver after "integrator,": the sender's byline is the author, the receiver is not.
-    for cid, author in ((6650124537, "session_01KucyfnPRxLT4YY1UibJ3Ee"), (6802820715, M9E)):
+    # Real handoffs name the receiver after "integrator,": it is never the author. 6802820715 signs "(`id`)";
+    # 6650124537 opens "Handoff from `id`", an origin phrase, so it names no author at all.
+    for cid, author, how in ((6650124537, None, "unresolved"), (6802820715, M9E, "heading")):
         got = w.comment_author(REAL[cid])
-        assert (got["author"], got["how"], A in got["addressees"]) == (author, "heading", True), cid
+        assert (got["author"], got["how"], A in got["addressees"]) == (author, how, True), cid
     m = w.build([], [_comment(6802820715, REAL[6802820715])], now=NOW, use_git=False)
     assert (m["claims"][0]["session"], [s["session"] for s in m["sessions"]]) == (M9E, [M9E])
     # Without a "·" byline, an owner who asked, a party who agreed, a session taken over from, one whose half is
@@ -1521,91 +1524,202 @@ def test_a_receiver_a_role_held_by_another_or_a_party_that_acts_is_never_the_byl
         assert (opened["author"], opened["how"], opened["addressees"]) == (A, "opening line", [B]), heading
         alone = w.comment_author(heading.format(b=B) + "\n")
         assert (alone["author"], alone["how"], alone["addressees"]) == (None, "unresolved", [B]), heading
-    # A role named as the receiver is never a byline. A role byline beside another kind of byline naming another id
-    # is not ranked below it: either can be the poster, so the author is unresolved (it was the session byline).
+    # A role named as the receiver is never a byline, and "Handoff from" is an origin, not a sender form. A role
+    # beside a signature is not a byline at all, so the signature alone names the author.
     got = w.comment_author(f"**Handoff from `{A}`** for review. The receiver is the #196 integrator, `{B}`.\n")
-    assert (got["author"], got["how"], got["addressees"]) == (A, "heading", [B])
+    assert (got["author"], got["how"], got["addressees"]) == (None, "unresolved", [B])
     for heading in ("## Claim: WU-11 · session `{a}` · integrator `{b}`", "**Note (`{a}`)**: owner `{b}`"):
         got = w.comment_author(heading.format(a=A, b=B) + "\n")
-        assert (got["author"], got["how"], got["addressees"]) == (None, "unresolved", []), heading
+        assert (got["author"], got["how"], got["addressees"]) == (A, "heading", []), heading
     for heading in ("**Note.** The receiver is the #196 integrator, `{b}`.", "## Ready: #300 for the integrator, `{b}`",
                     "## Ready: #300; the #196 integrator, `{b}`, takes it"):
         got = w.comment_author(heading.format(b=B) + "\n")
         assert (got["author"], got["addressees"]) == (None, [B]), heading
-    # The poster's own role byline still names it, and two ids of the strongest kind are still not guessed between.
+    # A role names whoever holds it, so the poster's own role is not a byline either; only the sender form that opens
+    # the heading names it. Two signatures naming two ids are still not guessed between.
     for heading in ("**#196 intake batch** (integrator `{a}`)", "**#196 intake, 2026-11-04** (integration owner `{a}`)",
-                    "## Status. Owner: `{a}`", "**From #196's integrator (session `{a}`)**"):
-        assert w.comment_author(heading.format(a=A) + "\n")["author"] == A, heading
+                    "## Status. Owner: `{a}`"):
+        assert w.comment_author(heading.format(a=A) + "\n")["author"] is None, heading
+    assert w.comment_author(f"**From #196's integrator (session `{A}`)**\n")["author"] == A
     assert w.comment_author(f"## Claim · session `{A}` · session `{B}` (integrator `{C}`)\n")["author"] is None
 
 
-# Constructed headings, {a} posting unless said otherwise; the expected author is the poster or None, never another.
-# "lost" marks a heading whose poster round 2 lost and this round leaves unresolved: recovering it would also take
-# a plausible heading by someone else ("## Review · `B`'s #300", "## Ready for review · the #196 integrator `B`").
+# Constructed headings, all posted by {a}; {b} and {c} are always other parties. The expected author is {a} or None
+# (unresolved), never another id. "was the poster" marks a heading 1bc7c8cb resolved to {a} and this version leaves
+# unresolved, because the same wording is as plausible from a poster naming someone else; "was another party" marks
+# a misattribution at 1bc7c8cb.
 BYLINE_PROBES = [
-    # The poster names itself in the third person, by role, or as the sender.
-    ("## Hand over from `{a}` to `{b}`", "a"),
-    ("## Handing over WU-11 from `{a}` to `{b}`", "a"),
-    ("## Handing WU-11 over from session `{a}`", "a"),
-    ("**Session `{a}` proposed a split of WU-11**", "a"),
-    ("## Claim · `{a}` agreed with `{b}` on the split", "a"),
-    ("## Release · `{a}`'s claim 6650124537", None),                                       # lost
-    ("## Claim · `{a}` (confirmed by `{b}`)", "a"),
-    ("## Status · `{a}` · picked up from `{b}`", "a"),
-    ("## Handoff · `{a}` · the integrator, `{b}`, takes it", "a"),
-    ("**From the #196 integrator, `{a}`**", "a"),
-    ("**From the integrator `{a}`**", "a"),
-    ("## Intake by the #196 integrator `{a}`", None),                                      # lost
-    ("## #196 intake · the integrator `{a}`", None),                                       # lost
-    ("**Note from the integrator (`{a}`)**", "a"),
-    ("**The integrator (`{a}`) accepts #300**", "a"),
-    ("## Owner: `{a}` · for `{b}`", "a"),
-    ("## Claim · session `{a}`, split from `{b}`", "a"),
-    ("## Claim · `{a}` said: WU-11", "a"),
-    ("## Claim (session `{a}`) — owner `{b}` approved", "a"),
-    ("## Ack · session `{a}` acknowledged 6650124537", "a"),
-    ("**Session `{a}` acknowledges intake 6668950482**", "a"),
-    ("**Session `{a}` replied**", "a"),
-    ("## Session `{a}` has now confirmed WU-11", "a"),
-    ("## Handoff: session `{a}` → session `{b}`", None),
+    # The skeptic's probes (wmfix3/sk2/probes/headings*.py): the poster names itself in the third person, by role,
+    # as the sender, or posts about another session's work.
+    ('## Hand over from `{a}` to `{b}`', "a"),
+    ('## Handing over WU-11 from `{a}` to `{b}`', "a"),
+    ('## Handing WU-11 over from session `{a}`', "a"),
+    ('**Session `{a}` proposed a split of WU-11**', None),  # was the poster
+    ('## Claim · `{a}` agreed with `{b}` on the split', None),  # was the poster
+    ("## Release · `{a}`'s claim 6650124537", None),
+    ('## Claim · `{a}` (confirmed by `{b}`)', "a"),
+    ('## Status · `{a}` · picked up from `{b}`', "a"),
+    ('## Handoff · `{a}` · the integrator, `{b}`, takes it', "a"),
+    ('**From the #196 integrator, `{a}`**', "a"),
+    ('**From the integrator `{a}`**', "a"),
+    ('## Intake by the #196 integrator `{a}`', None),
+    ('## #196 intake · the integrator `{a}`', None),
+    ('**Note from the integrator (`{a}`)**', None),  # was the poster
+    ('**The integrator (`{a}`) accepts #300**', None),  # was the poster
+    ('## Owner: `{a}` · for `{b}`', None),  # was the poster
+    ('## Claim · session `{a}`, split from `{b}`', None),  # was the poster
+    ('## Claim · `{a}` said: WU-11', None),  # was the poster
+    ('## Claim (session `{a}`) — owner `{b}` approved', "a"),
+    ('## Ack · session `{a}` acknowledged 6650124537', None),  # was the poster
+    ('**Session `{a}` acknowledges intake 6668950482**', None),  # was the poster
+    ('**Session `{a}` replied**', None),  # was the poster
+    ('## Session `{a}` has now confirmed WU-11', None),  # was the poster
+    ('## Handoff: session `{a}` → session `{b}`', None),
     ("## Claim (`{a}`): forked from `{b}`'s branch", "a"),
-    ("**Integrator `{a}` accepted #300**", "a"),
-    ("**Owner `{a}` decided**: merge order", "a"),
-    ("## Claim · `{a}`’s WU-11", None),                                                    # lost
-    ("**Receiver acknowledgment of handoff 6650124537 (`{a}`)**", None),                   # lost
-    ("**Receiver's intake (session `{a}`)**", None),                                       # lost
+    ('**Integrator `{a}` accepted #300**', None),  # was the poster
+    ('**Owner `{a}` decided**: merge order', None),  # was the poster
+    ('## Claim · `{a}`’s WU-11', None),
+    ('**#196 intake of #300 (session `{b}`)** · integrator `{a}`', None),
+    ('## Intake: #300 (`{b}`) by integrator `{a}`', None),
+    ('**Review of #300 (`{b}`)**, owner `{a}`', None),
+    ('## Intake of #300 from session `{b}` · integrator `{a}`', None),
+    ('## #300 (from `{b}`) taken in · owner `{a}`', None),
+    ('**Ack of handoff from `{b}`** (integrator `{a}`)', None),
+    ('**Intake decision: #201 from session `{b}`** (integrator `{a}`)', None),
+    ('**Receiver acknowledgment of handoff 6650124537 (`{a}`)**', None),
+    ("**Receiver's intake (session `{a}`)**", None),
     ("## Next owner's acknowledgment · `{a}`", "a"),
-    ("**Acknowledgment by the receiver (`{a}`)**", None),                                  # lost
-    ("**Intake by the #196 integrator (`{a}`)**", "a"),
-    ("**#196 intake, 2026-11-22** (the integrator, `{a}`)", "a"),
-    ("**From the #196 integrator, `{a}`: #300 is in.**", "a"),
-    ("**From the integrator (`{a}`)**", "a"),
-    # The integrator {a} posts about {b}'s work: an origin byline and a role byline name two ids, so neither is taken.
-    ("**#196 intake of #300 (session `{b}`)** · integrator `{a}`", None),
-    ("## Intake: #300 (`{b}`) by integrator `{a}`", None),
-    ("**Review of #300 (`{b}`)**, owner `{a}`", None),
-    ("## Intake of #300 from session `{b}` · integrator `{a}`", None),
-    ("## #300 (from `{b}`) taken in · owner `{a}`", None),
-    ("**Ack of handoff from `{b}`** (integrator `{a}`)", None),
-    ("**Intake decision: #201 from session `{b}`** (integrator `{a}`)", None),
-    ("## Claim: WU-11 · integrator `{b}` · session `{a}`", None),
-    # {b} is another party in a lead position: never taken as the poster.
-    ("## Status · owner `{b}` asked me to pause", None),
-    ("**Session `{b}` asked us for a split**", None),
-    ("## Ready for review · the #196 integrator `{b}`", None),
-    ("## Ready: #300 (the integrator, `{b}`, takes it)", None),
+    ('**Acknowledgment by the receiver (`{a}`)**', None),
+    ('**Intake by the #196 integrator (`{a}`)**', None),  # was the poster
+    ('**#196 intake, 2026-11-22** (the integrator, `{a}`)', None),  # was the poster
+    ('**From the #196 integrator, `{a}`: #300 is in.**', "a"),
+    ('**From the integrator (`{a}`)**', "a"),
+    # Round 3's own: another party in a lead position.
+    ('## Claim: WU-11 · integrator `{b}` · session `{a}`', "a"),  # was unresolved
+    ('## Status · owner `{b}` asked me to pause', None),
+    ('**Session `{b}` asked us for a split**', None),
+    ('## Ready for review · the #196 integrator `{b}`', None),
+    ('## Ready: #300 (the integrator, `{b}`, takes it)', None),
     ("## Ack of the handoff · `{b}`'s claim, taken by `{a}`", None),
-    ("## Claim, handed over from `{b}`", None),
-    ("## Claim: WU-11 — session `{b}` replied", None),
-    ("## #300 approved by the integrator `{b}`", None),
-    ("## Claim · `{a}` · `{b}` agreed", None),
+    ('## Claim, handed over from `{b}`', None),
+    ('## Claim: WU-11 — session `{b}` replied', None),
+    ('## #300 approved by the integrator `{b}`', None),
+    ('## Claim · `{a}` · `{b}` agreed', "a"),  # was unresolved
+    # Round 3 verifier's attack (verify-wm/tools/attack_headings.py): origin phrases, relayed and negated reports,
+    # the poster's own id marked as another party, two and three ids.
+    ('## Intake · the integrator `{a}` · #300 from `{b}`', None),  # was another party
+    ('**Intake by the #196 integrator `{a}`**: #300 from session `{b}`', None),  # was another party
+    ('**Ack by the receiver (session `{a}`)**; handoff from `{b}`', None),  # was another party
+    ("**Receiver's ack (`{a}`).** Handoff from session `{b}`", None),  # was another party
+    ('## Intake · the integrator `{a}` · #300 from `{b}` · reviewed by `{c}`', None),  # was another party
+    ('## Review of #300 from `{b}`; `{a}` approved', None),  # was another party
+    ('## Review of #300 from `{b}`', None),  # was another party
+    ('## WU-11 picked up from the integrator, `{b}`', None),  # was another party
+    ('## Taking over WU-11 from the #196 integrator, `{b}`', None),  # was another party
+    ('## Forwarded from the #196 integrator, `{b}`', None),  # was another party
+    ('## Re: From the integrator (`{b}`)', None),  # was another party
+    ('## Handed over from the integrator (`{b}`)', None),  # was another party
+    ('## Rebased #300 as asked (the integrator, `{b}`)', None),  # was another party
+    ('## WU-11, inherited from owner `{b}`', None),  # was another party
+    ('## Session `{b}` has not answered; I take WU-11', None),  # was another party
+    ('**Session `{b}` has not replied to the handoff**', None),  # was another party
+    ('## Owner `{b}` has not approved #300 yet', None),  # was another party
+    ('## Session `{b}` agreed. I take WU-11', None),  # was another party
+    ('## Session `{b}` agreed — I take WU-11', None),  # was another party
+    ('**Owner `{b}` decided**: I merge #300 first', None),  # was another party
+    ('## Reply · session `{b}` asked whether WU-11 is free', None),  # was another party
+    ('## WU-11 · session `{b}` accepted the handoff', None),  # was another party
+    ('## Session `{b}` asked for WU-11 to be split', None),  # was another party
+    ('**Integrator `{b}` accepted #300**', None),  # was another party
+    ('## Owner `{b}` decided — merge #300 first', None),  # was another party
+    ('**Session `{b}` approved; merging now**', None),  # was another party
+    ('## Session `{b}` had already confirmed WU-11 before my run', None),
+    ('## Quoting session `{b}`: WU-11 is free', None),  # was another party
+    ('## Status · `{b}` and `{a}` agreed the split', None),  # was another party
+    ('**Session `{b}` never replied**', None),  # was another party
+    ('## Claim · `{a}` · picked up from the integrator, `{b}`', "a"),  # was unresolved
+    ('## Claim (`{a}`) · inherited from owner `{b}`', "a"),  # was unresolved
+    ('## Handoff · the receiver, `{b}` · from `{a}`', None),  # was the poster
+    ("## Claim · `{a}`'s WU-11, split from session `{b}`", None),
+    ('## Owner `{b}` approved #300 for me', None),
+    ('## Session `{b}` agreed, so I take WU-11', None),
+    ('**Session `{b}` replied** — thanks, picking it up (session `{a}`)', "a"),  # was unresolved
+    ('## Claim · `{b}` agreed · session `{a}`', "a"),  # was unresolved
+    ('## Question for the integrator (`{b}`)', None),
+    ('## Handoff to session `{b}` · from session `{a}`', None),  # was the poster
+    ('## Ack · session `{a}` acknowledges the handoff from session `{b}`', None),
+    ('## Claim · session `{a}` (integrator `{c}`, owner `{b}`)', "a"),  # was unresolved
+    ('## #300 from `{b}` · intake by the integrator `{a}` · cc `{c}`', None),  # was another party
+    ('**Session `{a}`** · from the integrator, `{b}`: rebase', "a"),  # was unresolved
+    ('## Ack · `{a}` · the integrator `{b}` asked me', "a"),
+    # Round 4, written before the change: origin phrases, roles, subjects of a verb, a parenthesis after a PR,
+    # a comment or a unit, and an id after "·" that does not end its segment.
+    ('## Handoff from `{b}`: received, taking it from here', None),  # was another party
+    ('**Continuation from `{b}`**: I picked up WU-11', None),  # was another party
+    ('## Fix round for #300 from `{b}`', None),  # was another party
+    ('## Ack: handoff 6650124537 from session `{b}`', None),  # was another party
+    ('## Review notes on #300 from session `{b}`', None),  # was another party
+    ('**Taken in from `{b}`**: #300', None),  # was another party
+    ('## Relayed from `{b}`: WU-11 is free', None),  # was another party
+    ('## WU-11 carried over from session `{b}`', None),  # was another party
+    ('**Intake · #300 · from `{b}`**', None),  # was another party
+    ('## Re: Hand over from `{b}`', None),  # was another party
+    ('## Ready for intake (integrator `{b}`)', None),
+    ('**Handoff from `{a}`** (integrator `{b}`)', None),
+    ('## WU-11 status. Owner: `{b}`', None),  # was another party
+    ('## Intake queue · integrator `{b}`', None),  # was another party
+    ('## The #196 integrator (`{b}`) asked for a rebase', None),  # was another party
+    ('## Rebase request from the owner (`{b}`)', None),  # was another party
+    ('**Session `{b}` is retired**; I take over its claims', None),  # was another party
+    ('## Session `{b}` went quiet — taking WU-11', None),  # was another party
+    ('## Claim · `{b}` has gone idle, taking WU-11', None),  # was another party
+    ('**Claim: WU-11.** Session `{b}` is not running; taking it.', None),  # was another party
+    ('## `{b}` approved the split', None),
+    ('## Intake: #300 (`{b}`)', None),  # was another party
+    ('## Recheck of 6853778426 (`{b}`)', None),  # was another party
+    ('## Status of WU-11 (`{b}`)', None),  # was another party
+    ('**Update on check-in 6841838048 (`{b}`)**: still waiting', None),  # was another party
+    ('## Ready · `{b}`, please review #300', None),  # was another party
+    ('## Status · `{b}` and I split WU-11', None),  # was another party
+    ('## Waiting on reviews · session `{b}` is next', None),  # was another party
+    ('## Note · as session `{b}` put it, WU-11 is free', None),  # was another party
+    ('## Handing WU-11 to session `{b}`', None),
+    # Round 4, written after the change against the four signature places that remain: vocatives after "·", a
+    # party named before "·", "From `id`'s", a parenthesis after a noun or a preposition, and addressed ids.
+    ('## Thanks · `{b}`. Taking WU-11', None),
+    ('## Ready · `{b}` — please review #300', None),
+    ('## Ready · `{b}`; please review', None),
+    ('## Ready · `{b}`: please review', None),
+    ("## From `{b}`'s queue: WU-11 is free", None),
+    ('## Seam review of #300 (`{b}`)', None),
+    ('## Waiting for review (`{b}`)', None),
+    ('## Claim: WU-11 (session `{b}` asked me)', None),
+    ('**Claim: WU-11.** Session `{b}` agreed.', None),
+    ("**Claim: WU-11.** Session `{b}`'s half stays open.", None),
+    ('## Handoff to the integrator · `{b}` · from session `{a}`', None),
+    ('**Hand over from session `{b}` acknowledged**', None),
+    ('## Re: Session `{b}`', None),
+    ('## Answering `{b}` · WU-11 is free', None),
+    ('## Handing WU-11 back to `{b}`', None),
+    ('## Claim: WU-11 · for `{b}`', None),
+    ('## Claim: WU-11 · cc `{b}`', None),
+    ('## Claim: WU-11 · with session `{b}`', None),
+    ('## Ack (to session `{b}`)', None),
+    ('**For `{b}`:** WU-11 is free · `{a}`', "a"),
+    ('## Status of the long-named seam in greg/genesis.py and its documents and helpers (`{b}`)', None),
+    ('## Status of `greg/genesis.py` (`{b}`)', None),
 ]
 
 
 @pytest.mark.parametrize("heading,poster", BYLINE_PROBES, ids=[h for h, _p in BYLINE_PROBES])
 def test_a_heading_names_its_poster_or_nobody_never_another_party(quick, heading, poster):
-    got = w.comment_author(heading.format(a=A, b=B) + "\n\nSome text.\n")
+    got = w.comment_author(heading.format(a=A, b=B, c=C) + "\n\nSome text.\n")
     assert (got["author"], got["how"]) == ({"a": (A, "heading"), None: (None, "unresolved")}[poster]), heading
+
+
+def test_the_byline_probes_cover_every_set():
+    # 43 skeptic + 10 more of round 3's + 45 verifier + 30 round-4 written before the change + 22 written after it.
+    assert len(BYLINE_PROBES) == len({h for h, _p in BYLINE_PROBES}) == 150
 
 
 def test_an_opening_line_names_the_author_only_as_session_id(quick):
@@ -2065,7 +2179,7 @@ def test_a_claim_its_author_withdrew_is_released_and_an_old_claim_is_not_active(
             "claims"][0]["state"]
     assert state() == ("dormant", "active", "dormant")         # its session posted today; the claim is 24 days old
     for text in (f"## Withdrawn: my claim 6700000001 duplicates `3d2f9cc4` · `{B}`\n\nI stop here.\n",
-                 f"**Handoff and claim release**: session `{B}`, closing the claim in "
+                 f"**Handoff and claim release** · session `{B}`\n\nThis closes the claim in "
                  "https://github.com/o/r/issues/96#issuecomment-6700000001.\n",
                  f"## Handoff: draft #290 · `{B}`\n\nClaim 6700000001 is released into https://github.com/o/r/pull/290.\n",
                  f"## Handoff: draft #290 · `{B}`\n\nNothing is merged, so this releases claim 6700000001.\n"):

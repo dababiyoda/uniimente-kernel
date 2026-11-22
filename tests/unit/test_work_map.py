@@ -3474,3 +3474,27 @@ def test_the_ask_exception_is_stated_with_its_live_comments(quick):
     assert "when its heading or a poster label (Posted by, From, Sender, ...) names another id" not in text
     doc = " ".join(w.checkin_author.__doc__.split())
     assert "6853648077" in doc and "an id right after \"from\", \"by\", \"·\" or \"(\"" in doc
+
+
+# ------------------------------------------------------------------ round 8: a task_ref citing a non-exact check-in
+# The copier's own check-in need not be exact for its task_ref to stop a copied receipt: the cited marker post's
+# Session line names the copier, whose heading may well say review or handoff (round 7's RC1b variants).
+@pytest.mark.parametrize("heading", ["## Check-in: WU-12, fixing #300's review findings in a follow-up",
+                                     "## Check-in: WU-12, the handoff note's follow-up to #300"])
+def test_a_copied_receipt_citing_the_copier_s_check_in_that_is_not_exact_names_no_session(quick, tmp_path, capsys,
+                                                                                         heading):
+    checkins = [CHECKINS_AB[0], _comment(7100000082, _signed(heading, A, "- Files: `greg/missions.py`\n"),
+                                         at="2026-11-12T09:30:00Z")]
+    assert w.checkin_author(checkins[1]["body"]) is None and w.checkin_verdict(checkins[1]["body"])["names"] == A
+    prs = _copied(ATASK)
+    m = w.build(prs, checkins, now=NOW, use_git=False)
+    rows = {r["pr"]: r for r in m["prs"]}
+    assert (rows[301]["session"], rows[301]["session_unnamed"], rows[301]["task_ref_cites"]) == (
+        None, "receipt session_id and task_ref disagree", 7100000082)
+    assert {s["session"]: s["prs"] for s in m["sessions"]} == {B: [300]}
+    assert [(c["file"], c["holders"]) for c in m["contended"]] == [
+        ("greg/missions.py", {B: [300], "(receipt session_id and task_ref disagree) #301": [301]})]
+    paths, _raw = _answer(tmp_path, capsys, prs, checkins, "--paths", "greg/missions.py")
+    assert sorted((p["pr"], p["session"]) for p in paths["paths"][0]["prs"]) == [(300, B), (301, None)]
+    assert "the one id the cited post's check-in Session line names" in " ".join(
+        w.disagreeing_task_refs.__doc__.split())

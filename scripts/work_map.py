@@ -1753,18 +1753,21 @@ def _said(o: dict) -> tuple[str | None, str]:
 
 
 def disagreeing_task_refs(parsed: list[dict], rows: list[dict]) -> None:
-    """Name no session for a receipt whose ``task_ref`` cites a comment that is an exact check-in by another session
-    than its ``session_id`` (the sender's, when a handoff is accepted): a receipt copied from another PR with its
-    ``task_ref`` kept, or one started from another session's check-in. Such a PR is its own holder, labelled
-    ``TASK_REF_DISAGREES``, and ``task_ref_cites`` names the comment. Limit: a copied receipt whose ``task_ref`` cites
-    the same session's check-in, or nothing on the board, keeps the session it names."""
-    exact = {c["cid"]: c["author"] for c in parsed if c["author"]}
+    """Name no session for a receipt whose ``task_ref`` cites a post that opens with the check-in marker and whose
+    Session line names another session than its ``session_id`` (the sender's, when a handoff is accepted): the one
+    id the cited post's check-in Session line names (``checkin_verdict``'s ``names``), whether or not the post is an
+    exact check-in, so a copier's own check-in whose heading says review or handoff still counts. That is a receipt
+    copied from another PR with its ``task_ref`` repointed, or one started from another session's check-in. Such a PR
+    is its own holder, labelled ``TASK_REF_DISAGREES``, and ``task_ref_cites`` names the comment. This only ever
+    removes a session. Limit: a copied receipt whose ``task_ref`` cites the same session's check-in, or nothing on
+    the board, keeps the session it names."""
+    named = {c["cid"]: c["checkin_names"] for c in parsed if c["checkin_names"]}
     for r in rows:
         declared = r.get("handed_over_from") or r["session"]
         if not r["session"]:
             continue
         for run in re.findall(r"(?<!\d)\d{10}(?!\d)", r["task_ref"] or ""):
-            if exact.get(int(run)) not in (None, declared):
+            if named.get(int(run)) not in (None, declared):
                 r.update(session=None, client="unknown", session_unnamed=TASK_REF_DISAGREES, task_ref_cites=int(run))
                 break
 

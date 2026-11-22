@@ -3024,3 +3024,27 @@ def test_a_receipt_session_id_names_the_id_it_opens_with_and_otherwise_stays_opa
     assert [sorted(c["holders"]) for c in m["contended"]] == [sorted([A, handed])]
     paths, _raw = _answer(tmp_path, capsys, prs, [], "--paths", "greg/missions.py", "greg/body.py")
     assert [p["session"] for h in paths["paths"] for p in h["prs"]] == [handed, A, codex]
+
+
+REFUSED_SESSION_IDS = [("pending", "actual session identifier required"),
+                       (" Pending ", "actual session identifier required"),
+                       ("UNKNOWN", "actual session identifier required"),
+                       ("none", "actual session identifier required"),
+                       ("unassigned", "actual session identifier required"),
+                       ("<actual opaque worker/session ID; shared GitHub login is insufficient>",
+                        "replace session identifier placeholders"),
+                       (f"{B} <relayed>", "replace session identifier placeholders"),
+                       ("   ", "task reference and actual session identifier required")]
+
+
+@pytest.mark.parametrize("value,reason", REFUSED_SESSION_IDS, ids=[v for v, _r in REFUSED_SESSION_IDS])
+def test_a_session_id_the_receipt_check_refuses_names_no_session(quick, tmp_path, capsys, value, reason):
+    prs = [_pr(300, "a/seam", body=_receipt(value, ["greg/missions.py"]))]
+    m = w.build(prs, [], now=NOW, use_git=False)
+    row = m["prs"][0]
+    assert (row["session"], row.get("session_refused")) == (None, reason)
+    assert m["sessions"] == [] and m["gaps"].get("receipts_with_refused_session") == [300]
+    paths, _raw = _answer(tmp_path, capsys, prs, [], "--paths", "greg/missions.py")
+    hit = paths["paths"][0]["prs"][0]
+    assert (hit["session"], hit.get("session_refused")) == (None, reason)
+    assert "receipts naming no session because the receipt check refuses their session_id: 1" in w.markdown(m)

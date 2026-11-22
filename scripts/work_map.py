@@ -50,7 +50,8 @@ one by another exact author is ``release_stated_by_another_author`` and one by a
 check is listed there, never counted as zero) and ``prs`` (one row per open pull request, read once however often
 given: its receipt's fields as declared, ``files`` cut to the first ``FILES_LIMIT`` with ``files_cut`` counting the
 rest, ``receipt_problems`` for fields of the wrong type, ``files_refused``, why the receipt check refuses its
-coordination or its files (then its files are unknown, never an empty list), ``changed``, the files it changes
+coordination or its files (then its files are unknown, never an empty list), ``session_refused``, why the receipt
+check refuses its ``session_id`` (then it names no session), ``changed``, the files it changes
 itself, and ``changed_via``, where they came from: ``diff`` for local git, ``api`` for the GitHub API (``--github``, a
 PR into the line that this clone cannot diff), None when neither said; ``line_bound`` and ``carried``).
 
@@ -1160,6 +1161,21 @@ def _files_refused(r: dict | None) -> str | None:
     return None
 
 
+def _session_refused(value: str | None) -> str | None:
+    """Why the receipt check refuses a receipt's ``session_id`` text, in the check's words; None when it does not (or
+    the value is not text, which ``receipt_problems`` names). Copied from ``.github/workflows/collaboration-receipt.yml``
+    for the reason ``_files_refused`` gives. Such a value names no session."""
+    if not isinstance(value, str):
+        return None
+    if not value.strip():
+        return "task reference and actual session identifier required"
+    if value.strip().casefold() in ("unknown", "unassigned", "none", "pending"):
+        return "actual session identifier required"
+    if "<" in value or ">" in value:
+        return "replace session identifier placeholders"
+    return None
+
+
 def _ids(text: str) -> set[str]:
     """Unit ids (``WU-11``, ``S42-A``) and ask ids (``S42.A1``) in a text."""
     return set(UNIT.findall(text)) | set(ASK.findall(text))
@@ -1180,7 +1196,8 @@ def _row(pull: dict, root: Path, use_git: bool, line: str = LINE) -> dict:
     body = pull["body"]
     r = receipt_of(body)
     f, problems = _receipt_fields(r)
-    sid, client = canonical_identity(f["session_id"])
+    refused = _session_refused(f["session_id"])
+    sid, client = (None, "unknown") if refused else canonical_identity(f["session_id"])
     refs = " ".join(f["intent_refs"])
     node = _ROUTE.search(refs)
     named = _ids(pull["title"]) | _ids(f["scope"]) | _ids(refs)
@@ -1191,7 +1208,7 @@ def _row(pull: dict, root: Path, use_git: bool, line: str = LINE) -> dict:
         "draft": pull["draft"], "updated": pull["updated_at"], "receipt": r is not None,
         "older_receipt": r is None and receipt_of(body, version=1) is not None, "receipt_problems": problems,
         "files_refused": _files_refused(r),
-        "session": sid, "client": client, "task_ref": f["task_ref"],
+        "session": sid, "client": client, "session_refused": refused, "task_ref": f["task_ref"],
         "files": f["files"][:FILES_LIMIT], "files_cut": max(0, len(f["files"]) - FILES_LIMIT),
         **_changed(pull, root, use_git, line),
         "overlap": f["overlap"], "recheck": f["recheck_at"], "scope": f["scope"][:200],
@@ -1272,7 +1289,8 @@ def line_bound(rows: list[dict], line: str = LINE, contained=None) -> list[dict]
 
 
 def _holder(r: dict) -> str:
-    return r["session"] or (f"(no session id) #{r['pr']}" if r["receipt"] else f"(no receipt) #{r['pr']}")
+    return r["session"] or (f"(no receipt) #{r['pr']}" if not r["receipt"] else f"(refused session id) #{r['pr']}"
+                            if r.get("session_refused") else f"(no session id) #{r['pr']}")
 
 
 _PR_NUMBER = re.compile(r"(?:#|/pull/)(\d+)(?!\d)")
@@ -1501,7 +1519,9 @@ def who_touches(paths: list[str], rows: list[dict] | None, claims: list[dict] | 
                          "unknown_prs": None, "claims": None})
             continue
         prs = None if rows is None else [
-            {"pr": r["pr"], "session": r["session"], "base": r["base"], "overlap": r["overlap"], "title": r["title"],
+            {"pr": r["pr"], "session": r["session"],
+             **({"session_refused": r["session_refused"]} if r.get("session_refused") else {}),
+             "base": r["base"], "overlap": r["overlap"], "title": r["title"],
              "updated": r["updated"], "line_bound": r.get("line_bound", r["pr"] in bound),
              "carried_by_line": r.get("carried"),
              "via": [v for v, fs in (("receipt", r["files"]), (r.get("changed_via") or "diff", r["changed"] or []))
@@ -1879,6 +1899,7 @@ def build(prs: list[dict] | None, comments: list[dict] | None, *, root: Path = R
                                                                 if not r["receipt"] and r["base"] == line)),
             "receipts_with_unreadable_fields": if_prs(sorted(r["pr"] for r in rows if r["receipt_problems"])),
             "receipts_refused_for_files": if_prs(sorted(r["pr"] for r in rows if r["files_refused"])),
+            "receipts_with_refused_session": if_prs(sorted(r["pr"] for r in rows if r.get("session_refused"))),
             "line_bound_prs_without_diff": if_prs(sorted(r["pr"] for r in bound if r["changed"] is None)),
             "line_bound_prs_carried_by_line": if_prs(sorted(r["pr"] for r in bound if r["carried"])),
             "line_bound_prs_not_checked_against_line": if_prs(unchecked_prs),
@@ -2104,7 +2125,8 @@ def markdown(m: dict) -> str:
                 f"({len(g['open_prs_without_receipt_into_line'])} of them into the line); with an older (version-1) "
                 f"receipt: {len(g['open_prs_with_older_receipt'])}; receipts with fields of the wrong type: "
                 f"{len(g['receipts_with_unreadable_fields'])}; receipts the receipt check refuses for their "
-                f"coordination or files: {len(g['receipts_refused_for_files'])}"
+                f"coordination or files: {len(g['receipts_refused_for_files'])}; receipts naming no session because "
+                f"the receipt check refuses their session_id: {len(g['receipts_with_refused_session'])}"
                 + (f"; receipts listing more than {FILES_LIMIT} files, the rest not read: "
                    f"{_prs(g['receipts_with_files_cut'], 12)}" if g["receipts_with_files_cut"] else "") + ".",
                 _carried_line(m),
@@ -2301,6 +2323,7 @@ def _answer_sources(m: dict) -> dict:
             "unreadable_prs": g["unreadable_prs"], "receipts_with_files_cut": g["receipts_with_files_cut"],
             "receipts_with_unreadable_fields": g["receipts_with_unreadable_fields"],
             "receipts_refused_for_files": g["receipts_refused_for_files"],
+            "receipts_with_refused_session": g["receipts_with_refused_session"],
             "line_bound_prs_without_diff": g["line_bound_prs_without_diff"],
             "open_prs_without_diff": sorted(r["pr"] for r in m["prs"] if r["changed"] is None)
             if src["prs_read"] else None,

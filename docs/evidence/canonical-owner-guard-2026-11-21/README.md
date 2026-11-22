@@ -13,7 +13,8 @@ build was based on `121195907fff`. This record describes the branch after the li
 (`99d2a102`), after the review round that followed it, after the second review of `7c2b39e5` (round 4,
 2026-11-22, findings N1-N8 below), after round 5's review of `79ef5742` (fixed in round 6, 2026-11-22, items B1-B6
 below), after the line at `357b353d` was merged in (`19982b72`, no conflict) and after round 6's review of `16d35caa`
-(fixed in round 7, 2026-11-22, items M1-M5 below). It builds on MU-H, recorded in
+(fixed in round 7, 2026-11-22, items M1-M5 below) and after round 7's review of `ce7fc937` (fixed in round 8,
+2026-11-22, items M6-M11 below). It builds on MU-H, recorded in
 `docs/evidence/canonical-owner-guard-2026-10-30/README.md` (registry, guards 1-3, pins), which is not edited.
 
 Claims discipline: every guarantee below names the test that enforces it; anything without a test is stated as a
@@ -24,10 +25,10 @@ deliberate evader.
 
 | File | Change |
 |---|---|
-| `tests/unit/test_canonical_owner_guard.py` | Guard 4 (copies of a registered function's body), the twin check, the distinct check, `BODY_EXEMPTIONS`, the history guard `kept_for_problems`, a filesystem walk shared by guards 2-4. Round 4: `UNDECIDED_ENTRIES` (an undecided record pinned whole, replacing the exact pin on its candidates and alternates), guard 3's structural-copy check no longer honouring `distinct`, `SEALED` (the skipped cortex/evaluation/ files by path and digest), `COMPARED` (the compared bodies), `binding` (last binding), `module_file` package-first with `AmbiguousModule`, `module_name_problems`, `_once` (each real file once). Round 6: `binding_problems` (one binding per registered qualname; no star import or computed namespace write in its module), every record pinned in `PINNED`, registered classes compared whole (`body_shape`; `COMPARED` 36), sealed files in the module-name rule. Round 7: a decided record's canonical qualnames pinned exactly; `attribute_rebinding_problems` (a registered qualname or a registered class's attribute written from outside its definition); a name bound to the module namespace in `binding_problems`; `imported_test_files` (the tests/ modules runtime code imports are scanned); the class test made independent of the live tree. 34 new tests since `e3a84f95` (50 in the file), 7 of them in round 4, 5 in round 6 and 4 in round 7 |
-| `scripts/ci/check_canonical_owner_guard_mutants.py` | 108 MW-C mutants (167 in all): 24 new in round 4 and 8 re-anchored on rewritten lines; 18 new and 1 re-anchored in round 6; 10 new in round 7; `copy_body`, `append_body`, (round 4) `seal` and (round 6) `copy_class` and `append_class` edits that write a disguised copy of a registered function, a freeze manifest for a file, or a verbatim copy of a registered class, at run time |
-| `docs/collaboration/ARCHITECTURE-OWNERSHIP-MAP.yaml` | `greg.mission_control` REALITY: stale reason corrected, `kept_for: {consumer: acceptance.claims.crosswalk_problems}`; the header comment of `function_owner_records` and the note after the last record rewritten on 2026-11-22 so that each rule names its test and the rest are stated as limits, and again in round 6 (the threat model, the ruling case, every pin's test, the new rules; "nine" corrected to 10) and round 7 (the note's rule count matches its six bullets; the new rules and limits). No record or entry changed |
-| `acceptance/directive-sections.json` | S52.A1: reason and note, and in round 7 one evidence node. S69.A3: evidence (7 more nodes in round 4, 5 more in round 6, 4 more in round 7), reason and note. S76.A2: evidence, `owner_paths`, declared tier and coverage, reason and note. S76.A2's computed tier moved from INTENDED (gap) to UNIT_VERIFIED (partial) |
+| `tests/unit/test_canonical_owner_guard.py` | Guard 4 (copies of a registered function's body), the twin check, the distinct check, `BODY_EXEMPTIONS`, the history guard `kept_for_problems`, a filesystem walk shared by guards 2-4. Round 4: `UNDECIDED_ENTRIES` (an undecided record pinned whole, replacing the exact pin on its candidates and alternates), guard 3's structural-copy check no longer honouring `distinct`, `SEALED` (the skipped cortex/evaluation/ files by path and digest), `COMPARED` (the compared bodies), `binding` (last binding), `module_file` package-first with `AmbiguousModule`, `module_name_problems`, `_once` (each real file once). Round 6: `binding_problems` (one binding per registered qualname; no star import or computed namespace write in its module), every record pinned in `PINNED`, registered classes compared whole (`body_shape`; `COMPARED` 36), sealed files in the module-name rule. Round 7: a decided record's canonical qualnames pinned exactly; `attribute_rebinding_problems` (a registered qualname or a registered class's attribute written from outside its definition); a name bound to the module namespace in `binding_problems`; `imported_test_files` (the tests/ modules runtime code imports are scanned); the class test made independent of the live tree. Round 8: `_chains` (every written chain also read through `origin()`), `_globals_uses` (a literal `globals()` key anywhere is a binding; any other use of a `globals()` call in a registered module fails), and `__dict__`, `vars()`, `patch.object` and `patch("<dotted>")` writes in `_attribute_writes` and `_patch_targets`. 38 new tests since `e3a84f95` (54 in the file), 7 of them in round 4, 5 in round 6, 4 in round 7 and 4 in round 8 |
+| `scripts/ci/check_canonical_owner_guard_mutants.py` | 121 MW-C mutants (180 in all): 24 new in round 4 and 8 re-anchored on rewritten lines; 18 new and 1 re-anchored in round 6; 10 new in round 7; 13 new in round 8; `copy_body`, `append_body`, (round 4) `seal` and (round 6) `copy_class` and `append_class` edits that write a disguised copy of a registered function, a freeze manifest for a file, or a verbatim copy of a registered class, at run time |
+| `docs/collaboration/ARCHITECTURE-OWNERSHIP-MAP.yaml` | `greg.mission_control` REALITY: stale reason corrected, `kept_for: {consumer: acceptance.claims.crosswalk_problems}`; the header comment of `function_owner_records` and the note after the last record rewritten on 2026-11-22 so that each rule names its test and the rest are stated as limits, and again in round 6 (the threat model, the ruling case, every pin's test, the new rules; "nine" corrected to 10) and round 7 (the note's rule count matches its six bullets; the new rules and limits), and round 8 (two bullets name the round-8 forms and tests; the limits say the list of rebinding forms not read is not complete and name what is open). No record or entry changed |
+| `acceptance/directive-sections.json` | S52.A1: reason and note, in round 7 one evidence node, and in round 8 the reason names that node's test. S69.A3: evidence (7 more nodes in round 4, 5 more in round 6, 4 more in round 7, 4 more in round 8), reason and note. S76.A2: evidence, `owner_paths`, declared tier and coverage, reason and note. S76.A2's computed tier moved from INTENDED (gap) to UNIT_VERIFIED (partial) |
 
 No GREG runtime module changed. By guard 4's own definition of a runtime file, one changed: the mutant gate
 `scripts/ci/check_canonical_owner_guard_mutants.py`. The registry is PROPOSED, as before: nothing is retired,
@@ -62,9 +63,28 @@ a registered qualname may not bind a name to `globals()`, or to `vars()` or `loc
 `test_a_registered_qualname_rebound_from_another_module_or_through_a_namespace_alias_fails`). On today's tree the scan
 reads 19 attribute writes through an imported name (the ordinary patches at `scripts/measure_body_memory.py:61`,
 `scripts/node_cut_development.py:137`, `:169`, `:441` and `:470`, `cortex/evaluation/composition_lift/run_converged_v1.py:94-95`,
-and `sys` and `importlib` patches in four cognition and cortex files), and none names a registered qualname. So the def
-or class the guards read is the one Python binds, unless a form these rules do not parse rebinds it (listed under
-"Static resolution" below). `@overload` stubs of a registered function are now a second binding and fail.
+and `sys` and `importlib` patches in four cognition and cortex files), and none names a registered qualname. Round 7's review showed that rules (a) and (b) read only the raw import target: a timing shim on a registered class
+reached through its package re-export (`from omnimorph import OmnimorphEngine; OmnimorphEngine.simulate = _timed`,
+`from egregore import GoalGravityLoop; GoalGravityLoop.turn = _traced`), a write to a consumer's or a package's
+imported name of a registered qualname (`import greg.cli as _cli; _cli.send_signed = f`,
+`egregore.GoalGravityLoop = Quick`), a literal `globals()["reconcile"] = fast` inside an installer function, a
+`globals()` handed to a helper or unpacked, and a write through another module's `__dict__` or `vars()` or by a `mock`
+patcher each passed. Since round 8 the written chain is also read with every prefix resolved through the guard's own
+`origin()` (`_chains`; `origin()` follows a name that a module binds at its level by `import` or `from ... import`,
+up to four hops: package re-exports and a consumer's imported names), and these forms are read as writes:
+`X.__dict__["<literal>"]` and `vars(X)["<literal>"]` set or deleted, `X.__dict__.update(...)` and
+`vars(X).update(...)` with literal keys, `patch.object`, `mock.patch.object` or `unittest.mock.patch.object` with `X`
+and a literal name, and `patch`, `mock.patch` or `unittest.mock.patch` with a literal dotted target, wherever the
+call is (a decorator, a `with` item, a `.start()` receiver) (`_attribute_writes`, `_patch_targets`;
+`test_a_registered_qualname_rebound_through_a_re_export_or_a_consumers_imported_name_fails`,
+`test_a_registered_qualname_written_through_a_namespace_or_a_mock_patcher_fails`). In a module that holds a
+registered qualname, a literal `globals()["X"]` write, `globals().update(X=...)` or `globals().setdefault("X", ...)`
+anywhere (a def, a lambda, a class body, any target position) counts as a binding of X, and a `globals()` call used
+in any other way fails: passed to a helper, unpacked, stored, a default argument, `globals().__setitem__`, `.get`, a
+read (`_globals_uses`; `test_a_literal_globals_key_inside_a_function_binds_the_module_level_name`,
+`test_globals_used_as_a_value_in_a_module_that_holds_a_registered_qualname_fails`). So the def or class the guards
+read is the one Python binds for the forms these rules read. Python has other ways to rebind a name; "Static
+resolution" below lists those the rules do not read, and that list is not complete. `@overload` stubs of a registered function are now a second binding and fail.
 In the body, the docstring is dropped, and every variable, argument, nested def, class, handler, alias, global and match name, and every
 constant, is rewritten to one sentinel.
 Three one-node edits are normalised away, and nothing more: `pass` and no-op constant statements (a string, `...`)
@@ -93,7 +113,7 @@ under the repository root, read as bytes (a UTF-8 BOM parses), each real file on
   directly or through other such modules, and each package `__init__.py` on the way, is scanned all the same, because
   it runs (`imported_test_files`; `test_a_tests_module_that_runtime_code_imports_is_scanned_as_runtime`): four scripts
   import `tests.greg_fixtures` or `tests.unit.test_greg_oci`, which adds 3 files today. `docs/` stays unscanned,
-  including its 24 runnable scripts outside `lineage-archive/`, 5 of which import `tests/`;
+  including its 24 `.py` files outside `lineage-archive/` (6 with a `__main__` guard), 5 of which import `tests/`;
 - top-level hidden entries (`.git`, tool caches, an agent's worktree);
 - the sealed instruments under `cortex/evaluation/`: the files the test's `SEALED` literal names, each only while its
   current bytes hash to the digest pinned there and a `cortex/evaluation/freeze-*.json` manifest (`inputs.code`)
@@ -182,6 +202,11 @@ that change only one erased name or one statement:
 | one attribute renamed (`write_text` to `write_bytes`) or a field read as an attribute; a no-op `_unused = 0`; an `if True:` wrapper | missed (stated limits) |
 | a registered function rebound as an attribute of its module from another file (`_bl.reconcile = _native`, `setattr(_b, 'send_signed', f)`, `del`), an attribute of a registered class set outside its body, or `_ns = globals()` in a registered module | fails (round 7, `attribute_rebinding_problems`, `binding_problems`) |
 | a copy in a `tests/` module that a script imports (`tests/greg_fixtures.py`) | caught (round 7, `imported_test_files`) |
+| a method of a registered class swapped through its package re-export (`from omnimorph import OmnimorphEngine; OmnimorphEngine.simulate = f`, `import omnimorph; omnimorph.OmnimorphEngine.simulate = f`); a consumer's or a package's imported name of a registered qualname rebound (`_cli.send_signed = f`, `_gg.GoalGravityLoop = egregore.GoalGravityLoop = Quick`) | fails (round 8, M6, `attribute_rebinding_problems` through `_chains`) |
+| a literal `globals()["reconcile"] = fast`, `globals().update(reconcile=fast)` or `.setdefault` inside a def, a lambda or a class body of the registered module | fails (round 8, M7, one binding) |
+| `_install(globals(), f)`, `_ns, _ = globals(), None`, `def f(ns=globals())`, `globals().__setitem__(...)`, `globals().get(...)` or `globals()["x"]` read in a module that holds a registered qualname | fails (round 8, M8, `binding_problems`) |
+| `_bl.__dict__["reconcile"] = f`, `del _bl.__dict__[...]`, `_bl.__dict__.update(reconcile=f)`, `vars(_bl)["reconcile"] = f`, `vars(_bl).update(...)`, `mock.patch.object(_bl, "reconcile", f)`, `patch("greg.business_loop.reconcile", f)` (decorator, `with` or `.start()`) | fails (round 8, M9, `attribute_rebinding_problems`) |
+| `patch.dict(_bl.__dict__, {...})`, `patch.multiple`, an aliased `patch`, a computed name, a module or class reached by assignment, and the other forms "Static resolution" lists | not read (stated limits) |
 | the owner's logic moved to a new helper behind a wrapper of 25 nodes or more, and a copy of the moved logic; a copy of one method of a registered class; a class copy with one method added, removed or reordered | missed (stated limits: the fork pattern; methods not compared one by one; a class is one whole body) |
 
 `test_no_structural_duplicates` was not changed. Guard 3 was, though round 3's record said it was not: its file
@@ -267,6 +292,7 @@ that as passing.
 | Registered qualnames bound more than once at their level; star imports or computed namespace writes in their modules | 0; 0 (`binding_problems`) |
 | Records in the registry; records `PINNED` does not hold; decided records whose canonical qualnames differ from `PINNED` | 8; 0; 0 of 5 |
 | Attribute writes through an imported name in runtime files; of them, a registered qualname or a registered class's attribute; names bound to the namespace in a registered module | 19; 0; 0 (round 7) |
+| Round 8: of those 19 writes, any whose chain resolved through `origin()` names a registered qualname or a registered class's attribute; `__dict__`, `vars()` or `patch.object` writes; `patch("<dotted>")` targets; in the modules that hold a registered qualname, literal `globals()` keys outside module-level statements and other uses of a `globals()` call | 0; 0; 0; 0 and 0. Across all 558 runtime files there is one other use of a `globals()` call, `foundry/systems/promotion.py:169` (`globals()[f'_stage_{s}']`, a read in a module the registry does not name) |
 | Mentions the stated, uncommitted B2 cross-record rule would report | 1: `greg.autonomy.regress` (candidate of OWN-FN-AUTONOMY-LEVELS, distinct in OWN-FN-REGRESSION-CLOSING) |
 | Qualname mentions whose resolution changed with round 4's last-binding rule | 0 of 89 (every canonical, candidate, alternate and distinct mention: 50 registered qualnames and 39 distinct ones, 88 unique; guards 1, 3 and 4 read the same nodes as before) |
 | Entries pinned by `UNDECIDED_ENTRIES` | 24 (goal runtime 7, evidence ladder 13, autonomy levels 4) |
@@ -287,10 +313,12 @@ that as passing.
 
 ## Run time
 
-`python -B -m pytest -q -p no:cacheprovider tests/unit/test_canonical_owner_guard.py`: **50 passed**, with no warnings
-on either Python, in about 31-33 s on Python 3.13 and on 3.11 in round 7 (22-27 s for 46 tests in round 6), on this
-container (4 cores, with other agents' jobs running). Round 7's rules add a parse of every runtime file's imports and
-attribute writes; the parse itself is cached. Round 4 measured 15-18 s on a quieter container and round 5's verifier 21-23 s. Timings depend
+`python -B -m pytest -q -p no:cacheprovider tests/unit/test_canonical_owner_guard.py`: **54 passed**, with no warnings
+on either Python, in about 36-38 s on Python 3.13 and on 3.11 in round 8 (31-33 s for 50 tests in round 7, 22-27 s for
+46 tests in round 6), on this container (4 cores, with other agents' jobs running). Round 7's rules add a parse of
+every runtime file's imports and attribute writes; the parse itself is cached. Round 8's rules add an `origin()`
+lookup per prefix of each attribute write through an imported name (19 today) and one more walk of each registered
+module; `binding_problems` and `attribute_rebinding_problems` together took 10 s cold on today's tree. Round 4 measured 15-18 s on a quieter container and round 5's verifier 21-23 s. Timings depend
 on the machine and its load and are approximate.
 
 ## Commands and results
@@ -392,6 +420,30 @@ a new ALTERNATE: 50 passed; B2a's stopped cross-record rule), the skeptic's E3 (
 method, in `greg/evaluation/`: 50 passed). The verifier's E4 and E5 (whole-class copies nested in a function, and
 with `@dataclass` and a base added) failed before and fail now (1 failed each).
 
+Round 8 (the items of round 7's review of `ce7fc937`). Each fix has a test that fails on `ce7fc937`'s guard (the
+round-8 tests appended to that guard file) and passes now, on 3.13 and 3.11. "Attack" is round 7's skeptic's
+`e2e7.py` or verifier's `new7.py`, unchanged but for the tree path, run as the whole guard file on an export of
+`ce7fc937` with this branch's guard file copied in; the counts before are round 7's own logs. Every count below is
+identical on 3.13 and 3.11:
+
+| Item | Test | Fails before | Passes after |
+|---|---|---|---|
+| M6 (blocking): a rebinding through a package re-export or a consumer's imported name (skeptic X5, X5b, X5c, X2b, X3b) | `test_a_registered_qualname_rebound_through_a_re_export_or_a_consumers_imported_name_fails` | yes: `attribute_rebinding_problems` returned `[]` for all 9 rebinding files. Attack at `ce7fc937`: X5, X5b, X2b, X3b 50 passed (X5c a library case) | yes. Attack: X5, X5b, X5c, X2b, X3b 1 failed each (the tree rebinding test); X2 and X3, the same shims in `greg/`, 2 failed (that test and guard 3) |
+| M7: a literal `globals()` key inside an installer function (skeptic X1) | `test_a_literal_globals_key_inside_a_function_binds_the_module_level_name` | yes: no problem for any of the 10 variants. Attack X1 at `ce7fc937`: 50 passed | yes. Attack X1: 1 failed (the one-binding test), as its `global` control X1c |
+| M8: `globals()` handed to a helper or unpacked (verifier F3, F4) | `test_globals_used_as_a_value_in_a_module_that_holds_a_registered_qualname_fails` | yes: no problem for the first variant. Attack F3, F4 at `ce7fc937`: 50 passed each | yes. Attack F3, F4: 1 failed each (the one-binding test) |
+| M9: a write through another module's `__dict__` or `vars()`, or a `mock` patcher (skeptic X4, verifier F1, F2) | `test_a_registered_qualname_written_through_a_namespace_or_a_mock_patcher_fails` | yes: `[]` for all 13 rebinding files. Attack at `ce7fc937`: X4, F1, F2 50 passed each | yes. Attack X4, F1, F2: 1 failed each (the tree rebinding test) |
+| M10: wording | none (documents only): "Static resolution", the guard docstring's item 1, the YAML note and S69.A3 say the list of rebinding forms the rules do not read is not complete and name what round 7 found and round 8 leaves open; the monkeypatch sentence; S52.A1 names the round-7 pin test; `docs/` holds 24 `.py` files outside `lineage-archive/`, 6 with a `__main__` guard (round 7's verifier counted 9; this record's count is by `grep __main__`) | - | - |
+| M11: the round-7 and round-8 rules on the open heads | none: measured (below, "Compatibility") | - | - |
+
+Each rule was measured on today's tree before it was committed, and reports nothing: M6 (round 7's `fix_origin.py`,
+then the committed rule) 0; M7 (`fixes7.py`, `fixcost.py`) 0; M8 0 uses of a `globals()` call other than literal-key
+writes in the modules that hold a registered qualname; M9 0 `__dict__`, `vars()` or `patch.object` writes and 0
+`patch("<dotted>")` targets in runtime code. The gate gained 13 mutants: for M6 two tree edits (the X5 shim appended
+to `foundry/pipeline.py`, the X2b shim in a new `greg/quick_drop.py`) and one code mutant; for M7 one tree edit (an
+installer with a literal key appended to `greg/business_loop.py`) and one code mutant; for M8 one tree edit (a
+`globals()` default argument there) and one code mutant; for M9 two tree edits (`greg/accel.py` writing through
+`__dict__`, `greg/reconcile_patch.py` calling `mock.patch`) and four code mutants (one per form). Each is caught.
+
 ## Compatibility with the line and with the open heads
 
 WU-03 (#338) is now on the line, at `d776ca13`, and it added a real `greg/teams.py`. Two mutants from #253 create
@@ -412,7 +464,29 @@ Round 4: both merges were rebuilt with this branch's round-4 head (the same conf
 file gives **41 passed** on each, on 3.13 and 3.11 (556 and 555 runtime files; 27 compared bodies). The distinct
 entries #305 and #314 add belong to OWN-FN-ORGAN-EXCHANGE, a decided record, so `UNDECIDED_ENTRIES` does not bind
 them, and guard 3 reports no structural copy behind them. The mutant gate was not re-run on the merges in round 4.
-In round 6 the merges were not rebuilt.
+In round 6 the merges were not rebuilt. In round 8 they were, for every open PR into the line in the board snapshot
+(`prs_flat.json`: 45; this branch's #341 is not among them), at the head each PR had when fetched on 2026-11-22
+(`git fetch origin refs/pull/N/head`; 18 heads had moved since the snapshot). For each, the tree
+`git merge-tree --write-tree 357b353d <PR head>` writes was exported, this branch's guard file copied in, and every
+problem function of the guard run on it (shape, pins, undecided pins, markers, existence, guards 2, 3 and 4, the
+compared pin, twins, sealed files, distinct, kept_for, `binding_problems` and `attribute_rebinding_problems`, and the
+pinned list of scanned `tests/` files), then the tree deleted, one at a time, on Python 3.13:
+
+| Open heads | Merge into `357b353d` | Problems beyond the line's own |
+|---|---|---|
+| #206, #214, #218, #220, #226, #237, #240, #258, #260, #266, #267, #270, #280, #281, #282, #283, #288, #289, #303, #305, #313, #316, #317, #322, #324, #325, #327, #328, #330, #331, #332, #334, #335, #337, #338, #339 (36) | clean | none |
+| #221, #299, #310, #311, #314, #323 (6) | conflicts; measured on the PR head's tree, as asked, and again on the merged tree with each conflicted path taken from the PR head | none, either way |
+| #233, #243, #244 (3) | conflicts; the PR head's tree predates `function_owner_records`, so the guard stops on its first read of the registry (a `KeyError`); measured instead on the merged tree with each conflicted path taken from the PR head (`greg/computer.py` and its test; `greg/appraisal.py`; `greg/appraisal.py`, `greg/genesis.py`, `greg/missions.py`, `foundry/owned-source.json`, `scripts/ci/check_cortex_mutants.py`) | none |
+
+"The line's own" are five problems the line head alone gives with this guard (`357b353d` plus the guard file): its
+registry lacks this branch's `kept_for` on `greg.mission_control` REALITY, so the undecided pin (twice, once in
+`pin_problems` and once in `undecided_problems`) and `kept_for_problems` report that entry. They go when this branch's
+registry is merged. No round-7 or round-8 rule reports anything on any of the 45 merged trees: the canonical pin, the
+rebinding rules (as written and resolved through `origin()`), the namespace and `mock` forms, the `globals()` rules and
+the `tests/` scan. The trees hold 541 to 562 runtime files and 19 attribute writes through an imported name, 20 in
+#316 and in #233's merged tree; none names a registered qualname. No rule was changed because of an open head. The
+mutant gate was not run on the merges. Script and logs: the session's scratch directory (`round8/tools/heads.sh`,
+`heads_problems.py`, `round8/mwc8/heads_conflict.sh`).
 
 The `_deliver` question below applies to both.
 
@@ -459,8 +533,8 @@ The `_deliver` question below applies to both.
   `NOT_RUNTIME`, `SEALED_UNDER`, `NOT_CONSUMERS` and `MIN_COPY_NODES` are literals in the test; changing them changes
   the guard, visibly in the diff, and nothing but review stops a diff that changes the registry and the literal
   together.
-- **What is scanned.** `docs/` is not scanned, its runnable scripts included (24 outside `lineage-archive/`; 5
-  `docs/evidence/` scripts import `tests/`), and a `tests/` module is scanned only when a scanned file imports it by an
+- **What is scanned.** `docs/` is not scanned, its 24 `.py` files outside `lineage-archive/` included (6 with a
+  `__main__` guard; 5 `docs/evidence/` scripts import `tests/`), and a `tests/` module is scanned only when a scanned file imports it by an
   `import` statement: one imported by `importlib`, `__import__` or `exec`, or by a bare name after `sys.path` is changed
   to put a directory under `tests/` first, is not. The filesystem, not git. An untracked `.py` file outside a top-level hidden entry is scanned
   too, and a tracked `.py` file under a top-level hidden directory (there is none today) is not. A copy reachable only
@@ -469,19 +543,42 @@ The `_deliver` question below applies to both.
 - **Static resolution.** A qualname resolves to the last statement that binds it in source order, not by which branch
   runs. Since round 6 a registered qualname may have only one binding, so an `if X:` / `else:` pair, a dead-branch
   decoy, `@overload` stubs, a rebinding, a star import and a computed `globals()`, `vars()` or `locals()` write in its
-  module fail instead of being read (`binding_problems`). Since round 7 an assignment, augmented assignment, `del`, or
-  `setattr()` or `delattr()` with a literal name, from any runtime file, that writes a registered qualname as an
-  attribute of a name bound to its module, or any attribute of a registered class outside its class body, fails, and
-  so does a name bound to the namespace in a registered module (`attribute_rebinding_problems`; round 6's E1, E2, E3
-  and N2). Still not seen: a decorator on the one def or class that returns a different object (`@functools.lru_cache`
-  and `@dataclass` are allowed); `setattr` or `delattr` with a computed name; a module object reached by assignment
-  (`m = greg.body; m.send_signed = f`), through `sys.modules` (`sys.modules[__name__].__dict__`), by
-  `importlib.import_module` or `__import__`, or a different module object put in `sys.modules`; a literal `vars()` or
-  `locals()` key at module level; and `exec`. The import scan does not tell scopes apart, so a name imported in one
-  function counts in every function of the file (it fails closed). Those forms are exotic code, outside the threat
-  model; the plain monkeypatch of an imported module, which the tree already uses for constants, is not, and it is now
-  caught for registered qualnames. `AmbiguousModule` stops the guard with an exception naming the module (the test fails) rather than a list of
-  every problem.
+  module fail instead of being read (`binding_problems`). Since round 7 an assignment, augmented assignment, `del`, a
+  for or with target, or `setattr()` or `delattr()` with a literal name, from any runtime file, that writes a
+  registered qualname as an attribute of a name bound to its module, or any attribute of a registered class outside
+  its class body, fails, and so does a name bound to the namespace in a registered module
+  (`attribute_rebinding_problems`; round 6's E1, E2, E3 and N2). Since round 8 the written chain is also read with
+  every prefix resolved through `origin()` (M6); `X.__dict__["<literal>"]` and `vars(X)["<literal>"]` set or
+  deleted, `X.__dict__.update(...)` and `vars(X).update(...)` with literal keys, `patch.object`,
+  `mock.patch.object` or `unittest.mock.patch.object` with `X` and a literal name, and `patch`, `mock.patch` or
+  `unittest.mock.patch` with a literal dotted target are read as writes (M9); a literal `globals()["X"]` write,
+  `globals().update(X=...)` or `globals().setdefault("X", ...)` anywhere in a registered module counts as a binding
+  of X (M7); and any other use of a `globals()` call there fails (M8). Python has other ways to rebind a name; among
+  those the rules do not read are: `setattr` or `delattr` with a computed name; `sys.modules`
+  (`sys.modules[__name__].__dict__`, or a different module object put in `sys.modules`); `exec`;
+  `importlib.import_module`, `__import__` and `runpy.run_path`; a module or class reached by assignment
+  (`m = greg.body; m.send_signed = f`, `_R = Relay; _R.send = f`), a consumer's name bound by assignment included
+  (`send = send_signed` in a consumer, then `_cli.send = f`); `getattr(greg, "body").x = f`; `type(obj).m = f`;
+  `object.__setattr__` and `builtins.setattr`; a `__code__` swap; a decorator on the one def or class that returns a
+  different object (`@functools.lru_cache` and `@dataclass` are allowed); a re-export through a star import
+  (`from .engine import *`) or more than four hops, which `origin()` does not follow; a module rebinding its own
+  imported name (`from greg.body import send_signed`, then `send_signed = f` in that module); a literal `vars()` or
+  `locals()` key at module level, and `vars()` or `locals()` used as a value there (M8 reads `globals()` only);
+  `globals` reached through another name (`g = globals; g()["X"] = f`); a `__dict__` or `vars(X)` reached through
+  another name (`d = _b.__dict__; d["x"] = f`), its `.setdefault`, `.__setitem__` or `|=`, and a computed key; and
+  `patch` under another name (`from unittest.mock import patch as p`, `import unittest.mock as um`), with a computed
+  target or name, `patch.dict`, `patch.multiple` and pytest's `monkeypatch.setattr`. The import scan does not tell
+  scopes apart, so a name imported in one function counts in every function of the file (it fails closed). Most of
+  the forms listed are exotic code, outside the threat model; `patch.dict`, `patch.multiple`, an aliased `patch`,
+  `monkeypatch.setattr` and a module reached by assignment are ordinary and are open, stated here, not covered. The
+  tree's own monkeypatches replace constants (`scripts/node_cut_development.py:137` and `:169`,
+  `scripts/measure_body_memory.py:61`, `cortex/evaluation/composition_lift/run_converged_v1.py:94-95`), functions
+  (`scripts/node_cut_development.py:441` and `:470` swap `greg.cognition.cortex._numeric` and `independent_verify`
+  for timing wrappers) and a class method (`importlib.machinery.SourceFileLoader.get_data`, at
+  `greg/cognition/evolution_room.py:41`, `greg/cognition/evolution_sandbox.py:51` and
+  `cortex/evaluation/composition_lift/run_v6.py:100`); that plain form is read, and fails when it writes a registered
+  qualname. `AmbiguousModule` stops the guard with an exception naming the module (the test fails) rather than a
+  list of every problem.
 - **What the pins leave open.** `UNDECIDED_ENTRIES` pins an undecided record's entries, not its other fields
   (`decision_needed`, `safe_default`, `review_trigger`, `migration_path`, `effect`, which define the founder's question
   and the interim rule, change with no test failure): its `markers` are bounded below by `MUST_FLAG` (a marker can be
@@ -568,7 +665,8 @@ effect is at review time, and limited by the stated limits above. Each sentence 
 Threat model. These guards are for ORDINARY changes by cooperating agents working in parallel: refactors, copies made
 by mistake or for convenience, handoffs, relays, templates filled in for someone else, receipts copied between PRs.
 They are not a security boundary against a deliberate evader who writes exotic code or text to defeat them. Each such
-residual is stated as a limit above, and none is claimed as covered.
+residual found so far is stated as a limit above, and none is claimed as covered; the list of rebinding forms the rules
+do not read ("Static resolution") is not complete.
 
 - A copy of one of the 36 registered bodies `COMPARED` pins (27 functions, and 9 classes compared whole), renamed,
   relocated, nested, made async, reformatted or changed by one of the three normalised one-node edits, fails anywhere
@@ -580,15 +678,26 @@ residual is stated as a limit above, and none is claimed as covered.
   `test_a_registered_body_is_exempt_only_at_its_own_location`,
   `test_a_registered_class_body_is_compared_whole_at_its_own_location_and_for_twins`,
   `test_the_walk_reads_each_real_file_once_and_follows_file_links_anywhere`). The body read is the one Python binds
-  for the forms the rules parse: each registered qualname has one binding, its module no star import, computed
-  namespace write or name bound to its namespace, and no runtime file writes it, or an attribute of a registered
-  class, from outside its definition by an assignment, `del`, or a literal `setattr` or `delattr`
+  for the forms the rules read: each registered qualname has one binding (a literal `globals()` key anywhere in its
+  module counted), its module no star import, computed namespace write, name bound to its namespace or other use of a
+  `globals()` call, and no runtime file writes it, or an attribute of a registered class, from outside its definition
+  by an assignment, augmented assignment, `del`, a for or with target, a literal `setattr` or `delattr`, a
+  `__dict__["<literal>"]` or `vars(X)["<literal>"]` write or `.update` with literal keys, `patch.object` with a
+  literal name or `patch` with a literal dotted target (the names `patch`, `mock.patch` and `unittest.mock.patch`),
+  read as written and with every prefix resolved through `origin()` (names a module binds by `import` or
+  `from ... import`, up to four hops)
   (`test_every_registered_qualname_has_one_binding_and_its_module_no_computed_binding`,
   `test_a_decoy_rebinding_or_star_import_of_a_registered_qualname_fails`,
   `test_no_runtime_file_rebinds_a_registered_qualname_or_a_registered_class_attribute`,
-  `test_a_registered_qualname_rebound_from_another_module_or_through_a_namespace_alias_fails`). A computed `setattr`,
-  `sys.modules`, `exec`, `importlib`, a module reached by assignment, a literal `vars()` or `locals()` key and a
-  decorator that returns a different object are not parsed (see "Static resolution"). The scanned files leave out
+  `test_a_registered_qualname_rebound_from_another_module_or_through_a_namespace_alias_fails`,
+  `test_a_registered_qualname_rebound_through_a_re_export_or_a_consumers_imported_name_fails`,
+  `test_a_literal_globals_key_inside_a_function_binds_the_module_level_name`,
+  `test_globals_used_as_a_value_in_a_module_that_holds_a_registered_qualname_fails`,
+  `test_a_registered_qualname_written_through_a_namespace_or_a_mock_patcher_fails`). Python has other ways to rebind
+  a name; among those the rules do not read are a computed `setattr`, `sys.modules`, `exec`, `importlib`, `__import__`
+  and `runpy.run_path`, a module or class reached by assignment, `getattr(...)` and `type(obj)` as a write target,
+  `object.__setattr__`, a `__code__` swap, a decorator that returns a different object, a star-import re-export,
+  `patch.dict` and an aliased `patch`; "Static resolution" lists the rest found so far, and neither list is complete. The scanned files leave out
   `docs/`, `tests/` except the modules a scanned file imports
   (`test_a_tests_module_that_runtime_code_imports_is_scanned_as_runtime`), top-level hidden entries and the 9 `SEALED` instruments, which no diff can extend without changing the
   test (`test_a_freeze_manifest_seals_only_the_files_and_bytes_the_test_pins`), and which no package of the same module

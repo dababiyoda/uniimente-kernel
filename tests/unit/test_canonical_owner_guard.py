@@ -13,10 +13,31 @@ The registry is ``function_owner_records`` in docs/collaboration/ARCHITECTURE-OW
    ``TYPE_CHECKING`` blocks included, and its module no star import and no namespace write with a computed name
    (``binding_problems``), and since round 7 no name bound to its namespace (``_ns = globals()``), while no runtime
    file writes a registered qualname as an attribute of its module, or an attribute of a registered class outside its
-   body, by assignment, ``del`` or a literal ``setattr``/``delattr`` (``attribute_rebinding_problems``). So the
-   statement the guards read is the one Python binds, except for forms these rules do not parse: a computed
-   ``setattr``, ``sys.modules``, ``exec``, ``importlib``, a module reached by assignment, a literal ``vars()`` or
-   ``locals()`` key, a decorator that returns a different object;
+   body, by assignment, augmented assignment, ``del``, a for or with target, or a ``setattr``/``delattr`` with a
+   literal name (``attribute_rebinding_problems``). Since round 8 that rule reads each written chain as written and
+   with every prefix resolved through ``origin`` (which follows a name a module binds at its level by ``import`` or
+   ``from ... import``, up to four hops: package re-exports and a consumer's imported names;
+   ``_chains``), and it also reads ``X.__dict__["<literal>"]`` and ``vars(X)["<literal>"]`` set or deleted,
+   ``X.__dict__.update(...)`` and ``vars(X).update(...)`` with literal keys, ``patch.object``, ``mock.patch.object``
+   or ``unittest.mock.patch.object`` with ``X`` and a literal name, and ``patch``, ``mock.patch`` or
+   ``unittest.mock.patch`` with a literal dotted target (``_attribute_writes``, ``_patch_targets``); and
+   ``binding_problems`` counts a literal ``globals()["X"]`` write, ``globals().update(X=...)`` or
+   ``globals().setdefault("X", ...)`` anywhere in the module (in a def, a lambda or a class body too) as a binding of
+   X, and fails, in a module that holds a registered qualname, any other use of a ``globals()`` call than those
+   literal-key writes and the forms the older rules report (``_globals_uses``). So the statement the guards read is
+   the one Python binds for the forms these rules read. Python has other ways to rebind a name; among those the rules
+   do not read are: ``setattr`` or ``delattr`` with a computed name; ``sys.modules`` (``sys.modules[__name__]``, or
+   another module object put there); ``exec``; ``importlib.import_module``, ``__import__`` and ``runpy.run_path``; a
+   module or class reached by assignment (``m = greg.body; m.send_signed = f``, ``_R = Relay; _R.send = f``), a
+   consumer's name bound by assignment included (``send = send_signed``); ``getattr(greg, "body").x = f``;
+   ``type(obj).m = f``; ``object.__setattr__`` and ``builtins.setattr``; a ``__code__`` swap; a decorator that returns
+   a different object; a re-export through a star import or more than four hops, which ``origin`` does not follow; a
+   module rebinding its own imported name (``from greg.body import send_signed`` then ``send_signed = f`` there); a
+   literal ``vars()`` or ``locals()`` key at module level, and ``vars()`` or ``locals()`` used as a value there;
+   ``globals`` reached through another name (``g = globals``); a ``__dict__`` or ``vars(X)`` reached through another
+   name (``d = _b.__dict__``), its ``.setdefault``, ``.__setitem__`` or ``|=``, and a computed key; and ``patch``
+   under another name (``from unittest.mock import patch as p``), with a computed target or name, ``patch.dict``,
+   ``patch.multiple`` and pytest's ``monkeypatch.setattr``;
 2. no module under greg/ reaches an alternate whose status is RETIRED or HISTORICAL: ``import``, ``from ... import``
    (relative ones too), ``as`` aliases, attribute chains through any of them, names assigned from them,
    ``getattr``/``vars``/``sys.modules`` with a constant name, ``importlib.import_module`` and ``__import__`` (with
@@ -74,7 +95,8 @@ scripts/ci/ and any conftest.py, or its own record's open decision).
 Threat model: these guards catch ORDINARY changes by cooperating agents working in parallel (refactors, copies made by
 mistake or for convenience, handoffs, relays, templates filled in for someone else, receipts copied between PRs). They
 are not a security boundary against a deliberate evader who writes exotic code or text to defeat them; every such
-residual above is a stated limit, never claimed as covered.
+residual found so far is a stated limit above, never claimed as covered, and item 1's list of the rebinding forms the
+rules do not read is not complete.
 
 The test reads code and data. It grants, attaches, activates and retires nothing.
 """

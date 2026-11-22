@@ -2407,9 +2407,10 @@ def markdown(m: dict) -> str:
             "The map names your session only when the marker is alone on the comment's first line that is not blank "
             "and your own `Session:` line, naming one id, comes first after the heading. Post a check-in block only for your own "
             "session: a block that opens with the marker names the session on its Session line whoever posts it. To "
-            "pass a block to another session, leave out the marker line. A post whose text relays, whose heading "
-            "hands over, reassigns or reviews, or whose heading or poster label names another id names nobody, even "
-            "your own: release your own claim under a heading such as `## Release: claim N`.", ""]
+            "pass a block to another session, leave out the marker line. A post names nobody, even your own, when "
+            "its text outside code says relay, relayed or on ... behalf, when its heading says handoff, hand over, "
+            "reassign or review, or when its heading or a poster label (Posted by, From, Sender, ...) names another "
+            "id: release your own claim under a heading such as `## Release: claim N`.", ""]
     return "\n".join(out)
 
 

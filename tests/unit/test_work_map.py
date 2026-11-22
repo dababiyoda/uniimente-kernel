@@ -3284,6 +3284,8 @@ def test_the_map_tells_posters_to_post_a_block_only_for_their_own_session(quick)
             "on its Session line whoever posts it. To pass a block to another session, leave out the marker line."
             ) in text
     assert "fill in for another session names nobody" not in text
+    assert ("A post names nobody, even your own, when its text outside code says relay, relayed or on ... behalf, "
+            "when its heading says handoff, hand over, reassign or review") in text
     assert "block filled in, pasted or copied with none of this wording is read as the session its Session line " \
            "names, whoever posts it" in " ".join(w.checkin_author.__doc__.split())
     assert "is read as the session its Session line names, whoever posts it" in " ".join(w.__doc__.split())

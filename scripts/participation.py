@@ -424,11 +424,20 @@ def admit(task_issue: tuple[str, int], claim: int, source: Source, cwd: str = ".
     return rec
 
 
+REQUIRED = {"claim": int, "task_record": str, "exclusive": list, "shared": list, "checked_at": str}
+
+
 def load(gitdir: Path) -> dict | None:
+    """The worktree's admission record; None when absent or unreadable; ``{"malformed": reason}`` when its shape is
+    wrong, so the hook denies with a reason rather than crashing (a crash exits 1, not the 2 that denies)."""
     try:
-        return json.loads(record_path(gitdir).read_text())
+        rec = json.loads(record_path(gitdir).read_text())
     except (OSError, ValueError):
         return None
+    if not isinstance(rec, dict):
+        return {"malformed": "the record is not a JSON object"}
+    bad = [k for k, t in REQUIRED.items() if not isinstance(rec.get(k), t) or isinstance(rec.get(k), bool)]
+    return {"malformed": f"missing or wrong fields: {bad}"} if bad else rec
 
 
 # ---------------------------------------------------------------- the hook
@@ -467,6 +476,9 @@ def gate(event: dict) -> tuple[bool, str]:
         rec = load(gitdir)
         if not rec:
             return _deny(gitdir, tool, target, f"No admission in {top}. {HOW}")
+        if "malformed" in rec:
+            return _deny(gitdir, tool, target, f"The admission record in {top} is malformed ({rec['malformed']}); "
+                         "run `python scripts/participation.py admit` again. Never edit it by hand.")
         if rec.get("refresh_required"):
             return _deny(gitdir, tool, target, "This session resumed; refresh first: "
                          "`python scripts/participation.py check`.")
@@ -486,8 +498,9 @@ def gate(event: dict) -> tuple[bool, str]:
             return True, "outside git"
         top, gitdir = where
         rec = load(gitdir)
-        if not rec:
-            return _deny(gitdir, tool, command or tool, f"No admission in {top}. {HOW}")
+        if not rec or "malformed" in rec:
+            return _deny(gitdir, tool, command or tool,
+                         f"No valid admission in {top} ({(rec or {}).get('malformed', 'none')}). {HOW}")
         publishing = tool != "Bash" or GIT_PUSH.search(command)
         if rec.get("refresh_required") or (publishing and _stale(rec)):
             return _deny(gitdir, tool, command or tool, f"Refresh before publishing: "
@@ -543,7 +556,7 @@ def resume_main() -> int:
                 continue
             wt = worktree_of(line[9:])
             rec = wt and load(wt[1])
-            if rec:
+            if rec and "malformed" not in rec:
                 rec["refresh_required"] = True
                 record_path(wt[1]).write_text(json.dumps(rec, indent=2) + "\n")
                 print(f"participation: claim {rec['claim']} in {wt[0]} needs `python scripts/participation.py "
@@ -764,14 +777,14 @@ def main(argv: list[str] | None = None) -> int:
         else:
             where = worktree_of(os.getcwd())
             prior = where and load(where[1])
-            if not prior:
+            if not prior or "malformed" in prior:
                 raise Refused(f"no admission here. {HOW}")
             rec = admit(_issue(prior["task_record"]), prior["claim"], source)
             rec["admitted_at"] = prior["admitted_at"]
             record_path(where[1]).write_text(json.dumps(rec, indent=2) + "\n")
     except Refused as exc:
         where = worktree_of(os.getcwd())
-        if args.cmd == "check" and where and load(where[1]):
+        if args.cmd == "check" and where and (load(where[1]) or {}).get("claim"):
             rec = load(where[1])
             rec["refresh_required"] = True
             record_path(where[1]).write_text(json.dumps(rec, indent=2) + "\n")

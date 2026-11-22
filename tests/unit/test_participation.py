@@ -448,3 +448,16 @@ def test_work_done_before_a_recovery_keeps_its_historical_evidence(maintainer):
     ref = f"https://github.com/{REPO}/issues/500#issuecomment-1000001"
     out = P.contribution(ref, A, source(comments), ["scripts/a.py"], "2026-11-22T16:30:00Z")
     assert out["result"] == "pass" and out["assurance"] == "admitted-historical"
+
+
+@pytest.mark.parametrize("record", ["{}", "[]", '{"claim": "x"}', "not json"])
+def test_a_malformed_admission_record_denies_with_a_reason_and_never_crashes(repo, record):
+    """Found by trial 3, round 2 worker W1: a record without `claim` crashed the hook (exit 1, not a denial)."""
+    gitdir = Path(subprocess.run(["git", "-C", str(repo), "rev-parse", "--absolute-git-dir"], capture_output=True,
+                                 text=True, check=True).stdout.strip())
+    P.record_path(gitdir).parent.mkdir(parents=True, exist_ok=True)
+    P.record_path(gitdir).write_text(record)
+    ok, why = edit(repo / "scripts" / "a.py", repo)
+    assert not ok and ("malformed" in why or "No admission" in why)
+    ok, why = bash("git push", repo)
+    assert not ok

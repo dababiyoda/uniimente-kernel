@@ -217,14 +217,14 @@
  "counts": {
   "by_lineage": {
    "#158": 389,
-   "#179": 109,
+   "#179": 110,
    "both": 42
   },
   "by_role": {
    "P8 held-out": 7,
    "admission held-out": 150,
    "canary": 1,
-   "dev": 289,
+   "dev": 290,
    "held-out": 70,
    "review-pilot": 14,
    "train": 9
@@ -236,7 +236,7 @@
    "admission held-out / #179": 44,
    "canary / #158": 1,
    "dev / #158": 243,
-   "dev / #179": 23,
+   "dev / #179": 24,
    "dev / both": 23,
    "held-out / #158": 13,
    "held-out / #179": 38,
@@ -245,7 +245,7 @@
    "train / #158": 6,
    "train / #179": 3
   },
-  "exposures": 540,
+  "exposures": 541,
   "overlaps": {
    "identical_suite_items": 1,
    "same_data_items": 2,
@@ -26491,6 +26491,45 @@
     [
      5,
      5
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "fb41ddb9140dddb5f37f24b6cdfe598e396e9196",
+    "line_commits": [
+     "8b1151e4d842ae3fd1b325b73bbd6d452165b8ce"
+    ],
+    "lines": [
+     226
+    ],
+    "path": "tests/unit/test_greg_method_grants.py",
+    "sha256": "sha256:0f5d5dc40ecfce571484d4d5e6b9c7ab7ba6334dda835da87a2c40740d4b0a0c"
+   },
+   "exposure_commit": "8b1151e4d842ae3fd1b325b73bbd6d452165b8ce",
+   "family": null,
+   "generator": {
+    "commit": "8b1151e4d842ae3fd1b325b73bbd6d452165b8ce",
+    "key": "game.instance",
+    "kind": "code",
+    "resolved": false,
+    "why": "receiver not resolved statically"
+   },
+   "id": "#179|tests/unit/test_greg_method_grants.py|dev|-|?:game.instance:226",
+   "lineages": [
+    "#179"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "a test asserts on these instances",
+   "n": 1,
+   "part": "?:game.instance:226",
+   "present_in": [],
+   "program": "test fixture",
+   "role": "dev",
+   "seeds": [
+    [
+     0,
+     0
     ]
    ]
   },

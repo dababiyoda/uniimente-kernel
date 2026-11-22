@@ -944,3 +944,12 @@ function every candidate call reached, and that dispatch equals the frozen closu
 Control, game and information replicate and route again: the binding rule is satisfied, not loosened. On
 2026-10-21 probabilistic read EXPERIMENTAL. Here it reads NICHE_CAPABILITY, which is a second reading, not a
 replication, and it is kept as such. No candidate output was refuted.
+
+## 26. CI job-1 timeout and the #158 merge at `21ae7f5`
+
+**Numbering (merge of PR #189 at `42dea08b` into #196, 2026-11-22).** This section was section 24 on PR #189's tree, while #196's line already used 24 and 25; it is renumbered 26.
+
+| item | disposition |
+|---|---|
+| Job 1 cancelled on `866d477` (run 39708475199) | Not a test failure. The full suite passed in about 42 minutes, then the institutional verifier's V2 re-ran `tests/unit` and the job was cancelled at the 75-minute limit, in `verifier/v2/verify.py`. This is the third time suite growth reached the cap (30, 45, 75). The verifier needs only the checkout and the same dependencies, so it now runs as its own job, "1b · Institutional verifier V1-V5", in parallel (`3492f2b`). Each job runs the suite once, and no check is weakened or skipped. #158 met the same cancellation and raised its limit to 90 minutes (`9a35432`). The merge keeps both: the split, and 90 minutes for job 1. |
+| #158 merge at `21ae7f5` (green in CI, run 39772671638) | Brings admission v8 (15 genomes from lanes A-E) and v9 (`convex_qp_dual` re-admitted DEFAULT after the stdin request transport fix, `93bf43a`), the benchmark worlds for lanes B and E, and `tests/unit/test_sources_parse.py`, which parses every tracked Python file under the suite's interpreter. The workflow conflict is resolved as above. The evidence index is rebuilt with its builder: 24 genomes are added (83 in all), and no recipe, operation or genome verdict changed. The exposure ledger is regenerated on the converged tree (467 records: #158 377, #179 48, both 42; #179's count is unchanged). The owned-source inventory is unchanged. The map is pinned to `21ae7f5` with 26 new kept entries. `scripts/admission_readme.py` is now #158's bytes, because #158 adopted the 3.11 fix at `c04b0f1`. The four P6 converged v1 verdicts still bind. |

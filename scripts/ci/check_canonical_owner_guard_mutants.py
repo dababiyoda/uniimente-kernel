@@ -70,6 +70,7 @@ NEW_RECORD = "test_a_new_record_fails_until_it_is_pinned"
 CANONICAL_EXACT = "test_a_decided_records_canonical_qualnames_equal_the_pin"
 REBIND_TREE = "test_no_runtime_file_rebinds_a_registered_qualname_or_a_registered_class_attribute"
 REBIND = "test_a_registered_qualname_rebound_from_another_module_or_through_a_namespace_alias_fails"
+IMPORTED_TESTS = "test_a_tests_module_that_runtime_code_imports_is_scanned_as_runtime"
 # A new CANONICAL record that names candidate side A of the undecided goal runtime as its owner and side B as its
 # ALTERNATE (round 5's X1), with no ruling and no change to the test.
 ADOPTED_RECORD = ("  - record_id: OWN-FN-GOAL-RUNTIME-ADOPTED\n    function: the goal runtime, adopted\n"
@@ -660,6 +661,11 @@ MUTANTS = [
     ("MW-C round 7: a name bound to the module namespace no longer checked",
      [("replace", TESTS, "                and node.value is not None and id(node.value) in namespace]\n",
        "                and node.value is not None and id(node.value) in namespace and False]\n")], REBIND),
+    # -- MW-C round 7 (M3): a tests/ module that runtime code imports is runtime ----------------------------------------
+    ("MW-C round 7: a disguised copy of greg.body.send_signed in tests/greg_fixtures.py, which scripts import (E2)",
+     [("append_body", "greg/body.py", "send_signed", "tests/greg_fixtures.py", "function")], BODIES),
+    ("MW-C round 7: tests/ modules imported by runtime code no longer scanned",
+     [("replace", TESTS, "            if parts[0] != TESTS_PACKAGE:\n", "            if True:\n")], IMPORTED_TESTS),
 ]
 
 

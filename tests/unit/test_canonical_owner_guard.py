@@ -35,7 +35,8 @@ The registry is ``function_owner_records`` in docs/collaboration/ARCHITECTURE-OW
    runtime file the filesystem lists (``runtime_files``). The bodies compared are exactly ``COMPARED`` (by location,
    not by content)
    (test_the_set_of_compared_registered_bodies_is_pinned). The files are every .py file under the repository root,
-   each real file once (``_once``), except tests/, docs/, top-level hidden entries and the ``SEALED`` files whose
+   each real file once (``_once``), except docs/, tests/ (but since round 7 a tests/ module that a scanned file
+   imports is scanned: ``imported_test_files``), top-level hidden entries and the ``SEALED`` files whose
    bytes still match the digest pinned there and a cortex/evaluation/freeze-*.json manifest; directory links are
    followed only inside the repository, file links wherever they point. A copy anywhere but the body's own
    registered module and qualname fails, inside its record or outside it, whatever it is called; two registered
@@ -51,7 +52,8 @@ The registry is ``function_owner_records`` in docs/collaboration/ARCHITECTURE-OW
    the methods of a registered class one by one (four real duplicates already in the tree would fail, see the
    README); a decorator that returns a different object; the 3 registered functions below ``MIN_COPY_NODES``
    (acceptance.rank, greg.improvement.attention_close_condition and claim_close_condition); and any function the
-   registry does not record. tests/ is never scanned: fixtures may copy a body on purpose.
+   registry does not record. The rest of tests/ is not scanned (fixtures may copy a body on purpose), nor is docs/,
+   whose runnable scripts (docs/evidence scripts that import tests/ among them) are outside the scan.
 
 The registry itself is pinned (``PINNED``, ``UNDECIDED_ENTRIES``, ``FOUNDER_DECISIONS``, ``MUST_FLAG``): removing a
 record or an entry, adding a record PINNED does not hold (round 6), adding a second canonical module, adding, removing
@@ -1566,7 +1568,8 @@ def unrecorded(records: list[dict], root: Path = ROOT, packages=GUARDED) -> list
 # -- guard 4: a registered function's body anywhere in the runtime tree (MW-C, 2026-11-21) --------------------------
 
 # Not runtime code: tests (fixtures may copy a body on purpose) and documents, by full top-level path prefix, never by
-# a path segment, so a copy cannot hide in a new directory that shares one of these names. SEALED_UNDER: the only
+# a path segment, so a copy cannot hide in a new directory that shares one of these names. Since round 7 (M3) a tests/
+# module that a scanned file imports is scanned all the same (``imported_test_files``): it runs. SEALED_UNDER: the only
 # other files not scanned are the frozen instruments there (``sealed_files``); every other file under it (new files,
 # edited ones, subdirectories) is scanned, because GREG imports from it (cortex.evaluation.closure).
 NOT_RUNTIME = ("tests/", "docs/")
@@ -1793,7 +1796,57 @@ def runtime_files(root: Path = ROOT, sealed: dict = SEALED):
         relative = path.relative_to(root).as_posix()
         return not relative.startswith(".") and relative not in sealed
 
-    yield from _once(_walk(Path(root), root, skip), root, scanned)
+    listed = _once(_walk(Path(root), root, skip), root, scanned)
+    yield from sorted(listed + imported_test_files(listed, root), key=lambda p: p.relative_to(root).as_posix())
+
+
+TESTS_PACKAGE = "tests"
+
+
+@lru_cache(maxsize=None)
+def _imported_names(path: Path, stamp: int, module: str) -> tuple[str, ...]:
+    """Every dotted name an import anywhere in one file names: ``import a.b`` gives a.b, ``from a import b`` gives a
+    and a.b (b may be a submodule), relative imports resolved."""
+    try:
+        tree = _parse(path, stamp)
+    except (SyntaxError, UnicodeDecodeError, ValueError, OSError):
+        return ()                                      # guard 4 reports a file that does not parse
+    out = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            out.update(alias.name for alias in node.names)
+        elif isinstance(node, ast.ImportFrom):
+            base = _resolve(node, module, path.name == "__init__.py")
+            out.add(base)
+            out.update(f"{base}.{alias.name}" for alias in node.names if alias.name != "*")
+    return tuple(sorted(out))
+
+
+def imported_test_files(files: list[Path], root: Path = ROOT) -> list[Path]:
+    """Round 7, M3: every file under tests/ that one of ``files`` imports, directly or through other such files, and
+    every package ``__init__.py`` on the way (Python runs it on import): code that runs when runtime code runs, so the
+    copy, twin, distinct and rebinding rules scan it as runtime
+    (test_a_tests_module_that_runtime_code_imports_is_scanned_as_runtime). A tests/ module nothing scanned imports
+    stays unscanned (fixtures may copy a body on purpose); so do docs/ and what only docs/ imports. Not seen: an
+    import by ``importlib``, ``__import__`` or ``exec``, or one made after ``sys.path`` is changed to put tests/ (or a
+    directory under it) first."""
+    have = {Path(path).resolve() for path in files}
+    found: dict[Path, Path] = {}
+    queue = list(files)
+    while queue:
+        path = queue.pop()
+        for dotted in _imported_names(path, path.stat().st_mtime_ns, module_name(path, root)):
+            parts = dotted.split(".")
+            if parts[0] != TESTS_PACKAGE:
+                continue
+            for depth in range(1, len(parts) + 1):
+                base = Path(root, *parts[:depth])
+                for candidate in (base / "__init__.py", base.with_suffix(".py")):
+                    real = candidate.resolve()
+                    if candidate.is_file() and real not in have and real not in found:
+                        found[real] = candidate
+                        queue.append(candidate)
+    return sorted(found.values(), key=lambda p: p.relative_to(root).as_posix())
 
 
 def _functions(tree: ast.Module, kinds=FUNCTIONS):
@@ -3406,3 +3459,29 @@ def test_a_registered_qualname_rebound_from_another_module_or_through_a_namespac
     for relative in namespace_controls:
         assert binding_problems([ns_record(module_name(Path(root, relative), root))], root) == [], relative
 
+def test_a_tests_module_that_runtime_code_imports_is_scanned_as_runtime(tmp_path):
+    # Round 7, M3 (skeptic E2): tests/ was never scanned because fixtures may copy a body on purpose, but runtime code
+    # imports it (scripts/measure_body_memory.py, scripts/greg_transfer_eval.py, scripts/greg_whole_machine_trace.py
+    # and scripts/ci/prove_oci.py import tests.greg_fixtures or tests.unit.test_greg_oci), so a convenience copy in a
+    # shared fixtures module reached code that runs, unseen. A tests/ module a scanned file imports, at any depth and
+    # through other such modules, is now scanned by the copy, twin, distinct and rebinding rules; the rest of tests/
+    # and all of docs/ stay unscanned (docs/evidence scripts that import tests/ are outside the scan).
+    relay = OWNER_BODY.replace("def send_signed(", "def relay(")
+    root = _tree(tmp_path, {
+        "greg/__init__.py": "", "greg/body.py": OWNER_BODY,
+        "scripts/measure.py": "from tests.greg_fixtures import relay\n\n\ndef main():\n    from tests import shared\n"
+                              "    return shared\n",
+        "tests/greg_fixtures.py": relay + "\nfrom tests.helpers.deep import helper\n",
+        "tests/helpers/__init__.py": "", "tests/helpers/deep.py": relay.replace("def relay(", "def helper("),
+        "tests/shared.py": relay.replace("def relay(", "def shared_relay("),
+        "tests/unit/__init__.py": "", "tests/unit/test_copy.py": relay,         # a fixture copy nothing runtime imports
+        "docs/evidence/probe.py": "from tests.unit.test_copy import relay\n",    # docs/ is not scanned
+    })
+    listed = [p.relative_to(root).as_posix() for p in runtime_files(root)]
+    assert {"tests/greg_fixtures.py", "tests/helpers/__init__.py", "tests/helpers/deep.py",
+            "tests/shared.py"} <= set(listed) and not {"tests/unit/test_copy.py", "docs/evidence/probe.py"} & set(listed)
+    found = body_copy_problems([INBOX_RECORD], root)
+    assert sorted(line.split(":")[0] for line in found) == ["tests/greg_fixtures.py", "tests/helpers/deep.py",
+                                                            "tests/shared.py"], found
+    on_tree = [p.relative_to(ROOT).as_posix() for p in runtime_files() if p.relative_to(ROOT).parts[0] == "tests"]
+    assert on_tree == ["tests/greg_fixtures.py", "tests/unit/__init__.py", "tests/unit/test_greg_oci.py"], on_tree

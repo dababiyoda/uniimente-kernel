@@ -11,6 +11,7 @@ from dataclasses import asdict
 from datetime import datetime, timezone
 import hashlib
 import json
+from greg import untrusted_json
 from pathlib import Path
 
 from adapters.contract_validation import validate_contract
@@ -199,7 +200,7 @@ class ResearchLine:
         elif self.fixture_analysis is not None:
             raw, mode = self.fixture_analysis, "fixture"
         else:
-            raw = json.loads(self.model.complete(SYSTEM, json.dumps({
+            raw = untrusted_json.loads(self.model.complete(SYSTEM, json.dumps({   # the model's reply
                 "operator_job": self.job, "sources": state["sources"]})))
             mode = "local_model"
         return {"analysis": validate_analysis(raw, state["sources"]), "inference_mode": mode}

@@ -31,6 +31,7 @@ import base64
 import hashlib
 import http.server
 import json
+from greg import untrusted_json   # remote ActivityPub bodies are untrusted (re-check of 9a14b8a5, finding 6)
 import threading
 import urllib.error
 import urllib.parse
@@ -173,7 +174,10 @@ class Instance:
         status, _, body = _http("GET", url.split("#", 1)[0])
         if status != 200:
             raise FederationError(f"actor {url} not fetchable ({status})")
-        return json.loads(body)
+        try:
+            return untrusted_json.loads(body)
+        except ValueError:
+            raise FederationError(f"actor {url} is not readable JSON") from None
 
     # -- inbound verification ------------------------------------------------------------------
     def verify_request(self, method: str, path: str, headers: dict, body: bytes) -> tuple[bool, str, dict | None]:
@@ -221,7 +225,7 @@ class Instance:
             self._save(s)
             return 401, {"error": why}
         try:
-            activity = json.loads(body)
+            activity = untrusted_json.loads(body)
         except ValueError:
             return 400, {"error": "body is not JSON"}
         if activity.get("actor") != sender["id"]:
@@ -330,7 +334,10 @@ class Instance:
         status, _, body = _http("GET", actor["outbox"])
         if status != 200:
             raise FederationError(f"outbox {actor['outbox']} returned {status}")
-        return json.loads(body)["orderedItems"]
+        try:
+            return untrusted_json.loads(body)["orderedItems"]
+        except (ValueError, KeyError, TypeError):
+            raise FederationError(f"outbox {actor['outbox']} is not a readable collection") from None
 
     def inbox_stream(self, name: str) -> list[dict]:
         return self._state()["actors"][name]["inbox"]

@@ -146,7 +146,8 @@ def test_the_mcp_client_answer_is_read_by_the_untrusted_reader():
     """greg/mcp_tools.py's remote call reads the client's last line; a nested one is the client failing."""
     import inspect
     from greg import mcp_tools
-    source = inspect.getsource(mcp_tools._remote_act)
+    source = inspect.getsource(mcp_tools._client_answer)
+    assert "_client_answer(ctx, done" in inspect.getsource(mcp_tools._remote_act)
     # (still a source check: the parent's read runs only inside the relay namespace; the renewal path is driven for
     # real in test_a_renewed_mcp_login_survives_an_answer_too_deep_to_read)
     assert "lines = done.stdout.strip().splitlines()" in source
@@ -510,3 +511,129 @@ def test_a_renewed_mcp_login_survives_an_answer_too_deep_to_read(tmp_path, monke
     mcp_tools._keep_renewal(SimpleNamespace(secrets=broker), lines[:-1], "mcp:notes", login)
     kept = _json.loads(broker.resolve("mcp:notes", declared=("mcp:notes",)))
     assert kept["tokens"]["refresh_token"] == "new-refresh"
+
+
+def test_a_filed_link_never_lets_a_later_rejection_write_outside_the_body(tmp_path):
+    """Re-check of 9a14b8a5, finding 1: a refused link was filed as inbox/rejected/<name>, and the next rejection of
+    the same name was moved through it (shutil.move follows a link to a directory), writing a file of the sender's
+    choosing in any directory the body can write. Whoever can write the inbox can also plant such a link in
+    processed/ or faulted/ directly. Every entry is now filed under a fresh name when anything holds its name."""
+    import os
+    from greg.body import Body
+    home, key, body_id, _ = make_body(tmp_path)
+    inbox = home / "inbox"
+    victim = tmp_path / "victim"
+    victim.mkdir()
+    os.symlink(victim, inbox / "x.json")
+    with Body(home) as body:
+        body.tick()
+    assert (inbox / "rejected" / "x.json").is_symlink()
+    (inbox / "x.json").write_text('{"attacker": "content"}')
+    (inbox / "processed").mkdir(exist_ok=True)
+    os.symlink(victim, inbox / "processed" / "y.json")             # planted directly
+    (inbox / "y.json").write_text(json.dumps(sign_command(key, "BODY_PAUSE", {}, body_id=body_id)))
+    with Body(home) as body:
+        body.tick()                     # before: victim/x.json written, or shutil.Error out of the rejection path
+        assert body.paused()
+    assert list(victim.iterdir()) == []
+    rejected = sorted(p.name for p in (inbox / "rejected").iterdir())
+    assert len(rejected) == 2 and "x.json" in rejected                 # the link kept, the file beside it
+    processed = [p for p in (inbox / "processed").iterdir() if not p.is_symlink()]
+    assert len(processed) == 1 and json.loads(processed[0].read_text())["kind"] == "BODY_PAUSE"
+
+
+def test_every_way_the_mcp_client_ends_is_a_refusal_and_its_renewal_is_kept(tmp_path):
+    """Re-check of 9a14b8a5, finding 2: a client killed after printing its renewal left that line last, so
+    answer["ok"] raised KeyError out of the call; a renewal with a non-numeric expires_in raised ValueError past every
+    handler. Each is now a CapabilityError, and a readable renewal is still kept."""
+    import json as _json
+    import subprocess
+    from types import SimpleNamespace
+    import pytest
+    from greg import mcp_tools
+    from greg.capabilities import CapabilityError, SecretBroker
+    login = {"kind": "oauth", "tokens": {"access_token": "old", "refresh_token": "old"}}
+    renewal = {"access_token": "new", "refresh_token": "new-refresh", "expires_in": 60}
+
+    def answer(stdout, returncode=0):
+        broker = SecretBroker(tmp_path / f"s{len(list(tmp_path.iterdir()))}.json")
+        done = subprocess.CompletedProcess([], returncode, stdout=stdout, stderr="")
+        try:
+            return mcp_tools._client_answer(SimpleNamespace(secrets=broker), done, server="notes", token="t",
+                                            bearer="mcp:notes", login=login), broker
+        except CapabilityError as exc:
+            return exc, broker
+
+    def kept(broker):
+        try:
+            return _json.loads(broker.resolve("mcp:notes", declared=("mcp:notes",)))["tokens"]["refresh_token"]
+        except Exception:
+            return None
+    killed, broker = answer(_json.dumps({"renewed": renewal}) + "\n", returncode=-9)
+    assert isinstance(killed, CapabilityError) and "without an answer" in str(killed)
+    assert kept(broker) == "new-refresh"
+    bad = dict(renewal, expires_in="soon")
+    for stdout in (_json.dumps({"ok": {"value": 1, "provider_claims_read_only": False}, "renewed": bad}),
+                   _json.dumps({"renewed": bad}) + "\nnot json"):
+        refused, _ = answer(stdout)
+        assert isinstance(refused, CapabilityError), stdout
+    fine, broker = answer(_json.dumps({"renewed": renewal}) + "\n"
+                          + _json.dumps({"ok": {"value": 1, "provider_claims_read_only": False}, "renewed": renewal}))
+    assert fine["ok"]["value"] == 1 and kept(broker) == "new-refresh"
+
+
+def test_the_planner_reads_escaped_quotes_and_decoder_limits_correctly():
+    """Re-check of 9a14b8a5, finding 4 (present before): the scan recomputed its escape flag before testing the quote,
+    so \\" always ended the string, and a valid reply with an odd count of escaped quotes read as "no JSON object";
+    a number past the decoder's digit limit raised out of the scan instead of trying the next brace."""
+    import pytest
+    from greg.missions import MissionError
+    from greg.planner import _first_json_object
+    assert _first_json_object(r'{"a": "x\"y"}') == {"a": 'x"y'}
+    assert _first_json_object(r'{"p": "c:\\"} then {"q": 1}') == {"p": "c:\\"}
+    assert _first_json_object('{"a": ' + "1" * 5000 + '} {"b": 2}') == {"b": 2}
+    # finding 3, deliberate: more than MAX_DEPTH unclosed braces before an object refuse the reply
+    with pytest.raises(MissionError, match="too deeply"):
+        _first_json_object("{" * 300 + ' {"ok": 1}')
+
+
+def test_a_nested_search_response_is_refused_as_unreadable():
+    """Re-check of 9a14b8a5, finding 6: the SearXNG reader (and the federation, embassy RPC and research-line model
+    readers beside it) read remote bodies with plain json.loads; a deep array raised RecursionError past their
+    ValueError handlers. They read with the untrusted reader now."""
+    import contextlib
+    import io
+    import pytest
+    from foundry.research_sources import SearxSearch
+    search = SearxSearch()
+
+    class Opener:
+        def open(self, request, timeout):
+            # 60 KB: under the reader's 128 KiB cap, and deep enough that plain json.loads raises RecursionError
+            return contextlib.closing(io.BytesIO(("[" * 30000 + "]" * 30000).encode()))
+    search.opener = Opener()
+    with pytest.raises(ValueError) as raised:
+        search.search("anything")
+    assert not isinstance(raised.value, RecursionError)
+
+
+def test_an_inbox_subfolder_replaced_by_a_link_is_never_written_through(tmp_path):
+    """Finding 1's other half: inbox/rejected/ itself replaced by a link to a directory outside the body. Filing an
+    entry there refuses the link; the running body records the fault instead of writing through it."""
+    import os
+    import shutil as _shutil
+    from greg.body import Body
+    home, key, body_id, _ = make_body(tmp_path)
+    inbox = home / "inbox"
+    victim = tmp_path / "victim"
+    victim.mkdir()
+    if (inbox / "rejected").exists():
+        _shutil.rmtree(inbox / "rejected")
+    os.symlink(victim, inbox / "rejected")
+    (inbox / "bad.json").write_text("not json")
+    with Body(home) as body:
+        try:
+            body.tick()
+        except OSError:
+            pass                        # a running body exits on a fault it cannot file; it never writes through
+    assert list(victim.iterdir()) == []

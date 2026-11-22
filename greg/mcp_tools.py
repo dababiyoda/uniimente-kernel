@@ -421,24 +421,7 @@ def _remote_act(params: dict, ctx: InvocationContext) -> dict:
     finally:
         shutil.rmtree(scratch, ignore_errors=True)
         shutil.rmtree(sockets, ignore_errors=True)
-    lines = done.stdout.strip().splitlines()
-    try:
-        answer = untrusted_json.loads(lines[-1])
-        if answer.get("renewed") and login:          # the renewed login goes back to the broker, never the record
-            mcp_login.store_renewal(ctx.secrets, str(bearer), login, answer.pop("renewed"))
-    except untrusted_json.TooDeep:
-        # The client finished and printed the server's answer, nested past what GREG reads: the call ran on the
-        # server. Keep the login it renewed (printed alone, first) so the next call still works, and say what
-        # happened instead of "GREG's client failed" (re-check of 6933be8c, F4).
-        _keep_renewal(ctx, lines[:-1], bearer, login)
-        raise CapabilityError(f"MCP server {server}: the call ran, but the server's answer nests deeper than "
-                              f"{untrusted_json.MAX_DEPTH} levels and is not read") from None
-    except (ValueError, IndexError, RecursionError):
-        _keep_renewal(ctx, lines[:-1], bearer, login)
-        tail = " ".join(done.stderr.split())[-300:].replace(token, "[credential]") if token else done.stderr[-300:]
-        raise CapabilityError(f"MCP server {server}: GREG's client failed (exit {done.returncode}): {tail}") from None
-    if "error" in answer:
-        raise CapabilityError(f"MCP server {server}: {answer['error']}"[:700])
+    answer = _client_answer(ctx, done, server=server, token=token, bearer=bearer, login=login)
     value = answer["ok"]["value"]
     text = value if isinstance(value, str) else json.dumps(value, sort_keys=True, default=str)
     if len(text.encode()) > MAX_RESULT_BYTES:
@@ -451,16 +434,56 @@ def _remote_act(params: dict, ctx: InvocationContext) -> dict:
                             **({"login_renewed": True} if renewal else {})}}
 
 
+def _client_answer(ctx, done, *, server, token, bearer, login) -> dict:
+    """The MCP client's answer line, read as untrusted output; every way it can end without one is a
+    CapabilityError, and a login it renewed is kept whatever happened to the answer."""
+    lines = done.stdout.strip().splitlines()
+    tail = " ".join(done.stderr.split())[-300:].replace(token, "[credential]") if token else done.stderr[-300:]
+    try:
+        answer = untrusted_json.loads(lines[-1])
+    except untrusted_json.TooDeep:
+        # The client printed output nested past what GREG reads: the call may have run on the server. Keep the
+        # login it renewed (printed alone, first) so the next call still works, and say what happened instead of
+        # "GREG's client failed" (re-checks of 6933be8c, F4, and 9a14b8a5, finding 2).
+        _keep_renewal(ctx, lines[:-1], bearer, login)
+        raise CapabilityError(f"MCP server {server}: the call may have run, but GREG's client printed output nested "
+                              f"deeper than {untrusted_json.MAX_DEPTH} levels, which is not read") from None
+    except (ValueError, IndexError, RecursionError):
+        _keep_renewal(ctx, lines[:-1], bearer, login)
+        raise CapabilityError(f"MCP server {server}: GREG's client failed (exit {done.returncode}): {tail}") from None
+    if not isinstance(answer, dict) or not ({"ok", "error"} & set(answer)):
+        # the client ended before its answer line (killed, or a BaseException): its last line is the renewal
+        # printed first, or nothing GREG wrote; answer["ok"] raised KeyError (re-check of 9a14b8a5, finding 2)
+        _keep_renewal(ctx, lines, bearer, login)
+        raise CapabilityError(f"MCP server {server}: GREG's client ended without an answer (exit {done.returncode}): "
+                              f"{tail}")
+    if answer.get("renewed") and login:          # the renewed login goes back to the broker, never the record
+        if not _store_renewal(ctx, bearer, login, answer.pop("renewed")):
+            raise CapabilityError(f"MCP server {server}: the login the service renewed could not be read; run "
+                                  f"`greg mcp login` again")
+    return answer
+
+
+def _store_renewal(ctx, bearer, login, tokens) -> bool:
+    """Keep a renewed token response; False when the service's response cannot be stored (a non-numeric expires_in
+    raised ValueError past every handler; re-check of 9a14b8a5, finding 2)."""
+    from greg import mcp_login
+    try:
+        mcp_login.store_renewal(ctx.secrets, str(bearer), login, tokens)
+    except (ValueError, TypeError, KeyError, AttributeError):
+        return False
+    return True
+
+
 def _keep_renewal(ctx, lines, bearer, login) -> None:
     """A renewed login the MCP client printed alone before its answer line, stored when that answer is unreadable."""
     if not login:
         return
-    from greg import mcp_login
     for line in lines:
         try:
             item = untrusted_json.loads(line)
         except ValueError:
             continue
         if isinstance(item, dict) and set(item) == {"renewed"} and item["renewed"]:
-            mcp_login.store_renewal(ctx.secrets, str(bearer), login, item["renewed"])
+            _store_renewal(ctx, bearer, login, item["renewed"])
             return

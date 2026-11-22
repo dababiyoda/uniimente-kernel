@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import ipaddress
 import json
+from greg import untrusted_json
 import urllib.request
 from datetime import datetime, timezone
 from urllib.parse import urlencode, urlsplit
@@ -91,7 +92,7 @@ class SearxSearch:
             raw = response.read(MAX_JSON + 1)
         if len(raw) > MAX_JSON:
             raise ValueError("search response exceeds 128 KiB")
-        data = json.loads(raw)
+        data = untrusted_json.loads(raw)       # the search service's body (re-check of 9a14b8a5, finding 6)
         if not isinstance(data, dict) or "results" not in data:
             raise ValueError("invalid SearXNG response")
         warnings = data.get("unresponsive_engines", [])

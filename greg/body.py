@@ -28,7 +28,6 @@ from greg import untrusted_json
 import os
 from pathlib import Path
 import secrets
-import shutil
 import signal
 import stat
 import sys
@@ -1142,10 +1141,10 @@ class Body:
                     "at": iso(self.clock()),
                     **({"digest": sha256_json(envelope)} if isinstance(envelope, dict) else {}),
                     **({"consumed": consumed} if consumed else {})}, key=key)
-            shutil.move(str(path), self.layout.rejected / path.name)
+            _file_into(path, self.layout.rejected)
             return {"status": "REJECTED", "file": path.name, "reason": str(exc)[:300]}
         try:
-            shutil.move(str(path), self.layout.processed / path.name)
+            _file_into(path, self.layout.processed)
         except OSError as exc:
             exc.applied = outcome     # the command was accepted and applied; only its file could not be filed
             raise
@@ -1164,12 +1163,10 @@ class Body:
             raw = None
         recorded = {e.payload["kept_as"] for e in self.journal.replay("command.faulted")}
         try:
-            self.layout.faulted.mkdir(exist_ok=True)
-            target = self.layout.faulted / path.name
-            if target.exists() or f"inbox/faulted/{target.name}" in recorded:
-                # never overwrite a file set aside earlier, nor reuse the name of one recorded (and since removed)
-                target = target.with_name(f"{path.stem}.{secrets.token_hex(4)}{path.suffix}")
-            shutil.move(str(path), target)       # first, so a crash before the record loses no bytes
+            # never overwrite a file set aside earlier (nor a link in its place), nor reuse the name of one
+            # recorded and since removed; moved first, so a crash before the record loses no bytes
+            target = _file_into(path, self.layout.faulted,
+                                taken={k.split("/")[-1] for k in recorded if k.startswith("inbox/faulted/")})
             kept_as = f"inbox/faulted/{target.name}"
         except OSError:
             # inbox/faulted cannot take it (missing permission, a file in its place): set it aside in place, out of
@@ -1636,9 +1633,27 @@ def _intake_shape(item) -> str | None:
     return None
 
 
-def _move(path: Path, folder: Path):
+def _file_into(path: Path, folder: Path, *, taken=frozenset()) -> Path:
+    """Move one inbox or intake entry into ``folder`` under its own name, or a fresh one when anything (a link
+    included) already has that name, and return where it went.
+
+    ``os.rename`` never follows a link at the destination, and ``folder`` must be a real directory: whoever can
+    write the inbox can plant a link in it or in its subfolders. ``shutil.move`` into ``folder / name`` followed a
+    link to a directory there and wrote the entry inside it, so a refused link filed under inbox/rejected/ let the
+    next rejection of the same name write a file of the sender's choosing in any directory the body can write
+    (re-check of 9a14b8a5, finding 1); a same-name entry also replaced the bytes of an earlier one."""
     folder.mkdir(mode=0o700, exist_ok=True)
-    os.replace(path, folder / path.name)
+    if not stat.S_ISDIR(os.lstat(folder).st_mode):
+        raise OSError(errno.ENOTDIR, "not a directory (a link is refused)", str(folder))
+    target = folder / path.name
+    while os.path.lexists(target) or target.name in taken:
+        target = folder / f"{path.stem}.{secrets.token_hex(4)}{path.suffix}"
+    os.rename(path, target)
+    return target
+
+
+def _move(path: Path, folder: Path):
+    _file_into(path, folder)
 
 
 def drop_intake(home: str | Path, *, source: str, content: str, channel: str) -> Path:

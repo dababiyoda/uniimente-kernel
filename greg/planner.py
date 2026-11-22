@@ -739,7 +739,13 @@ def _first_json_object(text: str) -> dict:
     same state a scan started there would be (outside a string, no escape pending), so the close it finds for that
     brace, or its reaching the end without one, holds for that start too and is remembered. Rescanning from every
     brace was O(n^2): a reply of a few hundred kilobytes of unclosed braces took minutes (re-checks of bdfca22d, M3,
-    and 6933be8c, F3). A brace deeper than MAX_DEPTH refuses the reply, as a decoded one would be refused."""
+    and 6933be8c, F3).
+
+    A scan that meets a brace deeper than MAX_DEPTH refuses the whole reply, as a decoded one would be refused. This
+    is a deliberate change: a reply with more than MAX_DEPTH unclosed braces before a valid object (or that many
+    braces inside a string the scan has to cross) was answered from that later object before and is refused now
+    (re-check of 9a14b8a5, finding 3). Bounding each start instead would rescan up to MAX_DEPTH braces from every
+    brace, O(MAX_DEPTH * n) with a large constant; a model reply like that is refused, never guessed at."""
     close = {}           # index of a "{" -> index of its "}", or None when it never closes
     start = text.find("{")
     while start != -1:
@@ -748,8 +754,14 @@ def _first_json_object(text: str) -> dict:
             for index in range(start, len(text)):
                 ch = text[index]
                 if in_string:
-                    escape = (ch == "\\" and not escape)
-                    if ch == '"' and not escape:
+                    # an escaped character is skipped whole: before, the flag was recomputed before the quote was
+                    # tested, so \" always ended the string and a valid reply with an odd count of escaped quotes
+                    # read as "no JSON object" (re-check of 9a14b8a5, finding 4)
+                    if escape:
+                        escape = False
+                    elif ch == "\\":
+                        escape = True
+                    elif ch == '"':
                         in_string = False
                     continue
                 if ch == '"':
@@ -772,7 +784,7 @@ def _first_json_object(text: str) -> dict:
                 value = untrusted_json.loads(text[start:end + 1])
             except untrusted_json.TooDeep:
                 raise MissionError("model reply nests its JSON too deeply to read") from None
-            except json.JSONDecodeError:
+            except ValueError:          # not JSON, or past a decoder limit (int digits): try the next brace
                 value = None
             if isinstance(value, dict):
                 return value

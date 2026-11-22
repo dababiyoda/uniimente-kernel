@@ -519,13 +519,13 @@ def test_an_applied_command_whose_file_could_not_be_filed_is_never_called_unacce
     drop(home, signed(key, body_id, "MISSION", mission(
         "m:held", checks=[note_check("n", note, "x")], strategies=[write_strategy("w", "n.txt", "x", ["n"])],
         capabilities=["fs.read", "fs.write"], targets=("fs:*", "workspace:n.txt"))), "0-mission.json")
-    real = body_module.shutil.move
+    real = body_module._file_into       # every inbox move goes through it (it replaced shutil.move)
 
-    def failing(src, dst):
-        if "processed" in str(dst):
+    def failing(path, folder, **kwargs):
+        if "processed" in str(folder):
             raise OSError("inbox/processed is not writable")
-        return real(src, dst)
-    monkeypatch.setattr(body_module.shutil, "move", failing)
+        return real(path, folder, **kwargs)
+    monkeypatch.setattr(body_module, "_file_into", failing)
     with Body(home, clock=clock) as b:
         b.boot()
         [outcome] = b.ingest_inbox()
@@ -580,18 +580,18 @@ def test_a_file_that_can_be_neither_read_nor_set_aside_is_skipped_and_never_bloc
     inbox = Layout(home).inbox
     (inbox / "0-poison.json").write_bytes(POISON)
     drop(home, signed(key, body_id, "BODY_RESUME", {"reason": "fixed the cause"}), "1-resume.json")
-    real_move, real_rename = body_module.shutil.move, Path.rename
+    real_move, real_rename = body_module._file_into, Path.rename      # _file_into replaced shutil.move
 
-    def no_move(src, dst):
-        if str(src).endswith("0-poison.json"):
+    def no_move(path, folder, **kwargs):
+        if str(path).endswith("0-poison.json"):
             raise OSError(36, "File name too long")
-        return real_move(src, dst)
+        return real_move(path, folder, **kwargs)
 
     def no_rename(self, target):
         if self.name == "0-poison.json":
             raise OSError(36, "File name too long")
         return real_rename(self, target)
-    monkeypatch.setattr(body_module.shutil, "move", no_move)
+    monkeypatch.setattr(body_module, "_file_into", no_move)
     monkeypatch.setattr(Path, "rename", no_rename)
     with Body(home, clock=clock) as b:
         b.boot()

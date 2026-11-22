@@ -1,0 +1,54 @@
+{
+  "intent_id": "INTENT-20261122-SYMBIOSOUP-RESEARCH-TRACK",
+  "title": "A consequence-inert artificial-life research track (SymbioSoup) that starts by reproducing CuBFF exactly",
+  "statement": "The founder attached two AI-written research reports without other words on 2026-11-22: a ChatGPT report recommending two deliberately separated systems (an experimental SymbioSoup artificial-life track and the conventional governed UNIIMENTE runtime) and a Gemini specification for a five-layer 'emergent alien intelligence'. Both put the same first step first: reproduce the canonical Computational Life / CuBFF phenomenon and build a trusted measurement kernel before inventing.",
+  "exact_source_excerpt": "The objective is not to build the Egregore. It is to reproduce the canonical phenomena and establish a trusted measurement kernel.",
+  "source_refs": [
+    "docs/intent/sources/SYMBIOSOUP-RESEARCH-REPORT-2026-11-22-source.md",
+    "docs/intent/sources/GEM-MIND-SPECIFICATION-2026-11-22-source.md"
+  ],
+  "source_location": "docs/intent/sources/SYMBIOSOUP-RESEARCH-REPORT-2026-11-22-source.md",
+  "source_date": "2026-11-22",
+  "changed_axis": "none: research capability in developmental/ only; no authority, consequence or runtime path changes.",
+  "intended_effect": "UNIIMENTE gains a verified library of mechanisms whose causal contribution (replication, composite individuality, ecological agency, predictive modelling, cooperation, functional modularity) has been experimentally isolated; only mechanisms that beat conventional alternatives are proposed for the governed architecture (the report's six-month success condition, compiled to an effect).",
+  "executable_interpretation": "Stage A, first step: developmental/bff.py is a byte-exact Python reference of CuBFF bff_noheads (interpreter, SplitMix64 initialisation, 2^-12 per-byte mutation before execution, Fisher-Yates pairing, CheckSelfRep), read from the CuBFF source at f212e849, with tests and bounded emergence runs. Metaphor/literal split (INTENT-0030): 'symbiogenesis', 'metabolism', 'organs', 'alien intelligence' are mechanism-discovery prompts; the literal requirement is only what each stage gate measures. Evolved bytes are data to the host: never code, paths, commands or messages.",
+  "owner": "Alfonso (founder); developmental/ maintainers",
+  "state": "exploratory",
+  "status": "STAGE_A_REFERENCE_DIFFERENTIALLY_VERIFIED_AGAINST_CUBFF",
+  "authority_level": "none",
+  "consequence_class": "read_only (simulation inside the process; no external effect)",
+  "binding_scope": "developmental/ research laboratory; tests/evidence/bff-reference-2026-11-22/",
+  "constitutional_constraints": [
+    "no evolved artifact gains execution authority or leaves the VM as code",
+    "no self-modifying production code; generated or evolved capability never self-attaches or self-promotes",
+    "stage gates authorize nothing; graduation of any mechanism is a founder decision",
+    "AI-written reports are leads; their claims are verified or labelled unverified"
+  ],
+  "success_evidence": [
+    "tests/unit/test_developmental_bff.py",
+    "tests/unit/test_developmental_bff_differential.py (re-checks the recorded CuBFF output without the binary)",
+    "tests/evidence/bff-reference-2026-11-22/differential/ (2026-11-22: CuBFF f212e849 built with make CUDA=0, g++ 13.3.0; 12 of 12 soup checkpoints byte-identical for seeds 0 and 1 at 1,024 programs through 321 epochs; 800 of 800 tapes identical in final bytes and operation count; 114 of 114 CheckSelfRep scores identical, including full replicators scoring 64)",
+    "tests/evidence/bff-reference-2026-11-22/differential/scale.json and scale-logs/ (Stage A scale, 8 seeds, inconclusive)",
+    "tests/evidence/bff-reference-2026-11-22/ (bounded emergence runs)"
+  ],
+  "failure_evidence": [
+    "Stage A falsification gate (report p.23): differential mismatch with CuBFF on any deterministic tape, or an emergence distribution grossly incompatible with ~40% within 16k epochs at 131,072 programs"
+  ],
+  "dependencies": [
+    "differential test against the CuBFF binary: DONE 2026-11-22, after the founder asked for it in this session's chat ('build CuBFF with make CUDA=0 and run the differential test'); no mismatch was found, so developmental/bff.py was not changed",
+    "canonical-scale reproduction (131,072 programs, 16,000 epochs, 50-100 seeds): a first run of CuBFF itself on CPU, 2026-11-22, finished 8 seeds; 3 transitioned (37.5%, exact 95% interval 8.5%-75.5%), which contains the paper's ~40% but is inconclusive at 8 seeds; 50-100 seeds remain open (about 17 CPU-minutes on 4 cores per non-transitioning seed)"
+  ],
+  "conflicts": [
+    "Gemini specification: self-rewriting agent code and a Darwin Gödel Machine archive conflict with the authority rules unless confined to a consequence-inert sandbox with external evaluators; preserved as leads",
+    "both reports cite 2026 arXiv work (2607.01483, 2607.09211, 2609.10817, 2609.36126) that could not be fetched here (arxiv.org refused by the egress proxy): unverified"
+  ],
+  "next_review_trigger": "more Stage A scale seeds (to the report's 50-100), or a Stage A gate decision by the founder",
+  "supersedes": [],
+  "superseded_by": [],
+  "implementation_refs": [
+    "developmental/bff.py",
+    "tests/unit/test_developmental_bff.py",
+    "tests/evidence/bff-reference-2026-11-22/"
+  ],
+  "authority_delta": "none"
+}

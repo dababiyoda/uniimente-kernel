@@ -1,0 +1,82 @@
+{
+ "cubff_commit": "f212e849027c98fcf4b242eccfb5fed435223e23",
+ "programs": 131072,
+ "max_epochs": 16000,
+ "criterion": "number_selfreps >= 13108 (10% of the soup) at a logged epoch",
+ "summary": {
+  "finished_seeds": 8,
+  "transitions": 3,
+  "rate": 0.375,
+  "clopper_pearson_95": [
+   0.0852,
+   0.7551
+  ],
+  "paper_rate_reference": 0.4,
+  "paper_rate_inside_interval": true,
+  "verdict": "inconclusive: too few seeds to test the paper's ~40%"
+ },
+ "seeds": [
+  {
+   "seed": 0,
+   "logged_rows": 12,
+   "outcome": "transition",
+   "transition_epoch": 2817,
+   "selfreps_at_transition": 43052,
+   "higher_entropy_before": 0.722102,
+   "higher_entropy_at": 2.533667
+  },
+  {
+   "seed": 1,
+   "logged_rows": 64,
+   "outcome": "no transition by 16,000 epochs",
+   "max_selfreps": 0,
+   "max_higher_entropy": 0.364137
+  },
+  {
+   "seed": 2,
+   "logged_rows": 48,
+   "outcome": "transition",
+   "transition_epoch": 12033,
+   "selfreps_at_transition": 129053,
+   "higher_entropy_before": 1.192122,
+   "higher_entropy_at": 4.017161
+  },
+  {
+   "seed": 3,
+   "logged_rows": 64,
+   "outcome": "no transition by 16,000 epochs",
+   "max_selfreps": 0,
+   "max_higher_entropy": 0.381106
+  },
+  {
+   "seed": 4,
+   "logged_rows": 64,
+   "outcome": "no transition by 16,000 epochs",
+   "max_selfreps": 0,
+   "max_higher_entropy": 0.380136
+  },
+  {
+   "seed": 5,
+   "logged_rows": 64,
+   "outcome": "no transition by 16,000 epochs",
+   "max_selfreps": 0,
+   "max_higher_entropy": 0.370108
+  },
+  {
+   "seed": 6,
+   "logged_rows": 64,
+   "outcome": "no transition by 16,000 epochs",
+   "max_selfreps": 0,
+   "max_higher_entropy": 0.356239
+  },
+  {
+   "seed": 7,
+   "logged_rows": 50,
+   "outcome": "transition",
+   "transition_epoch": 12545,
+   "selfreps_at_transition": 14825,
+   "higher_entropy_before": 0.123062,
+   "higher_entropy_at": 3.052399
+  }
+ ]
+}

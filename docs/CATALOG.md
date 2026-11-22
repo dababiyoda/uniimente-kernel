@@ -14,7 +14,7 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 | Area | Files | What it holds |
 |---|---:|---|
 | [`(top)`](#doctrine-orders-and-top-level-references) | 31 | Doctrine, orders and top-level references |
-| [`intent`](#founder-intent-records-and-their-verbatim-sources) | 87 | Founder intent records and their verbatim sources |
+| [`intent`](#founder-intent-records-and-their-verbatim-sources) | 90 | Founder intent records and their verbatim sources |
 | [`collaboration`](#collaboration-records-handoffs-deliberations-reviews-reconciliations) | 199 | Collaboration records: handoffs, deliberations, reviews, reconciliations |
 | [`decisions`](#architecture-decision-records) | 6 | Architecture decision records |
 | [`deliberations`](#founder-rulings) | 1 | Founder rulings |
@@ -25,7 +25,7 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 | [`release`](#release-records) | 15 | Release records |
 | [`mechanisms`](#mechanism-cards) | 3 | Mechanism Cards |
 | [`developmental`](#developmental-mechanism-research) | 1 | Developmental mechanism research |
-| Elsewhere (`*.md`) | 84 | READMEs and notes beside code |
+| Elsewhere (`*.md`) | 85 | READMEs and notes beside code |
 
 ## Doctrine, orders and top-level references
 
@@ -87,10 +87,11 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 
 ## Founder intent records and their verbatim sources
 
-### Intent record (37)
+### Intent record (38)
 
 | File | Date | Title |
 |---|---|---|
+| [`intent/INTENT-20261122-SYMBIOSOUP-RESEARCH-TRACK.json`](intent/INTENT-20261122-SYMBIOSOUP-RESEARCH-TRACK.json) | 2026-11-22 | A consequence-inert artificial-life research track (SymbioSoup) that starts by reproducing CuBFF exactly |
 | [`intent/INTENT-20261112-CONVERGENCE-USEFUL-PATH.json`](intent/INTENT-20261112-CONVERGENCE-USEFUL-PATH.json) | 2026-11-12 | Convergence is the next engineering outcome; then one useful operational path, a second case, and review findings turned |
 | [`intent/INTENT-20261111-REVOKED-DEVICE-AUTHORITY.json`](intent/INTENT-20261111-REVOKED-DEVICE-AUTHORITY.json) | 2026-11-11 | Revoking a device voids its unused authority; completed effects and history stay; a suspected compromise opens a review |
 | [`intent/INTENT-20261111-ABSOLUTE-OPUS-MAXIMUS.json`](intent/INTENT-20261111-ABSOLUTE-OPUS-MAXIMUS.json) | 2026-11-11 | Complete-machine execution on two tracks: engineering never waits for acceptance, and acceptance is never manufactured |
@@ -129,10 +130,12 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 | [`intent/INTENT-0027-organize-around-existing-work.md`](intent/INTENT-0027-organize-around-existing-work.md) |  | Intent Record INTENT-0027 |
 | [`intent/INTENT-0001-uniimente-as-legal-principal.md`](intent/INTENT-0001-uniimente-as-legal-principal.md) |  | Intent Record INTENT-0001 |
 
-### Verbatim founder source (50)
+### Verbatim founder source (52)
 
 | File | Date | Title |
 |---|---|---|
+| [`intent/sources/SYMBIOSOUP-RESEARCH-REPORT-2026-11-22-source.md`](intent/sources/SYMBIOSOUP-RESEARCH-REPORT-2026-11-22-source.md) | 2026-11-22 | SymbioSoup research report, supplied by the founder 2026-11-22 (verbatim text) |
+| [`intent/sources/GEM-MIND-SPECIFICATION-2026-11-22-source.md`](intent/sources/GEM-MIND-SPECIFICATION-2026-11-22-source.md) | 2026-11-22 | "Engineering an Emergent Alien Intelligence", supplied by the founder 2026-11-22 (verbatim text) |
 | [`intent/sources/project-context-2026-11-12/manifest.json`](intent/sources/project-context-2026-11-12/manifest.json) | 2026-11-12 | passive_project_source_snapshot |
 | [`intent/sources/project-context-2026-11-12/README.md`](intent/sources/project-context-2026-11-12/README.md) | 2026-11-12 | Original project sources available to repository workers |
 | [`intent/sources/project-context-2026-11-12/11-DALEOBANKS-DALI-LEONARDO-DA-VINCI-BANKSY..txt`](intent/sources/project-context-2026-11-12/11-DALEOBANKS-DALI-LEONARDO-DA-VINCI-BANKSY..txt) | 2026-11-12 |  |
@@ -1009,6 +1012,7 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 | [`tests/evidence/antifragility-v3b-2026-10-22/PREREGISTRATION.md`](../tests/evidence/antifragility-v3b-2026-10-22/PREREGISTRATION.md) | Antifragility v3b: the dimension-and-objective key. Pre-registration |
 | [`tests/evidence/antifragility-v3b-2026-10-22/README.md`](../tests/evidence/antifragility-v3b-2026-10-22/README.md) | Antifragility v3b: result |
 | [`tests/evidence/append-only-witness-20261014/results.md`](../tests/evidence/append-only-witness-20261014/results.md) | Append-only witness — evidence (2026-10-14) |
+| [`tests/evidence/bff-reference-2026-11-22/differential/README.md`](../tests/evidence/bff-reference-2026-11-22/differential/README.md) | Differential test: `developmental/bff.py` against the CuBFF binary |
 | [`tests/evidence/cognition-residual-2026-10-13/README.md`](../tests/evidence/cognition-residual-2026-10-13/README.md) | Residual cognition safeguards — 2026-10-13 |
 | [`tests/evidence/cortex-seed-v0.2.3/README.md`](../tests/evidence/cortex-seed-v0.2.3/README.md) | Cortex 0.2.3: optimality proofs are bound, and only a conclusive engine confirms |
 | [`tests/evidence/cross-organ-mission-20261014/results.md`](../tests/evidence/cross-organ-mission-20261014/results.md) | Cross-organ mission — evidence (2026-10-14) |

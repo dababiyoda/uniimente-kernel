@@ -1,0 +1,1787 @@
+# SymbioSoup research report, supplied by the founder 2026-11-22 (verbatim text)
+
+Status: a file the founder attached, without other words, to Claude Code session `session_0174qtqgRsbJVdBkBitTyxkf`
+on 2026-11-22: `Mnd_research_chat.pdf` (30 pages, sha256 `fa42d2aebf39f01d43bff008de940ca2c881eb9e59362ddfd439a72e8f58157a`). It is a ChatGPT-generated research report; the text
+below is `pdftotext -layout` of that file, unedited. Source for `INTENT-20261122-SYMBIOSOUP-RESEARCH-TRACK`.
+
+An AI-written report is a lead, not evidence: its citations were not re-verified in this session (arxiv.org is refused
+by this environment's egress proxy), and several cite 2026 work the implementing agent cannot independently confirm.
+Chat attachments are intent evidence, not cryptographic runtime authentication. This grants no authority.
+
+```text
+UNIIMENTE Artificial Egregore: Technical Research
+Report on a Self-Constructing Symbiogenetic
+Computational Substrate
+Research finding and architecture decision
+The strongest conclusion from the primary literature is that the useful engineering lesson from Blaise
+Agüera y Arcas and Google’s Paradigms of Intelligence program is not “build biological cells in software,”
+and not even “let random code evolve until intelligence appears.” The experimentally defensible lesson is
+narrower and more powerful: very small computational substrates can be designed so that code is
+simultaneously executable state and writable material; ecological interaction can then make reproduction,
+parasitism, cooperation, specialization, and functional computation endogenous rather than directly
+programmed. The evidence also shows that these effects depend strongly on substrate details, resource
+rules, and search volume, and that no published system has demonstrated open-ended evolution into
+general intelligence. 1
+
+
+For UNIIMENTE, the right architecture is therefore two deliberately separated systems:
+
+
+Experimental Track — SymbioSoup. A consequence-inert artificial-life research environment using a
+custom, tiny mutable-tape VM derived from BFF/Tierra principles, with conserved computational energy,
+spatial ecology, byte-level horizontal transfer, fusion/fission physics, neural “organs” only after digital
+ecology works, and exhaustive deterministic provenance.
+
+
+Production Track — UNIIMENTE institutional runtime. A conventional, auditable stateful agent
+architecture with durable workflows, model/tool adapters, authorization boundaries, event sourcing, shared
+skill repositories, human approval gates, causal evaluation, and no evolutionary code mutation in
+production. Current agent interoperability protocols such as A2A and MCP are useful here, while durable
+execution patterns such as Temporal-style event histories are much better suited than an artificial-life soup
+for operating a real institution. Google introduced A2A for secure agent-to-agent capability discovery and
+coordination; MCP’s July 2026 specification moved to a stateless protocol core and formalized long-running
+Tasks and authorization hardening; Temporal reconstructs workflow state by deterministically replaying
+event history and explicitly requires nondeterministic calls such as APIs and LLM invocations to occur
+outside the deterministic workflow path. 2
+
+
+This separation matters. The artificial-life system is an instrument for discovering mechanisms—robust
+replication, composite individuality, distributed specialization, resource-sensitive computation, adaptation
+and mutual modeling. It must not acquire operational authority merely because an experiment produced
+surprising behavior. The approximately six-month founder-guided period should therefore treat every
+evolved capability as SANDBOX or SIMULATED until Alfonso explicitly graduates an independently verified
+mechanism into the governed production architecture.
+
+
+
+
+                                                      1
+The architecture selection after comparing candidate substrates is:
+
+
+                                    Endogenous
+                       Mutation                           Ecological      Performance/
+ Substrate                                  self-                                          UNIIMENTE role
+                     robustness                          evolvability       sandboxing
+                                    modification
+
+                           High
+                       because                               Strong     Extremely small
+ BFF-derived          most byte                        evidence for         interpreter;   Primary MVP
+                                       Excellent
+ mutable tape        values can                       spontaneous             easy GPU     substrate
+                        be inert                         replication           batching
+                     data/NOPs
+
+                                                             Strong
+                                                          historical      Custom VM is     Design
+ Tierra-like        Deliberately                           ecology:          safe; more    inspiration /
+                                       Excellent
+ ISA                       high                          parasites,     implementation     second
+                                                    hyperparasites,          complexity    substrate
+                                                         symbiosis
+
+                                                        Strong 2026
+                                                                           Fast custom
+                       Medium;                         evidence for
+                                                                            interpreter;   Cross-validation
+ Z80-like soup             ISA-        Excellent       replication +
+                                                                            established    substrate
+                     dependent                        task solving +
+                                                                              semantics
+                                                        cooperation
+
+                                                     Plausible, but
+                                                    standard Forth
+                                                         does not
+ Custom               Potentially                                                          Later
+                                                      expose code
+ Forth/                   high if          Good                         Simple CPU VM      comparative
+                                                          space as
+ threaded VM         redesigned                                                            substrate
+                                                          writable
+                                                          portable
+                                                          memory
+
+                                                                                           Control
+                                                     Mature digital             Mature     platform, but
+ Avida-like VM             High            Good
+                                                         evolution      instrumentation    reproduction is
+                                                                                           usually explicit
+
+                            High
+                                                                                           Production
+                        software                          Poor as a
+                                           Poor                                Excellent   organ sandbox,
+ WebAssembly          safety, low                         genotype
+                                        natively                            sandbox/JIT    not primordial
+                       mutation                           substrate
+                                                                                           soup
+                     robustness
+
+
+
+
+                                                     2
+                                     Endogenous
+                       Mutation                             Ecological     Performance/
+  Substrate                                  self-                                           UNIIMENTE role
+                     robustness                            evolvability      sandboxing
+                                     modification
+
+                     Low under
+                        random
+                      mutation                                                               Production
+                                                                                Excellent
+                       because       Intentionally                                           policy/
+  eBPF                                                           Poor        constrained
+                         verifier            poor                                            instrumentation,
+                                                                               execution
+                         rejects                                                             not evolution
+                     malformed
+                      programs
+
+                                     Continuous
+                        Excellent        learned              Strong
+                                                                                             Later learned
+  Neural                 damage      state rather     developmental
+                                                                           Excellent GPU     organ /
+  cellular             tolerance             than          potential,
+                                                                                mapping      developmental
+  automata                  after     executable             unclear
+                                                                                             track
+                         training        mutable          genealogy
+                                            code
+
+WebAssembly is explicitly designed around validated modules, immutable compiled code, bounded linear
+memories and sandboxed execution; those properties are excellent for production isolation but conflict with
+evolvable self-writing instruction streams. 3 eBPF is still more restrictive: the kernel verifier symbolically
+explores reachable paths, enforces pointer and memory-safety constraints, and only admits verified
+programs, making random genotype mutation overwhelmingly likely to produce rejected code rather than
+neutral variation. 4 Standard Forth distinguishes name, code and data spaces and only standardizes
+writable data-space access; a self-modifying Forth therefore needs a deliberately non-standard threaded
+representation. 5 Avida is an exceptionally useful experimental control but its conventional digital
+organisms use explicit copy/divide machinery, making it less appropriate for the specific objective of
+discovering copying rather than supplying reproduction as a primitive. 6
+
+
+The primary recommendation is consequently: build one small custom VM whose design target is
+evolvability, not general software execution, and keep Wasm/eBPF-class technologies outside it as
+containment boundaries.
+
+
+What Computational Life actually demonstrated
+The canonical publication is:
+
+
+Blaise Agüera y Arcas, Jyrki Alakuijala, James Evans, Ben Laurie, Alexander Mordvintsev, Eyvind Niklasson,
+Ettore Randazzo, Luca Versari, “Computational Life: How Well-formed, Self-replicating Programs
+Emerge from Simple Interaction,” arXiv:2406.19108, first submitted June 27, 2024.
+https://arxiv.org/abs/2406.19108
+
+
+The paper reports that randomly initialized programs in several self-modifying computational substrates
+can spontaneously generate self-replicators without an externally specified scalar fitness function. It also
+
+
+
+
+                                                       3
+reports a counterexample: a minimal SUBLEQ-like language in which self-replicators are possible but were
+not observed to arise, already showing that computational universality alone is insufficient for accessible
+abiogenesis. 7
+
+
+The authors’ canonical implementation is:
+
+
+Paradigms of Intelligence / CuBFF
+https://github.com/paradigms-of-intelligence/cubff
+
+
+The repository states that most experiments in the paper were run using this implementation. It supports
+CUDA as well as CPU execution and is Apache-2.0 licensed. 8
+
+
+Exact BFF mechanics
+
+The code resolves several ambiguities that secondary summaries often introduce. In the reference
+implementation a program is 64 bytes, and a pair interaction concatenates two programs into one 128-
+byte mutable execution tape. The default population is 128 × 1024 = 131,072 programs. The
+interaction interpreter is capped at 8 × 1024 = 8192 executed characters/steps.        9
+
+
+
+
+The actual BFF instruction mapping implemented in bff.inc.h is:
+
+
+                        Byte interpreted as    Semantics
+
+                         +                     increment byte under head 0
+
+                         -                     decrement byte under head 0
+
+                         >                     increment head-0 address
+
+                         <                     decrement head-0 address
+
+                         }                     increment head-1 address
+
+                         {                     decrement head-1 address
+
+                         .                     copy byte under head 0 to head 1
+
+                         ,                     copy byte under head 1 to head 0
+
+                         [                     loop opening condition on head-0 cell
+
+                         ]                     loop closing condition on head-0 cell
+
+                        byte 0                 null/termination-relevant value
+
+                        every other byte       inert/comment/data
+
+Thus only ten visible operation characters are active instructions; the enormous neutral byte space is part of
+BFF’s mutational affordance. The two copy operators replace Brainfuck’s conventional I/O meaning. 10
+
+
+
+
+                                                      4
+In the headed BFF variant, the first bytes initialize the two mutable heads and execution begins after them;
+both heads wrap modulo the 128-byte concatenated tape. Since instructions and state occupy the same
+tape, execution can overwrite future instructions, past instructions, the neighboring program or itself. This
+is the important von-Neumann-like property: the same physical representation can be treated both as
+description and machine-operable material. It is an operational analogue of constructor/copier duality,
+not a proof that BFF implements von Neumann’s full universal constructor. 11
+
+
+One canonical interaction is approximately:
+
+
+
+  A[64], B[64]
+          ↓ concatenate
+  T[128]
+          ↓ optional per-byte mutation
+  execute mutable T, ≤8192 steps
+          ↓ split
+  A'[64], B'[64]
+
+
+The reference code applies random byte replacement before execution, then executes the pair, then writes
+the first and second 64-byte halves back into the population. Population interactions are repeatedly
+randomized into pairs by shuffling unless a constrained neighborhood is configured. 12
+
+
+The default background mutation probability is approximately 2^-12 = 1/4096 ≈ 0.0244% per byte/
+interacting event in the relevant reference configuration. 13 Importantly, the paper also reports
+spontaneous replication in some experiments without background mutation, because execution itself is
+mutagenic: programs overwrite one another. 7
+
+
+At canonical scale, one epoch contains about 65,536 pair interactions. The absolute worst-case
+interpreter budget is therefore:
+
+
+65,536 pairs × 8,192 steps = 536,870,912 VM steps/epoch .
+
+
+That is a ceiling; real runs may terminate earlier.
+
+
+What counts as the transition
+
+The paper does not establish a universal numerical “life threshold.” It uses multiple signatures of the
+transition: emergence and takeover by replicating structures, abrupt shifts in tracer ancestry, declining
+token diversity, and rising structured compressibility. One showcased BFF trajectory identifies a replicator at
+roughly epoch 2,354, while across 1,000 runs at approximately 0.024% mutation, roughly 40% exhibited a
+transition within 16,000 epochs. 14
+
+
+The paper introduced a “higher-order entropy” proxy intended to separate raw byte-level Shannon entropy
+from compressible higher-order structure. In the implementation this is approximated from the byte-level
+entropy and Brotli compressed size; the repo records both compressed bits-per-byte and the derived
+higher-order measure. 15 A popular third-party implementation labels a value above 3 as a transition, but
+
+
+
+
+                                                       5
+this threshold is not canonical; it is a visualization heuristic added outside the official repository. 16
+UNIIMENTE should therefore detect replication behavior directly and treat compression as corroboration,
+not as a definition of life.
+
+
+The repo’s later self-replication detector performs repeated interactions against random partners and
+applies a stability/matching heuristic; this is useful instrumentation but remains a behavioral classifier
+rather than a mathematical proof that a sequence is an autonomous copier under every partner context.
+ 17
+
+
+
+
+The strongest contradictory result
+
+The most important 2026 correction is “BFF: Simple explanations for complex phenomena” (arXiv:
+2607.01483). That follow-up reports that self-replicators can be found at least as readily by simpler random
+walks through BFF program space; the specific pairwise soup dynamics are therefore not uniquely
+necessary for locating replicators. It also distinguishes origin from ecological takeover: constraining
+ancestry can stop a lineage from dominating without preventing replicators from appearing. This
+significantly weakens any claim that the 2024 experiment discovered a unique general mechanism for
+abiogenesis.
+https://arxiv.org/abs/2607.01483
+
+
+The valid conclusion is narrower: BFF contains unusually accessible self-copying basins, and interacting
+mutable code provides one route into them. That is still extremely valuable for engineering, because it
+gives UNIIMENTE a tractable experimental substrate; it does not justify claiming that self-replication
+necessarily emerges from arbitrary computation.
+
+
+Follow-up ecology
+
+Two 2026 lines are particularly consequential.
+
+
+“Co-evolution of self-replication and function in a digital primordial soup” uses 32-byte Z80 programs,
+spatial niches and computational tasks. Programs are concatenated into a 64-byte memory, executed under
+a 512-instruction budget, and allowed to rewrite both halves. Successful polynomial evaluation changes
+interaction probability; metabolic penalties scale with computation. Spatial niches and occasional cross-
+niche interactions produce a curriculum in which replication emerges before increasingly difficult task-
+solving. A public replication repository reports a full grid of 2^19 = 524,288 programs, 32 niches and
+100,000 epochs. 18
+Paper: https://arxiv.org/abs/2607.09211
+Replication repo: https://github.com/vicgalle/coevolution-soup
+
+
+The distinction from BFF is critical: the polynomial tasks introduce an externally designed competence
+pressure. This is not “fitness-free” evolution in the strong sense. UNIIMENTE should call such experiments
+ecologically incentivized functional evolution, not spontaneous emergence of arbitrary useful computation.
+
+
+The same reproduction work provides an unusually valuable substrate-dependence test. On its Z80 fast
+interpreter, a short LDIR -based copying route makes replicators comparatively easy to discover; the same
+experimental physics on MOS 6502 produces much rarer spontaneous copiers because a longer explicit
+copy loop must assemble. The replication implementation reports approximately 100-fold lower random
+
+
+
+
+                                                      6
+copier density and much later emergence in the 6502 case. 19 That result is exactly why UNIIMENTE
+should compare multiple ISAs rather than interpreting one successful substrate as a general law.
+
+
+“Tapes Together Strong: The Co-evolution of Computation and Cooperation,” submitted September
+2026 and listed by Pi as NeurIPS 2026 work, extends the Z80 ecology by coupling execution, reproduction
+and access to shared energy through what the authors call Autopoietic Game Theory. Under scarce
+resources, stealing can destroy the common energy required for reliable execution and reproduction,
+causing defection to become self-limiting; evolved programs suppress stealing in multiple environments,
+and spatial assortment improves structural complexity and task performance. 20
+https://arxiv.org/abs/2609.10817
+
+
+I did not find a canonical Paradigms-of-Intelligence publication, as of November 22, 2026, demonstrating
+the more specific claims sometimes attached to interviews—an evolved predator/prey world with resource-
+chasing agents, explicit environmental hazards and predator–prey trophic levels all arising in one Pi follow-
+up. The verified Pi sequence is much better described as mutable soup → spatial/task niches →
+metabolically constrained function → social cooperation. Predator–prey dynamics are well established
+elsewhere in artificial-life and spatial ecological modeling, but attributing such a paper to Pi without a
+primary source would be unsupported. 21
+
+
+From von Neumann duality to a symbiogenetic substrate
+Tierra supplies an important historical precedent. Thomas Ray explicitly designed its virtual machine so
+machine code would remain sufficiently functional under mutation and recombination; CPU time serves as
+“energy,” memory as “material,” and evolved ecologies included parasites, hyperparasites, competitive
+exclusion, coexistence and symbiotic interactions. Ray also argued that digital evolution should occur inside
+a bespoke VM specifically to prevent evolved code from gaining host-machine capabilities. 22
+
+
+That principle should be non-negotiable for SymbioSoup:
+
+
+       Evolved bytes are data to the host. They never become native x86, ARM, Wasm imports, shell
+       text, source code to compile, network packets, filesystem paths or host API calls.
+
+
+Proposed MVP VM: SymbioTape
+
+The MVP should stay closer to BFF than to a full CPU. Every extra semantic primitive enlarges the human-
+designed search bias.
+
+
+A practical cell can begin as:
+
+
+
+  EntityCell {
+      tape:       byte[64..256]
+      pc:         uint16
+      read_head: uint16
+      write_head: uint16
+      energy:     uint32
+      entity_id: uint64
+
+
+
+                                                      7
+       lineage_id: uint128
+  }
+
+
+The genome, data and mutable executable code remain one byte tape. pc , heads and energy are
+environmental execution state, not privileged genetic code. The core instruction set should remain
+extremely small:
+
+
+
+  0x00           STOP / null
+  '+'            tape[r] = tape[r] + 1 mod 256
+  '-'            tape[r] = tape[r] - 1 mod 256
+  '>'            r = r + 1 mod tape_window
+  '<'            r = r - 1 mod tape_window
+  '}'            w = w + 1 mod tape_window
+  '{'            w = w - 1 mod tape_window
+  '.'            tape[w] = tape[r]
+  ','            tape[r] = tape[w]
+  '['            if tape[r]==0 jump after matching ']'
+  ']'            if tape[r]!=0 jump after matching '['
+  other byte     NOP/data
+
+
+This preserves the crucial BFF affordance: a data byte can later become an instruction by mutation or
+copying, while an instruction can be treated as data and copied. No REPLICATE , BIRTH , DIVIDE ,
+ALLOCATE_OFFSPRING , FITNESS , or REWARD opcode exists.
+
+
+Environmental coupling should occur through memory-mapped interaction pages, not privileged “think,”
+“eat” or “cooperate” opcodes. For example, during an interaction the VM can temporarily concatenate:
+
+
+
+  [self mutable region]
+  [neighbor mutable region]
+  [read-only environment sensor page]
+  [write-only actuator page]
+
+
+The sensor page might expose local resource concentration, gradients, hazard intensity, neighboring port
+advertisements and recent messages. The actuator page can contain desired movement vector, resource
+transfer quantity, membrane state and emitted message bytes. At the end of a tick, substrate physics
+interprets those bytes. This keeps biological metaphors outside the ISA while allowing evolution to discover
+how to exploit them.
+
+
+Constructor/copier dynamics
+
+A copier requires no separate reproductive primitive. If A’s code causes bytes representing A—or a modified
+descendant—to be copied into B’s writable region, B subsequently executes those bytes. A general
+constructor is the wider case in which one tape interprets a description encoded on the tape and constructs
+
+
+
+
+                                                     8
+a different executable configuration. Whether evolved programs actually reach general construction is an
+empirical question.
+
+
+That difference should be recorded explicitly:
+
+
+copy_self ≠ construct_variant ≠ construct_arbitrary_description .
+
+
+Only the third approaches the computational role of von Neumann’s universal constructor.
+
+
+Symbiogenesis
+
+Simple coexistence is not symbiogenesis. UNIIMENTE should reserve the word for experiments satisfying
+three measurable conditions:
+
+
+    1. previously independent lineages become physically inherited as a composite;
+    2. the composite persists through repeated reproductive cycles;
+    3. at least one component loses independent viability or the composite exhibits a reproducible
+       functional advantage dependent on both components.
+
+The substrate can make this possible without awarding a “symbiosis bonus.” Give neighboring cells a
+generic boundary-control field. If both entities independently emit mutually compatible boundary states,
+the physics can form a composite compartment containing both tapes. A composite receives one resource
+budget and may preserve multiple execution contexts. Division is a generic geometric fission event that
+partitions contained tapes; no lineage is given special status.
+
+
+Conceptually:
+
+
+
+  if adjacent(A,B)
+  and membrane_out(A) compatible membrane_out(B)
+  and fusion_energy_available:
+      C = compartment(
+          members=[A,B],
+          shared_energy=A.energy+B.energy-cost,
+          inherited_internal_topology=true
+      )
+
+
+The test for obligate symbiosis is not whether fusion happens, but whether component A and B eventually
+evolve such that fitness(A-alone) and/or fitness(B-alone) collapses while persistence(A+B)
+remains high under matched ecological conditions.
+
+
+Horizontal code transfer
+
+The generic mechanism should be byte transfer, not a “gene transfer” special case. Neighbor interaction
+already permits copying across boundaries. Add only a bounded message/transfection buffer, e.g.:
+
+
+
+
+                                                     9
+  TransferEvent {
+        donor_entity
+        recipient_entity
+        donor_lineage
+        recipient_lineage
+        source_offset
+        destination_offset
+        byte_count       <= 32
+        payload_hash
+        pre_genome_hash
+        post_genome_hash
+        event_id
+  }
+
+
+Programs may evolve to package, accept, reject, re-copy or integrate these fragments. A “retroviral-like”
+lineage is then a behavioral phenotype: a fragment repeatedly enters unrelated lineages and uses recipient
+execution to propagate itself. The simulation does not need or permit real host-code injection techniques.
+This is horizontal transfer only inside the artificial VM.
+
+
+Phylogeny must consequently be represented as a directed reticulate network, not a tree. Biological
+phylogenetic-network methods were created specifically because horizontal gene transfer, recombination
+and hybridization produce histories that trees cannot represent. PhyloNet, for example, models rooted
+evolutionary networks rather than simple species trees. 23
+
+
+Ecology that selects for agency instead of copy loops
+A primordial soup will aggressively exploit whatever is cheapest. If reproduction requires only copying 64
+bytes, evolution has every reason to produce shorter, faster copiers and little reason to acquire sensing,
+memory, cooperation or modeling. This is not a bug; it is the correct optimization pressure. Open-ended-
+evolution research repeatedly warns that variation, inheritance and selection alone do not guarantee
+continual novelty or complexity; artificial systems commonly plateau, collapse diversity or discover trivial
+shortcuts. 24
+
+
+The environment therefore needs physics that makes useful information economically consequential,
+rather than an arbitrary scalar reward.
+
+
+Energy accounting
+
+Every cell has finite conserved energy E . Each executed instruction costs energy according to a fixed
+physical tariff:
+
+
+
+  NOP / pointer move              1 unit
+  byte arithmetic                 1 unit
+  copy / memory write             2 units
+  branch                           1 unit
+
+
+
+
+                                                      10
+  external message                 4 + payload_bytes
+  cell movement                    distance_cost
+  memory retention/tick            ceil(active_bytes / K)
+  fusion                            fixed + membrane_area_cost
+
+
+When E=0 , execution stops. Stored memory can decay probabilistically or be reclaimed unless
+maintenance energy is paid. Energy enters only through explicit environmental transformations: resource
+capture, successful exchange, or externally verifiable computation.
+
+
+This is closer to Tierra’s CPU-time-as-energy abstraction than literal thermodynamics. 25 It should
+therefore be called a computational metabolism, not a physical simulation of free energy.
+
+
+Pi’s 2026 cooperation work provides direct evidence that making computational capacity depend on
+available energy changes game dynamics: resource theft can destroy the shared capacity on which both
+parties depend, creating endogenous pressure toward restraint or cooperation. 26
+
+
+Do not conflate this with the variational free energy of active inference. Active inference chooses policies
+using expected free energy comprising information gain and value under a generative model; that
+mathematical quantity is not the same thing as joules or VM execution tokens. 27
+
+
+Resource fields
+
+A minimal spatial environment should maintain multiple dynamically changing scalar fields:
+
+
+
+  ResourceField[x,y,k]
+  HazardField[x,y,h]
+  Occupancy[x,y]
+  DiffusionRate[k]
+  SourceSchedule[k]
+  DecayRate[k]
+
+
+Resources diffuse, decay and regenerate. Sources migrate or pulse. Hazards may destroy bytes, drain
+energy, temporarily alter ports or increase mutation. An entity that never senses or moves will eventually
+lose access when gradients shift.
+
+
+The critical design criterion is nonstationarity without arbitrary scoring. Example: resource A appears in
+one region, migrates, disappears after depletion, while resource B requires transformation by another
+program. Selection then rewards prediction and coordination only because those behaviors preserve
+energy and reproduction.
+
+
+Exogenous computation as a resource faucet
+
+Live-data or computational tasks can be added later, but they must be labeled correctly. If the environment
+pays energy for solving a polynomial, compressing a sequence, predicting a changing stream, detecting
+
+
+
+
+                                                     11
+anomalies or producing a verified transformation, then the experiment does contain an imposed functional
+selection pressure.
+
+
+The 2026 Z80 work shows this can be useful: competence-gated interactions produced replicators that
+subsequently evolved functional task performance and more efficient early halting. 19 The appropriate
+UNIIMENTE interpretation is not “no fitness function”; it is replace one scalar fitness score with a market-
+like ecology of independently verifiable resource contracts.
+
+
+Typed functional ports
+
+The most valuable bridge from artificial life to institutional architecture is not genotype transfer. It is
+functional substitutability.
+
+
+Every entity should be able to advertise ports:
+
+
+
+  {
+      "port_id": "uuid",
+      "schema_hash": "sha256:...",
+      "direction": "consume|produce",
+      "semantic_type": "prediction/vector/v1",
+      "unit": "probability",
+      "shape": [16],
+      "capacity_per_tick": 4,
+      "energy_price": 17,
+      "latency_bound": 3,
+      "confidence_field": true,
+      "provenance_required": true
+  }
+
+
+A contract binds compatible producer/consumer ports. Evolution is then free to change internal machinery
+while preserving external behavior. One program can replace another if it satisfies the same contract more
+cheaply, accurately or robustly.
+
+
+This creates the right path to division of labor:
+
+
+resource sensor → predictor → transporter → processor → replicator
+
+
+instead of every organism being a monolithic copier.
+
+
+No central fitness score is needed. Persistence follows from resource balance:
+
+
+energy earned + energy received – compute – memory – movement – transfer – repair >
+0 .
+
+
+
+
+                                                        12
+Environmental tests that force purposefulness
+
+Purpose should be evaluated interventionally, not inferred from visual complexity. A behavior is stronger
+evidence of agency when all of the following rise together:
+
+
+     • removing informative environmental channels impairs survival or task performance;
+     • scrambling a learned correlation causes performance loss;
+     • the entity changes policy when causal contingencies reverse;
+     • behavior generalizes to new resource layouts;
+     • counterfactual actions predictably influence future reachable states.
+
+Research on semantic information offers an appropriate model: resource-gathering agents can be tested by
+scrambling agent–environment correlations and measuring whether viability falls; transfer entropy
+quantifies dynamically acquired information that helps maintain viability. 28
+
+
+Empowerment provides another substrate-independent measure: the channel capacity between an agent’s
+actions and its reachable sensory futures. It can measure how much causal control an entity possesses
+without specifying a task reward. 29
+
+
+Recursive self-modeling, peer modeling, and alien cognition
+The artificial-life VM should not initially contain a neural network. Doing so before ecological agency exists
+would make it impossible to know whether learned cognition solves an ecological bottleneck or merely
+rides on a human-designed controller.
+
+
+The correct sequence is:
+
+
+evolved program → persistent ecological strategy → learned predictive organ → recursive peer/self
+model.
+
+
+World models
+
+DreamerV3 is currently one of the strongest implementable examples of model-based reinforcement
+learning: a recurrent world model predicts future latent state and reward from observations/actions, while
+an actor and critic learn from imagined trajectories. The Nature publication reports one fixed configuration
+across more than 150 tasks and trains the world model, actor and critic concurrently from replayed
+experience. 30
+Paper: https://doi.org/10.1038/s41586-025-08744-2
+Code: https://github.com/danijar/dreamerv3
+
+
+For SymbioSoup, the analogue should be much smaller: a local recurrent predictive model fed only through
+the entity’s ports. It should predict next observations and energy/resource consequences. Crucially, the
+neural state belongs to the entity and consumes metabolic energy.
+
+
+A hybrid genotype could encode:
+
+
+
+
+                                                      13
+  [evolvable VM controller]
+  [port wiring]
+  [neural architecture descriptor]
+  [quantized parameter region]
+
+
+Evolution changes the architecture and developmental rules; learning changes weights during life. This is
+Lamarckian only if learned weights are copied into descendants, so inheritance mode must be explicit and
+experimentally varied.
+
+
+Self-modeling
+
+The Pi paper “Embedded Universal Predictive Intelligence: a coherent framework for multi-agent
+learning” develops the theoretical argument that an embedded predictor cannot cleanly model “the
+environment” while excluding itself; self-prediction and recursively modeling agents using related
+algorithms naturally induce higher-order reasoning. Its universal agents are idealized theoretical
+constructions, not deployable algorithms, so UNIIMENTE should extract the principle rather than attempt
+literal implementation.
+https://arxiv.org/abs/2511.22226
+
+
+The implementable version is to train separate latent predictors:
+
+
+
+  W_t = world-state latent
+  S_t = self-policy/self-resource latent
+  P_j,t = peer-j latent
+  P_j^(2),t = predicted model peer j has of me
+
+
+Ablation establishes whether higher-order layers matter. If P_j^(2) can be removed without impairing
+behavior, claims of recursive Theory of Mind are unsupported.
+
+
+Theory of Mind
+
+DeepMind’s ToMnet meta-learns models of agents from behavioral trajectories and demonstrated
+prediction of random, algorithmic and deep-RL agents, including false-belief-style tests. 31
+https://arxiv.org/abs/1802.07740
+
+
+Model-Based Opponent Modeling recursively simulates likely opponent policies through a learned
+environment model, providing a more explicitly recursive architectural pattern.
+https://arxiv.org/abs/2108.01843
+
+
+LOLA introduced opponent-learning awareness: an agent modifies its own update by accounting for how its
+policy will alter another learner’s subsequent update; it produced cooperative strategies in repeated social
+dilemmas. 32
+https://arxiv.org/abs/1709.04326
+
+
+
+
+                                                     14
+Pi’s later work pushes the same direction. Multi-agent cooperation through learning-aware policy
+gradients removes some higher-derivative burdens and learns from traces of other agents’ adaptation,
+while Multi-agent cooperation through in-context co-player inference reports cooperation emerging
+when sequence models infer and best-respond to diverse co-players.
+https://arxiv.org/abs/2410.18636
+https://arxiv.org/abs/2602.16301
+
+
+These mechanisms are valuable because cooperation is not hard-coded as virtue. Agents model learning
+dynamics and discover that influencing another learner can improve their own future returns.
+
+
+Active inference
+
+Active inference supplies a different inductive bias: select actions that both obtain preferred outcomes and
+reduce uncertainty about hidden causal structure. The 2026 Nature Communications paper formalizes
+expected free energy in terms of expected information gain and value and uses Bayesian model reduction
+to choose observations that discriminate among candidate world structures. 27
+
+
+For UNIIMENTE, the strongest use is not philosophical. It is an experiment-selection organ: when an entity
+has competing causal hypotheses about another entity or resource field, allocate scarce actions toward
+observations expected to disambiguate them.
+
+
+Neural cellular automata and alternative computation
+
+Pi’s September 2026 “Reasoning with Neural Cellular Automata” is directly relevant to a non-
+anthropocentric developmental track. The system uses strictly local connectivity and asynchronous cell
+updates, and the authors report reasoning behavior on mazes, Sudoku and ARC-style problems, including
+generalization through longer rollouts and robustness to perturbation. The official repository is Apache-2.0
+licensed. 33
+Paper: https://arxiv.org/abs/2609.36126
+Code: https://github.com/paradigms-of-intelligence/reasoning-nca
+
+
+NCA is therefore a strong candidate for an evolvable organ, not for the first genome substrate. It offers
+local distributed computation, developmental robustness and stochastic execution, but does not naturally
+expose executable code genealogy or byte-level horizontal transfer.
+
+
+Pi explicitly frames its broader neural-computing agenda around massively parallel, data-local computation
+rather than conventional sequential architecture. 33 That is a research direction, not evidence that low
+numerical precision by itself creates biological intelligence.
+
+
+A useful hybrid should experimentally compare:
+
+
+FP32 deterministic
+BF16/FP16
+INT8 quantized
+binary/ternary stochastic
+sparse event-driven
+asynchronous NCA
+
+
+
+                                                     15
+while keeping environment and parameter count fixed. The hypothesis is not “lower precision is smarter.” It
+is that noise, locality, sparsity and developmental repair may create different robustness/evolvability trade
+spaces.
+
+
+Alien cognition and subjective experience
+
+No behavioral architecture described above establishes subjective experience. ToM performance, self-
+prediction, planning, causal control or linguistic self-report are evidence about functional competencies,
+not direct evidence of phenomenology.
+
+
+UNIIMENTE should consequently evaluate alien intelligence using nonverbal interventions:
+
+
+             Probe                                         What it tests
+
+             hidden-state prediction                       world modeling
+
+             self-lesion adaptation                        body/self model
+
+             switched dynamics                             causal adaptation
+
+             deceptive peer                                opponent modeling
+
+             false-belief peer                             higher-order belief prediction
+
+             unseen resource topology                      generalization
+
+             tool substitution                             functional abstraction
+
+             novel coalition game                          social transfer
+
+             architecture perturbation                     robustness
+
+             self-report versus behavior contradiction     prevents anthropomorphic overclaim
+
+Passing these tests licenses stronger claims such as “counterfactual peer model” or “self-predictive control,”
+never “conscious” or “sentient” by default.
+
+
+Production agentic runtime and human–AI symbiosis
+The production Artificial Egregore should borrow the functional lessons of symbiogenesis—specialization,
+mutual modeling, replaceable internal organs, shared resources and collective intelligence—without
+literally running evolving bytecode.
+
+
+Pi’s own research framing is compatible with this interpretation: it describes intelligence as modular and
+social, emphasizing mutual modeling, cooperation and division of labor, while predictive intelligence is
+framed as continually updated modeling of future states including one’s own actions. 33 Blaise Agüera y
+Arcas’s What Is Intelligence?, published by MIT Press in September 2025, develops a broad computational
+and symbiotic view connecting molecules, organisms, brains, societies and AI; its predecessor What Is Life?
+explicitly argues for computation and symbiosis as organizing principles. These are conceptual frameworks,
+not proofs that a specific software architecture will produce intelligence. 34
+
+
+
+
+                                                      16
+Recommended runtime
+
+A production execution record should be event sourced:
+
+
+
+  Run {
+      run_id
+      parent_run_id
+      objective_id
+       founder_authority_scope
+       requested_capabilities[]
+       model/version
+       input_hashes[]
+       tool_calls[]
+       evidence_refs[]
+       decisions[]
+       state_transitions[]
+       external_effects[]
+       approvals[]
+       output_hash
+  }
+
+
+Every potentially consequential action has an authority tuple:
+
+
+
+  Authority {
+      principal
+      capability
+      resource_scope
+      monetary_limit
+      temporal_expiry
+      external_effect_class
+      requires_human_approval
+      revocation_handle
+  }
+
+
+No subagent may expand this tuple. Spawning creates a strict subset of the parent capability set.
+
+
+Subagents communicate over A2A-like capability descriptors or internal typed protocols. Tools and data
+sources should expose MCP-like schemas, but persistent institutional state belongs in UNIIMENTE’s own
+database/event log rather than in transient model context. MCP’s 2026 move toward stateless requests
+reinforces this architectural separation. 35
+
+
+Shared skill substrate
+
+A shared skill object should look more like a versioned software package than a memory sentence:
+
+
+
+
+                                                     17
+  Skill {
+       skill_id
+       semantic_version
+       interface_schema
+       implementation_ref
+       tests
+       evidence
+       benchmark_results
+       known_failure_modes
+       security_classification
+       authority_required
+       provenance
+       deprecated_by
+  }
+
+
+Agents may propose new skills. Only tested skills become CANDIDATE ; production use requires
+governance appropriate to consequence level.
+
+
+Reflection without uncontrolled autonomy
+
+“Idle reflection” should be implemented as a bounded scheduled workflow, not an unbounded inner loop. A
+safe cycle is:
+
+
+
+  observe completed run
+  → generate hypotheses / inconsistencies / compression opportunities
+  → retrieve contradicting evidence
+  → propose memory updates or experiments
+  → test in sandbox
+  → commit evidence-backed artifact
+  → stop
+
+
+The cycle has hard step, token, compute and tool budgets. It may produce proposals but cannot
+independently escalate external authority.
+
+
+Reciprocal human augmentation
+
+The human side requires equal engineering attention. A 2026 COLM paper reports randomized controlled
+experiments involving 1,222 participants in which AI assistance reduced persistence and subsequently
+impaired unassisted performance. 36 Other 2026 work distinguishes dependent offloading from
+scaffolding that preserves user cognitive agency, and proposes design interventions such as forcing the
+human to act or reason first in tasks where skill preservation matters. 37
+
+
+UNIIMENTE should therefore optimize not just task performance with AI, but the pair:
+
+
+joint capability + retained human independent capability .
+
+
+
+
+                                                   18
+For high-value domains, evaluation should include:
+
+
+AI-assisted score
+human-alone post-assistance score
+calibration accuracy
+error-detection rate
+ability to explain causal rationale
+recovery after intentionally wrong AI advice .
+
+
+This is genuine symbiosis in the functional sense: the combined system becomes stronger without making
+the root human authority progressively incapable of independent judgment.
+
+
+Observability, falsification, failure modes, and engineering scale
+The decisive bottleneck is not raw compute yet. It is constructing experiments whose observed complexity
+cannot be explained by a cheaper mechanism such as one dominant copier, scheduler bias, a hidden task
+reward, compression artifact or ISA-specific short copying instruction.
+
+
+That should determine the instrumentation.
+
+
+Core observability schema
+
+Every interaction should append or batch-record:
+
+
+
+  InteractionEvent {
+      epoch
+      tick
+      entity_a
+      entity_b
+      lineage_a
+      lineage_b
+      genome_hash_a_before
+      genome_hash_b_before
+      genome_hash_a_after
+      genome_hash_b_after
+      instructions_executed
+      energy_a_before_after
+      energy_b_before_after
+      bytes_written_a_to_b
+      bytes_written_b_to_a
+      mutation_events[]
+      resource_flows[]
+      port_messages[]
+      fusion_event?
+      fission_event?
+
+
+
+
+                                                     19
+       random_stream_counter
+  }
+
+
+This produces deterministic ancestry, resource accounting and replay.
+
+
+Quantitative diagnostic stack
+
+No single complexity metric should decide success.
+
+
+Replication metrics: fraction of lineages passing randomized partner-independent copying tests; offspring
+edit distance; copying fidelity; reproductive number; takeover half-time; partner dependence.
+
+
+Diversity: genotype Shannon entropy, Simpson diversity, lineage lifetime distribution, lineage turnover and
+ecological-role diversity.
+
+
+Compression: Brotli/zstd bits-per-byte, normalized compression distance among dominant genomes, and
+BFF-style higher-order structure. Compression detects structure but can be fooled by repetitive junk, so it
+must never be treated as intelligence.
+
+
+Evolutionary novelty: persistent novel genotype/phenotype rate, innovation survival time and cumulative
+reachable phenotype classes. Open-ended-evolution research emphasizes persistent novelty and
+complexity rather than merely continuing mutation. 38
+
+
+Information flow: mutual information and conditional transfer entropy between environment → entity,
+peer → entity and entity → peer. Transfer entropy is specifically useful for testing whether new
+environmental information contributes to future state beyond the entity’s own past. 39
+
+
+Agency: empowerment estimated as action-to-future-state channel capacity.       29
+
+
+
+
+Causal emergence: effective information across candidate coarse-grainings. Hoel, Albantakis and Tononi
+define causal emergence as effective information becoming greater at a macro scale than at the underlying
+micro scale; the method requires interventions over causal states rather than correlational pattern
+detection. 40 A composite organism should therefore count as emergent only if its macro description
+improves causal predictability/control under an explicit coarse-graining—not because it looks organized.
+
+
+Metabolic efficiency: verified useful information or resource transformation per energy unit.
+
+
+Robustness: survival/function after byte deletion, instruction corruption, sensor dropout, delayed
+messages, habitat relocation and collaborator substitution.
+
+
+ToM: held-out peer-policy prediction accuracy, false-belief intervention accuracy and incremental value of
+recursive peer-model depth.
+
+
+Reticulate ancestry: vertical edges, transfer edges, fusion edges, proportion of genome explained by
+nonparental lineage, network reticulation count and component ancestry contribution. Tree-only lineage
+plots should be banned once HGT is enabled. 41
+
+
+
+
+                                                     20
+Failure modes and corresponding controls
+
+ Failure                     Misleading appearance          Safeguard / falsifier
+
+                                                            diversity floors only as diagnostic; moving
+ copier monoculture          rapid “life” transition
+                                                            ecology; cross-seed replication
+
+ short-copy ISA bias         “universal emergence”          same physics on ≥2 distinct ISAs
+
+ compression gaming          rising “complexity”            behavioral + causal tests
+
+                             dramatic ecology then          resource conservation; refugia only as
+ parasite collapse
+                             extinction                     experimental treatment
+
+                                                            randomize schedule; deterministic
+ scheduler artifact          apparent fitness
+                                                            counterfactual replay
+
+ hidden external fitness     task solving                   explicitly classify every resource faucet
+
+ runaway compute             expanding “intelligence”       energy budget + hard per-interaction step cap
+
+                             impressive fixed
+ coadaptation brittleness                                   cross-play against held-out populations
+                             partners
+
+ lineage laundering
+                             false ancestry                 byte-level provenance DAG
+ through HGT
+
+ neural module               fake “evolved                  neural ablations; matched parameter
+ dominates VM                intelligence”                  baselines
+
+ simulator exploit           impossible energy gain         invariant checks after every kernel
+
+                                                            no syscalls/network/filesystem/JIT from
+ host escape                 operational risk
+                                                            evolved bytes
+
+ stochastic
+                             unrepeatable claims            counter-based RNG and event-log replay
+ irreproducibility
+
+ anthropomorphic             “belief/consciousness”
+                                                            intervention-based functional vocabulary
+ interpretation              claims
+
+
+Reproducibility
+
+Use a counter-based or explicitly indexed pseudorandom generator so every event can be reconstructed
+from:
+
+
+experiment_hash + seed + epoch + entity IDs + event_index .
+
+
+Do not use global thread-dependent RNG state. GPU and CPU implementations need differential test suites
+just as the 2026 Z80 reproduction compares fast and reference cores over millions of random tapes. That
+repository reports exact agreement on three million randomly generated tapes and a measured one-thread
+
+
+
+
+                                                       21
+increase from roughly 39 to 240 million interpreted Z80 instructions per second with its optimized core.   19
+
+These are implementation-specific measured results, not guaranteed UNIIMENTE throughput.
+
+
+Realistic throughput
+
+For canonical BFF size, the cap is ~0.537 billion VM steps per epoch. A full 16,000-epoch run would therefore
+have an absolute cap of about 8.59 trillion interpreter steps, although actual execution can be much lower
+because programs terminate early.
+
+
+The Z80 replication repository reports approximately 67 ms per epoch for its full 2^19 -program grid
+using eight CPU cores and its optimized interpreter, and around two hours for one 100,000-epoch
+experiment. 19 This demonstrates that high-throughput artificial life does not necessarily require a GPU.
+
+
+The correct engineering order is therefore:
+
+
+Rust scalar reference → Rust/C++ SIMD batch VM → CPU multithreading → CUDA only after profiling.
+
+
+Rust is preferable for the primary implementation because bounds-checked safe code, explicit integer
+semantics, strong serialization and property-based testing reduce simulator corruption risk. An optimized
+C++/CUDA backend can follow behind a byte-for-byte differential test contract.
+
+
+GPU execution becomes attractive when thousands of pair interactions share the same simple interpreter
+structure, but mutable branches create warp divergence. CuBFF’s own optional CUDA implementation
+shows that BFF is suitable for GPU batching, but its README does not publish a general throughput
+guarantee. 8 Any UNIIMENTE figure above the measured CPU baselines should therefore be labeled a
+benchmark target until measured.
+
+
+Hardware bands as of November 2026
+
+A single high-end developer GPU is already sufficient for the experimental stage. NVIDIA’s current RTX 5090
+has 32 GB GDDR7 and 1,792 GB/s memory bandwidth; the reference starting price remains around $1,999
+on NVIDIA’s marketplace. 42 A complete workstation around it is reasonably budgeted in the $4k–$7k
+range depending on CPU/RAM/storage; that system-cost figure is an engineering estimate, not an NVIDIA
+price.
+
+
+A memory-heavy compact machine such as DGX Spark provides 128 GB coherent unified memory; NVIDIA’s
+marketplace listed a $6,950 unit when checked, although NVIDIA had earlier changed its Founders Edition
+MSRP because of memory-supply constraints, illustrating why hardware pricing should be treated as
+volatile. 43
+
+
+For very large neural-organ experiments, an RTX PRO 6000 Blackwell provides 96 GB ECC GDDR7 and 1,792
+GB/s memory bandwidth; NVIDIA’s marketplace showed roughly $14k–$16k for the GPU alone. 44 A 96-
+core Threadripper PRO 9995WX provides 192 threads, eight DDR5 channels and a $11,699 launch SEP. 45 A
+workstation combining that class of CPU/GPU can readily exceed $30k before storage and memory. Buying
+it before the simulator proves that GPU memory or CPU parallelism is the actual bottleneck would be
+wasteful.
+
+
+
+
+                                                     22
+Cloud clusters should not enter the roadmap until a single-node experiment has: 1. demonstrated the
+target phenomenon, 2. proven near-linear scaling, 3. exhausted single-node throughput, and 4. established
+that additional search volume changes scientific conclusions rather than merely producing more runs.
+
+
+Developer roadmap, stage gates, and bibliography
+
+First thirty days — reproduce reality before inventing
+
+The objective is not to build the Egregore. It is to reproduce the canonical phenomena and establish a
+trusted measurement kernel.
+
+
+Implement or vendor CuBFF unchanged; reproduce official semantics from the source; archive exact
+commit hash, compiler, CUDA version, flags and RNG seeds. Run 50–100 canonical BFF seeds to 16k epochs.
+Measure higher-order entropy, replicator detection, takeover time, genotype diversity and interaction
+lengths.
+
+
+Falsification gate: the implementation fails Stage A if its emergence distribution is grossly incompatible
+with the paper’s approximately 40%-within-16k result or if differential tests disagree with CuBFF on any
+deterministic tape. A 95% binomial confidence interval should overlap the paper’s reported rate before
+claiming successful reproduction. 14
+
+
+Next build the Rust symbiotape-ref interpreter with the exact minimal semantics above. Differentially
+test ≥10 million random pair interactions against a deliberately slow specification interpreter.
+
+
+Falsification gate: zero unexplained state mismatches. Performance does not matter until correctness is
+exact.
+
+
+Then run one critical counterexperiment inspired by the 2026 BFF critique: random mutation walk versus
+interactive soup under the same total number of byte mutations. If both discover copiers at similar rates,
+record that the interaction process is not providing an origin advantage.
+
+
+Deliverables:
+
+
+
+  symbiotape/
+    spec/
+     ref_vm/
+     tests/
+     experiments/bff_reproduction/
+     provenance/
+     notebooks/
+     results/immutable/
+
+
+
+
+                                                      23
+By ninety days — ecology and symbiogenesis
+
+Add 2-D toroidal space, energy conservation, moving resource fields, hazards, memory costs, typed ports
+and provenance-aware transfer.
+
+
+No neural networks yet.
+
+
+Run a factorial experiment:
+
+
+                              Factor              Levels
+
+                              topology            well-mixed / 2-D local
+
+                              energy scarcity     none / moderate / severe
+
+                              mutation            off / low / high
+
+                              resource motion     static / migrating
+
+                              HGT                 off / on
+
+                              fusion              off / on
+
+                              ISA                 SymbioTape / Z80 reference
+
+                              task faucet         none / simple transformation
+
+
+Use ≥30 seeds per condition for screening and larger replication sets only on effects that survive.
+
+
+Replication gate: autonomous copier emergence in at least one substrate without any replication
+instruction.
+
+
+Ecology gate: disabling environmental sensing must significantly reduce viability when resources move;
+otherwise “resource chasing” is not established.
+
+
+Symbiogenesis gate: at least one independently evolved composite persists for >100 reproductive cycles
+and shows a reproducible dependence on multiple ancestral components under transplantation tests.
+
+
+Horizontal-transfer gate: a transferred code fragment must demonstrably alter phenotype in a non-
+descendant lineage, with byte-level provenance reconstructing its path.
+
+
+Failure gate: if complexity consistently collapses into short-copy monocultures across resource regimes, do
+not add neural cognition. Change ecological physics and repeat.
+
+
+By one hundred eighty days — cognition only after ecology earns it
+
+Introduce a tiny predictive neural organ with strict energy cost. Begin with 1–50k parameters, quantized
+and sparse variants, not an LLM.
+
+
+
+
+                                                     24
+Experiments should compare:
+
+
+reactive VM
+VM + recurrent world model
+VM + world/self model
+VM + peer model
+VM + recursive peer model .
+
+
+World-model gate: prediction on held-out environment dynamics must beat a matched-memory reactive
+baseline.
+
+
+Causal-adaptation gate: after reversing a resource or hazard contingency, model-based agents must
+adapt measurably faster than reactive controls.
+
+
+ToM gate: peer modeling must improve held-out peer prediction and behavior; removing peer-model latent
+state must remove the advantage.
+
+
+Recursive-ToM gate: a second-order model must outperform first-order modeling in a game specifically
+requiring beliefs about another agent’s adaptation. Otherwise do not label it recursive Theory of Mind.
+
+
+Alien-cognition gate: success must persist under at least one representation change or embodiment
+change that makes anthropomorphic memorization ineffective.
+
+
+In parallel, the production UNIIMENTE runtime should progress independently: durable event sourcing,
+strict delegated authority, model abstraction, A2A/MCP-style capability interfaces, skill registry,
+deterministic workflow reconstruction, founder approval controls and human-skill-retention evaluations.
+None of the SymbioSoup stage gates automatically authorize production integration.
+
+
+The deepest success condition at six months is therefore not “the soup became intelligent.” It is:
+
+
+       UNIIMENTE possesses a verified library of mechanisms whose causal contribution to
+       replication, compositional individuality, ecological agency, predictive modeling,
+       cooperation and functional modularity has been experimentally isolated—and only the
+       mechanisms that outperform conventional alternatives are promoted into the
+       governed institutional architecture.
+
+
+That criterion protects against the central failure mode of the entire research program: mistaking visually
+compelling emergence for useful capability.
+
+
+Primary-source bibliography and canonical URLs
+
+Agüera y Arcas, B. et al. Computational Life: How Well-formed, Self-replicating Programs Emerge from
+Simple Interaction. arXiv:2406.19108. 7
+https://arxiv.org/abs/2406.19108
+
+
+
+
+                                                      25
+Paradigms of Intelligence. CuBFF canonical repository. Apache-2.0.       8
+
+https://github.com/paradigms-of-intelligence/cubff
+
+
+Knierim, Versari, Obryk, Agüera y Arcas, Saurous et al. BFF: Simple explanations for complex phenomena.
+arXiv:2607.01483.
+https://arxiv.org/abs/2607.01483
+
+
+Cicala et al. Co-evolution of self-replication and function in a digital primordial soup. arXiv:2607.09211.
+ 46
+
+https://arxiv.org/abs/2607.09211
+
+
+Jha, K. et al. Tapes Together Strong: The Co-evolution of Computation and Cooperation. arXiv:
+2609.10817 / NeurIPS 2026 listing. 20
+https://arxiv.org/abs/2609.10817
+
+
+Paradigms of Intelligence official research organization and publication index.   33
+
+https://github.com/paradigms-of-intelligence
+
+
+Agüera y Arcas, B. What Is Life? Evolution as Computation. MIT Press, 2025.       34
+
+https://mitpress.mit.edu/9780262554091/what-is-life/
+
+
+Agüera y Arcas, B. What Is Intelligence? MIT Press / Antikythera, 2025.
+https://www.blaiseaguera.com/what-is-intelligence
+
+
+Etcheverry, M. et al. Reasoning with Neural Cellular Automata. arXiv:2609.36126; official Pi repository
+Apache-2.0. 33
+https://arxiv.org/abs/2609.36126
+https://github.com/paradigms-of-intelligence/reasoning-nca
+
+
+Meulemans et al. Multi-agent cooperation through learning-aware policy gradients. arXiv:2410.18636.
+https://arxiv.org/abs/2410.18636
+
+
+Multi-agent cooperation through in-context co-player inference. arXiv:2602.16301.
+https://arxiv.org/abs/2602.16301
+
+
+Embedded Universal Predictive Intelligence: a coherent framework for multi-agent learning. arXiv:
+2511.22226.
+https://arxiv.org/abs/2511.22226
+
+
+Rabinowitz, N. et al. Machine Theory of Mind. ICML 2018 / PMLR 80.       47
+
+https://arxiv.org/abs/1802.07740
+
+
+Foerster, J. et al. Learning with Opponent-Learning Awareness.      32
+
+https://arxiv.org/abs/1709.04326
+
+
+
+
+                                                     26
+Hafner, D. et al. Mastering diverse control tasks through world models. Nature 640, 2025.     30
+
+https://doi.org/10.1038/s41586-025-08744-2
+https://github.com/danijar/dreamerv3
+
+
+Friston, K. et al. Active inference and artificial reasoning. Nature Communications 17, 10125 (2026).    27
+
+https://doi.org/10.1038/s41467-026-77209-5
+
+
+Ray, T. Evolution, Ecology and Optimization of Digital Organisms / Tierra.     48
+
+https://www.tomray.me/pubs/tierra/
+
+
+Avida Digital Evolution Platform. LGPL.   49
+
+https://avida.devosoft.org/
+https://github.com/devosoft/avida
+
+
+WebAssembly Core Specification 3.0, W3C/WebAssembly Community Group, November 20, 2026.            50
+
+https://www.w3.org/TR/wasm-core/
+
+
+WebAssembly Security Model. 51
+https://webassembly.org/docs/security/
+
+
+Linux Kernel. BPF Instruction Set Architecture and eBPF verifier documentation.      4
+
+https://docs.kernel.org/bpf/standardization/instruction-set.html
+https://docs.kernel.org/bpf/verifier.html
+
+
+Forth Standard. Dictionary, code space and data space requirements.        5
+
+https://forth-standard.org/standard/usage
+
+
+Klyubin, A., Polani, D., Nehaniv, C. All Else Being Equal Be Empowered. DOI 10.1007/11553090_75.        29
+
+
+
+
+Hoel, E., Albantakis, L., Tononi, G. Quantifying causal emergence shows that macro can beat micro.
+PNAS 110, 19790–19795. DOI 10.1073/pnas.1314922110. 40
+
+
+Kolchinsky/Wolpert-derived semantic-information work and Semantic Information in a Model of
+Resource Gathering Agents, PRX Life 1, 023003. 28
+https://doi.org/10.1103/PRXLife.1.023003
+
+
+Than, C., Ruths, D., Nakhleh, L. PhyloNet: a software package for analyzing and reconstructing
+reticulate evolutionary relationships. BMC Bioinformatics 9, 322. 41
+https://doi.org/10.1186/1471-2105-9-322
+
+
+Google. Agent2Agent Protocol. 52
+https://developers.googleblog.com/en/a2a-a-new-era-of-agent-interoperability/
+
+
+Model Context Protocol. 2026-07-28 Specification release.    35
+
+https://blog.modelcontextprotocol.io/posts/2026-07-28/
+
+
+
+
+                                                     27
+Temporal. Durable Execution and deterministic workflow replay.                  53
+
+https://docs.temporal.io/durable-execution
+
+
+NVIDIA RTX 5090, RTX PRO 6000 Blackwell and DGX Spark official specifications and current marketplace
+listings. 54
+https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5090/
+https://www.nvidia.com/en-us/products/workstations/professional-desktop-gpus/rtx-pro-6000/
+https://www.nvidia.com/en-us/products/workstations/dgx-spark/
+
+
+
+ 1    7   Computational Life: How Well-formed, Self-replicating Programs Emerge from Simple Interaction
+https://arxiv.org/abs/2406.19108?utm_source=chatgpt.com
+
+ 2   52   Announcing the Agent2Agent Protocol (A2A) - Google Developers Blog
+https://developers.googleblog.com/en/a2a-a-new-era-of-agent-interoperability/?utm_source=chatgpt.com
+
+ 3   50   WebAssembly Core Specification
+https://www.w3.org/TR/wasm-core/?utm_source=chatgpt.com
+
+ 4   eBPF verifier — The Linux Kernel documentation
+https://docs.kernel.org/bpf/verifier.html?utm_source=chatgpt.com
+
+ 5   3 Usage requirements
+https://forth-standard.org/standard/usage?utm_source=chatgpt.com
+
+ 6   49   Avida by devosoft
+https://avida.devosoft.org/?utm_source=chatgpt.com
+
+ 8   GitHub - paradigms-of-intelligence/cubff · GitHub
+https://github.com/paradigms-of-intelligence/cubff
+
+ 9   13   cubff/common.h at main · paradigms-of-intelligence/cubff · GitHub
+https://github.com/paradigms-of-intelligence/cubff/blob/main/common.h
+
+10   11   cubff/bff.inc.h at main · paradigms-of-intelligence/cubff · GitHub
+https://github.com/paradigms-of-intelligence/cubff/blob/main/bff.inc.h
+
+12   15   17   cubff/common_language.h at main · paradigms-of-intelligence/cubff · GitHub
+https://github.com/paradigms-of-intelligence/cubff/blob/main/common_language.h
+
+14   Computational Life: How Well-formed, Self-replicating Programs Emerge from Simple Interaction
+https://www.researchgate.net/publication/381770386_Computational_Life_How_Well-formed_Self-
+replicating_Programs_Emerge_from_Simple_Interaction?utm_source=chatgpt.com
+
+16  GitHub - gustavsoderstrom/computational-life: Pure Python implementation of the BFF primordial soup
+experiment from 'Computational Life' - demonstrating spontaneous emergence of self-replicating programs
+· GitHub
+https://github.com/gustavsoderstrom/computational-life?utm_source=chatgpt.com
+
+18    GitHub - vicgalle/coevolution-soup: Co-evolution of self-replication and function in a digital
+     46
+
+primordial soup · GitHub
+https://github.com/vicgalle/coevolution-soup?utm_source=chatgpt.com
+
+
+
+
+                                                              28
+ 19 GitHub - vicgalle/coevolution-soup: Co-evolution of self-replication and function in a digital primordial
+
+soup · GitHub
+https://github.com/vicgalle/coevolution-soup
+
+20   26   Tapes Together Strong: The Co-evolution of Computation and Cooperation
+https://arxiv.org/abs/2609.10817?utm_source=chatgpt.com
+
+21   Self-organized patterns of coexistence out of a predator-prey cellular automaton
+https://arxiv.org/abs/q-bio/0604030?utm_source=chatgpt.com
+
+22   25   48   No Title
+https://www.tomray.me/pubs/tierra/?utm_source=chatgpt.com
+
+23   41   PhyloNet: a software package for analyzing and reconstructing reticulate evolutionary relationships
+https://pmc.ncbi.nlm.nih.gov/articles/PMC2533029/?utm_source=chatgpt.com
+
+24   38   # Requirements for Open-Ended Evolution in Natural and Artificial Systems
+https://perso.liris.cnrs.fr/guillaume.beslon/evoevo/Taylor_EvoEvo.pdf?utm_source=chatgpt.com
+
+27   Active inference and artificial reasoning
+https://www.nature.com/articles/s41467-026-77209-5?utm_source=chatgpt.com
+
+28   Semantic Information in a Model of Resource Gathering Agents
+https://journals.aps.org/prxlife/abstract/10.1103/PRXLife.1.023003?utm_source=chatgpt.com
+
+29   All Else Being Equal Be Empowered
+https://researchprofiles.herts.ac.uk/en/publications/all-else-being-equal-be-empowered/?utm_source=chatgpt.com
+
+30   Mastering diverse control tasks through world models
+https://www.nature.com/articles/s41586-025-08744-2?utm_source=chatgpt.com
+
+31   Machine Theory of Mind
+https://arxiv.org/abs/1802.07740?utm_source=chatgpt.com
+
+32   Learning with Opponent-Learning Awareness
+https://arxiv.org/abs/1709.04326?utm_source=chatgpt.com
+
+33   Paradigms of Intelligence Team · GitHub
+https://github.com/paradigms-of-intelligence
+
+34   What Is Life?
+https://mitpress.mit.edu/9780262554091/what-is-life/?utm_source=chatgpt.com
+
+35   The 2026-07-28 Specification | Model Context Protocol Blog
+https://blog.modelcontextprotocol.io/posts/2026-07-28/
+
+36   AI Assistance Reduces Persistence and Hurts Independent Performance
+https://ora.ox.ac.uk/objects/uuid%3A52f0b738-d802-49f4-9976-21ce4deb6b66/files/s6h440w34b?utm_source=chatgpt.com
+
+37   Deskilling and overreliance: Two long-term risks of AI assistance, and what designers can do about them
+https://onlinelibrary.wiley.com/doi/full/10.1002/aaai.70096?utm_source=chatgpt.com
+
+39   Semantic information, autonomous agency and non-equilibrium statistical physics
+https://pmc.ncbi.nlm.nih.gov/articles/PMC6227811/?utm_source=chatgpt.com
+
+40   Quantifying causal emergence shows that macro can beat micro
+https://pubmed.ncbi.nlm.nih.gov/24248356/?utm_source=chatgpt.com
+
+
+
+
+                                                             29
+42   54   GeForce RTX 5090 Graphics Cards | NVIDIA
+https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5090/?utm_source=chatgpt.com
+
+43   NVIDIA DGX Spark | NVIDIA
+https://marketplace.nvidia.com/en-us/enterprise/personal-ai-supercomputers/nvidia-dgx-spark/?utm_source=chatgpt.com
+
+44   RTX PRO 6000 Blackwell Workstation Edition | NVIDIA
+https://www.nvidia.com/en-us/products/workstations/professional-desktop-gpus/rtx-pro-6000/?utm_source=chatgpt.com
+
+45   AMD Ryzen™ Threadripper™ PRO 9995WX
+https://www.amd.com/en/products/processors/workstations/ryzen-threadripper/9000-wx-series/amd-ryzen-threadripper-
+pro-9995wx.html?utm_source=chatgpt.com
+
+47   Machine Theory of Mind
+https://proceedings.mlr.press/v80/rabinowitz18a.html?utm_source=chatgpt.com
+
+51   Security - WebAssembly
+https://webassembly.org/docs/security/?utm_source=chatgpt.com
+
+53   What is Durable Execution? | Temporal Documentation
+https://docs.temporal.io/durable-execution?utm_source=chatgpt.com
+
+
+
+
+                                                           30
+```

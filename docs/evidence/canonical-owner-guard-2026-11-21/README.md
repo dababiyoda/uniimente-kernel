@@ -11,8 +11,9 @@ BUILDABLE_NOT_BUILT, unit MW-C).
 Branch `claude/mw-c-owner-guard-20261121`, draft PR #341 into `claude/greg-full-machine-completion-whgiee`. The first
 build was based on `121195907fff`. This record describes the branch after the line at `e3a84f95` was merged in
 (`99d2a102`), after the review round that followed it, after the second review of `7c2b39e5` (round 4,
-2026-11-22, findings N1-N8 below), and after round 5's review of `79ef5742` (fixed in round 6, 2026-11-22, items B1-B6
-below). It builds on MU-H, recorded in
+2026-11-22, findings N1-N8 below), after round 5's review of `79ef5742` (fixed in round 6, 2026-11-22, items B1-B6
+below), after the line at `357b353d` was merged in (`19982b72`, no conflict) and after round 6's review of `16d35caa`
+(fixed in round 7, 2026-11-22, items M1-M5 below). It builds on MU-H, recorded in
 `docs/evidence/canonical-owner-guard-2026-10-30/README.md` (registry, guards 1-3, pins), which is not edited.
 
 Claims discipline: every guarantee below names the test that enforces it; anything without a test is stated as a
@@ -23,10 +24,10 @@ deliberate evader.
 
 | File | Change |
 |---|---|
-| `tests/unit/test_canonical_owner_guard.py` | Guard 4 (copies of a registered function's body), the twin check, the distinct check, `BODY_EXEMPTIONS`, the history guard `kept_for_problems`, a filesystem walk shared by guards 2-4. Round 4: `UNDECIDED_ENTRIES` (an undecided record pinned whole, replacing the exact pin on its candidates and alternates), guard 3's structural-copy check no longer honouring `distinct`, `SEALED` (the skipped cortex/evaluation/ files by path and digest), `COMPARED` (the compared bodies), `binding` (last binding), `module_file` package-first with `AmbiguousModule`, `module_name_problems`, `_once` (each real file once). Round 6: `binding_problems` (one binding per registered qualname; no star import or computed namespace write in its module), every record pinned in `PINNED`, registered classes compared whole (`body_shape`; `COMPARED` 36), sealed files in the module-name rule. 30 new tests since `e3a84f95` (46 in the file), 7 of them in round 4 and 5 in round 6 |
-| `scripts/ci/check_canonical_owner_guard_mutants.py` | 98 MW-C mutants (157 in all): 24 new in round 4 and 8 re-anchored on rewritten lines; 18 new and 1 re-anchored in round 6; `copy_body`, `append_body`, (round 4) `seal` and (round 6) `copy_class` and `append_class` edits that write a disguised copy of a registered function, a freeze manifest for a file, or a verbatim copy of a registered class, at run time |
-| `docs/collaboration/ARCHITECTURE-OWNERSHIP-MAP.yaml` | `greg.mission_control` REALITY: stale reason corrected, `kept_for: {consumer: acceptance.claims.crosswalk_problems}`; the header comment of `function_owner_records` and the note after the last record rewritten on 2026-11-22 so that each rule names its test and the rest are stated as limits, and again in round 6 (the threat model, the ruling case, every pin's test, the new rules; "nine" corrected to 10). No record or entry changed |
-| `acceptance/directive-sections.json` | S52.A1: reason and note only. S69.A3: evidence (7 more nodes in round 4, 5 more in round 6), reason and note. S76.A2: evidence, `owner_paths`, declared tier and coverage, reason and note. S76.A2's computed tier moved from INTENDED (gap) to UNIT_VERIFIED (partial) |
+| `tests/unit/test_canonical_owner_guard.py` | Guard 4 (copies of a registered function's body), the twin check, the distinct check, `BODY_EXEMPTIONS`, the history guard `kept_for_problems`, a filesystem walk shared by guards 2-4. Round 4: `UNDECIDED_ENTRIES` (an undecided record pinned whole, replacing the exact pin on its candidates and alternates), guard 3's structural-copy check no longer honouring `distinct`, `SEALED` (the skipped cortex/evaluation/ files by path and digest), `COMPARED` (the compared bodies), `binding` (last binding), `module_file` package-first with `AmbiguousModule`, `module_name_problems`, `_once` (each real file once). Round 6: `binding_problems` (one binding per registered qualname; no star import or computed namespace write in its module), every record pinned in `PINNED`, registered classes compared whole (`body_shape`; `COMPARED` 36), sealed files in the module-name rule. Round 7: a decided record's canonical qualnames pinned exactly; `attribute_rebinding_problems` (a registered qualname or a registered class's attribute written from outside its definition); a name bound to the module namespace in `binding_problems`; `imported_test_files` (the tests/ modules runtime code imports are scanned); the class test made independent of the live tree. 34 new tests since `e3a84f95` (50 in the file), 7 of them in round 4, 5 in round 6 and 4 in round 7 |
+| `scripts/ci/check_canonical_owner_guard_mutants.py` | 108 MW-C mutants (167 in all): 24 new in round 4 and 8 re-anchored on rewritten lines; 18 new and 1 re-anchored in round 6; 10 new in round 7; `copy_body`, `append_body`, (round 4) `seal` and (round 6) `copy_class` and `append_class` edits that write a disguised copy of a registered function, a freeze manifest for a file, or a verbatim copy of a registered class, at run time |
+| `docs/collaboration/ARCHITECTURE-OWNERSHIP-MAP.yaml` | `greg.mission_control` REALITY: stale reason corrected, `kept_for: {consumer: acceptance.claims.crosswalk_problems}`; the header comment of `function_owner_records` and the note after the last record rewritten on 2026-11-22 so that each rule names its test and the rest are stated as limits, and again in round 6 (the threat model, the ruling case, every pin's test, the new rules; "nine" corrected to 10) and round 7 (the note's rule count matches its six bullets; the new rules and limits). No record or entry changed |
+| `acceptance/directive-sections.json` | S52.A1: reason and note, and in round 7 one evidence node. S69.A3: evidence (7 more nodes in round 4, 5 more in round 6, 4 more in round 7), reason and note. S76.A2: evidence, `owner_paths`, declared tier and coverage, reason and note. S76.A2's computed tier moved from INTENDED (gap) to UNIT_VERIFIED (partial) |
 
 No GREG runtime module changed. By guard 4's own definition of a runtime file, one changed: the mutant gate
 `scripts/ci/check_canonical_owner_guard_mutants.py`. The registry is PROPOSED, as before: nothing is retired,
@@ -48,8 +49,22 @@ except or match target, walrus, `globals()` key, `global` declaration or `Class.
 included), and a module that holds one has no star import and no write to its namespace with a computed name
 (`globals().update(vars(m))`, `globals()[name] = ...`) (`binding_problems`;
 `test_every_registered_qualname_has_one_binding_and_its_module_no_computed_binding`,
-`test_a_decoy_rebinding_or_star_import_of_a_registered_qualname_fails`). So, for ordinary code, the def or class the
-guards read is the one Python binds. `@overload` stubs of a registered function are now a second binding and fail.
+`test_a_decoy_rebinding_or_star_import_of_a_registered_qualname_fails`). Round 6's review showed that this read only
+the registered module: an accelerator shim elsewhere (`import greg.business_loop as _bl; _bl.reconcile = _native`),
+a method of a registered class swapped after its class statement (`GoalGravityLoop.execution_authority = _v2`) and
+`_ns = globals(); _ns['reconcile'] = ...` each made Python run something the guards never read, with every test
+passing. Since round 7 no runtime file may assign, augment, delete, or `setattr()` or `delattr()` with a literal name
+a registered qualname as an attribute of a name bound to its module (by `import a.b as X`, `from a import b as X` or
+the dotted `import a.b`), nor any attribute of a registered class outside its own class body, and a module that holds
+a registered qualname may not bind a name to `globals()`, or to `vars()` or `locals()` at module level
+(`attribute_rebinding_problems`, `binding_problems`;
+`test_no_runtime_file_rebinds_a_registered_qualname_or_a_registered_class_attribute`,
+`test_a_registered_qualname_rebound_from_another_module_or_through_a_namespace_alias_fails`). On today's tree the scan
+reads 19 attribute writes through an imported name (the ordinary patches at `scripts/measure_body_memory.py:61`,
+`scripts/node_cut_development.py:137`, `:169`, `:441` and `:470`, `cortex/evaluation/composition_lift/run_converged_v1.py:94-95`,
+and `sys` and `importlib` patches in four cognition and cortex files), and none names a registered qualname. So the def
+or class the guards read is the one Python binds, unless a form these rules do not parse rebinds it (listed under
+"Static resolution" below). `@overload` stubs of a registered function are now a second binding and fail.
 In the body, the docstring is dropped, and every variable, argument, nested def, class, handler, alias, global and match name, and every
 constant, is rewritten to one sentinel.
 Three one-node edits are normalised away, and nothing more: `pass` and no-op constant statements (a string, `...`)
@@ -74,7 +89,11 @@ bodies. `runtime_files` walks the filesystem, because the mutant gate's copy of 
 under the repository root, read as bytes (a UTF-8 BOM parses), each real file once, with these exclusions:
 
 - `tests/` and `docs/`, by top-level path prefix, never by a path segment. A copy under `greg/evaluation/` is seen.
-  Fixtures in `tests/` may copy a body on purpose;
+  Fixtures in `tests/` may copy a body on purpose. Since round 7 a `tests/` module that a scanned file imports,
+  directly or through other such modules, and each package `__init__.py` on the way, is scanned all the same, because
+  it runs (`imported_test_files`; `test_a_tests_module_that_runtime_code_imports_is_scanned_as_runtime`): four scripts
+  import `tests.greg_fixtures` or `tests.unit.test_greg_oci`, which adds 3 files today. `docs/` stays unscanned,
+  including its 24 runnable scripts outside `lineage-archive/`, 5 of which import `tests/`;
 - top-level hidden entries (`.git`, tool caches, an agent's worktree);
 - the sealed instruments under `cortex/evaluation/`: the files the test's `SEALED` literal names, each only while its
   current bytes hash to the digest pinned there and a `cortex/evaluation/freeze-*.json` manifest (`inputs.code`)
@@ -161,7 +180,9 @@ that change only one erased name or one statement:
 | a registered body reached again through a sibling directory link (`examples/app/greg -> greg`) | read once, at its real path: no false copy |
 | a `SEALED` `cortex/evaluation/` file whose bytes still match; a copy reachable only through a DIRECTORY link out of the repository | not scanned |
 | one attribute renamed (`write_text` to `write_bytes`) or a field read as an attribute; a no-op `_unused = 0`; an `if True:` wrapper | missed (stated limits) |
-| the owner's logic moved to a new helper behind a wrapper of 25 nodes or more, and a copy of the moved logic; a copy of one method of a registered class | missed (stated limits: the fork pattern; methods not compared one by one) |
+| a registered function rebound as an attribute of its module from another file (`_bl.reconcile = _native`, `setattr(_b, 'send_signed', f)`, `del`), an attribute of a registered class set outside its body, or `_ns = globals()` in a registered module | fails (round 7, `attribute_rebinding_problems`, `binding_problems`) |
+| a copy in a `tests/` module that a script imports (`tests/greg_fixtures.py`) | caught (round 7, `imported_test_files`) |
+| the owner's logic moved to a new helper behind a wrapper of 25 nodes or more, and a copy of the moved logic; a copy of one method of a registered class; a class copy with one method added, removed or reordered | missed (stated limits: the fork pattern; methods not compared one by one; a class is one whole body) |
 
 `test_no_structural_duplicates` was not changed. Guard 3 was, though round 3's record said it was not: its file
 listing (`python_files`) moved to the shared walk in round 3 (directory links followed inside the repository,
@@ -202,7 +223,11 @@ in place.
 that named candidate side A (`greg.goal_gravity.tick`) as its owner and side B (`greg.gravity` select and step) as its
 ALTERNATE, with no ruling and no test change, and every test passed (X1; X2, a new record for a rewritten loop under
 unmarked names, and the skeptic's R4 are the same hole). Each now fails until `PINNED` changes in the same reviewed
-diff. The second half of B2 was a rule that a module and qualname that is a decided record's canonical owner, or a
+diff. Since round 7 a decided record's canonical qualnames equal `PINNED` exactly, and a founder ruling makes canonical
+only qualnames its module held as a candidate (`test_a_decided_records_canonical_qualnames_equal_the_pin`): round 6's
+review added `EVIDENCE_STATUS`, candidate side C of the undecided evidence ladder, to the commerce record's canonical
+`greg.path` qualnames, one word in the YAML, and every test passed. All 5 decided records equal `PINNED` today. The
+second half of B2 was a rule that a module and qualname that is a decided record's canonical owner, or a
 candidate of an undecided record, may appear in no other record in any role. Measured on today's tree it reports one
 mention: `greg.autonomy.regress`, candidate side B of the undecided OWN-FN-AUTONOMY-LEVELS, is also a `distinct`
 entry of OWN-FN-REGRESSION-CLOSING (and pinned there). As instructed, that rule was not weakened and not committed,
@@ -240,7 +265,8 @@ that as passing.
 | Registered qualnames (canonical, candidate, alternate) | 50: 30 functions, 9 classes, 11 constants |
 | Registered bodies compared | 36, exactly the 36 `COMPARED` pins: 27 functions at or above 25 erased nodes and the 9 classes whole (48 to 8,431 erased nodes); 36 distinct fingerprints; 0 twins |
 | Registered qualnames bound more than once at their level; star imports or computed namespace writes in their modules | 0; 0 (`binding_problems`) |
-| Records in the registry; records `PINNED` does not hold | 8; 0 |
+| Records in the registry; records `PINNED` does not hold; decided records whose canonical qualnames differ from `PINNED` | 8; 0; 0 of 5 |
+| Attribute writes through an imported name in runtime files; of them, a registered qualname or a registered class's attribute; names bound to the namespace in a registered module | 19; 0; 0 (round 7) |
 | Mentions the stated, uncommitted B2 cross-record rule would report | 1: `greg.autonomy.regress` (candidate of OWN-FN-AUTONOMY-LEVELS, distinct in OWN-FN-REGRESSION-CLOSING) |
 | Qualname mentions whose resolution changed with round 4's last-binding rule | 0 of 89 (every canonical, candidate, alternate and distinct mention: 50 registered qualnames and 39 distinct ones, 88 unique; guards 1, 3 and 4 read the same nodes as before) |
 | Entries pinned by `UNDECIDED_ENTRIES` | 24 (goal runtime 7, evidence ladder 13, autonomy levels 4) |
@@ -249,21 +275,22 @@ that as passing.
 | Guard 3's structural copies once `distinct` entries no longer exempt them | 0 |
 | Registered functions below the threshold, not compared | `acceptance.rank` (8), `greg.improvement.attention_close_condition` (17), `greg.improvement.claim_close_condition` (7) |
 | Methods of the 9 registered classes | compared only as part of their class's whole body (round 6), not one by one; see "Not done: class methods" |
-| Runtime files; functions and methods at any depth; classes at any depth | 553 (46 under `cortex/evaluation/`, 9 sealed files skipped), the same files as before round 4's de-duplication; 7,902 (418 of a registered size, fingerprinted); 618 (23 of a registered size, fingerprinted) |
-| `_erased_size` equal to the fingerprint's size | 7,902 of 7,902 functions; 618 of 618 classes |
+| Runtime files; functions and methods at any depth; classes at any depth | 558 after the merge of `357b353d` and round 7 (555 walked, 46 under `cortex/evaluation/`, 9 sealed files skipped; plus 3 `tests/` files runtime code imports); 7,938 (419 of a registered size, fingerprinted); 619 (23 of a registered size, fingerprinted). Round 6 measured 553, 7,902 (418) and 618 (23) before the merge |
+| `_erased_size` equal to the fingerprint's size | 7,902 of 7,902 functions; 618 of 618 classes (round 6; not re-measured) |
 | Copies at any location but their own (guard 4, functions and classes); exemptions | 0; `BODY_EXEMPTIONS` empty |
 | Distinct entries naming a module with a copy | 0 |
 | HISTORICAL or RETIRED alternates still in the tree; without a live `kept_for` | 1 (REALITY); 0 |
 | False-positive check (round 4, functions only): this container's Python 3.13 stdlib and site-packages, the user site `/root/.local` (504 files) and `/usr/lib/python3/dist-packages` (1,182 files) | 16,293 files, 204,082 functions, 0 match a registered body (stdlib and site-packages alone: 14,607 files, 181,326 functions) |
-| Guard 4, the twin check and the distinct check, cold, in one process | about 8 s on this container (4 cores, other agents' jobs running); 5.2 s in round 4 |
-| Commits on the line (`claude/greg-full-machine-completion-whgiee`) since 2026-11-08 that change one of the 27 registered function bodies, by fingerprint diff over `git log --full-history` of their 13 files | 5 (one authored change, `d7c43ce5` to `greg.remote.handle`, and 4 merges that carried it); with git's default history simplification, 2 |
+| Guard 4, the twin check and the distinct check, cold, in one process | about 8 s on this container (4 cores, other agents' jobs running); 5.2 s in round 4. Round 7's whole measurement (the scan above, guard 3 and the new rules) took 26.5 s cold |
+| Commits on the line (`claude/greg-full-machine-completion-whgiee`) since 2026-11-08 that change one of the 27 registered function bodies, by fingerprint diff over `git log --full-history` of their 13 files | 5 (one authored change, `d7c43ce5` to `greg.remote.handle`, and 4 merges that carried it); with git's default history simplification, 2 (round 6's measure, up to `e3a84f95`) |
 | Open heads committed since 2026-11-08, not merged into the line, that change one of the 27 bodies against their merge-base | 5 of 19 |
 
 ## Run time
 
-`python -B -m pytest -q -p no:cacheprovider tests/unit/test_canonical_owner_guard.py`: **46 passed**, with no warnings
-on either Python, in about 22-27 s on Python 3.13 and on 3.11 in round 6, on this container (4 cores, with other
-agents' jobs running). Round 4 measured 15-18 s on a quieter container and round 5's verifier 21-23 s. Timings depend
+`python -B -m pytest -q -p no:cacheprovider tests/unit/test_canonical_owner_guard.py`: **50 passed**, with no warnings
+on either Python, in about 31-33 s on Python 3.13 and on 3.11 in round 7 (22-27 s for 46 tests in round 6), on this
+container (4 cores, with other agents' jobs running). Round 7's rules add a parse of every runtime file's imports and
+attribute writes; the parse itself is cached. Round 4 measured 15-18 s on a quieter container and round 5's verifier 21-23 s. Timings depend
 on the machine and its load and are approximate.
 
 ## Commands and results
@@ -275,14 +302,14 @@ checkout as rootdir. The container's disk was full during round 4, so the mutant
 
 | Command | Python 3.13 | Python 3.11 |
 |---|---|---|
-| `pytest tests/unit/test_canonical_owner_guard.py` | **46 passed**, no warnings | **46 passed**, no warnings |
-| `pytest tests/unit/test_canonical_owner_guard.py tests/unit/test_no_structural_duplicates.py tests/unit/test_repo_health_gates.py tests/unit/test_import_layering.py`, in the worktree (`test_no_structural_duplicates` lists files with `git ls-files`) | **74 passed** | **74 passed**; the 2 DeprecationWarnings come from `test_no_structural_duplicates.py`, which parses the same script and is not in this unit |
-| `python scripts/ci/check_canonical_owner_guard_mutants.py`, in an export without `.git` | BASELINE_PASSES (46 passed), **157/157 caught**, 0 STALE, rc 0 | BASELINE_PASSES (46 passed), **157/157 caught**, 0 STALE, rc 0 |
-| `python scripts/repo_review.py --check` | rc 0, 0 hard findings, 1,001 literal anchors checked | rc 0, the same |
-| `python -m acceptance.claims` | PASS: 6,019 claims in 637 files, 0 crosswalk problems, 0 violations | PASS, the same |
-| `python -B -m acceptance directive --collect --against e3a84f95` | rc 0: the pinned asks hold, every ask closed since cites new or changed evidence (none closed), all 195 cited nodes collect; 82/272 asks met, as before; S52.A1, S69.A3 and S76.A2 each `UNIT_VERIFIED of UNIT_VERIFIED (partial)`, BUILDABLE_NOT_BUILT MW-C | not run in round 6 (round 4: rc 2, because this venv lacks `cryptography`; none of the 114 nodes that collect nothing is a node of this unit) |
+| `pytest tests/unit/test_canonical_owner_guard.py` | **50 passed**, no warnings | **50 passed**, no warnings |
+| `pytest tests/unit/test_canonical_owner_guard.py tests/unit/test_no_structural_duplicates.py tests/unit/test_repo_health_gates.py tests/unit/test_import_layering.py`, in the worktree (`test_no_structural_duplicates` lists files with `git ls-files`) | **78 passed** | **78 passed**; the 2 DeprecationWarnings come from `test_no_structural_duplicates.py`, which parses the same script and is not in this unit |
+| `python scripts/ci/check_canonical_owner_guard_mutants.py`, in an export without `.git` | BASELINE_PASSES (50 passed), **167/167 caught**, 0 STALE, rc 0 | BASELINE_PASSES (50 passed), **167/167 caught**, 0 STALE, rc 0 |
+| `python scripts/repo_review.py --check` | rc 0, 0 hard findings, 1,008 literal anchors in 40 gate scripts checked | rc 0, the same |
+| `python -m acceptance.claims` | PASS: 6,021 claims in 641 files, 0 crosswalk problems, 0 violations | PASS, the same |
+| `python -B -m acceptance directive --collect --against 357b353d` | rc 0: the pinned asks hold, every ask closed since cites new or changed evidence, all 204 cited nodes collect; 82/272 asks met; S52.A1, S69.A3 and S76.A2 each `UNIT_VERIFIED of UNIT_VERIFIED (partial)`, BUILDABLE_NOT_BUILT MW-C | not run (round 4: rc 2, because this venv lacks `cryptography`; none of the nodes that collect nothing is a node of this unit) |
 
-`repo_review --check` prints 17 advisories in round 6, two more than at `79ef5742` (round 6's `copy_class` edit of
+`repo_review --check` prints 17 advisories in round 7, as in round 6 (round 7's edits add none), two more than at `79ef5742` (round 6's `copy_class` edit of
 `CommercialLoop`, read in `business/commercial_loop.py`, and its `copy_body` edit of `handle` in `greg/remote.py`), and five more at `79ef5742` than at `7c2b39e5` ("anchor occurs at 3 sites" in
 `greg/business_loop.py` and `greg/remote.py`): its static reader takes the function name a round-4 `copy_body` edit
 copies (`reconcile`, `handle`) for a text anchor. Advisories are not findings, and those edits read the function from
@@ -293,7 +320,10 @@ and 8 earlier ones re-anchored on lines round 4 rewrote: the two undecided-pin m
 and the four that rewrite the runtime-file filter), and holds 157 (98 MW-C) after round 6: 18 new, one or more for
 each new rule (B1: five tree edits and four code mutants; B2: one of each; B3: two tree edits and three code mutants;
 B4: one of each), none removed, and one re-anchored ("async defs no longer scanned", on the line of `_functions` that
-round 6 rewrote), each caught. The gate's `create` edit now makes a missing directory and removes it again, which
+round 6 rewrote), each caught. After round 7 it holds 167 (108 MW-C): 10 new (M1: one tree edit and one code mutant;
+M2: three tree edits, the shim of E1/E2, the method swap of N2 and the namespace alias of E3, and three code mutants;
+M3: one of each), none removed or re-anchored. The merge of the line brought `a82b0d38`, the same
+`greg/teams.py` to `greg/team_forming.py` change this branch already had, so the gate file merged without a conflict. The gate's `create` edit now makes a missing directory and removes it again, which
 the B4 tree edit needs.
 
 Each item of round 3 has a test that failed on the guard as it was and passes now, on both Pythons:
@@ -326,17 +356,41 @@ end-to-end tree, run as the whole guard file:
 | N8: four real duplicates found while measuring method comparison | none (no runtime code changed); recorded under "Found evidence" below | - | - |
 
 Round 6 (the items of round 5's review of `79ef5742`). Each fix has a test that fails on `79ef5742`'s guard (the
-round-6 tests appended to that guard file) and passes now, on 3.13 and 3.11; "Attack" is the reviewers' end-to-end
-tree, run as the whole guard file at `79ef5742` and now (scripts and logs in the session's scratch directory):
+round-6 tests appended to that guard file) and passes now, on 3.13 and 3.11. "Attack" is an end-to-end tree run as the
+whole guard file at `79ef5742` and at `16d35caa`. The counts in this table come from the fixer's own re-creations of
+the reviewers' attacks (round 6's `attacks.py`), not from the reviewers' scripts; where the two differ, both are given
+(round 6's verifier and skeptic re-ran the reviewers' scripts; scripts and logs in the session's scratch directory):
 
 | Item | Test | Fails before | Passes after |
 |---|---|---|---|
 | B1: a dead-branch decoy, a `TYPE_CHECKING` decoy, a class rebinding or a star import hid a registered body | `test_every_registered_qualname_has_one_binding_and_its_module_no_computed_binding`; `test_a_decoy_rebinding_or_star_import_of_a_registered_qualname_fails` | yes (NameError: no rule existed). Attack, at `79ef5742`: `if False:` decoy plus a copy of `handle`, `except ImportError:` decoy, `TYPE_CHECKING` decoy plus a copy of `reconcile`, `GoalGravityLoop` rebound plus a verbatim copy, star-import accelerator: each 41 passed on 3.13 and 3.11 | yes. Attack now: each fails the one-binding test on both (the class rebinding also fails guard 4, the compared-set pin and the class test, 4 failed) |
 | B2: a new record adopts an undecided record's candidate (X1, X2, R4) | `test_a_new_record_fails_until_it_is_pinned` | yes: `pin_problems` returned `[]`. Attack: 41 passed on both | yes. Attack: 4 failed on both (this test and the three that assert `pin_problems` is clean). The cross-record half was measured and stopped (above) |
-| B3: a verbatim class copy in its record's own module, or recorded as a new alternate (R2a, R2b) | `test_a_registered_class_body_is_compared_whole_at_its_own_location_and_for_twins` | yes: no copy reported. Attack: R2a 41 passed, R2b 41 passed, on both | yes. Attack: R2a 1 failed (guard 4), R2b 5 failed (guard 4, the distinct check, the compared-set pin, the class test, and the one-binding test's count of 50 registered qualnames), on both |
+| B3: a verbatim class copy in its record's own module, or recorded as a new alternate (R2a, R2b) | `test_a_registered_class_body_is_compared_whole_at_its_own_location_and_for_twins` | yes: no copy reported. Attack: R2a 41 passed, R2b 41 passed, on both | yes. Attack: R2a 1 failed (guard 4) in the fixer's re-creation, whose copy was named `PullLoop`; 2 failed (guard 4 and the class test) with the reviewers' own script, whose copy is named `GravityLoop`, because the class test's fixture read the live `greg/gravity.py` (fixed in round 7, M5); R2b 5 failed (guard 4, the distinct check, the compared-set pin, the class test, and the one-binding test's count of 50 registered qualnames), on both |
 | B4: a package beside a `SEALED` file | `test_a_package_beside_a_sealed_file_fails_the_module_name_rule` | yes: no problem reported. Attack: 41 passed on both | yes. Attack: 1 failed (guard 4's test) on both |
 | B5: a wrapper of 25 nodes or more and an extracted helper (skeptic R1) | none: stated as the fork-pattern limit after measurement (above) | - | Attack, at `79ef5742` and now: 41 passed and 46 passed, on both (the limit, as stated) |
 | B6: wording | none (documents only): the sentences the verifier marked are corrected in this README, the registry comments, the test's docstring and S52.A1, S69.A3 and S76.A2 | - | - |
+
+Round 7 (the items of round 6's review of `16d35caa`, after the merge of the line at `357b353d`). Each fix has a test
+that fails on the guard as it stood before the fix and passes now, on 3.13 and 3.11. "Attack" is the reviewers' own
+round-6 script (the skeptic's `e2e_new.py` and `c1.py`, the verifier's `new6.py`), unchanged but for the tree path, run
+as the whole guard file on an export of `16d35caa` and on an export of round 7's last code commit (`abdc7837`). Every
+count below is identical on 3.13 and 3.11:
+
+| Item | Test | Fails before | Passes after |
+|---|---|---|---|
+| M1: an existing decided record names an undecided record's candidate as canonical, one word in the YAML (skeptic C1) | `test_a_decided_records_canonical_qualnames_equal_the_pin` | yes: `pin_problems` returned no problem for the edit. Attack C1 at `16d35caa`: 46 passed | yes. Attack C1: 5 failed (the pins test, the three tests that assert `pin_problems` is clean, and this test) |
+| M2 (a): a registered function rebound as an attribute of its module from another file (skeptic E1, verifier E2) | `test_no_runtime_file_rebinds_a_registered_qualname_or_a_registered_class_attribute`; `test_a_registered_qualname_rebound_from_another_module_or_through_a_namespace_alias_fails` | yes (NameError: no rule existed). Attack at `16d35caa`: E1 46 passed, E2 46 passed | yes. Attack: E1 1 failed, E2 1 failed (the tree test) |
+| M2 (b): a method of a registered class swapped after its class statement (skeptic N2, a library-level check) | the same two tests | yes (NameError) | yes; covered by the synthetic test and a gate mutant that appends `GoalGravityLoop.execution_authority = ...` to `egregore/gravity.py` |
+| M2 (c): `_ns = globals(); _ns['reconcile'] = ...` in the registered module (verifier E3) | the second test above; `test_every_registered_qualname_has_one_binding_and_its_module_no_computed_binding` on the tree | yes (NameError; `binding_problems` returned no problem). Attack E3 at `16d35caa`: 46 passed | yes. Attack E3: 1 failed (the one-binding test) |
+| M3: a copy in a `tests/` module that a script imports (skeptic E2) | `test_a_tests_module_that_runtime_code_imports_is_scanned_as_runtime` | yes: the imported `tests/` modules were not listed. Attack E2 at `16d35caa`: 46 passed | yes. Attack E2: 1 failed (guard 4) |
+| M4: wording | none (documents only): the YAML note's rule count matches its six bullets; the round-6 table names the tree each attack count comes from; Reality bullet 4; the fork-pattern basis; S69.A3's open list; the class limits; the guard-2 file-link case | - | - |
+| M5: the class test's exact assertion depended on the live tree | `test_a_registered_class_body_is_compared_whole_at_its_own_location_and_for_twins` (rewritten fixture) | yes: with a verbatim copy of `GoalGravityLoop` appended to the live `greg/gravity.py` as `GravityLoop` (round 5's R2a), the guard file gave 2 failed (guard 4 and this test); as `PullLoop`, the fixture's own name, 1 failed, the fixture's copy hiding behind the live one | yes: 1 failed (guard 4 only) under either name |
+
+Still passing at round 7, as stated limits: the verifier's E1 (a decided record takes greg.gravity select and step as
+a new ALTERNATE: 50 passed; B2a's stopped cross-record rule), the skeptic's E3 (base-class extraction of
+`CommercialLoop` plus a disguised copy of the base: 50 passed) and E4 (a verbatim `GoalGravityLoop` copy plus one
+method, in `greg/evaluation/`: 50 passed). The verifier's E4 and E5 (whole-class copies nested in a function, and
+with `@dataclass` and a base added) failed before and fail now (1 failed each).
 
 ## Compatibility with the line and with the open heads
 
@@ -378,14 +432,22 @@ The `_deliver` question below applies to both.
   `greg.remote.handle` wrapper). The wrapper stays in `COMPARED`, the helper is unregistered, and a copy of the moved
   logic anywhere passes. Round 4's record claimed this extracted-helper case was caught; only a thin delegation that
   leaves the wrapper below 25 nodes is. The fix considered (round 6, B5) was to pin each `COMPARED` body's digest, so
-  that every edit to a registered body becomes a reviewed test change. Measured first: 5 commits on the line since
-  2026-11-08 changed one of the 27 registered function bodies by a full-history fingerprint diff (one authored change
-  and 4 merges that carried it; 2 with git's default history simplification), and 5 of the 19 open heads committed in
-  that window change one against their merge-base. Above the threshold of 3, a digest pin would put a test edit into
-  each of those parallel PRs, so it was not adopted, and this stays a stated limit.
+  that every edit to a registered body becomes a reviewed test change. Measured first, on the line since 2026-11-08:
+  one authored change to a registered function body (`d7c43ce5`, `greg.remote.handle`), which a full-history
+  fingerprint diff counts in 5 commits (the 4 merges that carried it) and git's default history simplification in 2;
+  and 5 of the 19 open heads committed in that window (this branch and its backup among the 19) change one of the 27
+  bodies against their merge-base. The basis for the choice is the open heads: a digest pin would put a test edit,
+  and a merge conflict on the pin literal, into each of those 5 parallel PRs and every later edit of a registered
+  body, which is the churn the guard is meant to spare cooperating agents. So it was not adopted, and this stays a
+  stated limit. The class form of the fork pattern is base-class extraction: move every method but one of a
+  registered class into a new base class (`_CommercialCore`) and keep the one in the registered class, which stays in
+  `COMPARED` because it is still 25 erased nodes or more; a copy of the new base passes (round 6's skeptic E3).
 - **Registered functions and classes only.** A function the registry does not record has no owner check. Since round
   6 the 9 registered classes are compared whole by guard 4; their methods are not compared one by one (see below), so
-  a copy of one method passes. Constants are compared by guard 3 only (exact structure, six packages, module level). The three registered functions below the 25-node threshold
+  a copy of one method passes. A class is one fingerprint, so any added, removed or reordered method makes a copy a
+  different body: a copy of `GoalGravityLoop` with one 2-line method added passes (round 6's skeptic E4), and that
+  copy-and-tweak is the usual shape of a convenience class copy. Guard 4 catches only verbatim, renamed or disguised
+  whole-class copies. Constants are compared by guard 3 only (exact structure, six packages, module level). The three registered functions below the 25-node threshold
   (`acceptance.rank`, `greg.improvement.attention_close_condition`, `greg.improvement.claim_close_condition`) have no
   copy check: a disguised copy of either `greg.improvement` function passes.
 - **Small bodies have generic shapes.** A different function whose erased body equals a small registered one fails.
@@ -397,18 +459,28 @@ The `_deliver` question below applies to both.
   `NOT_RUNTIME`, `SEALED_UNDER`, `NOT_CONSUMERS` and `MIN_COPY_NODES` are literals in the test; changing them changes
   the guard, visibly in the diff, and nothing but review stops a diff that changes the registry and the literal
   together.
-- **What is scanned.** The filesystem, not git. An untracked `.py` file outside a top-level hidden entry is scanned
+- **What is scanned.** `docs/` is not scanned, its runnable scripts included (24 outside `lineage-archive/`; 5
+  `docs/evidence/` scripts import `tests/`), and a `tests/` module is scanned only when a scanned file imports it by an
+  `import` statement: one imported by `importlib`, `__import__` or `exec`, or by a bare name after `sys.path` is changed
+  to put a directory under `tests/` first, is not. The filesystem, not git. An untracked `.py` file outside a top-level hidden entry is scanned
   too, and a tracked `.py` file under a top-level hidden directory (there is none today) is not. A copy reachable only
   through a DIRECTORY link out of the repository is not scanned; a FILE link is followed wherever it points. A copy
   in a non-`.py` file is never read.
 - **Static resolution.** A qualname resolves to the last statement that binds it in source order, not by which branch
   runs. Since round 6 a registered qualname may have only one binding, so an `if X:` / `else:` pair, a dead-branch
   decoy, `@overload` stubs, a rebinding, a star import and a computed `globals()`, `vars()` or `locals()` write in its
-  module fail instead of being read (`binding_problems`). Still not seen: a decorator on the one def or class that
-  returns a different object (`@functools.lru_cache` and `@dataclass` are allowed); a rebinding the rule does not
-  parse (`setattr` on the module or the class, `sys.modules[__name__].__dict__`, a literal `vars()` or `locals()` key,
-  `exec`); and a different module object put in `sys.modules`. These are deliberate-evasion forms, outside the threat
-  model. `AmbiguousModule` stops the guard with an exception naming the module (the test fails) rather than a list of
+  module fail instead of being read (`binding_problems`). Since round 7 an assignment, augmented assignment, `del`, or
+  `setattr()` or `delattr()` with a literal name, from any runtime file, that writes a registered qualname as an
+  attribute of a name bound to its module, or any attribute of a registered class outside its class body, fails, and
+  so does a name bound to the namespace in a registered module (`attribute_rebinding_problems`; round 6's E1, E2, E3
+  and N2). Still not seen: a decorator on the one def or class that returns a different object (`@functools.lru_cache`
+  and `@dataclass` are allowed); `setattr` or `delattr` with a computed name; a module object reached by assignment
+  (`m = greg.body; m.send_signed = f`), through `sys.modules` (`sys.modules[__name__].__dict__`), by
+  `importlib.import_module` or `__import__`, or a different module object put in `sys.modules`; a literal `vars()` or
+  `locals()` key at module level; and `exec`. The import scan does not tell scopes apart, so a name imported in one
+  function counts in every function of the file (it fails closed). Those forms are exotic code, outside the threat
+  model; the plain monkeypatch of an imported module, which the tree already uses for constants, is not, and it is now
+  caught for registered qualnames. `AmbiguousModule` stops the guard with an exception naming the module (the test fails) rather than a list of
   every problem.
 - **What the pins leave open.** `UNDECIDED_ENTRIES` pins an undecided record's entries, not its other fields
   (`decision_needed`, `safe_default`, `review_trigger`, `migration_path`, `effect`, which define the founder's question
@@ -424,10 +496,13 @@ The `_deliver` question below applies to both.
 - **Each real file once.** A file reachable by several paths is read at one of them (`_once`). Guard 2 resolves a
   relative import from the path it reads, so a link inside greg/ to another file under greg/ (read at its real path)
   is not also checked as the module the link path names, whose relative imports could resolve elsewhere; a link to a
-  file outside greg/ is read at the link path, as Python imports it there. There are no links in the tree today.
+  file outside greg/ is read at the link path, as Python imports it there. An import through a FILE link to a
+  HISTORICAL module is not flagged by guard 2: with `greg/mission_view.py` linking to `greg/mission_control.py`,
+  `from greg.mission_view import REALITY` in `greg/ladder.py` passes, because guard 2 matches the module name the
+  import names (round 5's `alias_g2`, unchanged since). There are no links in the tree today.
 
 - **Threat model.** Every limit above that needs exotic code or text (a decorator that swaps the object, a namespace
-  write through `setattr` or `exec`, a self-issued ruling) is a limit against a deliberate evader, which these guards do
+  write through a computed `setattr`, `sys.modules` or `exec`, a self-issued ruling) is a limit against a deliberate evader, which these guards do
   not claim to stop (see "Reality level").
 
 ## The anchor question (S52.A1)
@@ -504,19 +579,28 @@ residual is stated as a limit above, and none is claimed as covered.
   `test_the_body_guard_ignores_one_node_edits_pass_no_op_constants_annotations_and_import_aliases`,
   `test_a_registered_body_is_exempt_only_at_its_own_location`,
   `test_a_registered_class_body_is_compared_whole_at_its_own_location_and_for_twins`,
-  `test_the_walk_reads_each_real_file_once_and_follows_file_links_anywhere`). The body read is the one Python binds,
-  because each registered qualname has one binding and its module no star import or computed namespace write
+  `test_the_walk_reads_each_real_file_once_and_follows_file_links_anywhere`). The body read is the one Python binds
+  for the forms the rules parse: each registered qualname has one binding, its module no star import, computed
+  namespace write or name bound to its namespace, and no runtime file writes it, or an attribute of a registered
+  class, from outside its definition by an assignment, `del`, or a literal `setattr` or `delattr`
   (`test_every_registered_qualname_has_one_binding_and_its_module_no_computed_binding`,
-  `test_a_decoy_rebinding_or_star_import_of_a_registered_qualname_fails`). The scanned files leave out `tests/`,
-  `docs/`, top-level hidden entries and the 9 `SEALED` instruments, which no diff can extend without changing the
+  `test_a_decoy_rebinding_or_star_import_of_a_registered_qualname_fails`,
+  `test_no_runtime_file_rebinds_a_registered_qualname_or_a_registered_class_attribute`,
+  `test_a_registered_qualname_rebound_from_another_module_or_through_a_namespace_alias_fails`). A computed `setattr`,
+  `sys.modules`, `exec`, `importlib`, a module reached by assignment, a literal `vars()` or `locals()` key and a
+  decorator that returns a different object are not parsed (see "Static resolution"). The scanned files leave out
+  `docs/`, `tests/` except the modules a scanned file imports
+  (`test_a_tests_module_that_runtime_code_imports_is_scanned_as_runtime`), top-level hidden entries and the 9 `SEALED` instruments, which no diff can extend without changing the
   test (`test_a_freeze_manifest_seals_only_the_files_and_bytes_the_test_pins`), and which no package of the same module
   name can shadow (`test_a_package_beside_a_sealed_file_fails_the_module_name_rule`). Not covered: the three
   registered functions below the threshold, the methods of the 9 registered classes one by one, the fork pattern
-  (a wrapper that keeps its place in `COMPARED` included), and every other stated limit above.
+  (a wrapper that keeps its place in `COMPARED` included, and its class form, base-class extraction), a class copy with
+  a method added, removed or reordered, and every other stated limit above.
 - A body leaves or joins the comparison only with a change to `COMPARED`
   (`test_the_set_of_compared_registered_bodies_is_pinned`); `COMPARED` pins locations, not contents.
-- A record joins the registry only with a change to `PINNED` (`test_a_new_record_fails_until_it_is_pinned`).
-- An undecided record cannot gain, lose or change any entry or field, of any role, without a change to
+- A record joins the registry only with a change to `PINNED` (`test_a_new_record_fails_until_it_is_pinned`), and a
+  decided record's canonical qualnames change only with one (`test_a_decided_records_canonical_qualnames_equal_the_pin`).
+- An undecided record cannot gain, lose or change any entry, or any field of an entry, of any role, without a change to
   `UNDECIDED_ENTRIES`, and a record cannot become undecided without being added to it
   (`test_an_undecided_record_takes_no_new_or_changed_entry_of_any_role_without_a_pin_change`).
 - A historical or retired alternate the registry records stays in the tree only while code outside `greg/`,

@@ -226,7 +226,9 @@ architecture_ownership_records:
 # Checked by tests/unit/test_canonical_owner_guard.py (mutants: scripts/ci/check_canonical_owner_guard_mutants.py).
 # The test pins every record, entry and canonical module set (PINNED): removing one, or adding a second canonical
 # module, fails (test_the_registry_keeps_every_pinned_record_entry_and_founder_decision), and since 2026-11-22 so does
-# adding a record PINNED does not hold (test_a_new_record_fails_until_it_is_pinned). The ENTRIES of a
+# adding a record PINNED does not hold (test_a_new_record_fails_until_it_is_pinned), or adding a canonical qualname to
+# a decided record (its canonical qualnames equal PINNED exactly; a founder ruling makes canonical only qualnames its
+# module held as a candidate: test_a_decided_records_canonical_qualnames_equal_the_pin). The ENTRIES of a
 # NEEDS_FOUNDER_DECISION record are pinned (UNDECIDED_ENTRIES): any entry of any role (canonical, candidate, alternate,
 # distinct) or any field of one (an alternate's status, a why, an evidence line) added, removed, changed or reordered
 # fails, and so does an undecided record the literal does not hold
@@ -710,15 +712,15 @@ function_owner_records:
       - '_?([a-z0-9]+_)*inbox_(drop|write|put|deliver|relay|transport)(_[a-z0-9]+)*'
 
 # MW-C, 2026-11-21, amended 2026-11-22 after review (tests/unit/test_canonical_owner_guard.py;
-# docs/evidence/canonical-owner-guard-2026-11-21/README.md). Four rules now bind the records above, each with the test
+# docs/evidence/canonical-owner-guard-2026-11-21/README.md). Six rules now bind the records above, each with the test
 # that enforces it (the header comment of this section states the pins):
 # - guard 4: the body of every canonical, candidate and alternate FUNCTION a record names, and the whole body of every
 #   such CLASS (names and constants erased, pass and no-op constants dropped, annotations and import aliases
 #   normalised, at least 25 AST nodes; the 36 locations compared, 27 functions and 9 classes, are pinned as COMPARED,
 #   by location, not content) is compared with every function, method and class of every runtime .py file, each real
-#   file read once, at its real path when scanned there and otherwise at one link path (everything but tests/, docs/,
-#   top-level hidden entries and the cortex/evaluation/ files the test's SEALED literal pins with the digest a freeze
-#   manifest records); a copy anywhere but the body's own registered module and qualname fails, inside its record or
+#   file read once, at its real path when scanned there and otherwise at one link path (everything but docs/, tests/
+#   apart from the tests/ modules a scanned file imports, top-level hidden entries and the cortex/evaluation/ files the
+#   test's SEALED literal pins with the digest a freeze manifest records); a copy anywhere but the body's own registered module and qualname fails, inside its record or
 #   outside it, two registered locations with one body fail, and two runtime or sealed files with one module name fail
 #   (test_no_copy_of_a_registered_function_body_outside_its_record,
 #   test_the_body_guard_catches_renamed_nested_relocated_and_one_line_copies,
@@ -727,19 +729,28 @@ function_owner_records:
 #   test_the_set_of_compared_registered_bodies_is_pinned, test_a_freeze_manifest_seals_only_the_files_and_bytes_the_test_pins,
 #   test_the_walk_reads_each_real_file_once_and_follows_file_links_anywhere,
 #   test_a_package_shadows_a_module_of_the_same_name_and_no_two_files_share_a_module_name,
-#   test_a_package_beside_a_sealed_file_fails_the_module_name_rule);
+#   test_a_package_beside_a_sealed_file_fails_the_module_name_rule,
+#   test_a_tests_module_that_runtime_code_imports_is_scanned_as_runtime);
 # - every registered qualname has exactly one binding at its level (dead branches and TYPE_CHECKING blocks included),
-#   and its module no star import and no namespace write with a computed name, so the def or class read is the one
-#   Python binds (test_every_registered_qualname_has_one_binding_and_its_module_no_computed_binding,
+#   and its module no star import, no namespace write with a computed name and no name bound to its namespace
+#   (_ns = globals())
+#   (test_every_registered_qualname_has_one_binding_and_its_module_no_computed_binding,
 #   test_a_decoy_rebinding_or_star_import_of_a_registered_qualname_fails);
+# - no runtime file assigns, augments, deletes, or setattr()s or delattr()s with a literal name, a registered qualname
+#   as an attribute of a name bound to its module (import a.b as X, from a import b as X, the dotted import a.b), or any
+#   attribute of a registered class outside its own class body
+#   (test_no_runtime_file_rebinds_a_registered_qualname_or_a_registered_class_attribute,
+#   test_a_registered_qualname_rebound_from_another_module_or_through_a_namespace_alias_fails); with the rule above,
+#   the def or class read is the one Python binds, unless a form neither parses rebinds it (the limits below);
 # - a 'distinct' entry exempts no copy (guard 4; guard 3's structural-copy check) and may not name a module that holds
 #   one; only an entry in the test's BODY_EXEMPTIONS (location, the body it resembles, the reason; empty today) clears
 #   a false positive (test_a_distinct_entry_cannot_vouch_for_a_module_that_holds_a_copy,
 #   test_guard_3_reports_a_structural_copy_even_where_a_distinct_entry_names_it,
 #   test_a_pinned_exemption_clears_exactly_one_location_and_a_stale_one_fails);
-# - a NEEDS_FOUNDER_DECISION record's entries are pinned, and every record is in PINNED, as the header says
+# - a NEEDS_FOUNDER_DECISION record's entries are pinned, every record is in PINNED, and a decided record's canonical
+#   qualnames equal PINNED, as the header says
 #   (test_an_undecided_record_takes_no_new_or_changed_entry_of_any_role_without_a_pin_change,
-#   test_a_new_record_fails_until_it_is_pinned);
+#   test_a_new_record_fails_until_it_is_pinned, test_a_decided_records_canonical_qualnames_equal_the_pin);
 # - a HISTORICAL or RETIRED alternate still defined in the tree carries kept_for: {consumer: <module>.<function>}
 #   outside greg/, tests/, docs/, scripts/ci/ and any conftest.py, whose source names it, or
 #   {open_decision: <its own record_id>} while that record is undecided
@@ -748,8 +759,11 @@ function_owner_records:
 # Limits, not guarantees: a copy that changes structure, renames an attribute or keyword, sits outside a def or runs by
 # exec is missed; the fork pattern passes, including the owner's logic moved to a new helper behind a wrapper of 25
 # nodes or more (COMPARED pins locations, not contents); the methods of the registered classes one by one and the 3
-# registered functions below 25 nodes are not compared; a decorator that returns a different object, or a rebinding
-# through setattr, sys.modules or exec, is not seen; a copy reachable only through a DIRECTORY link out of the
+# registered functions below 25 nodes are not compared, and any added, removed or reordered method makes a class copy
+# a different whole-class body (so is the class form of the fork pattern, base-class extraction); a decorator that
+# returns a different object, or a rebinding through setattr or delattr with a computed name, sys.modules, exec,
+# importlib, a module bound by assignment or a literal vars() or locals() key, is not seen; docs/ (its runnable
+# scripts included) and the tests/ modules no scanned file imports are not scanned; a copy reachable only through a DIRECTORY link out of the
 # repository, or in a non-.py file, is not read; an existing CANONICAL record can take a new alternate or distinct
 # entry naming an undecided record's candidate with no test change; a function no record names has no owner check; a
 # consumer is checked by what its source names, not by whether anything calls it. The evidence README lists them all.

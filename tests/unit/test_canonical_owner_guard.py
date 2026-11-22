@@ -11,7 +11,12 @@ The registry is ``function_owner_records`` in docs/collaboration/ARCHITECTURE-OW
    module to its package before a module file of the same name, both present failing (``module_file``). Since round 6
    every canonical, candidate and alternate qualname has exactly ONE binding at its level, dead branches and
    ``TYPE_CHECKING`` blocks included, and its module no star import and no namespace write with a computed name
-   (``binding_problems``), so the statement the guards read is the one Python binds, for ordinary code;
+   (``binding_problems``), and since round 7 no name bound to its namespace (``_ns = globals()``), while no runtime
+   file writes a registered qualname as an attribute of its module, or an attribute of a registered class outside its
+   body, by assignment, ``del`` or a literal ``setattr``/``delattr`` (``attribute_rebinding_problems``). So the
+   statement the guards read is the one Python binds, except for forms these rules do not parse: a computed
+   ``setattr``, ``sys.modules``, ``exec``, ``importlib``, a module reached by assignment, a literal ``vars()`` or
+   ``locals()`` key, a decorator that returns a different object;
 2. no module under greg/ reaches an alternate whose status is RETIRED or HISTORICAL: ``import``, ``from ... import``
    (relative ones too), ``as`` aliases, attribute chains through any of them, names assigned from them,
    ``getattr``/``vars``/``sys.modules`` with a constant name, ``importlib.import_module`` and ``__import__`` (with
@@ -49,14 +54,16 @@ The registry is ``function_owner_records`` in docs/collaboration/ARCHITECTURE-OW
    code run by ``exec`` of a string; the fork pattern (the owner edited in the same diff that keeps its old body as a
    copy, which then matches nothing registered; or the owner's logic moved into a new helper behind a wrapper of at
    least ``MIN_COPY_NODES`` nodes, which stays compared while the helper is not, so a copy of the moved logic passes);
-   the methods of a registered class one by one (four real duplicates already in the tree would fail, see the
-   README); a decorator that returns a different object; the 3 registered functions below ``MIN_COPY_NODES``
+   its class form (base-class extraction: every method but one moved into a new base class, whose copy then passes); a
+   class copy with any method added, removed or reordered (a class is one whole-body fingerprint); the methods of a
+   registered class one by one (four real duplicates already in the tree would fail, see the README); a decorator that returns a different object; the 3 registered functions below ``MIN_COPY_NODES``
    (acceptance.rank, greg.improvement.attention_close_condition and claim_close_condition); and any function the
    registry does not record. The rest of tests/ is not scanned (fixtures may copy a body on purpose), nor is docs/,
    whose runnable scripts (docs/evidence scripts that import tests/ among them) are outside the scan.
 
 The registry itself is pinned (``PINNED``, ``UNDECIDED_ENTRIES``, ``FOUNDER_DECISIONS``, ``MUST_FLAG``): removing a
-record or an entry, adding a record PINNED does not hold (round 6), adding a second canonical module, adding, removing
+record or an entry, adding a record PINNED does not hold (round 6), adding a canonical qualname to a decided record
+(round 7), adding a second canonical module, adding, removing
 or changing any entry of a record that is still NEEDS_FOUNDER_DECISION (candidates, alternates with their status,
 distinct entries, every field of each; the record's other fields are not pinned), resolving a founder decision without
 a ruling record, or narrowing a record's markers below the names it must catch fails until this file changes in the

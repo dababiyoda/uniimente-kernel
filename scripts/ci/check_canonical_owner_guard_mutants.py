@@ -65,6 +65,17 @@ SHADOW = "test_a_package_shadows_a_module_of_the_same_name_and_no_two_files_shar
 ONCE = "test_the_walk_reads_each_real_file_once_and_follows_file_links_anywhere"
 ONE_BINDING = "test_every_registered_qualname_has_one_binding_and_its_module_no_computed_binding"
 DECOYS = "test_a_decoy_rebinding_or_star_import_of_a_registered_qualname_fails"
+NEW_RECORD = "test_a_new_record_fails_until_it_is_pinned"
+# A new CANONICAL record that names candidate side A of the undecided goal runtime as its owner and side B as its
+# ALTERNATE (round 5's X1), with no ruling and no change to the test.
+ADOPTED_RECORD = ("  - record_id: OWN-FN-GOAL-RUNTIME-ADOPTED\n    function: the goal runtime, adopted\n"
+                  "    effect: one goal runtime\n    owner_status: CANONICAL\n    canonical:\n"
+                  "      - module: greg.goal_gravity\n        qualnames: [tick]\n"
+                  "    evidence: [\"adopted by an agent\"]\n    alternates:\n      - module: greg.gravity\n"
+                  "        qualnames: [select, step]\n        status: ALTERNATE\n        reason: the rival\n"
+                  "        retirement_condition: never\n    migration_path: none\n    markers:\n"
+                  "      - 'GoalRuntimeAdopted'\n\n")
+INBOX_RECORD_START = "  - record_id: OWN-FN-INBOX-TRANSPORT\n"
 REMOTE_SIG = "def handle(home: Path, method: str, path: str, headers, body: bytes, *, now: datetime | None = None):\n"
 REALITY_KEPT = "        kept_for: {consumer: acceptance.claims.crosswalk_problems}\n"
 # A copy of greg.organs.exchange recorded as 'distinct' in the organ-exchange record.
@@ -582,6 +593,12 @@ MUTANTS = [
     ("MW-C round 6: star imports and computed namespace writes pass",
      [("replace", TESTS, "                for line, what in _computed_namespace_writes(tree)]\n",
        "                for line, what in _computed_namespace_writes(tree) if False]\n")], DECOYS),
+    # -- MW-C round 6 (B2): every record is pinned ------------------------------------------------------------------
+    ("MW-C round 6: a new CANONICAL record adopts an undecided record's candidate and demotes its rival (X1)",
+     [("replace", MAP, INBOX_RECORD_START, ADOPTED_RECORD + INBOX_RECORD_START)], PINS),
+    ("MW-C round 6: a record that PINNED does not hold passes",
+     [("replace", TESTS, "for rid in sorted(set(records) - set(pinned),", "for rid in sorted(set() - set(pinned),")],
+     NEW_RECORD),
 ]
 
 

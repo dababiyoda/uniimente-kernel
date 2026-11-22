@@ -50,10 +50,11 @@ The registry is ``function_owner_records`` in docs/collaboration/ARCHITECTURE-OW
    registry does not record. tests/ is never scanned: fixtures may copy a body on purpose.
 
 The registry itself is pinned (``PINNED``, ``UNDECIDED_ENTRIES``, ``FOUNDER_DECISIONS``, ``MUST_FLAG``): removing a
-record or an entry, adding a second canonical module, adding, removing or changing any entry or field of a record that
-is still NEEDS_FOUNDER_DECISION (candidates, alternates with their status, distinct entries), resolving a founder
-decision without a ruling record, or narrowing a record's markers below the names it must catch fails until this file
-changes in the same reviewed diff. ``kept_for_problems`` is a forward guard for section 76: a
+record or an entry, adding a record PINNED does not hold (round 6), adding a second canonical module, adding, removing
+or changing any entry of a record that is still NEEDS_FOUNDER_DECISION (candidates, alternates with their status,
+distinct entries, every field of each; the record's other fields are not pinned), resolving a founder decision without
+a ruling record, or narrowing a record's markers below the names it must catch fails until this file changes in the
+same reviewed diff, or, for a founder decision, until a ruling record is cited. ``kept_for_problems`` is a forward guard for section 76: a
 HISTORICAL or RETIRED alternate still in the tree names what keeps it (a consumer outside greg/, tests/, docs/,
 scripts/ci/ and any conftest.py, or its own record's open decision).
 
@@ -88,9 +89,11 @@ ROLES = (("canonical", "canonical"), ("candidates", "candidates"), ("alternates"
 # -- frozen at this commit (review findings F4, F5, F6, MUH-F1 on 77deac50) --------------------------------------
 # Every record and every (module, qualname) it names. Removing one fails: an implementation leaves a record by a
 # status change (RETIRED, HISTORICAL), never by deletion. The canonical module set is exact: a second canonical module
-# is two owners (section 52) and must be recorded as an ALTERNATE instead. A record that is still NEEDS_FOUNDER_DECISION
-# is pinned whole, every entry and field, by UNDECIDED_ENTRIES below. Adding an alternate or a distinct entry to a
-# decided record needs no change here; changing this literal is a reviewed change to the guard itself.
+# is two owners (section 52) and must be recorded as an ALTERNATE instead. The entries of a record that is still
+# NEEDS_FOUNDER_DECISION (every entry of every role, and every field of each entry; not the record's own fields such as
+# decision_needed or safe_default) are pinned by UNDECIDED_ENTRIES below. Since round 6 every record must be here: a
+# record PINNED does not hold fails (test_a_new_record_fails_until_it_is_pinned). Adding an alternate or a distinct
+# entry to a decided record needs no change here; changing this literal is a reviewed change to the guard itself.
 PINNED = {
     "OWN-FN-TEMPORARY-TEAMS": {
         "canonical": {"foundry.systems.teams": ("form", "act", "dissolve", "report")},
@@ -959,7 +962,13 @@ def _have(record: dict, key: str) -> dict[str, set[str] | None]:
 def pin_problems(data: dict, root: Path = ROOT, pinned: dict = PINNED,
                  founder_decisions: frozenset = FOUNDER_DECISIONS, undecided: dict = UNDECIDED_ENTRIES) -> list[str]:
     records = {r.get("record_id"): r for r in data.get("function_owner_records") or []}
-    problems = []
+    # Round 6, B2: every record is pinned. A record that is not in PINNED (a new CANONICAL record naming an undecided
+    # record's candidate as its owner and the rival as its ALTERNATE, say) fails until PINNED changes in the same
+    # reviewed diff (test_a_new_record_fails_until_it_is_pinned).
+    problems = [f"{rid}: the record is not pinned in tests/unit/test_canonical_owner_guard.py (PINNED); a record joins "
+                f"the registry only in a reviewed change that adds it to PINNED, so that no record can name another's "
+                f"implementation as its owner or alternate unseen" for rid in sorted(set(records) - set(pinned),
+                                                                                         key=str)]
     for rid, pin in pinned.items():
         r = records.get(rid)
         if r is None:
@@ -3002,3 +3011,27 @@ def test_a_decoy_rebinding_or_star_import_of_a_registered_qualname_fails(tmp_pat
                                           "tools/relay.py": OWNER_BODY.replace("def send_signed(", "def relay(")})
     assert body_copy_problems([INBOX_RECORD], copy_root) == []
     assert binding_problems([INBOX_RECORD], copy_root) != []
+
+
+def test_a_new_record_fails_until_it_is_pinned():
+    # Round 6, B2 (verifier X1/X2, skeptic R4): a NEW decided record could name an undecided record's candidate as its
+    # canonical owner and the rival candidate as its ALTERNATE, with no ruling and no test change, and every test
+    # passed. Every record must now be in PINNED, so a new record is a reviewed change to this file.
+    data = load()
+    assert {r["record_id"] for r in data["function_owner_records"]} == set(PINNED)
+    adopted = {"record_id": "OWN-FN-GOAL-RUNTIME-ADOPTED", "function": "the goal runtime, adopted",
+               "effect": "one goal runtime", "owner_status": "CANONICAL", "markers": ["GoalRuntime"],
+               "migration_path": "none", "evidence": ["adopted"],
+               "canonical": [{"module": "greg.goal_gravity", "qualnames": ["tick"]}],
+               "alternates": [{"module": "greg.gravity", "qualnames": ["select", "step"], "status": "ALTERNATE",
+                               "reason": "the rival", "retirement_condition": "never"}]}
+    changed = copy.deepcopy(data)
+    changed["function_owner_records"].append(adopted)
+    assert shape_problems(changed) == []                    # what passed before: the shape check is all it met
+    found = pin_problems(changed)
+    assert found == ["OWN-FN-GOAL-RUNTIME-ADOPTED: the record is not pinned in tests/unit/test_canonical_owner_guard.py "
+                     "(PINNED); a record joins the registry only in a reviewed change that adds it to PINNED, so that "
+                     "no record can name another's implementation as its owner or alternate unseen"], found
+    pinned = {**PINNED, adopted["record_id"]: {"canonical": {"greg.goal_gravity": ("tick",)}, "candidates": {},
+                                               "alternates": {"greg.gravity": ("select", "step")}, "distinct": {}}}
+    assert pin_problems(changed, pinned=pinned) == []       # the reviewed change; review must then judge it

@@ -18,7 +18,7 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 | [`collaboration`](#collaboration-records-handoffs-deliberations-reviews-reconciliations) | 200 | Collaboration records: handoffs, deliberations, reviews, reconciliations |
 | [`decisions`](#architecture-decision-records) | 6 | Architecture decision records |
 | [`deliberations`](#founder-rulings) | 1 | Founder rulings |
-| [`evidence`](#measured-evidence-frozen-runs-admissions-proofs) | 533 | Measured evidence (frozen runs, admissions, proofs) |
+| [`evidence`](#measured-evidence-frozen-runs-admissions-proofs) | 544 | Measured evidence (frozen runs, admissions, proofs) |
 | [`cortex`](#cortex-and-seed-genome-specifications-and-evidence) | 79 | Cortex and Seed Genome specifications and evidence |
 | [`opus-maximus`](#opus-maximus-deliverables-al) | 13 | OPUS MAXIMUS deliverables A–L |
 | [`open-source`](#open-source-mechanism-harvest-records) | 23 | Open-source mechanism harvest records |
@@ -480,7 +480,7 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 
 | Run or record | Files | Date | Title |
 |---|---:|---|---|
-| [`evidence/symbiosoup-stage-a/2026-11-22`](evidence/symbiosoup-stage-a/2026-11-22/PREREGISTRATION.md) | 11 | 2026-11-22 | SymbioSoup Stage A: pre-registration (written before any run) |
+| [`evidence/symbiosoup-stage-a/2026-11-22`](evidence/symbiosoup-stage-a/2026-11-22/PREREGISTRATION.md) | 22 | 2026-11-22 | SymbioSoup Stage A: pre-registration (written before any run) |
 | [`evidence/greg-method-grants/2026-11-22`](evidence/greg-method-grants/2026-11-22/README.md) | 4 | 2026-11-22 | Standing method grants: rehearsal evidence (2026-11-22) |
 | [`evidence/live-pr-placement/2026-11-13`](evidence/live-pr-placement/2026-11-13/README.md) | 5 | 2026-11-13 | Section 53 placement from live state, 2026-11-13: stacks through a merged parent |
 | [`evidence/ledger-memory-w5-2026-11-13/f383fd26-rss.json`](evidence/ledger-memory-w5-2026-11-13/f383fd26-rss.json) | 1 | 2026-11-13 |  |

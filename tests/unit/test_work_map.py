@@ -3114,3 +3114,9 @@ def test_lf_cr_and_crlf_line_endings_all_read_the_same_block():
     for end in ("\n", "\r\n", "\r"):
         assert w.checkin_author(end.join([w.CHECKIN, "## Check-in", f"- Session: `{B}`", "- Files: x", ""])) == (
             B, "claude"), repr(end)
+
+
+def test_the_map_tells_posters_where_their_session_line_must_stand(quick):
+    text = w.markdown(w.build([], [], now=NOW, use_git=False))
+    assert ("The map names your session only when the marker is alone on the comment's first line and your own "
+            "`Session:` line, naming one id, comes first after the heading.") in text

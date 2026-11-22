@@ -2216,7 +2216,10 @@ def markdown(m: dict) -> str:
     out += ["", "## The check-in", "",
             "Post this on the work board before any edit, commit or push, and again when you resume. When the pull "
             "request exists, give this comment's URL as its receipt's `coordination.task_ref`:", "",
-            "```text", CHECKIN_BLOCK, "```", ""]
+            "```text", CHECKIN_BLOCK, "```", "",
+            "The map names your session only when the marker is alone on the comment's first line and your own "
+            "`Session:` line, naming one id, comes first after the heading. A block you relay, paste or fill in for "
+            "another session names nobody; it is a notice for them to post as their own.", ""]
     return "\n".join(out)
 
 

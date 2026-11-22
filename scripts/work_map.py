@@ -53,7 +53,8 @@ but is not exact has its ``reason`` and ``names``, the one id its Session line n
 given: its receipt's fields as declared, ``files`` cut to the first ``FILES_LIMIT`` with ``files_cut`` counting the
 rest, ``receipt_problems`` for fields of the wrong type, ``files_refused``, why the receipt check refuses its
 coordination or its files (then its files are unknown, never an empty list), ``session_refused``, why the receipt
-check refuses its ``session_id`` or its PR comes from a fork (then it names no session), ``receipt_head_stale``,
+check refuses its ``session_id`` or its PR comes from a fork (then it names no session), ``session_unnamed``, why the
+map names no session for a receipt the check accepts (``receipt_session``), ``receipt_head_stale``,
 whether the receipt's ``head_sha`` is not the PR's head (it keeps its session: a push lands before its description
 is updated), ``changed``, the files it changes
 itself, and ``changed_via``, where they came from: ``diff`` for local git, ``api`` for the GitHub API (``--github``, a
@@ -246,19 +247,35 @@ def identities(text: str) -> list[tuple[int, str, str]]:
     return [(at, key, client) for at, _end, key, client in _spans(text)]
 
 
-def canonical_identity(value: str | None) -> tuple[str | None, str]:
-    """A receipt's ``session_id`` as (canonical id, client): the id in a known form that opens the value (after code
-    marks or emphasis), else the whole value verbatim, an opaque id. So "unknown (handed over from `B`)" or
-    "codex/root/seam (continues `B`'s WU-11)" is that text, never ``B``: a parenthetical never names another session.
-    Limit: a value that opens with one session's id is read as that session whatever follows it."""
+OPENS_WITH_ANOTHER = "receipt session_id names an id it does not open with"
+NAMES_SEVERAL = "receipt session_id names more than one id"
+
+
+def receipt_session(value: str | None) -> tuple[str | None, str, str | None]:
+    """A receipt's ``session_id`` as (canonical id, client, why it names no session). The value names a session only
+    as the check-in rule does: it opens (after code marks or emphasis) with an id in a known form and names exactly
+    one, so "`B` → `A`", "B, handed over to A" or "B (now A)" names nobody (``NAMES_SEVERAL``), and so does a value
+    that names a known id it does not open with: "unknown (handed over from B)", "Session: B" or "my parent B's
+    worker" (``OPENS_WITH_ANOTHER``). A value that names no id in a known form ("uat-vulcan",
+    "codex/root/collab-20261030") is the whole value verbatim, an opaque id."""
     value = _text(value).strip()
     if not value:
-        return None, "unknown"
+        return None, "unknown", None
     hits = _spans(value)
-    if hits and not value[:hits[0][0]].strip("`*_ \t"):
-        return hits[0][2], hits[0][3]
-    prefix = re.match(r"(?i)(codex|kimi|cursor|claude|uat)\b", value)
-    return value, (prefix[1].lower() if prefix else "other")
+    if not hits:
+        prefix = re.match(r"(?i)(codex|kimi|cursor|claude|uat)\b", value)
+        return value, (prefix[1].lower() if prefix else "other"), None
+    if value[:hits[0][0]].strip("`*_ \t"):
+        return None, "unknown", OPENS_WITH_ANOTHER
+    if len({h[2] for h in hits}) > 1:
+        return None, "unknown", NAMES_SEVERAL
+    return hits[0][2], hits[0][3], None
+
+
+def canonical_identity(value: str | None) -> tuple[str | None, str]:
+    """A receipt's ``session_id`` as (canonical id, client): ``receipt_session`` without its reason, (None, "unknown")
+    when the value names no session."""
+    return receipt_session(value)[:2]
 
 
 # ------------------------------------------------------------------ board comments
@@ -1303,7 +1320,7 @@ def _row(pull: dict, root: Path, use_git: bool, line: str = LINE) -> dict:
     f, problems = _receipt_fields(r)
     same_repo = pull["head_repo"] is not None and pull["head_repo"] == pull["base_repo"]
     refused = _session_refused(f["session_id"])
-    sid, client = (None, "unknown") if refused else canonical_identity(f["session_id"])
+    sid, client, unnamed = (None, "unknown", None) if refused else receipt_session(f["session_id"])
     if sid and not same_repo:                 # a receipt from another repository is no session's declaration here
         refused = "fork: " + ("the head repository is not the base repository" if pull["head_repo"] else
                               "the head repository is unknown, so it is not known to be the base repository")
@@ -1319,7 +1336,7 @@ def _row(pull: dict, root: Path, use_git: bool, line: str = LINE) -> dict:
         "draft": pull["draft"], "updated": pull["updated_at"], "receipt": r is not None,
         "older_receipt": r is None and receipt_of(body, version=1) is not None, "receipt_problems": problems,
         "files_refused": _files_refused(r),
-        "session": sid, "client": client, "session_refused": refused,
+        "session": sid, "client": client, "session_refused": refused, "session_unnamed": unnamed,
         "receipt_head_stale": stated_head != pull["head_sha"] if isinstance(stated_head, str) else None,
         "task_ref": f["task_ref"],
         "files": f["files"][:FILES_LIMIT], "files_cut": max(0, len(f["files"]) - FILES_LIMIT),
@@ -1402,8 +1419,13 @@ def line_bound(rows: list[dict], line: str = LINE, contained=None) -> list[dict]
 
 
 def _holder(r: dict) -> str:
-    return r["session"] or (f"(no receipt) #{r['pr']}" if not r["receipt"] else f"(refused session id) #{r['pr']}"
-                            if r.get("session_refused") else f"(no session id) #{r['pr']}")
+    """The holder a PR counts as: its session, else a label of its own, so two PRs that name no session never share
+    one and their overlap still shows."""
+    if r["session"]:
+        return r["session"]
+    why = ("no receipt" if not r["receipt"] else "refused session id" if r.get("session_refused")
+           else r.get("session_unnamed") or "no session id")
+    return f"({why}) #{r['pr']}"
 
 
 _PR_NUMBER = re.compile(r"(?:#|/pull/)(\d+)(?!\d)")
@@ -1634,6 +1656,7 @@ def who_touches(paths: list[str], rows: list[dict] | None, claims: list[dict] | 
         prs = None if rows is None else [
             {"pr": r["pr"], "session": r["session"],
              **({"session_refused": r["session_refused"]} if r.get("session_refused") else {}),
+             **({"session_unnamed": r["session_unnamed"]} if r.get("session_unnamed") else {}),
              **({"receipt_head_stale": True} if r.get("receipt_head_stale") else {}),
              "base": r["base"], "overlap": r["overlap"], "title": r["title"],
              "updated": r["updated"], "line_bound": r.get("line_bound", r["pr"] in bound),
@@ -2014,6 +2037,7 @@ def build(prs: list[dict] | None, comments: list[dict] | None, *, root: Path = R
             "receipts_with_unreadable_fields": if_prs(sorted(r["pr"] for r in rows if r["receipt_problems"])),
             "receipts_refused_for_files": if_prs(sorted(r["pr"] for r in rows if r["files_refused"])),
             "receipts_with_refused_session": if_prs(sorted(r["pr"] for r in rows if r.get("session_refused"))),
+            "receipts_naming_no_session": if_prs(sorted(r["pr"] for r in rows if r.get("session_unnamed"))),
             "receipts_with_stale_head": if_prs(sorted(r["pr"] for r in rows if r.get("receipt_head_stale"))),
             "line_bound_prs_without_diff": if_prs(sorted(r["pr"] for r in bound if r["changed"] is None)),
             "line_bound_prs_carried_by_line": if_prs(sorted(r["pr"] for r in bound if r["carried"])),
@@ -2244,7 +2268,9 @@ def markdown(m: dict) -> str:
                 f"{len(g['receipts_with_unreadable_fields'])}; receipts the receipt check refuses for their "
                 f"coordination or files: {len(g['receipts_refused_for_files'])}; receipts naming no session because "
                 f"the receipt check refuses their session_id or they come from a fork: "
-                f"{len(g['receipts_with_refused_session'])}; receipts written for another head than the PR's (normal "
+                f"{len(g['receipts_with_refused_session'])}; receipts the check accepts that name no session (their "
+                f"session_id names more than one id or an id it does not open with): "
+                f"{len(g['receipts_naming_no_session'])}; receipts written for another head than the PR's (normal "
                 f"for minutes after a push): {len(g['receipts_with_stale_head'])}"
                 + (f"; receipts listing more than {FILES_LIMIT} files, the rest not read: "
                    f"{_prs(g['receipts_with_files_cut'], 12)}" if g["receipts_with_files_cut"] else "") + ".",
@@ -2458,6 +2484,7 @@ def _answer_sources(m: dict) -> dict:
             "receipts_with_unreadable_fields": g["receipts_with_unreadable_fields"],
             "receipts_refused_for_files": g["receipts_refused_for_files"],
             "receipts_with_refused_session": g["receipts_with_refused_session"],
+            "receipts_naming_no_session": g["receipts_naming_no_session"],
             "receipts_with_stale_head": g["receipts_with_stale_head"],
             "line_bound_prs_without_diff": g["line_bound_prs_without_diff"],
             "open_prs_without_diff": sorted(r["pr"] for r in m["prs"] if r["changed"] is None)

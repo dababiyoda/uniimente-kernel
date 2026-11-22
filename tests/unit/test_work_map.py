@@ -3013,22 +3013,36 @@ def test_one_id_named_twice_or_another_id_on_the_next_item_is_still_exact():
 
 # ------------------------------------------------------------------ round 6: what a receipt's session_id names
 
-def test_a_receipt_session_id_names_the_id_it_opens_with_and_otherwise_stays_opaque(quick, tmp_path, capsys):
-    handed = f"unknown (handed over from {B})"
-    codex = f"codex/root/seam-20261121 (continues {B}'s WU-11)"
-    assert w.canonical_identity(handed) == (handed, "other")
-    assert w.canonical_identity(codex) == (codex, "codex")
-    assert w.canonical_identity(f"{A} (continues {B})") == (A, "claude")
+def test_a_receipt_session_id_names_only_the_one_id_it_opens_with_and_otherwise_stays_opaque(quick, tmp_path, capsys):
+    opaque = "codex/root/collab-20261030"
+    assert w.canonical_identity(opaque) == (opaque, "codex")
+    assert w.canonical_identity("uat-vulcan") == ("uat-vulcan", "uat")
     assert w.canonical_identity(f"`{A}`") == (A, "claude")
+    assert w.canonical_identity(f"{A} (Claude Code, cloud; `{A}` opened #290)") == (A, "claude")
     assert w.canonical_identity("Codex /root, workspace 5bcf356971dc") == ("codex:5bcf356971dc", "codex")
-    prs = [_pr(300, "a/seam", body=_receipt(handed, ["greg/missions.py"])),
-           _pr(301, "a/other", body=_receipt(A, ["greg/missions.py"])),
-           _pr(302, "a/third", body=_receipt(codex, ["greg/body.py"]))]
-    m = w.build(prs, [], now=NOW, use_git=False)
-    assert sorted(s["session"] for s in m["sessions"]) == sorted([A, handed, codex])
-    assert [sorted(c["holders"]) for c in m["contended"]] == [sorted([A, handed])]
-    paths, _raw = _answer(tmp_path, capsys, prs, [], "--paths", "greg/missions.py", "greg/body.py")
-    assert [p["session"] for h in paths["paths"] for p in h["prs"]] == [handed, A, codex]
+    several = "receipt session_id names more than one id"
+    another = "receipt session_id names an id it does not open with"
+    for value, why in ((f"`{B}` → `{A}`", several), (f"{B}, handed over to {A} on 2026-11-20", several),
+                       (f"{B} (now {A})", several), (f"{A} (continues {B})", several),
+                       (f"unknown (handed over from {B})", another), (f"Session: {B}", another),
+                       (f"my parent {B}'s worker", another), (f"codex/root/seam-20261121 (continues {B}'s WU-11)", another)):
+        assert w.canonical_identity(value) == (None, "unknown"), value
+        assert w.receipt_session(value) == (None, "unknown", why), value
+        prs = [_pr(300, "a/seam", body=_receipt(value, ["greg/missions.py"])),
+               _pr(301, "a/other", body=_receipt(A, ["greg/missions.py"]))]
+        m = w.build(prs, [], now=NOW, use_git=False)
+        row = next(r for r in m["prs"] if r["pr"] == 300)
+        assert (row["session"], row["session_unnamed"], row["session_refused"]) == (None, why, None), value
+        assert [s["session"] for s in m["sessions"]] == [A] and m["gaps"]["receipts_naming_no_session"] == [300]
+        assert [c["holders"] for c in m["contended"]] == [{f"({why}) #300": [300], A: [301]}], value
+        if B not in value:
+            continue
+        assert B not in json.dumps([m["sessions"], m["contended"]]), value
+        paths, _raw = _answer(tmp_path, capsys, prs, [], "--paths", "greg/missions.py")
+        hit = next(p for p in paths["paths"][0]["prs"] if p["pr"] == 300)
+        assert (hit["session"], hit["session_unnamed"]) == (None, why), value
+        assert ("receipts the check accepts that name no session (their session_id names more than one id or an id "
+                "it does not open with): 1") in w.markdown(m)
 
 
 REFUSED_SESSION_IDS = [("pending", "actual session identifier required"),

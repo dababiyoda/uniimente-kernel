@@ -11,6 +11,7 @@ workers, run through the Body's main loop (Body.run) in a thread with a real clo
 from __future__ import annotations
 
 import json
+from pathlib import Path
 import threading
 import time
 
@@ -357,3 +358,25 @@ def test_no_member_output_is_consumed_while_another_member_is_rejected(tmp_path,
     assert observed["adder_accepted"] is True and observed["multiplier_accepted"] is False
     assert not [p for p in actions(home, "fs.write") if p.get("action_id") == "note-patch" and p["status"] == "DONE"]
     assert not note.exists()
+
+
+def test_a_member_missing_from_the_team_receipt_still_holds_the_handoff():
+    """#338 re-review follow-up: the hold checks every member order the founder signed. A member absent from the
+    receipt's ``members`` (one that errored) is never skipped: its missing appraisal holds the team's output."""
+    from types import SimpleNamespace
+    from greg.missions import MissionEngine
+    spec, _ = handoff_mission(Path("/nonexistent/proj"), Path("/nonexistent/home"))
+    output = {"team": {"id": "calc-team"}, "members": {"add-sub": {"work_order": "add-sub"}}}   # add-mul is absent
+    record = SimpleNamespace(seq=5, payload={"result": {"output": output}})
+    accepted = SimpleNamespace(seq=9, payload={"result": {"output": {"verdict": "ACCEPTED"}}})
+    observed = [SimpleNamespace(payload={"mission_id": "m:team", "check_id": "adder_accepted", "receipt": "r-adder"})]
+    ledger = SimpleNamespace(find=lambda rid: {"r-team": record, "r-adder": accepted}.get(rid))
+    journal = SimpleNamespace(ledger=ledger, replay=lambda kind: observed if kind == "mission.observed" else [])
+    engine = SimpleNamespace(journal=journal)
+    engine._appraisal_hold = lambda *a: MissionEngine._appraisal_hold(engine, *a)
+    m = SimpleNamespace(mission_id="m:team", spec=spec)
+    hold = MissionEngine._handoff_hold(engine, m, "field-team", "r-team")
+    assert hold and "field-team" in hold                # add-mul was never appraised: the output is held
+    observed.append(SimpleNamespace(payload={"mission_id": "m:team", "check_id": "multiplier_accepted",
+                                             "receipt": "r-adder"}))
+    assert MissionEngine._handoff_hold(engine, m, "field-team", "r-team") is None   # both accepted: handed on

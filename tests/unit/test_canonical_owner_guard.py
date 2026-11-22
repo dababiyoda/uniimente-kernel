@@ -917,6 +917,27 @@ def _attribute_writes(tree: ast.Module) -> list[tuple[int, str, str]]:
     return out
 
 
+def _origin_of(dotted: str, root: Path) -> str:
+    try:
+        return origin(dotted, root)
+    except (SyntaxError, UnicodeDecodeError, ValueError, OSError):    # AmbiguousModule is a ValueError
+        return dotted                                  # module_name_problems and guard 4 report those files
+
+
+def _chains(target: str, rest: list[str], root: Path) -> set[tuple[str, ...]]:
+    """Round 8, M6. The written chain ``target.rest`` as written, and with every prefix resolved through ``origin``
+    (re-exports and a consumer's imported names followed), prefix by prefix: ``from omnimorph import OmnimorphEngine``
+    then ``OmnimorphEngine.simulate`` gives omnimorph.engine.OmnimorphEngine.simulate, and ``greg.cli.send_signed``
+    gives greg.body.send_signed where greg/cli.py imports it from there."""
+    chains = {tuple(target.split(".") + rest)}
+    resolved = _origin_of(target, root)
+    chains.add(tuple(resolved.split(".") + rest))
+    for k, part in enumerate(rest):
+        resolved = _origin_of(f"{resolved}.{part}", root)
+        chains.add(tuple(resolved.split(".") + rest[k + 1:]))
+    return chains
+
+
 def attribute_writes(root: Path = ROOT, files=None) -> list[str]:
     """``file:line dotted -> object`` for every attribute write (``_attribute_writes``) through an imported name in
     the scanned files: what the M2 rule reads, listed so that its test can show it is not vacuous."""
@@ -935,13 +956,14 @@ def attribute_writes(root: Path = ROOT, files=None) -> list[str]:
 
 
 def attribute_rebinding_problems(records: list[dict], root: Path = ROOT, files=None) -> list[str]:
-    """Round 7, M2 (a) and (b). In every runtime file (``runtime_files``): no assignment, augmented assignment,
-    ``del``, or ``setattr``/``delattr`` with a literal name writes ``<a name bound to a registered module>.<a
-    registered qualname of that module>`` (the name bound by ``import a.b as X``, ``from a import b as X``, or the
-    dotted ``import a.b``), and none writes an attribute of a registered class outside that class's own body, through
-    an imported name or, in the class's own module, through the class's name. Either makes Python run something the
-    guards never read. Not seen (stated limits): ``setattr`` with a computed name, ``sys.modules``, ``exec``,
-    ``importlib``, a name bound by assignment (``m = greg.body``), and a decorator that returns a different object."""
+    """Round 7, M2 (a) and (b), widened in round 8 (M6). In every runtime file (``runtime_files``), a write is an
+    assignment, augmented assignment, ``del``, for or with target, or a ``setattr``/``delattr`` with a literal name
+    (``_attribute_writes``). Its chain is read as written through an imported name (``import a.b as X``, ``from a
+    import b as X``, the dotted ``import a.b``, or, in a registered class's own module, the class's name) and, since
+    round 8, with every prefix resolved through ``origin`` (``_chains``: package re-exports and a consumer's imported
+    names followed). Rule (a): no chain is ``<a registered module>.<a registered qualname of it>``. Rule
+    (b): no chain sets an attribute of a registered class outside that class's own body. Either makes Python run
+    something the guards never read. What these rules do not read is listed in the module docstring, item 1."""
     owners: dict[tuple[str, str], str] = {}
     for r in records:
         for role, e in entries(r):
@@ -963,19 +985,24 @@ def attribute_rebinding_problems(records: list[dict], root: Path = ROOT, files=N
             if isinstance(node, ast.ClassDef) and (module, node.name) in classes:
                 imported.setdefault(node.name, set()).add(f"{module}.{node.name}")
                 spans[node.name] = (node.lineno, node.end_lineno)
+        writes = []
         for line, dotted, text in _attribute_writes(tree):
             head, *rest = dotted.split(".")
             for target in sorted(imported.get(head, ())):
-                parts = target.split(".") + rest
+                writes.append((line, text, tuple(target.split(".") + rest), _chains(target, rest, root)))
+        for line, text, raw, chains in writes:
+            for parts in sorted(chains):
+                written = "" if parts == raw else f" (written as {'.'.join(raw)}, re-exports followed)"
                 for i in range(1, len(parts)):
                     owner_module, tail = ".".join(parts[:i]), parts[i:]
                     if owner_module not in modules:
                         continue
                     if (owner_module, ".".join(tail)) in owners:
-                        out.append(f"{relative}:{line}: `{text}` rebinds {'.'.join(parts)}, a registered qualname of "
-                                   f"{owners[owner_module, '.'.join(tail)]}, from outside its definition: Python then "
-                                   f"runs what this assigns while the guards read the def in {owner_module}. Give the "
-                                   f"replacement its own name and call it, or record it in the same reviewed diff")
+                        out.append(f"{relative}:{line}: `{text}` rebinds {'.'.join(parts)}{written}, a registered "
+                                   f"qualname of {owners[owner_module, '.'.join(tail)]}, from outside its definition: "
+                                   f"Python then runs what this assigns while the guards read the def in "
+                                   f"{owner_module}. Give the replacement its own name and call it, or record it in the "
+                                   f"same reviewed diff")
                     elif len(tail) == 2 and (owner_module, tail[0]) in classes and not (
                             owner_module == module and spans.get(tail[0], (0, -1))[0] <= line
                             <= spans.get(tail[0], (0, -1))[1]):
@@ -3497,3 +3524,44 @@ def test_a_tests_module_that_runtime_code_imports_is_scanned_as_runtime(tmp_path
                                                             "tests/shared.py"], found
     on_tree = [p.relative_to(ROOT).as_posix() for p in runtime_files() if p.relative_to(ROOT).parts[0] == "tests"]
     assert on_tree == ["tests/greg_fixtures.py", "tests/unit/__init__.py", "tests/unit/test_greg_oci.py"], on_tree
+
+
+# -- MW-C round 8: what the review of ce7fc937 found ---------------------------------------------------------------
+
+REEXPORT_OWNER = OWNER_BODY + "\n\nclass Relay:\n    def send(self, kind):\n        return kind\n"
+
+
+def test_a_registered_qualname_rebound_through_a_re_export_or_a_consumers_imported_name_fails(tmp_path):
+    # Round 8, M6 (skeptic X5, X5b, X5c, X2b, X3b): rules (a) and (b) read only the raw import target, so a timing
+    # shim on a registered class reached through its package re-export (``from omnimorph import OmnimorphEngine;
+    # OmnimorphEngine.simulate = _timed``), and a write to a consumer's or a package's imported name of a registered
+    # qualname (``import greg.cli as _cli; _cli.send_signed = ...``), passed. Each written chain is now also resolved
+    # through ``origin``, prefix by prefix, and both rules read the resolved chain.
+    rebinds = {
+        "tools/reexported_class.py": "from greg import Relay\nRelay.send = print\n",
+        "tools/package_class.py": "import greg\ngreg.Relay.send = print\n",
+        "tools/package_name.py": "import greg\ngreg.send_signed = print\n",
+        "tools/consumer.py": "import greg.cli as _cli\n_cli.send_signed = print\n",
+        "tools/consumer_alias.py": "import greg.console as _c\n_c.send = print\n",
+        "tools/consumer_dotted.py": "import greg.cli\ngreg.cli.send_signed = print\n",
+        "tools/consumer_and_package.py": "import greg\nimport greg.cli as _cli\n_cli.send_signed = greg.send_signed = print\n",
+        "tools/consumer_class.py": "import greg.cli as _cli\n_cli.Relay.send = print\n",
+        "tools/two_hops.py": "from greg.facade import send_signed as _s\nimport greg.facade as _f\n_f.send_signed = print\n",
+    }
+    controls = {
+        "tools/own_def.py": "import greg.own_name as _o\n_o.send_signed = print\n",       # the consumer's own def
+        "tools/function_attribute.py": "import greg\ngreg.send_signed.calls = 0\n",
+        "tools/read.py": "from greg import Relay\nrelay = Relay()\nrelay.send = print\n",
+    }
+    root = _tree(tmp_path, {
+        "greg/__init__.py": "from greg.body import Relay, send_signed\n", "greg/body.py": REEXPORT_OWNER,
+        "greg/cli.py": "from greg.body import Relay, send_signed\n", "greg/console.py": "from .body import send_signed as send\n",
+        "greg/facade.py": "from greg.cli import send_signed\n", "greg/own_name.py": "def send_signed():\n    return 1\n",
+        **rebinds, **controls})
+    record = {**INBOX_RECORD, "canonical": [{"module": "greg.body", "qualnames": ["send_signed", "Relay"]}]}
+    found = attribute_rebinding_problems([record], root)
+    assert sorted({line.split(":")[0] for line in found}) == sorted(rebinds), found
+    assert any("rebinds greg.body.send_signed (written as greg.cli.send_signed, re-exports followed)" in line
+               for line in found if line.startswith("tools/consumer.py")), found
+    assert any("sets send of the registered class greg.body.Relay" in line
+               for line in found if line.startswith("tools/reexported_class.py")), found

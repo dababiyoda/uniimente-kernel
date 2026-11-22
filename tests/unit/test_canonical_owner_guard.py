@@ -7,8 +7,11 @@ equally canonical forever. Preserving history does not require preserving active
 The registry is ``function_owner_records`` in docs/collaboration/ARCHITECTURE-OWNERSHIP-MAP.yaml. Three guards:
 
 1. every module and qualname the registry names exists (read from the source with ``ast``; nothing is imported). A
-   dotted qualname resolves, part by part, to the LAST statement that binds it, as Python does (``binding``), and a
-   module to its package before a module file of the same name, both present failing (``module_file``);
+   dotted qualname resolves, part by part, to the LAST statement that binds it in source order (``binding``), and a
+   module to its package before a module file of the same name, both present failing (``module_file``). Since round 6
+   every canonical, candidate and alternate qualname has exactly ONE binding at its level, dead branches and
+   ``TYPE_CHECKING`` blocks included, and its module no star import and no namespace write with a computed name
+   (``binding_problems``), so the statement the guards read is the one Python binds, for ordinary code;
 2. no module under greg/ reaches an alternate whose status is RETIRED or HISTORICAL: ``import``, ``from ... import``
    (relative ones too), ``as`` aliases, attribute chains through any of them, names assigned from them,
    ``getattr``/``vars``/``sys.modules`` with a constant name, ``importlib.import_module`` and ``__import__`` (with
@@ -688,11 +691,13 @@ def definitions(tree: ast.Module, module: str = "", is_package: bool = False) ->
 
 
 def binding(module: str, qualname: str, root: Path = ROOT):
-    """The statement that binds a dotted qualname, as Python resolves it: for each part, the LAST statement at that
-    level that binds the name (``statements``, ``bound_names``), descending only through a class. Python keeps the
-    last binding, so ``@overload`` stubs before a def, or a def rebound by a later assignment or import, resolve to
-    what runs (round 4, N4; test_a_registered_qualname_names_its_last_binding_as_python_does). None when a part is
-    unbound or a dotted part's parent is not a class."""
+    """The statement that binds a dotted qualname: for each part, the LAST statement at that level that binds the
+    name in SOURCE order (``statements``, ``bound_names``), descending only through a class. Python keeps the last
+    binding that runs, so ``@overload`` stubs before a def, or a def rebound by a later assignment or import, resolve
+    to what runs (round 4, N4; test_a_registered_qualname_names_its_last_binding_as_python_does); a later binding in
+    a branch that never runs (``if False:``, ``if TYPE_CHECKING:``) does not, which is why a registered qualname must
+    have exactly one binding (round 6, ``binding_problems``). None when a part is unbound or a dotted part's parent is
+    not a class."""
     path = module_file(module, root)
     if path is None:
         return None
@@ -719,6 +724,120 @@ def definition_node(module: str, name: str, root: Path = ROOT):
     """The def or class a top-level name is last bound to, or None when its last binding is anything else."""
     node = binding(module, name, root)
     return node if isinstance(node, DEFS) else None
+
+
+def _dotted(node) -> str | None:
+    """``A.b.c`` for an attribute chain on a plain name, else None."""
+    parts = []
+    while isinstance(node, ast.Attribute):
+        parts.append(node.attr)
+        node = node.value
+    return ".".join([node.id, *reversed(parts)]) if isinstance(node, ast.Name) else None
+
+
+def _module_namespace_calls(tree: ast.Module) -> set[int]:
+    """The ids of every call that returns the module's namespace: ``globals()`` anywhere, and ``locals()`` or
+    ``vars()`` with no argument outside a def, lambda or class body (inside one they are that scope's own)."""
+    found: set[int] = set()
+
+    def visit(node, nested: bool):
+        for child in ast.iter_child_nodes(node):
+            if (isinstance(child, ast.Call) and isinstance(child.func, ast.Name) and not child.args
+                    and not child.keywords and (child.func.id == "globals"
+                                                or (child.func.id in ("locals", "vars") and not nested))):
+                found.add(id(child))
+            visit(child, nested or isinstance(child, (*DEFS, ast.Lambda)))
+    visit(tree, False)
+    return found
+
+
+def _computed_namespace_writes(tree: ast.Module) -> list[tuple[int, str]]:
+    """(line, what) for every star import, and every write to the module namespace (``globals()``, or ``locals()``
+    and ``vars()`` at module level) whose names are not literals: ``.update(<not a dict literal of constant keys>)``
+    or ``**kwargs``, ``.setdefault(<not a constant>, ...)`` and ``[<not a constant>] = ...``. Literal ones are
+    bindings (``_globals_keys``) and count there."""
+    namespace = _module_namespace_calls(tree)
+
+    def _namespace_call(node) -> bool:
+        return id(node) in namespace
+
+    out = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and any(alias.name == "*" for alias in node.names):
+            out.append((node.lineno, f"from {'.' * node.level}{node.module or ''} import *"))
+        elif isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and _namespace_call(node.func.value):
+            literal = (node.func.attr == "update" and all(k.arg for k in node.keywords) and all(
+                isinstance(a, ast.Dict) and all(isinstance(k, ast.Constant) for k in a.keys) for a in node.args)) or (
+                node.func.attr == "setdefault" and node.args and isinstance(node.args[0], ast.Constant))
+            if node.func.attr in ("update", "setdefault") and not literal:
+                out.append((node.lineno, ast.unparse(node)[:80]))
+        elif isinstance(node, (ast.Assign, ast.AugAssign, ast.AnnAssign)):
+            for target in node.targets if isinstance(node, ast.Assign) else [node.target]:
+                if (isinstance(target, ast.Subscript) and _namespace_call(target.value)
+                        and not isinstance(target.slice, ast.Constant)):
+                    out.append((node.lineno, ast.unparse(target)[:80]))
+    return sorted(set(out))
+
+
+def binding_problems(records: list[dict], root: Path = ROOT) -> list[str]:
+    """Round 6, B1. Every canonical, candidate and alternate qualname a record names has exactly ONE binding at its
+    level in its module: one def or class statement (or, for a constant, one assignment), and no other def, class,
+    assignment, import, loop, with, except or match target, walrus, ``globals()`` key, ``global`` declaration or (for
+    a dotted part) ``Class.attr = ...`` binding that name, anywhere in the module: dead branches (``if False:``,
+    ``if TYPE_CHECKING:``, ``try: ... except ImportError:``) included, because the guards resolve a name statically.
+    A module that holds a registered qualname also has no star import and no write to its namespace with a computed
+    name (``_computed_namespace_writes``), either of which could replace the registered object at run time while the
+    guards read the def. So the def guard 4 fingerprints is the object Python binds, for ordinary code
+    (test_every_registered_qualname_has_one_binding_and_its_module_no_computed_binding,
+    test_a_decoy_rebinding_or_star_import_of_a_registered_qualname_fails)."""
+    out = []
+    names: dict[str, set[str]] = {}
+    for r in records:
+        for role, e in entries(r):
+            if role != "distinct":
+                names.setdefault(e["module"], set()).update(e.get("qualnames") or [])
+    for module in sorted(names):
+        path = module_file(module, root)
+        if path is None:
+            continue                                   # guard 1 (``missing``) reports it
+        tree, where = parse(path), path.relative_to(root).as_posix()
+        declared: dict[str, list[int]] = {}
+        attributes: dict[str, list[int]] = {}
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Global):
+                for name in node.names:
+                    declared.setdefault(name, []).append(node.lineno)
+            elif isinstance(node, (ast.Assign, ast.AugAssign, ast.AnnAssign)):
+                for target in node.targets if isinstance(node, ast.Assign) else [node.target]:
+                    for item in ast.walk(target):
+                        dotted = _dotted(item) if isinstance(item, ast.Attribute) else None
+                        if dotted:
+                            attributes.setdefault(dotted, []).append(node.lineno)
+        for qualname in sorted(names[module]):
+            body, node, parts = tree.body, None, qualname.split(".")
+            for depth, part in enumerate(parts):
+                if node is not None:
+                    if not isinstance(node, ast.ClassDef):
+                        break                          # guard 1 reports a dotted part under a non-class
+                    body = node.body
+                hits = [s for s in statements(body) if part in bound_names(s)]
+                lines = [s.lineno for s in hits] + (declared.get(part, []) if depth == 0 else
+                                                    attributes.get(".".join(parts[:depth + 1]), []))
+                if len(lines) > 1:
+                    out.append(f"{where}: {module}.{'.'.join(parts[:depth + 1])} is bound {len(lines)} times at its "
+                               f"level (lines {', '.join(map(str, sorted(lines)))}); a registered qualname has exactly "
+                               f"one binding, dead branches, TYPE_CHECKING blocks and rebindings included, so that "
+                               f"the def the guards read is the one Python runs. Remove the other bindings, or rename "
+                               f"them and record them in the same reviewed diff")
+                node = hits[-1] if hits else None
+                if node is None:
+                    break                              # guard 1 reports a missing name
+        out += [f"{where}:{line}: {what} in {module}, which holds registered qualnames "
+                f"({', '.join(sorted(names[module]))}); a star import or a namespace write with a computed name can "
+                f"replace a registered object at run time while the guards read its def. Import the names "
+                f"explicitly, or move it to a module the registry does not name"
+                for line, what in _computed_namespace_writes(tree)]
+    return out
 
 
 # -- the registry ------------------------------------------------------------------------------------------------
@@ -2812,3 +2931,74 @@ def test_the_walk_reads_each_real_file_once_and_follows_file_links_anywhere(tmp_
     assert "greg/foundry_compat/systems/teams.py" in in_greg and "greg/vendor/settle.py" in in_greg
     assert not any(p.startswith("greg/foundry_compat/") for p in
                    (q.relative_to(root).as_posix() for q in python_files(root, "greg", "foundry")))
+
+
+# -- MW-C round 6: what the review of 79ef5742 found ---------------------------------------------------------------
+
+def test_every_registered_qualname_has_one_binding_and_its_module_no_computed_binding():
+    # Round 6, B1, on today's tree: each of the 50 registered qualnames is bound once at its level, and no module that
+    # holds one has a star import or a namespace write with a computed name.
+    records = load()["function_owner_records"]
+    registered = {(e["module"], q) for r in records for role, e in entries(r) if role != "distinct"
+                  for q in e.get("qualnames") or []}
+    assert len(registered) == 50
+    assert binding_problems(records) == []
+
+
+def test_a_decoy_rebinding_or_star_import_of_a_registered_qualname_fails(tmp_path):
+    # Round 6, B1 (verifier N4/caseH3, skeptic r3_alias, r9_rebind and rstar): the guards resolve a name statically, to
+    # its last binding, so a decoy def in a branch that never runs, placed after the real def, was what guard 4 read,
+    # and a copy of the real body then passed; a registered class rebound after its class statement dropped out of
+    # guard 3's comparison; a star import could replace the registered def at run time. Every one is now a second
+    # binding, or a computed one, and fails.
+    decoy = ("def send_signed(home, key, kind, body):\n    rows = [home, key, kind]\n"
+             "    for row in body or ():\n        rows.append(str(row).lower())\n    return {'rows': rows}\n")
+    indented = "".join("    " + line + "\n" for line in decoy.splitlines())
+    variants = {
+        "if_false": "if False:\n" + indented,
+        "type_checking": "from typing import TYPE_CHECKING\nif TYPE_CHECKING:\n" + indented,
+        "except_import": "try:\n    pass\nexcept ImportError:\n" + indented,
+        "overload_stub": "from typing import overload\n@overload\ndef send_signed(home, key, kind, body): ...\n",
+        "rebound": "def _wrap(f):\n    return f\nsend_signed = _wrap(send_signed)\n",
+        "imported": "try:\n    from greg.native import send_signed\nexcept ImportError:\n    pass\n",
+        "loop_target": "for send_signed in ():\n    pass\n",
+        "global_declared": "def install(f):\n    global send_signed\n    send_signed = f\n",
+        "star_import": "try:\n    from greg.native import *\nexcept ImportError:\n    pass\n",
+        "globals_update": "import greg.native as _native\nglobals().update(vars(_native))\n",
+        "globals_computed_key": "for _name in ('send_signed',):\n    globals()[_name] = print\n",
+        "vars_update": "import greg.native as _native\nvars().update(_native.__dict__)\n",
+    }
+    method = ("class Relay:\n    def send(self, kind):\n        return kind\n"
+              "    def send(self, kind, body):\n        return body\n")
+    controls = {   # one binding each; computed namespace writes only in a function's own scope or with literal names
+        "plain": OWNER_BODY,
+        "decorated": "import functools\n" + OWNER_BODY.replace("def send_signed(", "@functools.lru_cache\ndef send_signed("),
+        "local_namespace": OWNER_BODY + "def g(values):\n    locals().update(values)\n    vars().update(values)\n",
+        "literal_globals": OWNER_BODY + "globals().update({'OTHER': 1}, MORE=2)\nglobals().setdefault('LAST', 3)\n",
+    }
+    root = _tree(tmp_path, {"greg/__init__.py": "", "greg/native.py": decoy, "greg/unnamed.py": "from greg.native import *\n",
+                            **{f"greg/{key}.py": OWNER_BODY + "\n\n" + text for key, text in variants.items()},
+                            **{f"greg/{key}.py": text for key, text in controls.items()},
+                            "greg/methods.py": method, "greg/patched.py": method.split("    def send(self, kind, body")[0]
+                            + "Relay.send = print\n"})
+
+    def record(module, qualname="send_signed"):
+        return {"record_id": f"OWN-FN-{module.upper()}", "canonical": [{"module": f"greg.{module}",
+                                                                         "qualnames": [qualname]}]}
+
+    for key in variants:
+        found = binding_problems([record(key)], root)
+        assert len(found) == 1, (key, found)
+        said = ("star import or a namespace write" if key in ("star_import", "globals_update", "globals_computed_key",
+                                                               "vars_update") else "is bound 2 times at its level")
+        assert said in found[0] and found[0].startswith(f"greg/{key}.py"), (key, found)
+    for key in controls:
+        assert binding_problems([record(key)], root) == [], key
+    assert "Relay.send is bound 2 times" in " ".join(binding_problems([record("methods", "Relay.send")], root))
+    assert "Relay.send is bound 2 times" in " ".join(binding_problems([record("patched", "Relay.send")], root))
+    assert binding_problems([record("native")], root) == []       # greg/unnamed.py's star import: not a registered module
+    # why the rule is needed: guard 4 reads the dead-branch decoy, so a copy of the real body passes guard 4 alone
+    copy_root = _tree(tmp_path / "copy", {"greg/body.py": OWNER_BODY + "\n\n" + variants["if_false"],
+                                          "tools/relay.py": OWNER_BODY.replace("def send_signed(", "def relay(")})
+    assert body_copy_problems([INBOX_RECORD], copy_root) == []
+    assert binding_problems([INBOX_RECORD], copy_root) != []

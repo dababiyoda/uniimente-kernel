@@ -7,7 +7,8 @@ resolve a founder decision alone, narrow the markers, rename what the registry n
 the test that must fail on it. The mutants added after the 2026-10-30 review of 77deac50 name the finding they
 replay (F1-F8, MUH-F1-MUH-F5); those added when #196 was merged in on 2026-11-04 are marked MERGE-196; those for
 guard 4 (copies of a registered body), the exact candidate pin and the history guard (2026-11-21) are marked MW-C,
-and those for the review of 7c2b39e5 (2026-11-22) are marked MW-C round 4 with the finding they replay (N1-N7).
+and those for the review of 7c2b39e5 (2026-11-22) are marked MW-C round 4 with the finding they replay (N1-N7);
+those for the review of 79ef5742 (2026-11-22) are marked MW-C round 6 with the item they close (B1-B4).
 A ``copy_body`` edit writes a disguised copy of a registered function at run time (every name and literal changed),
 so the mutant follows the function as it is today instead of a frozen text that would stop being a copy.
 
@@ -62,6 +63,8 @@ LAST_BINDING = "test_a_registered_qualname_names_its_last_binding_as_python_does
 COMPARED_PIN = "test_the_set_of_compared_registered_bodies_is_pinned"
 SHADOW = "test_a_package_shadows_a_module_of_the_same_name_and_no_two_files_share_a_module_name"
 ONCE = "test_the_walk_reads_each_real_file_once_and_follows_file_links_anywhere"
+ONE_BINDING = "test_every_registered_qualname_has_one_binding_and_its_module_no_computed_binding"
+DECOYS = "test_a_decoy_rebinding_or_star_import_of_a_registered_qualname_fails"
 REMOTE_SIG = "def handle(home: Path, method: str, path: str, headers, body: bytes, *, now: datetime | None = None):\n"
 REALITY_KEPT = "        kept_for: {consumer: acceptance.claims.crosswalk_problems}\n"
 # A copy of greg.organs.exchange recorded as 'distinct' in the organ-exchange record.
@@ -546,6 +549,39 @@ MUTANTS = [
     ("MW-C round 4: file links no longer followed",
      [("replace", TESTS, '        elif entry.name.endswith(".py") and entry.is_file():\n',
        '        elif entry.name.endswith(".py") and entry.is_file(follow_symlinks=False):\n')], ONCE),
+    # -- MW-C round 6 (B1): a registered qualname has one binding; its module no star import or computed write ---------
+    ("MW-C round 6: a dead-branch decoy of greg.remote.handle after the real def, and a copy of the real body in tools/",
+     [("copy_body", "greg/remote.py", "handle", "tools/serve_copy.py", "function"),
+      ("append", "greg/remote.py", "\n\nif False:  # never runs\n    def handle(home, method, path, headers, body, *, "
+                                   "now=None):\n        rows = [str(home), method, path]\n"
+                                   "        for key in sorted(headers or {}):\n            rows.append(key.lower())\n"
+                                   "        return 404, {'rows': rows, 'size': len(body)}\n")], ONE_BINDING),
+    ("MW-C round 6: an if TYPE_CHECKING: re-def of greg.business_loop.reconcile after the real def",
+     [("append", "greg/business_loop.py", "\n\nif TYPE_CHECKING:\n    def reconcile(params, ctx):\n"
+                                          "        rows = [dict(r) for r in params.get('rows') or []]\n"
+                                          "        return {'rows': rows, 'matched': bool(rows)}\n")], ONE_BINDING),
+    ("MW-C round 6: the registered class GoalGravityLoop rebound after its class statement",
+     [("append", "egregore/gravity.py", "\n\ndef _runtime(cls):\n    cls.runtime = True\n    return cls\n\n\n"
+                                        "GoalGravityLoop = _runtime(GoalGravityLoop)\n")], ONE_BINDING),
+    ("MW-C round 6: a star-import accelerator appended to greg/business_loop.py (business/reconcile_native.py)",
+     [("create", "business/reconcile_native.py", "def reconcile(params, ctx):\n    return {'matched': True}\n"),
+      ("append", "greg/business_loop.py", "\n\ntry:  # the native reader, where it is installed\n"
+                                          "    from business.reconcile_native import *  # noqa: F401,F403\n"
+                                          "except ImportError:\n    pass\n")], ONE_BINDING),
+    ("MW-C round 6: globals().update(vars(module)) in greg/body.py",
+     [("append", "greg/body.py", "\n\nimport greg.remote as _remote_names  # noqa: E402\n"
+                                 "globals().update(vars(_remote_names))\n")], ONE_BINDING),
+    ("MW-C round 6: a second binding of a registered qualname passes",
+     [("replace", TESTS, "                if len(lines) > 1:\n", "                if False:\n")], DECOYS),
+    ("MW-C round 6: only top-level statements counted (dead branches skipped)",
+     [("replace", TESTS, "                hits = [s for s in statements(body) if part in bound_names(s)]\n",
+       "                hits = [s for s in body if part in bound_names(s)]\n")], DECOYS),
+    ("MW-C round 6: global declarations not counted",
+     [("replace", TESTS, "lines = [s.lineno for s in hits] + (declared.get(part, []) if depth == 0 else",
+       "lines = [s.lineno for s in hits] + ([] if depth == 0 else")], DECOYS),
+    ("MW-C round 6: star imports and computed namespace writes pass",
+     [("replace", TESTS, "                for line, what in _computed_namespace_writes(tree)]\n",
+       "                for line, what in _computed_namespace_writes(tree) if False]\n")], DECOYS),
 ]
 
 

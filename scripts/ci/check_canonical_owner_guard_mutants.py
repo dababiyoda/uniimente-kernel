@@ -57,6 +57,9 @@ LINKS = "test_the_body_scan_reads_bom_files_follows_links_inside_the_repository_
 UNDECIDED_ROLES = "test_an_undecided_record_takes_no_new_or_changed_entry_of_any_role_without_a_pin_change"
 DISTINCT_SHAPE = "test_guard_3_reports_a_structural_copy_even_where_a_distinct_entry_names_it"
 SEALS_ONLY = "test_a_freeze_manifest_seals_only_the_files_and_bytes_the_test_pins"
+LAST_BINDING = "test_a_registered_qualname_names_its_last_binding_as_python_does"
+COMPARED_PIN = "test_the_set_of_compared_registered_bodies_is_pinned"
+REMOTE_SIG = "def handle(home: Path, method: str, path: str, headers, body: bytes, *, now: datetime | None = None):\n"
 REALITY_KEPT = "        kept_for: {consumer: acceptance.claims.crosswalk_problems}\n"
 # A copy of greg.organs.exchange recorded as 'distinct' in the organ-exchange record.
 DISTINCT_COPY = [("copy_body", "greg/organs.py", "exchange", "greg/organ_relay2.py", "function"),
@@ -492,6 +495,28 @@ MUTANTS = [
     ("MW-C round 4: a SEALED entry that seals nothing passes",
      [("replace", TESTS, 'f"change" for relative, digest in sealed.items() if relative not in live]\n',
        'f"change" for relative, digest in sealed.items() if False]\n')], SEALED),
+    # -- MW-C round 4 (N4): a qualname names its last binding; the compared bodies are pinned --------------------------
+    ("MW-C round 4: @overload stubs before greg.remote.handle, and a copy of its body in tools/",
+     [("copy_body", "greg/remote.py", "handle", "tools/serve_copy.py", "function"),
+      ("replace", "greg/remote.py", "from __future__ import annotations\n",
+       "from __future__ import annotations\nfrom typing import overload\n"),
+      ("replace", "greg/remote.py", REMOTE_SIG, "@overload\ndef handle(home, method, path, headers, body): ...\n\n\n"
+                                                + REMOTE_SIG)], BODIES),
+    ("MW-C round 4: greg.remote.handle's body moved to a helper it delegates to, and a copy of the body in tools/",
+     [("copy_body", "greg/remote.py", "handle", "tools/serve_copy.py", "function"),
+      ("replace", "greg/remote.py", REMOTE_SIG, "def handle(home, method, path, headers, body, *, now=None):\n"
+       "    return _handle(home, method, path, headers, body, now=now)\n\n\n"
+       + REMOTE_SIG.replace("def handle(", "def _handle("))], BODIES),
+    ("MW-C round 4: a qualname resolves to its first binding again",
+     [("replace", TESTS, "            if part in bound_names(statement):\n                node = statement\n",
+       "            if part in bound_names(statement) and node is None:\n                node = statement\n")],
+     LAST_BINDING),
+    ("MW-C round 4: a pinned body that leaves guard 4's comparison passes",
+     [("replace", TESTS, "           for m, q in sorted(compared - have)]\n",
+       "           for m, q in sorted(compared - have) if False]\n")], COMPARED_PIN),
+    ("MW-C round 4: a compared body missing from COMPARED passes",
+     [("replace", TESTS, "            for m, q in sorted(have - compared)]\n",
+       "            for m, q in sorted(have - compared) if False]\n")], COMPARED_PIN),
 ]
 
 

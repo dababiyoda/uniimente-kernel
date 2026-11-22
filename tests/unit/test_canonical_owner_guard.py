@@ -633,24 +633,38 @@ def definitions(tree: ast.Module, module: str = "", is_package: bool = False) ->
     return out
 
 
-def has_qualname(module: str, qualname: str, root: Path = ROOT) -> bool:
-    path = module_file(module, root)
-    if path is None:
-        return False
-    body = parse(path).body
-    for part in qualname.split("."):
-        found = next((n for n in statements(body) if part in bound_names(n)), None)
-        if found is None:
-            return False
-        body = found.body if isinstance(found, ast.ClassDef) else []
-    return True
-
-
-def definition_node(module: str, name: str, root: Path = ROOT):
+def binding(module: str, qualname: str, root: Path = ROOT):
+    """The statement that binds a dotted qualname, as Python resolves it: for each part, the LAST statement at that
+    level that binds the name (``statements``, ``bound_names``), descending only through a class. Python keeps the
+    last binding, so ``@overload`` stubs before a def, or a def rebound by a later assignment or import, resolve to
+    what runs (round 4, N4; test_a_registered_qualname_names_its_last_binding_as_python_does). None when a part is
+    unbound or a dotted part's parent is not a class."""
     path = module_file(module, root)
     if path is None:
         return None
-    return next((n for n in statements(parse(path).body) if isinstance(n, DEFS) and n.name == name), None)
+    body, node = parse(path).body, None
+    for part in qualname.split("."):
+        if node is not None:
+            if not isinstance(node, ast.ClassDef):
+                return None
+            body = node.body
+        node = None
+        for statement in statements(body):
+            if part in bound_names(statement):
+                node = statement
+        if node is None:
+            return None
+    return node
+
+
+def has_qualname(module: str, qualname: str, root: Path = ROOT) -> bool:
+    return binding(module, qualname, root) is not None
+
+
+def definition_node(module: str, name: str, root: Path = ROOT):
+    """The def or class a top-level name is last bound to, or None when its last binding is anything else."""
+    node = binding(module, name, root)
+    return node if isinstance(node, DEFS) else None
 
 
 # -- the registry ------------------------------------------------------------------------------------------------
@@ -1254,6 +1268,21 @@ ERASED = "_"                     # every name and every constant of a fingerprin
 # exactly that body; an entry that no longer matches a copy, or gives no reason, fails. Empty on 2026-11-21; adding one
 # is a reviewed change to this file.
 BODY_EXEMPTIONS: dict[tuple[str, str], tuple[str, str]] = {}
+# Round 4 (2026-11-22, N4): the registered bodies guard 4 compares, by (module, qualname). Exact: one that leaves the
+# comparison (a helper extracted, overload stubs, a body shrunk below MIN_COPY_NODES) or joins it fails until this
+# literal changes in the same reviewed diff (``compared_problems``, test_the_set_of_compared_registered_bodies_is_pinned).
+COMPARED = frozenset({
+    ("foundry.systems.teams", "act"), ("foundry.systems.teams", "dissolve"), ("foundry.systems.teams", "form"),
+    ("foundry.systems.teams", "report"), ("greg.autonomy", "earned_level"), ("greg.autonomy", "regress"),
+    ("greg.autonomy", "report"), ("greg.body", "send_signed"), ("greg.business_loop", "reconcile"),
+    ("greg.goal_gravity", "tick"), ("greg.gravity", "select"), ("greg.gravity", "step"),
+    ("greg.improvement", "_close_regressions"), ("greg.improvement", "_reopen_regressions"),
+    ("greg.improvement", "founder_revert"), ("greg.organ_exchange", "exchange"), ("greg.organ_exchange", "status"),
+    ("greg.organ_exchange", "verify_delivery"), ("greg.organs", "exchange"), ("greg.organs", "status"),
+    ("greg.path", "business_loop_closed"), ("greg.remote", "handle"), ("greg.remote", "make_server"),
+    ("greg.templates", "business_case"), ("greg.templates", "business_loop_amount"), ("greg.venture_rehearsal", "plan"),
+    ("greg.venture_rehearsal", "venture_rehearsal"),
+})
 FIX_COPY = ("Import the owner's function instead and remove the copy. Recording it does not exempt it: a body is "
             "exempt only at its own registered location, a 'distinct' entry exempts nothing, and two registered "
             "locations with one body fail (registered_twin_problems); {record} is in "
@@ -1448,14 +1477,9 @@ def _functions(tree: ast.Module):
 
 
 def _function_node(module: str, qualname: str, root: Path = ROOT):
-    """The def a registered (dotted) qualname names, or None for a class, a constant or a missing name."""
-    node, path = None, module_file(module, root)
-    body = parse(path).body if path is not None else []
-    for part in qualname.split("."):
-        node = next((n for n in statements(body) if isinstance(n, DEFS) and n.name == part), None)
-        if node is None:
-            return None
-        body = node.body
+    """The def a registered (dotted) qualname is last bound to (``binding``), or None for a class, a constant, a
+    missing name or a name whose last binding is not a def."""
+    node = binding(module, qualname, root)
     return node if isinstance(node, FUNCTIONS) else None
 
 
@@ -1503,6 +1527,21 @@ def registered_twin_problems(records: list[dict], root: Path = ROOT) -> list[str
                        + ". One is a copy of the other: import the owner's function instead and remove the copy from "
                          "the tree and from the registry")
     return sorted(out)
+
+
+def compared_problems(records: list[dict], root: Path = ROOT, compared: frozenset = None) -> list[str]:
+    """The registered (module, qualname) locations guard 4 compares must equal COMPARED: a body that leaves the
+    comparison (a helper extracted, overload stubs, a def rebound, the body shrunk below MIN_COPY_NODES) or joins it
+    fails until COMPARED changes in the same reviewed diff."""
+    compared = COMPARED if compared is None else compared
+    have = {(b.module, b.qualname) for found in registered_bodies(records, root).values() for b in found}
+    out = [f"{m}.{q} is pinned in COMPARED and is no longer compared by guard 4: its last binding is not a def, or its "
+           f"body is below MIN_COPY_NODES ({MIN_COPY_NODES} erased nodes), or the record no longer names it, so a "
+           f"copy of it would pass. Restore it, or change COMPARED in the same reviewed diff and say why"
+           for m, q in sorted(compared - have)]
+    out += [f"{m}.{q} is compared and not pinned in COMPARED: add it in the same reviewed diff"
+            for m, q in sorted(have - compared)]
+    return out
 
 
 @lru_cache(maxsize=None)
@@ -1972,9 +2011,9 @@ def test_a_stale_qualname_or_module_is_reported(tmp_path):
 
 def test_no_copy_of_a_registered_function_body_outside_its_record():
     records = load()["function_owner_records"]
-    # not vacuous: 27 registered function bodies of at least MIN_COPY_NODES erased nodes on 2026-11-21, compared with
-    # every function and method of about 550 runtime files; each is exempt only at its own location
-    assert sum(len(found) for found in registered_bodies(records).values()) >= 20
+    # not vacuous: the 27 registered function bodies COMPARED pins (compared_problems), compared with every function
+    # and method of about 550 runtime files; each is exempt only at its own location
+    assert compared_problems(records) == [] and len(COMPARED) == 27
     assert len(list(runtime_files())) > 400
     assert body_copy_problems(records) == []
     assert registered_twin_problems(records) == []
@@ -2619,3 +2658,44 @@ def test_a_freeze_manifest_seals_only_the_files_and_bytes_the_test_pins(tmp_path
     assert sorted(line.split(":")[0] for line in found) == ["cortex/evaluation/arms.py",
                                                             "cortex/evaluation/planted.py"], found
     assert sealed_files(root) == frozenset()
+
+
+def test_a_registered_qualname_names_its_last_binding_as_python_does(tmp_path):
+    # Round 4, N4: _function_node took the FIRST def of a qualname. Two @overload stubs before greg.remote.handle made
+    # guard 4 fingerprint a stub's empty body (Python binds the last def), so a copy of the real body passed. Every
+    # resolver (guard 1's has_qualname, guard 3's definition_node, guard 4's _function_node) now takes the last
+    # binding of each part; a name whose last binding is not a def (an assignment, an import) is not a def.
+    real = OWNER_BODY
+    stubs = ("from typing import overload\n\n\n@overload\ndef send_signed(home, key, kind, body): ...\n\n\n"
+             "@overload\ndef send_signed(home, key, kind, body, extra): ...\n\n\n")
+    root = _tree(tmp_path, {
+        "greg/body.py": stubs + real,
+        "greg/relay.py": real.replace("def send_signed(", "def relay("),
+        "greg/rebound.py": "def relay():\n    return 0\n\n\nrelay = print\n"
+                           + "class Box:\n    def open(self):\n        return 1\n    def open(self):\n        return 2\n",
+    })
+    found = body_copy_problems([INBOX_RECORD], root)
+    assert [line.split(" defines ")[0] for line in found] == ["greg/relay.py:1"], found
+    node = _function_node("greg.body", "send_signed", root)
+    assert node is not None and fingerprint(node) == fingerprint(ast.parse(OWNER_BODY).body[0])
+    assert _function_node("greg.rebound", "relay", root) is None and definition_node("greg.rebound", "relay", root) is None
+    assert has_qualname("greg.rebound", "relay", root) and has_qualname("greg.rebound", "Box.open", root)
+    assert _function_node("greg.rebound", "Box.open", root).body[0].value.value == 2
+
+
+def test_the_set_of_compared_registered_bodies_is_pinned(tmp_path):
+    # Round 4, N4: nothing pinned WHICH registered bodies guard 4 compares, only a floor of 20 of 27. Extracting a
+    # helper (handle delegating to _handle) or adding overload stubs dropped greg.remote.handle out of the comparison
+    # silently, and a copy of its body then passed. COMPARED is the exact set of (module, qualname) locations; one
+    # leaving the comparison or joining it fails until COMPARED changes in the same reviewed diff.
+    records = load()["function_owner_records"]
+    assert compared_problems(records) == []
+    delegated = OWNER_BODY.replace("def send_signed(home, key, kind, body):\n",
+                                   "def send_signed(home, key, kind, body):\n    return _send(home, key, kind, body)\n\n\n"
+                                   "def _send(home, key, kind, body):\n")
+    root = _tree(tmp_path, {"greg/body.py": delegated, "greg/relay.py": OWNER_BODY.replace("def send_signed(", "def relay(")})
+    gone = compared_problems([INBOX_RECORD], root, compared=frozenset({("greg.body", "send_signed")}))
+    assert len(gone) == 1 and "greg.body.send_signed is pinned in COMPARED and is no longer compared" in gone[0], gone
+    assert body_copy_problems([INBOX_RECORD], root) == []        # which is why the set is pinned: the copy passes
+    joined = compared_problems([INBOX_RECORD], _tree(tmp_path / "plain", {"greg/body.py": OWNER_BODY}), compared=frozenset())
+    assert len(joined) == 1 and "greg.body.send_signed is compared and not pinned in COMPARED" in joined[0], joined

@@ -849,7 +849,132 @@ def binding_problems(records: list[dict], root: Path = ROOT) -> list[str]:
                 f"replace a registered object at run time while the guards read its def. Import the names "
                 f"explicitly, or move it to a module the registry does not name"
                 for line, what in _computed_namespace_writes(tree)]
+        # Round 7, M2 (c): a name bound to the module namespace (``_ns = globals()``; ``vars()`` or ``locals()`` at
+        # module level) writes through an alias the literal-key rule does not see
+        # (test_a_registered_qualname_rebound_from_another_module_or_through_a_namespace_alias_fails).
+        namespace = _module_namespace_calls(tree)
+        out += [f"{where}:{node.lineno}: `{ast.unparse(node)[:80]}` binds a name to the module namespace in {module}, "
+                f"which holds registered qualnames ({', '.join(sorted(names[module]))}); a write through that name can "
+                f"replace a registered object at run time while the guards read its def. Use globals() only with "
+                f"literal keys, or move it to a module the registry does not name"
+                for node in ast.walk(tree) if isinstance(node, (ast.Assign, ast.AnnAssign, ast.NamedExpr))
+                and node.value is not None and id(node.value) in namespace]
     return out
+
+
+def _import_targets(tree: ast.Module, module: str, is_package: bool) -> dict[str, set[str]]:
+    """Name -> every dotted object an import anywhere in the file binds it to: ``import a.b as X`` gives X -> a.b,
+    ``import a.b`` gives a -> a, ``from a import b as X`` gives X -> a.b (a module or an object, relative imports
+    resolved). Scopes are not told apart, so a name imported in any function counts everywhere (fails closed)."""
+    out: dict[str, set[str]] = {}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                name = alias.asname or alias.name.split(".")[0]
+                out.setdefault(name, set()).add(alias.name if alias.asname else name)
+        elif isinstance(node, ast.ImportFrom):
+            base = _resolve(node, module, is_package)
+            for alias in node.names:
+                if alias.name != "*":
+                    out.setdefault(alias.asname or alias.name, set()).add(f"{base}.{alias.name}" if base else alias.name)
+    return out
+
+
+def _attribute_writes(tree: ast.Module) -> list[tuple[int, str, str]]:
+    """(line, ``A.b.c``, statement) for every attribute an assignment, augmented or annotated assignment, ``del``,
+    for or with target writes, and every ``setattr``/``delattr`` call whose object is a name or attribute chain and
+    whose attribute name is a string literal."""
+    out = []
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Assign, ast.Delete)):
+            targets = node.targets
+        elif isinstance(node, (ast.AugAssign, ast.AnnAssign, ast.For, ast.AsyncFor)):
+            targets = [node.target]
+        elif isinstance(node, (ast.With, ast.AsyncWith)):
+            targets = [item.optional_vars for item in node.items if item.optional_vars is not None]
+        elif (isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id in ("setattr", "delattr")
+              and len(node.args) >= 2 and isinstance(node.args[0], (ast.Name, ast.Attribute))
+              and isinstance(node.args[1], ast.Constant) and isinstance(node.args[1].value, str)):
+            dotted = _dotted(node.args[0])
+            if dotted:
+                out.append((node.lineno, f"{dotted}.{node.args[1].value}", ast.unparse(node)[:80]))
+            continue
+        else:
+            continue
+        for target in targets:
+            for item in ast.walk(target):
+                if isinstance(item, ast.Attribute) and isinstance(item.ctx, (ast.Store, ast.Del)) and _dotted(item):
+                    out.append((node.lineno, _dotted(item), ast.unparse(node)[:80]))
+    return out
+
+
+def attribute_writes(root: Path = ROOT, files=None) -> list[str]:
+    """``file:line dotted -> object`` for every attribute write (``_attribute_writes``) through an imported name in
+    the scanned files: what the M2 rule reads, listed so that its test can show it is not vacuous."""
+    out = []
+    for path in runtime_files(root) if files is None else files:
+        try:
+            tree = parse(path)
+        except (SyntaxError, UnicodeDecodeError, ValueError, OSError):
+            continue                                   # guard 4 reports a file that does not parse
+        imported = _import_targets(tree, module_name(path, root), path.name == "__init__.py")
+        for line, dotted, _ in _attribute_writes(tree):
+            head, _, rest = dotted.partition(".")
+            out += [f"{path.relative_to(root).as_posix()}:{line} {dotted} -> {target}.{rest}"
+                    for target in sorted(imported.get(head, ()))]
+    return out
+
+
+def attribute_rebinding_problems(records: list[dict], root: Path = ROOT, files=None) -> list[str]:
+    """Round 7, M2 (a) and (b). In every runtime file (``runtime_files``): no assignment, augmented assignment,
+    ``del``, or ``setattr``/``delattr`` with a literal name writes ``<a name bound to a registered module>.<a
+    registered qualname of that module>`` (the name bound by ``import a.b as X``, ``from a import b as X``, or the
+    dotted ``import a.b``), and none writes an attribute of a registered class outside that class's own body, through
+    an imported name or, in the class's own module, through the class's name. Either makes Python run something the
+    guards never read. Not seen (stated limits): ``setattr`` with a computed name, ``sys.modules``, ``exec``,
+    ``importlib``, a name bound by assignment (``m = greg.body``), and a decorator that returns a different object."""
+    owners: dict[tuple[str, str], str] = {}
+    for r in records:
+        for role, e in entries(r):
+            if role != "distinct":
+                for q in e.get("qualnames") or []:
+                    owners.setdefault((e["module"], q), r.get("record_id"))
+    modules = {m for m, _ in owners}
+    classes = {(m, q) for m, q in owners if "." not in q and isinstance(binding(m, q, root), ast.ClassDef)}
+    out = []
+    for path in runtime_files(root) if files is None else files:
+        try:
+            tree = parse(path)
+        except (SyntaxError, UnicodeDecodeError, ValueError, OSError):
+            continue                                   # guard 4 reports a file that does not parse
+        module, relative = module_name(path, root), path.relative_to(root).as_posix()
+        imported = _import_targets(tree, module, path.name == "__init__.py")
+        spans = {}
+        for node in tree.body:
+            if isinstance(node, ast.ClassDef) and (module, node.name) in classes:
+                imported.setdefault(node.name, set()).add(f"{module}.{node.name}")
+                spans[node.name] = (node.lineno, node.end_lineno)
+        for line, dotted, text in _attribute_writes(tree):
+            head, *rest = dotted.split(".")
+            for target in sorted(imported.get(head, ())):
+                parts = target.split(".") + rest
+                for i in range(1, len(parts)):
+                    owner_module, tail = ".".join(parts[:i]), parts[i:]
+                    if owner_module not in modules:
+                        continue
+                    if (owner_module, ".".join(tail)) in owners:
+                        out.append(f"{relative}:{line}: `{text}` rebinds {'.'.join(parts)}, a registered qualname of "
+                                   f"{owners[owner_module, '.'.join(tail)]}, from outside its definition: Python then "
+                                   f"runs what this assigns while the guards read the def in {owner_module}. Give the "
+                                   f"replacement its own name and call it, or record it in the same reviewed diff")
+                    elif len(tail) == 2 and (owner_module, tail[0]) in classes and not (
+                            owner_module == module and spans.get(tail[0], (0, -1))[0] <= line
+                            <= spans.get(tail[0], (0, -1))[1]):
+                        out.append(f"{relative}:{line}: `{text}` sets {tail[1]} of the registered class "
+                                   f"{owner_module}.{tail[0]} ({owners[owner_module, tail[0]]}) outside its class body: "
+                                   f"the class Python runs is then not the body the guards compare. Define it in the "
+                                   f"class, or subclass under another name")
+    return sorted(set(out))
 
 
 # -- the registry ------------------------------------------------------------------------------------------------
@@ -3205,3 +3330,79 @@ def test_a_decided_records_canonical_qualnames_equal_the_pin(tmp_path):
     widened = {**ruled, "canonical": [{"module": "greg.autonomy", "qualnames": [*side_b["qualnames"], "Ledger"]}]}
     assert problems(widened) == ["OWN-FN-AUTONOMY-LEVELS: canonical greg.autonomy.Ledger was not a pinned candidate: "
                                  "a founder ruling makes canonical only what its module held as a candidate"]
+
+
+def test_no_runtime_file_rebinds_a_registered_qualname_or_a_registered_class_attribute():
+    # Round 7, M2, on today's tree: no runtime file assigns, augments, deletes or setattr()s a registered qualname as
+    # an attribute of its module, or any attribute of a registered class outside its own class body, and no module
+    # that holds a registered qualname binds a name to its namespace. Not vacuous: the scan sees the tree's ordinary
+    # patches of imported modules (scripts/measure_body_memory.py, scripts/node_cut_development.py,
+    # cortex/evaluation/composition_lift/run_converged_v1.py), none of which names a registered qualname.
+    records = load()["function_owner_records"]
+    assert attribute_rebinding_problems(records) == []
+    seen = {where.split(":")[0] for where in attribute_writes()}
+    assert {"scripts/measure_body_memory.py", "scripts/node_cut_development.py",
+            "cortex/evaluation/composition_lift/run_converged_v1.py"} <= seen, sorted(seen)
+
+
+def test_a_registered_qualname_rebound_from_another_module_or_through_a_namespace_alias_fails(tmp_path):
+    # Round 7, M2 (skeptic E1 and N2, verifier E2 and E3): the one-binding rule read only the registered module, so an
+    # ordinary monkeypatch shim elsewhere (``import greg.business_loop as _bl; _bl.reconcile = _native``) made Python
+    # run a different function while the guards compared the dead def, and a method of a registered class could be
+    # swapped after its class statement (``GoalGravityLoop.execution_authority = _v2``); inside the module,
+    # ``_ns = globals(); _ns['reconcile'] = ...`` rebound it through an alias of the namespace.
+    owner = OWNER_BODY + "\n\nclass Relay:\n    def send(self, kind):\n        return kind\n\n" \
+        "    def reset(self):\n        Relay.count = 0\n        self.sent = []\n"
+    rebinds = {   # (a) a registered qualname as an attribute of its module, (b) an attribute of a registered class
+        "tools/alias.py": "import greg.body as _b\n_b.send_signed = print\n",
+        "tools/from_package.py": "from greg import body as _b\n_b.send_signed = print\n",
+        "tools/dotted.py": "import greg.body\ngreg.body.send_signed = print\n",
+        "tools/package_chain.py": "import greg\ngreg.body.send_signed = print\n",
+        "tools/augmented.py": "import greg.body as _b\n_b.send_signed += print\n",
+        "tools/deleted.py": "import greg.body as _b\ndel _b.send_signed\n",
+        "tools/set_attr.py": "import greg.body as _b\nsetattr(_b, 'send_signed', print)\n",
+        "tools/del_attr.py": "import greg.body as _b\ndelattr(_b, 'send_signed')\n",
+        "tools/in_function.py": "def install():\n    from greg import body\n    body.send_signed = print\n",
+        "greg/accel.py": "try:\n    from . import body as _b\n    _b.send_signed = print\nexcept ImportError:\n    pass\n",
+        "tools/class_method.py": "from greg.body import Relay\nRelay.send = print\n",
+        "tools/class_through_module.py": "import greg.body as _b\n_b.Relay.reset = print\n",
+        "tools/class_setattr.py": "from greg.body import Relay as _R\nsetattr(_R, 'send', print)\n",
+        "greg/own.py": "class Loop:\n    def turn(self):\n        return 1\n\n\nLoop.helper = print\n",
+    }
+    controls = {   # none rebinds a registered object
+        "tools/other_name.py": "import greg.body as _b\n_b.OTHER = 1\n",
+        "tools/read.py": "import greg.body as _b\nsend = _b.send_signed\n",
+        "tools/local_name.py": "from greg.body import send_signed\nsend_signed = print\n",
+        "tools/function_attribute.py": "import greg.body as _b\n_b.send_signed.calls = 0\n",
+        "tools/instance.py": "from greg.body import Relay\nrelay = Relay()\nrelay.send = print\n",
+        # a stated limit: setattr with a computed name is not seen
+        "tools/computed.py": "import greg.body as _b\nname = 'send_' + 'signed'\nsetattr(_b, name, print)\n",
+    }
+    namespaces = {   # (c) a module holding a registered qualname binds a name to its own namespace
+        "greg/ns_globals.py": OWNER_BODY + "_ns = globals()\n_ns['send_signed'] = print\n",
+        "greg/ns_vars.py": OWNER_BODY + "_ns: dict = vars()\n",
+        "greg/ns_locals.py": OWNER_BODY + "if (_ns := locals()):\n    pass\n",
+        "greg/ns_in_function.py": OWNER_BODY + "def install(f):\n    ns = globals()\n    ns['send_signed'] = f\n",
+    }
+    namespace_controls = {
+        "greg/ns_local_scope.py": OWNER_BODY + "def g():\n    ns = vars()\n    return locals()\n",
+    }
+    root = _tree(tmp_path, {"greg/__init__.py": "", "greg/body.py": owner, **rebinds, **controls, **namespaces,
+                            **namespace_controls})
+    record = {**INBOX_RECORD, "canonical": [{"module": "greg.body", "qualnames": ["send_signed", "Relay"]},
+                                            {"module": "greg.own", "qualnames": ["Loop"]}]}
+    found = attribute_rebinding_problems([record], root)
+    assert sorted({line.split(":")[0] for line in found}) == sorted(rebinds), found
+    assert all(("a registered qualname" in line) != ("of the registered class" in line) for line in found), found
+    assert any("sets reset of the registered class greg.body.Relay" in line for line in found if line.startswith("tools/class_through_module.py"))
+    assert binding_problems([record], root) == []        # the registered module itself binds each name once
+
+    def ns_record(module):
+        return {"record_id": "OWN-FN-X", "canonical": [{"module": module, "qualnames": ["send_signed"]}]}
+
+    for relative in namespaces:
+        problems = binding_problems([ns_record(module_name(Path(root, relative), root))], root)
+        assert any("binds a name to the module namespace" in p for p in problems), (relative, problems)
+    for relative in namespace_controls:
+        assert binding_problems([ns_record(module_name(Path(root, relative), root))], root) == [], relative
+

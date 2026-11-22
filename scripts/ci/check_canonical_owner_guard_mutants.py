@@ -68,6 +68,8 @@ ONE_BINDING = "test_every_registered_qualname_has_one_binding_and_its_module_no_
 DECOYS = "test_a_decoy_rebinding_or_star_import_of_a_registered_qualname_fails"
 NEW_RECORD = "test_a_new_record_fails_until_it_is_pinned"
 CANONICAL_EXACT = "test_a_decided_records_canonical_qualnames_equal_the_pin"
+REBIND_TREE = "test_no_runtime_file_rebinds_a_registered_qualname_or_a_registered_class_attribute"
+REBIND = "test_a_registered_qualname_rebound_from_another_module_or_through_a_namespace_alias_fails"
 # A new CANONICAL record that names candidate side A of the undecided goal runtime as its owner and side B as its
 # ALTERNATE (round 5's X1), with no ruling and no change to the test.
 ADOPTED_RECORD = ("  - record_id: OWN-FN-GOAL-RUNTIME-ADOPTED\n    function: the goal runtime, adopted\n"
@@ -640,6 +642,24 @@ MUTANTS = [
     ("MW-C round 7: added canonical qualnames no longer checked",
      [("replace", TESTS, "            for name in sorted(set(names or ()) - allowed):\n",
        "            for name in sorted(set(names or ()) - allowed - set(names or ())):\n")], CANONICAL_EXACT),
+    # -- MW-C round 7 (M2): a registered qualname rebound from outside its definition -----------------------------------
+    ("MW-C round 7: an accelerator shim rebinds greg.business_loop.reconcile from another module (E1/E2)",
+     [("create", "greg/reconcile_fast.py", "import greg.business_loop as _bl\n\n\ndef _fast(*args, **kwargs):\n"
+                                          "    return None\n\n\n_bl.reconcile = _fast\n")], REBIND_TREE),
+    ("MW-C round 7: a method of GoalGravityLoop swapped after its class statement (N2)",
+     [("append", "egregore/gravity.py", "\n\nGoalGravityLoop.execution_authority = lambda self: 'none'\n")],
+     REBIND_TREE),
+    ("MW-C round 7: greg/business_loop.py names its namespace and writes through it (E3)",
+     [("append", "greg/business_loop.py", "\n\n_ns = globals()\n")], ONE_BINDING),
+    ("MW-C round 7: a registered qualname written as an attribute of its module no longer checked",
+     [("replace", TESTS, "                    if (owner_module, \".\".join(tail)) in owners:\n",
+       "                    if False:\n")], REBIND),
+    ("MW-C round 7: an attribute of a registered class written outside its body no longer checked",
+     [("replace", TESTS, "                    elif len(tail) == 2 and (owner_module, tail[0]) in classes and not (\n",
+       "                    elif False and (owner_module, tail[0]) in classes and not (\n")], REBIND),
+    ("MW-C round 7: a name bound to the module namespace no longer checked",
+     [("replace", TESTS, "                and node.value is not None and id(node.value) in namespace]\n",
+       "                and node.value is not None and id(node.value) in namespace and False]\n")], REBIND),
 ]
 
 

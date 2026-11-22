@@ -25,9 +25,39 @@ MEDIA = 'tests/unit/test_greg_media_case.py'
 FABRIC = 'tests/unit/test_greg_task_fabric.py'
 RESTORE = 'tests/unit/test_greg_restore.py'
 FAILURES = 'tests/unit/test_greg_failure_closure.py'
+GRANT = 'tests/integration/test_greg_method_grant.py'
 CONSTRUCTION_SETTLED = 'tests/unit/test_greg_construction_settlement.py'
 CONSTRUCTION_DECISION = 'tests/unit/test_greg_construction_decision.py'
 MUTANTS = [
+ # Method grant (founder directive 2026-11-22, item 2): one signed, bounded, revocable grant over read-only methods.
+ ('a grant covers a method that spends, sends or writes', 'greg/method_grant.py',
+  'if manifest.consequence_class != "read_only":', 'if False:',
+  'test_consequential_and_sensitive_capabilities_stay_outside_any_grant', GRANT),
+ ('a grant covers a method that uses the network', 'greg/method_grant.py',
+  'if manifest.network != "none":', 'if False:',
+  'test_consequential_and_sensitive_capabilities_stay_outside_any_grant', GRANT),
+ ('a grant covers a manifest the founder never reviewed', 'greg/method_grant.py',
+  'if manifest.digest() != reviewed:\n            refusals', 'if False:\n            refusals',
+  'test_consequential_and_sensitive_capabilities_stay_outside_any_grant', GRANT),
+ ('a revoked grant keeps its methods attached', 'greg/method_grant.py',
+  'elif state != "ACTIVE" and ours:', 'elif False:',
+  'test_revoked_access_stops_and_stays_stopped_after_restart', GRANT),
+ ('an expired grant keeps its methods attached', 'greg/method_grant.py',
+  'if now >= instant(record["expires_at"]):', 'if False:',
+  'test_the_window_and_the_use_ceiling_end_the_grant_by_themselves', GRANT),
+ ('the use ceiling is never reached', 'greg/method_grant.py',
+  'if uses(body, record) >= record["max_uses"]:', 'if False:',
+  'test_the_window_and_the_use_ceiling_end_the_grant_by_themselves', GRANT),
+ ('a grant detaches what the founder attached on its own', 'greg/method_grant.py',
+  'ours = last.get("by") == BY and last.get("grant_id") == gid and last.get("state") == "ATTACHED"',
+  'ours = last.get("state") == "ATTACHED"',
+  'test_revoked_access_stops_and_stays_stopped_after_restart', GRANT),
+ ('a grant undoes a founder detach made inside its window', 'greg/method_grant.py',
+  '                        or (cid, gid) in touched):', '                        ):',
+  'test_a_founder_detach_inside_the_window_is_never_undone_by_the_grant', GRANT),
+ ('a grant never attaches anything', 'greg/method_grant.py',
+  'body.registry.set_state(cid, "ATTACHED")\n', 'pass\n',
+  'test_the_window_and_the_use_ceiling_end_the_grant_by_themselves', GRANT),
  ('a construction answer is never settled', 'greg/cognition/settlement.py',
   'built = _constructed(receipt, constructed) if compiled is None else None', 'built = None',
   'test_a_constructions_verified_answer_settles_once_and_reaches_the_compilers_counts', CONSTRUCTION_SETTLED),

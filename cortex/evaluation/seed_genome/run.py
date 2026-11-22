@@ -112,6 +112,10 @@ def main():
     ap.add_argument('--freeze', action='store_true')
     ap.add_argument('--out', type=Path)
     args = ap.parse_args()
+    # v14-pr313 = draft #313's round 4: greg/models.py reads a confined model call, an Ollama answer and the CLI report
+    # through greg/untrusted_json.loads, which refuses JSON nested past 200 levels as unreadable output. Named with
+    # its PR because draft #310 seals the join of its own seed path as freeze-v14.json; the integration line seals the
+    # join of both. The seed path, its static rules and scoring are untouched.
     # v13 = cortex 0.2.3 (review findings 4 and 5 on #196): cortex/contracts.py carries CORTEX_VERSION 0.2.3; the
     # optimality certificate binds model, value and sense, and only a conclusive second engine confirms. The seed
     # path, its static rules and scoring are untouched.
@@ -135,7 +139,7 @@ def main():
     # and freeze-v7-pr169.json: v7 = the door namespace stopped showing the founder's home to the Claude Code CLI;
     # v6 = #26 confined the paid model routes. v5 = the committed converged tree (v4 was written before the final
     # greg/models.py merge and the protobuf pin); v1-v8 kept.
-    manifest = HERE / 'freeze-v13.json'
+    manifest = HERE / 'freeze-v14-pr313.json'
     frozen = inputs()
     if args.freeze:
         if manifest.exists():

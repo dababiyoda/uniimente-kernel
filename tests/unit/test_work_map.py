@@ -3537,3 +3537,45 @@ def test_the_heading_words_are_listed_with_their_inflections(quick):
     text = " ".join(w.markdown(w.build([], [], now=NOW, use_git=False)).split())
     assert ("its heading says handoff, hand-off, handover, hand over, hand(s/ed/ing) ... over, hand(s/ed/ing) ... off, "
             "reassign, review, reviews, reviewed, reviewing, re-review or for/to the next owner") in text
+
+
+# ------------------------------------------------------------------ round 8: poster labels in any case, and prose
+POSTED_BY_ANOTHER = {
+    "N19": (f"## Check-in, posted for `{B}`: WU-11\n- Session: `{B}` (Claude Code, cloud)\n{F7}", "relayed"),
+    "N20": (f"## Check-in: WU-11\n- Session: `{B}` (Claude Code, cloud)\n{F7}\nPosted for `{B}` by `{A}`; `{B}` cannot "
+            "post here.\n", "relayed"),
+    "N21": (f"## Check-in: WU-11\n- Session: `{B}` (Claude Code, cloud)\n- Poster: `{A}`\n{F7}", "label"),
+    "N22": (f"## Check-in: WU-11\n- Session: `{B}` (Claude Code, cloud)\n- Submitted by: `{A}`\n{F7}", "label"),
+    "N23": (f"## Check-in: WU-11\n- Session: `{B}` (Claude Code, cloud)\n- Relayer: `{A}`\n{F7}", "relayed"),
+    "N24": (f"## Check-in: WU-11\n- Session: `{B}` (Claude Code, cloud)\n- posted by: `{A}`\n{F7}", "label"),
+    "sent by": (f"## Check-in: WU-11\n- Session: `{B}`\n- **Sent by:** `{A}`\n{F7}", "label"),
+    "written by": (f"## Check-in: WU-11\n- Session: `{B}`\n- WRITTEN BY: `{A}`\n{F7}", "label"),
+    "prose posted by": (f"## Check-in: WU-11\n- Session: `{B}`\n{F7}\nPosted by `{A}` for `{B}`.\n", "prose"),
+    "prose submitted by": (f"## Check-in: WU-11\n- Session: `{B}`\n{F7}\nThis was submitted by **`{A}`** today.\n",
+                           "prose"),
+    "prose sent by": (f"## Check-in: WU-11\n- Session: `{B}`\n{F7}\n_Sent by {A}._\n", "prose"),
+}
+WHY = {"relayed": "relayed", "label": "a label naming its poster names another id",
+       "prose": "its text says posted, submitted, sent or written by another id"}
+
+
+@pytest.mark.parametrize("name", list(POSTED_BY_ANOTHER))
+def test_a_poster_label_in_any_case_or_posted_by_in_prose_naming_another_id_names_nobody(quick, tmp_path, capsys,
+                                                                                         name):
+    text, why = POSTED_BY_ANOTHER[name]
+    body = f"{w.CHECKIN}\n{text}"
+    assert w.checkin_verdict(body)["reason"] == WHY[why]
+    comments = [_comment(7100000002, body)]
+    m = w.build([], comments, now=NOW, use_git=False)
+    assert m["sessions"] == [] and all(c["session"] is None for c in m["claims"])
+    paths, _raw = _answer(tmp_path, capsys, [], comments, "--paths", "greg/missions.py")
+    assert all(c["session"] is None for c in paths["paths"][0]["claims"])
+
+
+def test_a_poster_wording_that_names_the_session_or_no_id_or_sits_in_code_still_names_it():
+    for text in (f"- posted by: `{B}`", "- Posted by: the founder, for this session", f"Posted by `{B}` itself.",
+                 f"    posted by `{A}` (an indented block)", f"```\nsubmitted by `{A}`\n```"):
+        body = f"{w.CHECKIN}\n## Check-in: WU-11\n- Session: `{B}` (Claude Code, cloud)\n{F7}\n{text}\n"
+        assert w.checkin_author(body) == (B, "claude"), text
+    assert "or that names another id as its poster" in " ".join(w.__doc__.split())
+    assert "names another poster" not in " ".join(w.__doc__.split())

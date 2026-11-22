@@ -22,12 +22,12 @@ Threat model: these rules guard against ordinary changes by cooperating agents w
 made by mistake or convenience, handoffs, relays, templates filled in for someone else, receipts copied between PRs.
 They are not a security boundary against a deliberate evader who writes exotic code or text to defeat them. A receipt
 and a check-in are declared, not authenticated. A check-in that relays, or whose heading hands over, reassigns or
-reviews, or that names another poster, names nobody; but a block filled in, pasted or copied with none of this wording
-is read as the session its Session line names, whoever posts it. A receipt copied to another PR with its ``head_sha``
-unchanged is flagged (``receipt_head_stale``), and one whose ``task_ref`` cites another session's check-in names no
-session; but one whose SHAs were fixed to pass the receipt check, with its ``session_id`` and a ``task_ref`` citing
-nothing else, is read as the session it names. The residuals each rule leaves are stated where the rule is, never
-claimed as covered.
+reviews, or that names another id as its poster, names nobody; but a block filled in, pasted or copied with none of
+this wording is read as the session its Session line names, whoever posts it. A receipt copied to another PR with its
+``head_sha`` unchanged is flagged (``receipt_head_stale``), and one whose ``task_ref`` cites another session's
+check-in names no session; but one whose SHAs were fixed to pass the receipt check, with its ``session_id`` and a
+``task_ref`` citing nothing else, is read as the session it names. The residuals each rule leaves are stated where the
+rule is, never claimed as covered.
 
 Ask it before you edit::
 
@@ -622,18 +622,23 @@ def opens_with_checkin(body: str) -> bool:
 
 
 # What a check-in post says about who posts it (see ``checkin_verdict``).
-_RELAYED = re.compile(r"(?i)(?<![a-z])relay(?:s|ed|ing)?(?![a-z])|\bon\s+(?:\S+\s+){0,3}?behalf\b|"
+_RELAYED = re.compile(r"(?i)(?<![a-z])relay(?:s|ed|ing|er)?(?![a-z])|\bon\s+(?:\S+\s+){0,3}?behalf\b|"
+                      r"(?<![a-z])posted\s+for\b|"
                       r"\bposts?\s+(?:this|it)\s+as\s+(?:yours|(?:your|its|their)\s+own)\b")
 _HANDED = re.compile(r"(?i)\bhand\s*-?\s*(?:offs?|overs?)\b|\bhand(?:s|ed|ing)?\s+(?:\S+\s+){0,3}?(?:over|off)\b|"
                      r"\breassign|\b(?P<review>(?:re-?)?review(?:s|ed|ing)?)\b|\b(?:for|to)\s+the\s+next\s+owner\b")
 _ANSWERS = re.compile(r"(?i)\banswer(?:s|ed|ing)?\b[^.]*$")     # "#316 answers the integrator's review": its own reply
-_POSTER_LABELS = {"posted by", "relayed by", "relay", "from", "on behalf of", "recording session", "implementer",
-                  "agent", "agent / claim", "identity", "author", "sender"}
+_POSTER_LABELS = {"posted by", "relayed by", "relay", "relayer", "from", "on behalf of", "recording session",
+                  "implementer", "agent", "agent / claim", "identity", "author", "sender", "poster", "submitted by",
+                  "sent by", "written by"}
+_ANY_CASE_LABEL = re.compile(_LABEL.pattern, re.M | re.I)    # "- posted by:", "WRITTEN BY:": a poster label in any case
+_POSTED_BY = re.compile(r"(?i)(?<![a-z])(?:posted|submitted|sent|written)\s+by[\s`*_:]*")    # "Posted by `A` for `B`."
 _ASK = re.compile(r"(?i)^#{1,6}[ \t]+(?:[\w-]+[ \t]+){0,2}?ask\b")      # "## Coordination ask:", "## Second ask,"
-_ASK_BYLINE = re.compile(r"(?i)(?:\bfrom|\bby|·|\()[\s`*_]*$")     # "ask from `A`", "asked by `A`", "ask · `A`", "(`A`"
+_ASK_BYLINE = re.compile(r"(?i)(?:\bfrom|\bby|·|\()[\s`*_]*$")     # "ask from `A`", "asked by `A`", "· `A`", "(`A`"
 RELAYED = "relayed"
 HANDED = "handoff, review or reassignment wording in its heading"
 POSTER = "a label naming its poster names another id"
+POSTED_BY = "its text says posted, submitted, sent or written by another id"
 HEADING_NAMES = "its heading names another id"
 MARKER_LINE = "text after the marker on its line"
 NOT_FIRST = "Session line not first"
@@ -687,9 +692,13 @@ def checkin_verdict(body: str) -> dict:
         said.append(RELAYED)
     if any(not (m["review"] and _ANSWERS.search(heading[:m.start()])) for m in _HANDED.finditer(heading)):
         said.append(HANDED)
-    if key and any((m := _LABEL.match(line)) and _norm(m["bold"] or m["plain"]) in _POSTER_LABELS
+    if key and any((m := _ANY_CASE_LABEL.match(line)) and _norm(m["bold"] or m["plain"]) in _POSTER_LABELS
                    and {k for _at, k, _c in identities(line)} - {key} for line in text):
         said.append(POSTER)
+    joined = "\n".join(text)
+    starts = {at: k for at, _end, k, _c in _spans(joined)} if key else {}
+    if any(starts.get(m.end()) not in (None, key) for m in _POSTED_BY.finditer(joined)):
+        said.append(POSTED_BY)
     if key and heading.startswith("#") and {k for _at, k, _c in identities(heading)} - {key}:
         byline = _heading_bylines(heading)[0]
         signed = {k for at, k, _c in identities(heading) if _ASK_BYLINE.search(heading[max(0, at - 24):at])}
@@ -718,22 +727,24 @@ def checkin_author(body: str) -> tuple[str, str] | None:
     text (an HTML comment, ``<details>``, ``<pre>``, a fence).
 
     What the post says about who posts it: it names nobody when its text outside code relays ("relay", "relays",
-    "relayed", "relaying", "on ... behalf", "post this as yours"); when its heading, or the bold line acting as its
-    heading, says "handoff", "hand-off", "handover", "hand over", "hand(s/ed/ing) ... over" or "hand(s/ed/ing) ...
-    off" (up to three words between), "reassign" (and words it begins), "review", "reviews", "reviewed", "reviewing",
-    "re-review" (and its inflections) or "for/to the next owner"; a review word after "answers" in the same sentence
-    is the post's own reply, as in live check-in 7068165767 ("transfer" is not read: live claim 6474889018 is a
-    "transfer test");
-    when a labelled line that names a poster ("Posted by", "Relayed by", "Relay", "From", "On behalf of", "Recording
-    session", "Implementer", "Agent", "Identity", "Author", "Sender") names another id; or when its heading names
-    another id, except an ask: a heading that opens with up to two words and then "ask" ("## Coordination ask: ...
-    still yours, `X`?", "## Second ask, `X`: ..."; live check-ins 6853648077 and 6858741219 ask another session in
-    their headings) may name the session it asks, unless its byline is another id: an id right after "from", "by",
-    "·" or "(" ("## Coordination ask from `A`", "## Second ask · `A`", "asked by `A`"), or one in a signature place
-    of ``_heading_bylines``. So a
-    relay, a handoff, a reassignment record, a review and a template filled in for someone else that say what they
-    are name nobody, and so does a session's own handoff of its own claim: release your own claim under a heading
-    such as "## Release: claim N". On the live board this keeps all 29 check-ins round 6 read as exact.
+    "relayed", "relaying", "relayer", "on ... behalf", "posted for", "post this as yours"); when its heading, or the
+    bold line acting as its heading, says "handoff", "hand-off", "handover", "hand over", "hand(s/ed/ing) ... over" or
+    "hand(s/ed/ing) ... off" (up to three words between), "reassign" (and words it begins), "review", "reviews",
+    "reviewed", "reviewing", "re-review" (and its inflections) or "for/to the next owner"; a review word after
+    "answers" in the same sentence is the post's own reply, as in live check-in 7068165767 ("transfer" is not read:
+    live claim 6474889018 is a "transfer test"); when a labelled line that names a poster, its label in any case
+    ("Posted by", "Relayed by", "Relay", "Relayer", "From", "On behalf of", "Recording session", "Implementer",
+    "Agent", "Agent / claim", "Identity", "Author", "Sender", "Poster", "Submitted by", "Sent by", "Written by"),
+    names another id; when its text outside code says "posted by", "submitted by", "sent by" or "written by" right
+    before an id that is not the Session id ("Posted by `A` for `B`."); or when its heading names another id, except
+    an ask: a heading that opens with up to two words and then "ask" ("## Coordination ask: ... still yours, `X`?",
+    "## Second ask, `X`: ..."; live check-ins 6853648077 and 6858741219 ask another session in their headings) may
+    name the session it asks, unless its byline is another id: an id right after "from", "by", "·" or "(" ("##
+    Coordination ask from `A`", "## Second ask · `A`", "asked by `A`"), or one in a signature place of
+    ``_heading_bylines``. So a relay, a handoff, a reassignment record, a review and a template filled in for someone
+    else that say what they are name nobody, and so does a session's own handoff of its own claim: release your own
+    claim under a heading such as "## Release: claim N". On the live board this keeps all 29 check-ins round 6 read as
+    exact.
 
     Limit, inherent: a check-in is declared, not authenticated. A block filled in, pasted or copied with none of this
     wording is read as the session its Session line names, whoever posts it; this guards against ordinary posts by
@@ -2420,8 +2431,10 @@ def markdown(m: dict) -> str:
             "session: a block that opens with the marker names the session on its Session line whoever posts it. To "
             "pass a block to another session, leave out the marker line. A post names nobody, even your own, when "
             "its text outside code says relay, relayed or on ... behalf, when its heading says handoff, hand-off, "
-            "handover, hand over, hand(s/ed/ing) ... over, hand(s/ed/ing) ... off, reassign, review, reviews, reviewed, "
-            "reviewing, re-review or for/to the next owner, when a poster label (Posted by, From, Sender, ...) names another id, or when its "
+            "handover, hand over, hand(s/ed/ing) ... over, hand(s/ed/ing) ... off, reassign, review, reviews, "
+            "reviewed, "
+            "reviewing, re-review or for/to the next owner, when a poster label (Posted by, From, Sender, ...) names "
+            "another id, or when its "
             "heading names another "
             "id. An ask is the exception: a heading that opens with up to two words and then \"ask\" (`## Coordination "
             "ask`, `## Second ask`) may name the session it asks, as live check-ins 6853648077 and 6858741219 do, "

@@ -218,3 +218,78 @@ def test_a_formed_mechanism_is_a_required_step_on_the_same_budget(tmp_path, monk
     late = assign(40)
     assert late["state"] == "ANSWERED" and late["resource_use"]["budget"]["spent_s"] == 50
     assert any("overran the thinking budget" in d for d in late["dissent"])            # disclosed, not hidden
+
+
+# The decision an answer feeds, declared by the requester (directive section 12: "estimate whether another
+# calculation ... could change the decision enough to justify its total cost"; "cheap irrelevant information has
+# little decision value"). Before this rule every affordable re-run ran, whether or not it could change anything.
+FLIPS = {"output": "objective_value", "act_if": "at_most", "threshold": 5.5}   # optimum 5; +10% rhs makes it 6
+
+
+def test_a_rerun_that_cannot_change_the_decision_is_not_started_however_cheap(registry, timed):
+    # 70s holds the answer and all three re-runs (4 x 16s), so the budget never binds: value alone decides
+    r = cortex.reason({"problem_id": "voi", "compile": {"geometry": {**SENSITIVE, "latency_budget": 70},
+                                                        "data": MODEL, "decision": FLIPS}}, registry=registry)
+    sens, steps = r["sensitivity"], r["resource_use"]["budget"]["steps"]
+    assert r["decision"] == {"rule": {**FLIPS, "threshold": 5.5}, "baseline": "ACT", "authority_created": False}
+    # the first re-run flips the decision; the finding "fragile" is then settled and nothing more is spent
+    assert sens["decision"]["state"] == "FRAGILE" and sens["decision"]["flips_under"] == ["constraints"]
+    assert list(sens["inputs"]) == ["constraints"] and len(r["intermediate_receipts"]) == 2
+    assert [s["decision"] for s in steps] == ["RUN", "RUN", "STOP", "STOP"]
+    assert all(s["reason"].startswith("VOI: the decision already flips") for s in steps[2:])
+    assert set(sens["not_run"]) == {"objective", "variables"} and sens["decision"]["untested"] == ["objective",
+                                                                                                   "variables"]
+    assert any(d.startswith("decision: ACT flips when constraints") for d in r["dissent"])
+    assert r["authority_created"] is False and r["result"]["objective_value"] == 5.0
+    # a decision far from the threshold keeps its value at every re-run: all run, and it held where tested
+    timed.clock.now = 0.0
+    held = cortex.reason({"problem_id": "voi", "compile": {"geometry": {**SENSITIVE, "latency_budget": 70},
+                                                           "data": MODEL, "decision": {**FLIPS, "threshold": 7}}},
+                         registry=registry)
+    assert held["sensitivity"]["decision"]["state"] == "ROBUST_TO_TESTED_INPUTS"
+    assert held["sensitivity"]["decision"]["held_under"] == ["constraints", "objective", "variables"]
+    assert [s["decision"] for s in held["resource_use"]["budget"]["steps"]] == ["RUN"] * 4
+    # an answer with no value for the declared decision: no re-run can inform it, so none starts
+    timed.clock.now = 0.0
+    none = cortex.reason({"problem_id": "voi", "compile": {"geometry": {**SENSITIVE, "latency_budget": 70},
+                                                           "data": MODEL, "decision": {**FLIPS, "output": "cost"}}},
+                         registry=registry)
+    assert none["decision"]["baseline"] is None and none["sensitivity"]["decision"]["state"] == "NO_DECISION"
+    assert none["sensitivity"]["inputs"] == {} and len(none["intermediate_receipts"]) == 1
+    assert any("carries no numeric 'cost'" in d for d in none["dissent"])
+    # undeclared: unchanged behaviour, and the receipt says the re-runs were gated by budget, not by value
+    timed.clock.now = 0.0
+    plain = compile_(registry, {**SENSITIVE, "latency_budget": 70}, MODEL)
+    assert plain["sensitivity"]["decision"]["state"] == "UNDECLARED" and len(plain["sensitivity"]["inputs"]) == 3
+    assert "decision" not in plain
+
+
+def test_required_steps_ignore_decision_value_and_a_malformed_decision_is_refused():
+    clock = Clock()
+    b = Controller(10, clock=clock)
+    assert b.allot("answer", required=True, no_value="VOI: nothing to inform") == 10
+    b.done("answer")
+    assert b.allot("sensitivity:a", required=False, no_value="VOI: nothing to inform") is None
+    assert b.stops()[-1]["reason"] == "VOI: nothing to inform"
+    good = {"problem_id": "p", "compile": {"data": {}, "decision": FLIPS}}
+    compiler.validate(good)
+    for bad in ({**FLIPS, "extra": 1}, {k: v for k, v in FLIPS.items() if k != "act_if"},
+                {**FLIPS, "act_if": "above"}, {**FLIPS, "threshold": True}, {**FLIPS, "threshold": float("nan")},
+                {**FLIPS, "output": ""}, {**FLIPS, "output": 3}, [FLIPS]):
+        with pytest.raises(CognitionError):
+            compiler.validate({"problem_id": "p", "compile": {"data": {}, "decision": bad}})
+
+
+def test_peak_memory_is_measured_as_a_high_water_mark_not_claimed_per_run(registry, monkeypatch):
+    from greg.cognition import budget as B
+    compiled = compile_(registry, {"geometry": "optimization", "consequence_class": "internal_write"}, MODEL)
+    peak = compiled["resource_use"]["budget"]["peak_memory"]
+    # the solver and verifier ran in waited-for child processes, so the child high-water mark is real and nonzero
+    assert peak["self_kib"] > 0 and peak["largest_child_kib"] > 0 and "not per run" in peak["kind"]
+    assert "peak memory per run" in compiled["resource_use"]["budget"]["unmeasured"]
+    import builtins
+    real = builtins.__import__
+    monkeypatch.setattr(builtins, "__import__",
+                        lambda name, *a, **k: (_ for _ in ()).throw(ImportError(name)) if name == "resource"
+                        else real(name, *a, **k))
+    assert B.peak_memory() is None

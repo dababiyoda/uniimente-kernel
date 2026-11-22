@@ -20,6 +20,14 @@ budget can hold it.
     mean) fits in what remains. The requester's budget is the stated value of the decision, so nothing beyond
     it is spent on any optional step.
   - Every decision, run or stop, is kept with its reason, its remaining budget and the measured cost range.
+* ``DecisionRule`` is the decision an answer feeds, when the requester declares one (``compile.decision``): a
+  numeric output, a threshold and the side on which the decision is to act. It prices an optional sensitivity
+  re-run by what it can still do to that decision. A re-run whose result cannot change the decision has zero
+  decision value and is not started, however cheap: once one re-run has flipped the decision the finding "fragile"
+  is settled, and when the answer carries no decision there is nothing a re-run could inform. Where no rule is
+  declared, re-runs stay gated by the budget alone and the receipt says the decision value is undeclared.
+* Peak memory is measured as a high-water mark (this process, and the largest solver or verifier process it has
+  waited for) at the end of the decision. The platform does not split it per run, so per-run peak stays unmeasured.
 """
 from __future__ import annotations
 
@@ -27,6 +35,7 @@ from contextlib import contextmanager
 import contextvars
 from datetime import datetime, timezone
 import signal
+import sys
 import time
 
 from egregore.resources import ResourceGovernor
@@ -322,6 +331,65 @@ def window_limit(caller_window=None, shared_deadline=None):
     return {"seconds": max(0.0, min(bounds.values())), "bounds": {k: round(v, 4) for k, v in bounds.items()}}
 
 
+class DecisionRule:
+    """``{"output": <numeric key of the answer>, "act_if": "at_least" | "at_most", "threshold": <number>}``."""
+
+    KEYS = {"output", "act_if", "threshold"}
+
+    def __init__(self, output: str, act_if: str, threshold: float):
+        self.output, self.act_if, self.threshold = output, act_if, threshold
+
+    @classmethod
+    def parse(cls, raw):
+        if raw is None:
+            return None
+        if not isinstance(raw, dict) or set(raw) != cls.KEYS:
+            raise CognitionError("compile.decision takes exactly output, act_if and threshold")
+        output, act_if = raw["output"], raw["act_if"]
+        if not isinstance(output, str) or not 1 <= len(output) <= 64:
+            raise CognitionError("compile.decision.output names one top-level numeric output")
+        if act_if not in ("at_least", "at_most"):
+            raise CognitionError("compile.decision.act_if is at_least or at_most")
+        if isinstance(raw["threshold"], bool):
+            raise CognitionError("compile.decision.threshold is a finite number")
+        return cls(output, act_if, float(number(raw["threshold"])))
+
+    def describe(self) -> dict:
+        return {"output": self.output, "act_if": self.act_if, "threshold": self.threshold}
+
+    def decide(self, output):
+        """ACT or HOLD for one answer, or ``None`` when the answer carries no numeric value for the decision."""
+        value = output.get(self.output) if isinstance(output, dict) else None
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or value != value or value in (
+                float("inf"), float("-inf")):
+            return None
+        act = value >= self.threshold if self.act_if == "at_least" else value <= self.threshold
+        return "ACT" if act else "HOLD"
+
+    def no_value(self, baseline, flips) -> str | None:
+        """Why the next optional re-run cannot change the decision, or ``None`` when it still can."""
+        if baseline is None:
+            return (f"VOI: the answer carries no numeric {self.output!r}, so no re-run can inform the declared "
+                    "decision")
+        if flips:
+            return (f"VOI: the decision already flips when {flips[0]} changes by 10%; a further re-run cannot change "
+                    "that finding")
+        return None
+
+
+def peak_memory():
+    """High-water resident memory in KiB, or ``None`` where the platform offers no resource accounting."""
+    try:
+        import resource
+    except ImportError:
+        return None
+    scale = 1024 if sys.platform == "darwin" else 1            # macOS reports bytes, Linux KiB
+    own, kids = (resource.getrusage(who).ru_maxrss // scale for who in (resource.RUSAGE_SELF, resource.RUSAGE_CHILDREN))
+    return {"self_kib": int(own), "largest_child_kib": int(kids),
+            "kind": "high-water mark at the end of the decision, not per run: this process, and the largest solver "
+                    "or verifier process it has waited for since it started"}
+
+
 class Controller:
     """One bounded thinking budget for one decision, with a ledger of every spend and every stop.
 
@@ -343,6 +411,7 @@ class Controller:
         # would hash differently and settle twice.
         self.started = None
         self.ledger, self.costs, self.cpu = [], [], []
+        self.decision_rule = None        # set by the compiler from compile.decision (DecisionRule)
         self._open = None
         # A grant window is an absolute deadline, and planning spends it as surely as the steps do, so in window
         # mode the clock starts here, read before the window's bounds so remaining() never exceeds what the grant
@@ -377,8 +446,11 @@ class Controller:
         """[fastest, slowest] measured step, in seconds; ``None`` before any step has been measured."""
         return [round(min(self.costs), 4), round(max(self.costs), 4)] if self.costs else None
 
-    def allot(self, step: str, *, required: bool):
-        """The latency limit this step may use, or ``None`` with the stop reason recorded."""
+    def allot(self, step: str, *, required: bool, no_value: str | None = None):
+        """The latency limit this step may use, or ``None`` with the stop reason recorded.
+
+        ``no_value`` is the reason an optional step cannot change the decision it serves (``DecisionRule``); such a
+        step is not started whatever the budget. A required step ignores it: it is never value-gated."""
         if self._open is not None:
             raise CognitionError(f"step {self._open['step']} was allotted and never closed")
         now = self.clock()                      # read once: the first step's limit is then exactly the total
@@ -389,6 +461,8 @@ class Controller:
         if remaining < MIN_STEP_SECONDS:
             reason = (f"BUDGET_EXHAUSTED: {remaining:.3g}s left, below the {MIN_STEP_SECONDS}s minimum step that can "
                       "still solve and verify")
+        elif not required and no_value:
+            reason = no_value
         elif not required and cost is not None and cost[1] > remaining:
             reason = (f"STOP: the slowest measured step ({cost[1]:.3g}s) exceeds the remaining budget "
                       f"({remaining:.3g}s); an optional step is not started without room to finish")
@@ -431,4 +505,5 @@ class Controller:
                                     "note": "wall time per inner run, solver and verifier included"},
                 "cpu_s": round(sum(self.cpu), 4) if self.cpu else None,
                 "stopped": [{"step": e["step"], "reason": e["reason"]} for e in self.stops()],
+                "peak_memory": peak_memory(),
                 "unmeasured": ["peak memory per run", "energy"]}

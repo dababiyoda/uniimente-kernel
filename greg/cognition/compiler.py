@@ -1856,8 +1856,11 @@ def validate(params) -> tuple[str, dict]:
         raise CognitionError("a compilation request takes problem_id and compile")
     body = params.get("compile")
     if not isinstance(body, dict) or set(body) - {"geometry", "data", "consequence", "evidence_refs", "execute",
-                                                  "human", "assumptions"}:
-        raise CognitionError("compile takes geometry, data, consequence, evidence_refs, assumptions, human, execute")
+                                                  "human", "assumptions", "decision"}:
+        raise CognitionError("compile takes geometry, data, consequence, evidence_refs, assumptions, human, execute, "
+                             "decision")
+    from .budget import DecisionRule
+    DecisionRule.parse(body.get("decision"))            # refuse a malformed decision before anything runs
     strict_data(body)
     if len(canonical(params).encode()) > 4 * 1024 * 1024:
         raise CognitionError("compilation request exceeds 4 MiB")
@@ -1943,6 +1946,9 @@ def _compile(params, noted, *, registry, journal, model_config, caller_window, s
     budget = Controller(float(g.latency_budget) if g.latency_budget else DEFAULT_BUDGET_S,
                         declared=bool(g.latency_budget), clock=CLOCK, caller_window=caller_window,
                         shared_deadline=shared_deadline, shared_compute_limit=shared_compute_limit)
+    from .budget import DecisionRule
+    # The decision this answer feeds, when declared: it prices every optional re-run on this one budget.
+    budget.decision_rule = DecisionRule.parse(body.get("decision"))
     data = body["data"]
     consequence = body.get("consequence") or {}
     evidence = evidence_index()
@@ -2365,6 +2371,13 @@ def _compile(params, noted, *, registry, journal, model_config, caller_window, s
             verdict = _premises_check(pid, chosen["operation"], body["data"]["claim"], geometry_hint, verdict,
                                       registry, journal, model_config, receipt, extra, budget)
         return finish(done, verdict)
+    rule = budget.decision_rule
+    if rule is not None:
+        receipt["decision"] = {"rule": rule.describe(), "baseline": rule.decide(inner["output"]),
+                               "authority_created": False}
+        if receipt["decision"]["baseline"] is None:
+            receipt["dissent"].append(f"decision: the answer carries no numeric {rule.output!r}; the declared "
+                                      "decision is not informed by this result")
     if "sensitivity" in plan["evaluate"]:
         receipt["sensitivity"] = _sensitivity_runs(pid, chosen["operation"], data, inner["output"], geometry_hint,
                                                    registry, journal, model_config, receipt, extra, budget)
@@ -2465,9 +2478,14 @@ def _perturbation_runs(data, baseline, budget, receipt, rerun) -> dict:
     from .cortex import _cpu_delta, _cpu_seconds
     keys = [k for k in sorted(data) if _numbers(data[k])][:4]
     base = _numbers(baseline)
-    rows, not_run = {}, {}
+    # When the requester declared the decision this answer feeds, a re-run starts only while it can still change it
+    # (budget.DecisionRule): one flip settles "fragile", and an answer with no decision value informs nothing.
+    rule = getattr(budget, "decision_rule", None)
+    decided = rule.decide(baseline) if rule is not None else None
+    rows, not_run, flips = {}, {}, []
     for key in keys:
-        limit = budget.allot(f"sensitivity:{key}", required=False)
+        limit = budget.allot(f"sensitivity:{key}", required=False,
+                             no_value=rule.no_value(decided, flips) if rule is not None else None)
         if limit is None:
             not_run[key] = budget.stops()[-1]["reason"]
             continue
@@ -2483,6 +2501,11 @@ def _perturbation_runs(data, baseline, budget, receipt, rerun) -> dict:
         change = (max((abs(a - b) / max(1e-9, abs(b)) for a, b in zip(now, base)), default=0.0)
                   if len(now) == len(base) else None)
         rows[key] = {"state": "ANSWERED", "answer_changed": moved, "max_relative_change": change}
+        if rule is not None and decided is not None:
+            now_decided = rule.decide(out["output"])
+            rows[key]["decision"] = now_decided
+            if now_decided is not None and now_decided != decided:   # no decision value leaves it untested
+                flips.append(key)
     fragile = [k for k, v in rows.items() if v.get("answer_changed")]
     if fragile:
         receipt["dissent"].append(f"sensitivity: the answer moves when {', '.join(fragile)} change by 10%")
@@ -2490,5 +2513,22 @@ def _perturbation_runs(data, baseline, budget, receipt, rerun) -> dict:
         receipt["dissent"].append(f"sensitivity: {', '.join(not_run)} not tested within the thinking budget; "
                                   "the answer's robustness to them is unknown")
     receipt["resource_use"]["stages"] += len(rows)
-    return {"perturbation": "+10% on each numeric top-level input (at most four)", "inputs": rows,
-            "fragile_inputs": fragile, "not_run": not_run}
+    report = {"perturbation": "+10% on each numeric top-level input (at most four)", "inputs": rows,
+              "fragile_inputs": fragile, "not_run": not_run}
+    if rule is None:
+        report["decision"] = {"state": "UNDECLARED",
+                              "note": "no decision declared: re-runs were gated by the budget alone, not by value"}
+    elif decided is None:
+        report["decision"] = {"state": "NO_DECISION", "rule": rule.describe()}
+    else:
+        tested = [k for k, v in rows.items() if v.get("decision") is not None]
+        unsettled = [k for k in keys if k not in tested and k not in flips]
+        state = "FRAGILE" if flips else ("ROBUST_TO_TESTED_INPUTS" if tested else "UNTESTED")
+        report["decision"] = {"state": state, "rule": rule.describe(), "baseline": decided, "flips_under": flips,
+                              "held_under": [k for k in tested if k not in flips], "untested": unsettled}
+        if flips:
+            receipt["dissent"].append(f"decision: {decided} flips when {', '.join(flips)} changes by 10%")
+        elif unsettled:
+            receipt["dissent"].append(f"decision: {decided} held where tested; untested inputs "
+                                      f"{', '.join(unsettled)} could still flip it")
+    return report

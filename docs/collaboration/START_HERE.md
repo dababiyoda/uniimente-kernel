@@ -6,6 +6,13 @@ publishing, credential or live-activation authority.
 
 ## Start every new or resumed session here
 
+For a shared multi-repository workspace, install entry pointers once with
+`python scripts/workspace_entry.py --workspace /absolute/workspace --install`
+from this Kernel checkout. Run without `--install` to check for missing or
+changed pointers. The installer creates workspace AGENTS/Claude/Copilot/Cursor
+entry files; it never overwrites existing instructions or edits organ repositories.
+See [workspace entry validation and limits](WORKSPACE-ENTRY-2026-10-25.md).
+
 1. Read the [pinned founder Discussion](https://github.com/dababiyoda/uniimente-kernel/discussions/89), including its coding operating system section. From a cloud session the github.com page returns 403 through the egress proxy and the GitHub connector has no Discussion tool; the public REST API serves the same text without a credential: `curl -sS https://api.github.com/repos/dababiyoda/uniimente-kernel/discussions/89` (body field; comments at `.../discussions/89/comments`). Verified 2026-10-22 from a Claude Code cloud session.
 2. Read repository AGENTS.md, CLAUDE.md when applicable, and instructions under the paths you will edit.
 3. Read the [Founder Effect Compiler](../FOUNDER_EFFECT_COMPILER.md), [Founder Intent Ledger](../FOUNDER_INTENT_LEDGER.md), [Recursive Collaboration Protocol](../RECURSIVE_COLLABORATION_PROTOCOL.md), [Final Build Order](../UNIIMENTE_FINAL_BUILD_ORDER.md), and [Canonical Execution Order](../CANONICAL_EXECUTION_ORDER.md).
@@ -273,3 +280,17 @@ check Memory files for this checkout's entry instructions. Confirm the actual
 source pin and live claim in the session; text files provide context, not enforced
 configuration. Official reference inspected 2026-10-21:
 https://code.claude.com/docs/en/memory . This task does not modify global hooks.
+
+# Enrolled-client gate (2026-10-30 extension)
+
+For independent cloud containers, use the optional
+[shared GitHub claim registry](SHARED-REGISTRY-2026-10-30.md). It extends this gate
+with conditional shared admission; actual client enrollment is still required.
+
+For clients enrolled by this workspace's operator, covered write tools require a
+current claim before execution. Follow [mandatory enrollment and installation](MANDATORY-GATE-2026-10-30.md).
+The SQLite registry coordinates clients using the same local DB; remote clients
+and tools outside the installed hook coverage still require explicit enrollment.
+Discussion #89 and board #96 remain the source/coordination front door. An expiry
+does not release another worker's claim. Read-only orientation remains available.
+

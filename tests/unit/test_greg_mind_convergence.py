@@ -888,7 +888,13 @@ def test_recipe_lifts_bind_the_recipe_code_they_measured():
     lifts = {r for r, v in index["recipes"].items() if v.get("lift") and v["evidence"].startswith(joined)}
     assert lifts == {"estimate_then_optimize", "identify_then_optimize", "bayes_then_voi"}   # joined v1's lifts
     live = {r for r, v in index["recipes"].items() if v.get("lift") and not C.recipe_stale(r, v)}
-    assert live == lifts, "a lift routes on code that differs from what it measured"
+    # The 2026-11-17 verifier review required composition's certification consumer to check the certificate's
+    # binding (_certified, _optimality and the two compositions that read them; PR #189 at 42dea08b). Those sit in
+    # identify_then_optimize's closure, so its P6 joined v1 lift no longer binds today's code and routes UNEVALUATED
+    # until a pre-registered re-measurement: the rule working as designed, not a weakened one. The other two joined
+    # v1 lifts still bind the code they measured.
+    assert live == lifts - {"identify_then_optimize"}, "a lift routes on code that differs from what it measured"
+    assert "needs re-measurement" in C.recipe_stale("identify_then_optimize", index["recipes"]["identify_then_optimize"])
     assert all(index["recipes"][r]["evidence"].startswith(joined) for r in live), \
         "a lift routes on code that differs from what it measured"
     assert all(C.recipe_stale(r, v) for r, v in index["recipes"].items()

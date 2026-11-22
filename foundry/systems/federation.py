@@ -228,6 +228,8 @@ class Instance:
             activity = untrusted_json.loads(body)
         except ValueError:
             return 400, {"error": "body is not JSON"}
+        if not isinstance(activity, dict):      # a list raised AttributeError on activity.get (re-check of 02efc535)
+            return 400, {"error": "body is not a JSON object"}
         if activity.get("actor") != sender["id"]:
             self._journal(s, "inbox.refused", actor=name, why="activity actor is not the signer")
             self._save(s)

@@ -1074,7 +1074,8 @@ class Body:
         if not self.layout.intake.is_dir():
             return []
         results = []
-        for path in sorted(self.layout.intake.glob("*.json"))[:INTAKE_PER_TICK]:
+        unfiled = self.__dict__.setdefault("_intake_unfiled", set())   # items this process could not file
+        for path in sorted(p for p in self.layout.intake.glob("*.json") if p.name not in unfiled)[:INTAKE_PER_TICK]:
             raw, why = _read_intake(path)
             item = None
             if why is None:
@@ -1087,14 +1088,32 @@ class Body:
             if why is None:
                 results.append(dataplane.ingest(self.journal, source=item["source"], content=item["content"],
                                                 channel=item["channel"]))
-                _move(path, self.layout.intake_done)
+                self._file_intake(path, self.layout.intake_done, unfiled)
                 continue
             digest = hashlib.sha256(raw).hexdigest() if raw is not None else None
             self.journal.record("external.intake_refused", {"file": path.name[:120], "why": why,
                                                              "content_sha256": digest},
                                 key=[path.name[:120], digest, why])
-            _move(path, self.layout.intake_refused)
+            self._file_intake(path, self.layout.intake_refused, unfiled)
         return results
+
+    def _file_intake(self, path: Path, folder: Path, unfiled: set) -> None:
+        """File one intake item; one that cannot be filed (its folder replaced by a link, no permission) is recorded
+        once and skipped for the life of this process. Intake has no set-aside, so the OSError was raised out of
+        every tick and every resume until the file was deleted by hand (re-check of 02efc535, findings 4 and 5).
+        The item is data only, and re-reading it after a restart returns the fact already retained."""
+        try:
+            _move(path, folder)
+        except OSError as exc:
+            unfiled.add(path.name)
+            reason = f"{type(exc).__name__}: {exc}"[:300]
+            key = [path.name[:120], folder.name, reason]
+            try:
+                if self.journal.retained("external.intake_unfiled", key) is None:
+                    self.journal.record("external.intake_unfiled", {"file": path.name[:120], "folder": folder.name,
+                                                                    "why": reason}, key=key)
+            except Exception:
+                pass        # the skip stands even when the ledger cannot take the record
 
     def _stuck_file(self, path: Path, exc: Exception, failed: Exception) -> dict:
         error = f"{type(exc).__name__}: {exc}"[:300] + f"; set-aside failed: {type(failed).__name__}: {failed}"[:200]
@@ -1633,23 +1652,50 @@ def _intake_shape(item) -> str | None:
     return None
 
 
+NAME_MAX = 255     # bytes in one file name (Linux, macOS)
+
+
+def _fresh_name(name: str) -> str:
+    """``name`` with a random tag before its suffix, its stem cut so the result fits NAME_MAX bytes: a second entry
+    of a 250-byte name raised ENAMETOOLONG out of the filing (re-check of 02efc535, finding 4)."""
+    stem, dot, suffix = name.rpartition(".")
+    if not dot:
+        stem, suffix = name, ""
+    suffix = f".{suffix}" if dot else ""
+    tag = f".{secrets.token_hex(4)}"
+    room = NAME_MAX - len((tag + suffix).encode())
+    cut = stem.encode()[:max(room, 1)].decode("utf-8", "ignore") or "entry"
+    return f"{cut}{tag}{suffix}"
+
+
 def _file_into(path: Path, folder: Path, *, taken=frozenset()) -> Path:
     """Move one inbox or intake entry into ``folder`` under its own name, or a fresh one when anything (a link
     included) already has that name, and return where it went.
 
-    ``os.rename`` never follows a link at the destination, and ``folder`` must be a real directory: whoever can
-    write the inbox can plant a link in it or in its subfolders. ``shutil.move`` into ``folder / name`` followed a
-    link to a directory there and wrote the entry inside it, so a refused link filed under inbox/rejected/ let the
-    next rejection of the same name write a file of the sender's choosing in any directory the body can write
-    (re-check of 9a14b8a5, finding 1); a same-name entry also replaced the bytes of an earlier one."""
+    ``folder`` is opened once, without following a link, and both the name check and the rename are made relative
+    to that descriptor, so the folder cannot be swapped for a link between them (re-check of 02efc535, finding 3:
+    a thread exchanging inbox/rejected with a link won the race in about 365 tries). ``os.rename`` never follows a
+    link at the destination. ``shutil.move`` into ``folder / name`` followed a link to a directory there and wrote
+    the entry inside it, so a refused link filed under inbox/rejected/ let the next rejection of the same name write
+    a file of the sender's choosing in any directory the body can write (re-check of 9a14b8a5, finding 1)."""
     folder.mkdir(mode=0o700, exist_ok=True)
-    if not stat.S_ISDIR(os.lstat(folder).st_mode):
-        raise OSError(errno.ENOTDIR, "not a directory (a link is refused)", str(folder))
-    target = folder / path.name
-    while os.path.lexists(target) or target.name in taken:
-        target = folder / f"{path.stem}.{secrets.token_hex(4)}{path.suffix}"
-    os.rename(path, target)
-    return target
+    fd = os.open(folder, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    try:
+        name = path.name
+        while name in taken or _exists_at(fd, name):
+            name = _fresh_name(path.name)
+        os.rename(path, name, dst_dir_fd=fd)
+    finally:
+        os.close(fd)
+    return folder / name
+
+
+def _exists_at(dir_fd: int, name: str) -> bool:
+    try:
+        os.lstat(name, dir_fd=dir_fd)
+    except FileNotFoundError:
+        return False
+    return True
 
 
 def _move(path: Path, folder: Path):

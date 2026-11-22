@@ -637,3 +637,68 @@ def test_an_inbox_subfolder_replaced_by_a_link_is_never_written_through(tmp_path
         except OSError:
             pass                        # a running body exits on a fault it cannot file; it never writes through
     assert list(victim.iterdir()) == []
+
+
+def test_the_mcp_clients_own_error_line_is_a_refusal_with_its_reason(tmp_path):
+    """Re-check of 02efc535, finding 2: round 6 dropped the "error" check, so the client's normal failure line came
+    back as an answer and answer["ok"] raised KeyError, losing the reason; an "ok" GREG cannot read did the same."""
+    import json as _json
+    import subprocess
+    from types import SimpleNamespace
+    import pytest
+    from greg import mcp_tools
+    from greg.capabilities import CapabilityError, SecretBroker
+    ctx = SimpleNamespace(secrets=SecretBroker(tmp_path / "s.json"))
+    for stdout, reason in ((_json.dumps({"error": "McpError: tool not found"}), "tool not found"),
+                           (_json.dumps({"ok": "not a dict"}), "cannot read"),
+                           (_json.dumps({"ok": {"value": 1}}), "cannot read")):
+        done = subprocess.CompletedProcess([], 1, stdout=stdout, stderr="")
+        with pytest.raises(CapabilityError, match=reason):
+            mcp_tools._client_answer(ctx, done, server="notes", token="t", bearer=None, login=None)
+
+
+def test_a_reply_that_keeps_every_scan_inside_a_string_is_refused_in_linear_time():
+    """Re-check of 02efc535, finding 1: with escapes read correctly, a reply of {\\" repeated keeps every scan inside a
+    string, so nothing is remembered and every brace rescans to the end: 40 KB took 13.6 s. A work budget linear in
+    the reply refuses it."""
+    import time
+    import pytest
+    from greg.missions import MissionError
+    from greg.planner import _first_json_object
+    started = time.monotonic()
+    for reply in ('{\\"' * 13_000, 'x{"\\"' * 8_000):
+        with pytest.raises(MissionError, match="too irregular"):
+            _first_json_object(reply)
+    assert time.monotonic() - started < 2.0
+    assert _first_json_object("prose " * 20_000 + '{"steps": [1]}') == {"steps": [1]}
+
+
+def test_a_long_name_is_filed_again_and_a_stuck_intake_item_never_crashes_the_tick(tmp_path):
+    """Re-check of 02efc535, findings 4 and 5: the fresh name added 9 characters, so a second rejection of a 250-byte
+    name raised ENAMETOOLONG and the running body exited; an intake item that could not be filed raised out of every
+    tick, since intake has no set-aside."""
+    import os
+    import shutil as _shutil
+    from greg.body import Body, drop_intake
+    home, key, body_id, _ = make_body(tmp_path)
+    inbox = home / "inbox"
+    name = "a" * 250 + ".json"
+    for _ in range(2):
+        (inbox / name).write_text("not json")
+        with Body(home) as body:
+            body.tick()
+    assert len([p for p in (inbox / "rejected").iterdir()]) == 2
+    assert all(len(p.name.encode()) <= 255 for p in (inbox / "rejected").iterdir())
+    drop_intake(home, source="web", content="hello", channel="feed")
+    layout = Layout(home)
+    victim = tmp_path / "victim"
+    victim.mkdir()
+    done = layout.intake_done
+    if done.exists():
+        _shutil.rmtree(done)
+    os.symlink(victim, done)
+    with Body(home) as body:
+        body.tick()
+        body.tick()                     # raised OSError on every tick before
+        assert [e.payload["folder"] for e in body.journal.replay("external.intake_unfiled")] == [done.name]
+    assert list(victim.iterdir()) == []

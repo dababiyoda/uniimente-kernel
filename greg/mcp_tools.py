@@ -461,6 +461,12 @@ def _client_answer(ctx, done, *, server, token, bearer, login) -> dict:
         if not _store_renewal(ctx, bearer, login, answer.pop("renewed")):
             raise CapabilityError(f"MCP server {server}: the login the service renewed could not be read; run "
                                   f"`greg mcp login` again")
+    if "error" in answer:       # the client's own failure line (round 6 dropped this check: re-check of 02efc535)
+        raise CapabilityError(f"MCP server {server}: {answer['error']}"[:700])
+    ok = answer.get("ok")
+    if not isinstance(ok, dict) or "value" not in ok or "provider_claims_read_only" not in ok:
+        raise CapabilityError(f"MCP server {server}: GREG's client printed an answer GREG cannot read "
+                              f"(exit {done.returncode})")
     return answer
 
 

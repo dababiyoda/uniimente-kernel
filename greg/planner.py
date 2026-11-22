@@ -731,6 +731,10 @@ def _prompt(text: str, ctx: PlannerContext) -> str:
     return json.dumps(context, sort_keys=True, indent=1, default=str)
 
 
+SCAN_WORK_PER_CHAR = 8          # characters _first_json_object may visit, per character of the reply
+SCAN_WORK_FLOOR = 1 << 16
+
+
 def _first_json_object(text: str) -> dict:
     """The first JSON object in a model reply, trying each "{" in order: its balanced span is decoded, and a span that
     is not an object moves on to the next "{".
@@ -747,11 +751,19 @@ def _first_json_object(text: str) -> dict:
     (re-check of 9a14b8a5, finding 3). Bounding each start instead would rescan up to MAX_DEPTH braces from every
     brace, O(MAX_DEPTH * n) with a large constant; a model reply like that is refused, never guessed at."""
     close = {}           # index of a "{" -> index of its "}", or None when it never closes
+    # The memo covers a later "{" only when a scan meets it outside a string. A reply that keeps every scan inside a
+    # string ({\" repeated) is still rescanned from each brace: 40 KB took 13.6 s (re-check of 02efc535, finding 1).
+    # A work budget, linear in the reply, makes the whole search linear; a reply that exhausts it is refused, as an
+    # unreadable one is. Every reply in the tests and the fuzz used on this scan stays far inside it.
+    budget = SCAN_WORK_PER_CHAR * len(text) + SCAN_WORK_FLOOR
     start = text.find("{")
     while start != -1:
         if start not in close:
             stack, in_string, escape = [], False, False
             for index in range(start, len(text)):
+                budget -= 1
+                if budget < 0:
+                    raise MissionError("model reply is too irregular to read as JSON")
                 ch = text[index]
                 if in_string:
                     # an escaped character is skipped whole: before, the flag was recomputed before the quote was

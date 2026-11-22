@@ -59,6 +59,7 @@ DISTINCT_SHAPE = "test_guard_3_reports_a_structural_copy_even_where_a_distinct_e
 SEALS_ONLY = "test_a_freeze_manifest_seals_only_the_files_and_bytes_the_test_pins"
 LAST_BINDING = "test_a_registered_qualname_names_its_last_binding_as_python_does"
 COMPARED_PIN = "test_the_set_of_compared_registered_bodies_is_pinned"
+SHADOW = "test_a_package_shadows_a_module_of_the_same_name_and_no_two_files_share_a_module_name"
 REMOTE_SIG = "def handle(home: Path, method: str, path: str, headers, body: bytes, *, now: datetime | None = None):\n"
 REALITY_KEPT = "        kept_for: {consumer: acceptance.claims.crosswalk_problems}\n"
 # A copy of greg.organs.exchange recorded as 'distinct' in the organ-exchange record.
@@ -517,6 +518,19 @@ MUTANTS = [
     ("MW-C round 4: a compared body missing from COMPARED passes",
      [("replace", TESTS, "            for m, q in sorted(have - compared)]\n",
        "            for m, q in sorted(have - compared) if False]\n")], COMPARED_PIN),
+    # -- MW-C round 4 (N5): a package beside a module of its name fails; no two runtime files share a module name ------
+    ("MW-C round 4: a package greg/business_loop/ beside greg/business_loop.py (Python imports the package)",
+     [("copy_body", "greg/business_loop.py", "reconcile", "greg/business_loop/__init__.py", "function")], BODIES),
+    ("MW-C round 4: a top-level file greg.business_loop.py, read as module greg.business_loop",
+     [("copy_body", "greg/business_loop.py", "reconcile", "greg.business_loop.py", "function")], BODIES),
+    ("MW-C round 4: the module file read although a package of its name exists",
+     [("replace", TESTS, "    if package.is_file() and plain.is_file():\n        raise AmbiguousModule(",
+       "    if False:\n        raise AmbiguousModule("),
+      ("replace", TESTS, "    return package if package.is_file() else plain if plain.is_file() else None\n",
+       "    return plain if plain.is_file() else package if package.is_file() else None\n")], SHADOW),
+    ("MW-C round 4: two runtime files with one module name pass",
+     [("replace", TESTS, "for name, files in sorted(names.items()) if len(files) > 1]\n",
+       "for name, files in sorted(names.items()) if False]\n")], SHADOW),
 ]
 
 

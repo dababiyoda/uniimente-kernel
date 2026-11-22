@@ -444,17 +444,39 @@ def load(path: Path = REGISTRY) -> dict:
     return yaml.safe_load(Path(path).read_text())
 
 
+class AmbiguousModule(ValueError):
+    """A module that is both ``<name>.py`` and ``<name>/__init__.py``: Python imports the package, so the module file
+    is dead code that a guard must not read as the module."""
+
+
 def module_file(module: str, root: Path = ROOT) -> Path | None:
+    """The file ``import <module>`` loads: the package ``<name>/__init__.py`` first, as Python's FileFinder does, then
+    ``<name>.py``. Both present raises AmbiguousModule (round 4, N5;
+    test_a_package_shadows_a_module_of_the_same_name_and_no_two_files_share_a_module_name)."""
     base = Path(root, *module.split("."))
-    for candidate in (base.with_suffix(".py"), base / "__init__.py"):
-        if candidate.is_file():
-            return candidate
-    return None
+    package, plain = base / "__init__.py", base.with_suffix(".py")
+    if package.is_file() and plain.is_file():
+        raise AmbiguousModule(f"{module} is both {plain.relative_to(root).as_posix()} and "
+                              f"{package.relative_to(root).as_posix()}: Python imports the package, so the module file "
+                              f"is dead code; remove one of them")
+    return package if package.is_file() else plain if plain.is_file() else None
 
 
 def module_name(path: Path, root: Path = ROOT) -> str:
+    """The dotted name a file is read under. Not injective on its own (``a/b.py``, ``a/b/__init__.py`` and a file named
+    ``a.b.py`` are all ``a.b``): guard 4 fails on any two runtime files that share one (``module_name_problems``)."""
     relative = Path(path).relative_to(root).with_suffix("")
     return ".".join(relative.parts[:-1] if relative.name == "__init__" else relative.parts)
+
+
+def module_name_problems(paths: list[Path], root: Path = ROOT) -> list[str]:
+    """Every module name two or more of ``paths`` share: guard 4 compares a body with its own location by module
+    name, so a second file under the owner's name would count as the owner."""
+    names: dict[str, list[str]] = {}
+    for path in paths:
+        names.setdefault(module_name(path, root), []).append(Path(path).relative_to(root).as_posix())
+    return [f"{' and '.join(sorted(files))} are one module name ({name}), so guard 4 cannot tell which is the "
+            f"registered module; rename or remove one" for name, files in sorted(names.items()) if len(files) > 1]
 
 
 # An invalid escape in a string is a SyntaxWarning on Python 3.12 and later and a DeprecationWarning on 3.11 (CI's
@@ -1559,8 +1581,9 @@ def body_copies(records: list[dict], root: Path = ROOT, sealed: dict = SEALED) -
     BODY_EXEMPTIONS does (``exempted``)."""
     bodies = registered_bodies(records, root)
     sizes = frozenset(size for size, _ in bodies)
-    found, unreadable = [], []
-    for path in runtime_files(root, sealed):
+    files = list(runtime_files(root, sealed))
+    found, unreadable = [], module_name_problems(files, root)
+    for path in files:
         relative = path.relative_to(root).as_posix()
         try:
             prints = _prints(path, path.stat().st_mtime_ns, sizes)
@@ -2699,3 +2722,25 @@ def test_the_set_of_compared_registered_bodies_is_pinned(tmp_path):
     assert body_copy_problems([INBOX_RECORD], root) == []        # which is why the set is pinned: the copy passes
     joined = compared_problems([INBOX_RECORD], _tree(tmp_path / "plain", {"greg/body.py": OWNER_BODY}), compared=frozenset())
     assert len(joined) == 1 and "greg.body.send_signed is compared and not pinned in COMPARED" in joined[0], joined
+
+
+def test_a_package_shadows_a_module_of_the_same_name_and_no_two_files_share_a_module_name(tmp_path):
+    # Round 4, N5: module_file preferred greg/business_loop.py to greg/business_loop/__init__.py, the opposite of
+    # Python, so with both present every guard read the shadowed dead file and a copy in the live package counted as
+    # the body's own location. module_file now resolves the package first and fails when both exist; and two runtime
+    # files with one module name (a top-level greg.business_loop.py beside greg/business_loop.py) fail guard 4.
+    import pytest
+
+    commerce = next(r for r in load()["function_owner_records"] if r["record_id"] == "OWN-FN-COMMERCE-CLOSURE")
+    copied = _disguised("greg.business_loop", "reconcile", "reconcile")
+    both = _tree(tmp_path / "both", {**_real("greg.business_loop"), "greg/__init__.py": "",
+                                     "greg/business_loop/__init__.py": copied})
+    with pytest.raises(AmbiguousModule, match="greg.business_loop is both greg/business_loop.py and "
+                                              "greg/business_loop/__init__.py"):
+        body_copy_problems([commerce], both)
+    package = _tree(tmp_path / "package", {"greg/__init__.py": "", "greg/business_loop/__init__.py": copied})
+    assert module_file("greg.business_loop", package) == package / "greg/business_loop/__init__.py"
+    dotted = _tree(tmp_path / "dotted", {**_real("greg.business_loop"), "greg.business_loop.py": copied})
+    found = body_copy_problems([commerce], dotted)
+    assert len(found) == 1 and "greg.business_loop.py and greg/business_loop.py are one module name" in found[0], found
+    assert module_name_problems(list(runtime_files())) == []

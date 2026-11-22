@@ -1359,7 +1359,7 @@
    "source_location": "docs/intent/sources/GREG-SEED-GENOME-DIRECTIVE-2026-10-01-source.md (Appendix A, row A42)",
    "source_date": "2026-10-01",
    "intended_effect": "Challenge-resistant proof without compelled acceptance",
-   "interpretation": "Receipts are content-addressed and refutable; challenge workflow through existing receipt path is later",
+   "interpretation": "Receipts are content-addressed and refutable. A response to an evidence package can name the committed claims it addresses (assumption, evidence, inference, method, classification, conclusion) by digest; challenge_map shows per claim who contests it on what grounds and which claims no response contests; untargeted disputes are kept apart. Contested is not refuted and uncontested is not true. Recording a response from the console (a founder-signed command) is later",
    "canonical_owner": "greg/cognition + cortex (Kernel)",
    "lifecycle_state": "active",
    "implementation_state": "PARTIAL",
@@ -1371,11 +1371,15 @@
     "contracts/cortex-receipt.schema.json",
     "cortex/contracts.py",
     "cortex/memory.py",
+    "greg/cli.py",
     "greg/cognition/contracts.py",
-    "greg/cognition/settlement.py"
+    "greg/cognition/disclosure.py",
+    "greg/cognition/settlement.py",
+    "greg/gravity.py"
    ],
    "tests": [
-    "tests/integration/test_greg_cortex_mission.py"
+    "tests/integration/test_greg_cortex_mission.py",
+    "tests/unit/test_cognition_disclosure.py"
    ],
    "evidence_refs": [
     "tests/evidence/greg-cortex-rehearsal/rehearsal-summary.json"
@@ -3532,7 +3536,7 @@
    "source_location": "docs/intent/sources/GREG-SEED-GENOME-DIRECTIVE-2026-10-01-source.md (Appendix A, row B63)",
    "source_date": "2026-10-01",
    "intended_effect": "Eight corrections to v0.1",
-   "interpretation": "The supplied review that enumerates them is not in the repository; mapped by directive location (2, 5-7, 9, 11, 13, 15) to the v0.2.0 changes",
+   "interpretation": "The eight corrections are section 63 of the second review pass, preserved verbatim in docs/intent/sources/POLYINTELLIGENCE-CORTEX-REVIEW-PASS-2-2026-09-30.md (the 2026-11-22 repeat restates it); mapped by directive location (2, 5-7, 9, 11, 13, 15) to the v0.2.0 changes. The earlier note that the review was not in the repository was wrong",
    "canonical_owner": "greg/cognition + cortex (Kernel)",
    "lifecycle_state": "needs_evidence",
    "implementation_state": "PARTIAL",

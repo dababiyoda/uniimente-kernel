@@ -667,6 +667,8 @@ Repeated byte-identically 2026-10-14T04:59:45Z (same whole-message SHA-256, `ee7
 
 Evidence: `tests/evidence/seed-genome-residuals-2026-10-13/`. Authority delta: none. VEPMC: 0.
 
+Repeated 2026-11-22 (whole message `a1f3efca…`, 97,218 characters; every paragraph already preserved in the two review-pass sources). Applied by closing SG-A42: a response to an evidence package names the committed claims it addresses, and `greg cognition challenges` shows per claim who contests it and on what grounds, with untargeted disputes kept apart. A contested claim is not refuted and an uncontested one is not true. SG-B63's "review not in the repository" note is corrected: the eight corrections are §63 of review pass 2. Authority delta: none. VEPMC: 0.
+
 ## Master build directive and current gate repair — 2026-09-30
 
 The two September 30 master-directive records (this one and the next) describe complementary scopes of the same intended destination: gate-proof repairs and resource requests. Neither creates a second authority or goal owner; their original source lineages remain distinct.

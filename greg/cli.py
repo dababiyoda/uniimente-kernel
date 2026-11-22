@@ -469,6 +469,9 @@ def main(argv=None) -> int:
     pk.add_argument("--out", required=True, help="directory for holder.json (keep) and presentation.json (share)")
     vp = css.add_parser("verify-package", help="recipient side: check a presentation without any GREG state")
     vp.add_argument("presentation")
+    ch = css.add_parser("challenges", help="read-only: per committed claim of a package, who contested it and on "
+                                          "what grounds, and which claims no recorded response contests")
+    ch.add_argument("holder", help="the package's holder.json")
     css.add_parser("calibration", help="read-only: forecast calibration from realized values bound to receipts, "
                                        "and forecasts/construction objectives still awaiting a realization")
     cm = css.add_parser("mission")
@@ -907,6 +910,14 @@ def main(argv=None) -> int:
             elif args.cognition_cmd == "destinations":
                 from greg.cognition.advantage import export as advantage_export
                 data = advantage_export()["destinations"]
+            elif args.cognition_cmd == "challenges":
+                from greg.cognition import disclosure
+                from greg.cognition.contracts import CognitionError
+                with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                    try:
+                        data = disclosure.challenge_map(journal, json.loads(Path(args.holder).read_text()))
+                    except CognitionError as exc:
+                        raise BodyError(str(exc)) from None
             elif args.cognition_cmd in ("package", "verify-package"):
                 from greg.cognition import disclosure
                 from greg.cognition.contracts import CognitionError

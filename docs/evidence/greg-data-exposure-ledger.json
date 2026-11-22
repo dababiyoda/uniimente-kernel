@@ -217,7 +217,7 @@
  "counts": {
   "by_lineage": {
    "#158": 389,
-   "#179": 109,
+   "#179": 110,
    "both": 42
   },
   "by_role": {
@@ -225,7 +225,7 @@
    "admission held-out": 150,
    "canary": 1,
    "dev": 289,
-   "held-out": 70,
+   "held-out": 71,
    "review-pilot": 14,
    "train": 9
   },
@@ -239,13 +239,13 @@
    "dev / #179": 23,
    "dev / both": 23,
    "held-out / #158": 13,
-   "held-out / #179": 38,
+   "held-out / #179": 39,
    "held-out / both": 19,
    "review-pilot / #158": 14,
    "train / #158": 6,
    "train / #179": 3
   },
-  "exposures": 540,
+  "exposures": 541,
   "overlaps": {
    "identical_suite_items": 1,
    "same_data_items": 2,
@@ -365,12 +365,12 @@
    },
    "#179": {
     "glob": "cortex/evaluation/(?!genome_admission/).*(freeze|prereg)[^/]*\\.json",
-    "matched": 22,
+    "matched": 23,
     "missing": [],
     "no_declaration": [
      "cortex/evaluation/pr155_f8_fallback_diagnostic/prereg-draft.json"
     ],
-    "parsed": 21
+    "parsed": 22
    }
   }
  },
@@ -23375,6 +23375,57 @@
   },
   {
    "artifact": {
+    "commit": "279014760e7754a9c7745bdf2b4c58336cd74eab",
+    "path": "cortex/evaluation/seed_genome/freeze-v14-pr313.json",
+    "read_at": "HEAD",
+    "sha256": "sha256:7704341c4f44a57d0d9649492f88abadc6a5baa4d94f6841b3c1667972d6f048"
+   },
+   "exposure_commit": "279014760e7754a9c7745bdf2b4c58336cd74eab",
+   "family": null,
+   "generator": {
+    "commit": "279014760e7754a9c7745bdf2b4c58336cd74eab",
+    "files": [
+     {
+      "path": "cortex/evaluation/seed_genome/build.py",
+      "sha256": "sha256:ab67b7c9072f0538ed3b497f224a103f7fdd9137ac515c01450579476e626bb4"
+     },
+     {
+      "path": "cortex/evaluation/seed_genome/run.py",
+      "sha256": "sha256:8a0f3eec2368ba87633bfe8ba5b1c04755e40fefd938571bb4e507f19c89d8ea"
+     },
+     {
+      "path": "cortex/evaluation/seed_genome/suite.json",
+      "sha256": "sha256:eecb5505c68c16ae2e25ef7c266b6cf770b9d0987d329ecc252940bac3b2e4cc"
+     }
+    ],
+    "function": null,
+    "key": "cortex/evaluation/seed_genome/build.py@sha256:ab67b7c9072f0538ed3b497f224a103f7fdd9137ac515c01450579476e626bb4|cortex/evaluation/seed_genome/run.py@sha256:8a0f3eec2368ba87633bfe8ba5b1c04755e40fefd938571bb4e507f19c89d8ea|cortex/evaluation/seed_genome/suite.json@sha256:eecb5505c68c16ae2e25ef7c266b6cf770b9d0987d329ecc252940bac3b2e4cc",
+    "kind": "suite",
+    "resolved": true,
+    "why": "instances built inline by the harness or materialised in a frozen suite"
+   },
+   "id": "#179|cortex/evaluation/seed_genome/freeze-v14-pr313.json|held-out|-|suite:cortex/evaluation/seed_genome/suite.json:heldout",
+   "items": {
+    "ids_sha256": "sha256:83be0d58a676f903df47cfa521c3497386e4743a3438059a519707c18e8a350f",
+    "n": 120,
+    "partition": "heldout",
+    "suite": "cortex/evaluation/seed_genome/suite.json"
+   },
+   "lineages": [
+    "#179"
+   ],
+   "looked_at": false,
+   "looked_at_basis": "no results file binds this freeze's digest",
+   "n": 120,
+   "part": "suite:cortex/evaluation/seed_genome/suite.json:heldout",
+   "present_in": [
+    "#179"
+   ],
+   "program": "cortex seed genome",
+   "role": "held-out"
+  },
+  {
+   "artifact": {
     "commit": "HEAD",
     "path": "cortex/evaluation/seed_genome/freeze-v6-pr169.json",
     "read_at": "HEAD",
@@ -23391,7 +23442,7 @@
      },
      {
       "path": "cortex/evaluation/seed_genome/run.py",
-      "sha256": "sha256:8ffeef8e90a59e382b90a301889574980c40e5cc9ea7cc58f30c0c9bf5893bdd"
+      "sha256": "sha256:8a0f3eec2368ba87633bfe8ba5b1c04755e40fefd938571bb4e507f19c89d8ea"
      },
      {
       "path": "cortex/evaluation/seed_genome/suite.json",
@@ -23399,7 +23450,7 @@
      }
     ],
     "function": null,
-    "key": "cortex/evaluation/seed_genome/build.py@sha256:ab67b7c9072f0538ed3b497f224a103f7fdd9137ac515c01450579476e626bb4|cortex/evaluation/seed_genome/run.py@sha256:8ffeef8e90a59e382b90a301889574980c40e5cc9ea7cc58f30c0c9bf5893bdd|cortex/evaluation/seed_genome/suite.json@sha256:eecb5505c68c16ae2e25ef7c266b6cf770b9d0987d329ecc252940bac3b2e4cc",
+    "key": "cortex/evaluation/seed_genome/build.py@sha256:ab67b7c9072f0538ed3b497f224a103f7fdd9137ac515c01450579476e626bb4|cortex/evaluation/seed_genome/run.py@sha256:8a0f3eec2368ba87633bfe8ba5b1c04755e40fefd938571bb4e507f19c89d8ea|cortex/evaluation/seed_genome/suite.json@sha256:eecb5505c68c16ae2e25ef7c266b6cf770b9d0987d329ecc252940bac3b2e4cc",
     "kind": "suite",
     "resolved": true,
     "why": "instances built inline by the harness or materialised in a frozen suite"
@@ -23493,7 +23544,7 @@
      },
      {
       "path": "cortex/evaluation/seed_genome/run.py",
-      "sha256": "sha256:8ffeef8e90a59e382b90a301889574980c40e5cc9ea7cc58f30c0c9bf5893bdd"
+      "sha256": "sha256:8a0f3eec2368ba87633bfe8ba5b1c04755e40fefd938571bb4e507f19c89d8ea"
      },
      {
       "path": "cortex/evaluation/seed_genome/suite.json",
@@ -23501,7 +23552,7 @@
      }
     ],
     "function": null,
-    "key": "cortex/evaluation/seed_genome/build.py@sha256:ab67b7c9072f0538ed3b497f224a103f7fdd9137ac515c01450579476e626bb4|cortex/evaluation/seed_genome/run.py@sha256:8ffeef8e90a59e382b90a301889574980c40e5cc9ea7cc58f30c0c9bf5893bdd|cortex/evaluation/seed_genome/suite.json@sha256:eecb5505c68c16ae2e25ef7c266b6cf770b9d0987d329ecc252940bac3b2e4cc",
+    "key": "cortex/evaluation/seed_genome/build.py@sha256:ab67b7c9072f0538ed3b497f224a103f7fdd9137ac515c01450579476e626bb4|cortex/evaluation/seed_genome/run.py@sha256:8a0f3eec2368ba87633bfe8ba5b1c04755e40fefd938571bb4e507f19c89d8ea|cortex/evaluation/seed_genome/suite.json@sha256:eecb5505c68c16ae2e25ef7c266b6cf770b9d0987d329ecc252940bac3b2e4cc",
     "kind": "suite",
     "resolved": true,
     "why": "instances built inline by the harness or materialised in a frozen suite"
@@ -23595,7 +23646,7 @@
      },
      {
       "path": "cortex/evaluation/seed_genome/run.py",
-      "sha256": "sha256:8ffeef8e90a59e382b90a301889574980c40e5cc9ea7cc58f30c0c9bf5893bdd"
+      "sha256": "sha256:8a0f3eec2368ba87633bfe8ba5b1c04755e40fefd938571bb4e507f19c89d8ea"
      },
      {
       "path": "cortex/evaluation/seed_genome/suite.json",
@@ -23603,7 +23654,7 @@
      }
     ],
     "function": null,
-    "key": "cortex/evaluation/seed_genome/build.py@sha256:ab67b7c9072f0538ed3b497f224a103f7fdd9137ac515c01450579476e626bb4|cortex/evaluation/seed_genome/run.py@sha256:8ffeef8e90a59e382b90a301889574980c40e5cc9ea7cc58f30c0c9bf5893bdd|cortex/evaluation/seed_genome/suite.json@sha256:eecb5505c68c16ae2e25ef7c266b6cf770b9d0987d329ecc252940bac3b2e4cc",
+    "key": "cortex/evaluation/seed_genome/build.py@sha256:ab67b7c9072f0538ed3b497f224a103f7fdd9137ac515c01450579476e626bb4|cortex/evaluation/seed_genome/run.py@sha256:8a0f3eec2368ba87633bfe8ba5b1c04755e40fefd938571bb4e507f19c89d8ea|cortex/evaluation/seed_genome/suite.json@sha256:eecb5505c68c16ae2e25ef7c266b6cf770b9d0987d329ecc252940bac3b2e4cc",
     "kind": "suite",
     "resolved": true,
     "why": "instances built inline by the harness or materialised in a frozen suite"
@@ -23697,7 +23748,7 @@
      },
      {
       "path": "cortex/evaluation/seed_genome/run.py",
-      "sha256": "sha256:8ffeef8e90a59e382b90a301889574980c40e5cc9ea7cc58f30c0c9bf5893bdd"
+      "sha256": "sha256:8a0f3eec2368ba87633bfe8ba5b1c04755e40fefd938571bb4e507f19c89d8ea"
      },
      {
       "path": "cortex/evaluation/seed_genome/suite.json",
@@ -23705,7 +23756,7 @@
      }
     ],
     "function": null,
-    "key": "cortex/evaluation/seed_genome/build.py@sha256:ab67b7c9072f0538ed3b497f224a103f7fdd9137ac515c01450579476e626bb4|cortex/evaluation/seed_genome/run.py@sha256:8ffeef8e90a59e382b90a301889574980c40e5cc9ea7cc58f30c0c9bf5893bdd|cortex/evaluation/seed_genome/suite.json@sha256:eecb5505c68c16ae2e25ef7c266b6cf770b9d0987d329ecc252940bac3b2e4cc",
+    "key": "cortex/evaluation/seed_genome/build.py@sha256:ab67b7c9072f0538ed3b497f224a103f7fdd9137ac515c01450579476e626bb4|cortex/evaluation/seed_genome/run.py@sha256:8a0f3eec2368ba87633bfe8ba5b1c04755e40fefd938571bb4e507f19c89d8ea|cortex/evaluation/seed_genome/suite.json@sha256:eecb5505c68c16ae2e25ef7c266b6cf770b9d0987d329ecc252940bac3b2e4cc",
     "kind": "suite",
     "resolved": true,
     "why": "instances built inline by the harness or materialised in a frozen suite"

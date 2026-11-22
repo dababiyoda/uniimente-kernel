@@ -421,11 +421,20 @@ def _remote_act(params: dict, ctx: InvocationContext) -> dict:
     finally:
         shutil.rmtree(scratch, ignore_errors=True)
         shutil.rmtree(sockets, ignore_errors=True)
+    lines = done.stdout.strip().splitlines()
     try:
-        answer = untrusted_json.loads(done.stdout.strip().splitlines()[-1])
+        answer = untrusted_json.loads(lines[-1])
         if answer.get("renewed") and login:          # the renewed login goes back to the broker, never the record
             mcp_login.store_renewal(ctx.secrets, str(bearer), login, answer.pop("renewed"))
+    except untrusted_json.TooDeep:
+        # The client finished and printed the server's answer, nested past what GREG reads: the call ran on the
+        # server. Keep the login it renewed (printed alone, first) so the next call still works, and say what
+        # happened instead of "GREG's client failed" (re-check of 6933be8c, F4).
+        _keep_renewal(ctx, lines[:-1], bearer, login)
+        raise CapabilityError(f"MCP server {server}: the call ran, but the server's answer nests deeper than "
+                              f"{untrusted_json.MAX_DEPTH} levels and is not read") from None
     except (ValueError, IndexError, RecursionError):
+        _keep_renewal(ctx, lines[:-1], bearer, login)
         tail = " ".join(done.stderr.split())[-300:].replace(token, "[credential]") if token else done.stderr[-300:]
         raise CapabilityError(f"MCP server {server}: GREG's client failed (exit {done.returncode}): {tail}") from None
     if "error" in answer:
@@ -440,3 +449,18 @@ def _remote_act(params: dict, ctx: InvocationContext) -> dict:
             "confinement": {"network": f"only {', '.join(allowed)} through the relay", "writable": [], "shown": [],
                             "secrets": [str(bearer)] if bearer else [], "remote": str(params["url"]),
                             **({"login_renewed": True} if renewal else {})}}
+
+
+def _keep_renewal(ctx, lines, bearer, login) -> None:
+    """A renewed login the MCP client printed alone before its answer line, stored when that answer is unreadable."""
+    if not login:
+        return
+    from greg import mcp_login
+    for line in lines:
+        try:
+            item = untrusted_json.loads(line)
+        except ValueError:
+            continue
+        if isinstance(item, dict) and set(item) == {"renewed"} and item["renewed"]:
+            mcp_login.store_renewal(ctx.secrets, str(bearer), login, item["renewed"])
+            return

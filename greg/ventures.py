@@ -34,6 +34,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 import hashlib
 import json
+from greg import untrusted_json
 import os
 from pathlib import Path
 import subprocess
@@ -93,7 +94,10 @@ def _organ(script: str, stdin: dict, *args: str, cwd: Path, confined: bool = Fal
             raise CapabilityError(f"organ timed out after {ORGAN_TIMEOUT_SECONDS}s") from None
     if done.returncode != 0:
         raise CapabilityError(f"organ refused: {done.stderr.strip().splitlines()[-1] if done.stderr.strip() else done.returncode}")
-    return json.loads(done.stdout)
+    try:      # the venture organ's output is JSON GREG did not write (re-check of 6933be8c, F2)
+        return untrusted_json.loads(done.stdout)
+    except ValueError:
+        raise CapabilityError("organ returned output that is not readable JSON") from None
 
 
 def _git_head(path: Path) -> str | None:

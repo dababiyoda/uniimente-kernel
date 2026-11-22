@@ -482,6 +482,10 @@ def test_a_linked_revocation_is_neither_counted_nor_applied(tmp_path):
     home, kid = _revocation_after_a_backdated_pause(tmp_path, "linked")
     with Body(home) as body:
         assert kid not in body.revoking()
-        body.tick()        # the device's pause is applied first, so the unreadable link is set aside, unread
+        body.tick()        # the device's pause is applied first; the link is refused unread and filed as rejected
         assert ("DEVICE_REVOKE", "founder") not in _accepted(body)
-        assert [e.payload["file"] for e in body.journal.replay("command.faulted")] == ["zzzz-revoke.json"]
+        rejected = [e.payload for e in body.journal.replay("command.rejected")]
+        assert [(r["file"], r["sha256"]) for r in rejected] == [("zzzz-revoke.json", None)]
+        assert "symbolic link" in rejected[0]["reason"]
+        # rejected like a malformed command, not set aside as a fault (re-check of 6933be8c, F1)
+        assert not body.journal.replay("command.faulted")

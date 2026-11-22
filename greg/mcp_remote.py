@@ -49,6 +49,9 @@ def main(argv: list[str]) -> int:
         if pending:
             renewed = renew(json.loads(pending), url, cafile)
             provider["bearer"] = renewed["access_token"]
+            # first and alone: a renewal is a few shallow fields, so the parent can keep it even when the server's
+            # answer on the last line is one it refuses to read (re-check of 6933be8c, F4)
+            print(json.dumps({"renewed": renewed}), flush=True)
         if op == "list":
             out = list_tools(provider)
         elif op == "call" and len(argv) == 3:

@@ -226,6 +226,17 @@ def _body_home(workspace: Path) -> Path:
     return next((p for p in workspace.parents if (p / "body.json").is_file()), workspace)
 
 
+def _message_body(message, organ: str):
+    """The body of an organ's signed message: JSON the organ wrote, read by the untrusted reader. A body that is not
+    readable JSON (nested past MAX_DEPTH among them) is the organ's failure, not an exception escaping the exchange
+    (re-check of 6933be8c, F2: only the outer line of each stage was bounded)."""
+    body = message["body"]       # a missing or non-text body keeps its own refusal (KeyError, TypeError) upstream
+    try:
+        return untrusted_json.loads(body)
+    except ValueError:
+        raise CapabilityError(f"{organ} returned a message whose body is not readable JSON") from None
+
+
 def _stage(python: Path, cwd: Path, code: str, *args, stdin=None, env: dict, timeout: float,
            confine: dict | None = None, stop_check=None) -> dict:
     if timeout <= 0:
@@ -371,11 +382,11 @@ def _exchange(ctx, roots, code, env, keys, seed, trace, deadline) -> dict:
                 "recorded_in_journal": False, "external_effects": None, "spend_usd": 0.0, "authority_created": False}
     _unchanged(wmi, "while DALEOBANKS ran")
     _assigned(d, trace, "DALEOBANKS")
-    _wire(json.loads(d["body"]), "wire-opportunity-packet", "DALEOBANKS")
+    _wire(_message_body(d, "DALEOBANKS"), "wire-opportunity-packet", "DALEOBANKS")
     w = _stage(roots["wealthmachine_python"], wmi["path"], WEALTHMACHINE_STAGE, stdin=d, env=env["wealthmachine"],
                timeout=left(), confine=wmi["confine"], stop_check=ctx.stop_check)
     _assigned(w, trace, "WealthMachine")
-    _wire(json.loads(w["body"]), "wire-venture-assessment", "WealthMachine")
+    _wire(_message_body(w, "WealthMachine"), "wire-venture-assessment", "WealthMachine")
     request_body, answer_body = d["body"].encode(), w["body"].encode()
     # Kernel-side verification under the organs' own keys: a forged, replayed, shared-scope or wrong-organ
     # message raises here.
@@ -400,8 +411,9 @@ def _exchange(ctx, roots, code, env, keys, seed, trace, deadline) -> dict:
     # in the body, building headers here would forge DALEOBANKS's isolated identity.
     redo = _stage(roots["wealthmachine_python"], wmi["path"], WEALTHMACHINE_STAGE, stdin=d,
                   env=env["wealthmachine"], timeout=left(), confine=wmi["confine"], stop_check=ctx.stop_check)
-    packet, original = json.loads(d["body"]), json.loads(w["body"])
-    again = _wire(json.loads(redo["body"]), "wire-venture-assessment", "WealthMachine (re-derivation)")
+    packet, original = _message_body(d, "DALEOBANKS"), _message_body(w, "WealthMachine")
+    again = _wire(_message_body(redo, "WealthMachine (re-derivation)"), "wire-venture-assessment",
+                  "WealthMachine (re-derivation)")
     # A field both runs omit is not "reproduced": absence on both sides proves nothing.
     reproduced = {k: original.get(k) is not None and again.get(k) == original.get(k) for k in REPRODUCIBLE}
     invariants = {"human_approval_required": original.get("requires_human_approval") is True,

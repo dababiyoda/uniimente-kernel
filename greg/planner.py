@@ -732,34 +732,50 @@ def _prompt(text: str, ctx: PlannerContext) -> str:
 
 
 def _first_json_object(text: str) -> dict:
+    """The first JSON object in a model reply, trying each "{" in order: its balanced span is decoded, and a span that
+    is not an object moves on to the next "{".
+
+    Each "{" is scanned for its closing brace at most once. A scan that meets a later "{" outside a string is in the
+    same state a scan started there would be (outside a string, no escape pending), so the close it finds for that
+    brace, or its reaching the end without one, holds for that start too and is remembered. Rescanning from every
+    brace was O(n^2): a reply of a few hundred kilobytes of unclosed braces took minutes (re-checks of bdfca22d, M3,
+    and 6933be8c, F3). A brace deeper than MAX_DEPTH refuses the reply, as a decoded one would be refused."""
+    close = {}           # index of a "{" -> index of its "}", or None when it never closes
     start = text.find("{")
     while start != -1:
-        depth, in_string, escape = 0, False, False
-        for index in range(start, len(text)):
-            ch = text[index]
-            if in_string:
-                escape = (ch == "\\" and not escape)
-                if ch == '"' and not escape:
-                    in_string = False
-                continue
-            if ch == '"':
-                in_string = True
-            elif ch == "{":
-                depth += 1
-            elif ch == "}":
-                depth -= 1
-                if depth == 0:
-                    try:
-                        value = untrusted_json.loads(text[start:index + 1])
-                    except untrusted_json.TooDeep:
-                        # the whole reply is refused: retrying from each inner brace rescanned the reply once per
-                        # brace, minutes of work on a reply of a few hundred kilobytes (re-check of bdfca22d, M3)
-                        raise MissionError("model reply nests its JSON too deeply to read") from None
-                    except json.JSONDecodeError:
+        if start not in close:
+            stack, in_string, escape = [], False, False
+            for index in range(start, len(text)):
+                ch = text[index]
+                if in_string:
+                    escape = (ch == "\\" and not escape)
+                    if ch == '"' and not escape:
+                        in_string = False
+                    continue
+                if ch == '"':
+                    in_string = True
+                elif ch == "{":
+                    if index in close and close[index] is None:
+                        break      # a brace known never to close: no brace around it closes either
+                    stack.append(index)
+                    if len(stack) > untrusted_json.MAX_DEPTH:
+                        raise MissionError("model reply nests its JSON too deeply to read")
+                elif ch == "}" and stack:
+                    close[stack.pop()] = index
+                    if not stack:
                         break
-                    if isinstance(value, dict):
-                        return value
-                    break
+            for opened in stack:
+                close.setdefault(opened, None)
+        end = close.get(start)
+        if end is not None:
+            try:
+                value = untrusted_json.loads(text[start:end + 1])
+            except untrusted_json.TooDeep:
+                raise MissionError("model reply nests its JSON too deeply to read") from None
+            except json.JSONDecodeError:
+                value = None
+            if isinstance(value, dict):
+                return value
         start = text.find("{", start + 1)
     raise MissionError("model reply contained no JSON object")
 

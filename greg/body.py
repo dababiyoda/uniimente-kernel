@@ -514,6 +514,15 @@ def egress_relay(home: Path, config: dict):
 INBOX_FILE_BYTES = 4 * 1024 * 1024    # a signed command is kilobytes; greg serve accepts 64 KiB at most
 
 
+class InboxEntryRefused(OSError, ValueError):
+    """An inbox entry that is a symbolic link or larger than INBOX_FILE_BYTES: unread, and refused like a malformed
+    command. It is an OSError, so whoever counts the inbox passes over it, and a ValueError, so the applier rejects
+    it (moved to rejected/, recorded) instead of the body exiting on it: a refusal the body can always file needs no
+    restart (re-check of 6933be8c, F1: a linked founder command led to a crash-loop hold, and a 5 MiB file, rejected
+    cleanly before, made the running body exit). Only an entry that is not a file at all (a FIFO, a directory, a
+    device) still raises a plain OSError."""
+
+
 def _read_inbox_file(path: Path) -> bytes:
     """The bytes of one inbox file, opened without following a link and without waiting: an entry that is not one
     bounded regular file (a FIFO, a directory, a device, a symbolic link, more than INBOX_FILE_BYTES) raises OSError
@@ -524,22 +533,39 @@ def _read_inbox_file(path: Path) -> bytes:
     Every reader of the inbox uses this one, the pending-revocation count included, so a file is read the same way
     by whoever counts it and whoever applies it (re-check of bdfca22d, L1: a revocation behind a link, or padded
     past the count's own bound, was applied without having been counted as pending)."""
-    fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK | os.O_NOFOLLOW)
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK | os.O_NOFOLLOW)
+    except OSError as exc:
+        if exc.errno == errno.ELOOP:
+            raise InboxEntryRefused(errno.ELOOP, "inbox entry is a symbolic link", str(path)) from None
+        raise
     try:
         info = os.fstat(fd)
         if not stat.S_ISREG(info.st_mode):
             raise OSError(errno.EINVAL, "inbox entry is not a regular file", str(path))
         if info.st_size > INBOX_FILE_BYTES:
-            raise OSError(errno.EFBIG, f"inbox entry is larger than {INBOX_FILE_BYTES} bytes", str(path))
+            raise InboxEntryRefused(errno.EFBIG, f"inbox entry is larger than {INBOX_FILE_BYTES} bytes", str(path))
         chunks, total = [], 0
         while chunk := os.read(fd, 1 << 16):
             total += len(chunk)
             if total > INBOX_FILE_BYTES:     # grew while being read
-                raise OSError(errno.EFBIG, f"inbox entry is larger than {INBOX_FILE_BYTES} bytes", str(path))
+                raise InboxEntryRefused(errno.EFBIG, f"inbox entry is larger than {INBOX_FILE_BYTES} bytes", str(path))
             chunks.append(chunk)
         return b"".join(chunks)
     finally:
         os.close(fd)
+
+
+def read_heartbeat(layout: "Layout") -> dict | None:
+    """The heartbeat file as one JSON object, or None. The body writes it, but whoever can write the body's home can
+    replace it, so it is read as untrusted: missing, unreadable, nested too deep or not an object, it is no heartbeat
+    (an unreadable heartbeat is not evidence; greg/presence.py). Every reader uses this one (re-check of 6933be8c,
+    F6: the morning report, `greg status` and `greg presence` raised on a heartbeat a deep document replaced)."""
+    try:
+        value = untrusted_json.loads(layout.heartbeat.read_text())
+    except (OSError, ValueError):
+        return None
+    return value if isinstance(value, dict) else None
 
 
 def _parse_inbox(raw: bytes):
@@ -663,10 +689,7 @@ class Body:
         records is not detected here. A guard against rollback by accident or a stale copy, not against someone
         who can rewrite both files (greg/anchor.py witnesses cover that). An unreadable heartbeat is not evidence
         (presence). Cost: a start reads and verifies the whole chain twice, here and in the writer's own open."""
-        try:
-            published = json.loads(self.layout.heartbeat.read_text()).get("ledger_head")
-        except (OSError, ValueError, AttributeError, RecursionError):
-            return
+        published = (read_heartbeat(self.layout) or {}).get("ledger_head")
         if not isinstance(published, str):
             return
         if self.layout.ledger.exists():
@@ -1106,13 +1129,15 @@ class Body:
             # the reason is part of the fact: the same file rejected again for another reason (re-dropped after the
             # state that refused it changed) is a second rejection, not a reused fact identity the ledger refuses
             # (which crashed the body)
-            key = [path.name, sha256_json(raw.hex()), sha256_json(f"{type(exc).__name__}: {exc}")]
+            # a refused entry (a link, an oversized file) was never read: it is filed with no content digest
+            content = sha256_json(raw.hex()) if raw is not None else None
+            key = [path.name, content, sha256_json(f"{type(exc).__name__}: {exc}")]
             # When and which command it refused, by the body's clock: an acceptance of the same command claiming an
             # earlier time is a backdated record (greg.goal_gravity.founder_facts). Recorded once, so a retry after a
             # crash finds the retained refusal instead of a different time.
             if self.journal.retained("command.rejected", key) is None:
                 self.journal.record("command.rejected", {
-                    "file": path.name, "sha256": sha256_json(raw.hex()),
+                    "file": path.name, "sha256": content,
                     "reason": f"{type(exc).__name__}: {exc}"[:500], "instruction_status": "data_only",
                     "at": iso(self.clock()),
                     **({"digest": sha256_json(envelope)} if isinstance(envelope, dict) else {}),
@@ -1175,10 +1200,9 @@ class Body:
                   "platform": os.uname().sysname, "ledger_head_at_boot": self.ledger.head}
         if self.ledger.unacknowledged_tail:
             record["ledger_recovery"] = dict(self.ledger.unacknowledged_tail)
-        try:   # read before this process overwrites it: bounds the absence since the previous process
-            last = presence.previous_heartbeat(json.loads(self.layout.heartbeat.read_text()))
-        except (OSError, ValueError, RecursionError):
-            last = None
+        # read before this process overwrites it: bounds the absence since the previous process
+        previous = read_heartbeat(self.layout)
+        last = presence.previous_heartbeat(previous) if previous is not None else None
         if last is not None:
             record["previous_heartbeat"] = last
         if main_loop:
@@ -1676,10 +1700,7 @@ def morning_projection(home: str | Path) -> dict:
     from types import SimpleNamespace
     from greg.missions import MissionBook
     layout = Layout(home)
-    try:
-        heartbeat = json.loads(layout.heartbeat.read_text())
-    except (OSError, ValueError):
-        heartbeat = None
+    heartbeat = read_heartbeat(layout)
     with observe(home, actor="spiffe://uniimente.internal/greg/morning-reader") as journal:
         return tribunal.morning_report(journal, SimpleNamespace(book=MissionBook(journal)), heartbeat=heartbeat,
                                        pending=inbox_digests(layout))
@@ -1720,7 +1741,7 @@ def status(home: str | Path) -> dict:
     config = json.loads(layout.config.read_text())
     ledger = EvidenceLedger(config["constitution_hash"], str(layout.ledger), read_only=True, tail="ignore") \
         if layout.ledger.exists() else None
-    heartbeat = json.loads(layout.heartbeat.read_text()) if layout.heartbeat.exists() else None
+    heartbeat = read_heartbeat(layout)
     if ledger is None:
         return {"body_id": config["body_id"], "state": "NEVER_STARTED", "heartbeat": heartbeat}
     try:

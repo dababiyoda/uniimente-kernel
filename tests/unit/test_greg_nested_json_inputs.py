@@ -109,9 +109,11 @@ def test_a_nested_ollama_answer_is_bad_output(tmp_path):
     import pytest
     from greg import models
 
+    served = {}
+
     class Deep(http.server.BaseHTTPRequestHandler):
         def do_GET(self):
-            body = DEEP_OBJECT.encode()
+            body = served["body"].encode()
             self.send_response(200)
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
@@ -122,9 +124,13 @@ def test_a_nested_ollama_answer_is_bad_output(tmp_path):
     server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Deep)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     try:
-        with pytest.raises(models.RouteError, match="invalid JSON") as raised:
-            models.OllamaRoute("m", port=server.server_address[1])._request("GET", "/api/tags")
-        assert raised.value.kind == models.BAD_OUTPUT
+        # DEEP_OBJECT trips plain json.loads too; MID_DEEP (300 levels) does not, so only the untrusted reader's
+        # bound refuses it (re-check of 6933be8c, F7: the test passed on the code before the bound)
+        for body in (DEEP_OBJECT, MID_DEEP):
+            served["body"] = body
+            with pytest.raises(models.RouteError, match="invalid JSON") as raised:
+                models.OllamaRoute("m", port=server.server_address[1])._request("GET", "/api/tags")
+            assert raised.value.kind == models.BAD_OUTPUT
     finally:
         server.shutdown()
 
@@ -141,8 +147,12 @@ def test_the_mcp_client_answer_is_read_by_the_untrusted_reader():
     import inspect
     from greg import mcp_tools
     source = inspect.getsource(mcp_tools._remote_act)
-    assert "untrusted_json.loads(done.stdout" in source and "json.loads(done.stdout" not in source.replace(
-        "untrusted_json.loads(done.stdout", "")
+    # (still a source check: the parent's read runs only inside the relay namespace; the renewal path is driven for
+    # real in test_a_renewed_mcp_login_survives_an_answer_too_deep_to_read)
+    assert "lines = done.stdout.strip().splitlines()" in source
+    assert "untrusted_json.loads(lines[-1])" in source
+    assert "json.loads(lines" not in source.replace("untrusted_json.loads(lines", "")
+    assert "json.loads(done.stdout" not in source
 
 
 # ---------------------------------------------- re-check of 48d66f5f, F3: an inbox entry that is not a regular file
@@ -231,6 +241,9 @@ def test_a_nested_model_draft_is_refused_at_once():
     started = time.monotonic()
     with pytest.raises(MissionError, match="too deeply"):
         planner._first_json_object("draft: " + DEEP_OBJECT)
+    # deep arrays inside one object: the brace scan sees depth 1, so the decoder's own refusal must stop the reply
+    with pytest.raises(MissionError, match="too deeply"):
+        planner._first_json_object('{"plan": ' + "[" * 300 + "]" * 300 + "}")
     assert time.monotonic() - started < 5
     assert planner._first_json_object('noise {"plan": [1]} tail') == {"plan": [1]}
 
@@ -363,3 +376,137 @@ def test_every_reader_refuses_a_document_deeper_than_the_bound(tmp_path):
         body.tick()
         refused = [e.payload for e in body.journal.replay("external.intake_refused")]
     assert [(r["file"], r["why"]) for r in refused] == [("deep.json", "not JSON")]
+
+
+def test_a_linked_or_oversized_inbox_entry_is_rejected_and_the_running_body_reads_on(tmp_path):
+    """Re-check of 6933be8c, F1: the reader's refusal of a link or an oversized file was a plain OSError, which a
+    running body exits on (the crash-loop breaker then counts the boot and holds it). A link to a founder-signed
+    BODY_PAUSE and a 5 MiB file are now each rejected and filed, and the founder command behind them is applied
+    in the same tick."""
+    import json
+    import os
+    from greg.body import Body
+    from greg.founder import sign_command
+    from tests.greg_fixtures import make_body
+    home, key, body_id, _ = make_body(tmp_path)
+    inbox = home / "inbox"
+    real = tmp_path / "pause.json"
+    real.write_text(json.dumps(sign_command(key, "BODY_PAUSE", {}, body_id=body_id)))
+    os.symlink(real, inbox / "0000-linked-pause.json")
+    with open(inbox / "0001-big.json", "wb") as handle:
+        handle.write(b" " * (5 * 1024 * 1024) + b"{}")
+    (inbox / "0002-pause.json").write_text(json.dumps(sign_command(key, "BODY_PAUSE", {}, body_id=body_id)))
+    with Body(home) as body:
+        body.tick()                         # raised OSError (ELOOP) before the fix: the body exited
+        rejected = {e.payload["file"]: e.payload for e in body.journal.replay("command.rejected")}
+        assert set(rejected) == {"0000-linked-pause.json", "0001-big.json"}
+        assert "symbolic link" in rejected["0000-linked-pause.json"]["reason"]
+        assert rejected["0000-linked-pause.json"]["sha256"] is None      # never read
+        assert "larger than" in rejected["0001-big.json"]["reason"]
+        assert body.paused()                # the regular founder command behind them was applied
+    assert (inbox / "rejected" / "0000-linked-pause.json").is_symlink()   # the link itself is filed, not its target
+    assert real.exists()
+    assert not list(inbox.glob("*.json"))
+
+
+def test_the_planner_scans_a_reply_of_unclosed_braces_in_linear_time():
+    """Re-check of 6933be8c, F3: the planner rescanned the reply from every "{", so 199 unclosed braces before 400 KB
+    of text took about 7 s (O(n^2)), and a deep object with an invalid core never reached the decoder's depth
+    refusal. Each brace is now scanned once; one deeper than MAX_DEPTH refuses the reply at once."""
+    import time
+    import pytest
+    from greg.missions import MissionError
+    from greg.planner import _first_json_object
+    started = time.monotonic()
+    with pytest.raises(MissionError, match="no JSON object"):
+        _first_json_object("{" * 199 + "a" * 400_000)
+    with pytest.raises(MissionError, match="too deeply"):
+        _first_json_object('{"a":' * 4000 + "x" + "}" * 4000)
+    assert time.monotonic() - started < 2.0
+    assert _first_json_object('think { not json } then {"steps": [{"a": 1}]}') == {"steps": [{"a": 1}]}
+    assert _first_json_object('{"note": "a { brace"} trailing') == {"note": "a { brace"}
+
+
+def test_a_replaced_heartbeat_is_no_heartbeat_to_every_reader(tmp_path, capsys):
+    """Re-check of 6933be8c, F6: only the two heartbeat reads inside Body were changed. `greg status` raised on a
+    heartbeat replaced by any malformed document, and the morning report and `greg presence` on a deep one (a deep
+    array raises RecursionError; a deep object decodes and fails later). Each reads it as no heartbeat now."""
+    from greg import cli
+    from greg.body import morning_projection, status
+    home, key, body_id, _ = make_body(tmp_path)
+    with Body(home) as body:
+        body.tick()
+    for replaced in ("[" * 15000 + "]" * 15000, DEEP_OBJECT, '{"at": ' * 300 + "1" + "}" * 300, "not json", "[1]"):
+        Layout(home).heartbeat.write_text(replaced)
+        assert status(home)["background"] is None
+        morning_projection(home)
+        assert cli.main(["--home", str(home), "presence"]) in (None, 0)
+        capsys.readouterr()
+
+
+# Past MAX_DEPTH yet well within what json.loads, json.dumps and repr handle: a reader still on plain json.loads
+# accepts it silently, so only the untrusted reader's bound tells the two apart.
+MID_DEEP = '{"a":' * 300 + "1" + "}" * 300
+
+
+def test_an_organs_nested_output_is_the_organs_failure(tmp_path):
+    """Re-check of 6933be8c, F2: an organ process's stdout (the organ exchange's and the venture organ's) and the body
+    of each signed organ message were read with plain json.loads. Each is now the organ's refusal."""
+    import pytest
+    from greg import organ_exchange, organs, ventures
+    from greg.capabilities import CapabilityError
+    script = f"print({MID_DEEP!r})"
+    with pytest.raises(CapabilityError, match="not readable JSON"):
+        organ_exchange._organ(script, {}, cwd=tmp_path / "exchange", env={})
+    (tmp_path / "venture").mkdir()
+    with pytest.raises(CapabilityError, match="not readable JSON"):
+        ventures._organ(script, {}, cwd=tmp_path / "venture")
+    with pytest.raises(CapabilityError, match="DALEOBANKS returned a message whose body is not readable JSON"):
+        organs._message_body({"body": MID_DEEP}, "DALEOBANKS")
+    assert organs._message_body({"body": '{"id": "p1"}'}, "DALEOBANKS") == {"id": "p1"}
+    assert organ_exchange._organ('print(\'{"ok": 1}\')', {}, cwd=tmp_path / "plain", env={}) == {"ok": 1}
+
+
+def test_a_nested_github_response_is_the_briefs_refusal():
+    """Re-check of 6933be8c, F2: GitHub API bodies were read with plain json.loads, and a ValueError escaped the
+    capability. An unreadable body, nested too deep among them, is now its refusal."""
+    import pytest
+    from greg import briefs
+    from greg.capabilities import CapabilityError
+    for body in (MID_DEEP.encode(), b"not json", "[" * 5000 + "]" * 5000):
+        with pytest.raises(CapabilityError, match="not readable JSON"):
+            briefs._github_json(body)
+    assert briefs._github_json(b'{"login": "x"}') == {"login": "x"}
+
+
+def test_a_renewed_mcp_login_survives_an_answer_too_deep_to_read(tmp_path, monkeypatch, capsys):
+    """Re-check of 6933be8c, F4: the client printed the renewed login inside the same line as the server's answer, so
+    an answer nested past MAX_DEPTH lost the rotated refresh token with it, and an approved call that had already
+    run was reported as "GREG's client failed". The client prints the renewal alone first; the parent keeps it."""
+    import asyncio
+    import json as _json
+    from types import SimpleNamespace
+    import foundry.systems.mcp_gateway as gateway
+    from greg import mcp_remote, mcp_tools, untrusted_json
+    from greg.capabilities import SecretBroker
+    renewed = {"access_token": "new-access", "refresh_token": "new-refresh", "expires_in": 60}
+    monkeypatch.setattr(mcp_remote, "renew", lambda login, url, cafile: renewed)
+
+    async def deep_call(provider, tool, arguments):
+        return {"value": _json.loads(MID_DEEP), "provider_claims_read_only": False}
+    monkeypatch.setattr(gateway, "_call", deep_call)
+    monkeypatch.setenv("GREG_MCP_RENEW", _json.dumps({"tokens": {"refresh_token": "old"}}))
+    monkeypatch.setattr("sys.stdin", SimpleNamespace(read=lambda: "{}"))
+    assert mcp_remote.main(["call", "https://service.test/mcp", "notes.add"]) == 0
+    lines = capsys.readouterr().out.strip().splitlines()
+    assert _json.loads(lines[0]) == {"renewed": renewed}
+    try:
+        untrusted_json.loads(lines[-1])
+        raise AssertionError("the answer line should be too deep to read")
+    except untrusted_json.TooDeep:
+        pass
+    broker = SecretBroker(tmp_path / "secrets.json")
+    login = {"kind": "oauth", "tokens": {"access_token": "old-access", "refresh_token": "old"}}
+    mcp_tools._keep_renewal(SimpleNamespace(secrets=broker), lines[:-1], "mcp:notes", login)
+    kept = _json.loads(broker.resolve("mcp:notes", declared=("mcp:notes",)))
+    assert kept["tokens"]["refresh_token"] == "new-refresh"

@@ -221,7 +221,10 @@ def _organ(script: str, stdin: dict, *args: str, cwd: Path, env: dict, confined:
     if done.returncode != 0:
         tail = done.stderr.strip().splitlines()
         raise CapabilityError("organ refused: " + (tail[-1] if tail else str(done.returncode)))
-    return json.loads(done.stdout)
+    try:      # the organ's output is JSON GREG did not write (re-check of 6933be8c, F2)
+        return untrusted_json.loads(done.stdout)
+    except ValueError:
+        raise CapabilityError("organ returned output that is not readable JSON") from None
 
 
 def _relay_check(key: str, headers: dict, body: bytes, *, direction: str, status: str, request_digest: str,
@@ -302,7 +305,7 @@ def normalized_packet(packet: dict) -> dict:
 
 
 def render(inputs: dict) -> str:
-    packet, assessment = json.loads(inputs["request"]["body"]), json.loads(inputs["response"]["body"])
+    packet, assessment = untrusted_json.loads(inputs["request"]["body"]), untrusted_json.loads(inputs["response"]["body"])
     v, relay = inputs["binding"], inputs["relay_checks"]
     lines = [f"# Organ exchange — {inputs['signal'].get('topic') or packet['core_thesis'][:80]}", "",
              f"**Binding verdict: {v['verdict']}** — {v['why']}.", "",
@@ -411,7 +414,10 @@ def exchange(params: dict, ctx: InvocationContext) -> dict:
                                   "bridge_state": str(d_home / "bridge-state.jsonl"), "anchor": anchor,
                                   "legal_principal": principal},
                       str(p["daleobanks_root"]), str(KERNEL_ROOT), cwd=d_home, env=d_env, confined=confined)
-    packet, assessment = json.loads(produced["body"]), json.loads(received["body"])
+    try:      # the organs' message bodies (re-check of 6933be8c, F2)
+        packet, assessment = untrusted_json.loads(produced["body"]), untrusted_json.loads(received["body"])
+    except ValueError:
+        raise CapabilityError("an organ returned a message whose body is not readable JSON") from None
     canonical = _canonical(packet, assessment)
     verdict, why = binding_verdict(assessment["go_no_go"], canonical["packet_unresolved"], packet.get("evidence", []))
     inputs = {"renderer": RENDERER, "mission_id": mission_id, "signal": signal, "signal_sha256": signal_sha256,
@@ -480,7 +486,7 @@ def verify_delivery(output: dict, deliver_root: Path | None, ledger=None, *, con
         if hashlib.sha256(request_body).hexdigest() != inputs["request"]["body_sha256"] or \
                 hashlib.sha256(response_body).hexdigest() != inputs["response"]["body_sha256"]:
             return False, "retained envelope bodies do not match their digests"
-        packet, assessment = json.loads(request_body), json.loads(response_body)
+        packet, assessment = untrusted_json.loads(request_body), untrusted_json.loads(response_body)
         validate_contract(packet, "wire-opportunity-packet")
         validate_contract(assessment, "wire-venture-assessment")
         rq, rs = inputs["request"]["headers"], inputs["response"]["headers"]
@@ -514,12 +520,12 @@ def verify_delivery(output: dict, deliver_root: Path | None, ledger=None, *, con
             return False, "the signal changed since the exchange"
         with tempfile.TemporaryDirectory(prefix="greg-organ-appraisal-") as scratch:
             scratch = Path(scratch)
-            again = _organ(_PRODUCER, {"signal": json.loads(signal_raw.decode("utf-8")), "mission_id": inputs["mission_id"]},
+            again = _organ(_PRODUCER, {"signal": untrusted_json.loads(signal_raw.decode("utf-8")), "mission_id": inputs["mission_id"]},
                            str(paths["daleobanks_root"]), str(KERNEL_ROOT), cwd=scratch / "daleobanks",
                            env=_organ_env(secrets.token_hex(32), extra={"LEDGER_PATH": str(scratch / "d.jsonl"),
                                                                         "RAW_VAULT_PATH": str(scratch / "v.jsonl")}),
                            confined=confined)
-            if normalized_packet(json.loads(again["body"])) != normalized_packet(packet):
+            if normalized_packet(untrusted_json.loads(again["body"])) != normalized_packet(packet):
                 return False, "DALEOBANKS does not reproduce the receipted packet from the same signal"
             engine = _organ(_ENGINE_ONLY, packet, str(paths["wmi_root"]), str(KERNEL_ROOT), cwd=scratch / "wealthmachine",
                             env={}, confined=confined)

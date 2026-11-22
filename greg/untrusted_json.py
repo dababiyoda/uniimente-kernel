@@ -27,12 +27,15 @@ def loads(data):
         value = json.loads(data)
     except RecursionError:
         raise TooDeep("document nested too deeply to read", doc, 0) from None
+    if not isinstance(value, (dict, list)):
+        return value
     stack = [(value, 1)]
     while stack:        # iterative: a recursive walk would fail on exactly the documents it is meant to refuse
         item, depth = stack.pop()
-        if isinstance(item, (dict, list)):
-            if depth > MAX_DEPTH:
-                raise TooDeep(f"document nested deeper than {MAX_DEPTH} levels", doc, 0)
-            children = item.values() if isinstance(item, dict) else item
-            stack.extend((child, depth + 1) for child in children)
+        if depth > MAX_DEPTH:
+            raise TooDeep(f"document nested deeper than {MAX_DEPTH} levels", doc, 0)
+        children = item.values() if isinstance(item, dict) else item
+        # only containers are pushed: a wide array of scalars costs one pass over it, not a stack entry per number
+        # (re-check of 6933be8c, F5: 2M ints took 0.48 s and 146 MB on top of a 0.09 s parse)
+        stack.extend((child, depth + 1) for child in children if isinstance(child, (dict, list)))
     return value

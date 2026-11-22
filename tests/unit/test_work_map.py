@@ -3099,3 +3099,18 @@ def test_the_gaps_line_says_what_its_unresolved_posts_lack(quick):
             "line, then the block's own Session line first), so they name no verified author: 2 of 3; 1 of them "
             "opens with the check-in marker.") in text
     assert "that are not a check-in block" not in text
+
+
+@pytest.mark.parametrize("sep", ["\x0c", "\x0b", "\x1c", "\x85", " ", " "])
+def test_only_a_markdown_line_ending_ends_the_marker_line_or_the_session_line(sep):
+    # GitHub (CommonMark) ends a line only at LF, CR or CRLF: anything after the marker on its line is inside the
+    # hidden HTML comment's line, and a second id after the Session value is on the same rendered line.
+    assert w.checkin_author(f"{w.CHECKIN}{sep}- Session: `{B}`\n- Files: `greg/missions.py`\n") is None
+    assert w.checkin_author(f"{w.CHECKIN}\n## Check-in\n- Session: `{B}`{sep}relayed by `{A}`\n") is None
+    assert w.checkin_author(f"{w.CHECKIN}\n## Check-in\n{sep}\n- Session: `{B}`\n") is None   # not a blank line
+
+
+def test_lf_cr_and_crlf_line_endings_all_read_the_same_block():
+    for end in ("\n", "\r\n", "\r"):
+        assert w.checkin_author(end.join([w.CHECKIN, "## Check-in", f"- Session: `{B}`", "- Files: x", ""])) == (
+            B, "claude"), repr(end)

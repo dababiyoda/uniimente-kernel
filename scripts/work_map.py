@@ -553,6 +553,7 @@ def comment_author(body: str) -> dict:
 # The block's own Session line, in CHECKIN_BLOCK's format ("- Session: <id> (<client>)", the label also in bold).
 _CHECKIN_SESSION = re.compile(r"^-[ \t]+(?:\*\*Session:\*\*|Session:)[ \t]+(?P<value>\S.*)$")
 _LIST_ITEM = re.compile(r"^[ \t]*(?:[-*+]|\d{1,3}[.)])[ \t]")
+_MD_LINES = re.compile(r"\r\n|\r|\n")                # the only line endings CommonMark (and so GitHub) knows
 _HEADING = re.compile(r"^#{1,6}(?:[ \t]|$)")       # an ATX heading at the margin, as CHECKIN_BLOCK's "## Check-in"
 _BOLD_TITLE = re.compile(r"^\*\*(?:[^*\n]|\*(?!\*))+\*\*[ \t]*$")   # a line that is one bold run: "**Handoff**"
 # A line that starts another block, so it is not a lazy continuation of the Session line's item.
@@ -585,10 +586,13 @@ def checkin_author(body: str) -> tuple[str, str] | None:
     Threat model: this guards against ordinary posts by cooperating agents, not a deliberate evader. A session that
     posts another session's block unchanged, or a heading that names its sender ("## Handoff from `A`") above a
     Session line naming someone else, is still read as the Session line says: a check-in is declared, not
-    authenticated."""
-    lines = _text(body).splitlines()
-    filled = [i for i, line in enumerate(lines) if line.strip()]
-    if not filled or lines[filled[0]].rstrip() != CHECKIN:
+    authenticated.
+
+    Lines end only where CommonMark ends them (LF, CR, CRLF), and a blank line holds only spaces and tabs: a form feed
+    or a Unicode line separator after the marker stays on the marker's hidden line."""
+    lines = _MD_LINES.split(_text(body))
+    filled = [i for i, line in enumerate(lines) if line.strip(" \t")]
+    if not filled or lines[filled[0]].rstrip(" \t") != CHECKIN:
         return None
     after = filled[1:]
     if after and (_HEADING.match(lines[after[0]]) or (_BOLD_TITLE.match(lines[after[0]])
@@ -599,7 +603,7 @@ def checkin_author(body: str) -> tuple[str, str] | None:
         return None
     value = [m["value"]]
     for line in lines[after[0] + 1:]:
-        if not line.strip() or (_BLOCK_START.match(line) and not line[:1].isspace()):
+        if not line.strip(" \t") or (_BLOCK_START.match(line) and line[:1] not in " \t"):
             break
         value.append(line)
     hits = _spans("\n".join(value))

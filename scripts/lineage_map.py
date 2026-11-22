@@ -254,14 +254,25 @@ def _order(value):
     return (isinstance(value, str), str(value).zfill(8) if isinstance(value, int) else value)
 
 
-def _stacked_on(pr: dict, canonical_ref: str, by_ref: dict) -> bool:
+def _stacked_on(pr: dict, canonical_ref: str, by_ref: dict, verdicts: dict | None = None,
+                judged: set | frozenset = frozenset()) -> str | None:
+    """How ``pr`` reaches the canonical branch through its bases, or None.
+
+    Each base is an open PR, or (given ``verdicts``) a branch whose head the canonical head already carries:
+    a parent that was merged leaves its child stacked on what the canonical head holds. A base in ``judged``
+    (a recorded or inherited placement) ends the walk: a child is not next while its parent awaits a judgment."""
+    verdicts = verdicts or {}
     seen, current = set(), pr
     while current["base"] != canonical_ref:
         if current["number"] in seen or current["base"] not in by_ref:
-            return False
+            return None
         seen.add(current["number"])
         current = by_ref[current["base"]]
-    return True
+        if current["number"] in judged:
+            return None
+        if verdicts.get(current["number"]) in CONTAINED:
+            return f"based on {current['ref']}, whose head {canonical_ref} already carries"
+    return f"based, directly or through open PRs, on {canonical_ref}"
 
 
 def _inherited(inheritance: dict) -> dict[int, dict]:
@@ -308,8 +319,8 @@ def place(live: list[dict], canonical_ref: str, verdicts: dict, inheritance: dic
             derived = ("CANONICAL ACTIVE", "head of the canonical integration branch")
         elif verdict in CONTAINED:
             derived = ("EVIDENCE ONLY", f"every commit is carried by the canonical head ({verdict})")
-        elif pr.get("base") and _stacked_on(pr, canonical_ref, by_ref):
-            derived = ("STACKED NEXT", f"based, directly or through open PRs, on {canonical_ref}")
+        elif pr.get("base") and (route := _stacked_on(pr, canonical_ref, by_ref)):
+            derived = ("STACKED NEXT", route)
         elif covered_by.get(n):
             derived = ("FOLLOWS", f"its head is contained in open #{min(covered_by[n])}; placed with that PR")
         row = {"pr": n, "head": pr["sha"][:12], "title": pr.get("title", "")[:100], "intake": verdict}
@@ -337,6 +348,11 @@ def place(live: list[dict], canonical_ref: str, verdicts: dict, inheritance: dic
                 violations.append({"pr": n, "kind": "incomplete", "detail": "names no founder decision"})
         elif n in inherited:
             row.update(disposition=inherited[n]["disposition"], source="inherited", basis=inherited[n]["basis"])
+        elif pr.get("base") and (route := _stacked_on(pr, canonical_ref, by_ref, verdicts,
+                                                     set(recorded) | set(inherited))):
+            # Last resort, below every judgment: a stack whose merged parent left only a branch the canonical
+            # head carries. A recorded or inherited placement of an older stack is never overridden by this.
+            row.update(disposition="STACKED NEXT", source="derived", basis=route)
         else:
             row.update(disposition=None, source="unplaced", basis="")
             violations.append({"pr": n, "kind": "unplaced", "detail": "no fact, inherited or recorded placement"})

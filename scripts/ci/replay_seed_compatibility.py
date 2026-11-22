@@ -26,8 +26,8 @@ LOSS_V3_SHA256 = '80299c49024e58afa9d449763646c75be4d8e7bfc2b62e6a6eb966c1b41297
 
 # The runner freeze run.py currently points at, pinned by manifest digest. Re-freezing the runner
 # (a new freeze-vN) is a deliberate re-seal: update this pair in the same change.
-RUNNER_FREEZE = ('cortex/evaluation/seed_genome/freeze-v12.json',
-                 '9185db58775c7741833c94a63d450df4531e7f03d835c2191bda9ba1beaad60d')
+RUNNER_FREEZE = ('cortex/evaluation/seed_genome/freeze-v13.json',
+                 '32920a42ddb3ec0285f642d3822343665d9d4f3c061b409c951938d618d10b28')
 RUNNER = 'cortex/evaluation/seed_genome/run.py'
 
 

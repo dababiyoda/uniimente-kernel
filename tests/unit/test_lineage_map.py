@@ -283,3 +283,35 @@ def test_close_check_judges_a_closed_pr_by_section_53(tmp_path, monkeypatch):
         assert lineage_map.main(["--base", canonical, "--close", str(tmp_path / "closed.json"),
                                  "--record", str(tmp_path / "rec.json"),
                                  "--inheritance", str(tmp_path / "inh.json")]) == code
+
+
+def test_place_follows_a_stack_through_a_base_the_canonical_head_already_carries():
+    # A parent PR merged into the canonical line leaves its branch behind with no open PR; its child is still
+    # stacked next on the canonical head (#96 comment 6853569093: #285, #305, #310 and #312 were reported unplaced).
+    live = _live((1, "a" * 40, CANON, "main"), (2, "b" * 40, "child-of-merged", "merged-parent"),
+                 (3, "c" * 40, "grandchild", "child-of-merged"), (4, "d" * 40, "child-of-open", "open-parent"))
+    live += [{"number": "branch:merged-parent", "sha": "2" * 40, "ref": "merged-parent", "base": None},
+             {"number": "branch:open-parent", "sha": "3" * 40, "ref": "open-parent", "base": None}]
+    verdicts = {"branch:merged-parent": "CONTAINED_BY_ANCESTRY", "branch:open-parent": "UNPORTED_DELTA",
+                2: "UNPORTED_DELTA", 3: "UNPORTED_DELTA", 4: "UNPORTED_DELTA"}
+    out = lineage_map.place(live, CANON, verdicts, {}, {})
+    rows = {p["pr"]: p for p in out["placements"]}
+    assert rows[2]["disposition"] == rows[3]["disposition"] == "STACKED NEXT"
+    assert rows[2]["basis"] == f"based on merged-parent, whose head {CANON} already carries"
+    assert rows["branch:merged-parent"]["disposition"] == "EVIDENCE ONLY"
+    # a base the canonical head does not carry is not a route: the child stays for a recorded judgment
+    assert rows[4]["disposition"] is None
+    assert sorted(str(v["pr"]) for v in out["violations"]) == ["4", "branch:open-parent"]
+    # and the route never overrides a judgment: an old stack on a long-merged parent keeps its recorded placement
+    record = {"placements": [{"number": 2, "head_sha": "b" * 40, "disposition": "NEEDS FOUNDER DECISION",
+                              "decision": "sign or close", "basis": "awaiting the founder"}]}
+    inheritance = {"placements": [{"id": "g", "lineage": ["#3"], "classification": "PORTABLE_MECHANISM"}]}
+    judged = {p["pr"]: p for p in lineage_map.place(live, CANON, verdicts, inheritance, record)["placements"]}
+    assert (judged[2]["disposition"], judged[2]["source"]) == ("NEEDS FOUNDER DECISION", "recorded")
+    assert (judged[3]["disposition"], judged[3]["source"]) == ("PORT MECHANISM", "inherited")
+    # nor runs through a judged parent: a child of a PR that awaits a restack is not next (#277 on #245)
+    live2 = _live((1, "a" * 40, CANON, "main"), (5, "e" * 40, "parent", "merged-parent"), (6, "f" * 40, "kid", "parent"))
+    live2 += [{"number": "branch:merged-parent", "sha": "2" * 40, "ref": "merged-parent", "base": None}]
+    record2 = {"placements": [{"number": 5, "head_sha": "e" * 40, "disposition": "RESTACK", "basis": "restack it"}]}
+    kid = {p["pr"]: p for p in lineage_map.place(live2, CANON, verdicts, {}, record2)["placements"]}[6]
+    assert (kid["disposition"], kid["source"]) == (None, "unplaced")

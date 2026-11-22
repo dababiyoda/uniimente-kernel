@@ -17,8 +17,8 @@ below), after the line at `357b353d` was merged in (`19982b72`, no conflict) and
 2026-11-22, items M6-M11 below). It builds on MU-H, recorded in
 `docs/evidence/canonical-owner-guard-2026-10-30/README.md` (registry, guards 1-3, pins), which is not edited.
 
-Claims discipline: every guarantee below names the test that enforces it; anything without a test is stated as a
-limit. Threat model: see "Reality level" at the end. These guards catch ordinary changes by cooperating agents, not a
+Claims discipline: every guarantee below names the test that enforces it; anything found without a test is stated as
+a limit, and no list of limits is complete. Threat model: see "Reality level" at the end. These guards catch ordinary changes by cooperating agents, not a
 deliberate evader.
 
 ## What changed
@@ -56,7 +56,8 @@ a method of a registered class swapped after its class statement (`GoalGravityLo
 `_ns = globals(); _ns['reconcile'] = ...` each made Python run something the guards never read, with every test
 passing. Since round 7 no runtime file may assign, augment, delete, or `setattr()` or `delattr()` with a literal name
 a registered qualname as an attribute of a name bound to its module (by `import a.b as X`, `from a import b as X` or
-the dotted `import a.b`), nor any attribute of a registered class outside its own class body, and a module that holds
+the dotted `import a.b`), nor an attribute of a registered class outside its own class body when the written chain
+opens with a name the file binds by import (or, in the class's own module, the class's own name), and a module that holds
 a registered qualname may not bind a name to `globals()`, or to `vars()` or `locals()` at module level
 (`attribute_rebinding_problems`, `binding_problems`;
 `test_no_runtime_file_rebinds_a_registered_qualname_or_a_registered_class_attribute`,
@@ -73,7 +74,7 @@ patcher each passed. Since round 8 the written chain is also read with every pre
 `origin()` (`_chains`; `origin()` follows a name that a module binds at its level by `import` or `from ... import`,
 up to four hops: package re-exports and a consumer's imported names), and these forms are read as writes:
 `X.__dict__["<literal>"]` and `vars(X)["<literal>"]` set or deleted, `X.__dict__.update(...)` and
-`vars(X).update(...)` with literal keys, `patch.object`, `mock.patch.object` or `unittest.mock.patch.object` with `X`
+`vars(X).update(...)` with keyword arguments or a dict display with constant keys, `patch.object`, `mock.patch.object` or `unittest.mock.patch.object` with `X`
 and a literal name, and `patch`, `mock.patch` or `unittest.mock.patch` with a literal dotted target, wherever the
 call is (a decorator, a `with` item, a `.start()` receiver) (`_attribute_writes`, `_patch_targets`;
 `test_a_registered_qualname_rebound_through_a_re_export_or_a_consumers_imported_name_fails`,
@@ -200,13 +201,13 @@ that change only one erased name or one statement:
 | a registered body reached again through a sibling directory link (`examples/app/greg -> greg`) | read once, at its real path: no false copy |
 | a `SEALED` `cortex/evaluation/` file whose bytes still match; a copy reachable only through a DIRECTORY link out of the repository | not scanned |
 | one attribute renamed (`write_text` to `write_bytes`) or a field read as an attribute; a no-op `_unused = 0`; an `if True:` wrapper | missed (stated limits) |
-| a registered function rebound as an attribute of its module from another file (`_bl.reconcile = _native`, `setattr(_b, 'send_signed', f)`, `del`), an attribute of a registered class set outside its body, or `_ns = globals()` in a registered module | fails (round 7, `attribute_rebinding_problems`, `binding_problems`) |
+| a registered function rebound as an attribute of its module from another file (`_bl.reconcile = _native`, `setattr(_b, 'send_signed', f)`, `del`), an attribute of a registered class set outside its body through an imported name (or the class's name in its own module), or `_ns = globals()` in a registered module | fails (round 7, `attribute_rebinding_problems`, `binding_problems`) |
 | a copy in a `tests/` module that a script imports (`tests/greg_fixtures.py`) | caught (round 7, `imported_test_files`) |
 | a method of a registered class swapped through its package re-export (`from omnimorph import OmnimorphEngine; OmnimorphEngine.simulate = f`, `import omnimorph; omnimorph.OmnimorphEngine.simulate = f`); a consumer's or a package's imported name of a registered qualname rebound (`_cli.send_signed = f`, `_gg.GoalGravityLoop = egregore.GoalGravityLoop = Quick`) | fails (round 8, M6, `attribute_rebinding_problems` through `_chains`) |
 | a literal `globals()["reconcile"] = fast`, `globals().update(reconcile=fast)` or `.setdefault` inside a def, a lambda or a class body of the registered module | fails (round 8, M7, one binding) |
 | `_install(globals(), f)`, `_ns, _ = globals(), None`, `def f(ns=globals())`, `globals().__setitem__(...)`, `globals().get(...)` or `globals()["x"]` read in a module that holds a registered qualname | fails (round 8, M8, `binding_problems`) |
 | `_bl.__dict__["reconcile"] = f`, `del _bl.__dict__[...]`, `_bl.__dict__.update(reconcile=f)`, `vars(_bl)["reconcile"] = f`, `vars(_bl).update(...)`, `mock.patch.object(_bl, "reconcile", f)`, `patch("greg.business_loop.reconcile", f)` (decorator, `with` or `.start()`) | fails (round 8, M9, `attribute_rebinding_problems`) |
-| `patch.dict(_bl.__dict__, {...})`, `patch.multiple`, an aliased `patch`, a computed name, a module or class reached by assignment, and the other forms "Static resolution" lists | not read (stated limits) |
+| `patch.dict(_bl.__dict__, {...})`, `patch.multiple`, an aliased `patch`, a computed name, a module or class reached by assignment or a parameter, a computed name, and the other forms "Static resolution" lists (that list is not complete) | not read (stated limits) |
 | the owner's logic moved to a new helper behind a wrapper of 25 nodes or more, and a copy of the moved logic; a copy of one method of a registered class; a class copy with one method added, removed or reordered | missed (stated limits: the fork pattern; methods not compared one by one; a class is one whole body) |
 
 `test_no_structural_duplicates` was not changed. Guard 3 was, though round 3's record said it was not: its file
@@ -560,11 +561,12 @@ The `_deliver` question below applies to both.
   decoy, `@overload` stubs, a rebinding, a star import and a computed `globals()`, `vars()` or `locals()` write in its
   module fail instead of being read (`binding_problems`). Since round 7 an assignment, augmented assignment, `del`, a
   for or with target, or `setattr()` or `delattr()` with a literal name, from any runtime file, that writes a
-  registered qualname as an attribute of a name bound to its module, or any attribute of a registered class outside
-  its class body, fails, and so does a name bound to the namespace in a registered module
+  registered qualname as an attribute of a name bound to its module, or an attribute of a registered class outside
+  its class body through a name the file binds by import (or, in the class's own module, the class's own name), fails, and so does a name bound to the namespace in a registered module
   (`attribute_rebinding_problems`; round 6's E1, E2, E3 and N2). Since round 8 the written chain is also read with
   every prefix resolved through `origin()` (M6); `X.__dict__["<literal>"]` and `vars(X)["<literal>"]` set or
-  deleted, `X.__dict__.update(...)` and `vars(X).update(...)` with literal keys, `patch.object`,
+  deleted, `X.__dict__.update(...)` and `vars(X).update(...)` with keyword arguments or a dict display with constant
+  keys, `patch.object`,
   `mock.patch.object` or `unittest.mock.patch.object` with `X` and a literal name, and `patch`, `mock.patch` or
   `unittest.mock.patch` with a literal dotted target are read as writes (M9); a literal `globals()["X"]` write,
   `globals().update(X=...)` or `globals().setdefault("X", ...)` anywhere in a registered module counts as a binding
@@ -577,16 +579,31 @@ The `_deliver` question below applies to both.
   (`def install(cls=Relay): cls.send = f`); `getattr(greg, "body").x = f`; `type(obj).m = f`;
   `object.__setattr__` and `builtins.setattr`; a `__code__` swap; a decorator on the one def or class that returns a
   different object (`@functools.lru_cache` and `@dataclass` are allowed); a re-export through a star import
-  (`from .engine import *`) or more than four hops, which `origin()` does not follow; a module rebinding its own
-  imported name (`from greg.body import send_signed`, then `send_signed = f` in that module); a literal `vars()` or
+  (`from .engine import *`) or more than four hops, which `origin()` does not follow; the writer's own star import
+  (`from omnimorph import *`, then `OmnimorphEngine.simulate = f`); a module rebinding its own imported name by a
+  second import (`from greg.body import send_signed`, then `try: from vendor.fastsig import sign_and_drop as
+  send_signed`: guard 3 reads the first import of a name, Python keeps the last), or by assignment
+  (`send_signed = f`) outside the six packages guard 3 reads; a consumer whose imported name also has a fallback
+  binding (`try: from omnimorph import OmnimorphEngine` / `except ImportError: OmnimorphEngine = None`), where
+  `origin()` stops at the consumer; a consumer's dotted `import greg.body`, whose name `greg` `origin()` records as
+  `greg.body` (`_cli.greg.body.send_signed = f`); a consumer's imported module replaced (`_gg.egregore = x`); an
+  in-place change to a registered constant (`LEVELS[9] = ...`, `LEVELS.update(...)`); a comprehension target
+  (`[None for _b.send_signed in [f]]`); `fn.__globals__[...]` and `sys._getframe().f_globals[...]`; a literal-key
+  `.update` written another way (`vars(_b).update(dict(send_signed=f))`, `.update(**{...})`, `.update([(...)])`); a
+  literal `vars()` or
   `locals()` key at module level, and `vars()` or `locals()` used as a value there (M8 reads `globals()` only);
   `globals` reached through another name (`g = globals; g()["X"] = f`); a `__dict__` or `vars(X)` reached through
   another name (`d = _b.__dict__; d["x"] = f`), its `.setdefault`, `.__setitem__` or `|=`, and a computed key; and
   `patch` under another name (`from unittest.mock import patch as p`, `import unittest.mock as um`), with a computed
-  target or name, `patch.dict`, `patch.multiple` and pytest's `monkeypatch.setattr`. The import scan does not tell
-  scopes apart, so a name imported in one function counts in every function of the file (it fails closed). Most of
-  the forms listed are exotic code, outside the threat model; `patch.dict`, `patch.multiple`, an aliased `patch`,
-  `monkeypatch.setattr` and a module reached by assignment are ordinary and are open, stated here, not covered. The
+  target or name, `patch.dict`, `patch.multiple`, pytest's `monkeypatch.setattr` and pytest-mock's `mocker.patch`
+  and `mocker.patch.object`. The import scan does not tell
+  scopes apart, so a name imported in one function counts in every function of the file (it fails closed). Many of
+  the forms listed are exotic code, outside the threat model. These are ordinary and are open, stated here, not
+  covered: `patch.dict`, `patch.multiple`, an aliased `patch`, `monkeypatch.setattr`, `mocker.patch`, a module or
+  class reached by assignment or through a function parameter, `setattr` or `delattr` with a computed name (a timing
+  or tracing helper that takes the object and the name, `def instrument(cls, *names): setattr(cls, name, ...)`), a
+  consumer's name bound by assignment, a second import of a name as an optional accelerator, and a consumer's import
+  with a fallback binding. The
   tree's own monkeypatches replace constants (`scripts/node_cut_development.py:137` and `:169`,
   `scripts/measure_body_memory.py:61`, `cortex/evaluation/composition_lift/run_converged_v1.py:94-95`), functions
   (`scripts/node_cut_development.py:441` and `:470` swap `greg.cognition.cortex._numeric` and `independent_verify`
@@ -614,9 +631,10 @@ The `_deliver` question below applies to both.
   `from greg.mission_view import REALITY` in `greg/ladder.py` passes, because guard 2 matches the module name the
   import names (round 5's `alias_g2`, unchanged since). There are no links in the tree today.
 
-- **Threat model.** Every limit above that needs exotic code or text (a decorator that swaps the object, a namespace
-  write through a computed `setattr`, `sys.modules` or `exec`, a self-issued ruling) is a limit against a deliberate evader, which these guards do
-  not claim to stop (see "Reality level").
+- **Threat model.** Every limit above that needs exotic code or text (a decorator that swaps the object,
+  `sys.modules` or `exec`, a self-issued ruling) is a limit against a deliberate evader, which these guards do not
+  claim to stop (see "Reality level"). The ordinary forms "Static resolution" names are open against cooperating
+  agents too, stated, not covered.
 
 ## The anchor question (S52.A1)
 
@@ -697,8 +715,9 @@ do not read ("Static resolution") is not complete.
   for the forms the rules read: each registered qualname has one binding (a literal `globals()` key anywhere in its
   module counted), its module no star import, computed namespace write, name bound to its namespace or other use of a
   `globals()` call, and no runtime file writes it, or an attribute of a registered class, from outside its definition
-  by an assignment, augmented assignment, `del`, a for or with target, a literal `setattr` or `delattr`, a
-  `__dict__["<literal>"]` or `vars(X)["<literal>"]` write or `.update` with literal keys, `patch.object` with a
+  through a name the file binds by import (or the class's own name in its module) by an assignment, augmented assignment, `del`, a for or with target, a literal `setattr` or `delattr`, a
+  `__dict__["<literal>"]` or `vars(X)["<literal>"]` write or `.update` with keyword arguments or a constant-key dict
+  display, `patch.object` with a
   literal name or `patch` with a literal dotted target (the names `patch`, `mock.patch` and `unittest.mock.patch`),
   read as written and with every prefix resolved through `origin()` (names a module binds by `import` or
   `from ... import`, up to four hops)

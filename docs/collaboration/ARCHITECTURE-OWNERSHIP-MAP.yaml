@@ -244,7 +244,7 @@ architecture_ownership_records:
 # body, and since 2026-11-22 a registered class's whole body, is also compared with every runtime function or class;
 # see the note after the last record. Threat model: these checks catch ordinary changes by cooperating agents
 # (refactors, convenience copies, handoffs, relays, templates, copied receipts), not a deliberate evader; each residual
-# is stated as a limit.
+# found so far is stated as a limit, and no list of limits is complete.
 # Status: PROPOSED, like every record in this file. A status here attaches, activates, retires or grants nothing.
 function_owner_records:
 
@@ -743,18 +743,20 @@ function_owner_records:
 #   test_globals_used_as_a_value_in_a_module_that_holds_a_registered_qualname_fails);
 # - no runtime file assigns, augments, deletes, sets as a for or with target, or setattr()s or delattr()s with a
 #   literal name, a registered qualname as an attribute of a name bound to its module (import a.b as X, from a import b
-#   as X, the dotted import a.b), or any attribute of a registered class outside its own class body; since round 8 the
+#   as X, the dotted import a.b), or an attribute of a registered class outside its own class body through a name the
+#   file binds by import (or, in the class's own module, the class's own name); since round 8 the
 #   written chain is also read with every prefix resolved through the guard's origin(), which follows a name a module
 #   binds at its level by import or from ... import, up to four hops (package re-exports and a consumer's imported
 #   names: from omnimorph import OmnimorphEngine, greg.cli.send_signed), and these forms
 #   count as writes: X.__dict__["<literal>"] or vars(X)["<literal>"] set or deleted, X.__dict__.update(...) or
-#   vars(X).update(...) with literal keys, patch.object / mock.patch.object / unittest.mock.patch.object with X and a
+#   vars(X).update(...) with keyword arguments or a constant-key dict display, patch.object / mock.patch.object / unittest.mock.patch.object with X and a
 #   literal name, and patch / mock.patch / unittest.mock.patch with a literal dotted target
 #   (test_no_runtime_file_rebinds_a_registered_qualname_or_a_registered_class_attribute,
 #   test_a_registered_qualname_rebound_from_another_module_or_through_a_namespace_alias_fails,
 #   test_a_registered_qualname_rebound_through_a_re_export_or_a_consumers_imported_name_fails,
 #   test_a_registered_qualname_written_through_a_namespace_or_a_mock_patcher_fails); with the rule above, the def or
-#   class read is the one Python binds for the forms these rules read (the limits below list forms they do not);
+#   class read is the one Python binds for the forms these rules read (the limits below list forms they do not; that
+#   list is not complete);
 # - a 'distinct' entry exempts no copy (guard 4; guard 3's structural-copy check) and may not name a module that holds
 #   one; only an entry in the test's BODY_EXEMPTIONS (location, the body it resembles, the reason; empty today) clears
 #   a false positive (test_a_distinct_entry_cannot_vouch_for_a_module_that_holds_a_copy,
@@ -780,13 +782,18 @@ function_owner_records:
 # _R.send = f), a consumer's name bound by assignment included (send = send_signed); a module or class reached
 # through a function parameter (def install(cls=Relay): cls.send = f); getattr(greg, 'body').x = f;
 # type(obj).m = f; object.__setattr__ and builtins.setattr; a __code__ swap; a decorator that returns a different
-# object; a re-export through a star import or more than four hops; a module rebinding its own imported name
-# (from greg.body import send_signed, then send_signed = f there); a literal vars() or locals() key at module level,
+# object; a re-export through a star import or more than four hops; the writer's own star import; a module rebinding
+# its own imported name by a second import (guard 3 reads the first import of a name, Python the last), or by
+# assignment outside the six packages guard 3 reads; a consumer whose imported name also has a fallback binding; a
+# consumer's dotted import greg.body (origin() records greg as greg.body); a consumer's imported module replaced; an
+# in-place change to a registered constant (LEVELS[9] = ...); a comprehension target; fn.__globals__ and f_globals
+# writes; a literal-key .update written another way (.update(dict(c=f)), **{...}, a list of pairs); a literal vars() or locals() key at module level,
 # and vars() or locals() used as a value there; globals reached through another name (g = globals); a __dict__ or
 # vars(X) reached through another name (d = _b.__dict__), its .setdefault, .__setitem__ or |=, and a computed key;
 # patch under another name (from unittest.mock import patch as p), with a computed target or name, patch.dict,
-# patch.multiple and pytest's monkeypatch.setattr; docs/ (its 24 .py files outside lineage-archive/ included) and the
+# patch.multiple, pytest's monkeypatch.setattr and pytest-mock's mocker.patch; docs/ (its 24 .py files outside lineage-archive/ included) and the
 # tests/ modules no scanned file imports are not scanned; a copy reachable only through a DIRECTORY link out of the
 # repository, or in a non-.py file, is not read; an existing CANONICAL record can take a new alternate or distinct
 # entry naming an undecided record's candidate with no test change; a function no record names has no owner check; a
-# consumer is checked by what its source names, not by whether anything calls it. The evidence README lists them all.
+# consumer is checked by what its source names, not by whether anything calls it. The evidence README lists those
+# found so far; no list of limits is complete.

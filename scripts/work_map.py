@@ -235,13 +235,16 @@ def identities(text: str) -> list[tuple[int, str, str]]:
 
 
 def canonical_identity(value: str | None) -> tuple[str | None, str]:
-    """A receipt's ``session_id`` as (canonical id, client). An id in no known form is kept verbatim."""
+    """A receipt's ``session_id`` as (canonical id, client): the id in a known form that opens the value (after code
+    marks or emphasis), else the whole value verbatim, an opaque id. So "unknown (handed over from `B`)" or
+    "codex/root/seam (continues `B`'s WU-11)" is that text, never ``B``: a parenthetical never names another session.
+    Limit: a value that opens with one session's id is read as that session whatever follows it."""
     value = _text(value).strip()
     if not value:
         return None, "unknown"
-    hits = identities(value)
-    if hits:
-        return hits[0][1], hits[0][2]
+    hits = _spans(value)
+    if hits and not value[:hits[0][0]].strip("`*_ \t"):
+        return hits[0][2], hits[0][3]
     prefix = re.match(r"(?i)(codex|kimi|cursor|claude|uat)\b", value)
     return value, (prefix[1].lower() if prefix else "other")
 

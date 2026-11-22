@@ -3004,3 +3004,23 @@ def test_one_id_named_twice_or_another_id_on_the_next_item_is_still_exact():
     assert w.checkin_author(f"{w.CHECKIN}\n## Check-in\n- Session: `{B}`\n- Reviewer / integrator: `{A}`\n") == (
         B, "claude")
     assert w.checkin_author(f"{w.CHECKIN}\n## Check-in\n- Session: `{B}`\n\nAsked by `{A}`.\n") == (B, "claude")
+
+
+# ------------------------------------------------------------------ round 6: what a receipt's session_id names
+
+def test_a_receipt_session_id_names_the_id_it_opens_with_and_otherwise_stays_opaque(quick, tmp_path, capsys):
+    handed = f"unknown (handed over from {B})"
+    codex = f"codex/root/seam-20261121 (continues {B}'s WU-11)"
+    assert w.canonical_identity(handed) == (handed, "other")
+    assert w.canonical_identity(codex) == (codex, "codex")
+    assert w.canonical_identity(f"{A} (continues {B})") == (A, "claude")
+    assert w.canonical_identity(f"`{A}`") == (A, "claude")
+    assert w.canonical_identity("Codex /root, workspace 5bcf356971dc") == ("codex:5bcf356971dc", "codex")
+    prs = [_pr(300, "a/seam", body=_receipt(handed, ["greg/missions.py"])),
+           _pr(301, "a/other", body=_receipt(A, ["greg/missions.py"])),
+           _pr(302, "a/third", body=_receipt(codex, ["greg/body.py"]))]
+    m = w.build(prs, [], now=NOW, use_git=False)
+    assert sorted(s["session"] for s in m["sessions"]) == sorted([A, handed, codex])
+    assert [sorted(c["holders"]) for c in m["contended"]] == [sorted([A, handed])]
+    paths, _raw = _answer(tmp_path, capsys, prs, [], "--paths", "greg/missions.py", "greg/body.py")
+    assert [p["session"] for h in paths["paths"] for p in h["prs"]] == [handed, A, codex]

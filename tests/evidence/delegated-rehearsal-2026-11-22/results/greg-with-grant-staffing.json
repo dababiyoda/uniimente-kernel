@@ -1,0 +1,57 @@
+{
+  "answers": {
+    "supply:order-after": {
+      "answer": {
+        "optimality": "proven",
+        "plan": [
+          [
+            51
+          ],
+          [
+            51
+          ]
+        ],
+        "products": [
+          "degreaser"
+        ],
+        "solver_status": [
+          "OPTIMAL",
+          "OPTIMAL"
+        ]
+      },
+      "state": "ANSWERED"
+    },
+    "supply:order-before": {
+      "answer": {
+        "optimality": "proven",
+        "plan": [
+          [
+            65
+          ],
+          [
+            65
+          ]
+        ],
+        "products": [
+          "degreaser"
+        ],
+        "solver_status": [
+          "OPTIMAL",
+          "OPTIMAL"
+        ]
+      },
+      "state": "ANSWERED"
+    }
+  },
+  "arm": "improved",
+  "asks": [],
+  "corrected_mission_achieved": true,
+  "cpu_s": 8.58,
+  "first_mission_achieved": true,
+  "founder_acts_after_start": 1,
+  "interruptions": 0,
+  "model_calls": 0,
+  "money_usd": 0.0,
+  "task": "staffing",
+  "wall_s": 10.05
+}

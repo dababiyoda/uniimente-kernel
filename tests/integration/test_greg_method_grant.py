@@ -206,3 +206,45 @@ def test_a_device_key_cannot_sign_a_grant(tmp_path):
         with pytest.raises(FounderAuthError):
             body.apply(signed(stranger, body_id, "CAPABILITY_GRANT", grant_body(body, clock)))
         assert body.registry.state["cognition.game"] == "VERIFIED"
+
+
+VOI = {"problem_id": "grant:next-test", "chain": {"recipe": "bayes_then_voi", "payload": {
+    "beta_evidence": {"alpha": 1, "beta": 1, "successes": 3, "failures": 22},
+    "pilot_option": {"pilot_size": 30, "pilot_cost": 300},
+    "decision_model": {"customers": 250, "value_per_success": 730, "fixed_cost": 18000}}}}
+CHAIN = ("cognition.decision_preposterior", "cognition.information", "cognition.probabilistic")
+
+
+def test_an_abstaining_chain_asks_once_for_every_method_it_needs_and_one_grant_closes_it(tmp_path):
+    # Reproduced on #196 9b931994: the chain abstained at its first stage, no attach ask was raised, and the mission
+    # asked NO_STRATEGY twice, which no founder answer could resolve (tests/evidence/delegated-rehearsal-2026-11-22).
+    home, key, body_id, _ = make_body(tmp_path)
+    check, strategy = ({"check_id": "test", "description": "cheapest decisive test",
+                        "sensor": {"capability": "cognition.solve", "target": "cognition:voi", "params": VOI},
+                        "predicate": {"op": "equals", "field": "state", "value": "ANSWERED"}},
+                       {"action_id": "test", "capability": "cognition.solve", "target": "cognition:voi",
+                        "params": VOI, "advances": ["test"], "rationale": "Bayes, then value of information"})
+    spec = mission("m:next-test", checks=[check], strategies=[strategy], capabilities=["cognition.solve"],
+                   targets=("cognition:*",), ceiling="read_only")
+    drop(home, signed(key, body_id, "MISSION", spec))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        run(body, clock, "m:next-test", ticks=3)
+        [ask] = attach_asks(body)
+        assert sorted(ask["authority_requested"]["capabilities"]) == sorted(CHAIN)
+        assert "greg grant" in ask["recommendation"] and all(c in ask["recommendation"] for c in CHAIN)
+        assert "abstained at posterior" in ask["why_now"]
+        # the mission waits on its withheld methods: it never runs out of strategies or asks NO_STRATEGY
+        assert body.engine.book.missions["m:next-test"].blocker["type"] == "capability"
+        assert not [e for e in body.journal.replay("decision.requested") if e.payload["kind"] == "NO_STRATEGY"]
+        # one method attached on its own is not enough: the chain needs all three, so the mission keeps waiting
+        body.apply(signed(key, body_id, "CAPABILITY_ATTACH", {"capability_id": CHAIN[0]}))
+        assert run(body, clock, "m:next-test", ticks=2) != "ACHIEVED"
+        assert body.engine.book.missions["m:next-test"].blocker["type"] == "capability"
+        body.apply(signed(key, body_id, "CAPABILITY_GRANT", grant_body(body, clock, caps=CHAIN, gid="chain")))
+        assert run(body, clock, "m:next-test") == "ACHIEVED"
+        [answer] = [r.payload["result"]["output"]["answer"] for r in body.ledger.by_type("receipt")
+                    if ((r.payload.get("result") or {}).get("output") or {}).get("state") == "ANSWERED"
+                    and "answer" in r.payload["result"]["output"]]
+        assert answer["action"] == "pilot" and round(answer["net_value_of_information"], 2) == 98.41

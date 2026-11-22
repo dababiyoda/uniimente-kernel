@@ -30,6 +30,14 @@ CONSTRUCTION_SETTLED = 'tests/unit/test_greg_construction_settlement.py'
 CONSTRUCTION_DECISION = 'tests/unit/test_greg_construction_decision.py'
 MUTANTS = [
  # Method grant (founder directive 2026-11-22, item 2): one signed, bounded, revocable grant over read-only methods.
+ ('an abstaining chain asks nothing', 'greg/missions.py',
+  '            self._cognition_ask(m, aid, chain_deficit(outcome.output, self.registry), now)' if False else
+  '            rid = self._cognition_ask(m, aid, need, now)', '            rid = None',
+  'test_an_abstaining_chain_asks_once_for_every_method_it_needs_and_one_grant_closes_it', GRANT),
+ ('a chain resumes once any one of its methods is attached', 'greg/missions.py',
+  'unusable = [c for c in b["capabilities"] if not self.registry.usable(c)[0]]',
+  'unusable = [c for c in b["capabilities"][:1] if not self.registry.usable(c)[0]]',
+  'test_an_abstaining_chain_asks_once_for_every_method_it_needs_and_one_grant_closes_it', GRANT),
  ('a grant covers a method that spends, sends or writes', 'greg/method_grant.py',
   'if manifest.consequence_class != "read_only":', 'if False:',
   'test_consequential_and_sensitive_capabilities_stay_outside_any_grant', GRANT),

@@ -1,0 +1,64 @@
+{
+  "answers": {
+    "tampa:net-high": {
+      "abstention_state": "NONE",
+      "method": "cognition.exact",
+      "output": {
+        "denominator": 1,
+        "exact": "16200",
+        "numerator": 16200
+      }
+    },
+    "tampa:net-low": {
+      "abstention_state": "NONE",
+      "method": "cognition.exact",
+      "output": {
+        "denominator": 1,
+        "exact": "1820",
+        "numerator": 1820
+      }
+    },
+    "tampa:next-test-after": {
+      "answer": {
+        "action": "pilot",
+        "net_value_of_information": 98.41121767637014,
+        "posterior_mean": 0.14814814814814814
+      },
+      "state": "ANSWERED"
+    },
+    "tampa:next-test-before": {
+      "answer": {
+        "action": "launch",
+        "net_value_of_information": -299.9999999999891,
+        "posterior_mean": 0.14814814814814814
+      },
+      "state": "ANSWERED"
+    },
+    "tampa:vendor-claim": {
+      "abstention_state": "UNIDENTIFIED",
+      "method": "cognition.causal",
+      "output": {
+        "effect": null,
+        "identified_conditionally": false,
+        "uncertainty": null
+      }
+    }
+  },
+  "arm": "current",
+  "asks": [
+    {
+      "kind": "CAPABILITY_ATTACH",
+      "recommendation": "attach the 3 methods together, once, in one bounded read-only grant: greg grant --id tampa-first-next_test_before --capability cognition.decision_preposterior --capability cognition.information --capability cognition.probabilistic --days 7 --purpose 'read-only methods for next_test_before of m:tampa",
+      "why": "next_test_before composes bayes_then_voi; its stages need 3 built, verified methods that are not attached, so the chain abstained at posterior"
+    }
+  ],
+  "corrected_mission_achieved": true,
+  "cpu_s": 12.08,
+  "first_mission_achieved": true,
+  "founder_acts_after_start": 4,
+  "interruptions": 1,
+  "model_calls": 0,
+  "money_usd": 0.0,
+  "task": "tampa",
+  "wall_s": 13.49
+}

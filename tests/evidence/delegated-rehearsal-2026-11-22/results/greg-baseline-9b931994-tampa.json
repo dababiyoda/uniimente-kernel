@@ -1,0 +1,61 @@
+{
+  "answers": {
+    "tampa:net-high": {
+      "abstention_state": "NONE",
+      "method": "cognition.exact",
+      "output": {
+        "denominator": 1,
+        "exact": "16200",
+        "numerator": 16200
+      }
+    },
+    "tampa:net-low": {
+      "abstention_state": "NONE",
+      "method": "cognition.exact",
+      "output": {
+        "denominator": 1,
+        "exact": "1820",
+        "numerator": 1820
+      }
+    },
+    "tampa:next-test-after": {
+      "answer": null,
+      "state": "STAGE_ABSTAINED"
+    },
+    "tampa:next-test-before": {
+      "answer": null,
+      "state": "STAGE_ABSTAINED"
+    },
+    "tampa:vendor-claim": {
+      "abstention_state": "UNIDENTIFIED",
+      "method": "cognition.causal",
+      "output": {
+        "effect": null,
+        "identified_conditionally": false,
+        "uncertainty": null
+      }
+    }
+  },
+  "arm": "current",
+  "asks": [
+    {
+      "kind": "NO_STRATEGY",
+      "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+      "why": "every strategy for the failing checks is exhausted, refused or excluded"
+    },
+    {
+      "kind": "NO_STRATEGY",
+      "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+      "why": "every strategy for the failing checks is exhausted, refused or excluded"
+    }
+  ],
+  "corrected_mission_achieved": false,
+  "cpu_s": 3.9,
+  "first_mission_achieved": false,
+  "founder_acts_after_start": 1,
+  "interruptions": 2,
+  "model_calls": 0,
+  "money_usd": 0.0,
+  "task": "tampa",
+  "wall_s": 4.48
+}

@@ -1,0 +1,25 @@
+{
+  "net_monthly_usd": {"low": 1820, "central": 6760, "high": 16200},
+  "payer": "Independent restaurant owners/operators in the county (the food-service licence holder buys the cleaning). Chains that contract nationally are not the payer for a solo operator.",
+  "recommendation": "launch",
+  "cheapest_test": {
+    "description": "E11's pilot: contact 30 more independents for $300 and count bookings. Under E11's model it cannot change the decision. Launch breaks even at a booking rate of 18000/(400*730) = 6.16%. With a uniform prior and E9's 3/25, the posterior is Beta(4,23), with mean 14.8% and 90% interval 5.4%-27.2%. Even 0 bookings out of 30 would leave the posterior mean at 4/57 = 7.0%, still above break-even. So the expected value of sample information is 0 and the pilot's expected net value is -$300. The assumptions that could actually disprove the opportunity are untested: repeat frequency of 2 per year at $450 rather than the $299 promo, and the 400 reachable accounts. The cheapest test of those is to re-contact E9's 3 bookers and ask whether they will commit to a second cleaning at $450. That costs nearly nothing, but its EV cannot be computed from the file.",
+    "expected_net_value_usd": -300
+  },
+  "e8_established": false,
+  "excluded": [
+    {"id": "E2", "why": "Promotional first-visit price ($299). It is not the recurring price."},
+    {"id": "E3", "why": "A 2019 forum post: stale and unverified, and far outside the 2024 survey range."},
+    {"id": "E8", "why": "An observational vendor claim with self-selected customers, no comparison group and empty treated/control data. Not established, and it does not bear on the economics."},
+    {"id": "E10", "why": "A duplicate of E1 with a typo (central 4500 lies above its own high of 650)."},
+    {"id": "E4", "why": "Not used directly. It counts chains that contract nationally, and E11's 400 reachable accounts is the relevant market."}
+  ],
+  "questions_for_founder": [
+    "Is the 400 reachable-account figure in E11 a real list? At capacity a solo crew needs about 144 accounts at 2 cleanings a year (24*12/2), which is 36% of 400. E9's 12% booking rate implies about 48-59 accounts, or about 8-10 jobs a month. Is that demand limit acceptable?",
+    "Will booked accounts repeat at 2 cleanings a year at about $450, or were first bookings made at promo prices?",
+    "What horizon does E11's $730 per account cover: one year or the account's lifetime? And does the $18,000 launch cost overlap with E7's monthly fixed costs?"
+  ],
+  "transfer_order_litres": [60.0, 53.25],
+  "transfer_method": "Pattern identification followed by the newsvendor rule. Every value equals the value 7 days earlier plus exactly 1.75 (checked for all 65 lagged pairs), so demand is a deterministic weekly profile plus a trend of +0.25 L/day, with zero residual. The forecasts are h[65]+1.75 = 60.0 and h[66]+1.75 = 53.25. The newsvendor critical ratio is 30/(30+4) = 0.882, but with no residual spread the optimal quantile equals the point forecast. The 400 L storage limit does not bind.",
+  "notes": "Net monthly = jobs*(price - variable cost) - fixed cost, using E1 prices with E5 jobs, E6 variable costs and E7 fixed costs, low and high taken as pessimistic and optimistic combinations: low 18*(350-110)-2500 = 1820; central 24*(450-85)-2000 = 6760; high 30*(650-60)-1500 = 16200. These figures assume full capacity. Demand-limited at E9's booking rate, central is roughly 8-10 jobs/month, about $900-1,600/month. Recommendation: under E11, EV(launch) = 292000*E[p] - 18000 = $25,259 with the Beta(4,23) mean, or $17,040 at the point estimate of 12%. P(p < break-even) is about 7.3%, EVPI is about $319, and EVSI for the pilot is $0, so launch rather than pilot. E5 rests on n=3 interviews and E9 on n=25, so the uncertainty is real. All data are synthetic stand-ins. The Transfer forecast assumes the deterministic pattern continues; any real noise would push the order above the forecast."
+}

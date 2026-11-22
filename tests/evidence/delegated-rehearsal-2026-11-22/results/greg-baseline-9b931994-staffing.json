@@ -1,0 +1,34 @@
+{
+  "answers": {
+    "supply:order-after": {
+      "answer": null,
+      "state": "STAGE_ABSTAINED"
+    },
+    "supply:order-before": {
+      "answer": null,
+      "state": "STAGE_ABSTAINED"
+    }
+  },
+  "arm": "current",
+  "asks": [
+    {
+      "kind": "NO_STRATEGY",
+      "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+      "why": "every strategy for the failing checks is exhausted, refused or excluded"
+    },
+    {
+      "kind": "NO_STRATEGY",
+      "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+      "why": "every strategy for the failing checks is exhausted, refused or excluded"
+    }
+  ],
+  "corrected_mission_achieved": false,
+  "cpu_s": 1.28,
+  "first_mission_achieved": false,
+  "founder_acts_after_start": 1,
+  "interruptions": 2,
+  "model_calls": 0,
+  "money_usd": 0.0,
+  "task": "staffing",
+  "wall_s": 1.38
+}

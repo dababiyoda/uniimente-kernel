@@ -132,7 +132,7 @@
   "execution_authority": "none",
   "expenditure": {
     "model_calls": 0,
-    "seconds": 0.000444,
+    "seconds": 0.000357,
     "solver_calls": 0,
     "usd": 0.0
   },
@@ -383,7 +383,7 @@
     "status": "none_eligible",
     "tradeoffs": []
   },
-  "receipt_id": "sha256:0bdab23972255eaccda21b98b5706c7123e10451d6e33f8531d8c9e5aec3278d",
+  "receipt_id": "sha256:0320146b25b80d53f89b496676dcc0c4bea180857165e45e041a439476104b2d",
   "route": {
     "attempts": [],
     "composition": false,
@@ -421,7 +421,7 @@
     "verifier": "cortex.verifier.adversarial@0.1.0"
   },
   "versions": {
-    "cortex": "0.2.2",
+    "cortex": "0.2.3",
     "policy": "cortex-route-policy/0.2.2",
     "routes": {}
   }

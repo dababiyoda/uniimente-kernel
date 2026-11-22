@@ -343,8 +343,11 @@ def challenge_map(journal, holder: dict) -> dict:
 
 def contested_receipts(journal) -> list[dict]:
     """Read-only, across every package: receipts with at least one claim a recorded response contests."""
+    replay = getattr(journal, "replay", None)
+    if replay is None:  # a ledger-only view carries no disclosure responses
+        return []
     out = {}
-    for event in journal.replay("disclosure.response"):
+    for event in replay("disclosure.response"):
         data = event.payload
         if not data.get("targeted") or data.get("response") not in CONTESTING:
             continue

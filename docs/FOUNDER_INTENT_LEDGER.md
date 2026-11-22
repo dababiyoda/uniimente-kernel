@@ -2,6 +2,14 @@
 
 # Founder Intent Ledger
 
+## Mind research reports adopted as directives: SymbioSoup and the production lessons — 2026-11-22
+
+Alfonso supplied two model-written research reports ([sources and dispositions](intent/sources/mind-research-2026-11-22/README.md)) and wrote: "Treat the research papers as directive instructions". Adopted: two separated systems (a consequence-inert SymbioSoup artificial-life laboratory, and the governed production runtime); reproduce before inventing; cognition only after ecology earns it; intervention-based functional claims and never consciousness claims; bounded reflection; joint and retained human capability; air-gapped evaluators and host receipts.
+
+- **Stage A:** CuBFF's `bff_noheads` soup reimplemented from source commit `f212e849` in `developmental/symbiosoup/` (the real binary's build was refused by this session's permission policy). It is checked against a specification interpreter and pre-registered before any run ([pre-registration](evidence/symbiosoup-stage-a/2026-11-22/PREREGISTRATION.md)).
+- **Production lessons:** the authority tuple with expiry and revocation (`METHOD_GRANT`), host receipts and air-gapped evaluators are already on GREG's path. Bounded reflection and retained founder judgment are recorded residuals.
+- State: active. Authority delta: none; the lab is not wired to GREG. VEPMC: 0.
+
 ## The full Mind, with room to work: standing method grants — 2026-11-22
 
 Directive preserved verbatim at [MIND-HEADROOM-DIRECTIVE-2026-11-22-source.md](intent/sources/MIND-HEADROOM-DIRECTIVE-2026-11-22-source.md) (sha256 `112913ed…`). It asks GREG to push every part of a mission it can lawfully advance, and to give verified tools room to work under one signed, bounded, revocable grant, while consequential actions keep their own authority.

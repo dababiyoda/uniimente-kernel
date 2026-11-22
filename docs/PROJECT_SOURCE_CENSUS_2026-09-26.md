@@ -220,3 +220,8 @@ See `docs/PROJECT_COGNITION_SOP.md`.
 ## October 1 accessible addition
 
 `docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt`: founder-supplied coding-agent directive (uploads 8, 9, 10 byte-identical). Source digest, 677 nonblank lines and 122 Appendix A items are in `docs/cortex/SEED_GENOME_REQUIREMENTS.json`. This addition does not claim a refresh of inaccessible raw Project sources or organ repositories.
+
+## November 22 accessible additions
+
+- `docs/intent/sources/MIND-HEADROOM-DIRECTIVE-2026-11-22-source.md`: founder directive, the full Mind with room to work (verbatim).
+- `docs/intent/sources/mind-research-2026-11-22/`: two model research reports on Paradigms-of-Intelligence-style artificial life and alien cognition (ChatGPT PDF and Gemini DOCX, converted to text, original digests recorded). Model analysis, not founder language; dispositions in its README.

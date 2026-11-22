@@ -15,10 +15,10 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 |---|---:|---|
 | [`(top)`](#doctrine-orders-and-top-level-references) | 31 | Doctrine, orders and top-level references |
 | [`intent`](#founder-intent-records-and-their-verbatim-sources) | 88 | Founder intent records and their verbatim sources |
-| [`collaboration`](#collaboration-records-handoffs-deliberations-reviews-reconciliations) | 199 | Collaboration records: handoffs, deliberations, reviews, reconciliations |
+| [`collaboration`](#collaboration-records-handoffs-deliberations-reviews-reconciliations) | 200 | Collaboration records: handoffs, deliberations, reviews, reconciliations |
 | [`decisions`](#architecture-decision-records) | 6 | Architecture decision records |
 | [`deliberations`](#founder-rulings) | 1 | Founder rulings |
-| [`evidence`](#measured-evidence-frozen-runs-admissions-proofs) | 522 | Measured evidence (frozen runs, admissions, proofs) |
+| [`evidence`](#measured-evidence-frozen-runs-admissions-proofs) | 523 | Measured evidence (frozen runs, admissions, proofs) |
 | [`cortex`](#cortex-and-seed-genome-specifications-and-evidence) | 79 | Cortex and Seed Genome specifications and evidence |
 | [`opus-maximus`](#opus-maximus-deliverables-al) | 13 | OPUS MAXIMUS deliverables A–L |
 | [`open-source`](#open-source-mechanism-harvest-records) | 23 | Open-source mechanism harvest records |
@@ -187,10 +187,11 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 
 ## Collaboration records: handoffs, deliberations, reviews, reconciliations
 
-### Deliberation (five lenses, two passes) (51)
+### Deliberation (five lenses, two passes) (52)
 
 | File | Date | Title |
 |---|---|---|
+| [`collaboration/deliberation-method-grants-20261122.json`](collaboration/deliberation-method-grants-20261122.json) | 2026-11-22 | Standing method grants for read-only cognition |
 | [`collaboration/deliberation-worker-team-20261121.json`](collaboration/deliberation-worker-team-20261121.json) | 2026-11-21 | worker.team: one signed action fields a temporary worker team (Foundry #48) under one grant |
 | [`collaboration/deliberation-genesis-build-off-turn-20261121.json`](collaboration/deliberation-genesis-build-off-turn-20261121.json) | 2026-11-21 | Run a Genesis builder call off the Body's turn (S38-A follow-up) |
 | [`collaboration/deliberation-w5-ledger-memory-20261113.json`](collaboration/deliberation-w5-ledger-memory-20261113.json) | 2026-11-13 | Whiteboard W5: what bounds a body's evidence-ledger memory, after option 1 (#211) halved it. Outcome: RETAIN the correct |
@@ -476,6 +477,7 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 
 | Run or record | Files | Date | Title |
 |---|---:|---|---|
+| [`evidence/symbiosoup-stage-a/2026-11-22`](evidence/symbiosoup-stage-a/2026-11-22/PREREGISTRATION.md) | 1 | 2026-11-22 | SymbioSoup Stage A: pre-registration (written before any run) |
 | [`evidence/greg-method-grants/2026-11-22`](evidence/greg-method-grants/2026-11-22/README.md) | 4 | 2026-11-22 | Standing method grants: rehearsal evidence (2026-11-22) |
 | [`evidence/live-pr-placement/2026-11-13`](evidence/live-pr-placement/2026-11-13/README.md) | 5 | 2026-11-13 | Section 53 placement from live state, 2026-11-13: stacks through a merged parent |
 | [`evidence/ledger-memory-w5-2026-11-13/f383fd26-rss.json`](evidence/ledger-memory-w5-2026-11-13/f383fd26-rss.json) | 1 | 2026-11-13 |  |

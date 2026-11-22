@@ -12,8 +12,10 @@ grants nothing. It joins sources that already exist:
 
 Sessions and holders come from two places only: a receipt's ``session_id`` (or the receiver of its accepted handoff),
 and a comment that is itself a check-in (the check-in marker alone on its first line that is not blank, then the
-block's own ``Session:`` line first, after the block's heading when it has one, naming one id, in a post that does not
-relay, hand over, reassign or review; see ``checkin_author``). Every other reading of a comment's
+block's own ``Session:`` line first, after the block's heading when it has one, naming one id, in a post with none of
+the relay words, heading words, poster labels or poster wording that ``checkin_author`` lists, whose heading names no
+other id (an ask heading may name the session it asks, unless its byline is another id); see ``checkin_author``).
+Every other reading of a comment's
 author (heading bylines, other labels, opening lines and the joins in ``JOINS``) is ``author_guess``, kept with its
 ``how`` for diagnosis and never used as authority, because on replay the parser named wrong authors and left more than
 a quarter of a week's posts unresolved, the plan's stop condition for building the map from receipts only.
@@ -21,11 +23,14 @@ a quarter of a week's posts unresolved, the plan's stop condition for building t
 Threat model: these rules guard against ordinary changes by cooperating agents working in parallel: refactors, copies
 made by mistake or convenience, handoffs, relays, templates filled in for someone else, receipts copied between PRs.
 They are not a security boundary against a deliberate evader who writes exotic code or text to defeat them. A receipt
-and a check-in are declared, not authenticated. A check-in that relays, or whose heading hands over, reassigns or
-reviews, or that names another id as its poster, names nobody; but a block filled in, pasted or copied with none of
-this wording is read as the session its Session line names, whoever posts it. A receipt copied to another PR with its
-``head_sha`` unchanged is flagged (``receipt_head_stale``), and one whose ``task_ref`` cites another session's
-check-in names no session; but one whose SHAs were fixed to pass the receipt check, with its ``session_id`` and a
+and a check-in are declared, not authenticated. A check-in with any of the words, labels or heading ids that
+``checkin_author`` lists names nobody; but a block filled in, pasted or copied with none of this wording is read as the
+session its Session line names, whoever posts it. Among the wordings not read (this list is not complete) are
+"forwarded", "takeover", "claim transferred to", "passing", "copied from the previous owner", "## Check-in for `B`"
+(a heading that names only the Session id), a relay word only inside a fenced block, and handoff or review wording
+outside the heading. A receipt copied to another PR with its ``head_sha`` unchanged is flagged
+(``receipt_head_stale``), and one whose ``task_ref`` cites only posts whose check-in Session line names another
+session names no session; but one whose SHAs were fixed to pass the receipt check, with its ``session_id`` and a
 ``task_ref`` citing nothing else, is read as the session it names. The residuals each rule leaves are stated where the
 rule is, never claimed as covered.
 
@@ -49,8 +54,8 @@ per receipt session or check-in session; ``how`` is ``receipt`` or ``check-in bl
 comment) and ``claims`` (``session`` is the check-in's session or None, ``how`` is ``check-in block`` or
 ``unverified``; ``author_guess`` and ``author_guess_how`` are what the text suggests, for diagnosis only; a claim's
 ``state`` is its own, its session's is ``session_activity``; a release counts only from the claim's own exact author,
-one by another exact author is ``release_stated_by_another_author`` and one by an author that is not exact
-``release_by_unverified_author``), ``claims_without_pr``,
+one by another exact author is ``release_stated_by_another_author``, and one where either author, the release's or the
+claim's, is not exact is ``release_by_unverified_author``), ``claims_without_pr``,
 ``older_claims_without_pr``, ``line_checks``, ``gaps`` (``None`` where its source was not read; what git could not
 check is listed there, never counted as zero; in ``recent_posts_unresolved`` a post that opens with the check-in marker
 but is not exact has its ``reason`` and ``names``, the one id its Session line names, never a session or a holder) and ``prs`` (one row per open pull request, read once however often
@@ -58,8 +63,10 @@ given: its receipt's fields as declared, ``files`` cut to the first ``FILES_LIMI
 rest, ``receipt_problems`` for fields of the wrong type, ``files_refused``, why the receipt check refuses its
 coordination or its files (then its files are unknown, never an empty list), ``session_refused``, why the receipt
 check refuses its ``session_id`` or its PR comes from a fork (then it names no session), ``session_unnamed``, why the
-map names no session for a receipt the check accepts (``receipt_session``, or its ``task_ref`` cites a check-in by
-another session than its ``session_id``, then ``task_ref_cites`` is that comment), ``handed_over_from``, the session that
+map names no session for a receipt whose ``session_id`` the receipt check does not refuse, whatever else the check
+refuses in it (``receipt_session``; or its ``task_ref`` cites only posts whose check-in Session line names neither its
+``session_id`` nor its accepted handoff's receiver, then ``task_ref_cites`` is the first; or its accepted handoff's
+receiver is not one id or is refused by the check), ``handed_over_from``, the session that
 handed the PR over when its ``handoff.acknowledgment.status`` is ``accepted`` (the PR's session is then the receiver's
 one id; none when the receiver is not one id, or when the receipt check refuses the acknowledgment, and then
 ``session_unnamed`` holds the check's words), ``receipt_head_stale``,
@@ -625,7 +632,8 @@ def opens_with_checkin(body: str) -> bool:
 # What a check-in post says about who posts it (see ``checkin_verdict``).
 _RELAYED = re.compile(r"(?i)(?<![a-z])relay(?:s|ed|ing|er)?(?![a-z])|\bon\s+(?:\S+\s+){0,3}?behalf\b|"
                       r"(?<![a-z])posted\s+for\b|"
-                      r"(?<![a-z])(?:re)?posts?\s+(?:this|it)\s+as\s+(?:yours|(?:your|its|their)\s+(?:own|check-?in))\b")
+                      r"(?<![a-z])(?:re)?posts?\s+(?:this|it)\s+as\s+"
+                      r"(?:yours|(?:your|its|their)\s+(?:own|check-?in))\b")
 _HANDED = re.compile(r"(?i)\bhand\s*-?\s*(?:offs?|overs?)\b|\bhand(?:s|ed|ing)?\s+(?:\S+\s+){0,3}?(?:over|off)\b|"
                      r"\breassign|\b(?P<review>(?:re-?)?review(?:s|ed|ing)?)\b|\b(?:for|to)\s+the\s+next\s+owner\b")
 _ANSWERS = re.compile(r"(?i)\banswer(?:s|ed|ing)?\b[^.]*$")     # "#316 answers the integrator's review": its own reply
@@ -727,18 +735,25 @@ def checkin_author(body: str) -> tuple[str, str] | None:
     the heading and the Session line: no lead paragraph, no second heading, nothing GitHub does not render as plain
     text (an HTML comment, ``<details>``, ``<pre>``, a fence).
 
-    What the post says about who posts it: it names nobody when its text outside code relays ("relay", "relays",
-    "relayed", "relaying", "relayer", "on ... behalf", "posted for", "(re)post(s) this/it as yours", "... as
-    your/its/their own" or "... as your/its/their check-in"); when its heading, or the bold line acting as its
-    heading, says "handoff", "hand-off", "handover", "hand over", "hand(s/ed/ing) ... over" or "hand(s/ed/ing) ...
-    off" (up to three words between), "reassign" (and words it begins), "review", "reviews", "reviewed", "reviewing",
-    "re-review" (and its inflections) or "for/to the next owner"; a review word after "answers" in the same sentence
-    is the post's own reply, as in live check-in 7068165767 ("transfer" is not read: live claim 6474889018 is a
-    "transfer test"); when a labelled line that names a poster, its label in any case ("Posted by", "Relayed by",
-    "Relay", "Relayer", "From", "On behalf of", "Recording session", "Implementer", "Agent", "Agent / claim",
-    "Identity", "Author", "Sender", "Poster", "Submitted by", "Sent by", "Written by"), names another id; when its
-    text outside code says "posted by", "submitted by", "sent by" or "written by" right before an id that is not the
-    Session id ("Posted by `A` for `B`."); or when its heading names another id, except an ask: a heading that opens
+    What the post says about who posts it: it names nobody, even when it is the session's own, when its text outside
+    fenced and indented code blocks says "relay", "relays", "relayed", "relaying", "relayer", "on ... behalf" (up to
+    three words between), "posted for", or "post", "posts", "repost" or "reposts" then "this" or "it" then "as yours",
+    "as your/its/their own" or "as your/its/their check-in" (or "checkin") (in short, "(re)post(s) this/it as yours",
+    "... as your/its/their own" or "... as your/its/their check-in"). Inline code counts, so a genuine check-in that
+    names a file such as `relay.py` names nobody: a false negative, the safe direction. It names nobody when its
+    heading, or the bold line acting as its heading, says "hand off", "handoff", "hand-off", "hand over", "handover"
+    or "hand-over" (or their plurals), "hand", "hands", "handed" or "handing" then up to three words then "over" or
+    "off" ("hand(s/ed/ing) ... over", "hand(s/ed/ing) ... off"), a word that begins with "reassign", "review",
+    "reviews", "reviewed", "reviewing" (each also after "re" or "re-", as in "re-review"), or "for/to the next owner";
+    a review word after "answer", "answers", "answered" or "answering" with no full stop between is the post's own
+    reply, as in live check-in 7068165767 ("transfer" is not read: live claim 6474889018 is a "transfer test"). It
+    names nobody when a labelled line (one that opens, after optional indentation and an optional "- " or "* ", with
+    the label and a colon, or with the label in bold) whose label, in any case, is "Posted by", "Relayed by", "Relay",
+    "Relayer", "From", "On behalf of", "Recording session", "Implementer", "Agent", "Agent / claim", "Identity",
+    "Author", "Sender", "Poster", "Submitted by", "Sent by" or "Written by" names an id other than the Session id;
+    when its text outside fenced and indented code blocks says "posted by", "submitted by", "sent by" or "written by"
+    right before an id (after spaces, code marks, emphasis or a colon) that is not the Session id ("Posted by `A` for
+    `B`."); and when its heading names an id other than the Session id. An ask is the exception: a heading that opens
     with up to two words and then "ask" ("## Coordination ask: ... still yours, `X`?", "## Second ask, `X`: ..."; live
     check-ins 6853648077 and 6858741219 ask another session in their headings) may name the session it asks, unless
     its byline is another id: an id right after "from", "by", "·" or "(" ("## Coordination ask from `A`", "## Second
@@ -749,7 +764,10 @@ def checkin_author(body: str) -> tuple[str, str] | None:
 
     Limit, inherent: a check-in is declared, not authenticated. A block filled in, pasted or copied with none of this
     wording is read as the session its Session line names, whoever posts it; this guards against ordinary posts by
-    cooperating agents, not a deliberate evader.
+    cooperating agents, not a deliberate evader. Among the wordings not read (this list is not complete) are
+    "forwarded", "takeover", "claim transferred to", "passing", "copied from the previous owner", "## Check-in for
+    `B`" (a heading that names only the Session id), a relay word only inside a fenced block, and handoff or review
+    wording outside the heading: such a post names the session on its Session line, whoever posts it.
 
     Lines end only where CommonMark ends them (LF, CR, CRLF), and a blank line holds only spaces and tabs: a form
     feed or a Unicode line separator after the marker leaves the text after it on the marker's line, which GitHub
@@ -2237,8 +2255,9 @@ def markdown(m: dict) -> str:
         "API for the open PRs into the line that this clone cannot diff (with `--github`), and from the receipt "
         "otherwise. The board shares one GitHub login, so sessions and holders come only from receipts and from "
         "check-in blocks: a comment whose first line that is not blank is the check-in marker alone, whose block's own "
-        "`Session:` line comes first after it (or after the block's heading) and names one id, and that does not "
-        "relay, hand over, reassign or review (see the check-in section at the end). Anything else a comment seems to say about its author (a byline, another label, its opening line, a "
+        "`Session:` line comes first after it (or after the block's heading) and names one id, and that has none of "
+        "the words, labels and heading ids the check-in section at the end lists. Anything else a comment seems to "
+        "say about its author (a byline, another label, its opening line, a "
         "claim or PR it points to) is kept in the JSON as `author_guess` for diagnosis and never used, because on "
         "replay the parser named wrong authors and left over a quarter of a week's posts unresolved, the stop "
         "condition for building the map from receipts only. A claim whose author is not verified still holds its "
@@ -2368,10 +2387,11 @@ def markdown(m: dict) -> str:
                 f"{len(g['receipts_with_unreadable_fields'])}; receipts the receipt check refuses for their "
                 f"coordination or files: {len(g['receipts_refused_for_files'])}; receipts naming no session because "
                 f"the receipt check refuses their session_id or they come from a fork: "
-                f"{len(g['receipts_with_refused_session'])}; receipts the check accepts that name no session (their "
-                f"session_id names more than one id or an id it does not open with, their task_ref cites another "
-                f"session's check-in, or their accepted handoff's receiver is not one id or is refused by the receipt "
-                f"check; `session_unnamed` in the "
+                f"{len(g['receipts_with_refused_session'])}; receipts that name no session for another reason, "
+                f"whatever else the receipt check refuses in them (their session_id names more than one id or an id "
+                f"it does not open with, their task_ref cites only posts whose check-in Session line names neither "
+                f"their session_id nor their accepted handoff's receiver, or their accepted handoff's receiver is not "
+                f"one id or is refused by the receipt check; `session_unnamed` in the "
                 f"JSON): "
                 f"{len(g['receipts_naming_no_session'])}; receipts written for another head than the PR's (normal "
                 f"for minutes after a push): {len(g['receipts_with_stale_head'])}"
@@ -2401,8 +2421,8 @@ def markdown(m: dict) -> str:
             if u.get("reason"):
                 reasons[u["reason"]] = reasons.get(u["reason"], 0) + 1
         out += [f"- Board posts in the last 7 days with no check-in block of their own (the marker alone on the first "
-                f"line that is not blank, then the block's own Session line first, naming one id, in a post that does "
-                f"not relay, hand over, reassign or review), so they name no verified author: "
+                f"line that is not blank, then the block's own Session line first, naming one id, in a post with none "
+                f"of the words, labels and heading ids the check-in section lists), so they name no verified author: "
                 f"{len(g['recent_posts_unresolved'])} of {g['recent_posts']}; {marked} of them "
                 f"open{'s' if marked == 1 else ''} with the check-in marker"
                 + (" (" + "; ".join(f"{_cell(why)}: {n}" for why, n in sorted(reasons.items(), key=lambda x: -x[1]))
@@ -2453,20 +2473,39 @@ def markdown(m: dict) -> str:
             "Post this on the work board before any edit, commit or push, and again when you resume. When the pull "
             "request exists, give this comment's URL as its receipt's `coordination.task_ref`:", "",
             "```text", CHECKIN_BLOCK, "```", "",
-            "The map names your session only when the marker is alone on the comment's first line that is not blank "
-            "and your own `Session:` line, naming one id, comes first after the heading. Post a check-in block only for your own "
-            "session: a block that opens with the marker names the session on its Session line whoever posts it. To "
-            "pass a block to another session, leave out the marker line. A post names nobody, even your own, when "
-            "its text outside code says relay, relayed or on ... behalf, when its heading says handoff, hand-off, "
-            "handover, hand over, hand(s/ed/ing) ... over, hand(s/ed/ing) ... off, reassign, review, reviews, "
-            "reviewed, "
-            "reviewing, re-review or for/to the next owner, when a poster label (Posted by, From, Sender, ...) names "
-            "another id, or when its "
-            "heading names another "
-            "id. An ask is the exception: a heading that opens with up to two words and then \"ask\" (`## Coordination "
-            "ask`, `## Second ask`) may name the session it asks, as live check-ins 6853648077 and 6858741219 do, "
-            "unless its byline, an id right after from, by, · or (, is another id. Release your own claim under a "
-            "heading such as `## Release: claim N`.", ""]
+            "The map names your session only when all of these hold: the marker is alone on the comment's first line "
+            "that is not blank; your own `Session:` line, naming one id, comes first after the heading; and the post "
+            "has none of the words, labels and heading ids below. Post a check-in block only for your own session; to "
+            "pass a block to another session, leave out the marker line. A post names nobody, even your own, when:",
+            "",
+            "- its text outside fenced and indented code blocks says relay, relays, relayed, relaying, relayer, "
+            "on ... behalf (up to three words between), posted for, or post, posts, repost or reposts this or it as "
+            "yours, as your/its/their own or as your/its/their check-in (or checkin). Inline code counts, so a genuine "
+            "check-in that names a file such as `relay.py` names nobody;",
+            "- its heading (a `#` line, or a line that is one bold run naming no session id, right after the marker) "
+            "says hand off, "
+            "handoff, "
+            "hand-off, hand over, handover or hand-over (or their plurals), hand, hands, handed or handing then up to "
+            "three words then over or off, a word that begins with reassign, review, reviews, reviewed or reviewing "
+            "(each also after re or re-), or for/to the next owner. A review word after answer, answers, answered or "
+            "answering, with no full stop between, is the post's own reply, as live check-in 7068165767 is. Transfer "
+            "is not read;",
+            "- a line that opens, after optional indentation and an optional `- ` or `* `, with a label and a colon, "
+            "or with a label in bold, names an id other than your Session id, when the label, in any case, is Posted "
+            "by, Relayed by, Relay, Relayer, From, On behalf of, Recording session, Implementer, Agent, Agent / claim, "
+            "Identity, Author, Sender, Poster, Submitted by, Sent by or Written by;",
+            "- its text outside fenced and indented code blocks says posted by, submitted by, sent by or written by "
+            "right before an id other than your Session id;",
+            "- or its heading names an id other than your Session id. An ask is the exception: a heading that opens "
+            "with up to two words and then \"ask\" (`## Coordination ask`, `## Second ask`) may name the session it "
+            "asks, as live check-ins 6853648077 and 6858741219 do, unless its byline, an id right after from, by, · "
+            "or ( or one the map reads as the heading's signature, is another id.",
+            "",
+            "Release your own claim under a heading such as `## Release: claim N`. Among the wordings not read (this "
+            "list is not complete) are forwarded, takeover, claim transferred to, passing, copied from the previous "
+            "owner, a heading that names only the Session id (``## Check-in for `B` ``), a relay word only inside a "
+            "fenced block, and handoff or review wording outside the heading: such a post names the session on its "
+            "Session line, whoever posts it.", ""]
     return "\n".join(out)
 
 

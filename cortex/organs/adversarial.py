@@ -13,7 +13,7 @@ from __future__ import annotations
 import re
 from typing import Any, Mapping
 
-from ..contracts import HUMAN_AUTHORITY_CLASSES, consequence_rank
+from ..contracts import HUMAN_AUTHORITY_CLASSES, consequence_rank, digest
 
 VERIFIER_ID = "cortex.verifier.adversarial@0.1.0"
 VERIFIER_DEPENDENCIES = ("python-stdlib", "rules:cortex.organs.adversarial")
@@ -64,14 +64,34 @@ def _recheck_formal_answers(payload, results, add) -> None:
                     f"{r.organ_id}: reported objective {answer.get('objective')} but the assignment yields {value}",
                     r.organ_id)
         if answer.get("optimal") is True:
+            # The optimality obligation is "no feasible assignment is strictly better" (0.2.3; review finding 4 on
+            # #196). It is independently discharged by the formal engine's own UNSAT proof, or by a CERTIFIED
+            # second-engine certificate bound to this model, this objective value and this sense. A solver's native
+            # OPTIMAL alone is its own claim: still acceptable, but reported as not independently certified.
             solver = proof.get("solver") or {}
-            proven = (solver.get("certificate_check") == "UNSAT" or proof.get("native_status") == "OPTIMAL"
-                      or solver.get("status") == "OPTIMAL")
-            if not proven:
+            own_proof = solver.get("certificate_check") == "UNSAT"
+            native = proof.get("native_status") == "OPTIMAL" or solver.get("status") == "OPTIMAL"
+            cert = proof.get("certificate") or {}
+            bound = False
+            if cert:
+                expected = {"model_digest": digest(model), "value": answer.get("objective"),
+                            "sense": spec.query.get("sense")}
+                bound = cert.get("binding") == expected
+                if not bound:
+                    add("critical", "certificate_does_not_bind_answer",
+                        f"{r.organ_id}: the {cert.get('engine')} certificate was computed for "
+                        f"{cert.get('binding')}, not for {expected}", r.organ_id)
+            certified = own_proof or (bound and cert.get("status") == "CERTIFIED")
+            # The claimant must carry its own basis for the claim, whatever another engine later certifies: a route
+            # that asserts an optimum it never proved is not repaired by someone else's proof (unchanged from 0.2.2).
+            if not (own_proof or native):
                 add("critical", "optimality_claim_without_proof",
                     f"{r.organ_id} claims an optimum but neither a certificate nor an OPTIMAL status is recorded",
                     r.organ_id)
-            cert = proof.get("certificate") or {}
+            elif not certified:
+                add("major", "optimality_not_independently_certified",
+                    f"{r.organ_id}'s optimum rests on its own OPTIMAL status; independent certificate: "
+                    f"{cert.get('status', 'none') if bound else 'none bound to this answer'}", r.organ_id)
             if cert.get("status") == "REFUTED":
                 add("critical", "optimality_refuted_by_second_engine",
                     f"{cert.get('engine')} found a strictly better assignment", r.organ_id)

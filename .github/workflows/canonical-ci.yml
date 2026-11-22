@@ -156,6 +156,8 @@ jobs:
         run: python scripts/ci/check_effect_call_allowlist_mutants.py
       - name: Retained-receipt mutations (a retained Gate receipt is read by its result, as the call that produced it read it)
         run: python scripts/ci/check_retained_receipt_mutants.py
+      - name: Deliberation record mutations (each check of the founder's two-pass protocol validator fails a test when removed)
+        run: python scripts/ci/check_deliberation_record_mutants.py
 
   mutation_gates_b:
     name: "10b · Mutation gates (B)"

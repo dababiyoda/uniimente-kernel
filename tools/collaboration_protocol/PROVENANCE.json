@@ -1,0 +1,10 @@
+{
+  "what": "The founder-installed skill install-recursive-founder-intent-collaboration-protocol's deliberation validator and its schema, copied byte-identical in the skill's own layout so the validator's default schema path (../references/deliberation-schema.json) resolves unchanged.",
+  "source": "skill install-recursive-founder-intent-collaboration-protocol (claude.ai synced skill), scripts/validate_deliberation.py and references/deliberation-schema.json, read 2026-11-13 in session session_01KucyfnPRxLT4YY1UibJ3Ee",
+  "files": {
+    "scripts/validate_deliberation.py": "d62183f3c27318408d22649143a4781acf3d584b93745fed903b7ae543aab121",
+    "references/deliberation-schema.json": "2f05befb6a100facf5846242fd915bab1fab538454c09eae50d27a4854d37d10"
+  },
+  "earlier_use": "verifier/README.md run family collab-protocol-skill-v1 (2026-08-21) ran the same validator off-repo over one record; this copy runs it in CI over every record.",
+  "changing_it": "Do not edit these files in place. To take a newer skill version, replace both files from the skill, update the hashes here, and run tests/unit/test_deliberation_records.py: a record that the new version refuses must be fixed by its author or listed with its reason."
+}

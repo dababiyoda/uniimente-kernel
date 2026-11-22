@@ -18,7 +18,7 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 | [`collaboration`](#collaboration-records-handoffs-deliberations-reviews-reconciliations) | 200 | Collaboration records: handoffs, deliberations, reviews, reconciliations |
 | [`decisions`](#architecture-decision-records) | 6 | Architecture decision records |
 | [`deliberations`](#founder-rulings) | 1 | Founder rulings |
-| [`evidence`](#measured-evidence-frozen-runs-admissions-proofs) | 546 | Measured evidence (frozen runs, admissions, proofs) |
+| [`evidence`](#measured-evidence-frozen-runs-admissions-proofs) | 548 | Measured evidence (frozen runs, admissions, proofs) |
 | [`cortex`](#cortex-and-seed-genome-specifications-and-evidence) | 79 | Cortex and Seed Genome specifications and evidence |
 | [`opus-maximus`](#opus-maximus-deliverables-al) | 13 | OPUS MAXIMUS deliverables A–L |
 | [`open-source`](#open-source-mechanism-harvest-records) | 23 | Open-source mechanism harvest records |
@@ -686,7 +686,7 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 | [`evidence/oss-metabolism-201-fixes/LICENSE_EXPRESSIONS.md`](evidence/oss-metabolism-201-fixes/LICENSE_EXPRESSIONS.md) | 1 |  | License expression semantics: fixes to #201 (SPDX-1 to SPDX-7) |
 | [`evidence/oss-metabolism-201-fixes/BINARY_LICENSE_POLICY.md`](evidence/oss-metabolism-201-fixes/BINARY_LICENSE_POLICY.md) | 1 |  | Binary license policy: four options measured for founder decision D-LIC-2 |
 | [`evidence/greg-mind-evidence-index.json`](evidence/greg-mind-evidence-index.json) | 1 |  |  |
-| [`evidence/greg-data-exposure-ledger.json`](evidence/greg-data-exposure-ledger.json) | 1 |  |  |
+| [`evidence/greg-data-exposure-ledger.json`](evidence/greg-data-exposure-ledger.json) | 3 |  |  |
 | [`evidence/acceptance/README.md`](evidence/acceptance/README.md) | 1 |  | Acceptance runs |
 
 ## Cortex and Seed Genome specifications and evidence

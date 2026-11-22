@@ -2089,7 +2089,8 @@ class MissionEngine:
         from greg.ventures import LedgerReader
         return LedgerReader(self.journal) if self.journal is not None else None
 
-    def _context(self, m: MissionState, manifest) -> InvocationContext:
+    def _context(self, m: MissionState, manifest, target: str | None = None,
+                 now: datetime | None = None) -> InvocationContext:
         # worker.appraise reads the ledger to bind a retained WorkOrder to its canonical commission receipt, as the
         # separate appraiser does: evidence a stopped body wrote before its receipt is never accepted (H.G11).
         return InvocationContext(workspace=self.workspace_root / m.mission_id.replace(":", "_"),
@@ -2107,11 +2108,31 @@ class MissionEngine:
                                                                        "organ.", "foundry.")) else None,
                                  artifact_root=self.artifact_root, stop_check=self._stop_check,
                                  # eligibility view for the Mind, and for the evaluator that asks it
-                                 capability_registry=self.registry if manifest.capability_id.startswith("cognition.")
+                                 capability_registry=self._cognition_registry(m, manifest, target, now)
+                                 if manifest.capability_id.startswith("cognition.")
                                  or manifest.capability_id == "worker.appraise" else None,
                                  cognition_model=getattr(self, "cognition_model", None),
                                  egress=getattr(self, "egress", None) if manifest.capability_id in CONFINED_EGRESS else None,
                                  worker_confinement=getattr(self, "worker_confinement", "required"))
+
+    def _cognition_registry(self, m: MissionState, manifest, target: str | None, now: datetime | None):
+        """The eligibility view a cognition step sees: the body's registry, or a per-call view in which the
+        methods a live founder-signed METHOD_GRANT covers for this read-only step count as usable
+        (greg/method_grants.py). Nothing is attached and the body's registry is never changed."""
+        if target is None or now is None or not manifest.capability_id.startswith("cognition.") \
+                or self.journal is None:
+            return self.registry
+        from greg import method_grants
+        return method_grants.view(self.registry, self.journal, target=target,
+                                  ceiling=m.cone.max_consequence_class, now=now)
+
+    def _note_grant_use(self, m: MissionState, ctx, target: str, outcome, now: datetime) -> None:
+        """One method_grant.used per granted method a DONE cognition answer used, bound to its receipt."""
+        if getattr(outcome, "status", None) != "DONE":
+            return
+        from greg import method_grants
+        method_grants.record_uses(self.journal, ctx.capability_registry, mission_id=m.mission_id, target=target,
+                                  output=outcome.output, receipt_ref=outcome.receipt_hash, now=now)
 
     def _inert_interruption(self, m: MissionState, strategy: dict, manifest) -> dict:
         """The standing-reconciliation proof for an UNCERTAIN dispatch (greg.workers.inert_interruption_proof)."""
@@ -2828,12 +2849,14 @@ class MissionEngine:
                 self.journal.record("mission.input_wait", {"mission_id": m.mission_id,
                     "check_id": check["check_id"], "why": str(exc)}, key=[m.mission_id, check["check_id"], str(exc)])
                 continue
+            sensor_ctx = self._context(m, manifest, target=sensor["target"], now=now)
             outcome = self.office.act(
                 mission_id=m.mission_id, cone=m.cone, command_digest=m.command_digest, manifest=manifest,
-                adapter=adapter, ctx=self._context(m, manifest), params=bound_params,
+                adapter=adapter, ctx=sensor_ctx, params=bound_params,
                 target=sensor["target"], cost_usd=0.0, expected_outcome="observation captured",
                 evidence_refs=[], attempt=f"{attempt}@{iso(now)}", spent_usd=m.committed_usd,
                 approved_scopes=m.approved_scopes)
+            self._note_grant_use(m, sensor_ctx, sensor["target"], outcome, now)
             if outcome.status != "DONE":
                 if outcome.status in ("OUTSIDE_SCOPE", "NEEDS_DECISION"):
                     rid = self._request(m, kind="SENSOR_SCOPE", scope_digest=outcome.scope_digest, action_id=None,
@@ -4043,7 +4066,7 @@ class MissionEngine:
         # after any budget cap, so a pre-approval never covers a scope it did not name.
         signed = frozenset({scope}) if pre_approved(m.spec, s, manifest) else frozenset()
         background = self.background if manifest.capability_id in BACKGROUND_CAPABILITIES else None
-        ctx = self._context(m, manifest)
+        ctx = self._context(m, manifest, target=s["target"], now=now)
         if background is not None:
             # Read from inside the adapter while the turn goes on: a lock-free predicate (the turn's stop check
             # can read the inbox, which writes the ledger).
@@ -4078,6 +4101,7 @@ class MissionEngine:
                 # no-blind-retry reconciliation as any uncertain act, with the signed cap reserved.
                 outcome.status = "UNCERTAIN"
                 outcome.reasons = ["worker execution interrupted; partial outcome and spend require reconciliation"]
+            self._note_grant_use(mission, ctx, s["target"], outcome, when)
             return self._record_outcome(mission, s, manifest, outcome, attempt=attempt,
                                         routing_decision=routing_decision, input_bindings=input_bindings,
                                         bindings=bindings, budget_capped=budget_capped, prepare_for=prepare_for,

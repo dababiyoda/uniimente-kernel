@@ -730,6 +730,34 @@ class Body:
             if record.get("epistemic"):   # founder evidence advances the held-out learning loop now
                 improvement.learn(self.journal, self.ledger, self.clock())
             return record
+        if kind in ("METHOD_GRANT", "METHOD_GRANT_REVOKE"):
+            from greg import method_grants
+            try:
+                if kind == "METHOD_GRANT":
+                    grant = method_grants.validate_issue(body, self.clock())
+                    if grant["grant_id"] in method_grants.grants(self.journal):
+                        raise MissionError("that grant id was already issued; a grant is never reissued or widened")
+                    unknown = [c for c in grant["capabilities"] if c not in self.registry.manifests]
+                    if unknown:
+                        raise MissionError(f"not a registered capability: {unknown[0]}")
+                    acting = [c for c in grant["capabilities"]
+                              if self.registry.manifests[c].consequence_class != "read_only"]
+                    if acting:
+                        raise MissionError(f"{acting[0]} is not read-only; only read-only methods can be granted")
+                    self.journal.record("method_grant.issued", {**grant, "command_digest": digest,
+                                                                "issued_at": iso(self.clock()),
+                                                                "authority_created": False},
+                                        key=["method_grant", grant["grant_id"]])
+                    return {"grant_id": grant["grant_id"], "status": "LIVE"}
+                revoke = method_grants.validate_revoke(body)
+                if revoke["grant_id"] not in method_grants.grants(self.journal):
+                    raise MissionError("unknown method grant")
+                self.journal.record("method_grant.revoked", {**revoke, "command_digest": digest,
+                                                             "at": iso(self.clock())},
+                                    key=["method_grant.revoked", revoke["grant_id"], digest])
+                return {"grant_id": revoke["grant_id"], "status": "REVOKED"}
+            except method_grants.GrantError as exc:
+                raise MissionError(str(exc)) from None
         if kind in ("CAPABILITY_ATTACH", "CAPABILITY_DETACH"):
             cid = body.get("capability_id")
             if cid not in self.registry.manifests:

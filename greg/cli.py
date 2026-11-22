@@ -479,6 +479,23 @@ def main(argv=None) -> int:
     cm.add_argument("--key"); cm.add_argument("--no-passphrase", action="store_true")
     cm.add_argument("--print-only", action="store_true")
 
+    gr = sub.add_parser("grant", help="standing method grants: let read-only missions use a reviewed set of "
+                                      "read-only methods without an attach per question (greg/method_grants.py)")
+    grs = gr.add_subparsers(dest="grant_cmd", required=True)
+    gi = grs.add_parser("issue", help="sign one bounded, revocable METHOD_GRANT")
+    gi.add_argument("grant_id")
+    gi.add_argument("--method", action="append", required=True, help="exact cognition.* capability (repeatable)")
+    gi.add_argument("--target", action="append", required=True, help="mission target or prefix* it covers (repeatable)")
+    gi.add_argument("--days", type=float, default=7.0, help="how long it lasts (at most 30)")
+    gi.add_argument("--max-uses", type=int, default=50)
+    gi.add_argument("--purpose", required=True)
+    gv = grs.add_parser("revoke", help="sign a METHOD_GRANT_REVOKE; the grant ends at once")
+    gv.add_argument("grant_id"); gv.add_argument("--reason", default="")
+    grs.add_parser("list", help="read-only: every grant, its status, coverage and uses")
+    for g in (gi, gv):
+        g.add_argument("--key"); g.add_argument("--no-passphrase", action="store_true")
+        g.add_argument("--ttl-hours", type=int, default=24)
+
     for name in ("mission", "decide", "critique", "pause", "resume", "stop", "attach", "detach", "lifecycle",
                  "accept", "realize"):
         q = sub.add_parser(name)
@@ -1160,6 +1177,22 @@ def main(argv=None) -> int:
                 print(_drop(home, "BODY_STOP", {}, args))
         elif args.cmd in ("attach", "detach"):
             print(_drop(home, "CAPABILITY_" + args.cmd.upper(), {"capability_id": args.capability_id}, args))
+        elif args.cmd == "grant":
+            from greg import method_grants
+            if args.grant_cmd == "list":
+                with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                    print(json.dumps(method_grants.summary(journal, datetime.now(timezone.utc)), indent=2))
+            elif args.grant_cmd == "revoke":
+                print(_drop(home, "METHOD_GRANT_REVOKE", {"grant_id": args.grant_id, "reason": args.reason}, args))
+            else:
+                until = (datetime.now(timezone.utc) + timedelta(days=args.days)).isoformat()
+                body = {"grant_id": args.grant_id, "capabilities": args.method, "targets": args.target,
+                        "until": until, "max_uses": args.max_uses, "purpose": args.purpose}
+                try:
+                    method_grants.validate_issue(body, datetime.now(timezone.utc))
+                except method_grants.GrantError as exc:
+                    raise BodyError(str(exc)) from None
+                print(_drop(home, "METHOD_GRANT", body, args))
         elif args.cmd == "realize" and args.resolves:
             if not args.note.strip():
                 raise BodyError("--note states the basis of the resolution: the record that decides it")

@@ -138,7 +138,7 @@
   "execution_authority": "none",
   "expenditure": {
     "model_calls": 0,
-    "seconds": 0.040292,
+    "seconds": 0.023788,
     "solver_calls": 11,
     "usd": 0.0
   },
@@ -291,7 +291,7 @@
         ],
         "expenditure": {
           "model_calls": 0,
-          "seconds": 0.000816,
+          "seconds": 0.000644,
           "solver_calls": 0,
           "usd": 0.0
         },
@@ -639,7 +639,7 @@
         ],
         "expenditure": {
           "model_calls": 0,
-          "seconds": 0.023691,
+          "seconds": 0.016973,
           "solver_calls": 11,
           "usd": 0.0
         },
@@ -660,6 +660,11 @@
             "workers": 1
           },
           "certificate": {
+            "binding": {
+              "model_digest": "sha256:21587644f368435ce408489b4aadc109cac417162274a887fbf169c16d74ec78",
+              "sense": "minimize",
+              "value": 17
+            },
             "claim": "no feasible assignment has objective < 17",
             "engine": "z3",
             "status": "CERTIFIED",
@@ -1343,6 +1348,11 @@
         "workers": 1
       },
       "certificate": {
+        "binding": {
+          "model_digest": "sha256:21587644f368435ce408489b4aadc109cac417162274a887fbf169c16d74ec78",
+          "sense": "minimize",
+          "value": 17
+        },
         "claim": "no feasible assignment has objective < 17",
         "engine": "z3",
         "status": "CERTIFIED",
@@ -1687,7 +1697,7 @@
   ],
   "protection": null,
   "ranking": null,
-  "receipt_id": "sha256:a5eab4a7701a79b2ed48e9136c352e21de641b5cada1f5a278c461480855970b",
+  "receipt_id": "sha256:9360a923130874dcaa7992a057ae3a6933a814d44aa570e7682673d8c3451cc1",
   "route": {
     "attempts": [],
     "composition": true,
@@ -1762,7 +1772,7 @@
     "verifier": "cortex.verifier.adversarial@0.1.0"
   },
   "versions": {
-    "cortex": "0.2.2",
+    "cortex": "0.2.3",
     "policy": "cortex-route-policy/0.2.2",
     "routes": {
       "cortex.extraction.schedule@0.1.0": "0.1.0",

@@ -472,3 +472,28 @@ def test_a_commit_is_judged_in_the_worktree_it_targets_not_the_shells_cwd(repo, 
     assert bash(f"git -C {repo} push", elsewhere)[0]
     assert not bash(f"cd {repo} && cd {elsewhere} && git commit -m x", repo)[0]
     assert not bash(f"git -C {elsewhere} commit -m x", repo)[0]
+
+
+ROUND2 = Path(__file__).resolve().parents[1] / "fixtures" / "participation" / "issue346-trial3-round2.json"
+
+
+def test_a_handed_off_claim_authorizes_its_holders_commits_in_the_receivers_pr():
+    """Trial 3, round 2: W2 (accepting check-in 7081945632) continued W1's branch, and PR #356 holds W1's
+    commit 30f2414d (16:03:13, under W1's claim 7081742357, handed off by 7081777484). Before this fix the
+    check found no claim of W2's lineage covering that commit."""
+    src = P.Source(json.loads(ROUND2.read_text()))
+    w2 = "session_01KucyfnQL2Z7WrrYbfrzNkh"
+    out = P.contribution(REF + "7081945632", w2, src, changes=[
+        ("2026-11-22T16:03:13Z", ["docs/collaboration/RECOVERY.md"]),
+        ("2026-11-22T16:17:46Z", ["docs/collaboration/RECOVERY.md"])])
+    assert out["result"] == "pass" and out["assurance"] == "admitted-historical"
+    assert {o["claim"] for o in out["lineage"]} >= {7081742357, 7081945632}
+    late = P.contribution(REF + "7081945632", w2, src, changes=[("2026-11-22T16:03:00Z", ["scripts/x.py"])])
+    assert late["result"] == "fail"
+
+
+def test_a_handoff_never_lets_the_former_holder_cite_the_receivers_claim():
+    src = P.Source(json.loads(ROUND2.read_text()))
+    out = P.contribution(REF + "7081945632", "session_01Kucyfnk1i211wFFZpETRgv", src,
+                         ["docs/collaboration/RECOVERY.md"], "2026-11-22T16:20:00Z")
+    assert out["result"] == "fail"

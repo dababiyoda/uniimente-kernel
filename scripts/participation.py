@@ -681,12 +681,25 @@ def contribution(task_ref: str, session: str, source: Source, files: list[str] |
         return {"result": "fail", "assurance": "none", "reason": f"claim {cid} was posted by {c['session']}, not {session}"}
     lineage = sorted((o for o in claims.values() if o["session"] == session and o["task"] == c["task"]
                       and o["subtask"] == c["subtask"]), key=lambda o: o["id"])
+    # A claim handed to this lineage and accepted by one of its check-ins is part of it: the work its holder did
+    # before the handoff was authorized by that claim (found by trial 3, round 2: W2's PR #356 carries W1's commit).
+    seen = {o["id"] for o in lineage}
+    frontier = list(lineage)
+    while frontier:
+        nxt = []
+        for o in claims.values():
+            if o["id"] not in seen and o["state"] == "transferred" and o.get("ended_by") in {f["id"] for f in frontier}:
+                seen.add(o["id"])
+                nxt.append(o)
+        lineage += nxt
+        frontier = nxt
+    lineage.sort(key=lambda o: o["id"])
     if changes is None:
         changes = [(worked_at, files or [])]
     per_file, uncovered, historical = {}, [], False
     for when, paths in changes:
         for f in paths:
-            ok = [o for o in lineage if _covers(o["exclusive"] + o["shared"], f) and o["holder"] == session
+            ok = [o for o in lineage if _covers(o["exclusive"] + o["shared"], f)
                   and when and o["created_at"] <= when and (o["state"] == "active" or when < (o.get("ended_at") or ""))]
             if not ok:
                 uncovered.append({"file": f, "committed_at": when})

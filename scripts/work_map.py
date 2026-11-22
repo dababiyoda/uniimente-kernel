@@ -630,6 +630,7 @@ _ANSWERS = re.compile(r"(?i)\banswer(?:s|ed|ing)?\b[^.]*$")     # "#316 answers 
 _POSTER_LABELS = {"posted by", "relayed by", "relay", "from", "on behalf of", "recording session", "implementer",
                   "agent", "agent / claim", "identity", "author", "sender"}
 _ASK = re.compile(r"(?i)^#{1,6}[ \t]+(?:[\w-]+[ \t]+){0,2}?ask\b")      # "## Coordination ask:", "## Second ask,"
+_ASK_BYLINE = re.compile(r"(?i)(?:\bfrom|\bby|·|\()[\s`*_]*$")     # "ask from `A`", "asked by `A`", "ask · `A`", "(`A`"
 RELAYED = "relayed"
 HANDED = "handoff, review or reassignment wording in its heading"
 POSTER = "a label naming its poster names another id"
@@ -691,7 +692,8 @@ def checkin_verdict(body: str) -> dict:
         said.append(POSTER)
     if key and heading.startswith("#") and {k for _at, k, _c in identities(heading)} - {key}:
         byline = _heading_bylines(heading)[0]
-        if not _ASK.match(heading) or (byline and byline[0] != key):
+        signed = {k for at, k, _c in identities(heading) if _ASK_BYLINE.search(heading[max(0, at - 24):at])}
+        if not _ASK.match(heading) or (byline and byline[0] != key) or signed - {key}:
             said.append(HEADING_NAMES)
     reasons = said + reasons
     out["names"] = key if not several else None
@@ -721,8 +723,11 @@ def checkin_author(body: str) -> tuple[str, str] | None:
     owner"; a "review" after "answers" in the same sentence is the post's own reply, as in live check-in 7068165767);
     when a labelled line that names a poster ("Posted by", "Relayed by", "Relay", "From", "On behalf of", "Recording
     session", "Implementer", "Agent", "Identity", "Author", "Sender") names another id; or when its heading names
-    another id, except an ask ("## Coordination ask: ... still yours, `X`?", "## Second ask, `X`: ..."; live
-    check-ins 6853648077 and 6858741219 ask another session in their headings) whose byline is no other id. So a
+    another id, except an ask: a heading that opens with up to two words and then "ask" ("## Coordination ask: ...
+    still yours, `X`?", "## Second ask, `X`: ..."; live check-ins 6853648077 and 6858741219 ask another session in
+    their headings) may name the session it asks, unless its byline is another id: an id right after "from", "by",
+    "·" or "(" ("## Coordination ask from `A`", "## Second ask · `A`", "asked by `A`"), or one in a signature place
+    of ``_heading_bylines``. So a
     relay, a handoff, a reassignment record, a review and a template filled in for someone else that say what they
     are name nobody, and so does a session's own handoff of its own claim: release your own claim under a heading
     such as "## Release: claim N". On the live board this keeps all 29 check-ins round 6 read as exact.
@@ -2409,8 +2414,12 @@ def markdown(m: dict) -> str:
             "session: a block that opens with the marker names the session on its Session line whoever posts it. To "
             "pass a block to another session, leave out the marker line. A post names nobody, even your own, when "
             "its text outside code says relay, relayed or on ... behalf, when its heading says handoff, hand over, "
-            "reassign or review, or when its heading or a poster label (Posted by, From, Sender, ...) names another "
-            "id: release your own claim under a heading such as `## Release: claim N`.", ""]
+            "reassign or review, when a poster label (Posted by, From, Sender, ...) names another id, or when its "
+            "heading names another "
+            "id. An ask is the exception: a heading that opens with up to two words and then \"ask\" (`## Coordination "
+            "ask`, `## Second ask`) may name the session it asks, as live check-ins 6853648077 and 6858741219 do, "
+            "unless its byline, an id right after from, by, · or (, is another id. Release your own claim under a "
+            "heading such as `## Release: claim N`.", ""]
     return "\n".join(out)
 
 

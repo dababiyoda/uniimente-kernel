@@ -3437,3 +3437,40 @@ def test_the_map_defines_a_check_in_block_by_the_rule_it_applies(quick):
     assert "Tolerantly parsed" not in Path(w.__file__).read_text(encoding="utf-8")
     assert "shows as literal text but not as a list item" in " ".join(w.checkin_author.__doc__.split())
     assert "which is not the check's" in " ".join(w._session_refused.__doc__.split())
+
+
+# ------------------------------------------------------------------ round 8: an ask's byline
+# An ask heading may name the session it asks (live 6853648077, 6858741219), but an id right after "from", "by", "·"
+# or "(" is the ask's byline: when it is not the Session id, the post names nobody (round 7's N32-N35, S2, S3).
+ASK_BYLINES = {
+    "from": f"## Coordination ask from `{A}`: still yours?",
+    "dot": f"## Second ask · `{A}`: WU-11 still held?",
+    "paren": f"## Coordination ask (`{A}`): is WU-11 still yours?",
+    "asked by": f"## Coordination ask, asked by `{A}`: is WU-11 still yours?",
+}
+
+
+@pytest.mark.parametrize("name", list(ASK_BYLINES))
+def test_an_ask_whose_byline_is_another_id_names_nobody(quick, tmp_path, capsys, name):
+    body = f"{w.CHECKIN}\n{ASK_BYLINES[name]}\n- Session: `{B}` (Claude Code, cloud)\n{F7}"
+    assert w.checkin_verdict(body)["reason"] == "its heading names another id"
+    old = _comment(7100000001, _signed("## Claim: WU-11 seam", B, F7), at="2026-11-01T11:00:00Z")
+    comments = [old, _comment(7100000002, body)]
+    m = w.build([], comments, now=NOW, use_git=False)
+    assert [(s["session"], s["activity"]) for s in m["sessions"]] == [(B, "DORMANT")]
+    assert [(c["comment"], c["session"], c["state"]) for c in m["claims"]] == [(7100000001, B, "dormant")]
+    paths, _raw = _answer(tmp_path, capsys, [], comments, "--paths", "greg/missions.py")
+    assert [(c["comment"], c["session"], c["state"]) for c in paths["paths"][0]["claims"]] == [
+        (7100000001, B, "dormant")]
+
+
+def test_the_ask_exception_is_stated_with_its_live_comments(quick):
+    for body in (f"## Coordination ask: WU-03 — still yours, `{A}`?", f"## Second ask, `{A}`: WU-03"):
+        assert w.checkin_author(f"{w.CHECKIN}\n{body}\n- Session: `{B}` (Claude Code, cloud)\n{F7}") == (B, "claude")
+    text = " ".join(w.markdown(w.build([], [], now=NOW, use_git=False)).split())
+    assert ("An ask is the exception: a heading that opens with up to two words and then \"ask\" (`## Coordination "
+            "ask`, `## Second ask`) may name the session it asks, as live check-ins 6853648077 and 6858741219 do, "
+            "unless its byline, an id right after from, by, · or (, is another id.") in text
+    assert "when its heading or a poster label (Posted by, From, Sender, ...) names another id" not in text
+    doc = " ".join(w.checkin_author.__doc__.split())
+    assert "6853648077" in doc and "an id right after \"from\", \"by\", \"·\" or \"(\"" in doc

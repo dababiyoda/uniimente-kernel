@@ -6,7 +6,8 @@ entry or a field, import a historical alternate from greg/, add a re-implementat
 resolve a founder decision alone, narrow the markers, rename what the registry names, or weaken a guard. Each names
 the test that must fail on it. The mutants added after the 2026-10-30 review of 77deac50 name the finding they
 replay (F1-F8, MUH-F1-MUH-F5); those added when #196 was merged in on 2026-11-04 are marked MERGE-196; those for
-guard 4 (copies of a registered body), the exact candidate pin and the history guard (2026-11-21) are marked MW-C.
+guard 4 (copies of a registered body), the exact candidate pin and the history guard (2026-11-21) are marked MW-C,
+and those for the review of 7c2b39e5 (2026-11-22) are marked MW-C round 4 with the finding they replay (N1-N7).
 A ``copy_body`` edit writes a disguised copy of a registered function at run time (every name and literal changed),
 so the mutant follows the function as it is today instead of a frozen text that would stop being a copy.
 

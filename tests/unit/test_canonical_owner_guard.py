@@ -6,7 +6,9 @@ equally canonical forever. Preserving history does not require preserving active
 
 The registry is ``function_owner_records`` in docs/collaboration/ARCHITECTURE-OWNERSHIP-MAP.yaml. Three guards:
 
-1. every module and qualname the registry names exists (read from the source with ``ast``; nothing is imported);
+1. every module and qualname the registry names exists (read from the source with ``ast``; nothing is imported). A
+   dotted qualname resolves, part by part, to the LAST statement that binds it, as Python does (``binding``), and a
+   module to its package before a module file of the same name, both present failing (``module_file``);
 2. no module under greg/ reaches an alternate whose status is RETIRED or HISTORICAL: ``import``, ``from ... import``
    (relative ones too), ``as`` aliases, attribute chains through any of them, names assigned from them,
    ``getattr``/``vars``/``sys.modules`` with a constant name, ``importlib.import_module`` and ``__import__`` (with
@@ -16,30 +18,33 @@ The registry is ``function_owner_records`` in docs/collaboration/ARCHITECTURE-OW
    below says why it is safe;
 3. a module-level binding in greg/, foundry/, egregore/, omnimorph/, autonomy/ or governance/ (def, class,
    assignment, for/with/except/match target, walrus, import alias, ``globals()`` key) outside a record's canonical,
-   candidate and alternate modules and its ``distinct`` names fails when its name matches the record's markers, when
-   it reuses the exact name of a registered implementation (except the record's ``generic_names``), or when it is a
-   structural copy of a registered function or class under any name (a ``distinct`` entry exempts the first two,
-   never this one). Names are a HEURISTIC: a rewritten
+   candidate and alternate modules fails when its name matches the record's markers or reuses the exact name of a
+   registered implementation (except the record's ``generic_names``), unless a ``distinct`` entry names it; and when
+   it is a structural copy of a registered function or class under any name, whatever a ``distinct`` entry says
+   (test_guard_3_reports_a_structural_copy_even_where_a_distinct_entry_names_it). Names are a HEURISTIC: a rewritten
    re-implementation under an unmarked, unregistered name, a method inside a class, or code outside those six
    packages passes;
 4. (MW-C, 2026-11-21) the body of every canonical, candidate and alternate FUNCTION a record names (a dotted
    qualname may name a method), with every name and every constant erased, ``pass`` and no-op constant statements
    dropped, an annotated assignment read as the plain one and every import alias erased (``fingerprint``, from a
    fresh copy) and at least ``MIN_COPY_NODES`` nodes, is compared with every function and method at any depth of every
-   runtime file the filesystem lists (``runtime_files``: every .py file under the repository root, directory links
-   followed only when they resolve inside it, except tests/, docs/, top-level hidden entries and the
-   cortex/evaluation/ files whose current bytes a cortex/evaluation/freeze-*.json manifest hashes). A copy anywhere
-   but the body's own registered module and qualname fails, inside its record or outside it, whatever it is called;
-   two registered locations with one body fail (``registered_twin_problems``); a ``distinct`` entry never exempts one
-   (``distinct_copy_problems``: and may not name a module that holds one); only a ``BODY_EXEMPTIONS`` entry clears a
-   reviewed false positive. It still misses: a rewrite that changes structure (a statement reordered or added, such
-   as ``_unused = 0``, a body wrapped in ``if True:``, split into two functions or with a helper inlined); an attribute
-   or call-keyword rename (``row['x']`` to ``row.x``); code outside a def (at module level, in a class body or a
-   ``__main__`` block) and code run by ``exec`` of a string; the fork pattern (the owner edited in the same diff that
-   keeps its old body as a copy, which then matches nothing registered); the methods of a registered CLASS (not
-   compared: expanding them reports four existing generic matches, see the README); the 3 registered functions below
-   ``MIN_COPY_NODES`` (acceptance.rank, greg.improvement.attention_close_condition and claim_close_condition); and any
-   function the registry does not record. tests/ is never scanned: fixtures may copy a body on purpose.
+   runtime file the filesystem lists (``runtime_files``). The bodies compared are exactly ``COMPARED``
+   (test_the_set_of_compared_registered_bodies_is_pinned). The files are every .py file under the repository root,
+   each real file once (``_once``), except tests/, docs/, top-level hidden entries and the ``SEALED`` files whose
+   bytes still match the digest pinned there and a cortex/evaluation/freeze-*.json manifest; directory links are
+   followed only inside the repository, file links wherever they point. A copy anywhere but the body's own
+   registered module and qualname fails, inside its record or outside it, whatever it is called; two registered
+   locations with one body fail (``registered_twin_problems``); two runtime files with one module name fail
+   (``module_name_problems``); a ``distinct`` entry exempts none (``distinct_copy_problems``: and may not name a
+   module that holds one); only a ``BODY_EXEMPTIONS`` entry clears a reviewed false positive. Stated limits, missed:
+   a rewrite that changes structure (a statement reordered or added, such as ``_unused = 0``, a body wrapped in
+   ``if True:``, split into two functions or with a helper inlined); an attribute or call-keyword rename
+   (``row['x']`` to ``row.x``); code outside a def (at module level, in a class body or a ``__main__`` block) and
+   code run by ``exec`` of a string; the fork pattern (the owner edited in the same diff that keeps its old body as a
+   copy, which then matches nothing registered); the methods of a registered CLASS (not compared: four real
+   duplicates already in the tree would fail, see the README); the 3 registered functions below ``MIN_COPY_NODES``
+   (acceptance.rank, greg.improvement.attention_close_condition and claim_close_condition); and any function the
+   registry does not record. tests/ is never scanned: fixtures may copy a body on purpose.
 
 The registry itself is pinned (``PINNED``, ``UNDECIDED_ENTRIES``, ``FOUNDER_DECISIONS``, ``MUST_FLAG``): removing a
 record or an entry, adding a second canonical module, adding, removing or changing any entry or field of a record that
@@ -498,11 +503,14 @@ def parse(path: Path) -> ast.Module:
 
 
 def _walk(directory: Path, root: Path, skip=lambda path: False, _on_path: frozenset = frozenset()):
-    """Every .py file under ``directory``, in name order. A directory symlink is followed only when its target
-    resolves inside ``root`` and is not already on the walk's own path (a loop ends there); a link that leaves the
-    repository (a venv/ pointing at site-packages) is never followed. ``Path.rglob`` would follow a link only at the
-    directory it starts from and never below it, on 3.11 and 3.13 alike: a top-level venv/ link was walked in full
-    and greg/vendor -> docs/vendor was not. Nothing is skipped by name: a .py file under __pycache__/ is importable."""
+    """Every .py file under ``directory``, in name order, at every path it is reachable by (``_once`` keeps one). A
+    DIRECTORY symlink is followed only when its target resolves inside ``root`` and is not already on the walk's own
+    path (a loop ends there); a directory link that leaves the repository (a venv/ pointing at site-packages) is never
+    followed. A FILE symlink ending in .py is listed wherever it points, out of the repository too, so the scan reads
+    more, not less (test_the_walk_reads_each_real_file_once_and_follows_file_links_anywhere). ``Path.rglob`` would
+    follow a link only at the directory it starts from and never below it, on 3.11 and 3.13 alike: a top-level venv/
+    link was walked in full and greg/vendor -> docs/vendor was not. Nothing is skipped by name: a .py file under
+    __pycache__/ is importable."""
     inside, real = Path(root).resolve(), Path(directory).resolve()
     if not real.is_relative_to(inside) or real in _on_path:
         return
@@ -1488,9 +1496,9 @@ def sealed_problems(root: Path = ROOT, sealed: dict = SEALED) -> list[str]:
 
 def runtime_files(root: Path = ROOT, sealed: dict = SEALED):
     """Every runtime .py file as the filesystem lists it (no git: the mutant gate's copy of the tree has none), by
-    guard 3's rule (``_walk``: directory symlinks followed only inside the repository), without NOT_RUNTIME, the
-    sealed files under SEALED_UNDER and top-level hidden entries (.git, tool caches, an agent's worktree: none is
-    tracked runtime code)."""
+    guard 3's rule (``_walk``, then ``_once``: each real file once), without NOT_RUNTIME, the ``sealed_files`` and
+    top-level hidden entries (.git, tool caches, an agent's worktree: none is tracked runtime code). A link into one
+    of those places is read at the link path."""
     sealed = sealed_files(root, sealed)
 
     def skip(path: Path) -> bool:

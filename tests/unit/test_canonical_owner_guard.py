@@ -18,7 +18,8 @@ The registry is ``function_owner_records`` in docs/collaboration/ARCHITECTURE-OW
    assignment, for/with/except/match target, walrus, import alias, ``globals()`` key) outside a record's canonical,
    candidate and alternate modules and its ``distinct`` names fails when its name matches the record's markers, when
    it reuses the exact name of a registered implementation (except the record's ``generic_names``), or when it is a
-   structural copy of a registered function or class under any name. Names are a HEURISTIC: a rewritten
+   structural copy of a registered function or class under any name (a ``distinct`` entry exempts the first two,
+   never this one). Names are a HEURISTIC: a rewritten
    re-implementation under an unmarked, unregistered name, a method inside a class, or code outside those six
    packages passes;
 4. (MW-C, 2026-11-21) the body of every canonical, candidate and alternate FUNCTION a record names (a dotted
@@ -40,10 +41,11 @@ The registry is ``function_owner_records`` in docs/collaboration/ARCHITECTURE-OW
    ``MIN_COPY_NODES`` (acceptance.rank, greg.improvement.attention_close_condition and claim_close_condition); and any
    function the registry does not record. tests/ is never scanned: fixtures may copy a body on purpose.
 
-The registry itself is pinned (``PINNED``, ``FOUNDER_DECISIONS``, ``MUST_FLAG``): removing a record or an entry,
-adding a second canonical module, adding a candidate or an alternate to a record that is still NEEDS_FOUNDER_DECISION,
-resolving a founder decision without a ruling record, or narrowing a record's markers below the names it must catch
-fails until this file changes in the same reviewed diff. ``kept_for_problems`` is a forward guard for section 76: a
+The registry itself is pinned (``PINNED``, ``UNDECIDED_ENTRIES``, ``FOUNDER_DECISIONS``, ``MUST_FLAG``): removing a
+record or an entry, adding a second canonical module, adding, removing or changing any entry or field of a record that
+is still NEEDS_FOUNDER_DECISION (candidates, alternates with their status, distinct entries), resolving a founder
+decision without a ruling record, or narrowing a record's markers below the names it must catch fails until this file
+changes in the same reviewed diff. ``kept_for_problems`` is a forward guard for section 76: a
 HISTORICAL or RETIRED alternate still in the tree names what keeps it (a consumer outside greg/, tests/, docs/,
 scripts/ci/ and any conftest.py, or its own record's open decision).
 
@@ -78,11 +80,9 @@ ROLES = (("canonical", "canonical"), ("candidates", "candidates"), ("alternates"
 # -- frozen at this commit (review findings F4, F5, F6, MUH-F1 on 77deac50) --------------------------------------
 # Every record and every (module, qualname) it names. Removing one fails: an implementation leaves a record by a
 # status change (RETIRED, HISTORICAL), never by deletion. The canonical module set is exact: a second canonical module
-# is two owners (section 52) and must be recorded as an ALTERNATE instead. The candidate and alternate sets of a record
-# that is still NEEDS_FOUNDER_DECISION are exact too (MW-C, 2026-11-21): its candidates are competing owners and each
-# live alternate one more competing implementation, so adding one fails until it is pinned here. Adding an alternate
-# to a decided record, or a distinct entry to any record, needs no change here; changing this literal is a reviewed
-# change to the guard itself.
+# is two owners (section 52) and must be recorded as an ALTERNATE instead. A record that is still NEEDS_FOUNDER_DECISION
+# is pinned whole, every entry and field, by UNDECIDED_ENTRIES below. Adding an alternate or a distinct entry to a
+# decided record needs no change here; changing this literal is a reviewed change to the guard itself.
 PINNED = {
     "OWN-FN-TEMPORARY-TEAMS": {
         "canonical": {"foundry.systems.teams": ("form", "act", "dissolve", "report")},
@@ -159,6 +159,245 @@ REQUIRED = frozenset(PINNED)
 # Records whose owner is the founder's to decide. One leaves NEEDS_FOUNDER_DECISION only by citing a founder_ruling:
 # a decision or intent record in the repository that names the record and is accepted or active.
 FOUNDER_DECISIONS = frozenset({"OWN-FN-GOAL-RUNTIME", "OWN-FN-STATUS-EVIDENCE-LADDER", "OWN-FN-AUTONOMY-LEVELS"})
+# Round 4 (2026-11-22, N1 and N2): the WHOLE entry set of every NEEDS_FOUNDER_DECISION record, exactly as it stands in
+# the registry: canonical, candidates, alternates (status, reason, conditions and kept_for included) and distinct
+# entries, every field. While the founder has not ruled, every entry of such a record is part of the question (a
+# candidate is a competing owner, a live alternate one more competing implementation, a distinct entry a claim that
+# something is not one), so any entry or field added, removed, changed or reordered fails (``undecided_problems``,
+# tested by test_an_undecided_record_takes_no_new_or_changed_entry_of_any_role_without_a_pin_change) until this literal
+# changes in the same reviewed diff. A record that is NEEDS_FOUNDER_DECISION and absent from it fails too. A ruled
+# record (owner_status CANONICAL with its founder_ruling) leaves this pin and is checked by ``pin_problems``.
+UNDECIDED_ENTRIES = {
+    "OWN-FN-GOAL-RUNTIME": {
+        "canonical": [],
+        "candidates": [
+            {
+                "side": "A",
+                "module": "greg.goal_gravity",
+                "qualnames": ["tick"],
+                "evidence": [
+                    "Body.tick calls goal_gravity.tick before the mission engine on every tick (greg/body.py)",
+                    "ADR-GOAL-GRAVITY-002 (status proposed) names it 'one canonical persistent operating path'",
+                ],
+            },
+            {
+                "side": "A",
+                "module": "egregore.gravity",
+                "qualnames": ["GoalGravityLoop"],
+                "evidence": [
+                    "greg/goal_gravity.py runs GoalGravityLoop.turn in body mode (no gate, executor or grant)",
+                    ("its standalone gate and executor mode stays for non-body ledgers; ADR-GOAL-GRAVITY-002 graft "
+                     "9 keeps both lineages"),
+                ],
+            },
+            {
+                "side": "A",
+                "module": "egregore.goals",
+                "qualnames": ["GoalRegistry", "GoalSpec"],
+                "evidence": [
+                    ("the goal store side A runs on: greg/goal_gravity.py imports GoalRegistry and GoalSpec, and "
+                     "greg/cli.py _goal_id resolves a goal-id prefix through GoalRegistry"),
+                ],
+            },
+            {
+                "side": "B",
+                "module": "greg.gravity",
+                "qualnames": ["select", "step"],
+                "evidence": [
+                    ("Body._gravity_order is the mission engine's selector: gravity.select orders the signed "
+                     "missions every tick and records gravity.ranked (#178)"),
+                    "`greg gravity --situation` runs gravity.step, a one-turn read-only analysis (#158)",
+                    ("select's docstring reserves for a founder ruling (ADR-GOAL-GRAVITY-001) the choice between "
+                     "this path and egregore.GoalGravityLoop"),
+                ],
+            },
+        ],
+        "alternates": [
+            {
+                "module": "egregore.goal_chase",
+                "qualnames": ["GoalChase"],
+                "status": "RESEARCH",
+                "reason": ("the Infinite Goal Chase engine (#93/#97/#109): a sandbox-only composition over the "
+                           "Kernel spine, gate and causal memory, run from egregore/goal_chase_sandbox.py and "
+                           "goal_chase_host.py. No module under greg/ imports it. "
+                           'docs/collaboration/GREG-BODY-DECISION-2026-09-25.md: "GoalChase retained as sealed '
+                           'experiment/benchmark; not unsealed"; goal-gravity-completeness-critique-2026-10-13 '
+                           "counts it among four goal/mission engines"),
+                "revival_condition": ("the founder unseals it (GREG-BODY-DECISION-2026-09-25), and on the same "
+                                      "signed goals it closes a goal the canonical runtime does not, or with fewer "
+                                      "founder asks; until then it serves only as a sealed benchmark"),
+            },
+        ],
+        "distinct": [
+            {
+                "module": "greg.missions",
+                "qualnames": ["MissionEngine"],
+                "why": ("the mission engine: runs one signed mission's actions. Both candidates order or prepare "
+                        "its missions and neither replaces it (GREG-BODY-DECISION-2026-09-25: greg/missions.py is "
+                        "the product's goal pursuit)"),
+            },
+            {
+                "module": "egregore.local_mission",
+                "qualnames": ["run_once"],
+                "why": ("one bounded local repository-audit proof; by its own docstring not a general scheduler or "
+                        "goal engine"),
+            },
+        ],
+    },
+    "OWN-FN-STATUS-EVIDENCE-LADDER": {
+        "canonical": [],
+        "candidates": [
+            {
+                "side": "A",
+                "module": "foundry.completion",
+                "qualnames": ["EVIDENCE_TIERS"],
+                "evidence": [
+                    ("audit() refuses a Foundry row whose evidence_tier is not in it; `greg foundry status|run` "
+                     "(greg/cli.py) imports the module, but only audit() reads the tuple"),
+                ],
+            },
+            {
+                "side": "B",
+                "module": "acceptance",
+                "qualnames": ["STATUSES", "LADDER", "TEST_TIERS", "rank"],
+                "evidence": [
+                    ("ranks every requirement, trace link and mission of the full-machine acceptance harness "
+                     "(`python -m acceptance`, tests/unit/test_acceptance_harness.py); no module under greg/ "
+                     "imports it"),
+                    ("the same twelve names as EVIDENCE_TIERS; neither imports the other, and neither is section "
+                     "56's seventeen-level list"),
+                    ("TEST_TIERS is B's own slice (UNIT_VERIFIED, SANDBOX_VERIFIED, BODY_VERIFIED): the highest "
+                     "status any test can establish"),
+                ],
+            },
+            {
+                "side": "C",
+                "module": "greg.path",
+                "qualnames": ["EVIDENCE_STATUS"],
+                "evidence": [
+                    ("on the mission path: greg/path.py load() validates every greg/path.json node and refuses one "
+                     "whose evidence_status is not verified_by_execution, verified_by_inspection, asserted or "
+                     "unresolved; the body, the CLI, goal_gravity, gravity and the tribunal read the path through "
+                     "it"),
+                    ("a four-value vocabulary for the evidence behind each path node's status claim; it shares no "
+                     "name with A or B"),
+                ],
+            },
+        ],
+        "alternates": [
+            {
+                "module": "greg.mission_control",
+                "qualnames": ["REALITY"],
+                "status": "HISTORICAL",
+                "reason": ("a six-level reality tuple defined in greg/mission_control.py. No module under greg/ "
+                           "reads it (guard 2); acceptance/claims.py imports it (line 80) and crosswalk_problems "
+                           "checks that its REALITY_CROSSWALK maps every one of the six labels onto "
+                           "acceptance.LADDER, so the reality-claim guard still reads it. Corrected 2026-11-21 "
+                           '(MW-C): this said "read by nothing in the repository"'),
+                "revival_condition": ("only if the founder picks these six levels as the ladder; otherwise Mission "
+                                      "Control imports whichever tuple the decision above makes canonical"),
+                "kept_for": {"consumer": 'acceptance.claims.crosswalk_problems'},
+            },
+        ],
+        "distinct": [
+            {
+                "module": "greg.metrics",
+                "qualnames": ["FOUNDER_TIER", "STRUCTURAL_CANDIDATE", "founder_tier"],
+                "why": ("the per-closure tier that decides whether a closure moves greg path (greg/path.py "
+                        "_at_founder_tier); a different question from a claim's evidence level"),
+            },
+            {
+                "module": "egregore.experience",
+                "qualnames": ["TRUST_LEVELS"],
+                "why": "the trust of an incoming signal",
+            },
+            {
+                "module": "scripts.mind_status",
+                "qualnames": ["LABELS"],
+                "why": "the support label of one cognition mechanism",
+            },
+            {
+                "module": "greg.institution",
+                "qualnames": ["SCORING_MODEL"],
+                "why": "a leverage prior that reads reality strings: a consumer, not a ladder",
+            },
+            {
+                "module": "evolution.capsule",
+                "qualnames": ["VERIFIER_LEVELS"],
+                "why": ("ranks who or what verified an evolution capsule (formal proof down to intrinsic "
+                        "confidence): the verifier's strength, not how far a claim reached in reality"),
+            },
+            {
+                "module": "scripts.build_mind_coverage_record",
+                "qualnames": ["STATUSES"],
+                "why": ("the build stage of one cognition mechanism in the mind coverage record (absent to "
+                        "exercised), the same kind of label as scripts/mind_status.py LABELS; whether section 56 "
+                        "absorbs it is part of the decision above"),
+            },
+            {
+                "module": "greg.cognition.genome_library",
+                "qualnames": ["STATUSES"],
+                "why": ("a genome's role in the library (default for a geometry, niche, experimental, "
+                        "superseded...), not a claim's evidence"),
+            },
+            {
+                "module": "egregore.brief_learning",
+                "qualnames": ["rank"],
+                "why": "orders brief findings by kind",
+            },
+            {
+                "module": "greg.path",
+                "qualnames": ["STRUCTURALLY_BUILT", "BUILD_OPEN", "NO_PREDICATE", "ACCEPTANCE_STATUS", "build_status"],
+                "why": ("#236's build frontier, adopted into #196 at 2161dbe2: whether a path node's ledger "
+                        "predicate is structurally met on this ledger, and what its founder acceptance waits for; a "
+                        "node's build state, not a claim's evidence level (EVIDENCE_STATUS, side C, stays the "
+                        "path's evidence vocabulary)"),
+            },
+        ],
+    },
+    "OWN-FN-AUTONOMY-LEVELS": {
+        "canonical": [],
+        "candidates": [
+            {
+                "side": "A",
+                "module": "autonomy.levels",
+                "qualnames": ["LEVELS", "AutonomyTuple", "AutonomyAuthority", "PROMOTION_CRITERIA"],
+                "evidence": [
+                    ("the A0-A9 ladder with ten promotion criteria and a named human authorizer; imported by "
+                     "closure/kernel_registry.py and tests only, by no module under greg/"),
+                ],
+            },
+            {
+                "side": "B",
+                "module": "greg.autonomy",
+                "qualnames": ["LEVELS", "EARNED_CEILING", "earned_level", "report", "regress"],
+                "evidence": [
+                    ("#235, adopted into #196 at 6fc4b22b: LEVELS is section 59's five names, SHADOW to "
+                     "MANAGE_BY_EXCEPTION; earned_level names SHADOW, RECOMMENDER or SUPERVISED_CANARY "
+                     "(EARNED_CEILING) from verified runs since the latest failure, and nothing above it"),
+                    ("on the mission path: Body.tick (greg/body.py) calls regress first, which withdraws a standing "
+                     "approval when failure evidence names a run it allowed; `greg autonomy` (greg/cli.py) prints "
+                     "report, a read-only fold per (capability, action class, target pattern, budget band)"),
+                    "imports neither side A nor anything under autonomy/; neither side imports the other",
+                ],
+            },
+        ],
+        "alternates": [],
+        "distinct": [
+            {
+                "module": "greg.missions",
+                "qualnames": ["pre_approved"],
+                "why": ("the mission path's exact-scope pre-approval inside a signed mission: an authority "
+                        "envelope, not a level"),
+            },
+            {
+                "module": "greg.cognition.genomes.forecasting",
+                "qualnames": ["LEVELS"],
+                "why": "forecast quantile levels",
+            },
+        ],
+    },
+}
 RULING_DIRS = ("docs/decisions/", "docs/intent/")
 RULING_STATUS = re.compile(r'(?im)^\W*(status|state)\W*:\W*(accepted|active)\b|"(state|status)"\s*:\s*"(accepted|active|implemented)"')
 # Names each record's markers must catch: the shapes the program's open units and PRs use (#235's LEVELS,
@@ -531,7 +770,7 @@ def _have(record: dict, key: str) -> dict[str, set[str] | None]:
 
 
 def pin_problems(data: dict, root: Path = ROOT, pinned: dict = PINNED,
-                 founder_decisions: frozenset = FOUNDER_DECISIONS) -> list[str]:
+                 founder_decisions: frozenset = FOUNDER_DECISIONS, undecided: dict = UNDECIDED_ENTRIES) -> list[str]:
     records = {r.get("record_id"): r for r in data.get("function_owner_records") or []}
     problems = []
     for rid, pin in pinned.items():
@@ -561,20 +800,47 @@ def pin_problems(data: dict, root: Path = ROOT, pinned: dict = PINNED,
                     if not any(module in h and (h[module] is None or name in h[module]) for h in where):
                         problems.append(f"{rid}: {role} {module}.{name} is pinned and was removed; an implementation "
                                         f"leaves the record by a status change (RETIRED, HISTORICAL), not by deletion")
-        if r.get("owner_status") == "NEEDS_FOUNDER_DECISION":
-            # An undecided record's candidates are its competing owners until the founder rules, and each live
-            # alternate is one more competing implementation: both sets are exact (a whole-module alternate is wider
-            # than any pinned qualnames, so it is new too).
-            for role in ("candidates", "alternates"):
-                added = sorted(f"{module}.{name}" if name else module for module, names in have[role].items()
-                               for name in (sorted(names or ()) or [""])
-                               if module not in pin[role] or (name and name not in pin[role][module])
-                               or (not name and pin[role][module]))
-                problems += [f"{rid}: {role[:-1]} {name} is not pinned. The candidates and alternates of a "
-                             f"NEEDS_FOUNDER_DECISION record are its competing implementations until the founder "
-                             f"rules, so a new one joins only in a reviewed change to PINNED in "
-                             f"tests/unit/test_canonical_owner_guard.py, never by a registry edit alone"
-                             for name in added]
+    return problems + undecided_problems(data, undecided)
+
+
+UNDECIDED_KEYS = ("canonical", "candidates", "alternates", "distinct")
+ENTRY_WORD = {"canonical": "canonical entry", "candidates": "candidate", "alternates": "alternate",
+              "distinct": "distinct entry"}
+
+
+def _label(entry) -> str:
+    names = entry.get("qualnames") or []
+    return (f"{entry.get('module')} " + (f"[{', '.join(map(str, names))}]" if names else "(whole module)")
+            + (f" {entry['status']}" if entry.get("status") else ""))
+
+
+def undecided_problems(data: dict, undecided: dict = UNDECIDED_ENTRIES) -> list[str]:
+    """Every NEEDS_FOUNDER_DECISION record's canonical, candidate, alternate and distinct entries equal its
+    UNDECIDED_ENTRIES literal, field for field and in order; a record that is undecided and not in it fails."""
+    problems = []
+    for r in data.get("function_owner_records") or []:
+        if r.get("owner_status") != "NEEDS_FOUNDER_DECISION":
+            continue
+        rid, pin = r.get("record_id"), undecided.get(r.get("record_id"))
+        if pin is None:
+            problems.append(f"{rid}: is NEEDS_FOUNDER_DECISION and its entries are not pinned: add its canonical, "
+                            f"candidate, alternate and distinct entries, as they stand, to UNDECIDED_ENTRIES in "
+                            f"tests/unit/test_canonical_owner_guard.py in the same reviewed diff")
+            continue
+        for key in UNDECIDED_KEYS:
+            have, want = list(r.get(key) or []), list(pin.get(key) or [])
+            if have == want:
+                continue
+            added, gone = [e for e in have if e not in want], [e for e in want if e not in have]
+            problems += [f"{rid}: {ENTRY_WORD[key]} {_label(e)} is not pinned as it stands. Until the founder rules, "
+                         f"every entry of a NEEDS_FOUNDER_DECISION record (a competing owner, a competing "
+                         f"implementation, or a claim that something is not one) changes only in a reviewed change "
+                         f"to UNDECIDED_ENTRIES in tests/unit/test_canonical_owner_guard.py, never by a registry "
+                         f"edit alone" for e in added]
+            problems += [f"{rid}: pinned {ENTRY_WORD[key]} {_label(e)} is not in the registry as pinned (removed or "
+                         f"changed); change UNDECIDED_ENTRIES in the same reviewed diff" for e in gone]
+            if not added and not gone:
+                problems.append(f"{rid}: its {key} entries are reordered or repeated against UNDECIDED_ENTRIES")
     return problems
 
 
@@ -948,7 +1214,7 @@ def unrecorded(records: list[dict], root: Path = ROOT, packages=GUARDED) -> list
                     out.append(f"{path.relative_to(root)}:{line} defines {name!r}, which {why} ({r['function']}); "
                                f"its owner is {owner(r)}. " + FIX.format(record=r["record_id"]))
                 for name, (line, shape) in copies.items():
-                    if shape in shapes and (module, name) not in distinct:
+                    if shape in shapes:                   # a distinct entry exempts names, never a copy
                         out.append(f"{path.relative_to(root)}:{line} defines {name!r}, a structural copy of "
                                    f"{shapes[shape]} registered in {r['record_id']} ({r['function']}); its owner is "
                                    f"{owner(r)}. " + FIX.format(record=r["record_id"]))
@@ -1639,7 +1905,8 @@ def test_a_founder_decision_resolves_only_through_a_ruling_record_that_names_it(
                                                                            {"module": "greg.b", "qualnames": ["run"]}]}
     ruled = {"owner_status": "CANONICAL", "canonical": [{"module": "greg.a", "qualnames": ["run"]}],
              "alternates": [{"module": "greg.b", "qualnames": ["run"], "status": "ALTERNATE"}]}
-    check = lambda d: pin_problems(d, root, pinned, frozenset({"OWN-FN-D"}))  # noqa: E731
+    entries = {"OWN-FN-D": {"canonical": [], "candidates": undecided["candidates"], "alternates": [], "distinct": []}}
+    check = lambda d: pin_problems(d, root, pinned, frozenset({"OWN-FN-D"}), entries)  # noqa: E731
     assert check(data(undecided)) == []
     assert any("without a founder_ruling" in p for p in check(data(ruled)))
     for ref, said in (("docs/decisions/ADR-PROPOSED.md", "is not accepted or active"),
@@ -1895,10 +2162,10 @@ def test_an_undecided_record_takes_no_new_candidate_without_a_pin_change():
 
     new_module = changed("OWN-FN-GOAL-RUNTIME", lambda r: r["candidates"].append(
         {"module": "greg.goal_engine2", "qualnames": ["run"], "side": "C", "evidence": ["new"]}))
-    assert any("candidate greg.goal_engine2.run is not pinned" in p for p in new_module), new_module
+    assert any("candidate greg.goal_engine2 [run] is not pinned" in p for p in new_module), new_module
     new_name = changed("OWN-FN-GOAL-RUNTIME", lambda r: next(
         c for c in r["candidates"] if c["module"] == "greg.gravity")["qualnames"].append("rederive"))
-    assert any("candidate greg.gravity.rederive is not pinned" in p for p in new_name), new_name
+    assert any("candidate greg.gravity [select, step, rederive] is not pinned" in p for p in new_name), new_name
     for record_id in FOUNDER_DECISIONS:
         assert changed(record_id, lambda r: r["candidates"].append(
             {"module": "greg.extra", "qualnames": ["x"], "side": "Z", "evidence": ["new"]})), record_id
@@ -2096,11 +2363,12 @@ def test_an_undecided_record_takes_no_new_alternate_without_a_pin_change():
     engine = {"module": "egregore.goal_engine2", "qualnames": ["advance"], "status": "ALTERNATE",
               "reason": "a third goal runtime", "retirement_condition": "when the founder rules on the goal runtime"}
     new_module = changed("OWN-FN-GOAL-RUNTIME", lambda r: r["alternates"].append(engine))
-    assert any("alternate egregore.goal_engine2.advance is not pinned" in p for p in new_module), new_module
+    assert any("alternate egregore.goal_engine2 [advance] ALTERNATE is not pinned" in p for p in new_module), new_module
     new_name = changed("OWN-FN-GOAL-RUNTIME", lambda r: r["alternates"][0]["qualnames"].append("chase_v2"))
-    assert any("alternate egregore.goal_chase.chase_v2 is not pinned" in p for p in new_name), new_name
+    assert any("alternate egregore.goal_chase [GoalChase, chase_v2] RESEARCH is not pinned" in p
+               for p in new_name), new_name
     whole = changed("OWN-FN-STATUS-EVIDENCE-LADDER", lambda r: r["alternates"][0].update(qualnames=[]))
-    assert any("alternate greg.mission_control is not pinned" in p for p in whole), whole
+    assert any("alternate greg.mission_control (whole module) HISTORICAL is not pinned" in p for p in whole), whole
     for record_id in FOUNDER_DECISIONS:
         assert changed(record_id, lambda r: r.setdefault("alternates", []).append(
             {**engine, "module": "greg.extra", "qualnames": ["x"]})), record_id
@@ -2209,3 +2477,83 @@ def test_kept_for_names_the_alternates_own_open_record_and_a_consumer_outside_te
         found = problems(kept_for, own)
         assert len(found) == 1 and said in found[0], (kept_for, own, found)
     assert problems({"consumer": "scripts.keep_reality.keep"}, "CANONICAL") == []      # the stated limit
+
+
+# -- MW-C round 4: what the review of 7c2b39e5 found ---------------------------------------------------------------
+
+WU13_LADDER = {"module": "governance.reality_ladder", "qualnames": ["REALITY_LADDER"],
+               "why": "the governance ladder of section 56 for policy claims, not a status claim's evidence level"}
+
+
+def test_an_undecided_record_takes_no_new_or_changed_entry_of_any_role_without_a_pin_change():
+    # Round 4, N1 and N2: a competing owner joined an undecided record as a 'distinct' entry (WU-13's REALITY_LADDER on
+    # the evidence ladder; a verbatim copy of the candidate class GoalGravityLoop as a third goal runtime), and an
+    # alternate's status changed (GoalChase RESEARCH to a live ALTERNATE; REALITY revived from HISTORICAL), with no
+    # pin change. The whole entry set of every NEEDS_FOUNDER_DECISION record is one literal, UNDECIDED_ENTRIES: any
+    # entry or field added, removed or changed fails.
+    data = load()
+    assert pin_problems(data) == []
+
+    def changed(record_id: str, edit) -> list[str]:
+        out = copy.deepcopy(data)
+        edit(next(r for r in out["function_owner_records"] if r["record_id"] == record_id))
+        return [p for p in pin_problems(out) if p.startswith(record_id)]
+
+    def alternate(r, module):
+        return next(e for e in r["alternates"] if e["module"] == module)
+
+    a1 = changed("OWN-FN-STATUS-EVIDENCE-LADDER", lambda r: r["distinct"].append(dict(WU13_LADDER)))
+    assert any("distinct entry governance.reality_ladder [REALITY_LADDER] is not pinned" in p for p in a1), a1
+    a2 = changed("OWN-FN-GOAL-RUNTIME", lambda r: r["distinct"].append(
+        {"module": "egregore.goal_runtime", "qualnames": ["GoalRuntime"], "why": "a mission-scoped runtime"}))
+    assert any("distinct entry egregore.goal_runtime [GoalRuntime] is not pinned" in p for p in a2), a2
+    b1 = changed("OWN-FN-GOAL-RUNTIME", lambda r: alternate(r, "egregore.goal_chase").update(
+        status="ALTERNATE", retirement_condition="when the founder rules on the goal runtime"))
+    assert any("alternate egregore.goal_chase [GoalChase] ALTERNATE is not pinned" in p for p in b1), b1
+    assert any("pinned alternate egregore.goal_chase [GoalChase] RESEARCH is not in the registry" in p for p in b1), b1
+    b2 = changed("OWN-FN-STATUS-EVIDENCE-LADDER", lambda r: alternate(r, "greg.mission_control").update(
+        status="ALTERNATE", retirement_condition="when the founder picks the ladder", kept_for=None))
+    assert any("alternate greg.mission_control [REALITY] ALTERNATE is not pinned" in p for p in b2), b2
+    # any other field, prose included, and an entry removed or reordered
+    for record_id, edit, said in (
+            ("OWN-FN-AUTONOMY-LEVELS", lambda r: r["distinct"][1].update(why="forecast levels"), "distinct entry"),
+            ("OWN-FN-AUTONOMY-LEVELS", lambda r: r["candidates"][0]["evidence"].append("new"), "candidate"),
+            ("OWN-FN-AUTONOMY-LEVELS", lambda r: r["candidates"][1].pop("side"), "candidate"),
+            ("OWN-FN-GOAL-RUNTIME", lambda r: r["distinct"].pop(), "pinned distinct entry"),
+            ("OWN-FN-GOAL-RUNTIME", lambda r: r["distinct"].reverse(), "reordered or repeated"),
+            ("OWN-FN-STATUS-EVIDENCE-LADDER", lambda r: alternate(r, "greg.mission_control").update(
+                kept_for={"open_decision": "OWN-FN-STATUS-EVIDENCE-LADDER"}), "alternate"),
+            ("OWN-FN-STATUS-EVIDENCE-LADDER", lambda r: r["canonical"].append(
+                {"module": "acceptance", "qualnames": ["LADDER"]}), "canonical entry")):
+        found = changed(record_id, edit)
+        assert any(said in p for p in found), (record_id, said, found)
+    # a record that becomes undecided, or a new undecided record, is not pinned yet
+    flipped = changed("OWN-FN-REGRESSION-CLOSING", lambda r: r.update(owner_status="NEEDS_FOUNDER_DECISION"))
+    assert any("is NEEDS_FOUNDER_DECISION and its entries are not pinned" in p for p in flipped), flipped
+    # a decided record still takes a new distinct entry or alternate without a pin change
+    assert changed("OWN-FN-TEMPORARY-TEAMS", lambda r: r["distinct"].append(
+        {"module": "greg.crew", "qualnames": ["act"], "why": "a different act"})) == []
+    assert set(UNDECIDED_ENTRIES) == FOUNDER_DECISIONS
+
+
+def test_guard_3_reports_a_structural_copy_even_where_a_distinct_entry_names_it(tmp_path):
+    # Round 4, N1: guard 3 skipped every check, the structural-copy check included, for a (module, name) a distinct
+    # entry named, so an exact copy of a registered class recorded as 'distinct' passed. A distinct entry still
+    # exempts a name (the marker and exact-name checks: that is what it is for), never a structural copy.
+    owner_class = ("class Relay:\n    def __init__(self, home, key):\n        self.home, self.key = home, key\n"
+                   "    def send(self, kind, body):\n        path = self.home / 'inbox' / (kind + '.json')\n"
+                   "        path.write_text(str({'kind': kind, 'body': body, 'key': self.key}))\n        return path\n")
+    record = {"record_id": "OWN-FN-X", "function": "x", "owner_status": "CANONICAL", "markers": ["Inbox"],
+              "canonical": [{"module": "greg.body", "qualnames": ["send_signed", "Relay"]}],
+              "distinct": [{"module": "greg.vouched", "qualnames": ["forward_envelope", "InboxRelay"],
+                            "why": "says it is different"},
+                           {"module": "greg.named", "qualnames": ["InboxRelay"], "why": "a different relay"}]}
+    root = _tree(tmp_path, {
+        "greg/__init__.py": "", "greg/body.py": OWNER_BODY + owner_class,
+        "greg/vouched.py": OWNER_BODY.replace("def send_signed(", "def forward_envelope(")
+                           + owner_class.replace("class Relay:", "class InboxRelay:"),
+        "greg/named.py": "class InboxRelay:\n    pass\n",
+    })
+    found = unrecorded([record], root, packages=("greg",))
+    assert sorted(line.split(" defines ")[1].split(",")[0] for line in found) == ["'InboxRelay'", "'forward_envelope'"]
+    assert all(line.startswith("greg/vouched.py:") and "a structural copy of greg.body." in line for line in found)

@@ -52,6 +52,8 @@ QUIET = "test_a_file_with_an_invalid_escape_parses_without_a_warning_on_any_pyth
 ONE_NODE = "test_the_body_guard_ignores_one_node_edits_pass_no_op_constants_annotations_and_import_aliases"
 SEALED = "test_the_body_scan_reads_cortex_evaluation_except_the_files_a_freeze_manifest_seals"
 LINKS = "test_the_body_scan_reads_bom_files_follows_links_inside_the_repository_only_and_sees_pycache"
+UNDECIDED_ROLES = "test_an_undecided_record_takes_no_new_or_changed_entry_of_any_role_without_a_pin_change"
+DISTINCT_SHAPE = "test_guard_3_reports_a_structural_copy_even_where_a_distinct_entry_names_it"
 REALITY_KEPT = "        kept_for: {consumer: acceptance.claims.crosswalk_problems}\n"
 # A copy of greg.organs.exchange recorded as 'distinct' in the organ-exchange record.
 DISTINCT_COPY = [("copy_body", "greg/organs.py", "exchange", "greg/organ_relay2.py", "function"),
@@ -319,8 +321,8 @@ MUTANTS = [
     ("MW-C: a disguised copy of reconcile appended to an existing ALTERNATE module (no registry edit)",
      [("append_body", "greg/business_loop.py", "reconcile", "business/commercial_loop.py", "function")], BODIES),
     ("MW-C: the exact pin covers candidates only, not an undecided record's alternates",
-     [("replace", TESTS, '            for role in ("candidates", "alternates"):\n',
-       '            for role in ("candidates",):\n')], UNDECIDED_ALTERNATE),
+     [("replace", TESTS, 'UNDECIDED_KEYS = ("canonical", "candidates", "alternates", "distinct")\n',
+       'UNDECIDED_KEYS = ("canonical", "candidates")\n')], UNDECIDED_ALTERNATE),
     ("MW-C: guard 4 exempts every canonical, candidate and alternate module of the record again",
      [("replace", TESTS, "                if (module, name) != (body.module, body.qualname):\n",
        "                if module not in owned_modules(body.record):\n")], OWN_LOCATION),
@@ -328,8 +330,8 @@ MUTANTS = [
      [("replace", TESTS, "        if len({registered for registered, _, _ in locations}) > 1:\n",
        "        if False:\n")], TWINS),
     ("MW-C: the exact candidate pin removed from pin_problems",
-     [("replace", TESTS, '        if r.get("owner_status") == "NEEDS_FOUNDER_DECISION":\n            # An undecided',
-       '        if False:\n            # An undecided')], UNDECIDED),
+     [("replace", TESTS, "    return problems + undecided_problems(data, undecided)\n", "    return problems\n")],
+     UNDECIDED),
     # -- MW-C: history kept only with a live reason (section 76) ----------------------------------------------------
     ("MW-C: REALITY's kept_for deleted", [("replace", MAP, REALITY_KEPT, "")], HISTORY),
     ("MW-C: REALITY kept for a consumer that does not read it (acceptance.claims.directive_levels)",
@@ -443,6 +445,35 @@ MUTANTS = [
      [("replace", TESTS, "    def visit_alias(self, node):\n        node.asname = ERASED\n",
        "    def visit_alias(self, node):\n        if node.asname is not None:\n            node.asname = ERASED\n")],
      ONE_NODE),
+    # -- MW-C round 4 (N1, N2): an undecided record is pinned whole; guard 3 never lets a distinct entry hide a copy
+    ("MW-C round 4: WU-13's REALITY_LADDER joins the undecided evidence ladder as a distinct entry",
+     [("create", "governance/reality_ladder.py", "REALITY_LADDER = ('PROPOSED', 'DESIGNED', 'IMPLEMENTED')\n"),
+      ("replace", MAP, "      - module: greg.path\n        qualnames: [STRUCTURALLY_BUILT",
+       "      - module: governance.reality_ladder\n        qualnames: [REALITY_LADDER]\n"
+       "        why: \"the governance ladder of section 56 for policy claims\"\n"
+       "      - module: greg.path\n        qualnames: [STRUCTURALLY_BUILT")], PINS),
+    ("MW-C round 4: GoalChase revived from RESEARCH to a live ALTERNATE of the undecided goal runtime",
+     [("replace", MAP, "        qualnames: [GoalChase]\n        status: RESEARCH\n",
+       "        qualnames: [GoalChase]\n        status: ALTERNATE\n"
+       "        retirement_condition: when the founder rules on the goal runtime\n")], PINS),
+    ("MW-C round 4: the evidence of an undecided record's candidate edited",
+     [("replace", MAP, "the A0-A9 ladder with ten promotion criteria", "the A0-A9 ladder with nine promotion criteria")],
+     PINS),
+    ("MW-C round 4: an undecided record's distinct entries left unpinned",
+     [("replace", TESTS, 'UNDECIDED_KEYS = ("canonical", "candidates", "alternates", "distinct")\n',
+       'UNDECIDED_KEYS = ("canonical", "candidates", "alternates")\n')], UNDECIDED_ROLES),
+    ("MW-C round 4: an undecided record's entries compared by module and qualnames only (status and prose ignored)",
+     [("replace", TESTS, "            have, want = list(r.get(key) or []), list(pin.get(key) or [])\n",
+       "            have, want = ([{k: e.get(k) for k in ('module', 'qualnames')} for e in r.get(key) or []],\n"
+       "                          [{k: e.get(k) for k in ('module', 'qualnames')} for e in pin.get(key) or []])\n")],
+     UNDECIDED_ROLES),
+    ("MW-C round 4: an undecided record missing from UNDECIDED_ENTRIES passes",
+     [("replace", TESTS, "        if pin is None:\n            problems.append(", "        if pin is None:\n"
+       "            continue\n            problems.append(")], UNDECIDED_ROLES),
+    ("MW-C round 4: guard 3's structural-copy check honours distinct entries again",
+     [("replace", TESTS, "                    if shape in shapes:                   # a distinct entry exempts names, "
+                         "never a copy\n",
+       "                    if shape in shapes and (module, name) not in distinct:\n")], DISTINCT_SHAPE),
 ]
 
 

@@ -1,6 +1,6 @@
 # Recovering when admission fails
 
-What `scripts/participation.py` does in each case, and the step that gets you admitted again. Each case was run against the script at `72a38700`. Admission coordinates work and grants nothing. Never write or edit `<git dir>/uniimente/admission.json` by hand: run `admit` again, and it replaces the record in one step.
+What `scripts/participation.py` does in each case, and the step that gets you admitted again. Each case was run against the script at `272af40`. Admission coordinates work and grants nothing. Never write or edit `<git dir>/uniimente/admission.json` by hand: run `admit` again, and it replaces the record in one step.
 
 ## 1. The GitHub API is unavailable
 
@@ -10,14 +10,9 @@ What `scripts/participation.py` does in each case, and the step that gets you ad
 
 ## 2. The admission record is malformed
 
-- **What happens.** The hook reads `<git dir>/uniimente/admission.json`. A missing record, an unreadable one, invalid JSON, or `{}` all count as no admission. Edits, `git commit`, `git push` and GitHub write tools are denied with `No admission in <worktree>`. `check` refuses with `no admission here`, because it reuses the record's task issue and claim.
-- **A record with some fields missing** behaves unevenly:
-  - without `checked_at`, every push is denied (`Refresh before publishing`);
-  - without `exclusive` and `shared`, every edit is out of scope;
-  - without `claim`, the hook crashes with `KeyError` and exits 1, where a denial exits 2;
-  - without `task_record`, `check` crashes with `KeyError`;
-  - a record that is valid JSON but not an object (`"x"`) crashes the hook with `AttributeError`, exit 1.
-- **A crash is not a denial.** The client blocks on exit 2. Whether `onFailure: "block"` also blocks exit 1 was not tested, so treat a crash as unsafe and repair the record at once.
+- **What happens.** The hook reads `<git dir>/uniimente/admission.json`. With no record, edits, `git commit`, `git push` and GitHub write tools are denied with `No valid admission in <worktree>`.
+- **A record of the wrong shape** is denied the same way, with exit 2 and the reason named: `malformed (missing or wrong fields: [...])` or `malformed (the record is not a JSON object)`. This covers `{}`, `"x"`, and a record missing `claim`, `task_record`, `exclusive`, `shared` or `checked_at`. `check` refuses with `no admission here`. Before `deefd0f`, such a record crashed the hook with exit 1.
+- **A commit or push is judged in the worktree it targets** (`git -C <dir>`, or the last `cd <dir>` before `git`), not in the shell's cwd. Admit in the worktree you commit from.
 - **Recover.** Run `python scripts/participation.py admit --issue <task issue> --claim <your check-in comment id>` in that worktree. Each worktree needs its own record.
 
 ## 3. python3 is missing
@@ -34,3 +29,4 @@ What `scripts/participation.py` does in each case, and the step that gets you ad
 - **Recover, former holder.** Stop. To work again, post a new check-in on the task issue and admit it. It is ordered after every claim posted before it.
 - **Recover, receiver.** Post a check-in that keeps the same concerns and adds `- Accepts handoff: <handoff comment id>`. The handoff must name you in `To:` and your predecessor in `From:`, and your check-in must be posted after the handoff; an earlier one does not accept it. Then admit your new check-in. It keeps the original claim's place in the order.
 - **Keep the heading plain.** A check-in whose heading says "handoff", "review" or "reassignment" is refused as `names no session`. Name the work instead ("continue RECOVERY.md"), and keep the word for the `Accepts handoff:` line.
+- **The holder went silent.** Only a maintainer session (`MAINTAINER_SESSIONS`, today the integrator) can end the claim, with a `<!-- uniimente:recovery -->` comment, and only once the claim's own `Recheck` time is more than 24 hours past. A claim with no Recheck time is never stale. Recovery admits nobody: post your own check-in and admit it. Until then, ask the holder for a handoff on the task issue.

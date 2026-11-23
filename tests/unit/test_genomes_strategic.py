@@ -1210,16 +1210,19 @@ def test_z3_backed_bmc_is_reproducible_within_one_process():
 @pytest.mark.parametrize("family", FAMILIES)
 def test_dev_seeds_run_within_budget_and_never_answer_falsely(family):
     x = item(family)
+    # CPU seconds, not wall time: generation, solve and verification are single-process, and on a loaded CI runner
+    # the wall clock also counts time spent waiting for a core (mechanism_check read 5.19 s wall for a solve on
+    # #280's job 1, 2026-11-23; under 32 busy loops on 4 cores the 5 s per-seed wall limit failed too).
     for seed in range(10):
-        started = time.perf_counter()
+        started = time.process_time()
         data, truth = dev(family, seed)
-        t0 = time.perf_counter()
+        t0 = time.process_time()
         out = x.solve(copy.deepcopy(data), BUDGET)
-        solve_s = time.perf_counter() - t0
+        solve_s = time.process_time() - t0
         assert solve_s < 2.0, (family, seed, solve_s)
         if out["status"] == "ANSWER":
             assert all(x.verify(data, out["output"], out["certificate"]).values()), (family, seed)
             assert x.score(data, truth, out["output"])["category"] == "correct", (family, seed)
         else:
             assert out["status"] in ("ABSTAIN", "UNKNOWN") and out["missing"]
-        assert time.perf_counter() - started < 5.0, (family, seed)
+        assert time.process_time() - started < 5.0, (family, seed)

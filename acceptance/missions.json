@@ -770,10 +770,11 @@
     {
      "id": "G7",
      "gap": "G7. 'Oracle frozen before candidate' is not proven by ledger order or digest recomputation.",
-     "state": "OPEN",
+     "state": "CLOSED",
      "buildable_now": true,
      "dependency": "none",
-     "next": "Test: for the catalogued route and the contract route, read the journal events with their ledger seq. Assert seq(deficit.opened) < seq of the first genesis.route, genesis.built and genesis.verified for that deficit_id. Recompute the seed as int(sha256_json({'deficit': id})[7:15],16) and assert opened.acceptance.vector_digest == sha256_json(CATALOG[f]['oracle'](seed)) with bytes hex-encoded. For contracts, assert vector_digest == sha256_json([examples, held_out]) taken from the signed mission envelope."
+     "next": "Test: for the catalogued route and the contract route, read the journal events with their ledger seq. Assert seq(deficit.opened) < seq of the first genesis.route, genesis.built and genesis.verified for that deficit_id. Recompute the seed as int(sha256_json({'deficit': id})[7:15],16) and assert opened.acceptance.vector_digest == sha256_json(CATALOG[f]['oracle'](seed)) with bytes hex-encoded. For contracts, assert vector_digest == sha256_json([examples, held_out]) taken from the signed mission envelope.",
+     "closed_by": "tests/unit/test_greg_genesis_oracle_frozen.py (SANDBOX): from the journal alone, deficit.opened precedes every genesis.route, built, verified and discovery event for its deficit by position in the canonical history; a catalogued oracle's seed recomputes as int(sha256_json({'deficit': id})[7:15],16) and its vector_digest from CATALOG[f]['oracle'](seed) with bytes hex-encoded; a contract's vector_digest equals sha256_json([examples, held_out]) taken from the signed MISSION envelope, and every candidate was verified on all of them. Negative controls: a candidate moved before its deficit and a held-out vector changed after signing are both refused. Two metabolism mutants (digest without held-out vectors; seed not derived from the deficit) are caught."
     },
     {
      "id": "G8",

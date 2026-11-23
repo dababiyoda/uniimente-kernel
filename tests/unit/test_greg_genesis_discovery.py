@@ -102,8 +102,12 @@ def test_without_discovery_the_same_mission_pays_for_a_build(tmp_path, monkeypat
 
 
 @needs_wc
-def test_a_tool_that_answers_the_public_examples_but_not_the_held_out_vectors_is_never_acquired(tmp_path):
-    """Public examples screen; the held-out vectors decide. wc -l counts newlines, so it misses a final line."""
+def test_a_tool_that_answers_the_public_examples_but_not_the_held_out_vectors_is_never_acquired(tmp_path, monkeypatch):
+    """Public examples screen; the held-out vectors decide. wc -l counts newlines, so it misses a final line.
+
+    Single tools only: two-stage composition serves this contract with sort | wc -l (tests/unit/
+    test_greg_genesis_composition.py), so it is disabled here to keep this the single-tool held-out check."""
+    monkeypatch.setattr(genesis_mod.Genesis, "_pipeline_search", lambda self, *a, **k: False)
     contract = dict(LINES, function="text.lines_including_last", output_field="lines",
                     description="The number of lines, counting a final line that has no newline.",
                     held_out=[{"input_text": "no newline at all", "expected": 1},

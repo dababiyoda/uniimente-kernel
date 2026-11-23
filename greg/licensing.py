@@ -674,7 +674,38 @@ def binary_assessment(package: str, text: str | None) -> dict:
                             ["no DEP-5 copyright file could be read"])
             + ([f"not classified by GREG: {', '.join(unknown)[:200]}"] if unknown else []),
             "parts": [part], "policy": "binary: held on any known network-copyleft or not-open term",
-            "parser": "dpkg-query + DEP-5 (GREG reader)", "limits": LIMITS}
+            "parser": "dpkg-query + DEP-5 (GREG reader)", "limits": LIMITS, "package": package}
+
+
+# dpkg's own record of what is installed. Read as a file, never through a spawn: the one dpkg-query run stays in
+# system_binary. A stanza counts only when its Status says the package is installed; a version is returned only when
+# every installed stanza for the package (one per multiarch architecture) agrees and looks like a Debian version.
+DPKG_STATUS = Path("/var/lib/dpkg/status")
+MAX_DPKG_STATUS_BYTES = 64 << 20
+_DEBIAN_VERSION = re.compile(r"[0-9][A-Za-z0-9.+~:-]{0,127}")
+
+
+def installed_package_version(package: str, status: Path = DPKG_STATUS) -> str | None:
+    """The installed version of an OS package from dpkg's status database, or None when it cannot be said."""
+    try:
+        if status.stat().st_size > MAX_DPKG_STATUS_BYTES:
+            return None
+        text = status.read_text(errors="replace")
+    except OSError:
+        return None
+    versions = set()
+    for stanza in text.split("\n\n"):
+        fields = dict(line.split(":", 1) for line in stanza.splitlines() if line[:1] not in ("", " ", "\t")
+                      and ":" in line)
+        if fields.get("Package", "").strip() != package:
+            continue
+        if not fields.get("Status", "").strip().endswith(" installed"):
+            continue
+        versions.add(fields.get("Version", "").strip())
+    if len(versions) != 1:
+        return None
+    version = versions.pop()
+    return version if _DEBIAN_VERSION.fullmatch(version) else None
 
 
 def system_binary(binary: str) -> dict | None:

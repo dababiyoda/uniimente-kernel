@@ -461,6 +461,7 @@
     "greg/autonomy.py",
     "greg/background.py",
     "greg/backup.py",
+    "greg/black_start.py",
     "greg/blockers.py",
     "greg/body.py",
     "greg/briefs.py",

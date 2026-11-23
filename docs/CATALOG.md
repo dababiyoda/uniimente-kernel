@@ -15,7 +15,7 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 |---|---:|---|
 | [`(top)`](#doctrine-orders-and-top-level-references) | 31 | Doctrine, orders and top-level references |
 | [`intent`](#founder-intent-records-and-their-verbatim-sources) | 87 | Founder intent records and their verbatim sources |
-| [`collaboration`](#collaboration-records-handoffs-deliberations-reviews-reconciliations) | 199 | Collaboration records: handoffs, deliberations, reviews, reconciliations |
+| [`collaboration`](#collaboration-records-handoffs-deliberations-reviews-reconciliations) | 200 | Collaboration records: handoffs, deliberations, reviews, reconciliations |
 | [`decisions`](#architecture-decision-records) | 6 | Architecture decision records |
 | [`deliberations`](#founder-rulings) | 1 | Founder rulings |
 | [`evidence`](#measured-evidence-frozen-runs-admissions-proofs) | 518 | Measured evidence (frozen runs, admissions, proofs) |
@@ -186,12 +186,13 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 
 ## Collaboration records: handoffs, deliberations, reviews, reconciliations
 
-### Deliberation (five lenses, two passes) (51)
+### Deliberation (five lenses, two passes) (52)
 
 | File | Date | Title |
 |---|---|---|
 | [`collaboration/deliberation-worker-team-20261121.json`](collaboration/deliberation-worker-team-20261121.json) | 2026-11-21 | worker.team: one signed action fields a temporary worker team (Foundry #48) under one grant |
 | [`collaboration/deliberation-genesis-build-off-turn-20261121.json`](collaboration/deliberation-genesis-build-off-turn-20261121.json) | 2026-11-21 | Run a Genesis builder call off the Body's turn (S38-A follow-up) |
+| [`collaboration/deliberation-black-start-core-20261121.json`](collaboration/deliberation-black-start-core-20261121.json) | 2026-11-21 | A read-only black-start core over a copied body home (acceptance H.G13) |
 | [`collaboration/deliberation-w5-ledger-memory-20261113.json`](collaboration/deliberation-w5-ledger-memory-20261113.json) | 2026-11-13 | Whiteboard W5: what bounds a body's evidence-ledger memory, after option 1 (#211) halved it. Outcome: RETAIN the correct |
 | [`collaboration/deliberation-w3-ledger-hot-path-20261113.json`](collaboration/deliberation-w3-ledger-hot-path-20261113.json) | 2026-11-13 | Whiteboard W3: keep or revert the ledger hot-path changes e2440a6, bd0c17d and 3884493 on the #196 line |
 | [`collaboration/deliberation-autonomy-signed-issuance-20261113.json`](collaboration/deliberation-autonomy-signed-issuance-20261113.json) | 2026-11-13 | Autonomy above A0 is issued only on the founder's signed AUTONOMY_GRANT for that exact subject, tuple and level (accepta |

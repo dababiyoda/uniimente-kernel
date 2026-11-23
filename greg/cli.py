@@ -33,6 +33,7 @@
     greg gravity authorize g.json --supersedes GOAL --key K   replace an admitted goal (the old one is kept)
     greg gravity goals | greg gravity evidence GOAL   read-only; greg gravity control GOAL --kind stop_pushing --value true --key K
     greg cathedral [--days N | --since T] [--body [HOME]]   read-only: git activity against founder-tier outcomes
+    greg --home COPY black-start [--out N.json]   read-only recovery core over a copied home; signs nothing
     greg compute status                       read-only: pressure, the sustained bottleneck, COMPUTE asks, step time
     greg compute benchmark --out B.json       a fixed workload in a scratch directory; writes B.json only
     greg compute verify --before A.json --after B.json   did the change measurably help
@@ -627,6 +628,10 @@ def main(argv=None) -> int:
     it.add_argument("--file", help="read the content from this file instead of stdin")
     st = sub.add_parser("start", help="clear a persisted stop (local physical authority)")
     st.add_argument("--local", action="store_true", required=True)
+    bks = sub.add_parser("black-start", help="read-only recovery core over a COPY of a body home: verifies the "
+                         "chain and constitution, asserts shutdown, lists the revocations to sign; writes nothing "
+                         "in that home (exit 0 shown down, 1 not shown down, 3 history does not verify)")
+    bks.add_argument("--out", help="also write the notification for Alfonso here (outside the home; not sent)")
     sub.add_parser("status"); sub.add_parser("decisions"); sub.add_parser("vepmc"); sub.add_parser("routing")
     sub.add_parser("autonomy", help="read-only: the level each (capability, action class, target pattern, budget band) "
                                     "has earned from the ledger; it grants nothing")
@@ -1398,6 +1403,13 @@ def main(argv=None) -> int:
                     except Exception as exc:
                         server["tools"] = f"not listed: {str(exc)[:200]}"
             print(json.dumps(servers, indent=1))
+        elif args.cmd == "black-start":
+            from greg import black_start
+            report = black_start.assess(home)
+            if args.out:
+                report["notification_written"] = str(black_start.write_notification(report, args.out))
+            print(json.dumps(report, indent=1, default=str))
+            return black_start.exit_code(report)
         elif args.cmd == "doctor":
             from greg.doctor import chromebook
             report = chromebook()

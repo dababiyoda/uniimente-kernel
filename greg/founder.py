@@ -272,6 +272,10 @@ class FounderVerifier:
         public_hex, principal = self._public(kid, kind=None, now=now)
         if abs(instant(at) - now) > READ_SKEW:
             raise FounderAuthError("read signature too old or from the future")
+        device = self.devices.get(kid) if kid not in self.enrolled else None
+        if device and device.get("signed_not_before") and instant(at) < instant(device["signed_not_before"]):
+            raise FounderAuthError("read signed before this device key's current delegation: nothing the key "
+                                   "signed before it was delegated again ever verifies")
         try:
             Ed25519PublicKey.from_public_bytes(bytes.fromhex(public_hex)).verify(
                 bytes.fromhex(signature), _read_bytes(self.body_id, method, path, at))

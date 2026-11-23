@@ -291,7 +291,7 @@ class Instance:
         aliases = target.get("alsoKnownAs", []) if isinstance(target, dict) else None
         if isinstance(aliases, str):        # JSON-LD compaction sends one alias as a plain string
             aliases = [aliases]
-        if (not isinstance(aliases, list) or not isinstance(target.get("id"), str)
+        if (not isinstance(aliases, list) or target.get("id") != target_id
                 or not isinstance(target.get("inbox"), str) or not isinstance(sender.get("inbox"), str)):
             return 400, {"error": "the Move's target actor document is not readable"}
         # exact match: `in` on a string alias was a substring test, so "<sender>by" confirmed a Move
@@ -302,11 +302,14 @@ class Instance:
         # follow the new actor first: follow() fetches the target again, and a server answering that fetch with an
         # unreadable document raised after the old follow was removed and saved (re-check of c3310763)
         try:
-            self.follow(name, target_id)
+            self.follow(name, target_id, expect_id=target_id)
         except FederationError as exc:
             return 400, {"error": str(exc)[:120]}
         s = self._state()
-        s["actors"][name]["following"].remove(sender["id"])
+        following = s["actors"][name]["following"]
+        if sender["id"] not in following:   # a nested Move, made while this Follow was delivered, already moved it
+            return 202, {"accepted": True, "now_following": target_id}
+        following.remove(sender["id"])
         self._journal(s, "move.accepted", actor=name, old=sender["id"], new=target_id)
         self._save(s)
         s2 = self._state()
@@ -317,10 +320,14 @@ class Instance:
         return 202, {"accepted": True, "now_following": target_id}
 
     # -- client side ---------------------------------------------------------------------------
-    def follow(self, name: str, remote_actor: str) -> dict:
+    def follow(self, name: str, remote_actor: str, *, expect_id: str | None = None) -> dict:
         actor = self.fetch_actor(remote_actor)
         if not isinstance(actor, dict) or not isinstance(actor.get("id"), str) or not isinstance(actor.get("inbox"), str):
             raise FederationError(f"actor {remote_actor} is not a readable actor document")
+        if expect_id is not None and actor["id"] != expect_id:
+            # a Move's target server answered the second fetch with another actor, so GREG followed a third party
+            # (re-check of 14fcf659)
+            raise FederationError(f"actor {remote_actor} answered as {actor['id'][:80]}")
         s = self._state()
         activity = {"@context": CONTEXT, "id": self._next_id(s, name, "follow"), "type": "Follow", "actor": self.actor_id(name), "object": actor["id"]}
         s["actors"][name]["pending_follows"][actor["id"]] = activity["id"]

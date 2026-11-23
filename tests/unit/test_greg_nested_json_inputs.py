@@ -782,11 +782,12 @@ def test_a_renewal_that_overflows_or_cannot_be_stored_is_a_refusal(tmp_path, mon
     login = {"kind": "oauth", "tokens": {"access_token": "old", "refresh_token": "old"}}
     ok = {"value": 1, "provider_claims_read_only": False}
     broker = SecretBroker(tmp_path / "s.json")
+    # a 401-digit expires_in is kept as the century cap since the re-check of 14fcf659 (it was refused here, and the
+    # rotated refresh token lost); the broker failure below is still a refusal
     huge = {"access_token": "n", "refresh_token": "r", "expires_in": int("9" * 401)}
     done = subprocess.CompletedProcess([], 0, stdout=_json.dumps({"ok": ok, "renewed": huge}), stderr="")
-    with pytest.raises(CapabilityError, match="renewed could not be read"):
-        mcp_tools._client_answer(SimpleNamespace(secrets=broker), done, server="n", token="t", bearer="mcp:n",
-                                 login=login)
+    assert mcp_tools._client_answer(SimpleNamespace(secrets=broker), done, server="n", token="t", bearer="mcp:n",
+                                    login=login)["ok"] == ok
 
     def full(*args, **kwargs):
         raise OSError(28, "No space left on device")
@@ -901,3 +902,60 @@ def test_a_move_names_its_alias_exactly_and_never_drops_the_old_follow_on_a_seco
     assert inst.inbox("alice", {}, move)[0] == 202
     state = inst._state()["actors"]["alice"]
     assert old not in state["following"] and new in state["pending_follows"]
+
+
+def test_an_int_lifetime_beyond_float_range_keeps_the_rotated_token_and_a_move_is_bound_to_its_target(tmp_path):
+    """Re-check of 14fcf659: float() of an int beyond float range raised OverflowError, so a renewal lost the
+    rotated refresh token and a login failed; a Move's target server could answer the second fetch as a third
+    party, which GREG then followed; a nested Move made while the outer Follow was delivered made the outer
+    removal raise out of the inbox handler."""
+    import json as _json
+    import subprocess
+    from types import SimpleNamespace
+    from greg import mcp_login, mcp_tools
+    from greg.capabilities import SecretBroker
+    from foundry.systems import federation as F
+    assert mcp_login.expires_at(10 ** 400, now=0.0) == mcp_login.LONGEST_LIFETIME
+    assert mcp_login.expires_at(-(10 ** 400)) is None
+    broker = SecretBroker(tmp_path / "s.json")
+    line = ('{"ok": {"value": 1, "provider_claims_read_only": false}, "renewed": '
+            '{"access_token": "n", "refresh_token": "R2", "expires_in": ' + "9" * 401 + '}}')
+    answer = mcp_tools._client_answer(SimpleNamespace(secrets=broker), subprocess.CompletedProcess([], 0, stdout=line, stderr=""),
+                                      server="n", token="t", bearer="mcp:n",
+                                      login={"kind": "oauth", "tokens": {"access_token": "o", "refresh_token": "R1"}})
+    assert answer["ok"]["value"] == 1
+    assert _json.loads(broker.resolve("mcp:n", declared=("mcp:n",)))["tokens"]["refresh_token"] == "R2"
+
+    inst = F.Instance(str(tmp_path / "fed"), clock=lambda: "2026-11-23T00:00:00Z")
+    inst.base = "http://local.test"
+    inst.create_actor("alice")
+    old, new = "http://remote.test/users/bob", "http://new.test/users/bob"
+    sender = {"id": old, "inbox": old + "/inbox", "movedTo": new}
+    inst.verify_request = lambda *a, **k: (True, "verified", sender)
+    inst.deliver = lambda *a, **k: {"delivered": True}
+    s = inst._state()
+    s["actors"]["alice"]["following"].append(old)
+    inst._save(s)
+    move = json.dumps({"actor": old, "type": "Move", "object": old, "target": new}).encode()
+    good = {"alsoKnownAs": [old], "id": new, "inbox": new + "/inbox"}
+    eve = {"alsoKnownAs": [old], "id": "http://victim.test/users/eve", "inbox": "http://victim.test/inbox"}
+    answers = iter([good, eve])
+    inst.fetch_actor = lambda url: next(answers)
+    assert inst.inbox("alice", {}, move)[0] == 400
+    state = inst._state()["actors"]["alice"]
+    assert state["following"] == [old] and eve["id"] not in state["pending_follows"]
+    inst.fetch_actor = lambda url: dict(good, id=new + "#main")
+    assert inst.inbox("alice", {}, move)[0] == 400
+
+    real_follow = inst.follow
+
+    def follow_while_a_nested_move_lands(name, remote, **kw):
+        result = real_follow(name, remote, **kw)
+        st = inst._state()
+        st["actors"][name]["following"].remove(old)      # the nested Move completed during delivery
+        inst._save(st)
+        return result
+    inst.fetch_actor = lambda url: good
+    inst.follow = follow_while_a_nested_move_lands
+    assert inst.inbox("alice", {}, move)[0] == 202
+    assert old not in inst._state()["actors"]["alice"]["following"]

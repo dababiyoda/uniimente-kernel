@@ -66,7 +66,10 @@ def expires_at(expires_in, *, now: float | None = None) -> float | None:
         return None
     if isinstance(expires_in, bool):
         raise ValueError("expires_in is not a number")
-    seconds = float(expires_in)
+    try:
+        seconds = float(expires_in)
+    except OverflowError:       # an int beyond float range: its sign is all that can be read (re-check of 14fcf659)
+        seconds = math.inf if expires_in > 0 else -math.inf
     if math.isnan(seconds) or seconds <= 0:
         return None
     return (now if now is not None else time.time()) + min(seconds, LONGEST_LIFETIME)

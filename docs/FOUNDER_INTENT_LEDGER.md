@@ -2,6 +2,20 @@
 
 # Founder Intent Ledger
 
+## One entrance, the whole route and a check-in — 2026-11-13
+
+`INTENT-20261113-ONE-ENTRANCE` ([record](intent/INTENT-20261113-ONE-ENTRANCE.json), [verbatim source](intent/sources/ONE-ENTRANCE-DIRECTION-2026-11-13-source.md), [deliberation](collaboration/deliberation-one-entrance-20261113.json)): every agent that enters any repository finds the same context, knows the route from beginning to completion, identifies itself with its prompt and plan, and works in parallel without stepping on others. It is chat intent evidence, not founder authentication.
+
+- **The founder decided:** design the entrance around switching the Kernel's default branch to the integration branch (prepared, not performed); update the 12 existing consumer entry drafts in place; complement the Codex task on #315 (adopted into the line the same day).
+- **Prepared as drafts:**
+  - the cutover runbook in `collaboration/ROLLOUT.md`, with one blocker found: the Main Branch SOP Gate ruleset follows the default branch, so the ruleset changes come before the switch;
+  - `scripts/work_map.py`, a read-only view of buildable units with their owners, contended files, sessions and gaps;
+  - the check-in block on the existing work board and a receipt convention with no validator change;
+  - one forward commit on each of the 12 consumer drafts.
+- **Changed axis:** interface and process. Navigation follows the acknowledged branch; evidence stays pinned by commit.
+- **Founder decisions:** the three settings (two ruleset steps, then the default branch); every protected merge; whether the full gate also applies to the integration branch.
+- **State:** active. **Authority delta:** none. **Product delta:** none. **VEPMC:** 0. Adoption: pending.
+
 ## Convergence, then a useful operational path — 2026-11-12
 
 `INTENT-20261112-CONVERGENCE-USEFUL-PATH` ([record](intent/INTENT-20261112-CONVERGENCE-USEFUL-PATH.json), [verbatim source](intent/sources/CONVERGENCE-CLARIFICATION-2026-11-12-source.md)): the founder's clarification of 2026-11-12 in session `session_01Kucyfm9exT5imDVYvHTYSv`. It is chat intent evidence, not founder authentication.

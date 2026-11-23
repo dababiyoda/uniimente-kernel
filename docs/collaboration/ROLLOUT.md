@@ -89,3 +89,182 @@ any newly required status rule. Preserve old sources, all evidence, review disse
 and unrelated runtime. Kill/simplify if five-PR measurement shows burden exceeding
 rework prevented, or if any change weakens existing authority/evidence controls.
 
+## 2026-11-13: one entrance. Default-branch cutover (prepared, not performed)
+
+Status: **prepared**. No setting was changed and nothing was merged. Every repository's
+adoption stays **pending** until the founder acts and the result is observed. Source:
+`INTENT-20261113-ONE-ENTRANCE` ([record](../intent/INTENT-20261113-ONE-ENTRANCE.json),
+[verbatim source](../intent/sources/ONE-ENTRANCE-DIRECTION-2026-11-13-source.md),
+[deliberation](deliberation-one-entrance-20261113.json)).
+
+**What the founder decided.** Design the entrance around switching the Kernel's default
+branch to the integration branch, so a newcomer lands on the current machine. Update the
+12 existing consumer drafts in place. Navigate by the acknowledged branch; keep evidence
+by commit.
+
+**What this changes above.** "Consumers point to immutable source" still holds for
+evidence: receipts record the exact commit read, and reusable-workflow pins stay at a
+reviewed commit. For human navigation, an entry link now names the acknowledged
+integration branch, because a pinned guide goes stale (the 12 drafts pointed at `2ccbbe2`).
+"Review kernel #193 ... adopt" (adoption step 1) becomes, under this design, an optional
+banner on `main`; the entrance is the default branch.
+
+### Recorded state (for rollback)
+
+| | Branch | Commit when prepared (2026-11-13) | Commit re-checked 2026-11-21 |
+|---|---|---|---|
+| Default branch today | `main` | `d64a6c931bb05aba4e3454847b665e73384bbdfa` (2026-10-14) | unchanged |
+| Proposed default | `claude/greg-full-machine-completion-whgiee` (draft #196) | `8d20532464b1533b28d71d8331ca3412a90dbb11` | `121195907fff261bb8610ed03488ef4461b59f73` (read before 20:26Z); from about 20:42Z, `86f9600f1a222f43a78c3a84ce5c9f9a5de380f9` (Merge #336 into #196 (intake)); read at 2026-11-21T23:20Z: `e3a84f95b307dfdab784c058bddca7d3abe5f384` (Merge #339 into #196 (intake)). The head moves at every intake, so each of these is a reading at its time, not the current head; record the head at the moment of the switch |
+
+### What the switch does, verified 2026-11-13 from the public API and this tree
+
+| Fact | Consequence | How verified |
+|---|---|---|
+| Ruleset 21875390, "UNIIMENTE — Main Branch SOP Gate", is active, has no bypass and targets `~DEFAULT_BRANCH`. Rules: no deletion, no force push, linear history, pull request required (threads resolved, 0 approvals), Copilot review | **Blocker.** A bare switch moves this gate onto the integration branch: direct pushes and merge commits there are refused, which is how intake works today. `main` is left with no rule at all | `GET /repos/.../rulesets/21875390` |
+| The integration branch has no rule | It can be force-pushed or deleted today | `GET /repos/.../rules/branches/<branch>` returns `[]` |
+| `canonical-ci.yml` and `directive-completion.yml` run on `push` to `main` only | The line is checked only through #196's `pull_request` runs. If #196 is closed, pushes to the line run no check | workflow `on:` blocks |
+| `repository-review.yml` is the only scheduled workflow | It starts running weekly (Monday 06:17 UTC), read-only, with an artifact and no gate | workflow `on:` blocks |
+| A merge into the default branch closes issues named with a closing phrase ("closes #N") | One open pull request into the line does this: #218 says "closes #217", an open issue it fixes, so the automatic close is what it intends. No other open pull request into the line names an issue that way (#311 names #293 and asks to be closed once #322 is taken, with no closing keyword; re-checked 2026-11-21) | scan of open PR bodies against the open issues |
+| New pull requests default to the default branch | Wanted. The 49 open pull requests into `main` keep their base; #196 stays open (a PR whose head is the default branch is allowed) | GitHub behaviour; PR list |
+| `greg/briefs.py`, `greg/capabilities.py` and `egregore/repository_audit.py` read `refs/remotes/origin/main` | Unchanged and intended: they audit the founder-merged line of each repository | grep; `tests/security/effect-call-allowlist.json` |
+| No consumer default branch refers to the Kernel by a floating `main` | No consumer breaks at the switch | grep of the 12 default-branch checkouts |
+| Merge, squash and rebase are all allowed; auto-merge is off; branches are not deleted on merge | Unchanged | `GET /repos/...` |
+| #196's base is `claude/greg-integration-178-184-20261021`, not `main` | #196's pull-request runs, the only checks the line gets today, compare against that branch. The switch does not change this | `GET /repos/.../pulls/196` (re-checked 2026-11-21) |
+| `main` is an ancestor of the line, which is 1,877 commits ahead with 401 merge commits. The gate requires linear history | The switch is the only route that does not rewrite the line. A later landing of the line on `main` through the gate could only be a squash or a rebase, and neither keeps the merge commits; that is a separate founder decision | `git rev-list --count [--merges] d64a6c93..12119590` (2026-11-21) |
+
+### The settings, in order (the founder's; no session can make them)
+
+1. **Keep the gate on `main`.** Settings → Rules → Rulesets → "UNIIMENTE — Main Branch SOP Gate" →
+   Target branches: remove **Default**, add **Include by pattern** `main`.
+2. **Protect the integration branch's history.** New branch ruleset targeting
+   `claude/greg-full-machine-completion-whgiee`: **Restrict deletions** and **Block force pushes**
+   only. (Whether the full gate should also apply there is a separate decision; it would end
+   direct-push intake.)
+3. **Switch.** Settings → General → Default branch → `claude/greg-full-machine-completion-whgiee`.
+   (CLI: `gh repo edit dababiyoda/uniimente-kernel --default-branch claude/greg-full-machine-completion-whgiee`.)
+
+Do 1 and 2 before 3. In the other order `main` is unprotected and intake is blocked until 1 is done.
+
+**Founder actions still needed (the plan's single bottleneck metric), counted 2026-11-21: 15**, after the integrator
+takes #316 into the line: the three settings above, then the twelve consumer merges in the adoption package below.
+Two decisions sit beside the count and change it: whether the full gate also applies to the line (setting 2 as
+written leaves it off), and whether a session started only in a consumer repository may be given access to the
+Kernel's board (`VALIDATION.md`, 2026-11-13 limits). The banner on `main` is optional and not counted.
+
+### After the switch: verify by normal discovery
+
+- `curl -sS https://api.github.com/repos/dababiyoda/uniimente-kernel | grep default_branch` names the line.
+- `GET /repos/.../rules/branches/main` still lists the gate; the same call for the line lists the two history rules.
+- A fresh clone with no branch argument contains `AGENTS.md` § Canonical reading order, `docs/collaboration/START_HERE.md`
+  and `greg/path.json`.
+- A fresh session given only a task, with no hint, reaches the work board and posts a check-in. Until this is observed,
+  entry by default-branch discovery is **pending**; the trial in `VALIDATION.md` tested the prepared instructions only.
+- The next Monday run of `repository-review.yml` appears, with its artifact, and changes nothing.
+
+### Rollback
+
+Set the default branch back to `main`; set ruleset 21875390's target back to **Default**; delete the ruleset from step 2.
+No commit, branch, pull request or issue moves in either direction.
+
+### Check coverage of the line (prepared for the integrator; not applied)
+
+`.github/workflows/canonical-ci.yml` is the integrator's file and the most contended file on the line, so this change is
+handed over, not made here. Corrected on 2026-11-21 after the integrator's review of #316 (comment 6864550187): the
+first version replaced the whole `on:` block, which dropped `tags: ["*"]` (the trigger that runs the release-exclusion
+check on a tag) and `workflow_dispatch`, and its per-job `if:` made #196's pull-request jobs report as skipped, which
+satisfies a required check. Both are withdrawn. The change is now one word in the existing block:
+
+```yaml
+on:
+  pull_request:
+  push:
+    branches: [main, claude/greg-full-machine-completion-whgiee]   # was [main]
+    tags: ["*"]          # unchanged
+  workflow_dispatch:     # unchanged
+```
+
+No job gets an `if:`, so no required check can be satisfied by a skipped job. The cost: while #196 is open, a commit
+pushed to the line runs the checks twice, once for the push and once as #196's pull-request run, which breaks the
+file's own "exactly one run per change" comment for that one branch. That comment should then say so. The duplicate
+ends when #196 is closed after the default switch (the line's push runs then carry its checks). Until the change is
+made, a commit on the line is checked only through #196's pull-request runs. `directive-completion.yml` can stay as it
+is while #196 is open: its pull-request run does more than a push run (the ratchet against a base).
+
+If the head branch is added to `push.branches`, each commit on it gets two Canonical CI runs whose jobs report check
+runs with identical names on the same head SHA. The push run tests the branch tip and the `pull_request` run tests the
+merge with the base. GitHub's docs do not say which same-named check run a required check or the merge box reads, and
+its API returns the most recent run by default, so a later green push run can stand in for a failed `pull_request`
+run. Before treating a green merge box as proof that the merged result passed, read the "(pull_request)" entries on
+the PR's Checks tab, or give the push jobs distinct names.
+
+Sources. GitHub Docs: events that trigger workflows,
+[`pull_request`](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#pull_request)
+([source](https://raw.githubusercontent.com/github/docs/main/content/actions/reference/workflows-and-actions/events-that-trigger-workflows.md))
+and [`push`](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#push);
+[troubleshooting required status checks](https://docs.github.com/en/pull-requests/how-tos/merge-and-close-pull-requests/troubleshooting-required-status-checks)
+([source](https://raw.githubusercontent.com/github/docs/main/content/pull-requests/how-tos/merge-and-close-pull-requests/troubleshooting-required-status-checks.md));
+[about protected branches](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches)
+([source](https://raw.githubusercontent.com/github/docs/main/content/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches.md));
+[status checks](https://docs.github.com/en/pull-requests/reference/status-checks)
+([source](https://raw.githubusercontent.com/github/docs/main/content/pull-requests/reference/status-checks.md));
+[control workflow concurrency](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency)
+([source](https://raw.githubusercontent.com/github/docs/main/data/reusables/actions/actions-group-concurrency.md));
+the REST API's [list check runs for a Git reference](https://docs.github.com/en/rest/checks/runs#list-check-runs-for-a-git-reference)
+([OpenAPI](https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json))
+and [using the REST API to interact with checks](https://docs.github.com/en/rest/guides/using-the-rest-api-to-interact-with-checks);
+the GraphQL enum [`CheckRunType`](https://docs.github.com/en/graphql/reference/enums#checkruntype)
+([schema mirror](https://raw.githubusercontent.com/octokit/graphql-schema/main/schema.graphql)). GitHub Community:
+[discussion 26940](https://github.com/orgs/community/discussions/26940) (accepted answer by BrightRan, 2020; the page
+does not label the author as staff), [discussion 26325](https://github.com/orgs/community/discussions/26325) and
+[discussion 24872](https://github.com/orgs/community/discussions/24872) (lee-dohm: the state of a PR is determined by
+the check suites on the last commit). Seen only as search-engine snippets, not opened:
+<https://docs.github.com/en/enterprise-server@2.20/rest/reference/checks> and
+<https://www.kenmuse.com/blog/creating-github-checks/>. This repository, from the GitHub API as read on 2026-11-21
+before this paragraph was written (20:26Z): #196's `head.sha` was `121195907fff261bb8610ed03488ef4461b59f73`; its
+`pull_request` run [43538095376](https://github.com/dababiyoda/uniimente-kernel/actions/runs/43538095376) had that
+head SHA, and its check runs (for example id 132297031436, "1 · Kernel and organ tests") were then listed on the PR's
+head commit. The head moves at every intake: it then became `86f9600f1a222f43a78c3a84ce5c9f9a5de380f9` (the intake
+of #336), whose merge commit is dated 2026-11-21T20:40:38Z; #196 moved to it at about 20:42Z (its check suites were
+created at 20:42:05Z), and it has runs of its own, so read the head and its check runs again before relying on them.
+In this tree, `.github/workflows/canonical-ci.yml` runs on `pull_request` and on `push` to `branches: [main]` and
+tags, with the concurrency group `canonical-ci-${{ github.ref }}` and `cancel-in-progress: false`.
+
+### Adoption package (status on 2026-11-13, heads re-checked 2026-11-21; every row is pending the founder)
+
+One table for the Kernel and the 12 consumer drafts. "Before → after" is the draft's head before this session's
+two forward commits and after them: the pointer refresh, then the stop rule from the entry trial (#319; record in
+`VALIDATION.md`). The receipt in each pull request description declares the new head and keeps the old receipt
+verbatim under it. Every consumer pointer names the Kernel's one guide (`AGENTS.md` § Canonical reading
+order) on the integration branch, work board #96 and Discussion #89, and asks for the check-in. The route itself
+(`docs/BACKCAST_GPS.md`, `greg/path.json`) is reached through that guide, not copied.
+
+| # | Repository | Draft | Before → after | Repository-specific validation | Known blockers | Status |
+|---|---|---|---|---|---|---|
+| 1 | uniimente-kernel | #316 into the line | `91aaeca0` (base) → the head named in #316's receipt | Unit tests, `repo_review --check`, `governance.integrity --check`, receipt check green; Canonical CI on the PR | Integrator intake (#196 owner); then settings 1–3 above | pending |
+| 2 | DALEOBANKS | #76 | `f4e15b8f` → `f173ce05` → `7d71fe40` | Pointer-only diff; whitespace clean; pins unchanged | Siblings #83–#85 untouched; adopt after the Kernel | pending |
+| 3 | WealthMachineIntelligence | #34 | `070b3355` → `02ddd784` → `e3f26de5` | As above | Siblings #40–#42 untouched | pending |
+| 4 | PumpStation | #17 | `e91ccbb5` → `312515ae` → `f37d7d70` | As above | None found | pending |
+| 5 | RAILSCOUT | #6 | `924f0bd0` → `646c7e9b` → `adcf90f8` | As above | Organ code is in draft #9, not on `main` | pending |
+| 6 | RESEARCH-IN | #23 | `90ab4552` → `ba4ec858` → `66728d2d` | As above | `build` fails on the old head too (inherited) | pending |
+| 7 | build-your-own-x | #4 | `8a5a4bda` → `a391dbc6` → `325ff3d1` | As above (base `master`) | None found | pending |
+| 8 | agent-skills | #1 | `38f84836` → `580855a0` → `2cbf7c0e` | `node scripts/run-evals.js` passes | Fork: no Actions runs on this branch | pending |
+| 9 | knowledge-work-plugins | #1 | `0cf52de7` → `4ad77b49` → `49e7ed4c` | Nested plugin instructions untouched | Fork: no Actions runs | pending |
+| 10 | hyperframes | #1 | `4abe2f7c` → `cf98a638` → `97906fa1` | commitlint (conventional) and `oxfmt --check` pass; `_shared` templates untouched | Fork: no Actions runs | pending |
+| 11 | REA-Reverse-Engineering-Anything | #1 | `e8fd2701` → `65ca4722` → `082a75b6` | `oxfmt --check` passes; text below the pointer byte-identical to `main` | Fork: no Actions runs | pending |
+| 12 | VoiceStudio | #1 | `bf6286dc` → `5c6ab2a6` → `fafdebd3` | `check_commit_identities.py` clean; no agent attribution in commit or description | Fork: no Actions runs | pending |
+| 13 | gods-eye-view-EGGREGORE-TOOL | #3 | `f43cfc97` → `d8052076` → `c0608233` | As row 2 | Node jobs fail on the old head too (two files untouched here; patch proposed in the PR) | pending |
+
+**Rollback, every consumer row:** revert the two 2026-11-13 commits, newest first (both named in its receipt), or
+only the stop-rule commit to keep the refresh; the earlier pointer and history remain. Closing an unadopted draft is also safe. **Kernel row:** revert the PR's commits; the settings have
+their own rollback above.
+
+**Recommended merge order.**
+
+1. Integrator intake of #316 into the line (#315 is already on it).
+2. Founder settings 1 and 2, then 3 (above).
+3. Verify by discovery: a fresh session with no hint lands on the line and posts a check-in.
+4. Rows 2–7 and 13 (organ and research drafts that carry the receipt check), in any order.
+5. Rows 8–12 (fork-only pointers), in any order.
+6. Optional: a short "development moved" banner on `main` (handed to #152 and #193).
+
+No row is adopted until its merge is observed. An updated draft is not an adopted repository.

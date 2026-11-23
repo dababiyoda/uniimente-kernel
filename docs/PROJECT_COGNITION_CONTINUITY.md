@@ -125,6 +125,10 @@ directive section 1 and backcast node P0). Answers are short and point at canoni
   one ledger-backed journal and one consequence gate; the cortex is a set of GREG capabilities.
 - Current bottleneck: VEPMC 0 -> 1 on the founder's Chromebook (`greg path`, node N1). The cortex
   metric, Verified Cross-Geometry Routing Gain, is subordinate (`greg/path.json` workstreams).
+  (Dated note, 2026-11-13: this line is the 2026-10-01 record, kept as written. Since
+  `INTENT-20261030-BUILD-BEFORE-DEVICE-RUN` the device run is the acceptance and does not gate building; the
+  founder's direction of 2026-11-12 (`INTENT-20261112-CONVERGENCE-USEFUL-PATH`) names the engineering bottleneck. For today's
+  position run `python scripts/work_map.py`.)
 - Functional morphogenesis: capability formation in response to a verified deficit; P10 is the
   research form, held to a strong centralized baseline.
 - Capability Genesis: deficit -> search existing -> compose -> acquire -> build residual -> verify

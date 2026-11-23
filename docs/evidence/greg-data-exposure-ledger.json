@@ -314,10 +314,10 @@
    },
    "#179": {
     "glob": "docs/evidence/.*/PREREGISTRATION\\.md",
-    "matched": 3,
+    "matched": 5,
     "missing": [],
     "no_declaration": [],
-    "parsed": 3
+    "parsed": 5
    }
   },
   "admission freezes (#158 form)": {
@@ -27397,6 +27397,22 @@
    ],
    "path": "docs/evidence/greg-protected-evolution/2026-10-21-immune-7/PREREGISTRATION.md",
    "sha256": "sha256:b32b5d26f659bc5b5a2dfc8158917154226b086d9d3283849ddd1094be180f1b"
+  },
+  {
+   "commit": "1520ace9c4254d414d4be996a066e1c61c066ee2",
+   "declared_ranges": [],
+   "lineage": "#179",
+   "not_in_any_exposure": [],
+   "path": "docs/evidence/greg-abstention-resolution/2026-11-13/PREREGISTRATION.md",
+   "sha256": "sha256:65870ceb24514f0b5ec4778e35f13ac18a7c83f060d2fd38d665c789e5744ca9"
+  },
+  {
+   "commit": "1520ace9c4254d414d4be996a066e1c61c066ee2",
+   "declared_ranges": [],
+   "lineage": "#179",
+   "not_in_any_exposure": [],
+   "path": "docs/evidence/greg-abstention-resolution/2026-11-13/v2/PREREGISTRATION.md",
+   "sha256": "sha256:e088f3a6e0e9d2ec8097aa66d846892e4a781178802317ac71c537b00afb1657"
   },
   {
    "commit": "462bd98180fb6dc44a85237605524406167e08d6",

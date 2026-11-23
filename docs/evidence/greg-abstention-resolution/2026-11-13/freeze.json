@@ -1,0 +1,35 @@
+{
+ "arms": {
+  "B0": "55e6d74af4c0e4e24c410dec3f443675e60e5571",
+  "NEW": "recorded at run (dividend PR head)",
+  "P": "recorded at run (PR #194 head)"
+ },
+ "candidates_per_operator": 45,
+ "dependencies": {
+  "cryptography": "50.0.2",
+  "networkx": "3.7",
+  "numpy": "2.5.4",
+  "ortools": "9.15.6755",
+  "scipy": "1.18.1",
+  "z3-solver": "5.1.0.0"
+ },
+ "files": {
+  "cortex/evaluation/resolution/analyze.py": "sha256:427fff7a6197b3d2077c64666651cc16b7150d7f41da6d6660473d01da17d48c",
+  "cortex/evaluation/resolution/harness.py": "sha256:dca5d57e628f32aff2947e7998c32fd2c12aae0504195e37392cdca839df21d2",
+  "cortex/evaluation/resolution/suite.py": "sha256:5dbfa76b526712233293a6f7916c902a5ce773ebca6e7c3e21f0788dfd02935a",
+  "cortex/evaluation/suites/crossgeo-heldout-v0.3.json": "sha256:f4ad12b7dccf02d2494eb233f9611ef0ab61b2e598762f1b8fed85eb176deefd",
+  "docs/evidence/greg-abstention-resolution/2026-11-13/PREREGISTRATION.md": "sha256:65870ceb24514f0b5ec4778e35f13ac18a7c83f060d2fd38d665c789e5744ca9"
+ },
+ "note": "committed before any held-out candidate is labelled and before the dividend's code exists",
+ "run_id": "2026-11-13",
+ "schema": "greg-resolution-freeze/1",
+ "seeds": {
+  "bootstrap": 20261113,
+  "suite": 20261113
+ },
+ "suite_size": {
+  "adversarial": 30,
+  "closure_eligible_per_operator": 30,
+  "other_per_operator": 30
+ }
+}

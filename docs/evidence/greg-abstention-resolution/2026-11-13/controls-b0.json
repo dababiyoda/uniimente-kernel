@@ -1,0 +1,7021 @@
+{
+ "ablate": null,
+ "policy": "none",
+ "rows": [
+  {
+   "achieved_after": {
+    "m:hel-est-e34-control-p": "ACTIVE"
+   },
+   "achieved_before_action": false,
+   "action": null,
+   "appraised": {
+    "m:hel-est-e34-control-p": [
+     "VERIFIED_UNMET"
+    ]
+   },
+   "asks_after": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-31a3268de9c0ef88597c3724"
+    }
+   ],
+   "asks_before": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-31a3268de9c0ef88597c3724"
+    }
+   ],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-est-e34-control-p",
+   "mission_id": "m:hel-est-e34-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.16,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e34-control-p": "ACTED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e34-control-p": "BLOCKED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e34-control-p": "WAITING"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e34-control-p": "WAITING"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e34-control-p": "WAITING"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e34-control-p": "WAITING"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-for-f134-control-c": "ACTIVE"
+   },
+   "achieved_before_action": false,
+   "action": null,
+   "appraised": {
+    "m:hel-for-f134-control-c": [
+     "VERIFIED_UNMET"
+    ]
+   },
+   "asks_after": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-d342302a900f160b45b3ee98"
+    }
+   ],
+   "asks_before": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-d342302a900f160b45b3ee98"
+    }
+   ],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-for-f134-control-c",
+   "mission_id": "m:hel-for-f134-control-c",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 6.58,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f134-control-c": "ACTED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f134-control-c": "BLOCKED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f134-control-c": "WAITING"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f134-control-c": "WAITING"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f134-control-c": "WAITING"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f134-control-c": "WAITING"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-sch-o10-control-p": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-sch-o10-control-p": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-sch-o10-control-p",
+   "mission_id": "m:hel-sch-o10-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.53,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o10-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o10-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o10-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o10-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o10-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o10-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-est-e185-control-c": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-est-e185-control-c": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-est-e185-control-c",
+   "mission_id": "m:hel-est-e185-control-c",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 5.66,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e185-control-c": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e185-control-c": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e185-control-c": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e185-control-c": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e185-control-c": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e185-control-c": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-for-f175-control-p": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-for-f175-control-p": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-for-f175-control-p",
+   "mission_id": "m:hel-for-f175-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 0.9,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f175-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f175-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f175-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f175-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f175-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f175-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-sch-o76-control-c": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-sch-o76-control-c": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-sch-o76-control-c",
+   "mission_id": "m:hel-sch-o76-control-c",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 3.99,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o76-control-c": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o76-control-c": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o76-control-c": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o76-control-c": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o76-control-c": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o76-control-c": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-est-e166-control-p": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-est-e166-control-p": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-est-e166-control-p",
+   "mission_id": "m:hel-est-e166-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.13,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e166-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e166-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e166-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e166-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e166-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e166-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-for-f79-control-c": "ACTIVE"
+   },
+   "achieved_before_action": false,
+   "action": null,
+   "appraised": {
+    "m:hel-for-f79-control-c": [
+     "VERIFIED_UNMET"
+    ]
+   },
+   "asks_after": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-be0cc718a67b8b47039e2464"
+    }
+   ],
+   "asks_before": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-be0cc718a67b8b47039e2464"
+    }
+   ],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-for-f79-control-c",
+   "mission_id": "m:hel-for-f79-control-c",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 4.22,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f79-control-c": "ACTED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f79-control-c": "BLOCKED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f79-control-c": "WAITING"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f79-control-c": "WAITING"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f79-control-c": "WAITING"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f79-control-c": "WAITING"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-sch-o94-control-p": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-sch-o94-control-p": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-sch-o94-control-p",
+   "mission_id": "m:hel-sch-o94-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.39,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o94-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o94-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o94-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o94-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o94-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o94-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-est-e60-control-c": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-est-e60-control-c": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-est-e60-control-c",
+   "mission_id": "m:hel-est-e60-control-c",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 3.3,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e60-control-c": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e60-control-c": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e60-control-c": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e60-control-c": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e60-control-c": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e60-control-c": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-for-f246-control-p": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-for-f246-control-p": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-for-f246-control-p",
+   "mission_id": "m:hel-for-f246-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.5,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f246-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f246-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f246-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f246-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f246-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f246-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-sch-o161-control-c": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-sch-o161-control-c": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-sch-o161-control-c",
+   "mission_id": "m:hel-sch-o161-control-c",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 3.88,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o161-control-c": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o161-control-c": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o161-control-c": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o161-control-c": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o161-control-c": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o161-control-c": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-est-e189-control-p": "ACTIVE"
+   },
+   "achieved_before_action": false,
+   "action": null,
+   "appraised": {
+    "m:hel-est-e189-control-p": [
+     "VERIFIED_UNMET"
+    ]
+   },
+   "asks_after": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-afe70eb38031b79a33f227fb"
+    }
+   ],
+   "asks_before": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-afe70eb38031b79a33f227fb"
+    }
+   ],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-est-e189-control-p",
+   "mission_id": "m:hel-est-e189-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.16,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e189-control-p": "ACTED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e189-control-p": "BLOCKED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e189-control-p": "WAITING"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e189-control-p": "WAITING"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e189-control-p": "WAITING"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e189-control-p": "WAITING"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-for-f40-control-c": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-for-f40-control-c": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-for-f40-control-c",
+   "mission_id": "m:hel-for-f40-control-c",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 3.33,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f40-control-c": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f40-control-c": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f40-control-c": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f40-control-c": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f40-control-c": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f40-control-c": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-sch-o134-control-p": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-sch-o134-control-p": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-sch-o134-control-p",
+   "mission_id": "m:hel-sch-o134-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.43,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o134-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o134-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o134-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o134-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o134-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o134-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-est-e128-control-c": "ACTIVE"
+   },
+   "achieved_before_action": false,
+   "action": null,
+   "appraised": {
+    "m:hel-est-e128-control-c": [
+     "VERIFIED_UNMET"
+    ]
+   },
+   "asks_after": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-2e2a543147428fca7fe25ec1"
+    }
+   ],
+   "asks_before": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-2e2a543147428fca7fe25ec1"
+    }
+   ],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-est-e128-control-c",
+   "mission_id": "m:hel-est-e128-control-c",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 3.57,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e128-control-c": "ACTED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e128-control-c": "BLOCKED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e128-control-c": "WAITING"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e128-control-c": "WAITING"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e128-control-c": "WAITING"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e128-control-c": "WAITING"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-for-f78-control-p": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-for-f78-control-p": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-for-f78-control-p",
+   "mission_id": "m:hel-for-f78-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.48,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f78-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f78-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f78-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f78-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f78-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f78-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-sch-o24-control-c": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-sch-o24-control-c": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-sch-o24-control-c",
+   "mission_id": "m:hel-sch-o24-control-c",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 3.75,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o24-control-c": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o24-control-c": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o24-control-c": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o24-control-c": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o24-control-c": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o24-control-c": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-est-e96-control-p": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-est-e96-control-p": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-est-e96-control-p",
+   "mission_id": "m:hel-est-e96-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.12,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e96-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e96-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e96-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e96-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e96-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e96-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-for-f126-control-c": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-for-f126-control-c": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-for-f126-control-c",
+   "mission_id": "m:hel-for-f126-control-c",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 3.88,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f126-control-c": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f126-control-c": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f126-control-c": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f126-control-c": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f126-control-c": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f126-control-c": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-sch-o13-control-p": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-sch-o13-control-p": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-sch-o13-control-p",
+   "mission_id": "m:hel-sch-o13-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.51,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o13-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o13-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o13-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o13-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o13-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o13-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-est-e157-control-c": "ACTIVE"
+   },
+   "achieved_before_action": false,
+   "action": null,
+   "appraised": {
+    "m:hel-est-e157-control-c": [
+     "VERIFIED_UNMET"
+    ]
+   },
+   "asks_after": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-fdd299a5bc4078907283dfeb"
+    }
+   ],
+   "asks_before": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-fdd299a5bc4078907283dfeb"
+    }
+   ],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-est-e157-control-c",
+   "mission_id": "m:hel-est-e157-control-c",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 4.12,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e157-control-c": "ACTED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e157-control-c": "BLOCKED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e157-control-c": "WAITING"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e157-control-c": "WAITING"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e157-control-c": "WAITING"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e157-control-c": "WAITING"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-for-f269-control-p": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-for-f269-control-p": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-for-f269-control-p",
+   "mission_id": "m:hel-for-f269-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.02,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f269-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f269-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f269-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f269-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f269-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f269-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-sch-o212-control-c": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-sch-o212-control-c": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-sch-o212-control-c",
+   "mission_id": "m:hel-sch-o212-control-c",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 3.79,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o212-control-c": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o212-control-c": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o212-control-c": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o212-control-c": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o212-control-c": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o212-control-c": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-est-e184-control-p": "ACTIVE"
+   },
+   "achieved_before_action": false,
+   "action": null,
+   "appraised": {
+    "m:hel-est-e184-control-p": [
+     "VERIFIED_UNMET"
+    ]
+   },
+   "asks_after": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-1ffb20bc654377f04ac05a92"
+    }
+   ],
+   "asks_before": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-1ffb20bc654377f04ac05a92"
+    }
+   ],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-est-e184-control-p",
+   "mission_id": "m:hel-est-e184-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.15,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e184-control-p": "ACTED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e184-control-p": "BLOCKED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e184-control-p": "WAITING"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e184-control-p": "WAITING"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e184-control-p": "WAITING"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e184-control-p": "WAITING"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-for-f128-control-c": "ACTIVE"
+   },
+   "achieved_before_action": false,
+   "action": null,
+   "appraised": {
+    "m:hel-for-f128-control-c": []
+   },
+   "asks_after": [
+    {
+     "kind": "CAPABILITY_ATTACH",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "attach a verified capability for this function, or revise the mission",
+     "request_id": "req-39983c40919c91693b03271f"
+    }
+   ],
+   "asks_before": [
+    {
+     "kind": "CAPABILITY_ATTACH",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "attach a verified capability for this function, or revise the mission",
+     "request_id": "req-39983c40919c91693b03271f"
+    }
+   ],
+   "closed": false,
+   "genesis_first_tick": 0,
+   "harm": false,
+   "item_id": "hel-for-f128-control-c",
+   "mission_id": "m:hel-for-f128-control-c",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 0.1,
+   "ticks": [
+    {
+     "genesis": [
+      "cognition.constraint_feasibility:unspecified"
+     ],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f128-control-c": "BLOCKED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [
+      "cognition.constraint_feasibility:unspecified"
+     ],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f128-control-c": "WAITING"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [
+      "cognition.constraint_feasibility:unspecified"
+     ],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f128-control-c": "WAITING"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [
+      "cognition.constraint_feasibility:unspecified"
+     ],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f128-control-c": "WAITING"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [
+      "cognition.constraint_feasibility:unspecified"
+     ],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f128-control-c": "WAITING"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [
+      "cognition.constraint_feasibility:unspecified"
+     ],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f128-control-c": "WAITING"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-sch-o173-control-p": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-sch-o173-control-p": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-sch-o173-control-p",
+   "mission_id": "m:hel-sch-o173-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.57,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o173-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o173-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o173-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o173-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o173-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o173-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-est-e123-control-c": "ACTIVE"
+   },
+   "achieved_before_action": false,
+   "action": null,
+   "appraised": {
+    "m:hel-est-e123-control-c": [
+     "VERIFIED_UNMET"
+    ]
+   },
+   "asks_after": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-d80c61e668a2a8df2ac5418d"
+    }
+   ],
+   "asks_before": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-d80c61e668a2a8df2ac5418d"
+    }
+   ],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-est-e123-control-c",
+   "mission_id": "m:hel-est-e123-control-c",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 3.63,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e123-control-c": "ACTED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e123-control-c": "BLOCKED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e123-control-c": "WAITING"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e123-control-c": "WAITING"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e123-control-c": "WAITING"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e123-control-c": "WAITING"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-for-f66-control-p": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-for-f66-control-p": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-for-f66-control-p",
+   "mission_id": "m:hel-for-f66-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.47,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f66-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f66-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f66-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f66-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f66-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f66-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-sch-o28-control-c": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-sch-o28-control-c": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-sch-o28-control-c",
+   "mission_id": "m:hel-sch-o28-control-c",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 3.7,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o28-control-c": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o28-control-c": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o28-control-c": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o28-control-c": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o28-control-c": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o28-control-c": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-est-e181-control-p": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-est-e181-control-p": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-est-e181-control-p",
+   "mission_id": "m:hel-est-e181-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.17,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e181-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e181-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e181-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e181-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e181-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e181-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-for-f74-control-c": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-for-f74-control-c": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-for-f74-control-c",
+   "mission_id": "m:hel-for-f74-control-c",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 3.52,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f74-control-c": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f74-control-c": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f74-control-c": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f74-control-c": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f74-control-c": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f74-control-c": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-sch-o124-control-p": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-sch-o124-control-p": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-sch-o124-control-p",
+   "mission_id": "m:hel-sch-o124-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.5,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o124-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o124-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o124-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o124-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o124-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o124-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-est-e93-control-c": "ACTIVE"
+   },
+   "achieved_before_action": false,
+   "action": null,
+   "appraised": {
+    "m:hel-est-e93-control-c": [
+     "VERIFIED_UNMET"
+    ]
+   },
+   "asks_after": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-a2068a039080b4da1235a834"
+    }
+   ],
+   "asks_before": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-a2068a039080b4da1235a834"
+    }
+   ],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-est-e93-control-c",
+   "mission_id": "m:hel-est-e93-control-c",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 3.56,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e93-control-c": "ACTED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e93-control-c": "BLOCKED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e93-control-c": "WAITING"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e93-control-c": "WAITING"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e93-control-c": "WAITING"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e93-control-c": "WAITING"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-for-f186-control-p": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-for-f186-control-p": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-for-f186-control-p",
+   "mission_id": "m:hel-for-f186-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.48,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f186-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f186-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f186-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f186-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f186-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f186-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-sch-o181-control-c": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-sch-o181-control-c": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-sch-o181-control-c",
+   "mission_id": "m:hel-sch-o181-control-c",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 3.9,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o181-control-c": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o181-control-c": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o181-control-c": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o181-control-c": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o181-control-c": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o181-control-c": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-est-e159-control-p": "ACTIVE"
+   },
+   "achieved_before_action": false,
+   "action": null,
+   "appraised": {
+    "m:hel-est-e159-control-p": [
+     "VERIFIED_UNMET"
+    ]
+   },
+   "asks_after": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-c7072eecb58b39d039d7a74a"
+    }
+   ],
+   "asks_before": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-c7072eecb58b39d039d7a74a"
+    }
+   ],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-est-e159-control-p",
+   "mission_id": "m:hel-est-e159-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.11,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e159-control-p": "ACTED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e159-control-p": "BLOCKED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e159-control-p": "WAITING"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e159-control-p": "WAITING"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e159-control-p": "WAITING"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e159-control-p": "WAITING"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-for-f295-control-c": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-for-f295-control-c": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-for-f295-control-c",
+   "mission_id": "m:hel-for-f295-control-c",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 3.12,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f295-control-c": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f295-control-c": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f295-control-c": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f295-control-c": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f295-control-c": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f295-control-c": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-sch-o232-control-p": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-sch-o232-control-p": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-sch-o232-control-p",
+   "mission_id": "m:hel-sch-o232-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.53,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o232-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o232-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o232-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o232-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o232-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o232-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-est-e143-control-c": "ACTIVE"
+   },
+   "achieved_before_action": false,
+   "action": null,
+   "appraised": {
+    "m:hel-est-e143-control-c": [
+     "VERIFIED_UNMET"
+    ]
+   },
+   "asks_after": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-048c629baa219e94acdcd6eb"
+    }
+   ],
+   "asks_before": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-048c629baa219e94acdcd6eb"
+    }
+   ],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-est-e143-control-c",
+   "mission_id": "m:hel-est-e143-control-c",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 3.48,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e143-control-c": "ACTED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e143-control-c": "BLOCKED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e143-control-c": "WAITING"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e143-control-c": "WAITING"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e143-control-c": "WAITING"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e143-control-c": "WAITING"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-for-f147-control-p": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-for-f147-control-p": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-for-f147-control-p",
+   "mission_id": "m:hel-for-f147-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.47,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f147-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f147-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f147-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f147-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f147-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f147-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-sch-o214-control-c": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-sch-o214-control-c": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-sch-o214-control-c",
+   "mission_id": "m:hel-sch-o214-control-c",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 3.85,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o214-control-c": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o214-control-c": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o214-control-c": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o214-control-c": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o214-control-c": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o214-control-c": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-est-e41-control-p": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-est-e41-control-p": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-est-e41-control-p",
+   "mission_id": "m:hel-est-e41-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.21,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e41-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e41-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e41-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e41-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e41-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e41-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-for-f218-control-c": "ACTIVE"
+   },
+   "achieved_before_action": false,
+   "action": null,
+   "appraised": {
+    "m:hel-for-f218-control-c": []
+   },
+   "asks_after": [
+    {
+     "kind": "CAPABILITY_ATTACH",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "attach a verified capability for this function, or revise the mission",
+     "request_id": "req-51dcc33927a96e7929c59f49"
+    }
+   ],
+   "asks_before": [
+    {
+     "kind": "CAPABILITY_ATTACH",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "attach a verified capability for this function, or revise the mission",
+     "request_id": "req-51dcc33927a96e7929c59f49"
+    }
+   ],
+   "closed": false,
+   "genesis_first_tick": 0,
+   "harm": false,
+   "item_id": "hel-for-f218-control-c",
+   "mission_id": "m:hel-for-f218-control-c",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 0.11,
+   "ticks": [
+    {
+     "genesis": [
+      "cognition.constraint_feasibility:unspecified"
+     ],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f218-control-c": "BLOCKED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [
+      "cognition.constraint_feasibility:unspecified"
+     ],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f218-control-c": "WAITING"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [
+      "cognition.constraint_feasibility:unspecified"
+     ],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f218-control-c": "WAITING"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [
+      "cognition.constraint_feasibility:unspecified"
+     ],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f218-control-c": "WAITING"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [
+      "cognition.constraint_feasibility:unspecified"
+     ],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f218-control-c": "WAITING"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [
+      "cognition.constraint_feasibility:unspecified"
+     ],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f218-control-c": "WAITING"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-sch-o96-control-p": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-sch-o96-control-p": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-sch-o96-control-p",
+   "mission_id": "m:hel-sch-o96-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.46,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o96-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o96-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o96-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o96-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o96-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o96-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-for-f134-control-p": "ACTIVE"
+   },
+   "achieved_before_action": false,
+   "action": null,
+   "appraised": {
+    "m:hel-for-f134-control-p": [
+     "VERIFIED_UNMET"
+    ]
+   },
+   "asks_after": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-5989bb1f34e7b9ad5071fefa"
+    }
+   ],
+   "asks_before": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-5989bb1f34e7b9ad5071fefa"
+    }
+   ],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-for-f134-control-p",
+   "mission_id": "m:hel-for-f134-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.61,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f134-control-p": "ACTED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f134-control-p": "BLOCKED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f134-control-p": "WAITING"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f134-control-p": "WAITING"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f134-control-p": "WAITING"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f134-control-p": "WAITING"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-est-e185-control-p": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-est-e185-control-p": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-est-e185-control-p",
+   "mission_id": "m:hel-est-e185-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.02,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e185-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e185-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e185-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e185-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e185-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e185-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-sch-o76-control-p": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-sch-o76-control-p": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-sch-o76-control-p",
+   "mission_id": "m:hel-sch-o76-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.57,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o76-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o76-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o76-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o76-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o76-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o76-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-for-f79-control-p": "ACTIVE"
+   },
+   "achieved_before_action": false,
+   "action": null,
+   "appraised": {
+    "m:hel-for-f79-control-p": [
+     "VERIFIED_UNMET"
+    ]
+   },
+   "asks_after": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-513dcaa514978d03a21a1b0c"
+    }
+   ],
+   "asks_before": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-513dcaa514978d03a21a1b0c"
+    }
+   ],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-for-f79-control-p",
+   "mission_id": "m:hel-for-f79-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.74,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f79-control-p": "ACTED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f79-control-p": "BLOCKED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f79-control-p": "WAITING"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f79-control-p": "WAITING"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f79-control-p": "WAITING"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f79-control-p": "WAITING"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-est-e60-control-p": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-est-e60-control-p": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-est-e60-control-p",
+   "mission_id": "m:hel-est-e60-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 0.99,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e60-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e60-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e60-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e60-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e60-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e60-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-sch-o161-control-p": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-sch-o161-control-p": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-sch-o161-control-p",
+   "mission_id": "m:hel-sch-o161-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.56,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o161-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o161-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o161-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o161-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o161-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o161-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-for-f40-control-p": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-for-f40-control-p": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-for-f40-control-p",
+   "mission_id": "m:hel-for-f40-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 0.87,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f40-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f40-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f40-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f40-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f40-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f40-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-est-e128-control-p": "ACTIVE"
+   },
+   "achieved_before_action": false,
+   "action": null,
+   "appraised": {
+    "m:hel-est-e128-control-p": [
+     "VERIFIED_UNMET"
+    ]
+   },
+   "asks_after": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-21c25d34fe628840d9ea4ebf"
+    }
+   ],
+   "asks_before": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-21c25d34fe628840d9ea4ebf"
+    }
+   ],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-est-e128-control-p",
+   "mission_id": "m:hel-est-e128-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.21,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e128-control-p": "ACTED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e128-control-p": "BLOCKED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e128-control-p": "WAITING"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e128-control-p": "WAITING"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e128-control-p": "WAITING"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e128-control-p": "WAITING"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-sch-o24-control-p": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-sch-o24-control-p": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-sch-o24-control-p",
+   "mission_id": "m:hel-sch-o24-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.5,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o24-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o24-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o24-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o24-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o24-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o24-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-for-f126-control-p": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-for-f126-control-p": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-for-f126-control-p",
+   "mission_id": "m:hel-for-f126-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.59,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f126-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f126-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f126-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f126-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f126-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f126-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-est-e157-control-p": "ACTIVE"
+   },
+   "achieved_before_action": false,
+   "action": null,
+   "appraised": {
+    "m:hel-est-e157-control-p": [
+     "VERIFIED_UNMET"
+    ]
+   },
+   "asks_after": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-075fe8f9652da14b98172791"
+    }
+   ],
+   "asks_before": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-075fe8f9652da14b98172791"
+    }
+   ],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-est-e157-control-p",
+   "mission_id": "m:hel-est-e157-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.75,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e157-control-p": "ACTED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e157-control-p": "BLOCKED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e157-control-p": "WAITING"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e157-control-p": "WAITING"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e157-control-p": "WAITING"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e157-control-p": "WAITING"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-sch-o212-control-p": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-sch-o212-control-p": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-sch-o212-control-p",
+   "mission_id": "m:hel-sch-o212-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.4,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o212-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o212-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o212-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o212-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o212-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o212-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-for-f128-control-p": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-for-f128-control-p": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-for-f128-control-p",
+   "mission_id": "m:hel-for-f128-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.54,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f128-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f128-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f128-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f128-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f128-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f128-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-est-e123-control-p": "ACTIVE"
+   },
+   "achieved_before_action": false,
+   "action": null,
+   "appraised": {
+    "m:hel-est-e123-control-p": [
+     "VERIFIED_UNMET"
+    ]
+   },
+   "asks_after": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-60c057c6993e0c6a9c0aa62e"
+    }
+   ],
+   "asks_before": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-60c057c6993e0c6a9c0aa62e"
+    }
+   ],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-est-e123-control-p",
+   "mission_id": "m:hel-est-e123-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.27,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e123-control-p": "ACTED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e123-control-p": "BLOCKED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e123-control-p": "WAITING"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e123-control-p": "WAITING"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e123-control-p": "WAITING"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e123-control-p": "WAITING"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-sch-o28-control-p": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-sch-o28-control-p": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-sch-o28-control-p",
+   "mission_id": "m:hel-sch-o28-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.52,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o28-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o28-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o28-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o28-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o28-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o28-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-for-f74-control-p": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-for-f74-control-p": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-for-f74-control-p",
+   "mission_id": "m:hel-for-f74-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.08,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f74-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f74-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f74-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f74-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f74-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f74-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-est-e93-control-p": "ACTIVE"
+   },
+   "achieved_before_action": false,
+   "action": null,
+   "appraised": {
+    "m:hel-est-e93-control-p": [
+     "VERIFIED_UNMET"
+    ]
+   },
+   "asks_after": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-a4b9b36aeab35ccd55d487e4"
+    }
+   ],
+   "asks_before": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-a4b9b36aeab35ccd55d487e4"
+    }
+   ],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-est-e93-control-p",
+   "mission_id": "m:hel-est-e93-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.2,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e93-control-p": "ACTED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e93-control-p": "BLOCKED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e93-control-p": "WAITING"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e93-control-p": "WAITING"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e93-control-p": "WAITING"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e93-control-p": "WAITING"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-sch-o181-control-p": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-sch-o181-control-p": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-sch-o181-control-p",
+   "mission_id": "m:hel-sch-o181-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.54,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o181-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o181-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o181-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o181-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o181-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o181-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-for-f295-control-p": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-for-f295-control-p": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-for-f295-control-p",
+   "mission_id": "m:hel-for-f295-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 0.96,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f295-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f295-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f295-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f295-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f295-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f295-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-est-e143-control-p": "ACTIVE"
+   },
+   "achieved_before_action": false,
+   "action": null,
+   "appraised": {
+    "m:hel-est-e143-control-p": [
+     "VERIFIED_UNMET"
+    ]
+   },
+   "asks_after": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-209933a956cdb87944cf3e89"
+    }
+   ],
+   "asks_before": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-209933a956cdb87944cf3e89"
+    }
+   ],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-est-e143-control-p",
+   "mission_id": "m:hel-est-e143-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.24,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e143-control-p": "ACTED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e143-control-p": "BLOCKED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-est-e143-control-p": "WAITING"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e143-control-p": "WAITING"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e143-control-p": "WAITING"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-est-e143-control-p": "WAITING"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-sch-o214-control-p": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-sch-o214-control-p": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-sch-o214-control-p",
+   "mission_id": "m:hel-sch-o214-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.5,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o214-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o214-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sch-o214-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o214-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o214-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sch-o214-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-for-f218-control-p": "ACHIEVED"
+   },
+   "achieved_before_action": true,
+   "action": null,
+   "appraised": {
+    "m:hel-for-f218-control-p": [
+     "VERIFIED"
+    ]
+   },
+   "asks_after": [],
+   "asks_before": [],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-for-f218-control-p",
+   "mission_id": "m:hel-for-f218-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.51,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f218-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f218-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-for-f218-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f218-control-p": "ACHIEVED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f218-control-p": "ACHIEVED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-for-f218-control-p": "ACHIEVED"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-sem-s48-control-p": "ACTIVE"
+   },
+   "achieved_before_action": false,
+   "action": null,
+   "appraised": {
+    "m:hel-sem-s48-control-p": [
+     "VERIFIED_UNMET"
+    ]
+   },
+   "asks_after": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-dc9f4c3cb569b5287c614b46"
+    }
+   ],
+   "asks_before": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-dc9f4c3cb569b5287c614b46"
+    }
+   ],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-sem-s48-control-p",
+   "mission_id": "m:hel-sem-s48-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.2,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s48-control-p": "ACTED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s48-control-p": "BLOCKED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s48-control-p": "WAITING"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s48-control-p": "WAITING"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s48-control-p": "WAITING"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s48-control-p": "WAITING"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-sem-s132-control-p": "ACTIVE"
+   },
+   "achieved_before_action": false,
+   "action": null,
+   "appraised": {
+    "m:hel-sem-s132-control-p": [
+     "VERIFIED_UNMET"
+    ]
+   },
+   "asks_after": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-21b1a05280e00ba666647a72"
+    }
+   ],
+   "asks_before": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-21b1a05280e00ba666647a72"
+    }
+   ],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-sem-s132-control-p",
+   "mission_id": "m:hel-sem-s132-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.15,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s132-control-p": "ACTED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s132-control-p": "BLOCKED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s132-control-p": "WAITING"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s132-control-p": "WAITING"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s132-control-p": "WAITING"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s132-control-p": "WAITING"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-sem-s30-control-p": "ACTIVE"
+   },
+   "achieved_before_action": false,
+   "action": null,
+   "appraised": {
+    "m:hel-sem-s30-control-p": [
+     "VERIFIED_UNMET"
+    ]
+   },
+   "asks_after": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-e40467e626e5447387b46cba"
+    }
+   ],
+   "asks_before": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-e40467e626e5447387b46cba"
+    }
+   ],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-sem-s30-control-p",
+   "mission_id": "m:hel-sem-s30-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.12,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s30-control-p": "ACTED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s30-control-p": "BLOCKED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s30-control-p": "WAITING"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s30-control-p": "WAITING"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s30-control-p": "WAITING"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s30-control-p": "WAITING"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-sem-s06-control-p": "ACTIVE"
+   },
+   "achieved_before_action": false,
+   "action": null,
+   "appraised": {
+    "m:hel-sem-s06-control-p": [
+     "VERIFIED_UNMET"
+    ]
+   },
+   "asks_after": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-67a7b0ef8bb4653306983943"
+    }
+   ],
+   "asks_before": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-67a7b0ef8bb4653306983943"
+    }
+   ],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-sem-s06-control-p",
+   "mission_id": "m:hel-sem-s06-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.14,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s06-control-p": "ACTED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s06-control-p": "BLOCKED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s06-control-p": "WAITING"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s06-control-p": "WAITING"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s06-control-p": "WAITING"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s06-control-p": "WAITING"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-sem-s186-control-p": "ACTIVE"
+   },
+   "achieved_before_action": false,
+   "action": null,
+   "appraised": {
+    "m:hel-sem-s186-control-p": [
+     "VERIFIED_UNMET"
+    ]
+   },
+   "asks_after": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-eb6e973badc93ef197e52430"
+    }
+   ],
+   "asks_before": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-eb6e973badc93ef197e52430"
+    }
+   ],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-sem-s186-control-p",
+   "mission_id": "m:hel-sem-s186-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.14,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s186-control-p": "ACTED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s186-control-p": "BLOCKED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s186-control-p": "WAITING"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s186-control-p": "WAITING"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s186-control-p": "WAITING"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s186-control-p": "WAITING"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-sem-s54-control-p": "ACTIVE"
+   },
+   "achieved_before_action": false,
+   "action": null,
+   "appraised": {
+    "m:hel-sem-s54-control-p": [
+     "VERIFIED_UNMET"
+    ]
+   },
+   "asks_after": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-3717585077a42e8b82983c7e"
+    }
+   ],
+   "asks_before": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-3717585077a42e8b82983c7e"
+    }
+   ],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-sem-s54-control-p",
+   "mission_id": "m:hel-sem-s54-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.1,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s54-control-p": "ACTED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s54-control-p": "BLOCKED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s54-control-p": "WAITING"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s54-control-p": "WAITING"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s54-control-p": "WAITING"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s54-control-p": "WAITING"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-sem-s18-control-p": "ACTIVE"
+   },
+   "achieved_before_action": false,
+   "action": null,
+   "appraised": {
+    "m:hel-sem-s18-control-p": [
+     "VERIFIED_UNMET"
+    ]
+   },
+   "asks_after": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-8ee763358e461b4eaf669655"
+    }
+   ],
+   "asks_before": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-8ee763358e461b4eaf669655"
+    }
+   ],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-sem-s18-control-p",
+   "mission_id": "m:hel-sem-s18-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.13,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s18-control-p": "ACTED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s18-control-p": "BLOCKED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s18-control-p": "WAITING"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s18-control-p": "WAITING"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s18-control-p": "WAITING"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s18-control-p": "WAITING"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-sem-s180-control-p": "ACTIVE"
+   },
+   "achieved_before_action": false,
+   "action": null,
+   "appraised": {
+    "m:hel-sem-s180-control-p": [
+     "VERIFIED_UNMET"
+    ]
+   },
+   "asks_after": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-bb4850904ab5ef25a1179753"
+    }
+   ],
+   "asks_before": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-bb4850904ab5ef25a1179753"
+    }
+   ],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-sem-s180-control-p",
+   "mission_id": "m:hel-sem-s180-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.14,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s180-control-p": "ACTED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s180-control-p": "BLOCKED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s180-control-p": "WAITING"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s180-control-p": "WAITING"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s180-control-p": "WAITING"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s180-control-p": "WAITING"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-sem-s24-control-p": "ACTIVE"
+   },
+   "achieved_before_action": false,
+   "action": null,
+   "appraised": {
+    "m:hel-sem-s24-control-p": [
+     "VERIFIED_UNMET"
+    ]
+   },
+   "asks_after": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-7fe4602a0c351261b6e0146f"
+    }
+   ],
+   "asks_before": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-7fe4602a0c351261b6e0146f"
+    }
+   ],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-sem-s24-control-p",
+   "mission_id": "m:hel-sem-s24-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.24,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s24-control-p": "ACTED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s24-control-p": "BLOCKED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s24-control-p": "WAITING"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s24-control-p": "WAITING"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s24-control-p": "WAITING"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s24-control-p": "WAITING"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-sem-s204-control-p": "ACTIVE"
+   },
+   "achieved_before_action": false,
+   "action": null,
+   "appraised": {
+    "m:hel-sem-s204-control-p": [
+     "VERIFIED_UNMET"
+    ]
+   },
+   "asks_after": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-3bcb6c8beee29618b3643be0"
+    }
+   ],
+   "asks_before": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-3bcb6c8beee29618b3643be0"
+    }
+   ],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-sem-s204-control-p",
+   "mission_id": "m:hel-sem-s204-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.12,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s204-control-p": "ACTED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s204-control-p": "BLOCKED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s204-control-p": "WAITING"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s204-control-p": "WAITING"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s204-control-p": "WAITING"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s204-control-p": "WAITING"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-sem-s60-control-p": "ACTIVE"
+   },
+   "achieved_before_action": false,
+   "action": null,
+   "appraised": {
+    "m:hel-sem-s60-control-p": [
+     "VERIFIED_UNMET"
+    ]
+   },
+   "asks_after": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-555ded89d44bb4424a2f4974"
+    }
+   ],
+   "asks_before": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-555ded89d44bb4424a2f4974"
+    }
+   ],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-sem-s60-control-p",
+   "mission_id": "m:hel-sem-s60-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.13,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s60-control-p": "ACTED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s60-control-p": "BLOCKED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s60-control-p": "WAITING"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s60-control-p": "WAITING"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s60-control-p": "WAITING"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s60-control-p": "WAITING"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-sem-s210-control-p": "ACTIVE"
+   },
+   "achieved_before_action": false,
+   "action": null,
+   "appraised": {
+    "m:hel-sem-s210-control-p": [
+     "VERIFIED_UNMET"
+    ]
+   },
+   "asks_after": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-bd92497ae31888b8e669bc30"
+    }
+   ],
+   "asks_before": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-bd92497ae31888b8e669bc30"
+    }
+   ],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-sem-s210-control-p",
+   "mission_id": "m:hel-sem-s210-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.18,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s210-control-p": "ACTED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s210-control-p": "BLOCKED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s210-control-p": "WAITING"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s210-control-p": "WAITING"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s210-control-p": "WAITING"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s210-control-p": "WAITING"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-sem-s114-control-p": "ACTIVE"
+   },
+   "achieved_before_action": false,
+   "action": null,
+   "appraised": {
+    "m:hel-sem-s114-control-p": [
+     "VERIFIED_UNMET"
+    ]
+   },
+   "asks_after": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-0369ae49d6675a3f72c448c5"
+    }
+   ],
+   "asks_before": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-0369ae49d6675a3f72c448c5"
+    }
+   ],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-sem-s114-control-p",
+   "mission_id": "m:hel-sem-s114-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.13,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s114-control-p": "ACTED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s114-control-p": "BLOCKED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s114-control-p": "WAITING"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s114-control-p": "WAITING"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s114-control-p": "WAITING"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s114-control-p": "WAITING"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-sem-s96-control-p": "ACTIVE"
+   },
+   "achieved_before_action": false,
+   "action": null,
+   "appraised": {
+    "m:hel-sem-s96-control-p": [
+     "VERIFIED_UNMET"
+    ]
+   },
+   "asks_after": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-638ac5fe4e6768e3dfdf2a21"
+    }
+   ],
+   "asks_before": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-638ac5fe4e6768e3dfdf2a21"
+    }
+   ],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-sem-s96-control-p",
+   "mission_id": "m:hel-sem-s96-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.1,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s96-control-p": "ACTED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s96-control-p": "BLOCKED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s96-control-p": "WAITING"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s96-control-p": "WAITING"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s96-control-p": "WAITING"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s96-control-p": "WAITING"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-sem-s42-control-p": "ACTIVE"
+   },
+   "achieved_before_action": false,
+   "action": null,
+   "appraised": {
+    "m:hel-sem-s42-control-p": [
+     "VERIFIED_UNMET"
+    ]
+   },
+   "asks_after": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-4971d52cea0dd24bb2107c77"
+    }
+   ],
+   "asks_before": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-4971d52cea0dd24bb2107c77"
+    }
+   ],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-sem-s42-control-p",
+   "mission_id": "m:hel-sem-s42-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.28,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s42-control-p": "ACTED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s42-control-p": "BLOCKED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s42-control-p": "WAITING"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s42-control-p": "WAITING"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s42-control-p": "WAITING"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s42-control-p": "WAITING"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-sem-s72-control-p": "ACTIVE"
+   },
+   "achieved_before_action": false,
+   "action": null,
+   "appraised": {
+    "m:hel-sem-s72-control-p": [
+     "VERIFIED_UNMET"
+    ]
+   },
+   "asks_after": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-253b1a347d268bf9435b5462"
+    }
+   ],
+   "asks_before": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-253b1a347d268bf9435b5462"
+    }
+   ],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-sem-s72-control-p",
+   "mission_id": "m:hel-sem-s72-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.13,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s72-control-p": "ACTED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s72-control-p": "BLOCKED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s72-control-p": "WAITING"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s72-control-p": "WAITING"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s72-control-p": "WAITING"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s72-control-p": "WAITING"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-sem-s174-control-p": "ACTIVE"
+   },
+   "achieved_before_action": false,
+   "action": null,
+   "appraised": {
+    "m:hel-sem-s174-control-p": [
+     "VERIFIED_UNMET"
+    ]
+   },
+   "asks_after": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-0bb8aabd9b9b9b0f53bbe74b"
+    }
+   ],
+   "asks_before": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-0bb8aabd9b9b9b0f53bbe74b"
+    }
+   ],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-sem-s174-control-p",
+   "mission_id": "m:hel-sem-s174-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.16,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s174-control-p": "ACTED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s174-control-p": "BLOCKED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s174-control-p": "WAITING"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s174-control-p": "WAITING"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s174-control-p": "WAITING"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s174-control-p": "WAITING"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-sem-s138-control-p": "ACTIVE"
+   },
+   "achieved_before_action": false,
+   "action": null,
+   "appraised": {
+    "m:hel-sem-s138-control-p": [
+     "VERIFIED_UNMET"
+    ]
+   },
+   "asks_after": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-f7eb438e54987341d4bb53bb"
+    }
+   ],
+   "asks_before": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-f7eb438e54987341d4bb53bb"
+    }
+   ],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-sem-s138-control-p",
+   "mission_id": "m:hel-sem-s138-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.1,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s138-control-p": "ACTED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s138-control-p": "BLOCKED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s138-control-p": "WAITING"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s138-control-p": "WAITING"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s138-control-p": "WAITING"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s138-control-p": "WAITING"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-sem-s12-control-p": "ACTIVE"
+   },
+   "achieved_before_action": false,
+   "action": null,
+   "appraised": {
+    "m:hel-sem-s12-control-p": [
+     "VERIFIED_UNMET"
+    ]
+   },
+   "asks_after": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-ec163cce05870ad4c34a464e"
+    }
+   ],
+   "asks_before": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-ec163cce05870ad4c34a464e"
+    }
+   ],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-sem-s12-control-p",
+   "mission_id": "m:hel-sem-s12-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.17,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s12-control-p": "ACTED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s12-control-p": "BLOCKED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s12-control-p": "WAITING"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s12-control-p": "WAITING"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s12-control-p": "WAITING"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s12-control-p": "WAITING"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-sem-s126-control-p": "ACTIVE"
+   },
+   "achieved_before_action": false,
+   "action": null,
+   "appraised": {
+    "m:hel-sem-s126-control-p": [
+     "VERIFIED_UNMET"
+    ]
+   },
+   "asks_after": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-cac63df5a8a719087e43cbe4"
+    }
+   ],
+   "asks_before": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-cac63df5a8a719087e43cbe4"
+    }
+   ],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-sem-s126-control-p",
+   "mission_id": "m:hel-sem-s126-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.13,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s126-control-p": "ACTED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s126-control-p": "BLOCKED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s126-control-p": "WAITING"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s126-control-p": "WAITING"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s126-control-p": "WAITING"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s126-control-p": "WAITING"
+     },
+     "tick": 2
+    }
+   ]
+  },
+  {
+   "achieved_after": {
+    "m:hel-sem-s36-control-p": "ACTIVE"
+   },
+   "achieved_before_action": false,
+   "action": null,
+   "appraised": {
+    "m:hel-sem-s36-control-p": [
+     "VERIFIED_UNMET"
+    ]
+   },
+   "asks_after": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-660d10bb26954989e3eea0da"
+    }
+   ],
+   "asks_before": [
+    {
+     "kind": "NO_STRATEGY",
+     "open": true,
+     "prepared_command": null,
+     "recommendation": "add or revise strategies, widen scope, or abandon the mission",
+     "request_id": "req-660d10bb26954989e3eea0da"
+    }
+   ],
+   "closed": false,
+   "genesis_first_tick": null,
+   "harm": false,
+   "item_id": "hel-sem-s36-control-p",
+   "mission_id": "m:hel-sem-s36-control-p",
+   "operator": "CONTROL",
+   "policy": "none",
+   "seconds": 1.18,
+   "ticks": [
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s36-control-p": "ACTED"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s36-control-p": "BLOCKED"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "before",
+     "states": {
+      "m:hel-sem-s36-control-p": "WAITING"
+     },
+     "tick": 2
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s36-control-p": "WAITING"
+     },
+     "tick": 0
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s36-control-p": "WAITING"
+     },
+     "tick": 1
+    },
+    {
+     "genesis": [],
+     "phase": "after",
+     "states": {
+      "m:hel-sem-s36-control-p": "WAITING"
+     },
+     "tick": 2
+    }
+   ]
+  }
+ ],
+ "schema": "greg-resolution-run/1",
+ "suite_digest": "sha256:45b0b0efd8634409c967f20c607c6eb08af94864a5cd8c32eecef8ee1ab729c9",
+ "tree_commit": "55e6d74af4c0e4e24c410dec3f443675e60e5571"
+}

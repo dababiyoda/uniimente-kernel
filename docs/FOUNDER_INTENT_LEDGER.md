@@ -2,6 +2,25 @@
 
 # Founder Intent Ledger
 
+## Abstention-to-resolution: the dividend measured, not yet earned — 2026-11-13 (results 2026-11-21)
+
+A model-authored normalization, not the founder's words. This is the capability dividend owed under `INTENT-20261019-UPWARD-ASCENT`. [record](intent/INTENT-20261113-ABSTENTION-RESOLUTION.json), [deliberation](collaboration/deliberation-abstention-resolution-20261113.json), [results](evidence/greg-abstention-resolution/2026-11-13/README.md).
+
+- **Built:** when a signed mission's cognition step abstains, GREG asks the one decision that would let it answer, with the command prepared and unsigned. It can ask to attach the detached organ, to supply the missing input, to correct a contradicted declaration, or to hand the question to a person. It creates no new ask kind, command kind, ledger type or authority path, and FORM still reaches Genesis.
+- **Measured** (NEW at `1d6b1c1`, pre-registered):
+  - **v1: FAILED_HARM.** This came from two defects in the instrument itself, D1 and D2, both recorded before the results.
+  - **v2: NO_DIVIDEND.**
+    - H1 passes, with 0 of 90 harm-eligible items harmful.
+    - E1 fails: 0.638 against a 0.80 threshold.
+    - E2 against the parser founder fails: +0.106 against 0.15.
+    - F1 fails on 3 FORM items.
+  - Both single-sided ablations close nothing.
+- **Kept regardless:**
+  - B0 achieved all 30 UNANSWERED missions with a part unanswered. P and NEW never do; this is #194's effect.
+  - The F1 defect is fixed on this port (`e23ea45b`). The fix has not been measured.
+- **Next:** run v3, with D3 corrected (floor items in E1's denominator), new FORM geometries and the F1 fix.
+- **State:** `needs_evidence`; decision EXPERIMENT. Authority delta: none. No merge, attach or promotion.
+
 ## Convergence, then a useful operational path — 2026-11-12
 
 `INTENT-20261112-CONVERGENCE-USEFUL-PATH` ([record](intent/INTENT-20261112-CONVERGENCE-USEFUL-PATH.json), [verbatim source](intent/sources/CONVERGENCE-CLARIFICATION-2026-11-12-source.md)): the founder's clarification of 2026-11-12 in session `session_01Kucyfm9exT5imDVYvHTYSv`. It is chat intent evidence, not founder authentication.

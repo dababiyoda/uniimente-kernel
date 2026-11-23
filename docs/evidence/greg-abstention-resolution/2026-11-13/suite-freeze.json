@@ -1,0 +1,14 @@
+{
+ "files": {
+  "cortex/evaluation/resolution/label.py": "sha256:8395b1eff1b3da44de14c2d7fc605be953e15ac493f1155d18ebcd79457108cb",
+  "docs/evidence/greg-abstention-resolution/2026-11-13/candidates.json": "sha256:a405325da598400675875bc5aaae4db0d167768bc3f4aa321dee673ab37d3aec",
+  "docs/evidence/greg-abstention-resolution/2026-11-13/controls-b0.json": "sha256:863ffe3bfc612733625ec2e3a4b13922bda1633580916c4360f9cfc8b643e575",
+  "docs/evidence/greg-abstention-resolution/2026-11-13/controls.json": "sha256:ebea613672f5c279ca3b5712a02e6bb5e2bfa61ebccf9bd3fd204157268a0e2e",
+  "docs/evidence/greg-abstention-resolution/2026-11-13/freeze.json": "sha256:fa6f41716e96c861978c81627c5df62f8d9ddf198e481be915e8bc062e2ab2b1",
+  "docs/evidence/greg-abstention-resolution/2026-11-13/label-b0.json": "sha256:ad9ad3b4da65152d73ec6ff8933fc3b257f57300032cc8a97d087956ed3ce4f0",
+  "docs/evidence/greg-abstention-resolution/2026-11-13/suite.json": "sha256:34b5722d0f50eac88716764005b1d7405186e2bcb713071039f317d4e9be3d5d"
+ },
+ "note": "label.py was written after freeze.json; it applies the pre-registered labelling rule and records one reading the pre-registration left open (harm-scored operators have no floor partition). The candidate generator's counts were smoke-run before freeze.json; no candidate was run on any tree before it.",
+ "schema": "greg-resolution-suite-freeze/1",
+ "written": "2026-11-13, after freeze.json and before the dividend's code"
+}

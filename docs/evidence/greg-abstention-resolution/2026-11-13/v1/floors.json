@@ -1,0 +1,16 @@
+{
+ "F1": {
+  "differs_or_missing": [
+   "form-07",
+   "form-17",
+   "form-27"
+  ],
+  "form_items": 30,
+  "pass": false
+ },
+ "F2": {
+  "floor_items": 19,
+  "not_closed_unaided": [],
+  "pass": true
+ }
+}

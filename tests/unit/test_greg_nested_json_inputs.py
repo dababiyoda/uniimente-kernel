@@ -814,31 +814,37 @@ def test_a_fresh_name_cuts_a_valid_utf8_name_at_a_character_boundary():
     assert len(fresh) <= NAME_MAX and fresh.startswith(b"\xff") and fresh.endswith(b".json")
 
 
-def test_a_token_lifetime_out_of_range_is_refused_and_a_stored_one_never_breaks_the_authority_view(tmp_path):
-    """Re-check of e030a628, L2: an expires_in of 1e999 (inf), 1e308 or 1e20 passed float() and was stored, and the
-    Authority view then raised OverflowError on every render until the credential was removed."""
+def test_a_token_lifetime_is_never_refused_and_a_stored_one_never_breaks_the_authority_view(tmp_path):
+    """Re-check of e030a628, L2: an expires_in of 1e999 (inf), 1e308 or 1e20 was stored, and the Authority view then
+    raised OverflowError on every render. Re-check of c3310763: refusing such a lifetime instead discarded, at
+    renewal, the refresh token the service had already rotated (after the call ran) and refused a login to a
+    service whose tokens live ten calendar years. Every number is now kept, capped at a century."""
     import json as _json
     import subprocess
     from types import SimpleNamespace
     import pytest
     from greg import mcp_login, mcp_tools
-    from greg.capabilities import CapabilityError, SecretBroker
+    from greg.capabilities import SecretBroker
     from greg.mission_control import _when
-    for bad in (float("inf"), float("nan"), 1e308, 1e20, -5, True, "soon"):
+    cap = mcp_login.LONGEST_LIFETIME
+    for given, expect in ((None, None), ("", None), (0, None), ("0", None), (-1, None), (float("nan"), None),
+                          (60, 1060.0), ("3600", 4600.0), (315705599, 1000.0 + 315705599),
+                          (2147483647, 1000.0 + 2147483647), (1e10, 1000.0 + cap), (float("inf"), 1000.0 + cap), (1e308, 1000.0 + cap)):
+        assert mcp_login.expires_at(given, now=1000.0) == expect, given
+    for bad in (True, "soon"):
         with pytest.raises(ValueError):
             mcp_login.expires_at(bad)
-    assert mcp_login.expires_at(None) is None and mcp_login.expires_at(0) is None
-    assert mcp_login.expires_at(60, now=1000.0) == 1060.0
-    assert mcp_login.expires_at(mcp_login.LONGEST_LIFETIME, now=0.0) == mcp_login.LONGEST_LIFETIME
-    login = {"kind": "oauth", "tokens": {"access_token": "old", "refresh_token": "old"}}
-    ok = {"value": 1, "provider_claims_read_only": False}
-    broker = SecretBroker(tmp_path / "s.json")
-    line = '{"ok": {"value": 1, "provider_claims_read_only": false}, "renewed": {"access_token": "n", "expires_in": 1e999}}'
-    done = subprocess.CompletedProcess([], 0, stdout=line, stderr="")
-    with pytest.raises(CapabilityError, match="renewed could not be read"):
-        mcp_tools._client_answer(SimpleNamespace(secrets=broker), done, server="n", token="t", bearer="mcp:n",
-                                 login=login)
-    assert ok
+    login = {"kind": "oauth", "tokens": {"access_token": "old", "refresh_token": "R1"}}
+    for lifetime in ("1e999", "315705599", "2147483647", "-1", '"0"'):
+        broker = SecretBroker(tmp_path / f"s{abs(hash(lifetime))}.json")
+        line = ('{"ok": {"value": 1, "provider_claims_read_only": false}, "renewed": '
+                '{"access_token": "n", "refresh_token": "R2", "expires_in": ' + lifetime + '}}')
+        answer = mcp_tools._client_answer(SimpleNamespace(secrets=broker), subprocess.CompletedProcess([], 0, stdout=line, stderr=""),
+                                          server="n", token="t", bearer="mcp:n", login=login)
+        assert answer["ok"]["value"] == 1, lifetime
+        kept = _json.loads(broker.resolve("mcp:n", declared=("mcp:n",)))
+        assert kept["tokens"]["refresh_token"] == "R2", lifetime
+        assert _when(kept["expires_at"]) != "unreadable", lifetime
     for stored in (float("inf"), 1e308, "inf", "garbage"):
         assert _when(stored) == "unreadable"
     assert _when(0) == "—" and _when(86400).startswith("1970-01-02")
@@ -864,3 +870,34 @@ def test_a_move_whose_target_document_is_unreadable_is_refused_before_anything_c
         status, _ = inst.inbox("alice", {}, move)
         assert status == 400
         assert inst._state()["actors"]["alice"]["following"] == [old]
+
+
+def test_a_move_names_its_alias_exactly_and_never_drops_the_old_follow_on_a_second_bad_fetch(tmp_path):
+    """Re-check of c3310763: a single-string alsoKnownAs (JSON-LD compaction) was refused, and before that `in` on it
+    was a substring test, so "<sender>by" confirmed a Move; follow() fetched the target again after the old follow
+    was removed and saved, so a server answering that second fetch with an unreadable document left the actor
+    following no one."""
+    from foundry.systems import federation as F
+    inst = F.Instance(str(tmp_path), clock=lambda: "2026-11-22T00:00:00Z")
+    inst.base = "http://local.test"
+    inst.create_actor("alice")
+    old, new = "http://remote.test/users/bob", "http://new.test/users/bob"
+    sender = {"id": old, "inbox": old + "/inbox", "movedTo": new}
+    inst.verify_request = lambda *a, **k: (True, "verified", sender)
+    inst.deliver = lambda *a, **k: {"delivered": True}
+    s = inst._state()
+    s["actors"]["alice"]["following"].append(old)
+    inst._save(s)
+    move = json.dumps({"actor": old, "type": "Move", "object": old, "target": new}).encode()
+    good = {"alsoKnownAs": old, "id": new, "inbox": new + "/inbox"}
+    inst.fetch_actor = lambda url: dict(good, alsoKnownAs=old + "by")
+    assert inst.inbox("alice", {}, move)[0] == 403
+    assert inst._state()["actors"]["alice"]["following"] == [old]
+    answers = iter([good, [1]])
+    inst.fetch_actor = lambda url: next(answers)
+    assert inst.inbox("alice", {}, move)[0] == 400
+    assert inst._state()["actors"]["alice"]["following"] == [old]
+    inst.fetch_actor = lambda url: good
+    assert inst.inbox("alice", {}, move)[0] == 202
+    state = inst._state()["actors"]["alice"]
+    assert old not in state["following"] and new in state["pending_follows"]

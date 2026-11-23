@@ -50,21 +50,26 @@ def expired(login: dict, *, now: float | None = None, margin: float = 60.0) -> b
     return at is not None and (now if now is not None else time.time()) + margin >= float(at)
 
 
-LONGEST_LIFETIME = 10 * 365 * 86400   # seconds; a token said to live longer is a service's answer GREG cannot use
+LONGEST_LIFETIME = 100 * 366 * 86400   # seconds; a longer stated lifetime is kept as this one
 
 
 def expires_at(expires_in, *, now: float | None = None) -> float | None:
-    """When a token the service says lives ``expires_in`` seconds expires, or None when it gave none; a value that is
-    not a finite positive number of at most ten years is ValueError. An inf or 1e308 was stored, and the Authority
-    view then raised OverflowError on every render (re-check of e030a628, L2)."""
-    if expires_in is None or expires_in == "" or expires_in == 0:
+    """When a token the service says lives ``expires_in`` seconds expires, or None when it states none.
+
+    Only a value that is not a number at all (or a bool) is ValueError. A real lifetime is never refused: refusing
+    one at renewal discarded a refresh token the service had already rotated, after the call had run, and refused
+    ``greg mcp login`` to a service whose tokens live ten calendar years (re-check of c3310763). A lifetime that is
+    not finite or is longer than a century is kept as a century, so the stored expiry always renders: an inf or 1e308
+    was stored, and the Authority view then raised OverflowError on every render (re-check of e030a628, L2). Zero,
+    a negative value or NaN states no usable expiry and is kept as none."""
+    if expires_in is None or isinstance(expires_in, str) and not expires_in.strip():
         return None
     if isinstance(expires_in, bool):
         raise ValueError("expires_in is not a number")
     seconds = float(expires_in)
-    if not math.isfinite(seconds) or not 0 < seconds <= LONGEST_LIFETIME:
-        raise ValueError("expires_in is out of range")
-    return (now if now is not None else time.time()) + seconds
+    if math.isnan(seconds) or seconds <= 0:
+        return None
+    return (now if now is not None else time.time()) + min(seconds, LONGEST_LIFETIME)
 
 
 def store_renewal(broker, handle: str, login: dict, tokens: dict) -> None:

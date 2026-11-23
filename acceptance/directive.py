@@ -916,6 +916,104 @@ def collect_problems(nodes, root: Path = ROOT, timeout: int = 1800) -> list[str]
     return [f"{node}: collects nothing" for node in nodes if not any(covers(node, c) for c in collected)]
 
 
+# -- what GREG can do now that it could not before (directive section 70) -----------------------------------------
+
+def _rung(tier: str) -> int:
+    return -1 if tier == BLOCKED else rank(tier)
+
+
+_ROWS: dict[str, dict] = {}
+
+
+def _ask_rows(triple: tuple[dict, dict, dict], outcomes: dict | None, root: Path) -> dict[str, dict]:
+    """Each ask's status on one side, kept per content of the map, manifest, contract and outcomes."""
+    key = hashlib.sha256(json.dumps([triple, outcomes, str(root)], sort_keys=True).encode()).hexdigest()
+    if key not in _ROWS:
+        _ROWS[key] = {a["id"]: a for s in directive_report(*triple, outcomes=outcomes, root=root)["sections"]
+                      for a in s["asks"]}
+    return _ROWS[key]
+
+
+def _node_changed(node: str, read_base, read_head) -> bool:
+    path = node.split("::")[0]
+    then, now = read_base(path), read_head(path)
+    return then != now and node_text(then, node) != node_text(now, node)
+
+
+def capability_delta(base: tuple[dict, dict, dict], head: tuple[dict, dict, dict], read_base, read_head,
+                     base_outcomes: dict | None = None, head_outcomes: dict | None = None,
+                     root: Path = ROOT) -> dict:
+    """Directive section 70 asks "WHAT CAN REAL GREG NOW RELIABLY DO THAT IT COULD NOT DO BEFORE?". This answers
+    it from the directive map at two commits instead of from prose. Each of ``base`` and ``head`` is (map, manifest,
+    contract); ``read_base`` and ``read_head`` return a file's content at that side, or None.
+
+    - ``gained``: asks met at head that were not met at base. These are the answer.
+    - ``rose``: asks still open whose tier rose.
+    - ``lost``: asks met at base that are not met at head, and asks whose tier fell. They are never netted against
+      ``gained``.
+
+    Each row names the test nodes the ask's evidence reaches at head and which of them are new or changed since base.
+    An ask counted as gained whose evidence did not change is listed under ``unproven``: the map moved, the code that
+    proves the capability did not. It is not part of the answer.
+
+    Without outcomes a side is its static ceiling: what its cited tests would establish if every one passed. With
+    outcomes, recorded at that commit, a side is what that run attained. ``measured`` says which sides ran."""
+    before = _ask_rows(base, base_outcomes, root)
+    after = _ask_rows(head, head_outcomes, root)
+    live = {a["id"]: a for s in head[0]["sections"] for a in s["asks"] if "retired" not in a}
+    gained, rose, lost, unproven = [], [], [], []
+    for aid, now in after.items():
+        was = before.get(aid)
+        was_met, was_tier = (was["met"], was["tier"]) if was else (False, NO_EVIDENCE)
+        moved = now["met"] != was_met or _rung(now["tier"]) != _rung(was_tier)
+        if not moved:
+            continue
+        ask = live.get(aid) or live.get((now.get("retired") or {}).get("superseded_by"), {})
+        nodes = evidence_nodes(ask, *head[1:]) if ask else []
+        changed = [n for n in nodes if _node_changed(n, read_base, read_head)]
+        row = {"id": aid, "ask": ask.get("ask", ""), "before": {"met": was_met, "tier": was_tier},
+               "after": {"met": now["met"], "tier": now["tier"]}, "evidence": nodes, "changed_evidence": changed}
+        if now["met"] and not was_met:
+            (gained if changed else unproven).append(row)
+        elif was_met and not now["met"]:
+            lost.append(row)
+        elif _rung(now["tier"]) > _rung(was_tier):
+            rose.append(row)
+        elif _rung(now["tier"]) < _rung(was_tier):
+            lost.append(row)
+    for aid, was in before.items():
+        if aid not in after and was["met"]:
+            lost.append({"id": aid, "ask": "", "before": {"met": True, "tier": was["tier"]},
+                         "after": {"met": False, "tier": None}, "evidence": [], "changed_evidence": []})
+    return {"version": "capability-delta/1",
+            "measured": {"base": base_outcomes is not None, "head": head_outcomes is not None},
+            "gained": gained, "rose": rose, "lost": lost, "unproven": unproven}
+
+
+def print_delta(delta: dict, since: str) -> None:
+    sides = delta["measured"]
+    how = {(True, True): "both sides measured by recorded runs",
+           (False, False): "static ceilings: no test ran at either commit",
+           (False, True): "head measured by a recorded run; base is its static ceiling",
+           (True, False): "base measured by a recorded run; head is its static ceiling"}[(sides["base"], sides["head"])]
+    print(f"What GREG can do now that it could not do at {since} ({how}):")
+    if not delta["gained"]:
+        print("  nothing: no directive ask became met through new or changed evidence")
+    for row in delta["gained"]:
+        print(f"  {row['id']}: {row['ask']}")
+        print(f"      {row['before']['tier']} -> {row['after']['tier']}; proven by {len(row['changed_evidence'])} new "
+              f"or changed test(s): {', '.join(row['changed_evidence'][:3])}"
+              + (" ..." if len(row["changed_evidence"]) > 3 else ""))
+    for title, key in (("Closer, still open", "rose"), ("Lost since then", "lost"),
+                       ("Counted met, but no evidence changed: not proven by this delta", "unproven")):
+        if delta[key]:
+            print(f"{title}:")
+            for row in delta[key]:
+                print(f"  {row['id']}: {row['before']['tier']} -> {row['after']['tier']}  {row['ask'][:100]}")
+    print(f"{len(delta['gained'])} gained, {len(delta['rose'])} closer, {len(delta['lost'])} lost, "
+          f"{len(delta['unproven'])} counted without changed evidence")
+
+
 # -- printing ---------------------------------------------------------------------------------------------------------
 
 def summary_line(rep: dict) -> str:

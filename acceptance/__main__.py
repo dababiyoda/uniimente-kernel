@@ -9,6 +9,9 @@
              (--collect also runs pytest's collection over every node the map cites; --outcomes recomputes
              the tiers from a recorded run; --against <git ref> refuses a pinned ask that disappeared or whose
              pinned blocker class left BUILDABLE_NOT_BUILT since that ref)
+  delta      what GREG can do now that it could not do at --since <git ref> (directive section 70): the asks met
+             here that were not met there through new or changed evidence, the asks that came closer, and the asks
+             lost. Static ceilings unless --outcomes / --base-outcomes give runs recorded at each commit
 
 ``run`` exits 0 only when every tested requirement and every Mission L trace link attained its declared
 tier and no cited test failed, errored or collected nothing (a requirement of coverage 'gap' declares no tier,
@@ -111,6 +114,11 @@ def main(argv=None) -> int:
     dire.add_argument("--outcomes", help="recompute tiers from a recorded outcomes file")
     dire.add_argument("--against", metavar="REF", help="compare the pinned asks with the pin at a git ref (a PR's base)")
     dire.add_argument("--out")
+    delta = sub.add_parser("delta")
+    delta.add_argument("--since", metavar="REF", required=True, help="the git ref to compare with")
+    delta.add_argument("--outcomes", help="a run recorded at this tree (otherwise its static ceiling)")
+    delta.add_argument("--base-outcomes", help="a run recorded at --since (otherwise its static ceiling)")
+    delta.add_argument("--out")
     args = parser.parse_args(argv)
 
     manifest, contract = load(MANIFEST), load(CONTRACT)
@@ -118,6 +126,27 @@ def main(argv=None) -> int:
     if found:
         print("acceptance manifest or contract is unsound:", *found, sep="\n  ")
         return 2
+    if args.cmd == "delta":
+        if directive.pin_at(args.since)[1]:
+            print(f"cannot read git ref {args.since}")
+            return 2
+        base = directive.map_at(args.since)
+        if base is None:
+            print(f"no directive map at {args.since}: nothing to compare with")
+            return 2
+        head = directive.defaults()
+        unsound = directive.directive_problems(*head)
+        if unsound:
+            print("directive map is unsound:", *unsound, sep="\n  ")
+            return 2
+        read = {k: json.loads(Path(v).read_text()) if v else None
+                for k, v in (("head", args.outcomes), ("base", args.base_outcomes))}
+        drep = directive.capability_delta(base, head, directive.read_at(args.since), directive.read_tree(),
+                                          base_outcomes=read["base"], head_outcomes=read["head"])
+        if args.out:
+            Path(args.out).write_text(json.dumps(drep, indent=1, sort_keys=True) + "\n")
+        directive.print_delta(drep, args.since)
+        return 0
     if args.cmd in ("check", "directive"):
         sections = directive.load_map()
         found = directive.directive_problems(sections, manifest, contract)

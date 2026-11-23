@@ -484,7 +484,8 @@
    "source": "gap map of the 77 sections against #196 head 4ec00605 (session 2026-10-30), section 70 (unnamed there)",
    "depends_on": [
     "WU-01"
-   ]
+   ],
+   "closed_by": "branch claude/s70-capability-delta-20261121 (draft child of #196): `python -m acceptance delta --since <ref>` computes which directive asks became met through new or changed evidence since a commit, which came closer and which were lost (acceptance/directive.py capability_delta); tests/unit/test_capability_delta.py; scripts/ci/check_capability_delta_mutants.py"
   },
   {
    "id": "S73-A",
@@ -5609,24 +5610,30 @@
   {
    "n": 70,
    "heading": "REQUIRED QUESTION AFTER EVERY SUBSTANTIAL CODING SESSION",
-   "status": "OPEN",
+   "status": "PARTIAL",
    "asks": [
     {
      "id": "S70.A1",
      "ask": "The required question is answered from evidence: what real GREG can do now that it could not before",
      "excerpt": "WHAT CAN REAL GREG NOW RELIABLY DO THAT IT COULD NOT DO BEFORE?",
      "owner_paths": [
-      "greg/cli.py"
+      "acceptance/directive.py",
+      "acceptance/__main__.py",
+      "tests/unit/test_capability_delta.py"
      ],
-     "evidence": [],
+     "evidence": [
+      "tests/unit/test_capability_delta.py::test_a_newly_met_ask_with_new_evidence_is_gained",
+      "tests/unit/test_capability_delta.py::test_a_newly_met_ask_whose_evidence_did_not_change_is_not_counted",
+      "tests/unit/test_capability_delta.py::test_a_lost_ask_is_listed_and_not_netted",
+      "tests/unit/test_capability_delta.py::test_an_open_ask_that_came_closer_is_not_a_capability",
+      "tests/unit/test_capability_delta.py::test_a_recorded_run_replaces_the_ceiling",
+      "tests/unit/test_capability_delta.py::test_no_change_is_no_delta",
+      "tests/unit/test_capability_delta.py::test_the_command_compares_with_a_git_ref"
+     ],
      "required_tier": "UNIT_VERIFIED",
-     "tier": "INTENDED",
-     "coverage": "gap",
-     "blocker": {
-      "class": "BUILDABLE_NOT_BUILT",
-      "reason": "Answered in prose only; no capability delta between two commits",
-      "unit": "S70-A"
-     }
+     "tier": "UNIT_VERIFIED",
+     "coverage": "covered",
+     "tests_tier": "UNIT_VERIFIED"
     }
    ]
   },

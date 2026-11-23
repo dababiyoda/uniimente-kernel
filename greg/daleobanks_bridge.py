@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from greg import untrusted_json
 import os
 from pathlib import Path
 import re
@@ -120,7 +121,7 @@ def _run(params: dict, ctx: InvocationContext, action: str) -> dict:
     if proc.returncode:
         raise CapabilityError("DALEOBANKS refused or failed: " + (proc.stderr or proc.stdout)[-400:])
     try:
-        return json.loads(proc.stdout.strip().splitlines()[-1])
+        return untrusted_json.loads(proc.stdout.strip().splitlines()[-1])
     except (json.JSONDecodeError, IndexError) as exc:
         raise CapabilityError("DALEOBANKS produced unreadable output") from exc
 

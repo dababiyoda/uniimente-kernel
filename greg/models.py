@@ -47,6 +47,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 import http.client
 import json
+from greg import untrusted_json
 import math
 import os
 from pathlib import Path
@@ -462,7 +463,7 @@ def confined_call(provider: str, api_key: str, model: str, system: str, user: st
             except subprocess.TimeoutExpired as exc:
                 raise RouteError(f"confined {provider} call did not finish", kind=TRANSIENT) from exc
     try:
-        answer = json.loads(proc.stdout)
+        answer = untrusted_json.loads(proc.stdout)
     except json.JSONDecodeError:
         raise RouteError(f"confined {provider} call failed: {proc.stderr[-300:]}", kind=UNKNOWN) from None
     if not answer.get("ok"):
@@ -506,8 +507,8 @@ class OllamaRoute:
             if len(raw) > self.MAX_RESPONSE_BYTES:
                 raise RouteError("Ollama response exceeds size limit", kind=BAD_OUTPUT)
             try:
-                result = json.loads(raw)
-            except (UnicodeError, ValueError) as exc:
+                result = untrusted_json.loads(raw)
+            except (UnicodeError, ValueError, RecursionError) as exc:
                 raise RouteError("Ollama returned invalid JSON", kind=BAD_OUTPUT) from exc
             if not isinstance(result, dict):
                 raise RouteError("Ollama returned an invalid response", kind=BAD_OUTPUT)
@@ -573,7 +574,7 @@ def cli_report(proc) -> dict | None:
     neither what was billed nor whether the model declined. With verbose output on in the founder's Claude Code
     settings it prints every message as a JSON array, the result object last."""
     try:
-        result = json.loads(proc.stdout)
+        result = untrusted_json.loads(proc.stdout)
     except (json.JSONDecodeError, TypeError):
         return None
     if isinstance(result, list):

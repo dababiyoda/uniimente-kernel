@@ -76,6 +76,7 @@ DEVICE_KINDS = ("DECISION", "CRITIQUE", "LIFECYCLE", "BODY_PAUSE", "BODY_RESUME"
 DEVICE_MAX_LIFETIME = timedelta(days=90)
 READ_SKEW = timedelta(seconds=60)
 CLOCK_SKEW = timedelta(minutes=5)
+REVOKING = "device key revoked: the founder's revocation is waiting for the body to record it"
 
 
 class FounderAuthError(ValueError):
@@ -239,11 +240,15 @@ class FounderVerifier:
     ``devices`` maps key_id -> founder-signed device delegation (see validate_device_grant).
     ``seen_nonce`` is a callable answering whether a nonce was already accepted;
     the body backs it with retained ledger history.
+    ``revoking`` holds device key ids a founder-signed DEVICE_REVOKE still waiting in the body's inbox revokes
+    (greg.body.pending_revocations): such a key signs nothing, though the body has not recorded the revocation yet.
     """
 
-    def __init__(self, *, body_id: str, enrolled: dict[str, str], seen_nonce, devices: dict | None = None):
+    def __init__(self, *, body_id: str, enrolled: dict[str, str], seen_nonce, devices: dict | None = None,
+                 revoking=()):
         self.body_id, self.enrolled, self.seen_nonce = body_id, dict(enrolled), seen_nonce
         self.devices = dict(devices or {})
+        self.revoking = frozenset(revoking)
 
     def _public(self, kid: str, *, kind: str | None, now: datetime) -> tuple[str, str]:
         """(public key hex, principal) for a signer allowed to sign ``kind`` now."""
@@ -252,6 +257,8 @@ class FounderVerifier:
         device = self.devices.get(kid)
         if device is None:
             raise FounderAuthError("founder key not enrolled or revoked")
+        if kid in self.revoking:
+            raise FounderAuthError(REVOKING)
         if now >= instant(device["expires_at"]):
             raise FounderAuthError("device delegation expired")
         if kind is not None and (kind not in DEVICE_KINDS or kind not in device["kinds"]):

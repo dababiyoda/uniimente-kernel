@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import math
 import time
 from urllib.parse import parse_qs, urlsplit
 
@@ -49,12 +50,37 @@ def expired(login: dict, *, now: float | None = None, margin: float = 60.0) -> b
     return at is not None and (now if now is not None else time.time()) + margin >= float(at)
 
 
+LONGEST_LIFETIME = 100 * 366 * 86400   # seconds; a longer stated lifetime is kept as this one
+
+
+def expires_at(expires_in, *, now: float | None = None) -> float | None:
+    """When a token the service says lives ``expires_in`` seconds expires, or None when it states none.
+
+    Only a value that is not a number at all (or a bool) is ValueError. A real lifetime is never refused: refusing
+    one at renewal discarded a refresh token the service had already rotated, after the call had run, and refused
+    ``greg mcp login`` to a service whose tokens live ten calendar years (re-check of c3310763). A lifetime that is
+    not finite or is longer than a century is kept as a century, so the stored expiry always renders: an inf or 1e308
+    was stored, and the Authority view then raised OverflowError on every render (re-check of e030a628, L2). Zero,
+    a negative value or NaN states no usable expiry and is kept as none."""
+    if expires_in is None or isinstance(expires_in, str) and not expires_in.strip():
+        return None
+    if isinstance(expires_in, bool):
+        raise ValueError("expires_in is not a number")
+    try:
+        seconds = float(expires_in)
+    except OverflowError:       # an int beyond float range: its sign is all that can be read (re-check of 14fcf659)
+        seconds = math.inf if expires_in > 0 else -math.inf
+    if math.isnan(seconds) or seconds <= 0:
+        return None
+    return (now if now is not None else time.time()) + min(seconds, LONGEST_LIFETIME)
+
+
 def store_renewal(broker, handle: str, login: dict, tokens: dict) -> None:
     """Keep a renewed token response (rotating the refresh token when the service sent a new one)."""
     fresh = {**login["tokens"], **{k: v for k, v in tokens.items() if v is not None}}
     expires_in = tokens.get("expires_in")
     broker.put(handle, json.dumps({**login, "tokens": fresh, "scope": tokens.get("scope", login.get("scope")),
-                                   "expires_at": time.time() + float(expires_in) if expires_in else None}))
+                                   "expires_at": expires_at(expires_in)}))
 
 
 class _Storage:
@@ -70,7 +96,7 @@ class _Storage:
     async def set_tokens(self, tokens) -> None:
         self.data["tokens"] = tokens.model_dump(mode="json", exclude_none=True)
         self.data["scope"] = tokens.scope
-        self.data["expires_at"] = time.time() + tokens.expires_in if tokens.expires_in else None
+        self.data["expires_at"] = expires_at(tokens.expires_in)
 
     async def get_client_info(self):
         from mcp.shared.auth import OAuthClientInformationFull

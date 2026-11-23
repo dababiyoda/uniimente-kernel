@@ -1087,10 +1087,8 @@ def main(argv=None) -> int:
         elif args.cmd == "presence":
             from greg import presence
             now = datetime.now(timezone.utc)
-            try:
-                heartbeat = json.loads(Layout(home).heartbeat.read_text())
-            except (OSError, ValueError):
-                heartbeat = None
+            from greg.body import read_heartbeat
+            heartbeat = read_heartbeat(Layout(home))
             with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
                 data = presence.summary(journal, now=now, since=now - timedelta(hours=args.hours),
                                         heartbeat=heartbeat)

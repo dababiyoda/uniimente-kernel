@@ -26,6 +26,7 @@ import contextvars
 from datetime import datetime, timezone
 import hashlib
 import json
+from greg import untrusted_json
 import os
 from pathlib import Path
 import urllib.error
@@ -43,6 +44,15 @@ TITLE_LIMIT = 90
 
 
 # -- injectable edges (tests replace these; production uses the real world) --------
+
+
+def _github_json(body):
+    """A GitHub API response body: JSON GREG did not write, so read by the untrusted reader, and an unreadable one is
+    the capability's refusal rather than a ValueError escaping it (re-check of 6933be8c, F2)."""
+    try:
+        return untrusted_json.loads(body if isinstance(body, str) else body.decode("utf-8"))
+    except ValueError:
+        raise CapabilityError("GitHub returned a response that is not readable JSON") from None
 
 def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
@@ -63,7 +73,7 @@ def _https_json(url: str, token: str | None) -> tuple[int, object]:
             body = response.read(2 * 1024 * 1024 + 1)
             if len(body) > 2 * 1024 * 1024:
                 raise CapabilityError("GitHub response exceeds read ceiling")
-            return response.status, json.loads(body)
+            return response.status, _github_json(body)
     except egress.EgressRefused as exc:
         raise CapabilityError(str(exc)) from None
     except urllib.error.HTTPError as exc:
@@ -112,7 +122,7 @@ def _confined_fetcher(ctx: InvocationContext):
             raise CapabilityError("GitHub response exceeds read ceiling")
         if out["status"] != 200:
             return out["status"], None
-        return out["status"], json.loads(out["body"])
+        return out["status"], _github_json(out["body"])
     return fetch
 
 

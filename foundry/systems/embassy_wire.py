@@ -35,6 +35,7 @@ from __future__ import annotations
 import hashlib
 import http.server
 import json
+from greg import untrusted_json   # RPC bodies from the other side are untrusted (re-check of 9a14b8a5, finding 6)
 import math
 import threading
 import urllib.error
@@ -359,7 +360,7 @@ class _Handler(http.server.BaseHTTPRequestHandler):
             return self._send(404, {"Content-Type": "text/plain"}, b"only /rpc accepts requests")
         raw = self.rfile.read(int(self.headers.get("Content-Length") or 0))
         try:
-            request = json.loads(raw.decode())
+            request = untrusted_json.loads(raw.decode())
         except ValueError:
             request = None
         self._send(200, {"Content-Type": "application/json"}, json.dumps(self.embassy.rpc(request), sort_keys=True).encode())
@@ -406,7 +407,7 @@ class ForeignAgent:
             if seq > self.seq and key is None:
                 self.seq = seq
         _, _, raw = self.http("POST", "/rpc", {"jsonrpc": "2.0", "id": self.n, "method": method, "params": params})
-        return json.loads(raw)
+        return untrusted_json.loads(raw)
 
     def admit(self, *, audience: str | None = None, reuse_nonce: str | None = None) -> dict:
         self.audience = audience

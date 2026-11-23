@@ -21,12 +21,13 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
+import errno
 import hashlib
 import json
+from greg import untrusted_json
 import os
 from pathlib import Path
 import secrets
-import shutil
 import signal
 import stat
 import sys
@@ -277,6 +278,88 @@ def device_delegations(journal: Journal) -> dict[str, dict]:
     return devices
 
 
+
+
+def revocation_candidates(paths) -> list[dict]:
+    """The DEVICE_REVOKE and ROTATE_FOUNDER_KEY envelopes among these inbox files, in file order, unverified: read
+    first, verified later by the caller (a rotation decides which founder key a later revocation must be signed by).
+
+    Read without following a link and without waiting on a FIFO; a file that is not one regular, bounded JSON
+    object is passed over (whoever applies the inbox reads it and refuses it)."""
+    found = []
+    for path in paths:
+        try:      # the applier's own reader and parser: a file counted here is one the inbox can apply, and back
+            envelope = _parse_inbox(_read_inbox_file(path))
+        except (OSError, ValueError):
+            continue
+        if isinstance(envelope, dict) and envelope.get("kind") in ("DEVICE_REVOKE", "ROTATE_FOUNDER_KEY"):
+            found.append(envelope)
+    return found
+
+
+def pending_revocations(candidates, verifier: FounderVerifier, *, now: datetime) -> frozenset[str]:
+    """Device keys revoked by a founder-signed DEVICE_REVOKE still waiting in the inbox: they sign nothing more.
+
+    Revocation wins. The inbox is applied in file-name order. Since 2026-11-13 a name starts with when the file
+    arrived (arrival_name); before, it started with the signer's own ``issued_at``, which a device sets itself, and a
+    file can still be placed in the inbox under any name by whoever writes there. A device being revoked could
+    therefore have its command applied before the founder's revocation, in the same pass over the inbox or on the
+    restart after a crash. So a
+    device key that such a revocation names is refused everywhere a command or a read is verified (the body's
+    ``apply``, greg serve), whatever the order, until the revocation is recorded and the key is simply gone.
+
+    Only a revocation counts, read under the founder keys as a waiting ROTATE_FOUNDER_KEY before it in file order will
+    have left them: those are the founder commands that change who may sign. The other commands that
+    only narrow (BODY_PAUSE, BODY_STOP, NODE_REVOKE, CAPABILITY_DETACH, a narrowing LIFECYCLE or GOAL_CONTROL, a
+    rejecting DECISION) change what the body does, never whether a device's signature verifies: a device command
+    applied before one of them was signed by a key still delegated, and which of the two comes first stays file-name
+    order, that is, arrival order. A device command that arrives after the founder's narrowing command in the same
+    pass is applied after it and can undo it, as it could in the next pass (a founder question: whether, within one
+    pass, the founder's narrowing command should prevail). Moving them ahead of device commands would let a delegated device's BODY_RESUME or LIFECYCLE
+    resume, applied after the founder's pause, undo it. Every founder command keeps file-name order as well: a
+    revocation moved ahead of the founder's own earlier DEVICE_ENROLL of the same key would be refused, or let that
+    enrollment in after it, and leave the key delegated.
+
+    A candidate counts only when it verifies (signature, body, lifetime, unspent nonce), which for DEVICE_REVOKE
+    means signed by the founder key (no device may sign it: DEVICE_KINDS), and names exactly one ``device_key_id``:
+    a file nobody signed changes who may sign nothing. One whose nonce is already spent was recorded, and the key it
+    names is already gone from the delegations."""
+    revoked = set()
+    # The founder keys as they will stand when each candidate is applied in this pass: a ROTATE_FOUNDER_KEY earlier in
+    # file order that verifies is applied first, as apply applies it (the first enrolled key out, the new key in), so
+    # a revocation signed by the key it enrolls verifies then. Read here the same way, or such a revocation counts for
+    # nothing here and a device's command is applied before it (re-check of 8f72ceff, N1).
+    keys = dict(verifier.enrolled)
+    for envelope in candidates:
+        current = FounderVerifier(body_id=verifier.body_id, enrolled=keys, seen_nonce=verifier.seen_nonce,
+                                  devices=verifier.devices)
+        kind = envelope.get("kind")
+        try:
+            current.verify(envelope, now=now, expected_kind=kind)
+            principal = current.principal(envelope, now=now)
+        except Exception:     # untrusted bytes: whatever fails to verify counts for nothing (apply refuses it)
+            continue
+        body = envelope["body"]
+        if kind == "ROTATE_FOUNDER_KEY":
+            new_hex = body.get("new_public_key") if isinstance(body, dict) else None
+            try:
+                new_id = key_id(new_hex) if isinstance(new_hex, str) else None
+            except (ValueError, FounderAuthError):   # apply refuses a rotation to a malformed key; keys stay as they are
+                new_id = None
+            if principal == "founder" and keys and new_id is not None:
+                keys.pop(next(iter(keys)))
+                keys[new_id] = new_hex
+        else:
+            # every body DEVICE_REVOKE accepts, a suspected compromise included (re-check of 48d66f5f, F1: only
+            # an exact {"device_key_id"} counted, so `greg device revoke --suspected-compromise` did not win)
+            try:
+                kid, _ = revocation.revoke_fields(body)
+            except MissionError:
+                continue          # apply refuses it too
+            revoked.add(kid)
+    return frozenset(revoked)
+
+
 # A founder-signed GOAL or GOAL_CONTROL the body verified and then rejected (it would widen authority, it
 # duplicates a goal, ...) consumes its nonce: re-dropping the retained file later, after the state that
 # refused it changed (a revoke, a supersede), must not apply it without a new signature.
@@ -427,6 +510,69 @@ def egress_relay(home: Path, config: dict):
                  proxy=proxy_from_environment())
 
 
+INBOX_FILE_BYTES = 4 * 1024 * 1024    # a signed command is kilobytes; greg serve accepts 64 KiB at most
+
+
+class InboxEntryRefused(OSError, ValueError):
+    """An inbox entry that is a symbolic link or larger than INBOX_FILE_BYTES: unread, and refused like a malformed
+    command. It is an OSError, so whoever counts the inbox passes over it, and a ValueError, so the applier rejects
+    it (moved to rejected/, recorded) instead of the body exiting on it: a refusal the body can always file needs no
+    restart (re-check of 6933be8c, F1: a linked founder command led to a crash-loop hold, and a 5 MiB file, rejected
+    cleanly before, made the running body exit). Only an entry that is not a file at all (a FIFO, a directory, a
+    device) still raises a plain OSError."""
+
+
+def _read_inbox_file(path: Path) -> bytes:
+    """The bytes of one inbox file, opened without following a link and without waiting: an entry that is not one
+    bounded regular file (a FIFO, a directory, a device, a symbolic link, more than INBOX_FILE_BYTES) raises OSError
+    at once, as a directory always did, so a running body exits on it for the crash-loop breaker to count and a
+    held body sets it aside. Read with a plain open, a FIFO with no writer held the tick forever, and the BODY_STOP
+    or BODY_RESUME behind it was never read (re-check of 48d66f5f, F3).
+
+    Every reader of the inbox uses this one, the pending-revocation count included, so a file is read the same way
+    by whoever counts it and whoever applies it (re-check of bdfca22d, L1: a revocation behind a link, or padded
+    past the count's own bound, was applied without having been counted as pending)."""
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK | os.O_NOFOLLOW)
+    except OSError as exc:
+        if exc.errno == errno.ELOOP:
+            raise InboxEntryRefused(errno.ELOOP, "inbox entry is a symbolic link", str(path)) from None
+        raise
+    try:
+        info = os.fstat(fd)
+        if not stat.S_ISREG(info.st_mode):
+            raise OSError(errno.EINVAL, "inbox entry is not a regular file", str(path))
+        if info.st_size > INBOX_FILE_BYTES:
+            raise InboxEntryRefused(errno.EFBIG, f"inbox entry is larger than {INBOX_FILE_BYTES} bytes", str(path))
+        chunks, total = [], 0
+        while chunk := os.read(fd, 1 << 16):
+            total += len(chunk)
+            if total > INBOX_FILE_BYTES:     # grew while being read
+                raise InboxEntryRefused(errno.EFBIG, f"inbox entry is larger than {INBOX_FILE_BYTES} bytes", str(path))
+            chunks.append(chunk)
+        return b"".join(chunks)
+    finally:
+        os.close(fd)
+
+
+def read_heartbeat(layout: "Layout") -> dict | None:
+    """The heartbeat file as one JSON object, or None. The body writes it, but whoever can write the body's home can
+    replace it, so it is read as untrusted: missing, unreadable, nested too deep or not an object, it is no heartbeat
+    (an unreadable heartbeat is not evidence; greg/presence.py). Every reader uses this one (re-check of 6933be8c,
+    F6: the morning report, `greg status` and `greg presence` raised on a heartbeat a deep document replaced)."""
+    try:
+        value = untrusted_json.loads(layout.heartbeat.read_text())
+    except (OSError, ValueError):
+        return None
+    return value if isinstance(value, dict) else None
+
+
+def _parse_inbox(raw: bytes):
+    """One inbox file's JSON, decoded as the body applies it: UTF-8 only (no BOM, no UTF-16), nested too deep refused
+    as unreadable (ValueError)."""
+    return untrusted_json.loads(raw.decode("utf-8"))
+
+
 class Body:
     def __init__(self, home: str | Path, *, clock=None, builder=None, monotonic=None):
         self.layout = Layout(home)
@@ -542,10 +688,7 @@ class Body:
         records is not detected here. A guard against rollback by accident or a stale copy, not against someone
         who can rewrite both files (greg/anchor.py witnesses cover that). An unreadable heartbeat is not evidence
         (presence). Cost: a start reads and verifies the whole chain twice, here and in the writer's own open."""
-        try:
-            published = json.loads(self.layout.heartbeat.read_text()).get("ledger_head")
-        except (OSError, ValueError, AttributeError):
-            return
+        published = (read_heartbeat(self.layout) or {}).get("ledger_head")
         if not isinstance(published, str):
             return
         if self.layout.ledger.exists():
@@ -627,13 +770,22 @@ class Body:
     def _seen_nonce(self, nonce: str) -> bool:
         return nonce in consumed_nonces(self.journal)
 
-    def verifier(self) -> FounderVerifier:
+    def verifier(self, *, revoking=()) -> FounderVerifier:
         return FounderVerifier(body_id=self.config["body_id"], enrolled=self.enrolled_keys(),
-                               seen_nonce=self._seen_nonce, devices=self.device_keys())
+                               seen_nonce=self._seen_nonce, devices=self.device_keys(), revoking=revoking)
+
+    def revoking(self, paths=None) -> frozenset[str]:
+        """Device keys a verified founder DEVICE_REVOKE waiting in the inbox revokes (pending_revocations)."""
+        paths = sorted(self.layout.inbox.glob("*.json")) if paths is None else paths
+        candidates = revocation_candidates(paths)
+        return pending_revocations(candidates, self.verifier(), now=self.clock()) if candidates else frozenset()
 
     # -- commands ------------------------------------------------------------------
-    def apply(self, envelope: dict, *, channel: str = "direct") -> dict:
-        """Verify one signed founder command and apply it (idempotent on replay of the same file)."""
+    def apply(self, envelope: dict, *, channel: str = "direct", revoking=None) -> dict:
+        """Verify one signed founder command and apply it (idempotent on replay of the same file).
+
+        ``revoking``: the device keys revoked by founder revocations still waiting in the inbox, as read once for a
+        pass over the inbox; read from the inbox now when not given. A command such a key signed is refused."""
         digest = sha256_json(envelope)
         # Only a record carrying this very envelope and its nonce, as this method writes one, makes a replay of the
         # file a no-op: a bare record naming the digest cannot silently drop the founder's command.
@@ -650,7 +802,7 @@ class Body:
                                        "for it; sign your answer again")
             return {"status": "ALREADY_APPLIED", "digest": digest}
         now = self.clock()
-        verifier = self.verifier()
+        verifier = self.verifier(revoking=self.revoking() if revoking is None else revoking)
         env = verifier.verify(envelope, now=now)
         principal = verifier.principal(env, now=now)
         kind, body = env["kind"], env["body"]
@@ -878,13 +1030,20 @@ class Body:
         return bool(state) and state[-1] == "greg.body.paused"
 
     def ingest_inbox(self, *, only_kind: str | None = None) -> list[dict]:
+        """Apply the signed commands waiting in the inbox, in file-name order (``only_kind``: only that kind).
+
+        Revocation wins over that order: the device keys every verified founder DEVICE_REVOKE among these files
+        revokes are read before any file is applied, and a command one of them signed is refused wherever its file
+        sorts, before or after the revocation (pending_revocations says why, and why only a revocation counts)."""
         results = []
         stuck = self.__dict__.setdefault("_stuck", set())   # files this process could neither ingest nor set aside
-        for path in sorted(self.layout.inbox.glob("*.json")):
+        paths = sorted(self.layout.inbox.glob("*.json"))
+        revoking = self.revoking(paths)
+        for path in paths:
             if path.name in stuck:
                 continue
             try:
-                outcome = self._ingest_one(path, only_kind=only_kind)
+                outcome = self._ingest_one(path, only_kind=only_kind, revoking=revoking)
             except Exception as exc:   # anywhere in the file's handling, its rejection path included
                 if not self.paused():
                     raise     # a running body exits on it: its supervisor restarts it and the breaker counts the boot
@@ -915,27 +1074,46 @@ class Body:
         if not self.layout.intake.is_dir():
             return []
         results = []
-        for path in sorted(self.layout.intake.glob("*.json"))[:INTAKE_PER_TICK]:
+        unfiled = self.__dict__.setdefault("_intake_unfiled", set())   # items this process could not file
+        for path in sorted(p for p in self.layout.intake.glob("*.json") if p.name not in unfiled)[:INTAKE_PER_TICK]:
             raw, why = _read_intake(path)
             item = None
             if why is None:
                 try:
-                    item = json.loads(raw)
-                except ValueError:
+                    item = untrusted_json.loads(raw)
+                except (ValueError, RecursionError):  # nested too deep is not JSON GREG can read either
                     why = "not JSON"
             if why is None:
                 why = _intake_shape(item)
             if why is None:
                 results.append(dataplane.ingest(self.journal, source=item["source"], content=item["content"],
                                                 channel=item["channel"]))
-                _move(path, self.layout.intake_done)
+                self._file_intake(path, self.layout.intake_done, unfiled)
                 continue
             digest = hashlib.sha256(raw).hexdigest() if raw is not None else None
             self.journal.record("external.intake_refused", {"file": path.name[:120], "why": why,
                                                              "content_sha256": digest},
                                 key=[path.name[:120], digest, why])
-            _move(path, self.layout.intake_refused)
+            self._file_intake(path, self.layout.intake_refused, unfiled)
         return results
+
+    def _file_intake(self, path: Path, folder: Path, unfiled: set) -> None:
+        """File one intake item; one that cannot be filed (its folder replaced by a link, no permission) is recorded
+        once and skipped for the life of this process. Intake has no set-aside, so the OSError was raised out of
+        every tick and every resume until the file was deleted by hand (re-check of 02efc535, findings 4 and 5).
+        The item is data only, and re-reading it after a restart returns the fact already retained."""
+        try:
+            _move(path, folder)
+        except Exception as exc:        # any fault filing it, not only OSError (re-check of 37a8e43c)
+            unfiled.add(path.name)
+            reason = f"{type(exc).__name__}: {exc}"[:300]
+            key = [path.name[:120], folder.name, reason]
+            try:
+                if self.journal.retained("external.intake_unfiled", key) is None:
+                    self.journal.record("external.intake_unfiled", {"file": path.name[:120], "folder": folder.name,
+                                                                    "why": reason}, key=key)
+            except Exception:
+                pass        # the skip stands even when the ledger cannot take the record
 
     def _stuck_file(self, path: Path, exc: Exception, failed: Exception) -> dict:
         error = f"{type(exc).__name__}: {exc}"[:300] + f"; set-aside failed: {type(failed).__name__}: {failed}"[:200]
@@ -953,35 +1131,39 @@ class Body:
             pass   # the skip stands even when the ledger cannot take the record; the heartbeat still shows HELD
         return {"status": "SKIPPED", "file": path.name, "reason": error}
 
-    def _ingest_one(self, path: Path, *, only_kind: str | None = None) -> dict | None:
-        envelope = None
+    def _ingest_one(self, path: Path, *, only_kind: str | None = None, revoking=frozenset()) -> dict | None:
+        envelope = raw = None
         try:
-            envelope = json.loads(path.read_text())
+            raw = _read_inbox_file(path)
+            envelope = _parse_inbox(raw)
             if only_kind is not None and (not isinstance(envelope, dict) or envelope.get("kind") != only_kind):
                 return None
-            outcome = self.apply(envelope, channel="inbox")
-        except (FounderAuthError, MissionError, ValueError, KeyError, TypeError,
+            outcome = self.apply(envelope, channel="inbox", revoking=revoking)
+        except (FounderAuthError, MissionError, ValueError, RecursionError, KeyError, TypeError,
                 tribunal.CritiqueError) as exc:
-            raw = path.read_bytes()
+            # the bytes already read: opening the path again could wait on a FIFO renamed over it since the first
+            # read, and the BODY_STOP behind it would never be read (re-check of bdfca22d, M1)
             consumed = getattr(exc, "consumed", None)
             # the reason is part of the fact: the same file rejected again for another reason (re-dropped after the
             # state that refused it changed) is a second rejection, not a reused fact identity the ledger refuses
             # (which crashed the body)
-            key = [path.name, sha256_json(raw.hex()), sha256_json(f"{type(exc).__name__}: {exc}")]
+            # a refused entry (a link, an oversized file) was never read: it is filed with no content digest
+            content = sha256_json(raw.hex()) if raw is not None else None
+            key = [path.name, content, sha256_json(f"{type(exc).__name__}: {exc}")]
             # When and which command it refused, by the body's clock: an acceptance of the same command claiming an
             # earlier time is a backdated record (greg.goal_gravity.founder_facts). Recorded once, so a retry after a
             # crash finds the retained refusal instead of a different time.
             if self.journal.retained("command.rejected", key) is None:
                 self.journal.record("command.rejected", {
-                    "file": path.name, "sha256": sha256_json(raw.hex()),
+                    "file": path.name, "sha256": content,
                     "reason": f"{type(exc).__name__}: {exc}"[:500], "instruction_status": "data_only",
                     "at": iso(self.clock()),
                     **({"digest": sha256_json(envelope)} if isinstance(envelope, dict) else {}),
                     **({"consumed": consumed} if consumed else {})}, key=key)
-            shutil.move(str(path), self.layout.rejected / path.name)
+            _file_into(path, self.layout.rejected)
             return {"status": "REJECTED", "file": path.name, "reason": str(exc)[:300]}
         try:
-            shutil.move(str(path), self.layout.processed / path.name)
+            _file_into(path, self.layout.processed)
         except OSError as exc:
             exc.applied = outcome     # the command was accepted and applied; only its file could not be filed
             raise
@@ -995,17 +1177,15 @@ class Body:
         for byte (never deleted, never accepted as a command) and recorded once with its digest and error, and the
         turn goes on to the next file. Setting a file aside lifts nothing; only a valid signed command does."""
         try:
-            raw = path.read_bytes()
+            raw = _read_inbox_file(path)      # never waits on a FIFO: one is kept unread, with no digest
         except OSError:
             raw = None
         recorded = {e.payload["kept_as"] for e in self.journal.replay("command.faulted")}
         try:
-            self.layout.faulted.mkdir(exist_ok=True)
-            target = self.layout.faulted / path.name
-            if target.exists() or f"inbox/faulted/{target.name}" in recorded:
-                # never overwrite a file set aside earlier, nor reuse the name of one recorded (and since removed)
-                target = target.with_name(f"{path.stem}.{secrets.token_hex(4)}{path.suffix}")
-            shutil.move(str(path), target)       # first, so a crash before the record loses no bytes
+            # never overwrite a file set aside earlier (nor a link in its place), nor reuse the name of one
+            # recorded and since removed; moved first, so a crash before the record loses no bytes
+            target = _file_into(path, self.layout.faulted,
+                                taken={k.split("/")[-1] for k in recorded if k.startswith("inbox/faulted/")})
             kept_as = f"inbox/faulted/{target.name}"
         except OSError:
             # inbox/faulted cannot take it (missing permission, a file in its place): set it aside in place, out of
@@ -1036,10 +1216,9 @@ class Body:
                   "platform": os.uname().sysname, "ledger_head_at_boot": self.ledger.head}
         if self.ledger.unacknowledged_tail:
             record["ledger_recovery"] = dict(self.ledger.unacknowledged_tail)
-        try:   # read before this process overwrites it: bounds the absence since the previous process
-            last = presence.previous_heartbeat(json.loads(self.layout.heartbeat.read_text()))
-        except (OSError, ValueError):
-            last = None
+        # read before this process overwrites it: bounds the absence since the previous process
+        previous = read_heartbeat(self.layout)
+        last = presence.previous_heartbeat(previous) if previous is not None else None
         if last is not None:
             record["previous_heartbeat"] = last
         if main_loop:
@@ -1473,9 +1652,64 @@ def _intake_shape(item) -> str | None:
     return None
 
 
-def _move(path: Path, folder: Path):
+NAME_MAX = 255     # bytes in one file name (Linux, macOS)
+
+
+def _fresh_name(name: str) -> str:
+    """``name`` with a random tag before its suffix, its stem cut so the result fits NAME_MAX bytes: a second entry
+    of a 250-byte name raised ENAMETOOLONG out of the filing (re-check of 02efc535, finding 4)."""
+    stem, dot, suffix = name.rpartition(".")
+    if not dot:
+        stem, suffix = name, ""
+    suffix = f".{suffix}" if dot else ""
+    tag = f".{secrets.token_hex(4)}"
+    # bytes as the file system has them: a name that is not UTF-8 reaches Python with lone surrogates, and a strict
+    # str.encode() raised UnicodeEncodeError out of the filing (re-check of 37a8e43c)
+    room = NAME_MAX - len(os.fsencode(tag + suffix))
+    raw = os.fsencode(stem)
+    try:
+        raw.decode("utf-8")
+    except UnicodeDecodeError:
+        cut = os.fsdecode(raw[:max(room, 1)])     # bytes the file system already has as they are
+    else:
+        # a valid UTF-8 name is cut at a character boundary: surrogateescape round-trips a dangling byte, so a byte
+        # cut kept half a character and filed a name APFS refuses (re-check of e030a628, M1)
+        cut = raw[:max(room, 1)].decode("utf-8", "ignore")
+    return f"{cut or 'entry'}{tag}{suffix}"
+
+
+def _file_into(path: Path, folder: Path, *, taken=frozenset()) -> Path:
+    """Move one inbox or intake entry into ``folder`` under its own name, or a fresh one when anything (a link
+    included) already has that name, and return where it went.
+
+    ``folder`` is opened once, without following a link, and both the name check and the rename are made relative
+    to that descriptor, so the folder cannot be swapped for a link between them (re-check of 02efc535, finding 3:
+    a thread exchanging inbox/rejected with a link won the race in about 365 tries). ``os.rename`` never follows a
+    link at the destination. ``shutil.move`` into ``folder / name`` followed a link to a directory there and wrote
+    the entry inside it, so a refused link filed under inbox/rejected/ let the next rejection of the same name write
+    a file of the sender's choosing in any directory the body can write (re-check of 9a14b8a5, finding 1)."""
     folder.mkdir(mode=0o700, exist_ok=True)
-    os.replace(path, folder / path.name)
+    fd = os.open(folder, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    try:
+        name = path.name
+        while name in taken or _exists_at(fd, name):
+            name = _fresh_name(path.name)
+        os.rename(path, name, dst_dir_fd=fd)
+    finally:
+        os.close(fd)
+    return folder / name
+
+
+def _exists_at(dir_fd: int, name: str) -> bool:
+    try:
+        os.lstat(name, dir_fd=dir_fd)
+    except FileNotFoundError:
+        return False
+    return True
+
+
+def _move(path: Path, folder: Path):
+    _file_into(path, folder)
 
 
 def drop_intake(home: str | Path, *, source: str, content: str, channel: str) -> Path:
@@ -1495,13 +1729,25 @@ def drop_intake(home: str | Path, *, source: str, content: str, channel: str) ->
     return target
 
 
+def arrival_name(at: datetime) -> str:
+    """The start of an inbox file's name: when it reached the inbox, by this machine's clock, in a fixed width.
+
+    The body applies its inbox in file-name order. Until 2026-11-13 a name started with the signer's own
+    ``issued_at``, which a delegated device sets itself (from seven days back to five minutes ahead), so a device chose
+    its place against the founder's commands: a forward-dated BODY_RESUME was applied after the founder's later
+    BODY_PAUSE, and a backdated approving DECISION before the founder's earlier reject (re-check of 8f72ceff, N2).
+    Named by arrival, commands are applied in the order they reached the body. Microseconds, always written, keep
+    names of one second in order as text."""
+    return at.astimezone(timezone.utc).strftime("%Y-%m-%dT%H%M%S.%fZ")
+
+
 def send_signed(home: str | Path, key, kind: str, body: dict, *, ttl: timedelta = timedelta(hours=24)) -> Path:
     """Sign one founder command and drop it into the body inbox (any interface, then close)."""
     from greg.founder import sign_command
     layout = Layout(home)
     config = json.loads(layout.config.read_text())
     envelope = sign_command(key, kind, body, body_id=config["body_id"], ttl=ttl)
-    target = layout.inbox / f"{envelope['issued_at'].replace(':', '')}-{kind.lower()}-{envelope['nonce'][:8]}.json"
+    target = layout.inbox / f"{arrival_name(datetime.now(timezone.utc))}-{kind.lower()}-{envelope['nonce'][:8]}.json"
     temporary = target.with_suffix(".tmp")
     temporary.write_text(json.dumps(envelope, indent=1))
     temporary.replace(target)
@@ -1514,7 +1760,7 @@ def inbox_digests(layout: "Layout") -> set[str]:
     out = set()
     for path in layout.inbox.glob("*.json"):
         try:
-            out.add(sha256_json(json.loads(path.read_text())))
+            out.add(sha256_json(_parse_inbox(_read_inbox_file(path))))   # never waits on a FIFO (re-check, M2)
         except (OSError, ValueError):
             continue
     return out
@@ -1525,10 +1771,7 @@ def morning_projection(home: str | Path) -> dict:
     from types import SimpleNamespace
     from greg.missions import MissionBook
     layout = Layout(home)
-    try:
-        heartbeat = json.loads(layout.heartbeat.read_text())
-    except (OSError, ValueError):
-        heartbeat = None
+    heartbeat = read_heartbeat(layout)
     with observe(home, actor="spiffe://uniimente.internal/greg/morning-reader") as journal:
         return tribunal.morning_report(journal, SimpleNamespace(book=MissionBook(journal)), heartbeat=heartbeat,
                                        pending=inbox_digests(layout))
@@ -1558,13 +1801,18 @@ def _attach_waiting(journal, achieved: set) -> list[dict]:
     return list(waiting.values())
 
 
+UNACKNOWLEDGED_TAIL = ("history ends with a record that is not complete: one being written now, or one a crash tore "
+                       "(the body sets it aside when it next starts); left out of everything shown here, and until it "
+                       "is complete greg serve refuses device keys")
+
+
 def status(home: str | Path) -> dict:
     """Read-only projection for the founder; safe while the body runs."""
     layout = Layout(home)
     config = json.loads(layout.config.read_text())
     ledger = EvidenceLedger(config["constitution_hash"], str(layout.ledger), read_only=True, tail="ignore") \
         if layout.ledger.exists() else None
-    heartbeat = json.loads(layout.heartbeat.read_text()) if layout.heartbeat.exists() else None
+    heartbeat = read_heartbeat(layout)
     if ledger is None:
         return {"body_id": config["body_id"], "state": "NEVER_STARTED", "heartbeat": heartbeat}
     try:
@@ -1601,6 +1849,11 @@ def status(home: str | Path) -> dict:
             "body_id": config["body_id"], "version": config["version"],
             "background": heartbeat, "boots": len(boots),
             "security": {"founder_keys_enrolled": founder, "chain_verified": ok, "chain": chain,
+                         # History read here ends with a line that was never completed: one the body is writing
+                         # now, or one torn by a crash (the body sets it aside on its next start). Until it is
+                         # complete greg serve refuses every device key: that line may be its revocation.
+                         "unacknowledged_tail": ledger.unacknowledged_tail and {
+                             **ledger.unacknowledged_tail, "meaning": UNACKNOWLEDGED_TAIL},
                          "devices": [{k: d[k] for k in ("device_key_id", "label", "kinds", "expires_at")}
                                      for d in device_delegations(journal).values()],
                          # what each revocation voided, and the review a suspected compromise opened

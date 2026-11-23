@@ -31,6 +31,7 @@ import base64
 import hashlib
 import http.server
 import json
+from greg import untrusted_json   # remote ActivityPub bodies are untrusted (re-check of 9a14b8a5, finding 6)
 import threading
 import urllib.error
 import urllib.parse
@@ -173,7 +174,10 @@ class Instance:
         status, _, body = _http("GET", url.split("#", 1)[0])
         if status != 200:
             raise FederationError(f"actor {url} not fetchable ({status})")
-        return json.loads(body)
+        try:
+            return untrusted_json.loads(body)
+        except ValueError:
+            raise FederationError(f"actor {url} is not readable JSON") from None
 
     # -- inbound verification ------------------------------------------------------------------
     def verify_request(self, method: str, path: str, headers: dict, body: bytes) -> tuple[bool, str, dict | None]:
@@ -221,9 +225,11 @@ class Instance:
             self._save(s)
             return 401, {"error": why}
         try:
-            activity = json.loads(body)
+            activity = untrusted_json.loads(body)
         except ValueError:
             return 400, {"error": "body is not JSON"}
+        if not isinstance(activity, dict):      # a list raised AttributeError on activity.get (re-check of 02efc535)
+            return 400, {"error": "body is not a JSON object"}
         if activity.get("actor") != sender["id"]:
             self._journal(s, "inbox.refused", actor=name, why="activity actor is not the signer")
             self._save(s)
@@ -242,6 +248,8 @@ class Instance:
             return 202, {"accepted": True}
         if kind == "Accept" and isinstance(activity.get("object"), dict) and activity["object"].get("type") == "Follow":
             target = activity["object"].get("object")
+            if not isinstance(target, str):     # a list or object here raised TypeError on .pop (re-check of 37a8e43c)
+                return 400, {"error": "the accepted Follow names no actor"}
             if a["pending_follows"].pop(target, None) is not None or target in a["following"]:
                 if target not in a["following"]:
                     a["following"].append(target)
@@ -264,6 +272,8 @@ class Instance:
             self._save(s)
             return 202, {"accepted": True}
         if kind == "Move" and activity.get("object") == sender["id"]:
+            if not isinstance(activity.get("target"), str):   # a non-string target raised AttributeError
+                return 400, {"error": "a Move must name its target actor"}
             return self._handle_move(s, name, sender, activity)
         return 400, {"error": f"unsupported activity {kind!r}"}
 
@@ -276,14 +286,32 @@ class Instance:
             target = self.fetch_actor(target_id)
         except FederationError as exc:
             return 400, {"error": str(exc)[:120]}
-        if sender["id"] not in target.get("alsoKnownAs", []) or sender.get("movedTo") != target_id:
+        # checked before anything changes: a list target, an int alsoKnownAs or a target without an inbox raised
+        # out of the handler, the last after the old follow was already removed (re-check of e030a628, L1)
+        aliases = target.get("alsoKnownAs", []) if isinstance(target, dict) else None
+        if isinstance(aliases, str):        # JSON-LD compaction sends one alias as a plain string
+            aliases = [aliases]
+        if (not isinstance(aliases, list) or target.get("id") != target_id
+                or not isinstance(target.get("inbox"), str) or not isinstance(sender.get("inbox"), str)):
+            return 400, {"error": "the Move's target actor document is not readable"}
+        # exact match: `in` on a string alias was a substring test, so "<sender>by" confirmed a Move
+        if sender["id"] not in [x for x in aliases if isinstance(x, str)] or sender.get("movedTo") != target_id:
             self._journal(s, "move.refused", actor=name, why="alias not confirmed on both actors")
             self._save(s)
             return 403, {"error": "move not confirmed by both actors (alsoKnownAs and movedTo)"}
-        a["following"].remove(sender["id"])
+        # follow the new actor first: follow() fetches the target again, and a server answering that fetch with an
+        # unreadable document raised after the old follow was removed and saved (re-check of c3310763)
+        try:
+            self.follow(name, target_id, expect_id=target_id)
+        except FederationError as exc:
+            return 400, {"error": str(exc)[:120]}
+        s = self._state()
+        following = s["actors"][name]["following"]
+        if sender["id"] not in following:   # a nested Move, made while this Follow was delivered, already moved it
+            return 202, {"accepted": True, "now_following": target_id}
+        following.remove(sender["id"])
         self._journal(s, "move.accepted", actor=name, old=sender["id"], new=target_id)
         self._save(s)
-        self.follow(name, target_id)
         s2 = self._state()
         undo = {"@context": CONTEXT, "id": self._next_id(s2, name, "undo"), "type": "Undo", "actor": self.actor_id(name),
                 "object": {"type": "Follow", "actor": self.actor_id(name), "object": sender["id"]}}
@@ -292,8 +320,14 @@ class Instance:
         return 202, {"accepted": True, "now_following": target_id}
 
     # -- client side ---------------------------------------------------------------------------
-    def follow(self, name: str, remote_actor: str) -> dict:
+    def follow(self, name: str, remote_actor: str, *, expect_id: str | None = None) -> dict:
         actor = self.fetch_actor(remote_actor)
+        if not isinstance(actor, dict) or not isinstance(actor.get("id"), str) or not isinstance(actor.get("inbox"), str):
+            raise FederationError(f"actor {remote_actor} is not a readable actor document")
+        if expect_id is not None and actor["id"] != expect_id:
+            # a Move's target server answered the second fetch with another actor, so GREG followed a third party
+            # (re-check of 14fcf659)
+            raise FederationError(f"actor {remote_actor} answered as {actor['id'][:80]}")
         s = self._state()
         activity = {"@context": CONTEXT, "id": self._next_id(s, name, "follow"), "type": "Follow", "actor": self.actor_id(name), "object": actor["id"]}
         s["actors"][name]["pending_follows"][actor["id"]] = activity["id"]
@@ -330,7 +364,10 @@ class Instance:
         status, _, body = _http("GET", actor["outbox"])
         if status != 200:
             raise FederationError(f"outbox {actor['outbox']} returned {status}")
-        return json.loads(body)["orderedItems"]
+        try:
+            return untrusted_json.loads(body)["orderedItems"]
+        except (ValueError, KeyError, TypeError):
+            raise FederationError(f"outbox {actor['outbox']} is not a readable collection") from None
 
     def inbox_stream(self, name: str) -> list[dict]:
         return self._state()["actors"][name]["inbox"]

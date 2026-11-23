@@ -24,6 +24,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 import hashlib
 import json
+from greg import untrusted_json
 import os
 from pathlib import Path
 import re
@@ -730,31 +731,80 @@ def _prompt(text: str, ctx: PlannerContext) -> str:
     return json.dumps(context, sort_keys=True, indent=1, default=str)
 
 
+SCAN_WORK_PER_CHAR = 8          # characters _first_json_object may visit, per character of the reply
+SCAN_WORK_CEILING = 1 << 24     # ...or this many in all, whichever is larger: about 2.5 s of scanning
+
+
 def _first_json_object(text: str) -> dict:
+    """The first JSON object in a model reply, trying each "{" in order: its balanced span is decoded, and a span that
+    is not an object moves on to the next "{".
+
+    Each "{" is scanned for its closing brace at most once. A scan that meets a later "{" outside a string is in the
+    same state a scan started there would be (outside a string, no escape pending), so the close it finds for that
+    brace, or its reaching the end without one, holds for that start too and is remembered. Rescanning from every
+    brace was O(n^2): a reply of a few hundred kilobytes of unclosed braces took minutes (re-checks of bdfca22d, M3,
+    and 6933be8c, F3).
+
+    A scan that meets a brace deeper than MAX_DEPTH refuses the whole reply, as a decoded one would be refused. This
+    is a deliberate change: a reply with more than MAX_DEPTH unclosed braces before a valid object (or that many
+    braces inside a string the scan has to cross) was answered from that later object before and is refused now
+    (re-check of 9a14b8a5, finding 3). Bounding each start instead would rescan up to MAX_DEPTH braces from every
+    brace, O(MAX_DEPTH * n) with a large constant; a model reply like that is refused, never guessed at."""
+    close = {}           # index of a "{" -> index of its "}", or None when it never closes
+    # The memo covers a later "{" only when a scan meets it outside a string. A reply that keeps every scan inside a
+    # string ({\" repeated) is still rescanned from each brace: 40 KB took 13.6 s (re-check of 02efc535, finding 1).
+    # A work budget bounds the whole search; a reply that exhausts it is refused, as an unreadable one is.
+    # A budget linear in the reply alone refused a legitimate reply: an invalid first draft holding stringified JSON
+    # arguments, then the corrected draft, costs about rows x span (11 KB with 150 rows: 39 visits per character),
+    # and no fixed multiplier is enough as the draft grows (re-check of 37a8e43c). So the old, rescanning search is
+    # allowed up to a fixed ceiling, and a reply past it is refused after a bounded few seconds. Ordinary replies
+    # cost about 1.1 visits per character. A search linear in every case would need the scan's state memoised per
+    # position and tokenizer state; that is not built.
+    budget = max(SCAN_WORK_PER_CHAR * len(text), SCAN_WORK_CEILING)
     start = text.find("{")
     while start != -1:
-        depth, in_string, escape = 0, False, False
-        for index in range(start, len(text)):
-            ch = text[index]
-            if in_string:
-                escape = (ch == "\\" and not escape)
-                if ch == '"' and not escape:
-                    in_string = False
-                continue
-            if ch == '"':
-                in_string = True
-            elif ch == "{":
-                depth += 1
-            elif ch == "}":
-                depth -= 1
-                if depth == 0:
-                    try:
-                        value = json.loads(text[start:index + 1])
-                    except json.JSONDecodeError:
+        if start not in close:
+            stack, in_string, escape = [], False, False
+            for index in range(start, len(text)):
+                budget -= 1
+                if budget < 0:
+                    raise MissionError("model reply is too irregular to read as JSON")
+                ch = text[index]
+                if in_string:
+                    # an escaped character is skipped whole: before, the flag was recomputed before the quote was
+                    # tested, so \" always ended the string and a valid reply with an odd count of escaped quotes
+                    # read as "no JSON object" (re-check of 9a14b8a5, finding 4)
+                    if escape:
+                        escape = False
+                    elif ch == "\\":
+                        escape = True
+                    elif ch == '"':
+                        in_string = False
+                    continue
+                if ch == '"':
+                    in_string = True
+                elif ch == "{":
+                    if index in close and close[index] is None:
+                        break      # a brace known never to close: no brace around it closes either
+                    stack.append(index)
+                    if len(stack) > untrusted_json.MAX_DEPTH:
+                        raise MissionError("model reply nests its JSON too deeply to read")
+                elif ch == "}" and stack:
+                    close[stack.pop()] = index
+                    if not stack:
                         break
-                    if isinstance(value, dict):
-                        return value
-                    break
+            for opened in stack:
+                close.setdefault(opened, None)
+        end = close.get(start)
+        if end is not None:
+            try:
+                value = untrusted_json.loads(text[start:end + 1])
+            except untrusted_json.TooDeep:
+                raise MissionError("model reply nests its JSON too deeply to read") from None
+            except ValueError:          # not JSON, or past a decoder limit (int digits): try the next brace
+                value = None
+            if isinstance(value, dict):
+                return value
         start = text.find("{", start + 1)
     raise MissionError("model reply contained no JSON object")
 

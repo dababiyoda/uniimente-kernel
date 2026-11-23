@@ -30,6 +30,7 @@ from __future__ import annotations
 import ast
 import hashlib
 import json
+from greg import untrusted_json
 import os
 from pathlib import Path
 import re
@@ -133,7 +134,7 @@ def execute(source_path: Path, inputs: list[str], *, timeout: int = RUN_TIMEOUT)
         raise CapabilityError(f"built capability exited {proc.returncode}: "
                               f"{proc.stderr.decode('utf-8', 'replace')[-300:]}")
     try:
-        results = json.loads(proc.stdout)
+        results = untrusted_json.loads(proc.stdout)
     except json.JSONDecodeError as exc:
         raise CapabilityError("built capability produced unreadable output") from exc
     if not isinstance(results, list) or len(results) != len(inputs):

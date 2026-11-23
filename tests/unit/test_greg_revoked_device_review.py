@@ -194,8 +194,10 @@ def test_a_compensation_approved_by_a_device_revoked_before_its_dispatch_does_no
     with world.body() as body:
         phone = world.enroll(body, "phone")
         note, ask = superseded_and_asked(world, body)
-        drop(world.home, world.approve(ask["request_id"], key=phone), "a-decision.json")
-        drop(world.home, world.revoke("phone"), "b-revoke.json")
+        # recorded before the revocation reaches the body: in one inbox read with it, #313 refuses the device's
+        # command outright (test_a_devices_command_waiting_beside_its_revocation_ends_no_mission)
+        assert body.apply(world.approve(ask["request_id"], key=phone))["status"] == "APPLIED"
+        assert body.apply(world.revoke("phone"))["status"] == "APPLIED"
         world.tick(body, 4)
         assert note.read_text() == "draft" and compensated(body) == []
         assert gate_record(body, ask["scope_digest"]) == ([], [])
@@ -227,11 +229,10 @@ def test_a_mission_a_revoked_device_abandoned_runs_no_compensation_until_it_is_d
         [ran] = actions(body, "m:comp")
         before = len(grants(body))
         abandon = abandoned_by(world, body, phone)
-        drop(world.home, abandon, "a-abandon.json")
-        drop(world.home, world.revoke("phone"), "b-revoke.json")
-        turn = world.tick(body)
-        assert [c["status"] for c in turn["commands"]] == ["APPLIED", "APPLIED"]
-        world.tick(body, 3)
+        # recorded before the revocation reaches the body: in one inbox read with it, #313 refuses the device's
+        # command outright (test_a_devices_command_waiting_beside_its_revocation_ends_no_mission)
+        assert [body.apply(abandon)["status"], body.apply(world.revoke("phone"))["status"]] == ["APPLIED", "APPLIED"]
+        world.tick(body, 4)
         m = body.engine.book.missions["m:comp"]
         [revoked] = body.journal.replay("device.revoked")
         assert m.status == "ABANDONED"                              # the abandon itself stands
@@ -372,6 +373,25 @@ def test_the_founder_is_shown_what_a_revocation_holds_and_the_review_lists_it(wo
     assert "ended_missions_held" not in status(world.home)["security"]["device_revocations"][0]
 
 
+def test_a_devices_command_waiting_beside_its_revocation_ends_no_mission(world):
+    """The race the tests above once staged: the phone's abandon and the founder's DEVICE_REVOKE reach the body in
+    the same inbox read. Since #313 the revocation is read first, so the abandon is refused: the mission is not
+    ended, nothing is held, and no compensation runs or is asked for."""
+    with world.body() as body:
+        phone = world.enroll(body, "phone", ("LIFECYCLE",))
+        note = compensable(world, body)
+        before = len(grants(body))
+        drop(world.home, abandoned_by(world, body, phone), "a-abandon.json")
+        drop(world.home, world.revoke("phone"), "b-revoke.json")
+        turn = world.tick(body)
+        assert [c["status"] for c in turn["commands"]] == ["REJECTED", "APPLIED"]
+        world.tick(body, 3)
+        m = body.engine.book.missions["m:comp"]
+        assert m.status != "ABANDONED" and not getattr(m, "compensation_hold", None)
+        assert compensated(body) == [] and len(grants(body)) == before and note.read_text() == "draft"
+        assert not [a for a in open_asks(body, "m:comp") if a.get("compensation")]
+
+
 def test_a_late_suspicion_lists_the_compensation_the_abandon_ran_and_not_the_one_the_founder_approved(world):
     """The phone abandons two missions. The first is compensated before the phone is revoked: that ran on the
     phone's command. The second is held by the revocation and runs on the founder's approval. A suspicion signed
@@ -386,8 +406,10 @@ def test_a_late_suspicion_lists_the_compensation_the_abandon_ran_and_not_the_one
         assert ran["status"] == "DONE"
         compensable(world, body, "m:late")
         late = abandoned_by(world, body, phone, "m:late")
-        drop(world.home, late, "a-abandon.json")
-        drop(world.home, world.revoke("phone"), "b-revoke.json")
+        # recorded before the revocation reaches the body: in one inbox read with it, #313 refuses the device's
+        # command outright (test_a_devices_command_waiting_beside_its_revocation_ends_no_mission)
+        body.apply(late)
+        body.apply(world.revoke("phone"))
         world.tick(body, 3)
         [ask] = open_asks(body, "m:late")
         body.apply(world.approve(ask["request_id"]))                # the FOUNDER approves the held compensation
@@ -711,8 +733,10 @@ def test_voiding_a_devices_reconciliation_answer_leaves_the_founders_approval_of
         world.tick(body, 2)
         [question] = open_asks(body, mid, kind="RECONCILIATION")
         assert question["scope_digest"] == ask["scope_digest"]
-        drop(world.home, world.approve(question["request_id"], key=phone, answer="reconcile_not_executed"), "a.json")
-        drop(world.home, world.revoke("phone"), "b.json")
+        # recorded before the revocation reaches the body: in one inbox read with it, #313 refuses the device's
+        # command outright (test_a_devices_command_waiting_beside_its_revocation_ends_no_mission)
+        body.apply(world.approve(question["request_id"], key=phone, answer="reconcile_not_executed"))
+        body.apply(world.revoke("phone"))
         world.tick(body, 2)
         assert question["request_id"] in body.engine.book.voided
         assert body.engine.book.missions[mid].approved_scopes == {ask["scope_digest"]}

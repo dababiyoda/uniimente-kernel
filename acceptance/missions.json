@@ -1010,10 +1010,11 @@
     {
      "id": "G4",
      "gap": "G4. Cumulative budget across several workers in one mission is tested only at UNIT level (LightCone.admits).",
-     "state": "OPEN",
+     "state": "CLOSED",
      "buildable_now": true,
      "dependency": "none",
-     "next": "Reuse the G1 mission with a 0.7 cone budget and cost_usd 0.5 on each worker. Assert: after worker-a books 0.4, worker-b becomes exactly one APPROVAL decision.requested whose reasons say 'cost 0.5 with 0.4 spent exceeds budget 0.7'; no grant_issued exists for worker-b's scope; the double was called once. Then drop a signed DECISION approve and assert worker-b runs exactly once, spent_usd equals the sum, and no second approval is requested. The probe already showed the pre-approval half."
+     "next": "Reuse the G1 mission with a 0.7 cone budget and cost_usd 0.5 on each worker. Assert: after worker-a books 0.4, worker-b becomes exactly one APPROVAL decision.requested whose reasons say 'cost 0.5 with 0.4 spent exceeds budget 0.7'; no grant_issued exists for worker-b's scope; the double was called once. Then drop a signed DECISION approve and assert worker-b runs exactly once, spent_usd equals the sum, and no second approval is requested. The probe already showed the pre-approval half.",
+     "closed_by": "tests/integration/test_greg_mission_d_budget_and_cancel.py::test_the_mission_budget_holds_across_workers_and_only_the_founder_lifts_it (the D2 mission, 0.7 cone, two workers signed at 0.5: worker-a books 0.4; worker-b is exactly one APPROVAL whose why_now is 'cost 0.5 with 0.4 spent exceeds budget 0.7', no grant for its scope and no dispatch before a signed DECISION approve; then it runs exactly once, one grant, spent_usd is the sum, no second ask, ACHIEVED) and ::test_a_worker_inside_the_remaining_budget_needs_no_approval (control). SANDBOX tier: in-process Body, scripted worker double, per-test key."
     },
     {
      "id": "G5",
@@ -1027,10 +1028,11 @@
     {
      "id": "G6",
      "gap": "G6. Cancellation of a mission with dependent worker tasks is untested: abandon between tasks. (Interruption during a worker is now covered: H.G4 and H.G11.)",
-     "state": "OPEN",
+     "state": "CLOSED",
      "buildable_now": true,
      "dependency": "none",
-     "next": "Run the G1 mission. After worker-a is DONE, drop a signed LIFECYCLE {state:'ABANDONED'}. Assert status ABANDONED, worker-b never called, no work-orders/b, no worker-b grant_issued, worker-a's evidence and receipt kept, ledger chain ok. The probe showed this path works. (The former part (b), which asked for the next commission to return reused: True, described the defect H.G11 fixed: unreceipted evidence is never reused, and a not-executed answer runs a new worker under a new grant; tests/unit/test_greg_mission_reconciliation.py::test_a_body_lost_after_the_work_order_evidence_but_before_its_receipt_is_recommissioned_not_closed.)"
+     "next": "Run the G1 mission. After worker-a is DONE, drop a signed LIFECYCLE {state:'ABANDONED'}. Assert status ABANDONED, worker-b never called, no work-orders/b, no worker-b grant_issued, worker-a's evidence and receipt kept, ledger chain ok. The probe showed this path works. (The former part (b), which asked for the next commission to return reused: True, described the defect H.G11 fixed: unreceipted evidence is never reused, and a not-executed answer runs a new worker under a new grant; tests/unit/test_greg_mission_reconciliation.py::test_a_body_lost_after_the_work_order_evidence_but_before_its_receipt_is_recommissioned_not_closed.)",
+     "closed_by": "tests/integration/test_greg_mission_d_budget_and_cancel.py::test_abandoning_between_dependent_workers_stops_the_consumer_and_keeps_the_producer (after worker-a is DONE a signed LIFECYCLE ABANDONED: status ABANDONED, worker-b never called, no worker-b action, no grant after the abandon, work-orders/b absent while work-orders/a stays, worker-a's receipt still on the ledger, chain verifies). SANDBOX tier."
     },
     {
      "id": "G7",
@@ -2283,10 +2285,11 @@
     {
      "id": "G4",
      "gap": "G4: acquired-capability branch. No test shows a Capability-Genesis-formed capability measurably improving a later related mission.",
-     "state": "OPEN",
+     "state": "CLOSED",
      "buildable_now": true,
      "dependency": "none",
-     "next": "Base it on tests/unit/test_greg_genesis_builder.py. Mission A opens a deficit; builders.StaticBuilder(WRONG, GOOD) builds; the capability is verified by the frozen oracle and attached. Restart the Body. Submit mission B, a different mission_id and different input data needing the same function. Assert: no new deficit.opened, genesis.built count unchanged, builder.calls unchanged, no signed build budget consumed, B ACHIEVED and appraised VERIFIED in fewer ticks and actions than A. Ablation: on a fresh home, or after a founder-signed CAPABILITY_DETACH of the built capability, B opens a deficit and either needs builder calls or, without a build budget, blocks or escalates. The metric is builder invocations, ticks-to-ACHIEVED and budget, not registry rows."
+     "next": "Base it on tests/unit/test_greg_genesis_builder.py. Mission A opens a deficit; builders.StaticBuilder(WRONG, GOOD) builds; the capability is verified by the frozen oracle and attached. Restart the Body. Submit mission B, a different mission_id and different input data needing the same function. Assert: no new deficit.opened, genesis.built count unchanged, builder.calls unchanged, no signed build budget consumed, B ACHIEVED and appraised VERIFIED in fewer ticks and actions than A. Ablation: on a fresh home, or after a founder-signed CAPABILITY_DETACH of the built capability, B opens a deficit and either needs builder calls or, without a build budget, blocks or escalates. The metric is builder invocations, ticks-to-ACHIEVED and budget, not registry rows.",
+     "closed_by": "tests/unit/test_greg_genesis_capability_dividend.py (SANDBOX): mission B after a restart, served by the capability mission A formed, opens no deficit, records no Genesis route, build or verification, makes 0 builder calls, spends 0 of its signed build budget, and is appraised VERIFIED after reaching ACHIEVED in 1 tick against 2 ticks, 2 builder calls, 2 verifications and 0.10 of reported build spend for the same mission B on a fresh home; after a founder-signed CAPABILITY_DETACH, B gets no dividend (escalates without a build budget; with one, the identical rebuild is refused as founder-detached and not attached)"
     },
     {
      "id": "G5",

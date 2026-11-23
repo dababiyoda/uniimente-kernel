@@ -786,10 +786,11 @@
     {
      "id": "G9",
      "gap": "G9. The independent appraiser does not audit the genesis chain or attach authority.",
-     "state": "OPEN",
+     "state": "CLOSED",
      "buildable_now": true,
      "dependency": "none",
-     "next": "Add a check 'formed_capabilities_authorized' to greg/appraisal.py. For every receipt served by a non-builtin capability, the ledger must show deficit.opened -> genesis.verified passed -> capability.registered -> capability.state ATTACHED, where the attach was either by an accepted founder command (command_digest of a verified signed CAPABILITY_ATTACH) or by a signed mission auto_attach with read_only inside the cone, all before the receipt. Test: forge an ATTACHED capability.state through registry.set_state plus a journal record with no command. Assert the separate-process appraisal verdict is REFUTED with this finding, and that the honest path stays VERIFIED."
+     "next": "Add a check 'formed_capabilities_authorized' to greg/appraisal.py. For every receipt served by a non-builtin capability, the ledger must show deficit.opened -> genesis.verified passed -> capability.registered -> capability.state ATTACHED, where the attach was either by an accepted founder command (command_digest of a verified signed CAPABILITY_ATTACH) or by a signed mission auto_attach with read_only inside the cone, all before the receipt. Test: forge an ATTACHED capability.state through registry.set_state plus a journal record with no command. Assert the separate-process appraisal verdict is REFUTED with this finding, and that the honest path stays VERIFIED.",
+     "closed_by": "greg/appraisal.py check 7 formed_capabilities_authorized, with tests/unit/test_greg_appraiser_formed_attach.py (SANDBOX): in the separate-process appraisal, honest auto-attach, founder-signed attach and cross-mission reuse stay VERIFIED; an attach journaled with a fake command, one with a forged command.accepted signed by an unenrolled key, one claimed under a real signed mission whose cone does not cover it, one with an unknown authority, and one set in memory with nothing journaled are each REFUTED with a named finding"
     },
     {
      "id": "G10",

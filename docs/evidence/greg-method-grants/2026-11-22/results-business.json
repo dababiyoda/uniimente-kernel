@@ -1,0 +1,121 @@
+[
+ {
+  "arm": "baseline",
+  "missions": 10,
+  "achieved": 8,
+  "founder_actions": 4,
+  "mission_ticks_not_achieved": 25,
+  "methods_left_attached_globally": [
+   "cognition.info_experiment",
+   "cognition.knapsack_bnb",
+   "cognition.mc_expectation",
+   "cognition.queue_erlang"
+  ],
+  "grant_uses_recorded": 0,
+  "granted": [],
+  "attach_asks_answered": [
+   "cognition.info_experiment",
+   "cognition.knapsack_bnb",
+   "cognition.mc_expectation",
+   "cognition.queue_erlang"
+  ],
+  "attach_asks_open": [],
+  "answered_by": {
+   "rehearsal:m:info-experiment-2": "cognition.info_experiment",
+   "rehearsal:m:info-experiment-3": "cognition.info_experiment",
+   "rehearsal:m:knapsack-bnb-2": "cognition.knapsack_bnb",
+   "rehearsal:m:knapsack-bnb-3": "cognition.knapsack_bnb",
+   "rehearsal:m:mc-expectation-2": "cognition.mc_expectation",
+   "rehearsal:m:mc-expectation-3": "cognition.mc_expectation",
+   "rehearsal:m:queue-erlang-2": "cognition.queue_erlang",
+   "rehearsal:m:queue-erlang-3": "cognition.queue_erlang"
+  },
+  "wall_seconds": 47.5
+ },
+ {
+  "arm": "grant",
+  "missions": 10,
+  "achieved": 8,
+  "founder_actions": 1,
+  "mission_ticks_not_achieved": 17,
+  "methods_left_attached_globally": [],
+  "grant_uses_recorded": 8,
+  "granted": [
+   "cognition.queue_erlang",
+   "cognition.newsvendor_compile",
+   "cognition.knapsack_bnb",
+   "cognition.mc_expectation",
+   "cognition.info_experiment"
+  ],
+  "attach_asks_answered": [],
+  "attach_asks_open": [],
+  "answered_by": {
+   "rehearsal:m:info-experiment-2": "cognition.info_experiment",
+   "rehearsal:m:info-experiment-3": "cognition.info_experiment",
+   "rehearsal:m:knapsack-bnb-2": "cognition.knapsack_bnb",
+   "rehearsal:m:knapsack-bnb-3": "cognition.knapsack_bnb",
+   "rehearsal:m:mc-expectation-2": "cognition.mc_expectation",
+   "rehearsal:m:mc-expectation-3": "cognition.mc_expectation",
+   "rehearsal:m:queue-erlang-2": "cognition.queue_erlang",
+   "rehearsal:m:queue-erlang-3": "cognition.queue_erlang"
+  },
+  "wall_seconds": 41.0
+ },
+ {
+  "arm": "grant_and_answers",
+  "missions": 10,
+  "achieved": 8,
+  "founder_actions": 1,
+  "mission_ticks_not_achieved": 17,
+  "methods_left_attached_globally": [],
+  "grant_uses_recorded": 8,
+  "granted": [
+   "cognition.queue_erlang",
+   "cognition.newsvendor_compile",
+   "cognition.knapsack_bnb",
+   "cognition.mc_expectation",
+   "cognition.info_experiment"
+  ],
+  "attach_asks_answered": [],
+  "attach_asks_open": [],
+  "answered_by": {
+   "rehearsal:m:info-experiment-2": "cognition.info_experiment",
+   "rehearsal:m:info-experiment-3": "cognition.info_experiment",
+   "rehearsal:m:knapsack-bnb-2": "cognition.knapsack_bnb",
+   "rehearsal:m:knapsack-bnb-3": "cognition.knapsack_bnb",
+   "rehearsal:m:mc-expectation-2": "cognition.mc_expectation",
+   "rehearsal:m:mc-expectation-3": "cognition.mc_expectation",
+   "rehearsal:m:queue-erlang-2": "cognition.queue_erlang",
+   "rehearsal:m:queue-erlang-3": "cognition.queue_erlang"
+  },
+  "wall_seconds": 40.0
+ },
+ {
+  "arm": "suggested_grant",
+  "missions": 10,
+  "achieved": 8,
+  "founder_actions": 1,
+  "mission_ticks_not_achieved": 17,
+  "methods_left_attached_globally": [],
+  "grant_uses_recorded": 8,
+  "granted": [
+   "cognition.info_experiment",
+   "cognition.knapsack_bnb",
+   "cognition.mc_expectation",
+   "cognition.queue_erlang"
+  ],
+  "attach_asks_answered": [],
+  "attach_asks_open": [],
+  "answered_by": {
+   "rehearsal:m:info-experiment-2": "cognition.info_experiment",
+   "rehearsal:m:info-experiment-3": "cognition.info_experiment",
+   "rehearsal:m:knapsack-bnb-2": "cognition.knapsack_bnb",
+   "rehearsal:m:knapsack-bnb-3": "cognition.knapsack_bnb",
+   "rehearsal:m:mc-expectation-2": "cognition.mc_expectation",
+   "rehearsal:m:mc-expectation-3": "cognition.mc_expectation",
+   "rehearsal:m:queue-erlang-2": "cognition.queue_erlang",
+   "rehearsal:m:queue-erlang-3": "cognition.queue_erlang"
+  },
+  "wall_seconds": 42.3
+ }
+]

@@ -1,0 +1,233 @@
+{
+ "decision_id": "DELIB-20261122-METHOD-GRANTS",
+ "title": "Standing method grants for read-only cognition",
+ "problem": "A signed read-only mission whose question fits a registered, verified, read-only method blocks on a CAPABILITY_ATTACH per method, and the only remedy (a global attach) outlives the mission and the founder's review.",
+ "founder_intent_refs": [
+  "INTENT-20261019-UPWARD-ASCENT",
+  "INTENT-20261001-greg-seed-genome",
+  "INTENT-0030"
+ ],
+ "baseline": "Canonical 9b931994: cognition methods attach only by founder CAPABILITY_ATTACH; auto_attach never attaches a cognition method.",
+ "alternatives": [
+  {
+   "name": "Let auto_attach attach cognition methods",
+   "description": "Extend the read-only auto_attach to cognition.",
+   "advantages": [
+    "No new command kind"
+   ],
+   "disadvantages": [
+    "The attach is global and permanent; revoking the mission does not stop it"
+   ],
+   "revival_evidence": "Attachment becomes mission-scoped in the registry"
+  },
+  {
+   "name": "Grant inside each MISSION spec",
+   "description": "A method list in every signed mission.",
+   "advantages": [
+    "Reuses the mission signature"
+   ],
+   "disadvantages": [
+    "One review per mission, not per method set"
+   ],
+   "revival_evidence": "Founders prefer per-mission review in use"
+  }
+ ],
+ "do_nothing_option": {
+  "expected_outcome": "One founder action per withheld method, and methods left attached body-wide.",
+  "advantages": [
+   "No new authority surface"
+  ],
+  "disadvantages": [
+   "The Mind waits on the founder for work it may lawfully do"
+  ]
+ },
+ "roles": [
+  {
+   "role": "Founder-Intent Steward",
+   "position": "Item 2 of the 2026-11-22 directive, on the existing signed process.",
+   "material_concerns": [
+    "Consequential actions keep their own authority"
+   ],
+   "evidence_refs": [
+    "docs/intent/sources/MIND-HEADROOM-DIRECTIVE-2026-11-22-source.md"
+   ],
+   "recommendation": "RETAIN"
+  },
+  {
+   "role": "Systems Architect",
+   "position": "Two founder-only command kinds, one module and a per-call registry view; the registry, the authority office and the light cone are unchanged.",
+   "material_concerns": [
+    "Uses are counted from the method ids a receipt names"
+   ],
+   "evidence_refs": [
+    "tests/unit/test_greg_method_grants.py"
+   ],
+   "recommendation": "RETAIN"
+  },
+  {
+   "role": "Adversarial Reviewer",
+   "position": "Seven mutants are all caught; the rehearsal's naive grant arm lost (6/10) and is kept.",
+   "material_concerns": [
+    "Synthetic inputs; author-run"
+   ],
+   "evidence_refs": [
+    "docs/evidence/greg-method-grants/2026-11-22/README.md"
+   ],
+   "recommendation": "RETAIN"
+  },
+  {
+   "role": "Operator and Maintainer",
+   "position": "greg grant issue, revoke, list and suggest; revocation takes effect on the next call.",
+   "material_concerns": [
+    "A composition that names no method is not counted"
+   ],
+   "evidence_refs": [
+    "tests/unit/test_greg_method_grants.py"
+   ],
+   "recommendation": "RETAIN"
+  },
+  {
+   "role": "Evidence and Welfare Guardian",
+   "position": "Read-only methods and read-only missions only; nothing is spent, sent or published.",
+   "material_concerns": [
+    "A grant must never cover an acting capability"
+   ],
+   "evidence_refs": [
+    "tests/unit/test_greg_method_grants.py"
+   ],
+   "recommendation": "RETAIN"
+  }
+ ],
+ "evidence": [
+  {
+   "claim": "Inside the grant the mission closes with no ask and nothing attached",
+   "tier": "unit_test",
+   "reference": "tests/unit/test_greg_method_grants.py",
+   "finding": "pass"
+  },
+  {
+   "claim": "A suggested grant cuts founder actions and waiting",
+   "tier": "sandbox_execution",
+   "reference": "docs/evidence/greg-method-grants/2026-11-22/results-transfer.json",
+   "finding": "1 vs 5 actions; 1 vs 11 unanswered ticks; 10/10 both"
+  }
+ ],
+ "counterevidence": [
+  {
+   "claim": "A grant from the drawn families underperforms",
+   "tier": "sandbox_execution",
+   "reference": "docs/evidence/greg-method-grants/2026-11-22/results-transfer.json",
+   "finding": "6/10 vs 10/10"
+  }
+ ],
+ "pass_1": {
+  "intended_outcome": "One founder signature covers the reviewed read-only methods a class of questions needs, for a bounded window, with no permanent attach.",
+  "advantages": [
+   {
+    "id": "A1",
+    "statement": "Founder actions scale with reviews, not with questions",
+    "amplified_value": "Standing missions keep moving while the founder is away"
+   }
+  ],
+  "disadvantages": [
+   {
+    "id": "D-1",
+    "statement": "The founder may grant the wrong set",
+    "severity": "medium",
+    "response_type": "evidence",
+    "redesigned_response": "greg grant suggest previews the compiler's picks"
+   },
+   {
+    "id": "D-2",
+    "statement": "A grant could be read as consequence authority",
+    "severity": "high",
+    "response_type": "protective",
+    "redesigned_response": "Only read-only cognition ids and read-only missions; the Gate is unchanged"
+   }
+  ],
+  "comparisons": {
+   "baseline": "one attach per method, permanent",
+   "do_nothing": "the founder waits on every method",
+   "simplest_viable_alternative": "auto_attach for cognition (rejected: permanent)",
+   "strongest_competing_architecture": "mission-scoped registry attachment",
+   "reversible_experiment": "grants expire within 30 days and are revocable"
+  },
+  "rejected_alternatives": [
+   {
+    "name": "auto_attach for cognition",
+    "rejection_reason": "global and permanent",
+    "revival_evidence": "mission-scoped attachment"
+   }
+  ]
+ },
+ "pass_2": {
+  "attack_summary": "Attacked revocation, expiry, use limits, detaches and ceilings as deployed.",
+  "new_weaknesses": [
+   {
+    "id": "W1",
+    "category": "gaming",
+    "statement": "A reissued grant id could widen a grant",
+    "strengthening_response": "Refused; mutant caught"
+   },
+   {
+    "id": "W2",
+    "category": "fragility",
+    "statement": "A view could write the registry",
+    "strengthening_response": "set_state raises; mutant caught"
+   }
+  ],
+  "pass_1_disadvantage_dispositions": [
+   {
+    "disadvantage_id": "D-1",
+    "outcome": "resolved",
+    "rationale": "Preview built and measured",
+    "owner": "GREG maintainers",
+    "review_trigger": "A grant that misses its questions in use"
+   },
+   {
+    "disadvantage_id": "D-2",
+    "outcome": "resolved",
+    "rationale": "Bounded by construction and tests",
+    "owner": "Alfonso Lopez",
+    "review_trigger": "Any widening of grantable capabilities"
+   }
+  ],
+  "final_design": "METHOD_GRANT and METHOD_GRANT_REVOKE, a per-call GrantView, method_grant.used per receipt, and greg grant issue, revoke, list and suggest.",
+  "residual_risks": [
+   {
+    "risk": "Composition-stage questions still end in a generic ask",
+    "mitigation": "Reported; #340's resolution path is the candidate",
+    "owner": "GREG maintainers",
+    "review_trigger": "#340 merge"
+   }
+  ],
+  "recommendation": "RETAIN"
+ },
+ "dissent": {
+  "present": false,
+  "handling": "None recorded.",
+  "entries": []
+ },
+ "authority_impact": {
+  "level": "standard",
+  "changes_authority": false,
+  "requires_authorized_human": false,
+  "approval_status": "not_required",
+  "approver": null
+ },
+ "migration_plan": "Additive. Bodies without grants behave as before. Merging is the founder's decision.",
+ "rollback_plan": {
+  "possible": true,
+  "steps": [
+   "git revert the branch; existing grant records stay as history and lift nothing"
+  ],
+  "reason_impossible": null
+ },
+ "kill_criteria": [
+  "A grant lifts a non-read-only method",
+  "A revoked, expired or used-up grant still lifts a method"
+ ],
+ "decision": "RETAIN",
+ "decision_owner": "Alfonso Lopez",
+ "review_trigger": "Founder review of the draft PR"
+}

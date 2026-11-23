@@ -217,14 +217,14 @@
  "counts": {
   "by_lineage": {
    "#158": 389,
-   "#179": 109,
+   "#179": 110,
    "both": 42
   },
   "by_role": {
    "P8 held-out": 7,
    "admission held-out": 150,
    "canary": 1,
-   "dev": 289,
+   "dev": 290,
    "held-out": 70,
    "review-pilot": 14,
    "train": 9
@@ -236,7 +236,7 @@
    "admission held-out / #179": 44,
    "canary / #158": 1,
    "dev / #158": 243,
-   "dev / #179": 23,
+   "dev / #179": 24,
    "dev / both": 23,
    "held-out / #158": 13,
    "held-out / #179": 38,
@@ -245,7 +245,7 @@
    "train / #158": 6,
    "train / #179": 3
   },
-  "exposures": 540,
+  "exposures": 541,
   "overlaps": {
    "identical_suite_items": 1,
    "same_data_items": 2,
@@ -314,10 +314,10 @@
    },
    "#179": {
     "glob": "docs/evidence/.*/PREREGISTRATION\\.md",
-    "matched": 3,
+    "matched": 4,
     "missing": [],
     "no_declaration": [],
-    "parsed": 3
+    "parsed": 4
    }
   },
   "admission freezes (#158 form)": {
@@ -26496,6 +26496,45 @@
   },
   {
    "artifact": {
+    "commit": "fb41ddb9140dddb5f37f24b6cdfe598e396e9196",
+    "line_commits": [
+     "8b1151e4d842ae3fd1b325b73bbd6d452165b8ce"
+    ],
+    "lines": [
+     226
+    ],
+    "path": "tests/unit/test_greg_method_grants.py",
+    "sha256": "sha256:0f5d5dc40ecfce571484d4d5e6b9c7ab7ba6334dda835da87a2c40740d4b0a0c"
+   },
+   "exposure_commit": "8b1151e4d842ae3fd1b325b73bbd6d452165b8ce",
+   "family": null,
+   "generator": {
+    "commit": "8b1151e4d842ae3fd1b325b73bbd6d452165b8ce",
+    "key": "game.instance",
+    "kind": "code",
+    "resolved": false,
+    "why": "receiver not resolved statically"
+   },
+   "id": "#179|tests/unit/test_greg_method_grants.py|dev|-|?:game.instance:226",
+   "lineages": [
+    "#179"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "a test asserts on these instances",
+   "n": 1,
+   "part": "?:game.instance:226",
+   "present_in": [],
+   "program": "test fixture",
+   "role": "dev",
+   "seeds": [
+    [
+     0,
+     0
+    ]
+   ]
+  },
+  {
+   "artifact": {
     "commit": "c5e85bfda82a0c7be6a2e2b7fbf1f39527a8f6d7",
     "line_commits": [
      "c5e85bfda82a0c7be6a2e2b7fbf1f39527a8f6d7"
@@ -27526,6 +27565,14 @@
    "not_in_any_exposure": [],
    "path": "docs/evidence/greg-genome-admission/2026-11-05-v10/PREREGISTRATION.md",
    "sha256": "sha256:fb702a95a29fe615c5a3409cddada117db1bd8ac9a8b8e84db8ab4d99d00d25a"
+  },
+  {
+   "commit": "f08da7906f8bac6ece6c0dd318cb87db6b64c358",
+   "declared_ranges": [],
+   "lineage": "#179",
+   "not_in_any_exposure": [],
+   "path": "docs/evidence/symbiosoup-stage-a/2026-11-22/PREREGISTRATION.md",
+   "sha256": "sha256:91c76b6e3bc1db697762870ea4fd72016c950a7a05dba40d2eb81cfad2d9f298"
   }
  ],
  "reservations": {

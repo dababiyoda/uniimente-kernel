@@ -1,0 +1,137 @@
+[
+ {
+  "arm": "baseline",
+  "missions": 10,
+  "achieved": 10,
+  "founder_actions": 5,
+  "mission_ticks_not_achieved": 11,
+  "methods_left_attached_globally": [
+   "cognition.forecast_quantile",
+   "cognition.game_lp_dual",
+   "cognition.grid_dijkstra",
+   "cognition.mech_vcg",
+   "cognition.prove_resolution"
+  ],
+  "grant_uses_recorded": 0,
+  "granted": [],
+  "attach_asks_answered": [
+   "cognition.forecast_quantile",
+   "cognition.game_lp_dual",
+   "cognition.mech_vcg",
+   "cognition.prove_resolution",
+   "cognition.grid_dijkstra"
+  ],
+  "attach_asks_open": [],
+  "answered_by": {
+   "rehearsal:m:forecast-quantile-2": "cognition.forecast_quantile",
+   "rehearsal:m:forecast-quantile-3": "cognition.forecast_quantile",
+   "rehearsal:m:game-minimax-2": "cognition.game_lp_dual",
+   "rehearsal:m:game-minimax-3": "cognition.game_lp_dual",
+   "rehearsal:m:mech-vcg-2": "cognition.mech_vcg",
+   "rehearsal:m:mech-vcg-3": "cognition.mech_vcg",
+   "rehearsal:m:prove-resolution-2": "cognition.prove_resolution",
+   "rehearsal:m:prove-resolution-3": "cognition.prove_resolution",
+   "rehearsal:m:search-astar-2": "cognition.grid_dijkstra",
+   "rehearsal:m:search-astar-3": "cognition.grid_dijkstra"
+  },
+  "wall_seconds": 57.8
+ },
+ {
+  "arm": "grant",
+  "missions": 10,
+  "achieved": 6,
+  "founder_actions": 1,
+  "mission_ticks_not_achieved": 32,
+  "methods_left_attached_globally": [],
+  "grant_uses_recorded": 6,
+  "granted": [
+   "cognition.game_minimax",
+   "cognition.prove_resolution",
+   "cognition.search_astar",
+   "cognition.mech_vcg",
+   "cognition.forecast_quantile"
+  ],
+  "attach_asks_answered": [],
+  "attach_asks_open": [
+   "cognition.game_lp_dual",
+   "cognition.grid_dijkstra"
+  ],
+  "answered_by": {
+   "rehearsal:m:forecast-quantile-2": "cognition.forecast_quantile",
+   "rehearsal:m:forecast-quantile-3": "cognition.forecast_quantile",
+   "rehearsal:m:mech-vcg-2": "cognition.mech_vcg",
+   "rehearsal:m:mech-vcg-3": "cognition.mech_vcg",
+   "rehearsal:m:prove-resolution-2": "cognition.prove_resolution",
+   "rehearsal:m:prove-resolution-3": "cognition.prove_resolution"
+  },
+  "wall_seconds": 30.0
+ },
+ {
+  "arm": "grant_and_answers",
+  "missions": 10,
+  "achieved": 10,
+  "founder_actions": 3,
+  "mission_ticks_not_achieved": 5,
+  "methods_left_attached_globally": [
+   "cognition.game_lp_dual",
+   "cognition.grid_dijkstra"
+  ],
+  "grant_uses_recorded": 6,
+  "granted": [
+   "cognition.game_minimax",
+   "cognition.prove_resolution",
+   "cognition.search_astar",
+   "cognition.mech_vcg",
+   "cognition.forecast_quantile"
+  ],
+  "attach_asks_answered": [
+   "cognition.game_lp_dual",
+   "cognition.grid_dijkstra"
+  ],
+  "attach_asks_open": [],
+  "answered_by": {
+   "rehearsal:m:forecast-quantile-2": "cognition.forecast_quantile",
+   "rehearsal:m:forecast-quantile-3": "cognition.forecast_quantile",
+   "rehearsal:m:game-minimax-2": "cognition.game_lp_dual",
+   "rehearsal:m:game-minimax-3": "cognition.game_lp_dual",
+   "rehearsal:m:mech-vcg-2": "cognition.mech_vcg",
+   "rehearsal:m:mech-vcg-3": "cognition.mech_vcg",
+   "rehearsal:m:prove-resolution-2": "cognition.prove_resolution",
+   "rehearsal:m:prove-resolution-3": "cognition.prove_resolution",
+   "rehearsal:m:search-astar-2": "cognition.grid_dijkstra",
+   "rehearsal:m:search-astar-3": "cognition.grid_dijkstra"
+  },
+  "wall_seconds": 54.8
+ },
+ {
+  "arm": "suggested_grant",
+  "missions": 10,
+  "achieved": 10,
+  "founder_actions": 1,
+  "mission_ticks_not_achieved": 1,
+  "methods_left_attached_globally": [],
+  "grant_uses_recorded": 10,
+  "granted": [
+   "cognition.forecast_quantile",
+   "cognition.game_lp_dual",
+   "cognition.grid_dijkstra",
+   "cognition.mech_vcg",
+   "cognition.prove_resolution"
+  ],
+  "attach_asks_answered": [],
+  "attach_asks_open": [],
+  "answered_by": {
+   "rehearsal:m:forecast-quantile-2": "cognition.forecast_quantile",
+   "rehearsal:m:forecast-quantile-3": "cognition.forecast_quantile",
+   "rehearsal:m:game-minimax-2": "cognition.game_lp_dual",
+   "rehearsal:m:game-minimax-3": "cognition.game_lp_dual",
+   "rehearsal:m:mech-vcg-2": "cognition.mech_vcg",
+   "rehearsal:m:mech-vcg-3": "cognition.mech_vcg",
+   "rehearsal:m:prove-resolution-2": "cognition.prove_resolution",
+   "rehearsal:m:prove-resolution-3": "cognition.prove_resolution",
+   "rehearsal:m:search-astar-2": "cognition.grid_dijkstra",
+   "rehearsal:m:search-astar-3": "cognition.grid_dijkstra"
+  },
+  "wall_seconds": 53.6
+ }
+]

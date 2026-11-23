@@ -1,0 +1,17 @@
+{"seed": 0, "programs": 131072, "mutation_prob": 262144, "max_epochs": 16000, "threshold": 1.0, "transition_epoch": null, "last_epoch": 16000, "wall_seconds": 908.4, "sensitivity_threshold_3": null}
+{"seed": 1, "programs": 131072, "mutation_prob": 262144, "max_epochs": 16000, "threshold": 1.0, "transition_epoch": 15744, "last_epoch": 16000, "wall_seconds": 753.2, "sensitivity_threshold_3": 15744}
+{"seed": 2, "programs": 131072, "mutation_prob": 262144, "max_epochs": 16000, "threshold": 1.0, "transition_epoch": null, "last_epoch": 16000, "wall_seconds": 640.6, "sensitivity_threshold_3": null}
+{"seed": 3, "programs": 131072, "mutation_prob": 262144, "max_epochs": 16000, "threshold": 1.0, "transition_epoch": 7680, "last_epoch": 7936, "wall_seconds": 369.6, "sensitivity_threshold_3": 7808}
+{"seed": 4, "programs": 131072, "mutation_prob": 262144, "max_epochs": 16000, "threshold": 1.0, "transition_epoch": null, "last_epoch": 16000, "wall_seconds": 651.9, "sensitivity_threshold_3": null}
+{"seed": 5, "programs": 131072, "mutation_prob": 262144, "max_epochs": 16000, "threshold": 1.0, "transition_epoch": null, "last_epoch": 16000, "wall_seconds": 643.8, "sensitivity_threshold_3": null}
+{"seed": 6, "programs": 131072, "mutation_prob": 262144, "max_epochs": 16000, "threshold": 1.0, "transition_epoch": null, "last_epoch": 16000, "wall_seconds": 662.6, "sensitivity_threshold_3": null}
+{"seed": 7, "programs": 131072, "mutation_prob": 262144, "max_epochs": 16000, "threshold": 1.0, "transition_epoch": null, "last_epoch": 16000, "wall_seconds": 656.7, "sensitivity_threshold_3": null}
+{"seed": 8, "programs": 131072, "mutation_prob": 262144, "max_epochs": 16000, "threshold": 1.0, "transition_epoch": null, "last_epoch": 16000, "wall_seconds": 636.9, "sensitivity_threshold_3": null}
+{"seed": 9, "programs": 131072, "mutation_prob": 262144, "max_epochs": 16000, "threshold": 1.0, "transition_epoch": null, "last_epoch": 16000, "wall_seconds": 643.9, "sensitivity_threshold_3": null}
+{"seed": 10, "programs": 131072, "mutation_prob": 262144, "max_epochs": 16000, "threshold": 1.0, "transition_epoch": null, "last_epoch": 16000, "wall_seconds": 656.2, "sensitivity_threshold_3": null}
+{"seed": 11, "programs": 131072, "mutation_prob": 262144, "max_epochs": 16000, "threshold": 1.0, "transition_epoch": null, "last_epoch": 16000, "wall_seconds": 656.0, "sensitivity_threshold_3": null}
+{"seed": 12, "programs": 131072, "mutation_prob": 262144, "max_epochs": 16000, "threshold": 1.0, "transition_epoch": null, "last_epoch": 16000, "wall_seconds": 674.6, "sensitivity_threshold_3": null}
+{"seed": 13, "programs": 131072, "mutation_prob": 262144, "max_epochs": 16000, "threshold": 1.0, "transition_epoch": 6272, "last_epoch": 6528, "wall_seconds": 280.0, "sensitivity_threshold_3": 6400}
+{"seed": 14, "programs": 131072, "mutation_prob": 262144, "max_epochs": 16000, "threshold": 1.0, "transition_epoch": 6400, "last_epoch": 6656, "wall_seconds": 264.1, "sensitivity_threshold_3": null}
+{"seed": 15, "programs": 131072, "mutation_prob": 262144, "max_epochs": 16000, "threshold": 1.0, "transition_epoch": 4992, "last_epoch": 5248, "wall_seconds": 241.9, "sensitivity_threshold_3": null}
+{"seed": 16, "programs": 131072, "mutation_prob": 262144, "max_epochs": 16000, "threshold": 1.0, "transition_epoch": 3712, "last_epoch": 3968, "wall_seconds": 177.1, "sensitivity_threshold_3": 3968}

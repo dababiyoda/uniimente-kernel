@@ -57,6 +57,8 @@ COMMAND_KINDS = (
     "TREASURY_REQUIREMENTS",  # per-tier obligation and reserve amounts for one venture's books; moves no money
     "FOUNDER_TIER",       # the signing key attests passphrase custody; grants nothing (greg/metrics.py founder_tier)
     "AUTONOMY_GRANT",     # start one exact autonomy tuple above A0 (autonomy/levels.py); founder key only
+    "METHOD_GRANT",       # let read-only missions use a reviewed set of read-only methods (greg/method_grants.py)
+    "METHOD_GRANT_REVOKE",  # end one method grant at once; founder key only, like the grant
 )
 # FOUNDER_TIER's only body. The CLI signs it only from a passphrase-encrypted key file (``greg founder attest``,
 # and ``greg body designate`` when the key is protected), so the supported tools never sign it for a

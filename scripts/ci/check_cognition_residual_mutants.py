@@ -13,6 +13,7 @@ import tempfile
 ROOT = Path(__file__).resolve().parents[2]
 TESTS = 'tests/unit/test_cognition_residual_safeguards.py'
 DISCLOSURE = 'tests/unit/test_cognition_disclosure.py'
+GRANTS = 'tests/unit/test_greg_method_grants.py'
 CHARACTERIZE = 'tests/unit/test_cognition_characterize.py'
 BUDGET = 'tests/unit/test_cognition_thinking_budget.py'
 VENTURES = 'tests/unit/test_greg_ventures.py'
@@ -110,6 +111,22 @@ MUTANTS = [
  ('a dispute recorded without grounds', 'greg/cognition/disclosure.py',
   'if response in ("disputed", "declined", "partially_accepted") and not grounds and not note:', 'if False:',
   'test_an_institutional_response_is_appended_never_edited_in_and_grants_nothing', DISCLOSURE),
+ # Standing method grants: bounded, revocable, read-only, never an attach.
+ ('a revoked method grant still lifts its methods', 'greg/method_grants.py',
+  '    if grant["revoked"]:', '    if False:', 'test_revoked_expired_or_used_up_grants_stop_at_once_and_the_mission_asks_as_before', GRANTS),
+ ('an expired method grant still lifts its methods', 'greg/method_grants.py',
+  'if now >= _time(grant["until"], "until"):', 'if False:', 'test_revoked_expired_or_used_up_grants_stop_at_once_and_the_mission_asks_as_before', GRANTS),
+ ('a used-up method grant still lifts its methods', 'greg/method_grants.py',
+  'if grant["uses"] >= grant["max_uses"]:', 'if False:', 'test_revoked_expired_or_used_up_grants_stop_at_once_and_the_mission_asks_as_before', GRANTS),
+ ('a founder-detached method lifted by a grant', 'greg/method_grants.py',
+  'and registry.state.get(cid) == "VERIFIED" and cid not in self.lifted', 'and cid not in self.lifted', 'test_a_founder_detach_and_uncovered_targets_or_ceilings_are_never_lifted', GRANTS),
+ ('the grant view writes the body registry', 'greg/method_grants.py',
+  'raise PermissionError("a method grant view is read-only; it never attaches or detaches")',
+  'return self._registry.set_state(*_args, **_kw)', 'test_a_founder_detach_and_uncovered_targets_or_ceilings_are_never_lifted', GRANTS),
+ ('a mission above read-only covered by a grant', 'greg/method_grants.py',
+  '    if ceiling != "read_only":', '    if False:', 'test_consequential_steps_in_a_granted_mission_still_need_their_own_authority', GRANTS),
+ ('a reissued grant id widens the grant', 'greg/body.py',
+  'if grant["grant_id"] in method_grants.grants(self.journal):', 'if False:', 'test_consequential_steps_in_a_granted_mission_still_need_their_own_authority', GRANTS),
  ('a package shortens the limits the recipient is told', 'greg/cognition/disclosure.py',
   '            "does_not_prove": list(LIMITATIONS)}', '            "does_not_prove": list(package.get("limitations", []))}',
   'test_an_unsigned_package_reports_the_verifiers_own_limits', DISCLOSURE),

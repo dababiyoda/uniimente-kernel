@@ -49,7 +49,7 @@ MAX_INPUT = 256 * 1024
 RUN_TIMEOUT = 10
 
 HARNESS = r'''
-import builtins, json, resource, sys
+import builtins, json, resource, sys, time
 # The candidate's own CPU is bounded here: a loop dies by SIGXCPU and is judged as the candidate's failure.
 # A wall-clock timeout is the host's only when the host cannot run an isolated no-op either (verify).
 resource.setrlimit(resource.RLIMIT_CPU, (8, 9))
@@ -71,12 +71,13 @@ run = namespace.get("run")
 payload = json.loads(sys.stdin.read())
 out = []
 for text in payload["inputs"]:
+    started = time.process_time()
     try:
         value = run(text)
         json.dumps(value)
-        out.append({"ok": True, "value": value})
+        out.append({"ok": True, "value": value, "cpu": round(time.process_time() - started, 4)})
     except Exception as exc:
-        out.append({"ok": False, "error": type(exc).__name__})
+        out.append({"ok": False, "error": type(exc).__name__, "cpu": round(time.process_time() - started, 4)})
 sys.stdout.write(json.dumps(out))
 '''
 
@@ -194,6 +195,110 @@ def verify(source_path: Path, vectors: list[dict], *, timeout: int = RUN_TIMEOUT
             failures.append({"case": index, "got": str(result["value"])[:80]})
     return not failures, {"cases": len(vectors), "failures": failures,
                           "isolation": "separate python -I -S process, no network, scrubbed env, timeout"}
+
+
+# -- attack stage (directive S22.A2, S35.A3): a candidate that passed the frozen oracle is attacked before it counts --
+# One input's own CPU share. The harness kills a whole run at 8 s of CPU, so a candidate that spends more than this on
+# one input would starve the rest of a mission's inputs; it is judged slow, never given the benefit of the doubt.
+ATTACK_CPU_SECONDS = 2.0
+_ATTACK_SPAN = MAX_INPUT // 2
+
+
+def _kind(value) -> str:
+    if value is None:
+        return "null"
+    if isinstance(value, bool):
+        return "boolean"
+    if isinstance(value, (int, float)):
+        return "integer" if isinstance(value, int) else "number"
+    return {str: "string", list: "array", dict: "object"}.get(type(value), "other")
+
+
+def attack_inputs(examples: list[dict]) -> list[tuple[str, str]]:
+    """Hostile inputs no frozen vector covers, as (label, text). Labels name the shape, never the founder's data.
+
+    Generic shapes (empty, whitespace, control characters, decode-replacement characters, mixed scripts and bidi
+    marks, one huge line, many blank lines) plus shapes derived from the contract's own public examples (CRLF and
+    NUL-joined, without a trailing newline, and repeated to near the input ceiling). Deterministic: the same contract
+    always yields the same attack."""
+    seeds = [e["input_text"] for e in examples if isinstance(e.get("input_text"), str)]
+    joined = "\n".join(seeds)
+    attacks = [("empty", ""), ("whitespace only", " \t\n \n\t "), ("one newline", "\n"), ("NUL", "\x00"),
+               ("control characters", "".join(chr(c) for c in range(1, 32)) * 4),
+               ("decode-replacement characters", "�" * 64),
+               ("mixed scripts, emoji and bidi marks", "é 漢字 🙂 ‮​  Ω"),
+               ("one line at half the input ceiling", "a" * _ATTACK_SPAN),
+               ("many blank lines", "\n" * 20_000)]
+    if joined:
+        attacks += [("examples joined with CRLF", "\r\n".join(seeds)),
+                    ("examples joined with NUL", "\x00".join(seeds)),
+                    ("examples without the trailing newline", joined.rstrip("\n")),
+                    ("examples repeated to half the input ceiling",
+                     (joined + "\n") * max(1, _ATTACK_SPAN // (len(joined) + 1)))]
+    return attacks
+
+
+def attack(source_path: Path, examples: list[dict], *, timeout: int = RUN_TIMEOUT) -> dict:
+    """Attack a built candidate in the same isolated interpreter as verification, before it registers.
+
+    It fails when, on any attack input, it raises, returns a value whose JSON kind the contract's examples never
+    return, gives a different answer on a second run, or spends more than ``ATTACK_CPU_SECONDS`` of CPU. A host
+    outage is no verdict (a transient CapabilityError), exactly as in ``verify``."""
+    attacks = attack_inputs(examples)
+    kinds = {_kind(e["expected"]) for e in examples if "expected" in e}
+    if "number" in kinds:
+        kinds.add("integer")                             # an integral float is still a number
+    report = {"inputs": len(attacks), "failures": [], "wrong_kind": [], "nondeterministic": [], "slow": []}
+    batch, size = [], 0
+
+    def judge(batch):
+        texts = [text for _, text in batch]
+        try:
+            first, second = execute(source_path, texts, timeout=timeout), execute(source_path, texts, timeout=timeout)
+        except subprocess.TimeoutExpired as exc:
+            isolation_ready()                            # raises (no verdict) only when the host cannot run either
+            for label, _ in batch:
+                report["slow"].append({"input": label, "error": f"did not finish within {exc.timeout}s"})
+            return
+        except CapabilityError as exc:
+            if exc.failure_class == "transient":
+                raise
+            for label, _ in batch:
+                report["failures"].append({"input": label, "error": str(exc)[:200]})
+            return
+        for (label, _), a, b in zip(batch, first, second):
+            if not a.get("ok"):
+                report["failures"].append({"input": label, "error": a.get("error")})
+            elif kinds and _kind(a.get("value")) not in kinds:
+                report["wrong_kind"].append({"input": label, "returned": _kind(a.get("value")),
+                                             "expected": sorted(kinds)})
+            if (a.get("ok"), a.get("value"), a.get("error")) != (b.get("ok"), b.get("value"), b.get("error")):
+                report["nondeterministic"].append({"input": label})
+            if max(float(a.get("cpu") or 0), float(b.get("cpu") or 0)) > ATTACK_CPU_SECONDS:
+                report["slow"].append({"input": label, "cpu_seconds": max(a.get("cpu") or 0, b.get("cpu") or 0)})
+
+    for label, text in attacks:
+        if batch and size + len(text) > MAX_INPUT:
+            judge(batch)
+            batch, size = [], 0
+        batch.append((label, text))
+        size += len(text)
+    if batch:
+        judge(batch)
+    report["passed"] = not (report["failures"] or report["wrong_kind"] or report["nondeterministic"]
+                            or report["slow"])
+    return report
+
+
+def attack_feedback(report: dict) -> str:
+    """What the builder learns from a failed attack: the shapes and failure classes, never an input's text."""
+    parts = [f"raised {f['error']} on {f['input']}" for f in report["failures"][:4]]
+    parts += [f"returned {w['returned']} (expected {'/'.join(w['expected'])}) on {w['input']}"
+              for w in report["wrong_kind"][:2]]
+    parts += [f"answered differently on a second run of {n['input']}" for n in report["nondeterministic"][:2]]
+    parts += [f"was too slow on {s['input']}" for s in report["slow"][:2]]
+    return ("your candidate passes the examples but fails adversarial input: " + "; ".join(parts)
+            + ". Handle any text, including empty, huge and unusual input, deterministically and quickly")
 
 
 def built_adapter(function_spec: dict, source_path: Path, source_sha256: str):

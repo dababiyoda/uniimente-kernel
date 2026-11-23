@@ -1,0 +1,34 @@
+============================= test session starts ==============================
+platform linux -- Python 3.11.15, pytest-9.1.1, pluggy-1.6.0 -- /tmp/claude-0/-home-user/078bd1cb-bfbf-5140-aa7d-3c39af880cb4/scratchpad/venvconv/bin/python
+rootdir: /tmp/claude-0/-home-user/078bd1cb-bfbf-5140-aa7d-3c39af880cb4/scratchpad/wtm
+configfile: pyproject.toml
+plugins: anyio-4.15.1
+collecting ... collected 25 items
+
+tests/unit/test_greg_media_case.py::test_each_kind_of_change_is_refuted_and_the_claim_is_not_answered[The routing method cuts delays by 12%.-the new routing method may reduce delays by 12%-certainty] PASSED [  4%]
+tests/unit/test_greg_media_case.py::test_each_kind_of_change_is_refuted_and_the_claim_is_not_answered[The routing method will reduce delays by 12%.-the new routing method may reduce delays by 12%-certainty] PASSED [  8%]
+tests/unit/test_greg_media_case.py::test_each_kind_of_change_is_refuted_and_the_claim_is_not_answered[The routing method may reduce delays by 21%.-the new routing method may reduce delays by 12%-figure] PASSED [ 12%]
+tests/unit/test_greg_media_case.py::test_each_kind_of_change_is_refuted_and_the_claim_is_not_answered[It lowered fuel costs.-It did not lower fuel costs.-negation] PASSED [ 16%]
+tests/unit/test_greg_media_case.py::test_each_kind_of_change_is_refuted_and_the_claim_is_not_answered[The method may not reduce delays by 12%.-the new routing method may reduce delays by 12%-negation] PASSED [ 20%]
+tests/unit/test_greg_media_case.py::test_each_kind_of_change_is_refuted_and_the_claim_is_not_answered[All depots may see the routing method reduce delays by 12%.-the new routing method may reduce delays by 12%-scope] PASSED [ 24%]
+tests/unit/test_greg_media_case.py::test_each_kind_of_change_is_refuted_and_the_claim_is_not_answered[The new routing method may increase delays by 12%.-the new routing method may reduce delays by 12%-direction] PASSED [ 28%]
+tests/unit/test_greg_media_case.py::test_each_kind_of_change_is_refuted_and_the_claim_is_not_answered[Drivers at Southgate reported fewer missed windows.-Drivers at Northgate reported fewer missed windows.-named_term] PASSED [ 32%]
+tests/unit/test_greg_media_case.py::test_rewordings_found_during_characterization_are_not_flagged[Each depot used the method.-All depots used the method.] PASSED [ 36%]
+tests/unit/test_greg_media_case.py::test_rewordings_found_during_characterization_are_not_flagged[The trial failed to show a benefit.-The trial did not show a benefit.] PASSED [ 40%]
+tests/unit/test_greg_media_case.py::test_rewordings_found_during_characterization_are_not_flagged[Twelve percent fewer delays may follow.-may reduce delays by 12%] PASSED [ 44%]
+tests/unit/test_greg_media_case.py::test_rewordings_found_during_characterization_are_not_flagged[Northgate drivers reported fewer missed windows.-Drivers at Northgate reported fewer missed windows.] PASSED [ 48%]
+tests/unit/test_greg_media_case.py::test_changes_found_during_characterization_are_refuted[Southgate drivers reported fewer missed windows.-Drivers at Northgate reported fewer missed windows.-named_term] PASSED [ 52%]
+tests/unit/test_greg_media_case.py::test_changes_found_during_characterization_are_refuted[Twenty percent fewer delays may follow.-may reduce delays by 12%-figure] PASSED [ 56%]
+tests/unit/test_greg_media_case.py::test_the_verifier_does_not_refute_a_figure_the_span_spells_out PASSED [ 60%]
+tests/unit/test_greg_media_case.py::test_a_faithful_restatement_is_answered_with_its_limits_stated PASSED [ 64%]
+tests/unit/test_greg_media_case.py::test_a_span_given_only_as_context_does_not_support_the_claim PASSED [ 68%]
+tests/unit/test_greg_media_case.py::test_the_verifier_refutes_an_answer_that_hides_a_change[The routing method may reduce delays by 21%.-the new routing method may reduce delays by 12%] PASSED [ 72%]
+tests/unit/test_greg_media_case.py::test_the_verifier_refutes_an_answer_that_hides_a_change[It lowered fuel costs.-It did not lower fuel costs.] PASSED [ 76%]
+tests/unit/test_greg_media_case.py::test_a_faithful_paraphrase_is_verified_claim_by_claim PASSED [ 80%]
+tests/unit/test_greg_media_case.py::test_a_paraphrase_that_drops_a_hedge_is_held_back_with_the_minds_reason PASSED [ 84%]
+tests/unit/test_greg_media_case.py::test_a_sentence_no_receipt_covers_is_held_back PASSED [ 88%]
+tests/unit/test_greg_media_case.py::test_without_the_minds_receipts_verify_says_meaning_was_not_checked PASSED [ 92%]
+tests/unit/test_greg_media_case.py::test_a_receipt_from_another_family_does_not_vouch_for_a_claim PASSED [ 96%]
+tests/unit/test_greg_media_case.py::test_real_daleobanks_consumes_the_minds_receipts PASSED [100%]
+
+============================= 25 passed in 11.51s ==============================

@@ -1,0 +1,22 @@
+{
+ "intent_id": "INTENT-20261022-GREG-FULL-MACHINE-COORDINATION",
+ "statement": "Act as engineering lead and production coordinator: refresh current truth, find the single strongest bottleneck to full-machine acceptance, coordinate its ownership and execute the highest-value unblocked advance through GREG's actual path; keep one requirement-to-evidence inventory; make agents operate as one team with claims, dispatch, independent review and a fresh-session coordination test; finish integration so convergence yields a capability dividend; close the 15-step execution loop; prove learning with pre-registered experiments; prepare founder-device acceptance; establish useful operation and economic readiness; validate on exact trees; deliver a ten-item handoff with an explicit full-machine completion verdict.",
+ "exact_source_excerpt": "Start now: refresh current truth, identify the single strongest bottleneck to full-machine acceptance, coordinate its ownership, and execute the highest-value unblocked advance through GREG’s actual path.",
+ "source_refs": [
+  "docs/intent/sources/GREG-FULL-MACHINE-COMPLETION-2026-10-22-source.md",
+  "docs/intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json",
+  "docs/intent/INTENT-20261019-UPWARD-ASCENT.md"
+ ],
+ "source_location": "docs/intent/sources/GREG-FULL-MACHINE-COMPLETION-2026-10-22-source.md",
+ "source_date": "2026-10-22",
+ "intended_effect": "One CI-checked GREG tree that contains every verified open increment, on which the founder's loop (intent to settled, retained learning that changes a later decision) runs end to end with labelled fixtures, and a founder-device acceptance that names the exact code it accepted.",
+ "executable_interpretation": "Authorized now (the directive's own words): project-related coordination comments, task issues, review comments and reversible development changes within the existing development scope. Not authorized: protected-branch merges, deployment, spending, external business contact, credentials and live capability activation; bypassing #182's signature requirement, changing protected hashes to pass CI, inventing keys, suppressing integrity findings or weakening approvals; asking Alfonso to debug an unfinished setup or to supply secrets to an agent.",
+ "canonical_owner": "the integration candidate named on work board #96 (draft #196) on the existing GREG mission/authority/journal path",
+ "owner": "integration owner session_01FBS4KNJR59nSbdGbxo8Mbx; Alfonso decides merges and every founder-only action",
+ "state": "active",
+ "authority_delta": "none",
+ "supersedes": [],
+ "superseded_by": [],
+ "conflicts": [],
+ "next_review_trigger": "CI on the joined head; founder-device acceptance; the ten-item handoff on #196"
+}

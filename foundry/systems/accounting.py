@@ -12,9 +12,9 @@ authority; payments remain behind the Consequence Gate.
 """
 from __future__ import annotations
 
-import hashlib
 import json
 from pathlib import Path
+from provenance.digests import sha256_json
 
 TYPES = ("asset", "liability", "equity", "revenue", "expense")
 DEBIT_NORMAL = ("asset", "expense")
@@ -30,7 +30,7 @@ def _file(root: Path, name: str) -> Path:
 
 
 def _hash(record: dict) -> str:
-    return "sha256:" + hashlib.sha256(json.dumps(record, sort_keys=True).encode()).hexdigest()
+    return sha256_json(record, separators=None)
 
 
 def chart(root: Path) -> dict:

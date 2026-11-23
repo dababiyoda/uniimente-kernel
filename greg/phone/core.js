@@ -74,3 +74,71 @@ export async function verifyCommand(publicKey, envelope) { // used by tests for 
   const { signature, ...unsigned } = envelope;
   return crypto.subtle.verify("Ed25519", publicKey, unhex(signature), enc.encode(COMMAND_PREFIX + canonical(unsigned)));
 }
+
+// Python's sorted() order for keys: by code point, where JavaScript's default sort compares UTF-16 units.
+const codePoints = (s) => Array.from(s, (c) => c.codePointAt(0));
+function byCodePoint(a, b) {
+  const x = codePoints(a), y = codePoints(b);
+  for (let i = 0; i < Math.min(x.length, y.length); i++) if (x[i] !== y[i]) return x[i] - y[i];
+  return x.length - y.length;
+}
+
+// One ask value as every answer surface prints it; greg/console.py _shown prints the same text.
+export function shownValue(v) {
+  if (typeof v === "string") return v;
+  if (v === null || v === undefined) return "null";
+  if (Array.isArray(v)) return v.map(shownValue).join(", ");
+  if (typeof v === "object") return "{" + Object.keys(v).sort(byCodePoint).map((k) => `${k}: ${shownValue(v[k])}`).join(", ") + "}";
+  return String(v);
+}
+
+// Whether an APPROVAL's approve runs the compensation signed with its action: greg/console.py is_compensation,
+// display only. An ask recorded before the marker existed is read from its own why_now and evidence.
+export function isCompensation(r) {
+  if (r.compensation === true) return true;
+  if ("compensation" in r || r.kind !== "APPROVAL" || !r.action_id) return false;
+  const evidence = r.evidence;
+  return String(r.why_now || "").startsWith(`compensation of ${r.action_id}:`)
+    && evidence !== null && typeof evidence === "object" && "original_receipt" in evidence;
+}
+
+// What approving one APPROVAL covers: the scope its digest binds. The same sentence as greg/console.py
+// approval_covers; display only, the answer binds the digest.
+function approvalCovers(r) {
+  const cost = (r.authority_requested || {}).cost_usd, p = r.bound_params;
+  const parts = [...(r.mission_id ? [`mission ${r.mission_id}`] : []), "the capability, target, consequence class and cost above"];
+  if (typeof cost === "number" && cost > 0) parts.push("the mission's spend and budget when it was asked (one paid approval funds one run)");
+  if (p !== null && typeof p === "object" && typeof p.json === "string") {
+    const shownLength = codePoints(p.json).length, whole = p.length === shownLength;
+    const size = whole ? shownValue(p.length) : `the first ${shownLength} of ${shownValue(p.length)}`;
+    parts.push(`params ${p.json}${whole ? "" : "…"} (${size} characters of canonical JSON, ${shownValue(p.sha256)})`);
+  } else {
+    parts.push("params: not recorded with this ask");
+  }
+  // A compensation ask's approve runs the compensation signed with the action, never the action again.
+  const asked = !r.action_id ? "" : isCompensation(r) ? ` Asked to compensate action ${r.action_id}.`
+    : ` Asked for action ${r.action_id}.`;
+  return "Approving covers this exact scope: " + parts.join("; ") + "." + asked;
+}
+
+// What the founder reads before answering one ask, in the console's order (greg/console.py _ask_details): a
+// malformed scope first, every key the ask requests, what approving an APPROVAL covers, and what silence does.
+// Pure, so node tests it without a browser.
+export function askTerms(r) {
+  const requested = r.authority_requested || {};
+  const rest = Object.entries(requested).filter(([k]) => k !== "malformed");
+  const lines = [];
+  if ("malformed" in requested) lines.push("This scope is malformed: " + shownValue(requested.malformed));
+  if (rest.length) lines.push("Authority requested: " + rest.map(([k, v]) => `${k}: ${shownValue(v)}`).join("; "));
+  if (r.kind === "APPROVAL") lines.push(approvalCovers(r));
+  if (r.consequence_of_no_response) lines.push("If you do not answer: " + r.consequence_of_no_response);
+  return lines;
+}
+
+// The answers the body accepts for this ask, as [label, answer] (greg/missions.py MissionEngine.answer refuses
+// approve/reject on a RECONCILIATION, and every answer on an ask no DECISION closes).
+export function askAnswers(r) {
+  if (r.answerable === false) return [];
+  if (r.kind === "RECONCILIATION") return [["It happened", "reconcile_executed"], ["It did not happen", "reconcile_not_executed"]];
+  return [["Approve", "approve"], ["Reject", "reject"]];
+}

@@ -1,0 +1,50 @@
+[
+ {
+  "config": {
+   "mu": 4,
+   "offspring": 4,
+   "p_recombine": 0.3,
+   "p_extra_mutation": 0.3,
+   "p_extra_mutation_recombined": 0.5,
+   "p_restart": 0.25,
+   "tournament": 2
+  },
+  "why": "incumbent with p_restart 0.25"
+ },
+ {
+  "config": {
+   "mu": 4,
+   "offspring": 4,
+   "p_recombine": 0.3,
+   "p_extra_mutation": 0.3,
+   "p_extra_mutation_recombined": 0.5,
+   "p_restart": 0.5,
+   "tournament": 2
+  },
+  "why": "incumbent with p_restart 0.5"
+ },
+ {
+  "config": {
+   "mu": 4,
+   "offspring": 4,
+   "p_recombine": 0.3,
+   "p_extra_mutation": 0.3,
+   "p_extra_mutation_recombined": 0.5,
+   "p_restart": 0.75,
+   "tournament": 2
+  },
+  "why": "incumbent with p_restart 0.75"
+ },
+ {
+  "config": {
+   "mu": 4,
+   "offspring": 4,
+   "p_recombine": 0.3,
+   "p_extra_mutation": 0.3,
+   "p_extra_mutation_recombined": 0.5,
+   "p_restart": 1.0,
+   "tournament": 2
+  },
+  "why": "incumbent with p_restart 1.0"
+ }
+]

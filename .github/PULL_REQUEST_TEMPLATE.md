@@ -1,3 +1,15 @@
+<!--
+TWO PR TEMPLATES EXIST. This repository has `.github/PULL_REQUEST_TEMPLATE.md` (this file:
+SOP section 12 fields: product delta, Context Reconstruction Packet, repository metabolism,
+VEPMC, Spider-Web impact, cross-repository effects) and `.github/pull_request_template.md`
+(the protocol fields: effect compilation, alternatives, five roles, two upward passes,
+decision, receipt). The two names differ only in case, and which one GitHub pre-fills is not
+guaranteed. `.github/pull_request_template.md` is the one tooling reads
+(foundry/systems/commissioning.py, tests/unit/test_founder_effect_doctrine.py), so
+treat it as canonical, and copy this file's SOP section 12 sections into your PR as well.
+Merging the two into one file is a pending founder decision
+(docs/collaboration/CONTRIBUTOR-PAIN-POINTS-2026-11-05.md, P-10). Nothing here was removed.
+-->
 ## Parent machine continuation
 
 - Fixed completion boundary: BODY + ORGANS + MIND = GREG / UNIIMENTE.

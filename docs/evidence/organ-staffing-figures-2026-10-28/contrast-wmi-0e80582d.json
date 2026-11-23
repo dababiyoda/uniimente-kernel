@@ -1,0 +1,66 @@
+{
+ "python": "3.11.17",
+ "rows": {
+  "8/8": {
+   "organ_heads": {
+    "daleobanks": "664ac98c553759ce754bb684cb248225343edd7e",
+    "wealthmachine": "0e80582d6d4f5b4d2477e13d2bb48fb4a57be3e6"
+   },
+   "appraisal": "REPRODUCED",
+   "evidence_items": 2,
+   "go_no_go": "go",
+   "opportunity_score": 0.696,
+   "reasons": [
+    "opportunity score 0.696 meets the 0.55 threshold",
+    "engine risk level: Ultra Low",
+    "[bear] only 1 evidence item(s); demand is asserted, not shown; willingness to pay is untested until a buyer commits value",
+    "[incumbent_response] an incumbent with distribution can copy educational checklist quickly; the durable edge must be trust and cultural specificity, not the artifact itself",
+    "[adoption_friction] audience interest does not imply workflow change; the smallest validation action must measure behavior, not applause",
+    "finance content must remain educational; no personalized advice",
+    "staffing evidence[1] (unverified report): staffed=8, total_demand=8, shortage=0, unfilled={}; internal arithmetic agrees only; original demand, capacity and optimality are not verified"
+   ],
+   "validation_plan": [
+    "Validate the reported staffing result of 8/8 units against original demand and capacity; obtain independent acceptance before relying on it",
+    "Post one educational thread on the thesis and offer a free checklist waitlist; measure saves, replies, and signups",
+    "Draft landing-page copy and collect waitlist interest (no payment yet)",
+    "Run 3-5 buyer interviews from engaged repliers"
+   ],
+   "recommended_next_action": "Validate the reported staffing result of 8/8 units against original demand and capacity; obtain independent acceptance before relying on it"
+  },
+  "4/8": {
+   "organ_heads": {
+    "daleobanks": "664ac98c553759ce754bb684cb248225343edd7e",
+    "wealthmachine": "0e80582d6d4f5b4d2477e13d2bb48fb4a57be3e6"
+   },
+   "appraisal": "REPRODUCED",
+   "evidence_items": 2,
+   "go_no_go": "needs_more_evidence",
+   "opportunity_score": 0.696,
+   "reasons": [
+    "opportunity score 0.696 meets the 0.55 threshold",
+    "engine risk level: Ultra Low",
+    "[bear] only 1 evidence item(s); demand is asserted, not shown; willingness to pay is untested until a buyer commits value",
+    "[incumbent_response] an incumbent with distribution can copy educational checklist quickly; the durable edge must be trust and cultural specificity, not the artifact itself",
+    "[adoption_friction] audience interest does not imply workflow change; the smallest validation action must measure behavior, not applause",
+    "finance content must remain educational; no personalized advice",
+    "staffing evidence[1] (unverified report): staffed=4, total_demand=8, shortage=4, unfilled={\"Dock\": 2, \"Line\": 2}; internal arithmetic agrees only; original demand, capacity and optimality are not verified",
+    "reported staffing shortfall or inconsistent evidence requires validation before proceeding"
+   ],
+   "validation_plan": [
+    "Validate the reported staffing shortage of 4 units against original demand and capacity; resolve unfilled orders {\"Dock\": 2, \"Line\": 2} before proceeding",
+    "Post one educational thread on the thesis and offer a free checklist waitlist; measure saves, replies, and signups",
+    "Draft landing-page copy and collect waitlist interest (no payment yet)",
+    "Run 3-5 buyer interviews from engaged repliers"
+   ],
+   "recommended_next_action": "Validate the reported staffing shortage of 4 units against original demand and capacity; resolve unfilled orders {\"Dock\": 2, \"Line\": 2} before proceeding"
+  }
+ },
+ "identical_between_8of8_and_4of8": {
+  "evidence_items": true,
+  "go_no_go": false,
+  "opportunity_score": true,
+  "reasons": false,
+  "validation_plan": false,
+  "recommended_next_action": false
+ }
+}

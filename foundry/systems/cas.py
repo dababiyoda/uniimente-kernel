@@ -36,6 +36,11 @@ def put(root: Path, data: bytes) -> str:
     if target.exists():
         get(root, address)  # an existing object must still be intact
         return address
+    _write(target, data)
+    return address
+
+
+def _write(target: Path, data: bytes) -> None:
     target.parent.mkdir(parents=True, exist_ok=True)
     temporary = target.with_name(f".{target.name}.{os.getpid()}.tmp")
     with open(temporary, "wb") as handle:
@@ -43,7 +48,26 @@ def put(root: Path, data: bytes) -> str:
         handle.flush()
         os.fsync(handle.fileno())
     os.replace(temporary, target)
+
+
+def repair(root: Path, data: bytes) -> str:
+    """Rewrite the stored object of ``data`` atomically. ``data`` hashes to the address, so this restores an object
+    whose stored bytes no longer do; the caller records the repair (nothing here repairs silently)."""
+    address = digest(data)
+    _write(_path(root, address), data)
     return address
+
+
+def intact(root: Path, address: str) -> bool:
+    """Whether the object is stored and still hashes to its address, re-hashed in chunks (never read whole)."""
+    hasher = hashlib.sha256()
+    try:
+        with open(_path(root, address), "rb") as handle:
+            for chunk in iter(lambda: handle.read(1 << 20), b""):
+                hasher.update(chunk)
+    except OSError:
+        return False
+    return PREFIX + hasher.hexdigest() == address
 
 
 def get(root: Path, address: str) -> bytes:

@@ -1,0 +1,41 @@
+{
+ "sample": {
+  "at": "2026-10-30T12:14:11.409020Z",
+  "machine": "x86_64",
+  "system": "Linux",
+  "cores": 4,
+  "load1": 5.331,
+  "load_ratio": 1.333,
+  "memory_bytes": 16872808448,
+  "disk_total": 270553174016,
+  "disk_free": 22520045568,
+  "disk_free_ratio": 0.0832,
+  "psi_cpu_some_avg10": 19.65,
+  "psi_cpu_some_avg60": 29.56,
+  "psi_memory_some_avg10": 0.0,
+  "psi_memory_some_avg60": 0.0,
+  "psi_io_some_avg10": 0.6,
+  "psi_io_some_avg60": 1.98,
+  "mem_total_bytes": 16872808448,
+  "mem_available_bytes": 15345528832,
+  "mem_available_ratio": 0.9095
+ },
+ "samples": 1,
+ "bottleneck": null,
+ "asks": {},
+ "workload": {
+  "recorded": false,
+  "steps_in_window": 0,
+  "heaviest": null,
+  "by_capability": [],
+  "note": "the journal records no mission step timing yet"
+ },
+ "delay": {
+  "basis": "estimate (method: for each capability, the median step time in the bottleneck window minus its median before the window, summed over the window's steps and scaled from the window's span to 7 days; all excess is attributed to the bottleneck, which the journal cannot establish)",
+  "excess_step_seconds": null,
+  "window_seconds": 0.0,
+  "mission_hours_delayed_per_week": null,
+  "latency_inflation": {},
+  "unbaselined_capabilities": []
+ }
+}

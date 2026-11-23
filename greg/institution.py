@@ -34,13 +34,13 @@ new signed mission or work order.
 """
 from __future__ import annotations
 
-import hashlib
 import json
 import re
 from datetime import datetime, timezone
 from pathlib import Path
 
 from greg.capabilities import CapabilityError, InvocationContext
+from provenance.digests import compact_json_bytes, sha256_tagged as _sha
 
 SCORING_MODEL = {
     "name": "declared-leverage-prior/1",
@@ -57,12 +57,8 @@ FOUNDER_WORDS = ("alfonso", "founder", "authoriz", "privileged", "dedicated host
                  "execution environment", "purchase", "legal operator", "hardware")
 
 
-def _sha(data: bytes) -> str:
-    return "sha256:" + hashlib.sha256(data).hexdigest()
-
-
 def _canon(value) -> bytes:
-    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+    return compact_json_bytes(value, ensure_ascii=False)
 
 
 def _inside(path: Path, roots) -> Path:

@@ -1,0 +1,7 @@
+# reproduce.py, run at the pristine base b8626600 before any change on this branch; stub DALEOBANKS approves every draft
+{"blocked_for": [["capability 'daleobanks.publish' outside scope", "external_contact exceeds scope ceiling internal_write"]], "checks": {"draft_verified": true, "publish_outcome_known": false}, "draft": "faithful", "states": ["ACTED", "WAITING", "WAITING", "WAITING", "WAITING", "WAITING", "WAITING", "WAITING"]}
+{"blocked_for": [["capability 'daleobanks.publish' outside scope", "external_contact exceeds scope ceiling internal_write"]], "checks": {"draft_verified": true, "publish_outcome_known": false}, "draft": "hedge dropped", "states": ["ACTED", "WAITING", "WAITING", "WAITING", "WAITING", "WAITING", "WAITING", "WAITING"]}
+{"blocked_for": [["capability 'daleobanks.publish' outside scope", "external_contact exceeds scope ceiling internal_write"]], "checks": {"draft_verified": true, "publish_outcome_known": false}, "draft": "negation removed", "states": ["ACTED", "WAITING", "WAITING", "WAITING", "WAITING", "WAITING", "WAITING", "WAITING"]}
+{"draft": "faithful", "worker.appraise": {"findings": ["worker self-report retained as claim only; not used for this verdict"], "verdict": "ACCEPTED"}}
+{"draft": "hedge dropped", "worker.appraise": {"findings": ["worker self-report retained as claim only; not used for this verdict"], "verdict": "ACCEPTED"}}
+{"draft": "negation removed", "worker.appraise": {"findings": ["worker self-report retained as claim only; not used for this verdict"], "verdict": "ACCEPTED"}}

@@ -365,6 +365,41 @@ def test_a_deficit_that_fits_a_withheld_genome_names_it_as_the_attach_candidate(
         assert len(attach_asks(body)) == 1 and not list(body.journal.replay("decision.withdrawn"))
 
 
+def test_an_attach_candidate_whose_frozen_status_was_measured_at_another_version_is_labelled_with_it(tmp_path,
+                                                                                                     index):
+    """grid_dijkstra 1.1.0 carries 1.0.0's EXPERIMENTAL verdict (negative evidence persists until a re-admission).
+    Genesis named it 'attach candidate: cognition.grid_dijkstra (EXPERIMENTAL)' as if 1.1.0 had been measured."""
+    from greg.cognition.genomes import solvers_b
+    grid, astar = library.genome("grid_dijkstra"), library.genome("search_astar")
+    assert grid.version != "1.0.0"
+    index.write_text(json.dumps({"genomes": {
+        "grid_dijkstra": {"status": "EXPERIMENTAL", "version": "1.0.0", "evidence": "v3.json#grid_dijkstra",
+                          "median_seconds": 0.001328},
+        "search_astar": {"status": "SUPERSEDED", "version": astar.version, "evidence": "v1.json#search_astar"}},
+        "recipes": {}, "routing": {}}))
+    home, key, body_id, _ = make_body(tmp_path)
+    data, _ = solvers_b.astar_instance(1)                                 # development seed
+    drop(home, signed(key, body_id, "MISSION", compile_mission("m:grid", {"geometry": "optimization"}, data,
+                                                                auto_attach=True)))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        assert ticks(body, clock, 3)[-1]["state"] in ("BLOCKED", "WAITING")
+        routes = {e.payload["capability_id"]: e.payload["result"] for e in body.journal.replay("genesis.route")
+                  if e.payload["route"] == "genome_library"}
+        assert routes["cognition.grid_dijkstra"] == (
+            "attach candidate: cognition.grid_dijkstra (EXPERIMENTAL, measured at version 1.0.0) fits by native "
+            "class and inputs ['goal', 'grid', 'start']; registered and withheld; GREG does not attach it")
+        assert routes["cognition.search_astar"] == "cognition.search_astar fits but is not a candidate: frozen " \
+                                                   "admission status SUPERSEDED"
+        [awaiting] = [e.payload for e in body.journal.replay("deficit.awaiting_attach")]
+        assert awaiting["capability_id"] == "cognition.grid_dijkstra" and awaiting["admission_status"] == "EXPERIMENTAL"
+        assert (awaiting["admission_version"], awaiting["current_version"]) == ("1.0.0", grid.version)
+        [ask] = attach_asks(body)
+        assert ask["evidence"]["stale_measurements"]["version_measured"] == "1.0.0"
+        assert ask["evidence"]["stale_measurements"]["median_seconds"] == 0.001328
+
+
 def test_without_the_compiler_genesis_alone_names_the_withheld_genome_in_the_one_mission_ask(tmp_path, index):
     item = library.executables()["queue_erlang"]
     index.write_text(json.dumps({"genomes": {"queue_erlang": {"status": "NICHE_CAPABILITY",
@@ -468,6 +503,80 @@ def test_genesis_offers_exactly_what_the_compiler_would_route_and_never_a_relaxa
                                     compiler.evidence_index())
         assert sorted(candidates) == sorted({r["method"] for r in rows if not r["rejected"]
                                              and body.registry.state.get(r["method"]) == "VERIFIED"})
+
+
+def test_a_request_in_a_one_part_recipe_shape_is_offered_the_genome_that_answers_its_part(tmp_path, index):
+    """Independent review 2026-10-15 (F1): a capacity network sent as ``{"capacity_network": {...}}`` fits
+    flow_expansion_mcf through the compiler's part row, and the compiler asked the founder to attach it. Genesis read
+    only the residual's input names (['capacity_network']), found no family, and the mission asked a second time, with
+    evidence.registered [] and a recommendation to buy or build a capability a withheld genome already serves."""
+    item = library.executables()["flow_expansion_mcf"]
+    index.write_text(json.dumps({"genomes": {               # admission v3's verdicts on the part's two genomes
+        "flow_expansion_mcf": {"status": "DEFAULT_FOR_GEOMETRY", "version": item.genome.version},
+        "flow_reinforce_greedy": {"status": "SUPERSEDED", "version": library.genome("flow_reinforce_greedy").version}},
+        "recipes": {"graph_then_allocate": {"lift": True, "status": "VPL_LIFT"}}, "routing": {}}))
+    data, _ = item.instance(1)                                                     # development seed
+    home, key, body_id, _ = make_body(tmp_path)
+    drop(home, signed(key, body_id, "MISSION", compile_mission(
+        "m:xpand", {"geometry": "optimization", "subgeometry": "expansion"}, {"capacity_network": data})))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        assert ticks(body, clock, 3)[-1]["state"] in ("BLOCKED", "WAITING")
+        assert compilations(body)[-1]["withheld_best_fit"]["method"] == "cognition.flow_expansion_mcf"
+        routes = [(e.payload["route"], e.payload["result"]) for e in body.journal.replay("genesis.route")]
+        assert ("genome_library", "attach candidate: cognition.flow_expansion_mcf fits the request's one typed part by "
+                                  "the compiler's own row; registered and withheld; GREG does not attach it") in routes
+        assert not any(result.startswith("no registered intelligence fits") for _, result in routes)
+        [awaiting] = [e.payload for e in body.journal.replay("deficit.awaiting_attach")]
+        assert awaiting["capability_id"] == "cognition.flow_expansion_mcf"
+        blocker = body.engine.book.missions["m:xpand"].blocker
+        assert blocker["attach_candidates"] == ["cognition.flow_expansion_mcf"] and blocker["shared_ask"]
+        [ask] = attach_asks(body)                                                  # the compiler's one ask, shared
+        assert ask["mission_id"] is None and ask["request_id"] == blocker["request_id"]
+        assert ask["authority_requested"]["attach"] == "cognition.flow_expansion_mcf"
+        body.apply(signed(key, body_id, "CAPABILITY_ATTACH", {"capability_id": "cognition.flow_expansion_mcf"}))
+        assert "ACHIEVED" in [s["state"] for s in ticks(body, clock, 3)]
+        answered = [c for c in compilations(body) if c["state"] == "ANSWERED"][-1]
+        assert answered["method_or_composition_selected"] == "cognition.flow_expansion_mcf"
+        assert answered["payload_part"] == "capacity_network" and len(attach_asks(body)) == 1
+
+
+def test_a_founder_detached_genome_fitting_the_requests_part_is_reported_not_offered(tmp_path, index):
+    """Fix verification 2026-10-15 (F1): the part-addressed rows pass the same registry-state check as the family
+    rows. A genome the founder detached that fits a one-part request is reported, never offered: the search continues
+    past the repertoire, the mission asks on its own, and the founder's later attach resolves it."""
+    item = library.executables()["flow_expansion_mcf"]
+    index.write_text(json.dumps({"genomes": {
+        "flow_expansion_mcf": {"status": "DEFAULT_FOR_GEOMETRY", "version": item.genome.version},
+        "flow_reinforce_greedy": {"status": "SUPERSEDED", "version": library.genome("flow_reinforce_greedy").version}},
+        "recipes": {"graph_then_allocate": {"lift": True, "status": "VPL_LIFT"}}, "routing": {}}))
+    data, _ = item.instance(1)                                                     # development seed
+    detached = "cognition.flow_expansion_mcf"
+    home, key, body_id, _ = make_body(tmp_path)
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        body.apply(signed(key, body_id, "CAPABILITY_DETACH", {"capability_id": detached}))
+        body.apply(signed(key, body_id, "MISSION", compile_mission(
+            "m:xpand", {"geometry": "optimization", "subgeometry": "expansion"}, {"capacity_network": data})))
+        assert ticks(body, clock, 3)[-1]["state"] in ("BLOCKED", "WAITING")
+        routes = [(e.payload["route"], e.payload["result"]) for e in body.journal.replay("genesis.route")]
+        assert ("genome_library", f"{detached} fits the request's part but is not a candidate: founder-detached; "
+                                  "explicit attach required") in routes
+        assert not any(result.startswith("attach candidate") for _, result in routes)
+        assert not any(result.startswith("not searched") for _, result in routes)      # the search went on
+        assert not list(body.journal.replay("deficit.awaiting_attach"))
+        assert body.genesis.attach_candidates("m:xpand", "cognition.optimization:expansion") == []
+        blocker = body.engine.book.missions["m:xpand"].blocker
+        assert "shared_ask" not in blocker and not blocker.get("attach_candidates")
+        [ask] = attach_asks(body)                                                  # the mission's own ask
+        assert ask["mission_id"] == "m:xpand" and ask["evidence"]["registered"] == []
+        body.apply(signed(key, body_id, "CAPABILITY_ATTACH", {"capability_id": detached}))  # the founder relents
+        assert "ACHIEVED" in [s["state"] for s in ticks(body, clock, 3)]
+        answered = [c for c in compilations(body) if c["state"] == "ANSWERED"][-1]
+        assert answered["method_or_composition_selected"] == detached
+        assert answered["payload_part"] == "capacity_network"
 
 
 def test_auto_attach_inside_an_admitting_cone_never_attaches_a_mechanism_formed_for_cognition(tmp_path, index):
@@ -1060,3 +1169,8 @@ def test_a_formed_answer_carries_its_own_receipt_and_poor_settled_outcomes_demot
     assert demoted["state"] == "ANSWERED" and demoted["method_or_composition_selected"] == SCIPY
     assert [d["method"] for d in demoted["methods_demoted"]] == [SCIPY]
     assert any(d.startswith(f"{SCIPY}: settled outcomes on this body: 1 of 12") for d in demoted["dissent"])
+    # the compile receipt itself carries the basis and the dissent (whole-machine trace gap, #158, 2026-10-21)
+    assert demoted["conditional_competence_basis"][SCIPY] == {"settled": 12, "correct": 1, "laplace": 0.1429}
+    assert inner["strongest_counterargument"] in demoted["dissent"]
+    assert r["conditional_competence_basis"][SCIPY] == "no settled outcomes in this journal"
+    assert inner["strongest_counterargument"] in r["dissent"]

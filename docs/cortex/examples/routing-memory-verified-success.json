@@ -31,10 +31,10 @@
     "validation_status": "externally_verified"
   },
   "outcome_status": "verified_success",
-  "policy_version": "cortex-route-policy/0.2.1",
+  "policy_version": "cortex-route-policy/0.2.2",
   "problem_id": "H-F01",
-  "receipt_id": "sha256:cb0e2724c6b2a4f6fdb0dc5207e7197712f21d4bdf1003bb225339a1de5d21cc",
+  "receipt_id": "sha256:4652ddb1d00907bdda1f4c9f8b1a9ac4f0e55ce75050f7ae209e4b96353675b5",
   "recommendation": "recommend",
-  "record_id": "sha256:34f1281e181cde9c4e57a80fc8091817f55544cf3f10cb678a25ca107da0c27b",
+  "record_id": "sha256:e0ed44f957f84c16469a65e627e08b802946e65203b93a22094652fb9e824a27",
   "rollback_ref": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
 }

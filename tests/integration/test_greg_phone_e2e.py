@@ -6,10 +6,8 @@ The founder delegates that key from the CLI. The approval and the stop then come
 on the page. Nothing is simulated except the founder key (per test) and the browser engine
 (Chromium stands in for iOS Safari, which is not available here).
 """
-import glob
 import json
 import os
-import shutil
 import signal
 import socket
 import subprocess
@@ -18,15 +16,20 @@ import sys
 import pytest
 
 from greg import service
+from greg.founder import accepted_body
+from tests.browser_requirement import chromium_path, playwright_api, require_browser
 from tests.integration.test_greg_body_supervised import (ROOT, SUPERVISORD, events, greg, heartbeat,
                                                          supervisor_endpoint, wait_for)
 
-playwright = pytest.importorskip("playwright.sync_api")
-CHROMIUM = os.environ.get("GREG_CHROMIUM") or next(
-    iter(sorted(glob.glob("/opt/pw-browsers/chromium-*/chrome-linux/chrome"))
-         + [p for p in (shutil.which("chromium"), shutil.which("google-chrome")) if p]), None)
-pytestmark = pytest.mark.skipif(SUPERVISORD is None or CHROMIUM is None,
-                                reason="needs supervisord and a Chromium binary")
+playwright = playwright_api()
+CHROMIUM = chromium_path()
+pytestmark = pytest.mark.skipif(SUPERVISORD is None, reason="needs supervisord (requirements-dev)")
+
+
+@pytest.fixture(autouse=True)
+def _a_real_browser():
+    """A skip without Playwright or Chromium, a failure under GREG_REQUIRE_BROWSER=1 (tests/browser_requirement.py)."""
+    require_browser(playwright, CHROMIUM, "the phone page runs in Chromium")
 
 
 def _free_port():
@@ -101,7 +104,8 @@ def test_phone_page_approves_a_real_decision_and_stops_the_body(tmp_path):
             assert note.read_text() == "approved from my phone"
             decision = [e for e in events(home, "command.accepted") if e["kind"] == "DECISION"]
             assert decision[0]["signer"] == "device:iphone" and decision[0]["channel"] == "inbox"
-            assert "teléfono" in decision[0]["body"]["reason"]
+            # the signed body lives in the record's envelope since e166308c (stored once); accepted_body reads it
+            assert "teléfono" in accepted_body(decision[0])["reason"]
 
             page.click("#refresh")
             page.wait_for_function("document.querySelector('#who').textContent.includes('device:iphone')")

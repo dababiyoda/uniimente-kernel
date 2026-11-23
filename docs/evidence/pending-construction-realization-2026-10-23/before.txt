@@ -1,0 +1,16 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_a_pending_construction_names_the_promised_objective_and_does_not_write __
+tests/unit/test_greg_pending_construction_realization.py:43: in test_a_pending_construction_names_the_promised_objective_and_does_not_write
+    [row] = settlement.awaiting_realization(journal)
+    ^^^^^
+E   ValueError: not enough values to unpack (expected 1, got 0)
+_ test_real_construction_is_listed_reported_by_signed_cli_and_no_longer_pending _
+tests/unit/test_greg_pending_construction_realization.py:118: in test_real_construction_is_listed_reported_by_signed_cli_and_no_longer_pending
+    row = next(r for r in view["awaiting_realization"] if r["receipt"] == record.hash)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   StopIteration
+=========================== short test summary info ============================
+FAILED tests/unit/test_greg_pending_construction_realization.py::test_a_pending_construction_names_the_promised_objective_and_does_not_write
+FAILED tests/unit/test_greg_pending_construction_realization.py::test_real_construction_is_listed_reported_by_signed_cli_and_no_longer_pending
+2 failed in 12.47s

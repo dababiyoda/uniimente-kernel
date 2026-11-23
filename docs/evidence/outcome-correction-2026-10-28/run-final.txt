@@ -1,0 +1,7 @@
+git rev-parse HEAD: b1a3c1af587dc7bcc71d7ae4544c5f804b7a83a6
+sha256 tests/integration/test_outcome_correction_changes_decision.py: 206f7f3f81e55a5170367f6f1ca1ca49ad9c639160ca9df69bb2687c3ba6c8c0
+command: python -m pytest -q tests/integration/test_outcome_correction_changes_decision.py tests/unit/test_greg_outcome_resolution.py tests/unit/test_greg_outcome_resolution_signed.py tests/unit/test_greg_pending_construction_realization.py tests/unit/test_greg_construction_realization.py tests/unit/test_greg_gravity.py (py3.11.17, local)
+--- raw output ---
+........................................................................ [ 76%]
+......................                                                   [100%]
+94 passed in 336.66s (0:05:36)

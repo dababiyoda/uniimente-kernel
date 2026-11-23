@@ -1,0 +1,136 @@
+{
+  "scope": "collaboration entry audit, not full code or conversation inspection",
+  "repositories": [
+    {
+      "repository": "dababiyoda/uniimente-kernel",
+      "default_branch": "main",
+      "inspected_default_sha": "d64a6c931bb05aba4e3454847b665e73384bbdfa",
+      "role": "Institutional intent, shared governance and collaboration source",
+      "role_status": "routing description, not new canonical ownership or runtime proof",
+      "entry_scope": "this fork's UNIIMENTE work only",
+      "private_conversations": "unavailable",
+      "adoption": "pending review/merge and actual client acknowledgment"
+    },
+    {
+      "repository": "dababiyoda/DALEOBANKS",
+      "default_branch": "main",
+      "inspected_default_sha": "667439f49442bd898d3655666a389f53114f1412",
+      "role": "Creative/media organ; preserves publishing and identity boundaries",
+      "role_status": "routing description, not new canonical ownership or runtime proof",
+      "entry_scope": "this fork's UNIIMENTE work only",
+      "private_conversations": "unavailable",
+      "adoption": "pending review/merge and actual client acknowledgment"
+    },
+    {
+      "repository": "dababiyoda/WealthMachineIntelligence",
+      "default_branch": "main",
+      "inspected_default_sha": "ec82b8027d987c865dc123215afb53d20916908f",
+      "role": "Venture and strategy assessment; recommendations do not authorize execution",
+      "role_status": "routing description, not new canonical ownership or runtime proof",
+      "entry_scope": "this fork's UNIIMENTE work only",
+      "private_conversations": "unavailable",
+      "adoption": "pending review/merge and actual client acknowledgment"
+    },
+    {
+      "repository": "dababiyoda/RAILSCOUT",
+      "default_branch": "main",
+      "inspected_default_sha": "017d9f32f9ad8f194854de1c4207f2daa0653b59",
+      "role": "Research and signal refinement; preserve evidence lineage",
+      "role_status": "routing description, not new canonical ownership or runtime proof",
+      "entry_scope": "this fork's UNIIMENTE work only",
+      "private_conversations": "unavailable",
+      "adoption": "pending review/merge and actual client acknowledgment"
+    },
+    {
+      "repository": "dababiyoda/PumpStation",
+      "default_branch": "main",
+      "inspected_default_sha": "db6758dfa8621a4f6fb0504c20343e60db5336c1",
+      "role": "Economic/community application lineage; no implicit treasury authority",
+      "role_status": "routing description, not new canonical ownership or runtime proof",
+      "entry_scope": "this fork's UNIIMENTE work only",
+      "private_conversations": "unavailable",
+      "adoption": "pending review/merge and actual client acknowledgment"
+    },
+    {
+      "repository": "dababiyoda/RESEARCH-IN",
+      "default_branch": "main",
+      "inspected_default_sha": "15ceb62c40941f6915c8b8ce8ce40915d4e7b01c",
+      "role": "Research source and capability lineage",
+      "role_status": "routing description, not new canonical ownership or runtime proof",
+      "entry_scope": "this fork's UNIIMENTE work only",
+      "private_conversations": "unavailable",
+      "adoption": "pending review/merge and actual client acknowledgment"
+    },
+    {
+      "repository": "dababiyoda/build-your-own-x",
+      "default_branch": "master",
+      "inspected_default_sha": "7141ae657b7c89a91a3ae59f5559487f27898b0a",
+      "role": "Mechanism anatomy atlas; educational source, not a cloning mandate",
+      "role_status": "routing description, not new canonical ownership or runtime proof",
+      "entry_scope": "this fork's UNIIMENTE work only",
+      "private_conversations": "unavailable",
+      "adoption": "pending review/merge and actual client acknowledgment"
+    },
+    {
+      "repository": "dababiyoda/gods-eye-view-EGGREGORE-TOOL",
+      "default_branch": "main",
+      "inspected_default_sha": "f3282e8ecad501d0a47b38c4f6449021343f96f3",
+      "role": "Geospatial tool source; integration ownership remains unratified",
+      "role_status": "routing description, not new canonical ownership or runtime proof",
+      "entry_scope": "this fork's UNIIMENTE work only",
+      "private_conversations": "unavailable",
+      "adoption": "pending review/merge and actual client acknowledgment"
+    },
+    {
+      "repository": "dababiyoda/agent-skills",
+      "default_branch": "main",
+      "inspected_default_sha": "1401c8b8030e023baeebb31781a6653fe8e93026",
+      "role": "Upstream engineering skill source; fork-specific collaboration pointers",
+      "role_status": "routing description, not new canonical ownership or runtime proof",
+      "entry_scope": "this fork's UNIIMENTE work only",
+      "private_conversations": "unavailable",
+      "adoption": "pending review/merge and actual client acknowledgment"
+    },
+    {
+      "repository": "dababiyoda/hyperframes",
+      "default_branch": "main",
+      "inspected_default_sha": "46f6cb356785bed79e1ce7b79d7e7accc697786a",
+      "role": "Upstream video framework source; fork-specific collaboration pointers",
+      "role_status": "routing description, not new canonical ownership or runtime proof",
+      "entry_scope": "this fork's UNIIMENTE work only",
+      "private_conversations": "unavailable",
+      "adoption": "pending review/merge and actual client acknowledgment"
+    },
+    {
+      "repository": "dababiyoda/VoiceStudio",
+      "default_branch": "main",
+      "inspected_default_sha": "06c6e077f0fc35149efefc3561e9be5ae835d916",
+      "role": "Upstream voice application source; preserve local-first and upstream development rules",
+      "role_status": "routing description, not new canonical ownership or runtime proof",
+      "entry_scope": "this fork's UNIIMENTE work only",
+      "private_conversations": "unavailable",
+      "adoption": "pending review/merge and actual client acknowledgment"
+    },
+    {
+      "repository": "dababiyoda/REA-Reverse-Engineering-Anything",
+      "default_branch": "main",
+      "inspected_default_sha": "0c6852b392b34319a6fd2c6dffcac10cee51ab94",
+      "role": "Reverse-engineering tool source; preserve provider and effect boundaries",
+      "role_status": "routing description, not new canonical ownership or runtime proof",
+      "entry_scope": "this fork's UNIIMENTE work only",
+      "private_conversations": "unavailable",
+      "adoption": "pending review/merge and actual client acknowledgment"
+    },
+    {
+      "repository": "dababiyoda/knowledge-work-plugins",
+      "default_branch": "main",
+      "inspected_default_sha": "ae1513ea94dcb74a7f1505ddcf3b0ec3fab327f1",
+      "role": "Upstream plugin source; preserve plugin and nested instructions",
+      "role_status": "routing description, not new canonical ownership or runtime proof",
+      "entry_scope": "this fork's UNIIMENTE work only",
+      "private_conversations": "unavailable",
+      "adoption": "pending review/merge and actual client acknowledgment"
+    }
+  ]
+}
+

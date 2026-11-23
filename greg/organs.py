@@ -24,10 +24,14 @@ two governed capabilities; it adds no transport, no ledger and no authority:
 
     Both organ processes run with a scrubbed environment and the OS network denial used for
     every other GREG subprocess (``run_isolated``); their stores live in the mission
-    workspace. A per-invocation signing key is generated, passed only through the child
-    environment and never written. The organs pin ``uniimente-kernel-boundaries`` at 4999acff,
-    whose transport has one shared key, so ``sender_identity_isolated`` is reported false:
-    the exchange authenticates a key holder, not a specific organ (#174 explains the upgrade).
+    workspace. Each organ gets its own per-invocation key (``UNIIMENTE_BRIDGE_KEY_<ORGAN>``),
+    passed only through that child's environment and never written; no shared key exists. The
+    organs pin ``uniimente-kernel-boundaries`` at Kernel e7dc0cbc (founder decision 2026-10-23),
+    whose transport binds the key scope into the signature, and GREG refuses any message whose
+    sender identity is not isolated. DALEOBANKS holds only its own key, so it cannot sign as
+    WealthMachine. WealthMachine also holds DALEOBANKS's key, because it verifies the packet:
+    HMAC lets a verifier forge, so ``key_holders`` states who could have signed each message.
+    An organ still on the shared-key pin (4999acff) is refused with that reason.
 
 ``organ.status`` (read_only sensor, retry-safe)
     Re-reads this mission's organ facts from the journal: which organs were observed, whether
@@ -102,6 +106,18 @@ print(json.dumps({"body": out.decode(), "headers": headers}))
 REPRODUCIBLE = ("go_no_go", "opportunity_score", "market_alignment", "risk_level", "legal_readiness",
                 "requires_human_approval", "validation_plan", "reasons")
 SUMMARY = ("go_no_go", "opportunity_score", "risk_level", "legal_readiness", "requires_human_approval")
+
+
+def _binding(packet: dict, assessment: dict) -> tuple[str, str]:
+    """The verdict an exchange may state: WealthMachine's, capped by the rule the founder-facing memo applies
+    (greg.organ_exchange.binding_verdict). A score may not outrun canonical fields the packet leaves unevidenced; a
+    packet the Kernel's adapter cannot read leaves every field unevidenced."""
+    from greg.organ_exchange import _canonical, binding_verdict
+    try:
+        unresolved = _canonical(packet, assessment)["packet_unresolved"]
+    except CapabilityError as exc:
+        unresolved = [f"every field: the Kernel could not read the wire messages ({str(exc)[:160]})"]
+    return binding_verdict(assessment.get("go_no_go"), unresolved, packet.get("evidence", []))
 
 
 def trace_for(mission_id: str, seed: str) -> str:
@@ -245,10 +261,16 @@ def exchange(params: dict, ctx: InvocationContext) -> dict:
         raise CapabilityError("timeout_seconds must be an integer in [30, 900] (the whole exchange's bound)")
     store = ctx.workspace / "organs" / PAIR
     (store / "tmp").mkdir(parents=True, exist_ok=True)
-    key = _secrets.token_hex(32)          # per invocation, only in the children's environment, never written
-    env = {bt.SIGNING_KEY_ENV: key, "HOME": str(store), "TMPDIR": str(store / "tmp"), "PERSIST_STORE": "false",
-           "LEDGER_PATH": str(store / "daleobanks-decision-ledger.jsonl"),
-           "DB_SNAPSHOT_PATH": str(store / "daleobanks-store.jsonl"), "PYTHONDONTWRITEBYTECODE": "1"}
+    # One key per organ, per invocation, only in that organ's environment, never written. No shared key: a
+    # message signed at shared scope (or by an organ on the one-key pin) cannot verify.
+    keys = {"daleobanks": _secrets.token_hex(32), "wealthmachine": _secrets.token_hex(32)}
+    base = {"HOME": str(store), "TMPDIR": str(store / "tmp"), "PERSIST_STORE": "false",
+            "LEDGER_PATH": str(store / "daleobanks-decision-ledger.jsonl"),
+            "DB_SNAPSHOT_PATH": str(store / "daleobanks-store.jsonl"), "PYTHONDONTWRITEBYTECODE": "1"}
+    env = {"daleobanks": {**base, _key_env("daleobanks"): keys["daleobanks"]},
+           # WealthMachine verifies DALEOBANKS's packet, so it holds that key too (see key_holders).
+           "wealthmachine": {**base, _key_env("daleobanks"): keys["daleobanks"],
+                             _key_env("wealthmachine"): keys["wealthmachine"]}}
     # One trace per mission: a mission already bound to a trace (an earlier seed or an older ledger)
     # keeps it, so a second exchange never runs both organs only to fail the binding afterwards.
     bound = [e.payload["trace_id"] for e in (ctx.journal.replay("organ.observed") if ctx.journal else [])
@@ -265,7 +287,7 @@ def exchange(params: dict, ctx: InvocationContext) -> dict:
             snap["interpreter"] = _interpreter_record(roots[organ + "_python"])
         deadline = time.monotonic() + timeout
         try:
-            return _exchange(ctx, roots, code, env, seed, trace, deadline)
+            return _exchange(ctx, roots, code, env, keys, seed, trace, deadline)
         except (bt.BridgeSecurityError, organ_bridge.MissionBindingError, EventError, KeyError, ValueError,
                 TypeError) as exc:
             # A forged, misbound or malformed exchange is a receipted refusal, never an "uncertain
@@ -294,11 +316,50 @@ def _assigned(message: dict, trace: str, who: str) -> None:
         raise CapabilityError(f"{who} signed trace {signed!r}, not the assigned {trace}")
 
 
-def _exchange(ctx, roots, code, env, seed, trace, deadline) -> dict:
+def _key_env(organ: str) -> str:
+    return bt.IDENTITY_KEY_ENV_PREFIX + organ.upper()
+
+
+# Who held the key each organ's messages were signed with (HMAC: any holder could have signed).
+KEY_HOLDERS = {"daleobanks": ["daleobanks", "wealthmachine (verifies the packet)", "kernel"],
+               "wealthmachine": ["wealthmachine", "kernel"]}
+_BRIDGE_ENV = (bt.SIGNING_KEY_ENV, *(_key_env(o) for o in bt.KNOWN_IDENTITIES))
+
+
+class _KernelKeys:
+    """The Kernel's verification environment for one exchange: exactly the two organ keys, no shared key and
+    no Kernel key, so a shared-scope message cannot verify and isolation is judged against these keys alone."""
+
+    def __init__(self, keys: dict):
+        self.keys = keys
+
+    def __enter__(self):
+        self.saved = {name: os.environ.get(name) for name in _BRIDGE_ENV}
+        for name in _BRIDGE_ENV:
+            os.environ.pop(name, None)
+        for organ, key in self.keys.items():
+            os.environ[_key_env(organ)] = key
+
+    def __exit__(self, *exc):
+        for name, value in self.saved.items():
+            if value is None:
+                os.environ.pop(name, None)
+            else:
+                os.environ[name] = value
+
+
+def _exchange(ctx, roots, code, env, keys, seed, trace, deadline) -> dict:
     dale, wmi = code["daleobanks"], code["wealthmachine"]
     left = lambda: deadline - time.monotonic()                                      # noqa: E731
-    d = _stage(roots["daleobanks_python"], dale["path"], DALEOBANKS_STAGE, seed, trace, env=env, timeout=left(),
-               confine=dale["confine"], stop_check=ctx.stop_check)
+    try:
+        d = _stage(roots["daleobanks_python"], dale["path"], DALEOBANKS_STAGE, seed, trace, env=env["daleobanks"],
+                   timeout=left(), confine=dale["confine"], stop_check=ctx.stop_check)
+    except CapabilityError as exc:
+        if "signing configuration required" in str(exc):
+            raise CapabilityError("DALEOBANKS signs only with the shared bridge key: its uniimente-kernel-boundaries "
+                                  "pin predates per-organ keys (4999acff); upgrade it to Kernel e7dc0cbc or later") \
+                from None
+        raise
     if d.get("no_opportunity"):
         # DALEOBANKS's own judgment: nothing to evaluate. A correct organ answer, not a capability
         # fault, so it completes (no message exists and none is recorded); the mission's check
@@ -310,41 +371,34 @@ def _exchange(ctx, roots, code, env, seed, trace, deadline) -> dict:
     _unchanged(wmi, "while DALEOBANKS ran")
     _assigned(d, trace, "DALEOBANKS")
     _wire(json.loads(d["body"]), "wire-opportunity-packet", "DALEOBANKS")
-    w = _stage(roots["wealthmachine_python"], wmi["path"], WEALTHMACHINE_STAGE, stdin=d, env=env, timeout=left(),
-               confine=wmi["confine"], stop_check=ctx.stop_check)
+    w = _stage(roots["wealthmachine_python"], wmi["path"], WEALTHMACHINE_STAGE, stdin=d, env=env["wealthmachine"],
+               timeout=left(), confine=wmi["confine"], stop_check=ctx.stop_check)
     _assigned(w, trace, "WealthMachine")
     _wire(json.loads(w["body"]), "wire-venture-assessment", "WealthMachine")
     request_body, answer_body = d["body"].encode(), w["body"].encode()
-    # Kernel-side verification under the same key; a forged or replayed message raises here.
-    previous = os.environ.get(bt.SIGNING_KEY_ENV)
-    os.environ[bt.SIGNING_KEY_ENV] = env[bt.SIGNING_KEY_ENV]
-    try:
+    # Kernel-side verification under the organs' own keys: a forged, replayed, shared-scope or wrong-organ
+    # message raises here.
+    with _KernelKeys(keys):
         cache = bt.NonceCache()
+        checks = [dict(headers=d["headers"], body=request_body, expected_sender="daleobanks",
+                       expected_operation="opportunity.evaluate"),
+                  dict(headers=w["headers"], body=answer_body, expected_sender="wealthmachine",
+                       expected_recipient="kernel", expected_operation="assessment.report",
+                       request_digest=bt.body_digest(request_body))]
         if ctx.journal is not None:
-            seen = [organ_bridge.record_exchange(
-                        ctx.journal, mission_id=ctx.mission_id, headers=d["headers"], body=request_body,
-                        nonce_cache=cache, expected_sender="daleobanks", expected_operation="opportunity.evaluate"),
-                    organ_bridge.record_exchange(
-                        ctx.journal, mission_id=ctx.mission_id, headers=w["headers"], body=answer_body,
-                        nonce_cache=cache, expected_sender="wealthmachine", expected_recipient="kernel",
-                        expected_operation="assessment.report", request_digest=bt.body_digest(request_body))]
+            seen = [organ_bridge.record_exchange(ctx.journal, mission_id=ctx.mission_id, nonce_cache=cache,
+                                                 require_isolated_identity=True, **check) for check in checks]
         else:
-            seen = [bt.verify_headers(d["headers"], request_body, nonce_cache=cache, expected_sender="daleobanks",
-                                      expected_operation="opportunity.evaluate"),
-                    bt.verify_headers(w["headers"], answer_body, nonce_cache=cache, expected_sender="wealthmachine",
-                                      expected_recipient="kernel", expected_operation="assessment.report",
-                                      request_digest=bt.body_digest(request_body))]
-    finally:
-        if previous is None:
-            os.environ.pop(bt.SIGNING_KEY_ENV, None)
-        else:
-            os.environ[bt.SIGNING_KEY_ENV] = previous
+            seen = [bt.verify_headers(check["headers"], check["body"], nonce_cache=cache,
+                                      require_isolated_identity=True,
+                                      **{k: v for k, v in check.items() if k not in ("headers", "body")})
+                    for check in checks]
     _unchanged(wmi, "between the WealthMachine runs")
     # The re-derivation: a fresh WealthMachine process given DALEOBANKS's own signed message (its
     # replay cache is its own). The Kernel never signs as an organ: with per-organ keys configured
     # in the body, building headers here would forge DALEOBANKS's isolated identity.
     redo = _stage(roots["wealthmachine_python"], wmi["path"], WEALTHMACHINE_STAGE, stdin=d,
-                  env=env, timeout=left(), confine=wmi["confine"], stop_check=ctx.stop_check)
+                  env=env["wealthmachine"], timeout=left(), confine=wmi["confine"], stop_check=ctx.stop_check)
     packet, original = json.loads(d["body"]), json.loads(w["body"])
     again = _wire(json.loads(redo["body"]), "wire-venture-assessment", "WealthMachine (re-derivation)")
     # A field both runs omit is not "reproduced": absence on both sides proves nothing.
@@ -354,6 +408,7 @@ def _exchange(ctx, roots, code, env, seed, trace, deadline) -> dict:
                   "redo_answers_this_packet": again.get("opportunity_packet_id") == packet.get("id"),
                   "finance_flag_forces_review": "finance_education_only" not in packet.get("risk_flags", [])
                                                 or original.get("legal_readiness") == "review_required"}
+    verdict, why = _binding(packet, original)
     judged = {"trace_id": trace, "packet_sha256": hashlib.sha256(request_body).hexdigest(),
               "assessment_sha256": hashlib.sha256(answer_body).hexdigest(),
               "redo_sha256": hashlib.sha256(redo["body"].encode()).hexdigest()}
@@ -369,9 +424,12 @@ def _exchange(ctx, roots, code, env, seed, trace, deadline) -> dict:
             "packet_sha256": judged["packet_sha256"], "assessment_sha256": judged["assessment_sha256"],
             "redo_sha256": judged["redo_sha256"],
             "assessment": {k: original.get(k) for k in SUMMARY},
+            # assessment.go_no_go is the engine's own answer; verdict is the one this exchange may state
+            "verdict": verdict, "verdict_why": why, "engine_verdict": original.get("go_no_go"),
             "appraisal_verdict": appraisal["verdict"], "transport_verified": True,
             "sender_identity_isolated": all(bool(s.get("identity_isolated") in (True, "true")) or
                                             bool(s.get("sender_identity_isolated")) for s in seen),
+            "key_holders": KEY_HOLDERS,
             "organ_heads": {organ: snap["head"] for organ, snap in code.items()},
             "organ_code": {organ: {**{k: snap[k] for k in ("head", "tree_sha256", "uncommitted_changes_ignored",
                                                            "interpreter")},

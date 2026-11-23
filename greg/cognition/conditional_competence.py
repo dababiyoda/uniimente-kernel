@@ -138,11 +138,14 @@ class ConditionalCompetence:
                 "estimates": {k: (None if depth is None else round(rows[depth]["estimate"], 4)) for k, rows in
                               table.items()}, "depth": depth}
 
-    def reorder(self, keys, geometry, **_):
+    def reorder(self, keys, geometry, *, part_geometries=None, **_):
         keys = list(keys)
         if self.bound is None or len(keys) < 2:
             return keys
-        info = self.explain(keys, getattr(geometry, "epistemic_class", None))
+        cells = {(part_geometries or {}).get(k) or getattr(geometry, "epistemic_class", None) for k in keys}
+        if len(cells) > 1:
+            return keys                                   # a composition across part geometries: fixed policy
+        info = self.explain(keys, cells.pop())
         if info["depth"] is None:
             return keys                                   # not enough evidence anywhere: fixed policy
         est = info["estimates"]

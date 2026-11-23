@@ -1,0 +1,215 @@
+F1-4717 estimate_alone=no_decision optimize_at_point=wrong optimize_at_worst_case=suboptimal static_composition=correct routed_composition=correct compiled=correct
+F1-4718 estimate_alone=no_decision optimize_at_point=wrong optimize_at_worst_case=suboptimal static_composition=correct routed_composition=correct compiled=correct
+F1-4719 estimate_alone=no_decision optimize_at_point=wrong optimize_at_worst_case=correct static_composition=correct routed_composition=correct compiled=correct
+F1-4720 estimate_alone=no_decision optimize_at_point=wrong optimize_at_worst_case=suboptimal static_composition=correct routed_composition=correct compiled=correct
+F1-4721 estimate_alone=no_decision optimize_at_point=wrong optimize_at_worst_case=suboptimal static_composition=correct routed_composition=correct compiled=correct
+F1-4722 estimate_alone=no_decision optimize_at_point=wrong optimize_at_worst_case=suboptimal static_composition=correct routed_composition=correct compiled=correct
+F1-4723 estimate_alone=no_decision optimize_at_point=wrong optimize_at_worst_case=suboptimal static_composition=correct routed_composition=correct compiled=correct
+F1-4724 estimate_alone=no_decision optimize_at_point=wrong optimize_at_worst_case=suboptimal static_composition=correct routed_composition=correct compiled=correct
+F1-4725 estimate_alone=no_decision optimize_at_point=wrong optimize_at_worst_case=suboptimal static_composition=correct routed_composition=correct compiled=correct
+F1-4726 estimate_alone=no_decision optimize_at_point=wrong optimize_at_worst_case=suboptimal static_composition=correct routed_composition=correct compiled=correct
+F1-4727 estimate_alone=no_decision optimize_at_point=wrong optimize_at_worst_case=suboptimal static_composition=correct routed_composition=correct compiled=correct
+F1-4728 estimate_alone=no_decision optimize_at_point=wrong optimize_at_worst_case=suboptimal static_composition=correct routed_composition=correct compiled=correct
+F1-4729 estimate_alone=no_decision optimize_at_point=correct optimize_at_worst_case=correct static_composition=correct routed_composition=correct compiled=correct
+F1-4730 estimate_alone=no_decision optimize_at_point=wrong optimize_at_worst_case=suboptimal static_composition=correct routed_composition=correct compiled=correct
+F1-4731 estimate_alone=no_decision optimize_at_point=wrong optimize_at_worst_case=suboptimal static_composition=correct routed_composition=correct compiled=correct
+F1-4732 estimate_alone=no_decision optimize_at_point=correct optimize_at_worst_case=suboptimal static_composition=correct routed_composition=correct compiled=correct
+F1-4733 estimate_alone=no_decision optimize_at_point=wrong optimize_at_worst_case=suboptimal static_composition=correct routed_composition=correct compiled=correct
+F1-4734 estimate_alone=no_decision optimize_at_point=wrong optimize_at_worst_case=suboptimal static_composition=correct routed_composition=correct compiled=correct
+F1-4735 estimate_alone=no_decision optimize_at_point=wrong optimize_at_worst_case=suboptimal static_composition=correct routed_composition=correct compiled=correct
+F1-4736 estimate_alone=no_decision optimize_at_point=wrong optimize_at_worst_case=suboptimal static_composition=correct routed_composition=correct compiled=correct
+F1-4737 estimate_alone=no_decision optimize_at_point=wrong optimize_at_worst_case=suboptimal static_composition=correct routed_composition=correct compiled=correct
+F1-4738 estimate_alone=no_decision optimize_at_point=wrong optimize_at_worst_case=suboptimal static_composition=correct routed_composition=correct compiled=correct
+F1-4739 estimate_alone=no_decision optimize_at_point=wrong optimize_at_worst_case=suboptimal static_composition=correct routed_composition=correct compiled=correct
+F1-4740 estimate_alone=no_decision optimize_at_point=wrong optimize_at_worst_case=suboptimal static_composition=correct routed_composition=correct compiled=correct
+F1-4741 estimate_alone=no_decision optimize_at_point=wrong optimize_at_worst_case=correct static_composition=correct routed_composition=correct compiled=correct
+F1-4742 estimate_alone=no_decision optimize_at_point=wrong optimize_at_worst_case=correct static_composition=correct routed_composition=correct compiled=correct
+F1-4743 estimate_alone=no_decision optimize_at_point=wrong optimize_at_worst_case=suboptimal static_composition=correct routed_composition=correct compiled=correct
+F1-4744 estimate_alone=no_decision optimize_at_point=wrong optimize_at_worst_case=suboptimal static_composition=correct routed_composition=correct compiled=correct
+F1-4745 estimate_alone=no_decision optimize_at_point=wrong optimize_at_worst_case=suboptimal static_composition=correct routed_composition=correct compiled=correct
+F1-4746 estimate_alone=no_decision optimize_at_point=wrong optimize_at_worst_case=suboptimal static_composition=correct routed_composition=correct compiled=correct
+F1-4747 estimate_alone=no_decision optimize_at_point=wrong optimize_at_worst_case=suboptimal static_composition=correct routed_composition=correct compiled=correct
+F1-4748 estimate_alone=no_decision optimize_at_point=wrong optimize_at_worst_case=suboptimal static_composition=correct routed_composition=correct compiled=correct
+F1-4749 estimate_alone=no_decision optimize_at_point=wrong optimize_at_worst_case=suboptimal static_composition=correct routed_composition=correct compiled=correct
+F1-4750 estimate_alone=no_decision optimize_at_point=wrong optimize_at_worst_case=suboptimal static_composition=correct routed_composition=correct compiled=correct
+F1-4751 estimate_alone=no_decision optimize_at_point=wrong optimize_at_worst_case=suboptimal static_composition=correct routed_composition=correct compiled=correct
+F1-4752 estimate_alone=no_decision optimize_at_point=wrong optimize_at_worst_case=suboptimal static_composition=correct routed_composition=correct compiled=correct
+F1-4753 estimate_alone=no_decision optimize_at_point=wrong optimize_at_worst_case=suboptimal static_composition=suboptimal routed_composition=suboptimal compiled=suboptimal
+F1-4754 estimate_alone=no_decision optimize_at_point=wrong optimize_at_worst_case=suboptimal static_composition=correct routed_composition=correct compiled=correct
+F1-4755 estimate_alone=no_decision optimize_at_point=wrong optimize_at_worst_case=suboptimal static_composition=correct routed_composition=correct compiled=correct
+F1-4756 estimate_alone=no_decision optimize_at_point=wrong optimize_at_worst_case=suboptimal static_composition=correct routed_composition=correct compiled=correct
+F2R-4640 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4641 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4642 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4643 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4644 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4645 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4646 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4647 identify_alone=no_decision optimize_on_association=wrong static_composition=correct routed_composition=correct compiled=correct
+F2R-4648 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4649 identify_alone=no_decision optimize_on_association=wrong static_composition=correct routed_composition=correct compiled=correct
+F2R-4650 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4651 identify_alone=no_decision optimize_on_association=wrong static_composition=correct routed_composition=correct compiled=correct
+F2R-4652 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4653 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4654 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4655 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4656 identify_alone=no_decision optimize_on_association=wrong static_composition=correct routed_composition=correct compiled=correct
+F2R-4657 identify_alone=no_decision optimize_on_association=correct static_composition=wrong routed_composition=wrong compiled=wrong
+F2R-4658 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4659 identify_alone=no_decision optimize_on_association=wrong static_composition=correct routed_composition=correct compiled=correct
+F2R-4660 identify_alone=no_decision optimize_on_association=wrong static_composition=correct routed_composition=correct compiled=correct
+F2R-4661 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4662 identify_alone=no_decision optimize_on_association=correct static_composition=wrong routed_composition=wrong compiled=wrong
+F2R-4663 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4664 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4665 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4666 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4667 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4668 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4669 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4670 identify_alone=no_decision optimize_on_association=wrong static_composition=correct routed_composition=correct compiled=correct
+F2R-4671 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4672 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4673 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4674 identify_alone=no_decision optimize_on_association=wrong static_composition=correct routed_composition=correct compiled=correct
+F2R-4675 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4676 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4677 identify_alone=no_decision optimize_on_association=wrong static_composition=correct routed_composition=correct compiled=correct
+F2R-4678 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4679 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4680 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4681 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4682 identify_alone=no_decision optimize_on_association=wrong static_composition=wrong routed_composition=wrong compiled=wrong
+F2R-4683 identify_alone=no_decision optimize_on_association=wrong static_composition=correct routed_composition=correct compiled=correct
+F2R-4684 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4685 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4686 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4687 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4688 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4689 identify_alone=no_decision optimize_on_association=wrong static_composition=correct routed_composition=correct compiled=correct
+F2R-4690 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4691 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4692 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4693 identify_alone=no_decision optimize_on_association=wrong static_composition=correct routed_composition=correct compiled=correct
+F2R-4694 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4695 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4696 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4697 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4698 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4699 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4700 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4701 identify_alone=no_decision optimize_on_association=correct static_composition=correct routed_composition=correct compiled=correct
+F2R-4702 identify_alone=no_decision optimize_on_association=wrong static_composition=wrong routed_composition=wrong compiled=wrong
+F2R-4703 identify_alone=no_decision optimize_on_association=wrong static_composition=correct routed_composition=correct compiled=correct
+F3-4809 graph_alone_greedy=suboptimal optimize_flow_blind=suboptimal exact_single=correct static_composition=correct routed_composition=correct compiled=correct
+F3-4810 graph_alone_greedy=suboptimal optimize_flow_blind=suboptimal exact_single=correct static_composition=correct routed_composition=correct compiled=correct
+F3-4811 graph_alone_greedy=suboptimal optimize_flow_blind=suboptimal exact_single=correct static_composition=correct routed_composition=correct compiled=correct
+F3-4812 graph_alone_greedy=correct optimize_flow_blind=suboptimal exact_single=correct static_composition=correct routed_composition=correct compiled=correct
+F3-4813 graph_alone_greedy=correct optimize_flow_blind=correct exact_single=correct static_composition=correct routed_composition=correct compiled=correct
+F3-4814 graph_alone_greedy=correct optimize_flow_blind=suboptimal exact_single=correct static_composition=correct routed_composition=correct compiled=correct
+F3-4815 graph_alone_greedy=correct optimize_flow_blind=suboptimal exact_single=correct static_composition=correct routed_composition=correct compiled=correct
+F3-4816 graph_alone_greedy=correct optimize_flow_blind=suboptimal exact_single=correct static_composition=correct routed_composition=correct compiled=correct
+F3-4817 graph_alone_greedy=correct optimize_flow_blind=suboptimal exact_single=correct static_composition=correct routed_composition=correct compiled=correct
+F3-4818 graph_alone_greedy=suboptimal optimize_flow_blind=suboptimal exact_single=correct static_composition=correct routed_composition=correct compiled=correct
+F3-4819 graph_alone_greedy=correct optimize_flow_blind=suboptimal exact_single=correct static_composition=correct routed_composition=correct compiled=correct
+F3-4820 graph_alone_greedy=correct optimize_flow_blind=suboptimal exact_single=correct static_composition=correct routed_composition=correct compiled=correct
+F3-4821 graph_alone_greedy=suboptimal optimize_flow_blind=suboptimal exact_single=correct static_composition=correct routed_composition=correct compiled=correct
+F3-4822 graph_alone_greedy=correct optimize_flow_blind=suboptimal exact_single=correct static_composition=correct routed_composition=correct compiled=correct
+F3-4823 graph_alone_greedy=correct optimize_flow_blind=suboptimal exact_single=correct static_composition=correct routed_composition=correct compiled=correct
+F3-4824 graph_alone_greedy=suboptimal optimize_flow_blind=suboptimal exact_single=correct static_composition=correct routed_composition=correct compiled=correct
+F3-4825 graph_alone_greedy=suboptimal optimize_flow_blind=suboptimal exact_single=correct static_composition=correct routed_composition=correct compiled=correct
+F3-4826 graph_alone_greedy=correct optimize_flow_blind=suboptimal exact_single=correct static_composition=correct routed_composition=correct compiled=correct
+F3-4827 graph_alone_greedy=correct optimize_flow_blind=suboptimal exact_single=correct static_composition=correct routed_composition=correct compiled=correct
+F3-4828 graph_alone_greedy=suboptimal optimize_flow_blind=suboptimal exact_single=correct static_composition=correct routed_composition=correct compiled=correct
+F3-4829 graph_alone_greedy=correct optimize_flow_blind=suboptimal exact_single=correct static_composition=correct routed_composition=correct compiled=correct
+F3-4830 graph_alone_greedy=correct optimize_flow_blind=suboptimal exact_single=correct static_composition=correct routed_composition=correct compiled=correct
+F3-4831 graph_alone_greedy=correct optimize_flow_blind=suboptimal exact_single=correct static_composition=correct routed_composition=correct compiled=correct
+F3-4832 graph_alone_greedy=correct optimize_flow_blind=suboptimal exact_single=correct static_composition=correct routed_composition=correct compiled=correct
+F3-4833 graph_alone_greedy=correct optimize_flow_blind=suboptimal exact_single=correct static_composition=correct routed_composition=correct compiled=correct
+F3-4834 graph_alone_greedy=suboptimal optimize_flow_blind=suboptimal exact_single=correct static_composition=correct routed_composition=correct compiled=correct
+F3-4835 graph_alone_greedy=correct optimize_flow_blind=suboptimal exact_single=correct static_composition=correct routed_composition=correct compiled=correct
+F3-4836 graph_alone_greedy=correct optimize_flow_blind=suboptimal exact_single=correct static_composition=correct routed_composition=correct compiled=correct
+F3-4837 graph_alone_greedy=suboptimal optimize_flow_blind=suboptimal exact_single=correct static_composition=correct routed_composition=correct compiled=correct
+F3-4838 graph_alone_greedy=correct optimize_flow_blind=suboptimal exact_single=correct static_composition=correct routed_composition=correct compiled=correct
+F3-4839 graph_alone_greedy=correct optimize_flow_blind=correct exact_single=correct static_composition=correct routed_composition=correct compiled=correct
+F3-4840 graph_alone_greedy=correct optimize_flow_blind=suboptimal exact_single=correct static_composition=correct routed_composition=correct compiled=correct
+F3-4841 graph_alone_greedy=correct optimize_flow_blind=suboptimal exact_single=correct static_composition=correct routed_composition=correct compiled=correct
+F3-4842 graph_alone_greedy=suboptimal optimize_flow_blind=suboptimal exact_single=correct static_composition=correct routed_composition=correct compiled=correct
+F3-4843 graph_alone_greedy=suboptimal optimize_flow_blind=suboptimal exact_single=correct static_composition=correct routed_composition=correct compiled=correct
+F3-4844 graph_alone_greedy=correct optimize_flow_blind=suboptimal exact_single=correct static_composition=correct routed_composition=correct compiled=correct
+F3-4845 graph_alone_greedy=suboptimal optimize_flow_blind=suboptimal exact_single=correct static_composition=correct routed_composition=correct compiled=correct
+F3-4846 graph_alone_greedy=correct optimize_flow_blind=suboptimal exact_single=correct static_composition=correct routed_composition=correct compiled=correct
+F3-4847 graph_alone_greedy=correct optimize_flow_blind=suboptimal exact_single=correct static_composition=correct routed_composition=correct compiled=correct
+F3-4848 graph_alone_greedy=suboptimal optimize_flow_blind=suboptimal exact_single=correct static_composition=correct routed_composition=correct compiled=correct
+F4-4863 bayes_alone=correct voi_uninformed=wrong static_composition=correct routed_composition=correct compiled=correct
+F4-4864 bayes_alone=correct voi_uninformed=wrong static_composition=correct routed_composition=correct compiled=correct
+F4-4865 bayes_alone=wrong voi_uninformed=correct static_composition=correct routed_composition=correct compiled=correct
+F4-4866 bayes_alone=wrong voi_uninformed=wrong static_composition=correct routed_composition=correct compiled=correct
+F4-4867 bayes_alone=wrong voi_uninformed=correct static_composition=correct routed_composition=correct compiled=correct
+F4-4868 bayes_alone=wrong voi_uninformed=correct static_composition=correct routed_composition=correct compiled=correct
+F4-4869 bayes_alone=correct voi_uninformed=wrong static_composition=correct routed_composition=correct compiled=correct
+F4-4870 bayes_alone=wrong voi_uninformed=wrong static_composition=correct routed_composition=correct compiled=correct
+F4-4871 bayes_alone=wrong voi_uninformed=correct static_composition=correct routed_composition=correct compiled=correct
+F4-4872 bayes_alone=wrong voi_uninformed=correct static_composition=correct routed_composition=correct compiled=correct
+F4-4873 bayes_alone=correct voi_uninformed=wrong static_composition=correct routed_composition=correct compiled=correct
+F4-4874 bayes_alone=wrong voi_uninformed=correct static_composition=correct routed_composition=correct compiled=correct
+F4-4875 bayes_alone=wrong voi_uninformed=correct static_composition=correct routed_composition=correct compiled=correct
+F4-4876 bayes_alone=correct voi_uninformed=wrong static_composition=correct routed_composition=correct compiled=correct
+F4-4877 bayes_alone=wrong voi_uninformed=wrong static_composition=correct routed_composition=correct compiled=correct
+F4-4878 bayes_alone=wrong voi_uninformed=correct static_composition=correct routed_composition=correct compiled=correct
+F4-4879 bayes_alone=wrong voi_uninformed=wrong static_composition=correct routed_composition=correct compiled=correct
+F4-4880 bayes_alone=correct voi_uninformed=wrong static_composition=correct routed_composition=correct compiled=correct
+F4-4881 bayes_alone=correct voi_uninformed=correct static_composition=correct routed_composition=correct compiled=correct
+F4-4882 bayes_alone=correct voi_uninformed=wrong static_composition=correct routed_composition=correct compiled=correct
+F4-4883 bayes_alone=wrong voi_uninformed=correct static_composition=correct routed_composition=correct compiled=correct
+F4-4884 bayes_alone=correct voi_uninformed=wrong static_composition=correct routed_composition=correct compiled=correct
+F4-4885 bayes_alone=correct voi_uninformed=wrong static_composition=correct routed_composition=correct compiled=correct
+F4-4886 bayes_alone=wrong voi_uninformed=correct static_composition=correct routed_composition=correct compiled=correct
+F4-4887 bayes_alone=wrong voi_uninformed=correct static_composition=correct routed_composition=correct compiled=correct
+F4-4888 bayes_alone=wrong voi_uninformed=correct static_composition=correct routed_composition=correct compiled=correct
+F4-4889 bayes_alone=wrong voi_uninformed=correct static_composition=correct routed_composition=correct compiled=correct
+F4-4890 bayes_alone=correct voi_uninformed=wrong static_composition=correct routed_composition=correct compiled=correct
+F4-4891 bayes_alone=wrong voi_uninformed=wrong static_composition=correct routed_composition=correct compiled=correct
+F4-4892 bayes_alone=wrong voi_uninformed=wrong static_composition=correct routed_composition=correct compiled=correct
+F4-4893 bayes_alone=correct voi_uninformed=wrong static_composition=correct routed_composition=correct compiled=correct
+F4-4894 bayes_alone=correct voi_uninformed=wrong static_composition=correct routed_composition=correct compiled=correct
+F4-4895 bayes_alone=correct voi_uninformed=correct static_composition=correct routed_composition=correct compiled=correct
+F4-4896 bayes_alone=correct voi_uninformed=correct static_composition=correct routed_composition=correct compiled=correct
+F4-4897 bayes_alone=wrong voi_uninformed=correct static_composition=correct routed_composition=correct compiled=correct
+F4-4898 bayes_alone=correct voi_uninformed=correct static_composition=correct routed_composition=correct compiled=correct
+F4-4899 bayes_alone=correct voi_uninformed=wrong static_composition=correct routed_composition=correct compiled=correct
+F4-4900 bayes_alone=wrong voi_uninformed=wrong static_composition=correct routed_composition=correct compiled=correct
+F4-4901 bayes_alone=correct voi_uninformed=correct static_composition=correct routed_composition=correct compiled=correct
+F4-4902 bayes_alone=wrong voi_uninformed=correct static_composition=correct routed_composition=correct compiled=correct
+{
+ "F1": {
+  "lift": true,
+  "best_constituent": "optimize_at_worst_case",
+  "routed_wins": 35,
+  "routed_losses": 0,
+  "sign_test_p_one_sided": 2.9e-11
+ },
+ "F2R": {
+  "lift": true,
+  "best_constituent": "optimize_on_association",
+  "routed_wins": 13,
+  "routed_losses": 2,
+  "sign_test_p_one_sided": 0.003692626953
+ },
+ "F3": {
+  "lift": false,
+  "best_constituent": "exact_single",
+  "routed_wins": 0,
+  "routed_losses": 0,
+  "sign_test_p_one_sided": 1.0
+ },
+ "F4": {
+  "lift": true,
+  "best_constituent": "voi_uninformed",
+  "routed_wins": 20,
+  "routed_losses": 0,
+  "sign_test_p_one_sided": 9.53674e-07
+ }
+}
+EXIT 0

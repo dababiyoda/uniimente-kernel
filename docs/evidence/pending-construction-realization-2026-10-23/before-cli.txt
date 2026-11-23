@@ -1,0 +1,48 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________ test_cli_emits_a_signed_scalar_without_changing_forecast_shape ________
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/argparse.py:1943: in _parse_known_args2
+    namespace, args = self._parse_known_args(args, namespace, intermixed)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/argparse.py:2230: in _parse_known_args
+    raise ArgumentError(None, _('the following arguments are required: %s') %
+E   argparse.ArgumentError: the following arguments are required: --value
+
+During handling of the above exception, another exception occurred:
+tests/unit/test_greg_pending_construction_realization.py:101: in test_cli_emits_a_signed_scalar_without_changing_forecast_shape
+    assert cli.main(["--home", str(home), "realize", "sha256:fixture", "--objective-value", "3",
+greg/cli.py:592: in main
+    args = p.parse_args(argv)
+           ^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/argparse.py:1904: in parse_args
+    args, argv = self.parse_known_args(args, namespace)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/argparse.py:1914: in parse_known_args
+    return self._parse_known_args2(args, namespace, intermixed=False)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/argparse.py:1943: in _parse_known_args2
+    namespace, args = self._parse_known_args(args, namespace, intermixed)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/argparse.py:2165: in _parse_known_args
+    positionals_end_index = consume_positionals(start_index)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/argparse.py:2141: in consume_positionals
+    take_action(action, args)
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/argparse.py:2018: in take_action
+    action(self, namespace, argument_values, option_string)
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/argparse.py:1272: in __call__
+    subnamespace, arg_strings = parser.parse_known_args(arg_strings, None)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/argparse.py:1914: in parse_known_args
+    return self._parse_known_args2(args, namespace, intermixed=False)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/argparse.py:1945: in _parse_known_args2
+    self.error(str(err))
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/argparse.py:2650: in error
+    self.exit(2, _('%(prog)s: error: %(message)s\n') % args)
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/argparse.py:2637: in exit
+    _sys.exit(status)
+E   SystemExit: 2
+=========================== short test summary info ============================
+FAILED tests/unit/test_greg_pending_construction_realization.py::test_cli_emits_a_signed_scalar_without_changing_forecast_shape
+1 failed in 0.73s

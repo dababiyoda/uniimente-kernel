@@ -25,14 +25,11 @@ from datetime import datetime
 from pathlib import Path
 
 from foundry.systems import cas, snapshots, versions
+from provenance.digests import compact_json_bytes as _canon
 
 
 class ShellError(RuntimeError):
     pass
-
-
-def _canon(value) -> bytes:
-    return json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
 
 
 def _digest_dir(d: Path) -> str:

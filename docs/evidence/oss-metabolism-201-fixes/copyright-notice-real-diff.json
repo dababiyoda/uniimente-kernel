@@ -1,0 +1,35 @@
+{
+ "measured": "model_license_tree over every license text installed on this body, at 376889d0 and with the copyright-notice fix",
+ "script": "measure_model_texts.py",
+ "texts": 121,
+ "before": {
+  "permissive": 46,
+  "unclassified": 74,
+  "not_open_source": 1
+ },
+ "after": {
+  "permissive": 45,
+  "unclassified": 75,
+  "not_open_source": 1
+ },
+ "changed": [
+  {
+   "file": "pandas-3.1.0.dist-info/licenses/LICENSES/HAVEN_LICENSE",
+   "before": "unclassified",
+   "after": "unclassified",
+   "terms_after": [
+    "MIT",
+    "MIT text with other terms beside it ('# MIT License Copyrigh"
+   ]
+  },
+  {
+   "file": "pluggy-1.7.0.dist-info/licenses/LICENSE",
+   "before": "permissive",
+   "after": "unclassified",
+   "terms_after": [
+    "MIT",
+    "MIT text with other terms beside it ('Copyright (c) 2015 hol"
+   ]
+  }
+ ]
+}

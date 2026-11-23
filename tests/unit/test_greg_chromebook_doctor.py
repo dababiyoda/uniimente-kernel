@@ -88,3 +88,24 @@ def test_confined_egress_is_reported_unavailable_with_its_fix_when_a_probe_fails
     assert "bubblewrap" in report["fix"] and "libseccomp" in report["fix"]
     monkeypatch.setattr(doctor.platform, "system", lambda: "Darwin")
     assert doctor.confined_egress()["available"] is False
+
+
+def test_runbook_step_0_doctor_runs_on_a_stdlib_only_python():
+    """CHROMEBOOK_FIRST_MISSION.md step 0 runs ``python3 -m greg doctor --chromebook`` with the system python3, before
+    install.sh has installed any dependency. -S drops site-packages, so only the standard library is importable."""
+    import json
+    import os
+    import subprocess
+    import sys
+    from pathlib import Path
+    repo = Path(__file__).resolve().parents[2]
+    env = {k: v for k, v in os.environ.items() if k not in ("PYTHONPATH", "PYTHONHOME")}
+    stdlib_only = [sys.executable, "-S", "-B", "-m", "greg"]
+    control = subprocess.run(stdlib_only + ["status"], cwd=repo, env=env, capture_output=True, text=True, timeout=60)
+    assert control.returncode != 0 and "ModuleNotFoundError" in control.stderr   # the deps really are unimportable
+    for argv in (["doctor", "--chromebook"], ["--home", "/nonexistent-greg-home", "doctor", "--chromebook"]):
+        run = subprocess.run(stdlib_only + argv, cwd=repo, env=env, capture_output=True, text=True, timeout=120)
+        assert run.returncode in (0, 2), run.stderr
+        assert "Traceback" not in run.stderr
+        report = json.loads(run.stdout)
+        assert report["ready_for_linux_service"] is (run.returncode == 0) and "missing" in report

@@ -1,0 +1,92 @@
+"""Operation-family admission v3 (review of #179, M17): a live harness re-admits #155's operation families on the
+converged tree, under a freeze that binds the solver closures it measures."""
+from __future__ import annotations
+
+import json
+
+import pytest
+
+from cortex.evaluation.genome_admission import run as V1
+from cortex.evaluation.genome_admission import run_ops_v3 as R
+
+pytestmark = pytest.mark.filterwarnings("ignore::RuntimeWarning")
+
+
+def test_the_harness_reuses_lineage_benchmarks_and_the_frozen_rule_unchanged():
+    from cortex.evaluation.genome_admission import run_v2 as V2
+    assert {f: b for f, (b, _) in R.BENCHMARKS.items()} == {**V1.BENCHMARKS, **V2.BENCHMARKS}
+    prereg = json.loads(R.PREREG.read_text())
+    assert prereg["seeds"] == [R.SEEDS.start, R.SEEDS.stop - 1] == [5001, 5040]
+    assert prereg["families"] == sorted(R.BENCHMARKS)
+    assert sorted(prereg["structural_not_measured"]) == sorted(V1.STRUCTURAL)
+
+
+def test_every_benchmarked_family_binds_its_solver_closure():
+    bound = R.closures()
+    assert set(bound) == set(R.BENCHMARKS)
+    assert all(v and v["closure_sha256"].startswith("sha256:") for v in bound.values())
+    assert R.inputs()["solver_closures"] == bound
+
+
+def test_a_changed_solver_closure_changes_the_frozen_inputs(monkeypatch):
+    before = R.inputs()
+    real = R.closures()
+    changed = {**real, "graph": {**real["graph"], "closure_sha256": "sha256:" + "0" * 64}}
+    monkeypatch.setattr(R, "closures", lambda: changed)
+    assert R.inputs() != before
+
+
+def test_the_run_refuses_a_dirty_tree_and_unfrozen_or_changed_inputs(monkeypatch, tmp_path):
+    monkeypatch.setattr(R, "dirty", lambda: [" M greg/cognition/solvers.py"])
+    monkeypatch.setattr("sys.argv", ["run_ops_v3", "--out", str(tmp_path / "r.json")])
+    with pytest.raises(SystemExit, match="DIRTY_TREE"):
+        R.main()
+    monkeypatch.setattr(R, "dirty", lambda: [])
+    monkeypatch.setattr(R, "MANIFEST", tmp_path / "missing.json")
+    with pytest.raises(SystemExit, match="NOT_FROZEN"):
+        R.main()
+    stale = tmp_path / "freeze.json"
+    stale.write_text(json.dumps({"inputs": {**R.inputs(), "seeds": [1, 40]}}))
+    monkeypatch.setattr(R, "MANIFEST", stale)
+    with pytest.raises(SystemExit, match="FROZEN_INPUT_CHANGED"):
+        R.main()
+    assert not (tmp_path / "r.json").exists()
+
+
+def test_the_freeze_refuses_to_overwrite(monkeypatch, tmp_path):
+    existing = tmp_path / "freeze.json"
+    existing.write_text("{}")
+    monkeypatch.setattr(R, "dirty", lambda: [])
+    monkeypatch.setattr(R, "MANIFEST", existing)
+    monkeypatch.setattr("sys.argv", ["run_ops_v3", "--freeze"])
+    with pytest.raises(SystemExit, match="refusing to overwrite"):
+        R.main()
+    assert existing.read_text() == "{}"
+
+
+def test_measure_reports_every_family_and_the_sparse_geometry_on_development_seeds(monkeypatch):
+    # The merged solvers (#184) refuse a compute_limit above 100000 (solvers._work); #155's run.py declares 200000.
+    # #184's own re-admission makes this one declared change (run_operations.py GEOMETRY), and so does this
+    # development-seed measure on the joined tree (#196). The frozen v3 results keep the geometry they ran with.
+    monkeypatch.setattr(V1, "GEOMETRY", {**V1.GEOMETRY, "compute_limit": 100000})
+    measured = R.measure(seeds=range(1, 3))           # development seeds only; never the held-out range
+    assert set(R.BENCHMARKS) | set(V1.STRUCTURAL) == set(measured["families"])
+    for family in R.BENCHMARKS:
+        row = measured["families"][family]
+        assert row["n"] == 2 and row["status"] in ("REJECTED", "SUPERSEDED", "DEFAULT_FOR_GEOMETRY", "EXPERIMENTAL")
+    assert measured["crowd_sparse"]["n"] == 2 and measured["crowd_sparse"]["candidate"].startswith("Dawid-Skene")
+
+
+def test_operation_admission_seeds_are_registered_as_spent():
+    """Round-3 review of #179 (finding 5): spent_seeds() scanned genome admissions only, so a later genome admission
+    or P8 split could draw operation admission v3's held-out seeds without a refusal."""
+    from greg.cognition.genomes.admission import spent_seeds
+    assert set(range(5001, 5041)) <= spent_seeds()
+
+
+def test_operation_admission_seeds_stay_outside_p8s_reserved_range():
+    """#158's request (round 3): 5001-5040 are spent, and the spent registry never overlaps P8_RESERVED."""
+    from greg.cognition.genomes.admission import P8_RESERVED, spent_seeds
+    spent = spent_seeds()
+    assert set(range(5001, 5041)) <= spent
+    assert not spent & set(P8_RESERVED)

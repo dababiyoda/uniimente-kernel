@@ -119,7 +119,7 @@ def test_an_unsigned_answer_written_to_the_ledger_never_moves_a_mission(tmp_path
 def test_a_genuine_digest_of_another_command_or_another_request_moves_nothing(tmp_path):
     w = blocked(tmp_path, "m:forged", "m:other")
     mission_digest = next(c["digest"] for c in events(w.home, "command.accepted")
-                          if c["kind"] == "MISSION" and c["body"]["mission_id"] == w.mid)
+                          if c["kind"] == "MISSION" and c["envelope"]["body"]["mission_id"] == w.mid)
     forge(w, row(w.rid, w.mid, "approve", mission_digest), key=w.rid)          # a verified MISSION, not a DECISION
     run(w.home, w.clock)
     assert not (w.ws / "c.txt").exists()

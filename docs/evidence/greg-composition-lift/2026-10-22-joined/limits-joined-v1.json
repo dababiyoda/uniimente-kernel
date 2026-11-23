@@ -1,0 +1,11 @@
+{
+  "of": "docs/evidence/greg-composition-lift/2026-10-22-joined/results-joined-v1.json",
+  "added_after_run": false,
+  "copied_from": "the report's own limits block (results-joined-v1.json#limits), written by the run",
+  "limits": [
+    "F1, F2R, F3 and F4 are constructed to need two intelligences; they test the machinery on the joined code, not whether natural tasks need composition",
+    "F1 truth assumes the stated intervals are calibrated lognormal 90% intervals",
+    "the natural families (F5 M4, F6 bank calls, F7 SNDlib, F8 Uber) are not re-measured: their held-out data were already looked at",
+    "one container, one pinned core; latency is this machine's under the contention recorded in environment; the compiled arm measured the compiler at the freeze commit"
+  ]
+}

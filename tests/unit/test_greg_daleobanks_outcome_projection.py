@@ -109,7 +109,12 @@ def test_the_mission_engine_gives_the_projecting_sensors_the_journal(tmp_path):
         m = SimpleNamespace(mission_id=MID)
         for cap in ("daleobanks.outcome", "foundry.query", "foundry.apply"):
             assert body.engine._context(m, BUILTINS[cap][0]).journal is body.journal
-        assert body.engine._context(m, BUILTINS["daleobanks.verify"][0]).journal is None
+        # daleobanks.verify never gets the writable journal (#192). Joined with #183 it reads the Mind's receipts,
+        # so it gets the no-write reader: only ledger.by_type, no record, no append.
+        from greg.ventures import LedgerReader
+        reader = body.engine._context(m, BUILTINS["daleobanks.verify"][0]).journal
+        assert isinstance(reader, LedgerReader) and reader is not body.journal
+        assert not hasattr(reader, "record") and not hasattr(reader.ledger, "append")
 
 
 def test_a_receipted_publish_closes_and_the_separate_process_appraiser_verifies_it(tmp_path, monkeypatch):

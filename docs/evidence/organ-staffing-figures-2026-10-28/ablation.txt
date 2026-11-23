@@ -1,0 +1,4 @@
+# Kernel ablation: greg/organs.py SUMMARY without recommended_next_action, WMI 0e80582d
+FAILED tests/integration/test_organ_staffing_figures.py::test_a_shortage_changes_reasons_evidence_requests_and_priority_with_nothing_else_changed
+FAILED tests/integration/test_organ_staffing_figures.py::test_the_fifteen_step_missions_answer_holds_the_verdict_and_leads_with_its_shortage
+2 failed, 5 passed in 14.63s

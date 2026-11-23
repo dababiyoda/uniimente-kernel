@@ -1,0 +1,10 @@
+{"family": "control", "status": "DEFAULT_FOR_GEOMETRY", "rule_155_status": "DEFAULT_FOR_GEOMETRY", "vs_baseline": {"wins": 30, "losses": 0, "ties": 0, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 30, "losses": 0, "ties": 0, "p_better": 0.0, "p_worse": 1.0}}
+{"family": "game", "status": "DEFAULT_FOR_GEOMETRY", "rule_155_status": "DEFAULT_FOR_GEOMETRY", "vs_baseline": {"wins": 30, "losses": 0, "ties": 0, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 21, "losses": 0, "ties": 9, "p_better": 0.0, "p_worse": 1.0}}
+{"family": "information", "status": "DEFAULT_FOR_GEOMETRY", "rule_155_status": "DEFAULT_FOR_GEOMETRY", "vs_baseline": {"wins": 17, "losses": 0, "ties": 13, "p_better": 8e-06, "p_worse": 1.0}, "vs_competitor": {"wins": 13, "losses": 0, "ties": 17, "p_better": 0.000122, "p_worse": 1.0}}
+{"family": "probabilistic", "status": "NICHE_CAPABILITY", "rule_155_status": "DEFAULT_FOR_GEOMETRY", "vs_baseline": {"wins": 17, "losses": 6, "ties": 7, "p_better": 0.017345, "p_worse": 0.994689}, "vs_competitor": {"wins": 13, "losses": 10, "ties": 7, "p_better": 0.33882, "p_worse": 0.797564}}
+{
+ "control": "DEFAULT_FOR_GEOMETRY",
+ "game": "DEFAULT_FOR_GEOMETRY",
+ "information": "DEFAULT_FOR_GEOMETRY",
+ "probabilistic": "NICHE_CAPABILITY"
+}

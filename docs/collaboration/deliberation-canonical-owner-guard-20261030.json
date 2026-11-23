@@ -1,0 +1,573 @@
+{
+  "decision_id": "CANONICAL-OWNER-GUARD-20261030",
+  "title": "Record one canonical owner per duplicated function in the ownership map, and fail the unit suite on an unrecorded second implementation",
+  "problem": "At base b1950be2 (#196's head when the unit started), eight functions on GREG's mission path had two or more implementations and no file named which one was canonical: temporary teams, commerce closure, the goal runtime, the status evidence ladder, autonomy levels, regression closing, organ exchange and inbox transport. Nothing stopped another implementation from landing unrecorded, and the program's open and planned work adds more: #235's greg/autonomy.py, WU-03 greg/teams.py, WU-06 nodes.py, WU-12 greg/regressions.py and WU-13 governance/reality_ladder.py. Directive section 52 asks, for every major mechanism, for the canonical implementation, alternatives, shims, experiments, benchmarks, historical implementations, migration path and retirement condition, and says 'Do not allow architectural generations to remain equally canonical forever.' Section 3 asks for one canonical persistent mission architecture; section 76 says 'Do not keep obsolete implementations merely to preserve history.'",
+  "founder_intent_refs": [
+    "INTENT-20261028-OPUS-MAXIMUS-REISSUE (sections 3, 52, 56, 59 and 76)",
+    "INTENT-20261030-BUILD-BEFORE-DEVICE-RUN",
+    "INTENT-20261001-FULL-MACHINE-COMPLETION",
+    "INTENT-20261019-UPWARD-ASCENT",
+    "INTENT-2026-09-30-MASTER-BUILD-DIRECTIVE (section 76, the same governing rule in the original directive)",
+    "INTENT-0030"
+  ],
+  "baseline": "b1950be2: docs/collaboration/ARCHITECTURE-OWNERSHIP-MAP.yaml says 'one canonical owner per concern; two active owners is a defect' but records concerns, not functions, and nothing reads it. scripts/ci/check_authority_singleton.py counts authority artifacts only and says it 'does NOT restrict multiple capability implementations'. No test fails when a second implementation of a function lands or when greg/ imports a superseded one.",
+  "alternatives": [
+    {
+      "name": "Proposed: function_owner_records in the existing ownership map, three static guards and a frozen pin, all in one unit test",
+      "description": "Eight records in a new function_owner_records section of docs/collaboration/ARCHITECTURE-OWNERSHIP-MAP.yaml. Five are CANONICAL, decided by what greg/ and the CLI import and call at b1950be2; three are NEEDS_FOUNDER_DECISION with the evidence on each side, a safe default and a review trigger. tests/unit/test_canonical_owner_guard.py (15 tests) checks: every registered module and qualname exists (ast, nothing imported); no greg module reaches a HISTORICAL or RETIRED alternate through any import form greg uses, including _lazy and module-name string tables, and every unresolvable dynamic import is allowlisted with a reason; no module-level binding in greg, foundry, egregore, omnimorph, autonomy or governance re-implements a registered function by marker, by exact name or by structural copy. PINNED, FOUNDER_DECISIONS and MUST_FLAG freeze the records, entries, canonical module sets and markers. scripts/ci/check_canonical_owner_guard_mutants.py holds 53 mutants.",
+      "advantages": [
+        "Every duplicated function on the mission path has one recorded owner or an explicit NEEDS_FOUNDER_DECISION with evidence on each side",
+        "Reuses the repository's existing owner record; no new file format, authority plane or runtime component",
+        "Runs in Canonical CI job 1's full suite with no workflow change (about 20 s)",
+        "A new candidate, alternate or distinct entry needs no test change, so #235 and the WU units can record themselves",
+        "53 of 53 mutants caught; 48 of 48 single-entry deletions caught"
+      ],
+      "disadvantages": [
+        "Guard 3 is a heuristic: near copies, methods, code outside the six packages and a second implementation inside a listed module pass",
+        "The pins live in the test; a diff that edits the YAML and the test together defeats them, visibly",
+        "The founder_ruling check cannot authenticate the founder",
+        "A 1,140-line test with its own AST resolver joins the review surface"
+      ],
+      "revival_evidence": "Retained; revisit if a duplicate lands on #196 while the guard passes, or if a runtime capability router becomes the canonical dispatch path."
+    },
+    {
+      "name": "Simplest viable: registry plus an existence check and a direct-import guard (round 1, 77deac50)",
+      "description": "The unit spec's 'small registry (data plus a test)' and 'live-import guard': eight records, a check that every named module and qualname exists, an import guard that follows import statements, aliases, relative imports and _lazy, and a name-marker check for new definitions.",
+      "advantages": [
+        "About half the test code",
+        "Already caught the round-1 mutant set: 20 of 20",
+        "Simulated: flags #235's greg/autonomy.py on LEVELS, EARNED_CEILING and earned_level"
+      ],
+      "disadvantages": [
+        "Two adversarial reviews (separate agents of this session) confirmed every one of their 16 findings against it (F1-F9, MUH-F1-MUH-F7; F9 and MUH-F7 repeat others)",
+        "Guard 2 missed 10 dynamic-import forms, including greg's own __import__(...).name idiom, and appraisal.py:558's DELIVERING table",
+        "A verbatim copy under a registered name passed; vacuous markers passed; a second CANONICAL entry passed; a full unilateral flip of a founder decision passed; deleting two whole records or 17 single entries passed",
+        "Two records' evidence was false (commerce importers; the only writer of regression reopenings)"
+      ],
+      "revival_evidence": "None as a terminal design; its 20 mutants remain in the round-2 mutant set and are all still caught."
+    },
+    {
+      "name": "Strongest competing design: runtime single-owner dispatch through a capability router or governed module loader",
+      "description": "Route each registered function through one dispatcher (Final Build Order 4.4 and 4.14), so that a non-owner implementation is unreachable at runtime rather than refused at review time.",
+      "advantages": [
+        "Enforces the owner at the point of use, not only by static name and structure",
+        "Would catch a re-implementation under a new name that only a runtime call reveals"
+      ],
+      "disadvantages": [
+        "Changes runtime behaviour, which this unit may not do",
+        "Needs greg/capabilities.py and greg/body.py, held by open PRs (#221, #228, #229, #235)",
+        "Would decide the three founder-decision records by code: today both goal runtimes run on every Body.tick",
+        "Not built or measured here"
+      ],
+      "revival_evidence": "The founder rules on the three open records and a capability router becomes the canonical dispatch path; then the registry can be its data."
+    },
+    {
+      "name": "Staged experiment: the same guards in report-only mode for one wave of child PRs",
+      "description": "Print guard findings without failing, observe what the program's next PRs would trip, then switch to failing.",
+      "advantages": [
+        "No friction for in-flight PRs",
+        "Measures false positives before enforcement"
+      ],
+      "disadvantages": [
+        "The duplications the unit exists to stop (#235, WU-03, WU-06, WU-12, WU-13) would land unrecorded during the wave",
+        "False positives are already measured without it: the guard was run against #235's and MU-B's modules and against nine merged trees"
+      ],
+      "revival_evidence": "A false positive that can be cleared only by editing PINNED or weakening a guard."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "The eight functions keep two or three active implementations with no recorded owner. #235's second autonomy ladder and the program's WU-03, WU-06, WU-12 and WU-13 modules land as further unrecorded generations. Section 52 stays unmet, and the three open founder decisions stay scattered across the intent ledger and the conflict matrix instead of next to the code they decide.",
+    "advantages": [
+      "No new test and no review friction",
+      "No risk of a heuristic false positive"
+    ],
+    "disadvantages": [
+      "Architectural generations remain equally canonical, which section 52 forbids",
+      "A greg import of a superseded implementation is invisible",
+      "Each new duplicate is found, if at all, by a later audit"
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Section 52 is an active requirement of the re-issued directive, and section 3 names one canonical persistent mission architecture. The registry records owners without retiring, attaching or activating anything, and it keeps the three choices that belong to the founder (goal runtime, evidence ladder, autonomy ladder) as NEEDS_FOUNDER_DECISION instead of deciding them by code.",
+      "material_concerns": [
+        "Five CANONICAL designations rest on import evidence at b1950be2, not on a founder ruling; the registry is PROPOSED like the rest of the map",
+        "Section 56's seventeen-level reality ladder and section 59's five autonomy levels are not yet any implementation; the records must not read as if they were",
+        "A record does not satisfy the elevation obligation of INTENT-20261019-UPWARD-ASCENT; it only stops silent duplication"
+      ],
+      "evidence_refs": [
+        "docs/collaboration/ARCHITECTURE-OWNERSHIP-MAP.yaml (function_owner_records)",
+        "docs/intent/sources/OPUS-MAXIMUS-MASTER-BUILD-DIRECTIVE-2026-10-28-source.md sections 3, 52, 56, 59, 76",
+        "docs/FOUNDER_INTENT_LEDGER.md open founder decisions (canonical Goal Gravity runtime)"
+      ],
+      "recommendation": "NEEDS_FOUNDER_DECISION"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "The owner map already exists and already says two active owners is a defect; extending it beats a new file. check_authority_singleton.py would mix capability with authority, the developmental-inheritance JSON has no per-function fields, greg/path.json is read at runtime and governance/ holds founder-signed digests. The guards are static: nothing is imported and no runtime path changes.",
+      "material_concerns": [
+        "Guard 2 binds names per file, not per scope, and does not see setattr on a module or a name reached through a function's return value",
+        "Three dynamic-import sites are allowlisted by reason, not resolved (_lazy's adapter, the genome library's MODULES tuple, the evolution sandbox's TARGETS rows)",
+        "Exact-name collisions such as greg/mcp_tools.py act and three verify_delivery functions are recorded as distinct; each future collision needs the same care"
+      ],
+      "evidence_refs": [
+        "tests/unit/test_canonical_owner_guard.py",
+        "scripts/ci/check_authority_singleton.py docstring",
+        "docs/evidence/canonical-owner-guard-2026-10-30/README.md 'Why this file and not a new one'"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Two reviews of round 1 (77deac50), done by separate agents of this same session, one attack lens and one fidelity lens, confirmed all 16 of their findings with probes (F1-F9 and MUH-F1-MUH-F7; F9 repeats MUH-F3 and MUH-F6, MUH-F7 repeats F7). Round 2 fixes every one, each with a regression test that fails on 77deac50, and replays them as 33 new mutants. The guard now fails every finding scenario. What remains is the heuristic's boundary and the fact that the pins defend against silent edits, not against a reviewed diff that changes the test.",
+      "material_concerns": [
+        "Near copies pass: the copy rule needs the same AST without name and docstring, at least 25 nodes",
+        "A rewritten re-implementation under a name no marker matches, a method inside a class, or code in acceptance/, business/, closure/ or scripts/ passes",
+        "An agent can write a ruling file under docs/decisions/ or docs/intent/ that names a record and says accepted; the check cannot tell it from the founder's",
+        "Every scenario was reproduced in this container by agents of the same session; no independent session or human reviewed it"
+      ],
+      "evidence_refs": [
+        "docs/evidence/canonical-owner-guard-2026-10-30/README.md 'Review round 2' table",
+        "scripts/ci/check_canonical_owner_guard_mutants.py (53 mutants)"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "The guard test runs in about 20 s inside Canonical CI job 1's full suite with no workflow edit. Reverting is removing four added files' worth of changes and one YAML section. The guard merges cleanly with #196's current head and eight other refs, and passes on each merged tree except #235's, where it fails exactly as documented.",
+      "material_concerns": [
+        "The mutant script is not in CI and took 619 s in the final run; the #196 integrator must wire it",
+        "#235 will fail job 1 on LEVELS, EARNED_CEILING and earned_level until it adds greg.autonomy as a candidate; its author must be told",
+        "Merge checks were textual plus a guard-test re-run per merged tree; the full suites were not re-run on the merged trees"
+      ],
+      "evidence_refs": [
+        ".github/workflows/canonical-ci.yml job 1 ('Full unit and integration suite')",
+        "final verification: git merge-tree on 9 refs; guard test on each merged tree"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "No evidence, history or implementation is deleted; every alternate keeps a retirement or revival condition, and negatives (round 1's missed _lazy branch, the reviews' confirmed findings, its two false evidence lines) are kept in the README. The claim is held at UNIT-TESTED: no runtime behaviour changed and GREG gained no capability.",
+      "material_concerns": [
+        "The README and PR must not present a review-time guard as a product capability",
+        "Record evidence lines are prose checked by reviewers, not by the test; two were wrong in round 1",
+        "Only function_owner_records and the refines IDs are machine-checked; the concern records' own fields are not"
+      ],
+      "evidence_refs": [
+        "docs/evidence/canonical-owner-guard-2026-10-30/README.md 'Limitations and negatives' and 'Reality level'"
+      ],
+      "recommendation": "RETAIN"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "The base has no function-level registry: the guard test fails on b1950be2",
+      "tier": "unit_test",
+      "reference": "round-2 test file copied into a detached worktree of b1950be2",
+      "finding": "9 failed, 6 passed; the 6 need no registry (four synthetic-tree tests, the stale-name test, the dynamic-import test)"
+    },
+    {
+      "claim": "Round 2's checks fail on round 1's registry",
+      "tier": "unit_test",
+      "reference": "round-2 test file in a detached worktree of 77deac50",
+      "finding": "4 failed, 11 passed: shape 7 problems, pins 24, markers 6, definitions 23"
+    },
+    {
+      "claim": "The guard passes at the head",
+      "tier": "unit_test",
+      "reference": "PYTHONDONTWRITEBYTECODE=1 python -B -m pytest -q -p no:cacheprovider tests/unit/test_canonical_owner_guard.py at 66794c5b, clean tree",
+      "finding": "15 passed in 20.60 s"
+    },
+    {
+      "claim": "Each safeguard fails its named test when defeated",
+      "tier": "sandbox_execution",
+      "reference": "scripts/ci/check_canonical_owner_guard_mutants.py at 66794c5b",
+      "finding": "baseline 15 passed, then 53 of 53 caught, exit 0, 619 s (20 from round 1, 33 replaying round-2 findings)"
+    },
+    {
+      "claim": "The reviewers' probes are now caught",
+      "tier": "sandbox_execution",
+      "reference": "probe_guard2.py, probe_appraisal.py, probe_guard3_shapes.py re-run after the fix",
+      "finding": "guard 2: 11 of 11 caught (10 missed before); binding shapes 7 of 7 (6 missed before); greg/appraisal.py:558 reported for whole-module and qualname-restricted alternates"
+    },
+    {
+      "claim": "Removing any single registry entry fails a guard",
+      "tier": "sandbox_execution",
+      "reference": "postfix.py replay of every registry finding through every guard",
+      "finding": "48 of 48 single-entry deletions caught (17 survived on round 1)"
+    },
+    {
+      "claim": "The guard merges cleanly and passes on #196's current head",
+      "tier": "sandbox_execution",
+      "reference": "git merge-tree --write-tree with origin/claude/greg-full-machine-completion-whgiee (a986fc74, 120 commits past b1950be2) and eight other refs; guard test on each merged tree",
+      "finding": "all 9 merges clean; 15 passed on the merged tree with a986fc74 and with 7 of the 8 other refs"
+    },
+    {
+      "claim": "Owners recorded as CANONICAL follow what greg imports and calls",
+      "tier": "primary_source",
+      "reference": "greg/foundry_bridge.py (foundry.apply, SYSTEMS[48]='teams'); greg/path.py business_loop_closed; greg/improvement.py; greg/capabilities.py _lazy bindings; greg/body.py send_signed and greg/remote.py handle",
+      "finding": "confirmed by the fidelity reviewer, with two evidence lines corrected in round 2"
+    },
+    {
+      "claim": "Related checks are unaffected",
+      "tier": "unit_test",
+      "reference": "check_authority_singleton.py; check_schema_refs.py; test_developmental_inheritance, test_greg_packaging, test_autonomy, test_omnimorph_v1; test_release_exclusions, test_governance_integrity, test_cortex_register",
+      "finding": "authority singleton and schema refs exit 0; 97 passed; 185 passed"
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "Round 1 passed its own 20 mutants and the reviews still confirmed every finding against it",
+      "tier": "sandbox_execution",
+      "reference": "two reviews of 77deac50 by separate agents of this session (findings F1-F8, MUH-F1-MUH-F6)",
+      "finding": "a mutant set written by the builder did not find the dynamic-import, copy, vacuous-marker, second-canonical, founder-flip and deletion gaps"
+    },
+    {
+      "claim": "The first import guard did not follow _lazy",
+      "tier": "unit_test",
+      "reference": "guard 2 with and without its _lazy branch, organ-exchange alternate set to RETIRED",
+      "finding": "0 findings without the branch, 2 with it (greg/capabilities.py:1001 and :1007); 3 after round 2, adding appraisal.py:558"
+    },
+    {
+      "claim": "Two records' evidence lines were false in round 1",
+      "tier": "sandbox_execution",
+      "reference": "F7 (business.commercial_loop importers) and MUH-F4 (a pytest spy tracing tribunal.critique -> founder_revert -> _reopen_regressions)",
+      "finding": "corrected; the prose evidence in records is checked by review, not by the test"
+    },
+    {
+      "claim": "The heuristic has a known boundary",
+      "tier": "unit_test",
+      "reference": "scratch tree with MU-B's greg/readiness.py",
+      "finding": "its RUNGS capability-readiness ladder is not flagged by any marker"
+    },
+    {
+      "claim": "#235 fails the guard when merged",
+      "tier": "sandbox_execution",
+      "reference": "merged tree with origin/claude/standing-approval-regression-20261030 (ac5ff82f)",
+      "finding": "1 failed, 14 passed: greg/autonomy.py:50 LEVELS, :51 EARNED_CEILING, :250 earned_level; no retired import and no unresolved dynamic import"
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "Every duplicated function on GREG's mission path has one recorded owner or an explicit founder decision, and a second implementation or a greg import of a retired or historical alternate cannot land without a record that names its status and its retirement or revival condition.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "Section 52's fields exist for eight functions, mapped onto canonical, status (ALTERNATE, RESEARCH, HISTORICAL, RETIRED), migration_path, retirement_condition and revival_condition",
+        "amplified_value": "The program's next modules meet a named owner and a migration path instead of an audit after the fact"
+      },
+      {
+        "id": "A2",
+        "statement": "The check runs in Canonical CI job 1 with no workflow change",
+        "amplified_value": "Enforcement starts on the next PR to #196 without touching canonical-ci.yml, which several open PRs hold"
+      },
+      {
+        "id": "A3",
+        "statement": "The three undecided owners carry the evidence on each side, a safe default and a review trigger, and resolve only through a ruling record that names them",
+        "amplified_value": "The founder's decisions sit next to the code they decide and cannot be flipped by a silent YAML edit"
+      },
+      {
+        "id": "A4",
+        "statement": "No new authority plane, file format or runtime component",
+        "amplified_value": "Reverting is file-level; nothing at runtime depends on the registry"
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "Guard 3 is a name and structure heuristic with a stated boundary (near copies, methods, code outside the six packages, a second implementation inside a listed module, generic names report and status)",
+        "severity": "medium",
+        "response_type": "evidence",
+        "redesigned_response": "Three rules instead of one (markers, exact registered names, structural copies), every binding shape covered, and the boundary written in the README and the PR"
+      },
+      {
+        "id": "D2",
+        "statement": "Guard 2 resolves names per file and only from constants and module-level string tables",
+        "severity": "low",
+        "response_type": "protective",
+        "redesigned_response": "A dynamic import it cannot resolve fails its own test unless ALLOWED_DYNAMIC gives the reason; a stale allowlist entry also fails"
+      },
+      {
+        "id": "D3",
+        "statement": "PINNED, MUST_FLAG and ALLOWED_DYNAMIC live in the test, so one diff can change both the registry and its pin",
+        "severity": "medium",
+        "response_type": "governance",
+        "redesigned_response": "Every removal, second owner, marker narrowing or founder flip fails unless the pin changes in the same reviewed diff, so the change is visible"
+      },
+      {
+        "id": "D4",
+        "statement": "The founder_ruling check cannot authenticate the founder",
+        "severity": "medium",
+        "response_type": "governance",
+        "redesigned_response": "The ruling must be a file under docs/decisions/ or docs/intent/ that names the record and is accepted or active, and it may only promote a recorded candidate; writing it is a visible act"
+      },
+      {
+        "id": "D5",
+        "statement": "In-flight work meets new friction: #235 fails until it records itself, and WU-03, WU-06, WU-12 and WU-13 must do the same",
+        "severity": "low",
+        "response_type": "modularity",
+        "redesigned_response": "Adding a candidate, alternate or distinct entry needs no test change; each record's migration_path names what the incoming module must do"
+      },
+      {
+        "id": "D6",
+        "statement": "The mutant gate is not in CI and takes about 10 minutes",
+        "severity": "low",
+        "response_type": "governance",
+        "redesigned_response": "Named for the #196 integrator to wire into canonical-ci.yml, which this unit may not edit"
+      },
+      {
+        "id": "D7",
+        "statement": "Five CANONICAL designations are decided by import evidence, not by a founder ruling",
+        "severity": "medium",
+        "response_type": "governance",
+        "redesigned_response": "The registry is PROPOSED, like every record in the map; it retires, attaches or activates nothing, and each alternate keeps a retirement or revival condition"
+      },
+      {
+        "id": "D8",
+        "statement": "A large test with its own AST resolver adds review and maintenance surface",
+        "severity": "low",
+        "response_type": "evidence",
+        "redesigned_response": "53 mutants pin each safeguard to a named test, so a weakening edit fails"
+      }
+    ],
+    "comparisons": {
+      "baseline": "b1950be2: an owner map nobody reads, recording concerns only; no test fails on a second implementation or on an import of a superseded one",
+      "do_nothing": "Section 52 unmet; #235, WU-03, WU-06, WU-12 and WU-13 add unrecorded generations",
+      "simplest_viable_alternative": "Round 1 (registry, existence check, direct-import guard, markers): 20 of 20 own mutants caught, then 16 confirmed findings from two reviews, most of them bypasses; superseded by round 2",
+      "strongest_competing_architecture": "Runtime single-owner dispatch: enforces at use, but changes runtime behaviour, needs hot files held by open PRs, and would decide three founder decisions by code",
+      "reversible_experiment": "This change: four files, no runtime effect, reverted by reverting the branch; enforcement can be loosened only by a visible edit to the test"
+    },
+    "rejected_alternatives": [
+      {
+        "name": "Extend scripts/ci/check_authority_singleton.py",
+        "rejection_reason": "It counts authority artifacts and says it does not restrict multiple capability implementations; putting capability owners there mixes authority with capability (Final Build Order section 3)",
+        "revival_evidence": "A duplicated function that is itself an authority artifact"
+      },
+      {
+        "name": "Record owners in docs/collaboration/DEVELOPMENTAL-INHERITANCE-2026-09-30.json",
+        "rejection_reason": "It places PRs and branches on path nodes and has no per-function canonical or alternate",
+        "revival_evidence": "The inheritance record gains per-function fields"
+      },
+      {
+        "name": "Record owners in greg/path.json",
+        "rejection_reason": "It is read at runtime by greg/path.py, greg/metrics.py, greg/planner.py and others; editing it could change runtime behaviour, which this unit may not do",
+        "revival_evidence": "A founder decision to make ownership part of the path"
+      },
+      {
+        "name": "Record owners under governance/",
+        "rejection_reason": "governance/ holds the live integrity tripwire over founder-signed digests; an owner map is not signed authority data",
+        "revival_evidence": "Founder signing of ownership rulings"
+      },
+      {
+        "name": "Report-only guard for one wave",
+        "rejection_reason": "The duplications the unit exists to stop would land during the wave; false positives were measured instead on #235's and MU-B's modules and on nine merged trees",
+        "revival_evidence": "A false positive that can be cleared only by editing PINNED or weakening a guard"
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Two reviews of round 1 (77deac50), done by separate agents of this same session (not independent sessions or humans), attacked the guards with probes on synthetic and real trees: one for bypasses, one for fidelity to the scope and the evidence. They reported 16 findings (F1-F9, MUH-F1-MUH-F7), all confirmed; F9 repeats MUH-F3 and MUH-F6, and MUH-F7 repeats F7. Round 2 (66794c5b) fixed every one, each with a regression test that fails on 77deac50, and added 33 mutants that replay them. A final verifier re-ran the guard, the mutants, related suites, both CI scripts and merge checks against #196's current head and eight other refs.",
+    "new_weaknesses": [
+      {
+        "id": "W1",
+        "category": "fragility",
+        "statement": "F1: guard 2 missed 10 constant-name dynamic-import forms, including greg's own __import__(...).name idiom, getattr and sys.modules",
+        "strengthening_response": "A resolver for import_module and __import__ (name=, package=, relative names, fromlist), attribute chains, assigned names to a fixed point, getattr, vars, __dict__ and sys.modules; probe 11 of 11 caught"
+      },
+      {
+        "id": "W2",
+        "category": "fragility",
+        "statement": "F2: greg/appraisal.py:558 reaches greg.organ_exchange.verify_delivery through the DELIVERING table, unseen, so retiring the alternate under its recorded condition would break appraisal silently",
+        "strengthening_response": "Module-level string tables are resolved; unresolvable dynamic imports fail unless allowlisted with a reason; the record's evidence and retirement condition name appraisal"
+      },
+      {
+        "id": "W3",
+        "category": "gaming",
+        "statement": "F3: a verbatim copy under its own registered name passed (send_signed, exchange, form/act/dissolve, tick/select)",
+        "strengthening_response": "Exact registered names fail outside the record (only report and status exempt, each defined by at least three other guarded modules), and structural copies fail under any name"
+      },
+      {
+        "id": "W4",
+        "category": "gaming",
+        "statement": "F4: markers that can never match passed the shape check, so #235's failure could be cleared by narrowing them",
+        "strengthening_response": "MUST_FLAG lists the names each record must catch, including #235's LEVELS, EARNED_CEILING and earned_level"
+      },
+      {
+        "id": "W5",
+        "category": "gaming",
+        "statement": "F5: a second implementation could list itself as another CANONICAL module",
+        "strengthening_response": "Each record's canonical module set is pinned exactly; a second module must be an ALTERNATE"
+      },
+      {
+        "id": "W6",
+        "category": "gaming",
+        "statement": "F6: a full unilateral rewrite of a NEEDS_FOUNDER_DECISION record to CANONICAL passed every guard",
+        "strengthening_response": "FOUNDER_DECISIONS plus a founder_ruling file that names the record, is accepted or active, and may only promote a recorded candidate"
+      },
+      {
+        "id": "W7",
+        "category": "gaming",
+        "statement": "MUH-F1: deleting two whole records or 17 single entries passed",
+        "strengthening_response": "REQUIRED covers all 8 records and PINNED every (module, qualname); 48 of 48 deletions caught"
+      },
+      {
+        "id": "W8",
+        "category": "fragility",
+        "statement": "F8: bindings in for, while and match blocks, walrus, import aliases and globals() keys were invisible to guard 3",
+        "strengthening_response": "Every module-level binding shape covered; probe 7 of 7 caught"
+      },
+      {
+        "id": "W9",
+        "category": "other",
+        "statement": "F7, MUH-F2, MUH-F3, MUH-F4: record evidence was wrong or incomplete (commerce importers; GoalChase unrecorded; four evidence vocabularies unrecorded; a second writer of regression reopenings)",
+        "strengthening_response": "Evidence corrected; GoalChase a RESEARCH alternate; greg.path EVIDENCE_STATUS candidate C; TEST_TIERS joins side B; VERIFIER_LEVELS and the mind coverage STATUSES distinct; founder_revert a canonical qualname"
+      },
+      {
+        "id": "W10",
+        "category": "comprehensibility",
+        "statement": "MUH-F5, MUH-F6: four records lacked migration_path, undecided records lacked review_trigger, and the README miscounted mutants and overstated what was machine-checked",
+        "strengthening_response": "Both fields required and added; README corrected and every number re-checked by the final verifier"
+      },
+      {
+        "id": "W11",
+        "category": "fragility",
+        "statement": "The stronger checks hit real cases on the tree: evolution sandbox dynamic imports, OMNIMORPH re-exported through foundry/pipeline.py, and exact-name collisions (greg/mcp_tools.py act, three verify_delivery)",
+        "strengthening_response": "Sandbox sites allowlisted with their reason; re-exports followed to their origin; collisions recorded as distinct with why"
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "accepted",
+        "rationale": "Round 2 closed every bypass the reviewers found; the remaining boundary is stated, and no static check of names and structure can see a semantic re-implementation under new names",
+        "owner": "#196 integrator and the registry's maintainers (any session editing function_owner_records)",
+        "review_trigger": "A duplicate of a registered function lands on #196 while the guard passes"
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "resolved",
+        "rationale": "Fail-closed on what it cannot resolve; three allowlisted sites carry reasons and a stale entry fails",
+        "owner": "#196 integrator",
+        "review_trigger": "A new dynamic-import site in greg/ that needs an allowlist entry"
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "accepted",
+        "rationale": "The pins turn a silent registry edit into a visible test edit; review is the remaining control",
+        "owner": "#196 integrator reviewing any diff to PINNED, MUST_FLAG, ALLOWED_DYNAMIC or FOUNDER_DECISIONS",
+        "review_trigger": "Any PR that edits those constants"
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "deferred",
+        "rationale": "Authenticating a ruling needs the founder's enrolled key and a signed-ruling path that does not exist for ownership records",
+        "owner": "Alfonso Lopez",
+        "review_trigger": "Founder key enrollment, or the first ruling on goal runtime, evidence ladder or autonomy levels"
+      },
+      {
+        "disadvantage_id": "D5",
+        "outcome": "resolved",
+        "rationale": "Verified on #235's merged tree: it fails only guard 3 on its three ladder names and clears by adding a candidate entry with no test change",
+        "owner": "Authors of #235, WU-03, WU-06, WU-12 and WU-13",
+        "review_trigger": "Each of those PRs landing on #196"
+      },
+      {
+        "disadvantage_id": "D6",
+        "outcome": "deferred",
+        "rationale": "canonical-ci.yml was outside this unit's scope and is held by other PRs",
+        "owner": "#196 integrator",
+        "review_trigger": "Next canonical-ci.yml change on #196"
+      },
+      {
+        "disadvantage_id": "D7",
+        "outcome": "deferred",
+        "rationale": "Adopting the map's canonical designations is an ownership decision; the PROPOSED status and the retirement conditions keep it reversible",
+        "owner": "Alfonso Lopez (adoption); #196 integrator (intake)",
+        "review_trigger": "Founder review of this draft PR"
+      },
+      {
+        "disadvantage_id": "D8",
+        "outcome": "accepted",
+        "rationale": "Each safeguard is pinned by a mutant naming its test; 53 of 53 caught",
+        "owner": "#196 integrator",
+        "review_trigger": "A mutant goes STALE or SURVIVES after an edit to the test"
+      }
+    ],
+    "final_design": "Eight function_owner_records in docs/collaboration/ARCHITECTURE-OWNERSHIP-MAP.yaml: five CANONICAL (temporary teams, commerce closure, regression closing, organ exchange, inbox transport) and three NEEDS_FOUNDER_DECISION (goal runtime, status evidence ladder, autonomy levels), each with migration_path, every alternate with a retirement or revival condition and every undecided record with decision_needed, safe_default and review_trigger. tests/unit/test_canonical_owner_guard.py (15 tests): existence by ast; a greg import guard over every import form greg uses, failing closed on unresolvable dynamic imports; a definition guard over every module-level binding in six packages by marker, exact registered name and structural copy; PINNED, FOUNDER_DECISIONS and MUST_FLAG. scripts/ci/check_canonical_owner_guard_mutants.py: 53 mutants, each naming its test.",
+    "residual_risks": [
+      {
+        "risk": "A re-implementation under new names, a near copy, a method, or code outside the six guarded packages lands unrecorded",
+        "mitigation": "Stated boundary; reviewers check new modules against the records' functions and effects",
+        "owner": "#196 integrator",
+        "review_trigger": "A duplicate found by audit that the guard missed"
+      },
+      {
+        "risk": "A ruling file written by an agent resolves a founder decision",
+        "mitigation": "The ruling must name the record, be accepted or active and promote only a recorded candidate; the edit is visible in the diff",
+        "owner": "Alfonso Lopez and the #196 integrator",
+        "review_trigger": "Any new file under docs/decisions/ or docs/intent/ that names an OWN-FN record"
+      },
+      {
+        "risk": "The registry and its pins are edited together to clear a failure",
+        "mitigation": "The pins make the edit visible; the mutant gate catches a weakened guard if wired into CI",
+        "owner": "#196 integrator",
+        "review_trigger": "Any PR touching tests/unit/test_canonical_owner_guard.py"
+      },
+      {
+        "risk": "Without the mutant gate in CI, a later edit can weaken a guard while the 15 tests still pass",
+        "mitigation": "Wire scripts/ci/check_canonical_owner_guard_mutants.py into canonical-ci.yml",
+        "owner": "#196 integrator",
+        "review_trigger": "Intake of this PR"
+      }
+    ],
+    "recommendation": "NEEDS_FOUNDER_DECISION"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Recorded with thresholds; neither blocks a draft. The first blocks treating any OWN-FN founder decision as resolved; the second blocks claiming the guard covers semantic duplication.",
+    "entries": [
+      {
+        "role": "Adversarial Reviewer",
+        "position": "Do not treat a founder_ruling file as the founder's decision until it is signed by the founder's enrolled key; until then, any PR that flips one of the three FOUNDER_DECISIONS records needs the founder's explicit review in the PR itself.",
+        "rationale": "The check proves a file exists, names the record and says accepted or active; an agent can write that file.",
+        "evidence_threshold": "A ruling path that verifies a founder signature, or the founder's own approval recorded on the PR that adds the ruling",
+        "owner": "Alfonso Lopez",
+        "review_trigger": "The first PR that adds a founder_ruling to an OWN-FN record"
+      },
+      {
+        "role": "Adversarial Reviewer",
+        "position": "The guard should be described as a review-time check of names and structure, not as a guarantee of one owner per function.",
+        "rationale": "Near copies, renamed rewrites, methods and code outside the six packages pass; MU-B's readiness ladder is already an example the markers do not see.",
+        "evidence_threshold": "A semantic or runtime check (for example a capability router that dispatches each registered function) that catches a renamed rewrite",
+        "owner": "#196 integrator",
+        "review_trigger": "A duplicate found by audit that the guard missed"
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": true,
+    "approval_status": "pending",
+    "approver": "Alfonso Lopez (the three undecided owners and adoption of the five CANONICAL designations); #196 integrator for intake"
+  },
+  "migration_plan": "No data or runtime migration: the registry is a new section of an existing YAML file that nothing at runtime reads. Incoming modules record themselves per each record's migration_path: #235 adds greg.autonomy to OWN-FN-AUTONOMY-LEVELS as candidate side B; WU-03 greg/teams.py forms teams through #48 on foundry.apply or records itself as an ALTERNATE; WU-06 nodes.py goes through send_signed or handle or records itself; WU-12 greg/regressions.py extends greg/improvement.py's close rule or records itself; WU-13 governance/reality_ladder.py joins the evidence ladder as a candidate. A founder ruling file under docs/decisions/ or docs/intent/ that names a record moves it out of NEEDS_FOUNDER_DECISION. The #196 integrator wires the mutant script into canonical-ci.yml.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Revert the branch's commits (d96f6e76, 104c63aa, 77deac50, da9ba324, 66794c5b and the commit adding this record), or decline intake into #196",
+      "Nothing to migrate: no runtime file changed, the concern records in the ownership map are unchanged, and no status retired, attached or activated anything"
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "A registry status is read as authority: anything attaches, activates, retires or is granted because of it",
+    "The guard fails a PR that adds no second implementation of a registered function and no import of a retired or historical alternate, and the failure can be cleared only by editing PINNED or weakening a guard",
+    "A duplicate of a registered function lands on #196 while the guard passes, and the guard cannot be extended to catch that class",
+    "The founder rejects the registry's location or the five CANONICAL designations"
+  ],
+  "decision": "NEEDS_FOUNDER_DECISION",
+  "decision_owner": "Alfonso Lopez decides the three undecided owners (goal runtime, status evidence ladder, autonomy levels) and adoption of the five CANONICAL designations; the #196 integrator decides intake and wiring the mutant gate into canonical-ci.yml; session_01Kucyfm6YBHMTjaiC1M9hqD owns the reversible draft. Roles: three RETAIN, one EXPERIMENT (Adversarial Reviewer), one NEEDS_FOUNDER_DECISION (Founder-Intent Steward).",
+  "review_trigger": "#235 landing on #196 (it must add greg.autonomy as a candidate), any of WU-03, WU-06, WU-12 or WU-13 landing, a founder ruling on any of the three undecided records, or a duplicate found that the guard missed"
+}

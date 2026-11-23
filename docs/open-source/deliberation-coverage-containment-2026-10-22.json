@@ -1,0 +1,293 @@
+{
+ "decision_id": "DELIB-20261022-COVERAGE-CONTAINMENT",
+ "title": "Honest extraction coverage, bounded acquired binaries, and the evidence-soundness patch for the integrator",
+ "problem": "A scanned PDF page proved a phrase absent; acquired binaries' output was fully buffered with no memory ceiling; mission predicates judged a receipt's kept prefix as the whole value.",
+ "founder_intent_refs": [
+  "INTENT-20261022-OSS-METABOLISM",
+  "INTENT-20261001-FULL-MACHINE-COMPLETION"
+ ],
+ "baseline": "#201 head fe82005: found=false on scanned pages; subprocess.run(capture_output) then a length check; missions._field unwraps the prefix.",
+ "alternatives": [
+  {
+   "name": "Proposed: page coverage in document.text; RLIMIT_FSIZE/RLIMIT_AS limiter for catalog binaries; tri-state judge proposed as a patch to the missions owner",
+   "description": "Stdlib resource limits in a child of the existing isolated process; capabilities.run_isolated untouched; missions.py edited only by its owner.",
+   "advantages": [
+    "No new dependency",
+    "Fail-before evidence for every change",
+    "Respects the claimed missions seam"
+   ],
+   "disadvantages": [
+    "Blank pages count as unread",
+    "RLIMIT_AS unenforced on macOS",
+    "Engine fix waits on the owner"
+   ],
+   "revival_evidence": "n/a (selected)"
+  },
+  {
+   "name": "Bound output inside run_isolated for every caller",
+   "description": "Change the shared spawner to stream with a cap.",
+   "advantages": [
+    "Covers run_cli, git and every other caller"
+   ],
+   "disadvantages": [
+    "Shared seam owned by others; larger blast radius"
+   ],
+   "revival_evidence": "A second caller is shown to buffer an attacker-sized output"
+  },
+  {
+   "name": "OCR with Tesseract",
+   "description": "Read scanned pages instead of reporting them.",
+   "advantages": [
+    "Closes the scanned-PDF need"
+   ],
+   "disadvantages": [
+    "Not installed; installation is the founder's; needs its own oracle"
+   ],
+   "revival_evidence": "Founder installs tesseract-ocr"
+  },
+  {
+   "name": "Fail-closed binary licenses now",
+   "description": "Hold every unclassified binary.",
+   "advantages": [
+    "Lowest legal-supply-chain risk"
+   ],
+   "disadvantages": [
+    "442 of 707 binaries held on this body, shasum among them"
+   ],
+   "revival_evidence": "Founder chooses P1 in D-LIC-2"
+  }
+ ],
+ "do_nothing_option": {
+  "expected_outcome": "Forbidden-clause checks pass on scanned PDFs; a large output can exhaust the body's memory; long-output missions close falsely.",
+  "advantages": [
+   "No change"
+  ],
+  "disadvantages": [
+   "False closures",
+   "Unbounded resource use"
+  ]
+ },
+ "roles": [
+  {
+   "role": "Founder-Intent Steward",
+   "position": "The directive's priority zero: no closure on evidence not inspected.",
+   "material_concerns": [
+    "The generic engine fix is not in this PR"
+   ],
+   "evidence_refs": [
+    "EVIDENCE-SOUNDNESS-PATCH-2026-10-22.md"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Systems Architect",
+   "position": "Smallest sound change at each seam; no new evidence plane; Boolean interface kept.",
+   "material_concerns": [
+    "Tri-state on the wire is a shared contract"
+   ],
+   "evidence_refs": [
+    "patches/missions-incomplete-evidence.patch"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Adversarial Reviewer",
+   "position": "Every protection has a mutant that its tests catch; fail-before shown for each.",
+   "material_concerns": [
+    "Same-session review only"
+   ],
+   "evidence_refs": [
+    "5 OSS mutants caught",
+    "old adapter MemoryError under a 6 GB guard"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Operator and Maintainer",
+   "position": "Stdlib only; spool files removed; stderr tail reaches the record.",
+   "material_concerns": [
+    "macOS memory ceiling absent"
+   ],
+   "evidence_refs": [
+    "test_an_acquired_binary_runs_under_a_memory_ceiling_and_reports_its_stderr"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Evidence and Welfare Guardian",
+   "position": "Unknown is reported as unknown; the founder is asked rather than a strategy blamed.",
+   "material_concerns": [
+    "Refusal watches miss a refusal past 16 KiB under the patch"
+   ],
+   "evidence_refs": [
+    "EVIDENCE-SOUNDNESS-PATCH-2026-10-22.md 'What it does not do'"
+   ],
+   "recommendation": "EXPERIMENT"
+  }
+ ],
+ "evidence": [
+  {
+   "claim": "Scanned page never proves absence",
+   "tier": "sandbox_execution",
+   "reference": "tests/unit/test_greg_document_text.py",
+   "finding": "passes at f929246; fails on fe82005"
+  },
+  {
+   "claim": "Oversized output stopped at the ceiling",
+   "tier": "sandbox_execution",
+   "reference": "test_an_oversized_output_is_stopped_at_the_ceiling_without_being_buffered",
+   "finding": "refused in under 20 s; the old adapter exhausted a 6 GB guard"
+  },
+  {
+   "claim": "Engine patch closes the false pass",
+   "tier": "sandbox_execution",
+   "reference": "tests/unit/test_greg_incomplete_evidence.py in the patch",
+   "finding": "3 mission-path tests fail unpatched, pass patched; 35 passed on integration tip abc7a55"
+  }
+ ],
+ "counterevidence": [
+  {
+   "claim": "Fail-closed binary licenses are viable now",
+   "tier": "sandbox_execution",
+   "reference": "BINARY-LICENSE-POLICY-2026-10-22.md",
+   "finding": "false on this body: 442 of 707 held; scancode text reading leaves about 99 binaries held"
+  }
+ ],
+ "pass_1": {
+  "intended_outcome": "No mission closes, and no capability qualifies, on evidence it did not fully read; acquired binaries cannot exhaust the body.",
+  "advantages": [
+   {
+    "id": "A1",
+    "statement": "Completeness becomes a declared property any capability can report",
+    "amplified_value": "The engine patch honours complete: false generically, so future readers inherit it"
+   }
+  ],
+  "disadvantages": [
+   {
+    "id": "D1",
+    "statement": "Blank pages are indistinguishable from scans",
+    "severity": "low",
+    "response_type": "evidence",
+    "redesigned_response": "Reported as unread; pdfimages -list recorded as the discriminator"
+   },
+   {
+    "id": "D2",
+    "statement": "RLIMIT_AS not enforced on macOS",
+    "severity": "medium",
+    "response_type": "modularity",
+    "redesigned_response": "Output ceiling still enforced; stated limit"
+   },
+   {
+    "id": "D3",
+    "statement": "Engine fix depends on another owner",
+    "severity": "high",
+    "response_type": "governance",
+    "redesigned_response": "Tested patch that applies to both heads, routed to the owner"
+   }
+  ],
+  "comparisons": {
+   "baseline": "fe82005 behaviour",
+   "do_nothing": "false closures persist",
+   "simplest_viable_alternative": "report coverage and cap output at the existing adapter (selected)",
+   "strongest_competing_architecture": "stream-capped run_isolated for every caller",
+   "reversible_experiment": "revert the adapter limiter and the coverage fields"
+  },
+  "rejected_alternatives": [
+   {
+    "name": "Fail-closed binary licenses now",
+    "rejection_reason": "measured regression of 62% of the body; founder decision",
+    "revival_evidence": "Founder chooses P1 or P3"
+   }
+  ]
+ },
+ "pass_2": {
+  "attack_summary": "Attack the limiter (signals, spool files), the coverage claim (forged completeness), and the patch (forged wrappers, legacy receipts, refusal watches).",
+  "new_weaknesses": [
+   {
+    "id": "W1",
+    "category": "fragility",
+    "statement": "Python ignores SIGXFSZ and exec inherits it, so the binary saw EFBIG instead of dying",
+    "strengthening_response": "Limiter restores SIG_DFL; size check refuses at the ceiling either way"
+   },
+   {
+    "id": "W2",
+    "category": "gaming",
+    "statement": "A capability dict shaped like a truncation wrapper could be unwrapped",
+    "strengthening_response": "Only the exact wrapper with length > len(prefix) is unwrapped (tested)"
+   },
+   {
+    "id": "W3",
+    "category": "fragility",
+    "statement": "Legacy receipts cut lists silently",
+    "strengthening_response": "A list of exactly 1000 items is treated as possibly cut"
+   }
+  ],
+  "pass_1_disadvantage_dispositions": [
+   {
+    "disadvantage_id": "D1",
+    "outcome": "accepted",
+    "rationale": "conservative and stated",
+    "owner": "session_013k41DnwrjzpXL33r3j9BgB",
+    "review_trigger": "a mission over a document with blank pages is blocked"
+   },
+   {
+    "disadvantage_id": "D2",
+    "outcome": "accepted",
+    "rationale": "first body is Linux (Chromebook); stated",
+    "owner": "session_013k41DnwrjzpXL33r3j9BgB",
+    "review_trigger": "a macOS body"
+   },
+   {
+    "disadvantage_id": "D3",
+    "outcome": "accepted",
+    "rationale": "ownership respected; patch handed over with evidence",
+    "owner": "session_01FBS4KNJR59nSbdGbxo8Mbx",
+    "review_trigger": "integrator intake of #201"
+   }
+  ],
+  "final_design": "document.text coverage fields and unknown found; catalog binaries under a stdlib resource limiter; missions tri-state judge as an owner-applied patch.",
+  "residual_risks": [
+   {
+    "risk": "Refusal watch misses a refusal past 16 KiB under the patch",
+    "mitigation": "flagged to the owner",
+    "owner": "session_01FBS4KNJR59nSbdGbxo8Mbx",
+    "review_trigger": "patch intake"
+   },
+   {
+    "risk": "No OCR",
+    "mitigation": "reported, not read; Tesseract recorded",
+    "owner": "Alfonso Lopez",
+    "review_trigger": "founder installs tesseract-ocr"
+   }
+  ],
+  "recommendation": "EXPERIMENT"
+ },
+ "dissent": {
+  "present": false,
+  "handling": "No dissent; the binary-license policy is put to the founder as D-LIC-2.",
+  "entries": []
+ },
+ "authority_impact": {
+  "level": "standard",
+  "changes_authority": false,
+  "requires_authorized_human": false,
+  "approval_status": "not_required",
+  "approver": null
+ },
+ "migration_plan": "Additive output fields; receipts gain coverage fields; no data migration.",
+ "rollback_plan": {
+  "possible": true,
+  "steps": [
+   "Revert f929246",
+   "The engine patch is not applied on this branch"
+  ],
+  "reason_impossible": null
+ },
+ "kill_criteria": [
+  "A scanned page again proves a phrase absent",
+  "A catalog binary's output is buffered past the ceiling"
+ ],
+ "decision": "EXPERIMENT",
+ "decision_owner": "Alfonso Lopez (merge, D-LIC-2); integrator session_01FBS4KNJR59nSbdGbxo8Mbx (intake, missions patch)",
+ "review_trigger": "Integrator intake of #201 or of the missions patch"
+}

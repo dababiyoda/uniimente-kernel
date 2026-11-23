@@ -205,5 +205,114 @@
    "greg path still reports N2 active: path nodes are sequential and this rehearsal did not kill -9 during an N2 genesis mission, so N3 is measured directly, not claimed as a node"
   ],
   "reality": "LOCAL-REAL rehearsal, test key, fictitious buyer, no money moved. Never counts as N3 for Alfonso and never as VEPMC."
+ },
+ "runbook_N2_to_N7_on_installed_body": {
+  "how": "the same installed body (rehearsal/home), driven as the founder would: console /ask, /sign, /decide, /accept for asks, decisions and acceptance; the runbook's CLI commands for mission new, sop and treasury; a fictitious buyer and person; test key; no money moved",
+  "code_on_body": [
+   "924bede..92e66e9 during N2-N7",
+   "e9c92e1 (with 3c92bc9, 1dfef4e) for the verification of the fixes"
+  ],
+  "N2": {
+   "ask": "Confirm ~/src/essay-draft.md is at most 1500 words",
+   "observed": "deficit.opened -> Genesis acquired acquired.text.wordcount.wc -> deficit.resolved -> filing waited at the approval boundary -> kill -9 of the body (pid 674) while waiting -> restarted (pid 742) with the same open APPROVAL -> console approve -> achieved -> appraised VERIFIED -> console accept",
+   "measure": {
+    "genesis_closure": {
+     "met": true,
+     "closures": [
+      {
+       "mission_id": "m:words-essay-draft-md",
+       "capability_id": "acquired.text.wordcount.wc"
+      }
+     ]
+    },
+    "vepmc_at_least_one": {
+     "value": 2
+    }
+   }
+  },
+  "N4": {
+   "observed": "two more word-limit closures -> GREG proposed sop-bdc37e429313c8e0 (inputs path, words; pre-approvable file-record) -> ratified with --pre-approve file-record -> three runs, each closed with no ask, appraised VERIFIED",
+   "measure": {
+    "met": true,
+    "interventions_per_outcome": {
+     "taught": 1.0,
+     "ratified_runs": 0.0
+    },
+    "model_cost_usd_per_outcome": 0.0
+   }
+  },
+  "N6": {
+   "mission": "m:shared-design-the-greg-logo (Dana Reyes, contract, logo.png)",
+   "observed": "handoff.md written first with the right to decline; consent.txt, logo.png, review.txt ACCEPT each noticed within 65-111 s; outcome.md written; appraised VERIFIED; accepted",
+   "measure": {
+    "met": true,
+    "cases": [
+     {
+      "mission_id": "m:shared-design-the-greg-logo",
+      "person_steps": 2
+     }
+    ]
+   }
+  },
+  "N3_more": {
+   "observed": "leases cases 02-04 with --venture leases --approve-writes: two approvals plus four person steps each, each person step noticed in 64-121 s, every case appraised VERIFIED and accepted",
+   "measure": {
+    "business_loop_closed": {
+     "met": true,
+     "value": 4
+    }
+   }
+  },
+  "N7": {
+   "observed": "GREG proposed sop-883c946460c1243d from the three leases cases (inputs buyer, reference; pre-approvable draft-offer, record-settlement) -> ratified with both writes pre-approved -> run twice with --venture audits -> each closed with no approval stop (4 founder steps instead of 6) -> treasury set audits USD taxes 120, reserves 80 -> books",
+   "measure": {
+    "met": true,
+    "per_outcome": {
+     "interventions": {
+      "taught_in_leases": 6.0,
+      "run_in_audits": 4.0
+     },
+     "hours_to_close": {
+      "taught_in_leases": 0.1567,
+      "run_in_audits": 0.155
+     }
+    },
+    "books_audits": {
+     "verified_revenue": "500.00",
+     "funded": {
+      "taxes_and_binding_legal_obligations": "120.00",
+      "emergency_liquidity_and_operating_reserves": "80.00"
+     }
+    }
+   }
+  },
+  "N5": "no ledger predicate yet (greg/path.json predicate null); never counted as passed. A real closure needs model-backed workers and a held-out team-vs-single-worker comparison; GREG has no model credentials in this container and the session's own credentials are never GREG's.",
+  "defects_found_and_fixed": [
+   {
+    "commit": "3c92bc9",
+    "defect": "a person's step ask said 'put the deliverable where the mission's check reads it' without naming the file or folder; an answer (console or phone), which changes nothing for the mission, removed the ask from status, the morning report and the phone while the mission kept waiting",
+    "verified_on_body": "console: 'Where GREG looks: save acceptance.txt in .../m_case-lease-review-05: Fir Street Landlords LLC's written acceptance, carrying CASE-LEASE-REVIEW-05', no decide button; after a signed approve the ask stayed in status() with answered=approve and the console said it was only recorded; once the file was observed it left every surface; case 05 closed VERIFIED"
+   },
+   {
+    "commit": "1dfef4e",
+    "defect": "every signed runbook command after N2 failed as written: N3/N6 omit --key (passphrase prompt, then TypeError traceback); N4/N7 name ~/greg-founder.pem while install.sh writes ~/.greg-founder.pem (FileNotFoundError); the N7 example used --set price/offer/acceptance, which a procedure taught by identical-terms cases refuses",
+    "verified_on_body": "the runbook's N3 command with no --key signed and dropped the mission (case 05)"
+   },
+   {
+    "commit": "e9c92e1",
+    "defect": "greg path / status showed N0-N4 achieved and N5 active while N6 and N7 measured met: position() discarded every measurement after the first unmeasurable node",
+    "verified_on_body": "greg path: achieved N0-N4, active N5, met_ahead N6 and N7"
+   }
+  ],
+  "supervision": {
+   "systemd_unit": "greg service install --platform linux writes greg-body.service (Restart=on-failure, RestartSec=5, WantedBy=default.target); systemd-analyze verify (systemd 255) passes",
+   "not_rehearsed": "a real systemd user manager does not start in this container (systemd --user exits 1 with no output; not PID 1, uid 0), so supervision here remained a bash restart loop; Chromebook reboot/sign-out behavior is untested here"
+  },
+  "negative_evidence": [
+   "my first N7 driver passed --set price/offer/acceptance as the runbook showed and would have been refused; corrected to the procedure's real inputs before running (and the runbook corrected)",
+   "status()['goals'] carries no case-folder path; the runbook's '(greg status shows the path)' was true only inside an open ask's evidence JSON; the line was replaced",
+   "person-step latency after 924bede is bounded by the 30 s tick plus the mission's own observe/act cycles: 30-121 s per step here, with the full test suite running on the same machine during part of it"
+  ],
+  "reality": "LOCAL-REAL rehearsal on Linux (not ChromeOS), test key, fictitious buyers and person, no money moved. Never counts as any node for Alfonso and never as VEPMC."
  }
 }

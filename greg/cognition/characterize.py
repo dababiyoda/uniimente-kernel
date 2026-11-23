@@ -186,6 +186,11 @@ def characterize(families=None, *, repeats: int = 5, quick: bool = False) -> dic
         largest = max((r["size"] for r in ladder_rows if r["correct"]), default=None)
         independence = {r["evaluator_result"].get("independence") for r in receipts if r.get("evaluator_result")}
         cross = sorted({k for r in receipts for k in (r.get("evaluator_result") or {}).get("cross_checks", {})})
+        # the verifier's second-engine certificate: which engine attacked the claim, how independent it is of the
+        # solver, and how each check ended (NOT_RUN where that engine is not installed, never counted as a pass)
+        certified = [c for r in receipts if (c := (r.get("evaluator_result") or {}).get("certificate"))]
+        certificates = sorted({f"{c['engine']}: {c['independence']}" for c in certified})
+        outcomes = {s: sum(c["status"] == s for c in certified) for s in sorted({c["status"] for c in certified})}
         unavailable = all(r["state"] == "CAPABILITY_DEFICIT" for r in ladder_rows)
         report["families"][family] = {
             "operation": operation,
@@ -200,7 +205,8 @@ def characterize(families=None, *, repeats: int = 5, quick: bool = False) -> dic
                                "rate_wilson95": wilson(sum(invariant), len(invariant)),
                                "transform": "renamed identifiers and reversed order"},
             "correlated_failure_evidence": {"verifier_independence": sorted(i for i in independence if i),
-                                            "cross_checks": cross},
+                                            "cross_checks": cross, "certificates": certificates,
+                                            "certificate_outcomes": outcomes},
         }
     return report
 

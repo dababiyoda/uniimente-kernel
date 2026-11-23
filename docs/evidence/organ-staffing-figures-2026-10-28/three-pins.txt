@@ -1,0 +1,18 @@
+# The real-organ contrast test against three WealthMachine heads (DALEOBANKS 664ac98c, Kernel child of 4e970f2d)
+# command per head: UNIIMENTE_WEALTHMACHINE_ROOT=<checkout> python -m pytest -q tests/integration/test_organ_staffing_figures.py --tb=no -rf
+# python 3.11.17, organ venvs from each organ's own requirements (CI job 8 recipe), Landlock ABI 7, bubblewrap 0.9.0
+== WMI 0e80582 
+7 passed in 13.69s
+== WMI b2c7f23 (dirty tree: committed HEAD runs)
+FAILED test_hostile_reports_keep_explicit_uncertainty[contradictory]
+FAILED test_hostile_reports_keep_explicit_uncertainty[replayed]
+2 failed, 5 passed in 13.60s
+== WMI 7a45d22 
+FAILED test_a_shortage_changes_reasons_evidence_requests_and_priority_with_nothing_else_changed
+FAILED test_the_fifteen_step_missions_answer_holds_the_verdict_and_leads_with_its_shortage
+FAILED test_hostile_reports_keep_explicit_uncertainty[contradictory]
+FAILED test_hostile_reports_keep_explicit_uncertainty[inconsistent]
+FAILED test_hostile_reports_keep_explicit_uncertainty[replayed]
+FAILED test_hostile_reports_keep_explicit_uncertainty[self-promoting]
+FAILED test_hostile_reports_keep_explicit_uncertainty[truncated]
+7 failed in 13.52s

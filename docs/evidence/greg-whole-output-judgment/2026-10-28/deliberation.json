@@ -1,0 +1,325 @@
+{
+ "decision_id": "GREG-WHOLE-OUTPUT-JUDGMENT-20261028",
+ "title": "Decide a check over the whole output its receipt kept, on every path that judges a receipt",
+ "problem": "Since 3d2f9cc4/af6fdfe1 a check the 16 KiB receipt prefix cannot decide is INSUFFICIENT: GREG re-observes, then asks the founder (SENSOR_FAILURE). Since f9086781/40ce615d the whole output (<= 1 MiB) is already kept in the body's content-addressed store and its address recorded on the receipt, but only `by: artifact` binds read it. So a fact past 16 KiB of fs.read, document.text or any long output costs the founder an ask, a person's refusal in a long note is never heard, and Goal Gravity distrusts the engine's own reading. Separately, one unmeasurable check beside a passing one never reached the founder at all (streak reset), and a lone surrogate past 16 KiB failed the action into a reconciliation ask.",
+ "founder_intent_refs": [
+  "Founder directive 2026-10-22 sections VI (full-document capability, hostile cases 1-14) and VIII (a preview is not a result)",
+  "INTENT-20261019-UPWARD-ASCENT (recombine the artifact route with the evidence judge)",
+  "INTENT-20261001-FULL-MACHINE-COMPLETION",
+  "INTENT-2026-09-25-SPIDER-WEB-COMPOUNDING (proof/truth, reliability, founder intervention)"
+ ],
+ "baseline": "#196 190c58fb: judge() proves only monotone facts from the kept prefix; INSUFFICIENT re-observes then asks; artifact_output() reads the kept whole only for `by: artifact` binds; appraisal, preconditions, refusal watch and Goal Gravity judge the kept prefix.",
+ "alternatives": [
+  {
+   "name": "simplest_viable_alternative",
+   "description": "One function, judge_receipt: judge the kept output; only when INSUFFICIENT and the receipt recorded an artifact, read it through the existing artifact_output binding (address from the ledger, re-hashed, must cut to the kept output) and judge it whole. Call it from every receipt reader.",
+   "advantages": [
+    "Reuses the existing store, binding and judge; no new ledger, store, authority or format.",
+    "Uncut outputs and receipts without an artifact behave exactly as before."
+   ],
+   "disadvantages": [
+    "Bounded by the store's 1 MiB per output; larger outputs still ask."
+   ],
+   "revival_evidence": "Selected after two passes."
+  },
+  {
+   "name": "strongest_competing_architecture",
+   "description": "A streaming full-value predicate service: capabilities register a query interface (as document.text's phrase) and the judge asks the capability to evaluate the predicate over its full source with a coverage certificate.",
+   "advantages": [
+    "No size ceiling; works for sources too large to keep."
+   ],
+   "disadvantages": [
+    "Every capability needs a query contract; re-running a sensor is a new observation, not the receipt's own; much larger surface."
+   ],
+   "revival_evidence": "Repeated founder asks for outputs over 1 MiB, or a sensor whose whole output cannot be kept."
+  },
+  {
+   "name": "raise_receipt_limit",
+   "description": "Raise RECEIPT_TEXT_LIMIT so receipts keep more.",
+   "advantages": [
+    "Trivial."
+   ],
+   "disadvantages": [
+    "Ledger growth for every long output; moves the cliff, does not remove it."
+   ],
+   "revival_evidence": "Ledger cost measured as negligible at a larger limit."
+  },
+  {
+   "name": "reversible_experiment",
+   "description": "Child branch off #196 with failing-first tests and mutants; no adoption without the integrator.",
+   "advantages": [
+    "No change to #196 until intake."
+   ],
+   "disadvantages": [
+    "Not exercised on a founder device."
+   ],
+   "revival_evidence": "Current development scope."
+  }
+ ],
+ "do_nothing_option": {
+  "expected_outcome": "Every long output keeps costing a founder ask; refusals in long notes stay unheard; Goal Gravity distrusts long readings; a passing check beside an unmeasurable one hides the failure forever.",
+  "advantages": [
+   "No change."
+  ],
+  "disadvantages": [
+   "Founder intervention on facts GREG already holds; a silent liveness hole."
+  ]
+ },
+ "roles": [
+  {
+   "role": "Founder-Intent Steward",
+   "position": "Advances section VI's full-document effect and lowers founder intervention without lowering the evidence bar. All five roles performed by one agent session (session_01KucyfnPRxLT4YY1UibJ3Ee); self-review, not independent review.",
+   "material_concerns": [
+    "Outputs over 1 MiB still ask; the directive's streaming traversal remains open."
+   ],
+   "evidence_refs": [
+    "greg/missions.py judge_receipt",
+    "tests/unit/test_greg_whole_output_judgment.py"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Systems Architect",
+   "position": "One judge entry for every receipt reader; the artifact binding is the existing one; no new authority, store or ledger record shape.",
+   "material_concerns": [
+    "Five call sites must stay consistent; a mutant per site guards it."
+   ],
+   "evidence_refs": [
+    "scripts/ci/check_whole_output_mutants.py"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Adversarial Reviewer",
+   "position": "A deleted, altered, non-JSON or foreign artifact, a missing store, a refused store and an output claiming its own artifact record all stay INSUFFICIENT; the appraiser refutes a closure whose artifact was altered.",
+   "material_concerns": [
+    "The store and ledger share a host: whoever controls the host can rewrite both. Same trust boundary as the ledger itself."
+   ],
+   "evidence_refs": [
+    "test_damaged_or_foreign_evidence_never_decides",
+    "test_an_altered_artifact_makes_the_appraiser_refute_the_closure"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Operator and Maintainer",
+   "position": "Reads at most one 1 MiB JSON per undecided check; nothing written changes. A failing store degrades to the old ask.",
+   "material_concerns": [
+    "Store retention: an artifact pruned later makes old receipts undecidable again (honestly)."
+   ],
+   "evidence_refs": [
+    "greg/authority.py keep_output"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Evidence and Welfare Guardian",
+   "position": "A person's refusal past 16 KiB is now honored instead of left unheard; no check passes on a prefix.",
+   "material_concerns": [
+    "Canonical Unicode equivalence is not applied (NFD text vs NFC phrase): exact code points, as before; recorded, not changed here."
+   ],
+   "evidence_refs": [
+    "test_a_refusal_written_past_16_kib_of_a_note_is_honored"
+   ],
+   "recommendation": "EXPERIMENT"
+  }
+ ],
+ "evidence": [
+  {
+   "claim": "A required phrase past 16 KiB closes ACHIEVED with 0 founder asks and the separate appraiser returns VERIFIED",
+   "tier": "unit_test",
+   "reference": "tests/unit/test_greg_whole_output_judgment.py::test_a_required_phrase_past_16_kib_closes_the_mission_without_asking_and_is_verified",
+   "finding": "Fails with the whole-output read removed (mutant 1): the ask returns."
+  },
+  {
+   "claim": "Over a kept whole, verdicts equal the verdicts on the value uncut",
+   "tier": "unit_test",
+   "reference": "test_over_a_kept_whole_the_verdict_is_the_verdict_on_the_value_uncut",
+   "finding": "Seven output shapes, 30 predicates."
+  },
+  {
+   "claim": "13 guards are each necessary",
+   "tier": "unit_test",
+   "reference": "scripts/ci/check_whole_output_mutants.py",
+   "finding": "13 mutants, 0 survived."
+  }
+ ],
+ "counterevidence": [
+  {
+   "claim": "INSUFFICIENT should always reach the founder",
+   "tier": "primary_source",
+   "reference": "3d2f9cc4 rationale",
+   "finding": "That rule protected against judging a prefix as the whole; the kept whole is not a prefix, and its binding to the receipt is checked."
+  },
+  {
+   "claim": "Outputs past 1 MiB are rare",
+   "tier": "unit_test",
+   "reference": "fs.read 256 KiB of control characters",
+   "finding": "Escaped JSON can exceed 1 MiB from a 200 KiB file; those still ask (tested)."
+  }
+ ],
+ "pass_1": {
+  "intended_outcome": "A check is decided over the whole observation its receipt kept, by every reader, and never over a prefix or an unbound artifact.",
+  "advantages": [
+   {
+    "id": "A1",
+    "statement": "Fewer founder asks for facts GREG already holds.",
+    "amplified_value": "Lower founder intervention per verified outcome (the Spider-Web transaction)."
+   },
+   {
+    "id": "A2",
+    "statement": "Engine, appraiser and Goal Gravity read the same evidence the same way.",
+    "amplified_value": "No false distrust; independent re-derivation stays possible."
+   }
+  ],
+  "disadvantages": [
+   {
+    "id": "D1",
+    "statement": "Size ceiling of 1 MiB per kept output.",
+    "severity": "medium",
+    "response_type": "modularity",
+    "redesigned_response": "Above it the old ask stands, tested; streaming is the named next step."
+   },
+   {
+    "id": "D2",
+    "statement": "A forged or swapped artifact could decide a check.",
+    "severity": "high",
+    "response_type": "protective",
+    "redesigned_response": "Read only by the ledger's address, re-hashed, must cut to the kept output; every failure stays INSUFFICIENT."
+   },
+   {
+    "id": "D3",
+    "statement": "Changing which checks pass may change mission behaviour broadly.",
+    "severity": "medium",
+    "response_type": "evidence",
+    "redesigned_response": "Only INSUFFICIENT verdicts change; uncut outputs are untouched; neighbouring suites rerun."
+   }
+  ],
+  "comparisons": {
+   "baseline": "Prefix-only judgment, founder asked.",
+   "do_nothing": "Asks persist; refusals unheard.",
+   "simplest_viable_alternative": "judge_receipt over the existing binding.",
+   "strongest_competing_architecture": "Capability query contracts with coverage certificates.",
+   "reversible_experiment": "Child branch, intake by the integrator."
+  },
+  "rejected_alternatives": [
+   {
+    "name": "strongest_competing_architecture",
+    "rejection_reason": "Not needed below 1 MiB; larger surface and a new observation instead of the receipt's own.",
+    "revival_evidence": "Asks for outputs over 1 MiB recur."
+   },
+   {
+    "name": "raise_receipt_limit",
+    "rejection_reason": "Moves the cliff and grows the ledger.",
+    "revival_evidence": "Measured negligible ledger cost."
+   }
+  ]
+ },
+ "pass_2": {
+  "attack_summary": "Attack: deleted, altered, non-JSON, foreign and self-declared artifacts; missing and refused store; declared-incomplete outputs read whole; lists at the item limit; lone surrogates; a passing check beside an unmeasurable one; restart with an earlier incomplete reading; every reader of a receipt.",
+  "new_weaknesses": [
+   {
+    "id": "N1",
+    "category": "dependency",
+    "statement": "Artifacts can be pruned or lost, turning a decided reading undecidable at appraisal.",
+    "strengthening_response": "Then the appraiser refuses VERIFIED (tested with an altered artifact); nothing passes on less evidence."
+   },
+   {
+    "id": "N2",
+    "category": "comprehensibility",
+    "statement": "A reader could take 'decided over the whole output' as broader than the receipt.",
+    "strengthening_response": "The detail names the address and byte count; it is the receipt's own observation."
+   },
+   {
+    "id": "N3",
+    "category": "fragility",
+    "statement": "The streak fix changes when SENSOR_FAILURE fires in mixed missions.",
+    "strengthening_response": "Single-check and all-error missions count exactly as before; only other checks' readings are skipped."
+   }
+  ],
+  "pass_1_disadvantage_dispositions": [
+   {
+    "disadvantage_id": "D1",
+    "outcome": "accepted",
+    "rationale": "Bounded and tested; above 1 MiB the existing ask stands.",
+    "owner": "GREG mission maintainers",
+    "review_trigger": "Founder asks for outputs over 1 MiB."
+   },
+   {
+    "disadvantage_id": "D2",
+    "outcome": "resolved",
+    "rationale": "Six damage cases and a self-declared record stay INSUFFICIENT; appraiser refutes on alteration; mutant caught.",
+    "owner": "GREG mission maintainers",
+    "review_trigger": "Any change to artifact_output or output_store."
+   },
+   {
+    "disadvantage_id": "D3",
+    "outcome": "accepted",
+    "rationale": "Neighbouring suites rerun; the integrator decides intake.",
+    "owner": "#196 integrator",
+    "review_trigger": "Intake into #196."
+   }
+  ],
+  "final_design": "judge_receipt in greg/missions.py, used by the sensor, refusal watch, appraiser re-derivation and preconditions, and Goal Gravity; ActionOutcome carries the receipt's output_artifact; one list-limit constant; surrogate-safe receipt digests; per-check sensor-failure streak.",
+  "residual_risks": [
+   {
+    "risk": "Outputs over 1 MiB, and sources too large to keep, still ask.",
+    "mitigation": "Honest ask; streaming traversal with coverage certificates is the next step.",
+    "owner": "GREG mission maintainers",
+    "review_trigger": "Recurring asks."
+   },
+   {
+    "risk": "Canonical Unicode equivalence is not applied (pre-existing).",
+    "mitigation": "Recorded; a forbidden phrase in another normalization form can evade not_contains on any value.",
+    "owner": "#196 integrator / founder",
+    "review_trigger": "A mission that checks for forbidden text in user-supplied documents."
+   }
+  ],
+  "recommendation": "EXPERIMENT"
+ },
+ "dissent": {
+  "present": true,
+  "handling": "Preserved with owners and triggers.",
+  "entries": [
+   {
+    "role": "Founder-Intent Steward",
+    "position": "Section VI's streaming traversal for sources over 1 MiB is not built here.",
+    "rationale": "This closes the kept-output case only.",
+    "evidence_threshold": "A mission that must decide a fact in a source over 1 MiB.",
+    "owner": "GREG mission maintainers",
+    "review_trigger": "Next evidence-soundness increment."
+   },
+   {
+    "role": "Evidence and Welfare Guardian",
+    "position": "not_contains should match canonically equivalent text.",
+    "rationale": "A forbidden phrase in NFD evades an NFC check, on any value, before and after this change.",
+    "evidence_threshold": "Founder or integrator decision on normalization semantics.",
+    "owner": "#196 integrator",
+    "review_trigger": "Intake review."
+   }
+  ]
+ },
+ "authority_impact": {
+  "level": "standard",
+  "changes_authority": false,
+  "requires_authorized_human": false,
+  "approval_status": "not_required",
+  "approver": null
+ },
+ "migration_plan": "None: no stored format changes. Receipts written before are read as before; a receipt without output_artifact is judged on its kept output.",
+ "rollback_plan": {
+  "possible": true,
+  "steps": [
+   "Revert the child branch commit(s); keep tests and records as evidence."
+  ],
+  "reason_impossible": null
+ },
+ "kill_criteria": [
+  "Any check passes on a prefix or on an artifact not bound to its receipt.",
+  "The appraiser verifies a closure whose artifact was altered.",
+  "Any verdict on an uncut output changes."
+ ],
+ "decision": "EXPERIMENT",
+ "decision_owner": "#196 integrator (session_01FBS4KNJR59nSbdGbxo8Mbx) for intake; Alfonso for any merge",
+ "review_trigger": "Integrator intake review, or a founder ask for an output over 1 MiB."
+}

@@ -23,6 +23,7 @@ import json
 from pathlib import Path
 
 from capabilities.genome import CONSEQUENCE_CLASSES
+from foundry.systems.refusals import refusal_recorder
 
 TYPES = {"str": str, "int": int, "float": (int, float), "bool": bool, "list": list, "dict": dict}
 
@@ -155,13 +156,7 @@ def exercise(root) -> dict:
     root = Path(root)
     plan = link(demo_stages())
     result = run(plan, root / "run", ceiling="read_only")
-    refusals = {}
-    def refused(label, fn):
-        try:
-            fn()
-            refusals[label] = False
-        except LinkError as exc:
-            refusals[label] = str(exc)
+    refusals, refused = refusal_recorder(LinkError, accepted=False)
     bad = demo_stages()
     bad[1]["needs"] = {"trust": "list"}
     refused("type_mismatch", lambda: link(bad))

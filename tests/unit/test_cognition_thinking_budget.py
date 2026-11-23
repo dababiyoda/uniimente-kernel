@@ -95,6 +95,25 @@ def test_required_steps_are_never_priced_away_and_optional_ones_must_fit_their_m
     assert Controller(5, clock=clock).allot("x", required=False) == 5   # no measurement yet: nothing to price
 
 
+def test_planning_time_before_the_first_step_never_reaches_its_limit():
+    """The first step's limit travels inside the inner request, hence inside the settled claim's input digest; if
+    planning time reached it, one answer re-observed after a restart would settle twice
+    (tests/integration/test_greg_whole_machine_trace.py)."""
+    limits = []
+    for planning in (0.0, 0.0137, 2.5):
+        clock = Clock()
+        b = Controller(20, clock=clock)
+        clock.now = planning
+        limits.append(b.allot("answer", required=True))
+        clock.now += 3
+        b.done("answer")
+        assert b.remaining() == pytest.approx(17) and b.summary()["spent_s"] == pytest.approx(3)
+    assert limits == [20, 20, 20]
+    ticking = iter(x / 1e6 for x in range(10**6))                # a real clock moves between any two reads
+    assert Controller(20, clock=lambda: next(ticking)).allot("answer", required=True) == 20
+    assert Controller(20, clock=Clock()).summary()["spent_s"] == 0.0
+
+
 def test_one_budget_covers_the_whole_compiled_decision(registry, timed, monkeypatch):
     r = compile_(registry, {**SENSITIVE, "latency_budget": 40}, MODEL)
     assert r["state"] == "WORLD_UNVERIFIED" and isinstance(r["result"], dict)
@@ -129,22 +148,34 @@ def test_a_spent_budget_narrows_the_result_instead_of_skipping_required_evidence
 
 
 def test_local_compute_is_measured_not_assumed_free(registry, monkeypatch):
+    # Both are measured. reason prices its own call on its receipt (#192), so a direct capability call is never free;
+    # the compiler measures each inner run around its call to reason (Track B). On the joined tree reason's code
+    # closure differs from the one Track B's recipe lifts measured (the grant window as well as this counter), so
+    # those lifts re-measure on the joined code (test_greg_mind_convergence: test_recipe_lifts_bind_...).
     roomy = {"latency_limit": 30}
     r = cortex.reason({"problem_id": "cpu", "operation": "optimize", "data": dict(MODEL), "geometry": roomy},
                       registry=registry)
     assert r["output"] is not None
     cost = r["compute_cost"]
     assert cost["cpu_seconds"] > 0 and cost["peak_memory"] == "unmeasured" and cost["energy"] == "unmeasured"
-    # where a platform offers no resource accounting, the receipt says unmeasured instead of crashing or saying 0
     with monkeypatch.context() as m:
         m.setattr(cortex, "_cpu_seconds", lambda: None)
-        blind = cortex.reason({"problem_id": "cpu2", "operation": "optimize", "data": dict(MODEL), "geometry": roomy},
-                              registry=registry)
-    assert blind["compute_cost"]["cpu_seconds"] == "unmeasured" and blind["output"] == r["output"]
+        direct_blind = cortex.reason({"problem_id": "cpu2", "operation": "optimize", "data": dict(MODEL),
+                                      "geometry": roomy}, registry=registry)
+    assert direct_blind["compute_cost"]["cpu_seconds"] == "unmeasured" and direct_blind["output"] == r["output"]
     compiled = compile_(registry, {"geometry": "optimization", "consequence_class": "internal_write"}, MODEL)
+    assert compiled["state"] == "ANSWERED"
     budget = compiled["resource_use"]["budget"]
     assert budget["total_source"].startswith("default") and budget["total_s"] == compiler.DEFAULT_BUDGET_S
     assert budget["cpu_s"] > 0 and budget["measured_step_s"]["count"] == compiled["resource_use"]["stages"] == 1
+    [step] = [s for s in budget["steps"] if s["step"] == "answer"]
+    assert step["cpu_s"] > 0 and "peak memory per run" in budget["unmeasured"] and "energy" in budget["unmeasured"]
+    # where a platform offers no resource accounting, the budget says unmeasured instead of crashing or saying 0
+    with monkeypatch.context() as m:
+        m.setattr(cortex, "_cpu_seconds", lambda: None)
+        blind = compile_(registry, {"geometry": "optimization", "consequence_class": "internal_write"}, MODEL)
+    assert blind["resource_use"]["budget"]["cpu_s"] is None and blind["result"] == compiled["result"]
+    assert all("cpu_s" not in s for s in blind["resource_use"]["budget"]["steps"])
 
 
 def test_a_formed_mechanism_is_a_required_step_on_the_same_budget(tmp_path, monkeypatch):

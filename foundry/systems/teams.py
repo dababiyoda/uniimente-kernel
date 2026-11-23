@@ -17,6 +17,7 @@ import json
 from pathlib import Path
 
 from capabilities.genome import CONSEQUENCE_CLASSES
+from foundry.systems.refusals import refusal_recorder
 
 
 class TeamError(RuntimeError):
@@ -133,13 +134,7 @@ def exercise(root) -> dict:
     contract = compiler.compile_source(compiler.SOURCES["swarm.yaml"], "swarm.yaml")
     check = {"system": 36, "op": "verify", "field": "objects", "gte": 1}
     grant = {"capabilities": ["foundry.query", "foundry.apply"], "max_consequence": "internal_write", "budget_usd": 0}
-    refusals = {}
-    def refused(label, fn):
-        try:
-            fn()
-            refusals[label] = None
-        except TeamError as exc:
-            refusals[label] = str(exc)
+    refusals, refused = refusal_recorder(TeamError)
     refused("competence_not_registered", lambda: form(root / "t0", contract, grant, registry_root=reg,
                                                       objective_check=check))
     for role in ("analyst", "writer"):

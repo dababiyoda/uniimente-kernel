@@ -40,18 +40,20 @@ def knapsack(n=6):
                      [">=", ["+", *[["*", 2 + i, f"x{i}"] for i in range(n)]], 8]])
 
 
-def led(payload, lead):
+def led(payload, lead, n=0):
     registry = seed_registry()
     registry.withhold(CPSAT if lead == FORMAL else FORMAL, "founder pin")
     receipt = Cortex(registry, clock=lambda: "2026-10-07T00:00:00Z").run(
-        {"problem_id": f"p-{lead}", "question": "q", "payload": payload})
+        {"problem_id": f"p-{lead}-{n}", "question": "q", "payload": payload})
     assert receipt["route"]["selected"] == [lead]
     return receipt
 
 
 def settle(ledger, payload, lead, status, n):
-    receipt, method = led(payload, lead), lead.partition("@")
-    for _ in range(n):
+    method = lead.partition("@")
+    for i in range(n):
+        # cortex 0.2.2: one receipt is one decision and settles a method once, so each outcome is its own decision
+        receipt = led(payload, lead, i)
         ledger.settle(receipt=receipt, method=method[0], method_version=method[2], outcome_status=status,
                       provenance=PROVENANCE, conditions=conditions(features(payload)),
                       attribution=[{"method": method[0], "role": "final_answer", "uncertainty": "medium"}])

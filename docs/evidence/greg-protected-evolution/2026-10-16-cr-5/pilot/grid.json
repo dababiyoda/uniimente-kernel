@@ -1,0 +1,7652 @@
+{
+ "schema": "greg-p8-cr-pilot-grid/1",
+ "seeds": {
+  "pilot_train": [
+   3000,
+   3059
+  ],
+  "pilot_test": [
+   3060,
+   3119
+  ]
+ },
+ "incumbent": {
+  "id": "cfg-111751096c0d",
+  "config": {
+   "mu": 4,
+   "offspring": 4,
+   "p_recombine": 0.3,
+   "p_extra_mutation": 0.3,
+   "p_extra_mutation_recombined": 0.5,
+   "p_restart": 0.0,
+   "tournament": 2
+  }
+ },
+ "summary": {
+  "pilot_train": {
+   "incumbent_mean_loss": 0.010796,
+   "random_restart_mean_loss": 0.006399,
+   "random_restart_vs_incumbent": {
+    "wins": 29,
+    "losses": 14,
+    "ties": 17,
+    "sign_test_p_one_sided": 0.01577
+   },
+   "incumbent_failure_rate_vs_random_restart": 0.4833
+  },
+  "pilot_test": {
+   "incumbent_mean_loss": 0.007752,
+   "random_restart_mean_loss": 0.006276,
+   "random_restart_vs_incumbent": {
+    "wins": 34,
+    "losses": 12,
+    "ties": 14,
+    "sign_test_p_one_sided": 0.000821
+   },
+   "incumbent_failure_rate_vs_random_restart": 0.5667
+  }
+ },
+ "rows": [
+  {
+   "id": "cfg-2729f58342dc",
+   "config": {
+    "mu": 2,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.0,
+    "tournament": 1
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.007721,
+    "vs_incumbent": {
+     "wins": 24,
+     "losses": 12,
+     "ties": 24,
+     "sign_test_p_one_sided": 0.032623
+    },
+    "vs_random_restart": {
+     "wins": 15,
+     "losses": 26,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.970208
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.009455,
+    "vs_incumbent": {
+     "wins": 23,
+     "losses": 22,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.5
+    },
+    "vs_random_restart": {
+     "wins": 14,
+     "losses": 34,
+     "ties": 12,
+     "sign_test_p_one_sided": 0.998956
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.00832,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.011861,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-9c9369b9e998",
+   "config": {
+    "mu": 2,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.0,
+    "tournament": 2
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.006378,
+    "vs_incumbent": {
+     "wins": 26,
+     "losses": 10,
+     "ties": 24,
+     "sign_test_p_one_sided": 0.005665
+    },
+    "vs_random_restart": {
+     "wins": 20,
+     "losses": 22,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.678016
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.006455,
+    "vs_incumbent": {
+     "wins": 17,
+     "losses": 24,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.894488
+    },
+    "vs_random_restart": {
+     "wins": 14,
+     "losses": 28,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.99024
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.009451,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.011913,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-4d91ffcc93d7",
+   "config": {
+    "mu": 2,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.0,
+    "tournament": 3
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.01166,
+    "vs_incumbent": {
+     "wins": 22,
+     "losses": 23,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.617004
+    },
+    "vs_random_restart": {
+     "wins": 14,
+     "losses": 32,
+     "ties": 14,
+     "sign_test_p_one_sided": 0.997733
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.008827,
+    "vs_incumbent": {
+     "wins": 18,
+     "losses": 26,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.912914
+    },
+    "vs_random_restart": {
+     "wins": 15,
+     "losses": 34,
+     "ties": 11,
+     "sign_test_p_one_sided": 0.998099
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.011385,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.013236,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-62e29869efc3",
+   "config": {
+    "mu": 4,
+    "offspring": 4,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.0,
+    "tournament": 1
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.006012,
+    "vs_incumbent": {
+     "wins": 25,
+     "losses": 16,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.105512
+    },
+    "vs_random_restart": {
+     "wins": 19,
+     "losses": 23,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.7796
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.007059,
+    "vs_incumbent": {
+     "wins": 25,
+     "losses": 20,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.275742
+    },
+    "vs_random_restart": {
+     "wins": 16,
+     "losses": 28,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.975617
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.00998,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009588,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-111751096c0d",
+   "config": {
+    "mu": 4,
+    "offspring": 4,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.0,
+    "tournament": 2
+   },
+   "source": "grid",
+   "cycle_4_train_mean_loss": 0.007975,
+   "pilot_train": {
+    "mean_loss": 0.010796,
+    "vs_incumbent": {
+     "wins": 0,
+     "losses": 0,
+     "ties": 60,
+     "sign_test_p_one_sided": 1.0
+    },
+    "vs_random_restart": {
+     "wins": 14,
+     "losses": 29,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.993141
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.007752,
+    "vs_incumbent": {
+     "wins": 0,
+     "losses": 0,
+     "ties": 60,
+     "sign_test_p_one_sided": 1.0
+    },
+    "vs_random_restart": {
+     "wins": 12,
+     "losses": 34,
+     "ties": 14,
+     "sign_test_p_one_sided": 0.999732
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.007944,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.014502,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-2a647542961b",
+   "config": {
+    "mu": 4,
+    "offspring": 4,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.0,
+    "tournament": 3
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.008712,
+    "vs_incumbent": {
+     "wins": 25,
+     "losses": 16,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.105512
+    },
+    "vs_random_restart": {
+     "wins": 14,
+     "losses": 27,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.986233
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.006311,
+    "vs_incumbent": {
+     "wins": 24,
+     "losses": 16,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.134094
+    },
+    "vs_random_restart": {
+     "wins": 18,
+     "losses": 24,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.860022
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.006463,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.011267,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-dfc91efd2ea2",
+   "config": {
+    "mu": 8,
+    "offspring": 8,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.0,
+    "tournament": 1
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.011409,
+    "vs_incumbent": {
+     "wins": 22,
+     "losses": 21,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.5
+    },
+    "vs_random_restart": {
+     "wins": 16,
+     "losses": 31,
+     "ties": 13,
+     "sign_test_p_one_sided": 0.990688
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.008385,
+    "vs_incumbent": {
+     "wins": 24,
+     "losses": 19,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.271192
+    },
+    "vs_random_restart": {
+     "wins": 15,
+     "losses": 29,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.988686
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.011548,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.012655,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-7c511f4c900a",
+   "config": {
+    "mu": 8,
+    "offspring": 8,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.0,
+    "tournament": 2
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.011092,
+    "vs_incumbent": {
+     "wins": 26,
+     "losses": 15,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.058638
+    },
+    "vs_random_restart": {
+     "wins": 20,
+     "losses": 26,
+     "ties": 14,
+     "sign_test_p_one_sided": 0.849002
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.007643,
+    "vs_incumbent": {
+     "wins": 18,
+     "losses": 17,
+     "ties": 25,
+     "sign_test_p_one_sided": 0.5
+    },
+    "vs_random_restart": {
+     "wins": 14,
+     "losses": 31,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.996696
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.009406,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.014111,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-7627ee1460ea",
+   "config": {
+    "mu": 8,
+    "offspring": 8,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.0,
+    "tournament": 3
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.009058,
+    "vs_incumbent": {
+     "wins": 29,
+     "losses": 17,
+     "ties": 14,
+     "sign_test_p_one_sided": 0.051903
+    },
+    "vs_random_restart": {
+     "wins": 19,
+     "losses": 24,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.819811
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.006775,
+    "vs_incumbent": {
+     "wins": 25,
+     "losses": 18,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.180189
+    },
+    "vs_random_restart": {
+     "wins": 19,
+     "losses": 23,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.7796
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.007669,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.01043,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-12c84fdbdf48",
+   "config": {
+    "mu": 2,
+    "offspring": 8,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.0,
+    "tournament": 1
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.008645,
+    "vs_incumbent": {
+     "wins": 21,
+     "losses": 19,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.437315
+    },
+    "vs_random_restart": {
+     "wins": 14,
+     "losses": 26,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.980761
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.00746,
+    "vs_incumbent": {
+     "wins": 18,
+     "losses": 25,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.888974
+    },
+    "vs_random_restart": {
+     "wins": 14,
+     "losses": 32,
+     "ties": 14,
+     "sign_test_p_one_sided": 0.997733
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.011182,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.011007,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-ebcf59d4bb51",
+   "config": {
+    "mu": 2,
+    "offspring": 8,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.0,
+    "tournament": 2
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.010606,
+    "vs_incumbent": {
+     "wins": 21,
+     "losses": 18,
+     "ties": 21,
+     "sign_test_p_one_sided": 0.374629
+    },
+    "vs_random_restart": {
+     "wins": 15,
+     "losses": 27,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.978221
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.007988,
+    "vs_incumbent": {
+     "wins": 20,
+     "losses": 18,
+     "ties": 22,
+     "sign_test_p_one_sided": 0.435707
+    },
+    "vs_random_restart": {
+     "wins": 12,
+     "losses": 33,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.999588
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.009665,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.012237,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-aeb6f9ef717d",
+   "config": {
+    "mu": 2,
+    "offspring": 8,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.0,
+    "tournament": 3
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.009377,
+    "vs_incumbent": {
+     "wins": 26,
+     "losses": 16,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.082075
+    },
+    "vs_random_restart": {
+     "wins": 18,
+     "losses": 25,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.888974
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.006364,
+    "vs_incumbent": {
+     "wins": 24,
+     "losses": 20,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.325794
+    },
+    "vs_random_restart": {
+     "wins": 19,
+     "losses": 27,
+     "ties": 14,
+     "sign_test_p_one_sided": 0.908038
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.009495,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.010007,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-5897445fd0d8",
+   "config": {
+    "mu": 8,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.0,
+    "tournament": 1
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.00641,
+    "vs_incumbent": {
+     "wins": 29,
+     "losses": 13,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.00976
+    },
+    "vs_random_restart": {
+     "wins": 18,
+     "losses": 24,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.860022
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.006324,
+    "vs_incumbent": {
+     "wins": 26,
+     "losses": 17,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.111026
+    },
+    "vs_random_restart": {
+     "wins": 20,
+     "losses": 21,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.622386
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.008873,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009013,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-6609e834ebdb",
+   "config": {
+    "mu": 8,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.0,
+    "tournament": 2
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.012083,
+    "vs_incumbent": {
+     "wins": 24,
+     "losses": 16,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.134094
+    },
+    "vs_random_restart": {
+     "wins": 20,
+     "losses": 25,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.814351
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.006816,
+    "vs_incumbent": {
+     "wins": 21,
+     "losses": 21,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.561193
+    },
+    "vs_random_restart": {
+     "wins": 17,
+     "losses": 28,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.963773
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.011794,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.013455,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-910891d79113",
+   "config": {
+    "mu": 8,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.0,
+    "tournament": 3
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.010328,
+    "vs_incumbent": {
+     "wins": 24,
+     "losses": 18,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.2204
+    },
+    "vs_random_restart": {
+     "wins": 17,
+     "losses": 25,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.917925
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.005974,
+    "vs_incumbent": {
+     "wins": 25,
+     "losses": 16,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.105512
+    },
+    "vs_random_restart": {
+     "wins": 15,
+     "losses": 27,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.978221
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.008162,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.01129,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-e669a573c16e",
+   "config": {
+    "mu": 2,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.25,
+    "tournament": 1
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.005683,
+    "vs_incumbent": {
+     "wins": 31,
+     "losses": 10,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.000725
+    },
+    "vs_random_restart": {
+     "wins": 24,
+     "losses": 15,
+     "ties": 21,
+     "sign_test_p_one_sided": 0.099795
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.008354,
+    "vs_incumbent": {
+     "wins": 23,
+     "losses": 21,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.440198
+    },
+    "vs_random_restart": {
+     "wins": 17,
+     "losses": 25,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.917925
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.006994,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.00979,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-40607aaecae8",
+   "config": {
+    "mu": 2,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.25,
+    "tournament": 2
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.007538,
+    "vs_incumbent": {
+     "wins": 27,
+     "losses": 18,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.116347
+    },
+    "vs_random_restart": {
+     "wins": 19,
+     "losses": 24,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.819811
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.005737,
+    "vs_incumbent": {
+     "wins": 20,
+     "losses": 19,
+     "ties": 21,
+     "sign_test_p_one_sided": 0.5
+    },
+    "vs_random_restart": {
+     "wins": 15,
+     "losses": 27,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.978221
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.008165,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.010525,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-3ebd58aaab7c",
+   "config": {
+    "mu": 2,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.25,
+    "tournament": 3
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.008484,
+    "vs_incumbent": {
+     "wins": 25,
+     "losses": 17,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.139978
+    },
+    "vs_random_restart": {
+     "wins": 19,
+     "losses": 26,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.883653
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.005639,
+    "vs_incumbent": {
+     "wins": 28,
+     "losses": 17,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.067578
+    },
+    "vs_random_restart": {
+     "wins": 17,
+     "losses": 27,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.951929
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.008077,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.01033,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-4ae65a6154dd",
+   "config": {
+    "mu": 4,
+    "offspring": 4,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.25,
+    "tournament": 1
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.005713,
+    "vs_incumbent": {
+     "wins": 30,
+     "losses": 12,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.003958
+    },
+    "vs_random_restart": {
+     "wins": 25,
+     "losses": 16,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.105512
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.004686,
+    "vs_incumbent": {
+     "wins": 31,
+     "losses": 12,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.002701
+    },
+    "vs_random_restart": {
+     "wins": 25,
+     "losses": 17,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.139978
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.009494,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.010119,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-eb5049e9f76f",
+   "config": {
+    "mu": 4,
+    "offspring": 4,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.25,
+    "tournament": 2
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.005748,
+    "vs_incumbent": {
+     "wins": 28,
+     "losses": 13,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.013767
+    },
+    "vs_random_restart": {
+     "wins": 21,
+     "losses": 20,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.5
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.005722,
+    "vs_incumbent": {
+     "wins": 23,
+     "losses": 16,
+     "ties": 21,
+     "sign_test_p_one_sided": 0.168392
+    },
+    "vs_random_restart": {
+     "wins": 14,
+     "losses": 29,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.993141
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.007385,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009717,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-b0275fa0359e",
+   "config": {
+    "mu": 4,
+    "offspring": 4,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.25,
+    "tournament": 3
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.007199,
+    "vs_incumbent": {
+     "wins": 26,
+     "losses": 14,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.040345
+    },
+    "vs_random_restart": {
+     "wins": 20,
+     "losses": 21,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.622386
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.00661,
+    "vs_incumbent": {
+     "wins": 23,
+     "losses": 19,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.321984
+    },
+    "vs_random_restart": {
+     "wins": 13,
+     "losses": 30,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.997299
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.009621,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009895,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-a6162bae70d1",
+   "config": {
+    "mu": 8,
+    "offspring": 8,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.25,
+    "tournament": 1
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.005819,
+    "vs_incumbent": {
+     "wins": 27,
+     "losses": 15,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.044215
+    },
+    "vs_random_restart": {
+     "wins": 15,
+     "losses": 23,
+     "ties": 22,
+     "sign_test_p_one_sided": 0.928347
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.006502,
+    "vs_incumbent": {
+     "wins": 26,
+     "losses": 15,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.058638
+    },
+    "vs_random_restart": {
+     "wins": 17,
+     "losses": 23,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.865906
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.010172,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009218,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-ba8c536bb172",
+   "config": {
+    "mu": 8,
+    "offspring": 8,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.25,
+    "tournament": 2
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.007994,
+    "vs_incumbent": {
+     "wins": 30,
+     "losses": 12,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.003958
+    },
+    "vs_random_restart": {
+     "wins": 25,
+     "losses": 19,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.22569
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.007536,
+    "vs_incumbent": {
+     "wins": 25,
+     "losses": 19,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.22569
+    },
+    "vs_random_restart": {
+     "wins": 17,
+     "losses": 28,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.963773
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.007778,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.011754,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-ed6d72391996",
+   "config": {
+    "mu": 8,
+    "offspring": 8,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.25,
+    "tournament": 3
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.007343,
+    "vs_incumbent": {
+     "wins": 32,
+     "losses": 13,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.003304
+    },
+    "vs_random_restart": {
+     "wins": 20,
+     "losses": 22,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.678016
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.00672,
+    "vs_incumbent": {
+     "wins": 22,
+     "losses": 22,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.559802
+    },
+    "vs_random_restart": {
+     "wins": 13,
+     "losses": 30,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.997299
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.009472,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.014016,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-f0d7829b6280",
+   "config": {
+    "mu": 2,
+    "offspring": 8,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.25,
+    "tournament": 1
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.007169,
+    "vs_incumbent": {
+     "wins": 25,
+     "losses": 17,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.139978
+    },
+    "vs_random_restart": {
+     "wins": 16,
+     "losses": 23,
+     "ties": 21,
+     "sign_test_p_one_sided": 0.900205
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.005716,
+    "vs_incumbent": {
+     "wins": 25,
+     "losses": 20,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.275742
+    },
+    "vs_random_restart": {
+     "wins": 19,
+     "losses": 23,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.7796
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.007957,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009811,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-e76df6c62f33",
+   "config": {
+    "mu": 2,
+    "offspring": 8,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.25,
+    "tournament": 2
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.007933,
+    "vs_incumbent": {
+     "wins": 24,
+     "losses": 17,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.174444
+    },
+    "vs_random_restart": {
+     "wins": 22,
+     "losses": 22,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.559802
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.00708,
+    "vs_incumbent": {
+     "wins": 23,
+     "losses": 21,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.440198
+    },
+    "vs_random_restart": {
+     "wins": 15,
+     "losses": 29,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.988686
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.007567,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.011742,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-6eb9427afc1c",
+   "config": {
+    "mu": 2,
+    "offspring": 8,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.25,
+    "tournament": 3
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.006501,
+    "vs_incumbent": {
+     "wins": 26,
+     "losses": 15,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.058638
+    },
+    "vs_random_restart": {
+     "wins": 16,
+     "losses": 22,
+     "ties": 22,
+     "sign_test_p_one_sided": 0.872062
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.007504,
+    "vs_incumbent": {
+     "wins": 23,
+     "losses": 22,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.5
+    },
+    "vs_random_restart": {
+     "wins": 13,
+     "losses": 28,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.994246
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.008031,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009431,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-52dc5bb06acd",
+   "config": {
+    "mu": 8,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.25,
+    "tournament": 1
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.008617,
+    "vs_incumbent": {
+     "wins": 22,
+     "losses": 21,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.5
+    },
+    "vs_random_restart": {
+     "wins": 15,
+     "losses": 27,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.978221
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.006261,
+    "vs_incumbent": {
+     "wins": 32,
+     "losses": 17,
+     "ties": 11,
+     "sign_test_p_one_sided": 0.022192
+    },
+    "vs_random_restart": {
+     "wins": 19,
+     "losses": 24,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.819811
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.008356,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009894,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-70b29530c4dc",
+   "config": {
+    "mu": 8,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.25,
+    "tournament": 2
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.007344,
+    "vs_incumbent": {
+     "wins": 28,
+     "losses": 14,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.021779
+    },
+    "vs_random_restart": {
+     "wins": 20,
+     "losses": 20,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.562685
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.00481,
+    "vs_incumbent": {
+     "wins": 29,
+     "losses": 16,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.036227
+    },
+    "vs_random_restart": {
+     "wins": 20,
+     "losses": 22,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.678016
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.010178,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.011068,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-7e4fdea11e94",
+   "config": {
+    "mu": 8,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.25,
+    "tournament": 3
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.006481,
+    "vs_incumbent": {
+     "wins": 27,
+     "losses": 13,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.019239
+    },
+    "vs_random_restart": {
+     "wins": 18,
+     "losses": 18,
+     "ties": 24,
+     "sign_test_p_one_sided": 0.56603
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.00624,
+    "vs_incumbent": {
+     "wins": 24,
+     "losses": 20,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.325794
+    },
+    "vs_random_restart": {
+     "wins": 15,
+     "losses": 31,
+     "ties": 14,
+     "sign_test_p_one_sided": 0.994324
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.010592,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.011263,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-b6378c5404aa",
+   "config": {
+    "mu": 2,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.5,
+    "tournament": 1
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.008601,
+    "vs_incumbent": {
+     "wins": 31,
+     "losses": 14,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.008047
+    },
+    "vs_random_restart": {
+     "wins": 20,
+     "losses": 22,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.678016
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.007701,
+    "vs_incumbent": {
+     "wins": 26,
+     "losses": 23,
+     "ties": 11,
+     "sign_test_p_one_sided": 0.387725
+    },
+    "vs_random_restart": {
+     "wins": 18,
+     "losses": 27,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.932422
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.008082,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.010881,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-a2b6a30bc197",
+   "config": {
+    "mu": 2,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.5,
+    "tournament": 2
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.00618,
+    "vs_incumbent": {
+     "wins": 27,
+     "losses": 14,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.029792
+    },
+    "vs_random_restart": {
+     "wins": 21,
+     "losses": 19,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.437315
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.00675,
+    "vs_incumbent": {
+     "wins": 25,
+     "losses": 17,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.139978
+    },
+    "vs_random_restart": {
+     "wins": 18,
+     "losses": 24,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.860022
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.007734,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.010062,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-a0cc6150c239",
+   "config": {
+    "mu": 2,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.5,
+    "tournament": 3
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.008906,
+    "vs_incumbent": {
+     "wins": 22,
+     "losses": 18,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.317914
+    },
+    "vs_random_restart": {
+     "wins": 17,
+     "losses": 23,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.865906
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.007381,
+    "vs_incumbent": {
+     "wins": 28,
+     "losses": 21,
+     "ties": 11,
+     "sign_test_p_one_sided": 0.195801
+    },
+    "vs_random_restart": {
+     "wins": 15,
+     "losses": 32,
+     "ties": 13,
+     "sign_test_p_one_sided": 0.996029
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.008323,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.011545,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-cfa40876093a",
+   "config": {
+    "mu": 4,
+    "offspring": 4,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.5,
+    "tournament": 1
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.005323,
+    "vs_incumbent": {
+     "wins": 29,
+     "losses": 14,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.01577
+    },
+    "vs_random_restart": {
+     "wins": 24,
+     "losses": 19,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.271192
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.006,
+    "vs_incumbent": {
+     "wins": 27,
+     "losses": 19,
+     "ties": 14,
+     "sign_test_p_one_sided": 0.150998
+    },
+    "vs_random_restart": {
+     "wins": 21,
+     "losses": 20,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.5
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.01061,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.008834,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-95d924d478f3",
+   "config": {
+    "mu": 4,
+    "offspring": 4,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.5,
+    "tournament": 2
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.007289,
+    "vs_incumbent": {
+     "wins": 27,
+     "losses": 18,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.116347
+    },
+    "vs_random_restart": {
+     "wins": 20,
+     "losses": 19,
+     "ties": 21,
+     "sign_test_p_one_sided": 0.5
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.006431,
+    "vs_incumbent": {
+     "wins": 26,
+     "losses": 15,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.058638
+    },
+    "vs_random_restart": {
+     "wins": 22,
+     "losses": 23,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.617004
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.008387,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.010834,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-b67737a09959",
+   "config": {
+    "mu": 4,
+    "offspring": 4,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.5,
+    "tournament": 3
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.008414,
+    "vs_incumbent": {
+     "wins": 23,
+     "losses": 17,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.214795
+    },
+    "vs_random_restart": {
+     "wins": 18,
+     "losses": 22,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.785205
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.006728,
+    "vs_incumbent": {
+     "wins": 27,
+     "losses": 20,
+     "ties": 13,
+     "sign_test_p_one_sided": 0.190847
+    },
+    "vs_random_restart": {
+     "wins": 18,
+     "losses": 28,
+     "ties": 14,
+     "sign_test_p_one_sided": 0.948097
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.00674,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.011431,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-7b25bf3d03b1",
+   "config": {
+    "mu": 8,
+    "offspring": 8,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.5,
+    "tournament": 1
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.006281,
+    "vs_incumbent": {
+     "wins": 31,
+     "losses": 11,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.001444
+    },
+    "vs_random_restart": {
+     "wins": 24,
+     "losses": 16,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.134094
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.007022,
+    "vs_incumbent": {
+     "wins": 23,
+     "losses": 22,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.5
+    },
+    "vs_random_restart": {
+     "wins": 15,
+     "losses": 23,
+     "ties": 22,
+     "sign_test_p_one_sided": 0.928347
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.012679,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.00993,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-ecce3668c6e2",
+   "config": {
+    "mu": 8,
+    "offspring": 8,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.5,
+    "tournament": 2
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.007218,
+    "vs_incumbent": {
+     "wins": 30,
+     "losses": 14,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.011314
+    },
+    "vs_random_restart": {
+     "wins": 20,
+     "losses": 20,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.562685
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.005932,
+    "vs_incumbent": {
+     "wins": 26,
+     "losses": 16,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.082075
+    },
+    "vs_random_restart": {
+     "wins": 21,
+     "losses": 21,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.561193
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.009433,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009355,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-9a64260e46b3",
+   "config": {
+    "mu": 8,
+    "offspring": 8,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.5,
+    "tournament": 3
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.008248,
+    "vs_incumbent": {
+     "wins": 27,
+     "losses": 16,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.063145
+    },
+    "vs_random_restart": {
+     "wins": 21,
+     "losses": 19,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.437315
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.006274,
+    "vs_incumbent": {
+     "wins": 27,
+     "losses": 18,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.116347
+    },
+    "vs_random_restart": {
+     "wins": 17,
+     "losses": 26,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.936855
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.00716,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.011448,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-e2a5f9f9bd5c",
+   "config": {
+    "mu": 2,
+    "offspring": 8,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.5,
+    "tournament": 1
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.007978,
+    "vs_incumbent": {
+     "wins": 27,
+     "losses": 16,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.063145
+    },
+    "vs_random_restart": {
+     "wins": 19,
+     "losses": 21,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.682086
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.005099,
+    "vs_incumbent": {
+     "wins": 29,
+     "losses": 17,
+     "ties": 14,
+     "sign_test_p_one_sided": 0.051903
+    },
+    "vs_random_restart": {
+     "wins": 19,
+     "losses": 20,
+     "ties": 21,
+     "sign_test_p_one_sided": 0.625371
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.010783,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.010057,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-815612f6c52b",
+   "config": {
+    "mu": 2,
+    "offspring": 8,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.5,
+    "tournament": 2
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.004745,
+    "vs_incumbent": {
+     "wins": 29,
+     "losses": 11,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.003213
+    },
+    "vs_random_restart": {
+     "wins": 26,
+     "losses": 15,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.058638
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.005869,
+    "vs_incumbent": {
+     "wins": 23,
+     "losses": 17,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.214795
+    },
+    "vs_random_restart": {
+     "wins": 16,
+     "losses": 24,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.92307
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.007076,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009131,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-7d221cf4e8c8",
+   "config": {
+    "mu": 2,
+    "offspring": 8,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.5,
+    "tournament": 3
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.008747,
+    "vs_incumbent": {
+     "wins": 24,
+     "losses": 17,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.174444
+    },
+    "vs_random_restart": {
+     "wins": 19,
+     "losses": 20,
+     "ties": 21,
+     "sign_test_p_one_sided": 0.625371
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.007771,
+    "vs_incumbent": {
+     "wins": 23,
+     "losses": 22,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.5
+    },
+    "vs_random_restart": {
+     "wins": 16,
+     "losses": 28,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.975617
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.006762,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.010885,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-37684d1bec6b",
+   "config": {
+    "mu": 8,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.5,
+    "tournament": 1
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.005679,
+    "vs_incumbent": {
+     "wins": 27,
+     "losses": 15,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.044215
+    },
+    "vs_random_restart": {
+     "wins": 19,
+     "losses": 20,
+     "ties": 21,
+     "sign_test_p_one_sided": 0.625371
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.006338,
+    "vs_incumbent": {
+     "wins": 25,
+     "losses": 21,
+     "ties": 14,
+     "sign_test_p_one_sided": 0.329369
+    },
+    "vs_random_restart": {
+     "wins": 18,
+     "losses": 18,
+     "ties": 24,
+     "sign_test_p_one_sided": 0.56603
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.007862,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009588,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-9f3db1cea102",
+   "config": {
+    "mu": 8,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.5,
+    "tournament": 2
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.006422,
+    "vs_incumbent": {
+     "wins": 29,
+     "losses": 13,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.00976
+    },
+    "vs_random_restart": {
+     "wins": 19,
+     "losses": 20,
+     "ties": 21,
+     "sign_test_p_one_sided": 0.625371
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.005207,
+    "vs_incumbent": {
+     "wins": 30,
+     "losses": 16,
+     "ties": 14,
+     "sign_test_p_one_sided": 0.027038
+    },
+    "vs_random_restart": {
+     "wins": 22,
+     "losses": 18,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.317914
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.011235,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.010166,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-f57d4318e038",
+   "config": {
+    "mu": 8,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.5,
+    "tournament": 3
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.009526,
+    "vs_incumbent": {
+     "wins": 25,
+     "losses": 19,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.22569
+    },
+    "vs_random_restart": {
+     "wins": 21,
+     "losses": 22,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.619604
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.005889,
+    "vs_incumbent": {
+     "wins": 27,
+     "losses": 18,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.116347
+    },
+    "vs_random_restart": {
+     "wins": 20,
+     "losses": 21,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.622386
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.006631,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009661,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-76fe48c6cc02",
+   "config": {
+    "mu": 2,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.75,
+    "tournament": 1
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.006904,
+    "vs_incumbent": {
+     "wins": 32,
+     "losses": 13,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.003304
+    },
+    "vs_random_restart": {
+     "wins": 22,
+     "losses": 19,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.377614
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.006527,
+    "vs_incumbent": {
+     "wins": 27,
+     "losses": 18,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.116347
+    },
+    "vs_random_restart": {
+     "wins": 17,
+     "losses": 25,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.917925
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.007861,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.008849,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-682958eaaf02",
+   "config": {
+    "mu": 2,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.75,
+    "tournament": 2
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.007514,
+    "vs_incumbent": {
+     "wins": 28,
+     "losses": 16,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.048071
+    },
+    "vs_random_restart": {
+     "wins": 22,
+     "losses": 16,
+     "ties": 22,
+     "sign_test_p_one_sided": 0.208846
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.008068,
+    "vs_incumbent": {
+     "wins": 30,
+     "losses": 16,
+     "ties": 14,
+     "sign_test_p_one_sided": 0.027038
+    },
+    "vs_random_restart": {
+     "wins": 18,
+     "losses": 26,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.912914
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.006458,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.012601,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-b99675550056",
+   "config": {
+    "mu": 2,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.75,
+    "tournament": 3
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.009698,
+    "vs_incumbent": {
+     "wins": 25,
+     "losses": 18,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.180189
+    },
+    "vs_random_restart": {
+     "wins": 22,
+     "losses": 21,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.5
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.008167,
+    "vs_incumbent": {
+     "wins": 23,
+     "losses": 20,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.380396
+    },
+    "vs_random_restart": {
+     "wins": 17,
+     "losses": 31,
+     "ties": 12,
+     "sign_test_p_one_sided": 0.985348
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.00762,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.01329,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-92c32a05fc13",
+   "config": {
+    "mu": 4,
+    "offspring": 4,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.75,
+    "tournament": 1
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.005422,
+    "vs_incumbent": {
+     "wins": 35,
+     "losses": 10,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.000124
+    },
+    "vs_random_restart": {
+     "wins": 27,
+     "losses": 16,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.063145
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.006001,
+    "vs_incumbent": {
+     "wins": 30,
+     "losses": 16,
+     "ties": 14,
+     "sign_test_p_one_sided": 0.027038
+    },
+    "vs_random_restart": {
+     "wins": 16,
+     "losses": 25,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.941362
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.008732,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009347,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-ef21c4300207",
+   "config": {
+    "mu": 4,
+    "offspring": 4,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.75,
+    "tournament": 2
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.008545,
+    "vs_incumbent": {
+     "wins": 29,
+     "losses": 16,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.036227
+    },
+    "vs_random_restart": {
+     "wins": 24,
+     "losses": 15,
+     "ties": 21,
+     "sign_test_p_one_sided": 0.099795
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.005959,
+    "vs_incumbent": {
+     "wins": 29,
+     "losses": 16,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.036227
+    },
+    "vs_random_restart": {
+     "wins": 16,
+     "losses": 26,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.955785
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.007286,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.011662,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-5445d415da0b",
+   "config": {
+    "mu": 4,
+    "offspring": 4,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.75,
+    "tournament": 3
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.010303,
+    "vs_incumbent": {
+     "wins": 26,
+     "losses": 19,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.185649
+    },
+    "vs_random_restart": {
+     "wins": 19,
+     "losses": 23,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.7796
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.006962,
+    "vs_incumbent": {
+     "wins": 28,
+     "losses": 17,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.067578
+    },
+    "vs_random_restart": {
+     "wins": 19,
+     "losses": 28,
+     "ties": 13,
+     "sign_test_p_one_sided": 0.928067
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.009646,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.012829,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-16279d2303cb",
+   "config": {
+    "mu": 8,
+    "offspring": 8,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.75,
+    "tournament": 1
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.007354,
+    "vs_incumbent": {
+     "wins": 31,
+     "losses": 11,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.001444
+    },
+    "vs_random_restart": {
+     "wins": 20,
+     "losses": 19,
+     "ties": 21,
+     "sign_test_p_one_sided": 0.5
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.007641,
+    "vs_incumbent": {
+     "wins": 26,
+     "losses": 20,
+     "ties": 14,
+     "sign_test_p_one_sided": 0.230696
+    },
+    "vs_random_restart": {
+     "wins": 15,
+     "losses": 28,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.98423
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.01009,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009915,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-35cc024eae94",
+   "config": {
+    "mu": 8,
+    "offspring": 8,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.75,
+    "tournament": 2
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.008994,
+    "vs_incumbent": {
+     "wins": 28,
+     "losses": 14,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.021779
+    },
+    "vs_random_restart": {
+     "wins": 23,
+     "losses": 16,
+     "ties": 21,
+     "sign_test_p_one_sided": 0.168392
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.005314,
+    "vs_incumbent": {
+     "wins": 33,
+     "losses": 13,
+     "ties": 14,
+     "sign_test_p_one_sided": 0.002267
+    },
+    "vs_random_restart": {
+     "wins": 21,
+     "losses": 20,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.5
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.006382,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.010812,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-47e0d762ef2a",
+   "config": {
+    "mu": 8,
+    "offspring": 8,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.75,
+    "tournament": 3
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.009737,
+    "vs_incumbent": {
+     "wins": 27,
+     "losses": 20,
+     "ties": 13,
+     "sign_test_p_one_sided": 0.190847
+    },
+    "vs_random_restart": {
+     "wins": 22,
+     "losses": 21,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.5
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.008119,
+    "vs_incumbent": {
+     "wins": 30,
+     "losses": 17,
+     "ties": 13,
+     "sign_test_p_one_sided": 0.03947
+    },
+    "vs_random_restart": {
+     "wins": 20,
+     "losses": 23,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.728808
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.009266,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.013606,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-6a1371dad539",
+   "config": {
+    "mu": 2,
+    "offspring": 8,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.75,
+    "tournament": 1
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.006045,
+    "vs_incumbent": {
+     "wins": 31,
+     "losses": 14,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.008047
+    },
+    "vs_random_restart": {
+     "wins": 23,
+     "losses": 18,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.266355
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.006479,
+    "vs_incumbent": {
+     "wins": 28,
+     "losses": 17,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.067578
+    },
+    "vs_random_restart": {
+     "wins": 18,
+     "losses": 22,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.785205
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.0084,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009261,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-96834805138e",
+   "config": {
+    "mu": 2,
+    "offspring": 8,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.75,
+    "tournament": 2
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.006788,
+    "vs_incumbent": {
+     "wins": 31,
+     "losses": 12,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.002701
+    },
+    "vs_random_restart": {
+     "wins": 24,
+     "losses": 15,
+     "ties": 21,
+     "sign_test_p_one_sided": 0.099795
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.005235,
+    "vs_incumbent": {
+     "wins": 33,
+     "losses": 15,
+     "ties": 12,
+     "sign_test_p_one_sided": 0.006642
+    },
+    "vs_random_restart": {
+     "wins": 19,
+     "losses": 21,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.682086
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.006803,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.010392,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-8a37604cff92",
+   "config": {
+    "mu": 2,
+    "offspring": 8,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.75,
+    "tournament": 3
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.009592,
+    "vs_incumbent": {
+     "wins": 24,
+     "losses": 18,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.2204
+    },
+    "vs_random_restart": {
+     "wins": 19,
+     "losses": 26,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.883653
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.007669,
+    "vs_incumbent": {
+     "wins": 27,
+     "losses": 21,
+     "ties": 12,
+     "sign_test_p_one_sided": 0.23544
+    },
+    "vs_random_restart": {
+     "wins": 17,
+     "losses": 29,
+     "ties": 14,
+     "sign_test_p_one_sided": 0.972962
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.009821,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.012866,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-6ee51053ae5e",
+   "config": {
+    "mu": 8,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.75,
+    "tournament": 1
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.006275,
+    "vs_incumbent": {
+     "wins": 31,
+     "losses": 13,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.00478
+    },
+    "vs_random_restart": {
+     "wins": 23,
+     "losses": 18,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.266355
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.006246,
+    "vs_incumbent": {
+     "wins": 30,
+     "losses": 17,
+     "ties": 13,
+     "sign_test_p_one_sided": 0.03947
+    },
+    "vs_random_restart": {
+     "wins": 18,
+     "losses": 21,
+     "ties": 21,
+     "sign_test_p_one_sided": 0.738801
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.007963,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.008975,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-ce69a8d6f129",
+   "config": {
+    "mu": 8,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.75,
+    "tournament": 2
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.007068,
+    "vs_incumbent": {
+     "wins": 30,
+     "losses": 15,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.017849
+    },
+    "vs_random_restart": {
+     "wins": 22,
+     "losses": 16,
+     "ties": 22,
+     "sign_test_p_one_sided": 0.208846
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.008226,
+    "vs_incumbent": {
+     "wins": 29,
+     "losses": 17,
+     "ties": 14,
+     "sign_test_p_one_sided": 0.051903
+    },
+    "vs_random_restart": {
+     "wins": 18,
+     "losses": 24,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.860022
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.007867,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.011312,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-a9d2c961e2b4",
+   "config": {
+    "mu": 8,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.75,
+    "tournament": 3
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.011974,
+    "vs_incumbent": {
+     "wins": 27,
+     "losses": 18,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.116347
+    },
+    "vs_random_restart": {
+     "wins": 21,
+     "losses": 23,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.674206
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.008129,
+    "vs_incumbent": {
+     "wins": 28,
+     "losses": 17,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.067578
+    },
+    "vs_random_restart": {
+     "wins": 21,
+     "losses": 24,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.724258
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.007006,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.013244,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-6fdfdec96168",
+   "config": {
+    "mu": 2,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.9,
+    "tournament": 1
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.006432,
+    "vs_incumbent": {
+     "wins": 30,
+     "losses": 15,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.017849
+    },
+    "vs_random_restart": {
+     "wins": 25,
+     "losses": 16,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.105512
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.008076,
+    "vs_incumbent": {
+     "wins": 30,
+     "losses": 16,
+     "ties": 14,
+     "sign_test_p_one_sided": 0.027038
+    },
+    "vs_random_restart": {
+     "wins": 19,
+     "losses": 24,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.819811
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.006385,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.0093,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-416098bb08a5",
+   "config": {
+    "mu": 2,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.9,
+    "tournament": 2
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.006636,
+    "vs_incumbent": {
+     "wins": 26,
+     "losses": 16,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.082075
+    },
+    "vs_random_restart": {
+     "wins": 22,
+     "losses": 18,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.317914
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.010076,
+    "vs_incumbent": {
+     "wins": 30,
+     "losses": 15,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.017849
+    },
+    "vs_random_restart": {
+     "wins": 17,
+     "losses": 24,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.894488
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.005674,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009922,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-e93bee71cc30",
+   "config": {
+    "mu": 2,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.9,
+    "tournament": 3
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.005761,
+    "vs_incumbent": {
+     "wins": 31,
+     "losses": 14,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.008047
+    },
+    "vs_random_restart": {
+     "wins": 24,
+     "losses": 15,
+     "ties": 21,
+     "sign_test_p_one_sided": 0.099795
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.006371,
+    "vs_incumbent": {
+     "wins": 30,
+     "losses": 18,
+     "ties": 12,
+     "sign_test_p_one_sided": 0.055701
+    },
+    "vs_random_restart": {
+     "wins": 19,
+     "losses": 23,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.7796
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.00693,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009207,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-288ec6962a0d",
+   "config": {
+    "mu": 4,
+    "offspring": 4,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.9,
+    "tournament": 1
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.006083,
+    "vs_incumbent": {
+     "wins": 28,
+     "losses": 15,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.032997
+    },
+    "vs_random_restart": {
+     "wins": 22,
+     "losses": 17,
+     "ties": 21,
+     "sign_test_p_one_sided": 0.261199
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.008272,
+    "vs_incumbent": {
+     "wins": 29,
+     "losses": 16,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.036227
+    },
+    "vs_random_restart": {
+     "wins": 20,
+     "losses": 22,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.678016
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.007296,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009133,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-05619108a768",
+   "config": {
+    "mu": 4,
+    "offspring": 4,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.9,
+    "tournament": 2
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.005895,
+    "vs_incumbent": {
+     "wins": 29,
+     "losses": 13,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.00976
+    },
+    "vs_random_restart": {
+     "wins": 23,
+     "losses": 14,
+     "ties": 23,
+     "sign_test_p_one_sided": 0.093871
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.009557,
+    "vs_incumbent": {
+     "wins": 30,
+     "losses": 18,
+     "ties": 12,
+     "sign_test_p_one_sided": 0.055701
+    },
+    "vs_random_restart": {
+     "wins": 17,
+     "losses": 26,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.936855
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.005626,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009466,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-86e34b5748db",
+   "config": {
+    "mu": 4,
+    "offspring": 4,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.9,
+    "tournament": 3
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.005533,
+    "vs_incumbent": {
+     "wins": 32,
+     "losses": 13,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.003304
+    },
+    "vs_random_restart": {
+     "wins": 22,
+     "losses": 17,
+     "ties": 21,
+     "sign_test_p_one_sided": 0.261199
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.008256,
+    "vs_incumbent": {
+     "wins": 31,
+     "losses": 15,
+     "ties": 14,
+     "sign_test_p_one_sided": 0.012948
+    },
+    "vs_random_restart": {
+     "wins": 19,
+     "losses": 20,
+     "ties": 21,
+     "sign_test_p_one_sided": 0.625371
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.007058,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009833,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-5931c7a40077",
+   "config": {
+    "mu": 8,
+    "offspring": 8,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.9,
+    "tournament": 1
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.006079,
+    "vs_incumbent": {
+     "wins": 31,
+     "losses": 13,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.00478
+    },
+    "vs_random_restart": {
+     "wins": 24,
+     "losses": 16,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.134094
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.008712,
+    "vs_incumbent": {
+     "wins": 30,
+     "losses": 13,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.006859
+    },
+    "vs_random_restart": {
+     "wins": 19,
+     "losses": 22,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.733645
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.006356,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009219,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-4bc584152828",
+   "config": {
+    "mu": 8,
+    "offspring": 8,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.9,
+    "tournament": 2
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.006311,
+    "vs_incumbent": {
+     "wins": 28,
+     "losses": 14,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.021779
+    },
+    "vs_random_restart": {
+     "wins": 23,
+     "losses": 14,
+     "ties": 23,
+     "sign_test_p_one_sided": 0.093871
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.0089,
+    "vs_incumbent": {
+     "wins": 31,
+     "losses": 14,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.008047
+    },
+    "vs_random_restart": {
+     "wins": 19,
+     "losses": 22,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.733645
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.005818,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009739,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-89756b2547e3",
+   "config": {
+    "mu": 8,
+    "offspring": 8,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.9,
+    "tournament": 3
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.005457,
+    "vs_incumbent": {
+     "wins": 32,
+     "losses": 13,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.003304
+    },
+    "vs_random_restart": {
+     "wins": 25,
+     "losses": 14,
+     "ties": 21,
+     "sign_test_p_one_sided": 0.054065
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.009031,
+    "vs_incumbent": {
+     "wins": 32,
+     "losses": 16,
+     "ties": 12,
+     "sign_test_p_one_sided": 0.014652
+    },
+    "vs_random_restart": {
+     "wins": 20,
+     "losses": 23,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.728808
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.008728,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009619,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-f1ca96793b34",
+   "config": {
+    "mu": 2,
+    "offspring": 8,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.9,
+    "tournament": 1
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.005829,
+    "vs_incumbent": {
+     "wins": 31,
+     "losses": 15,
+     "ties": 14,
+     "sign_test_p_one_sided": 0.012948
+    },
+    "vs_random_restart": {
+     "wins": 28,
+     "losses": 15,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.032997
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.009188,
+    "vs_incumbent": {
+     "wins": 29,
+     "losses": 15,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.024383
+    },
+    "vs_random_restart": {
+     "wins": 20,
+     "losses": 22,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.678016
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.005937,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009145,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-b0ebc734e075",
+   "config": {
+    "mu": 2,
+    "offspring": 8,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.9,
+    "tournament": 2
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.00684,
+    "vs_incumbent": {
+     "wins": 26,
+     "losses": 16,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.082075
+    },
+    "vs_random_restart": {
+     "wins": 21,
+     "losses": 19,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.437315
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.009788,
+    "vs_incumbent": {
+     "wins": 32,
+     "losses": 13,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.003304
+    },
+    "vs_random_restart": {
+     "wins": 17,
+     "losses": 23,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.865906
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.005706,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.010309,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-fa7aaefe326f",
+   "config": {
+    "mu": 2,
+    "offspring": 8,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.9,
+    "tournament": 3
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.005724,
+    "vs_incumbent": {
+     "wins": 31,
+     "losses": 14,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.008047
+    },
+    "vs_random_restart": {
+     "wins": 24,
+     "losses": 15,
+     "ties": 21,
+     "sign_test_p_one_sided": 0.099795
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.009033,
+    "vs_incumbent": {
+     "wins": 31,
+     "losses": 17,
+     "ties": 12,
+     "sign_test_p_one_sided": 0.029732
+    },
+    "vs_random_restart": {
+     "wins": 20,
+     "losses": 23,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.728808
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.008057,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009223,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-0c056b9cc10b",
+   "config": {
+    "mu": 8,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.9,
+    "tournament": 1
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.005961,
+    "vs_incumbent": {
+     "wins": 31,
+     "losses": 12,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.002701
+    },
+    "vs_random_restart": {
+     "wins": 24,
+     "losses": 13,
+     "ties": 23,
+     "sign_test_p_one_sided": 0.049436
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.007829,
+    "vs_incumbent": {
+     "wins": 31,
+     "losses": 15,
+     "ties": 14,
+     "sign_test_p_one_sided": 0.012948
+    },
+    "vs_random_restart": {
+     "wins": 21,
+     "losses": 22,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.619604
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.007078,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009299,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-b1f761f9c554",
+   "config": {
+    "mu": 8,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.9,
+    "tournament": 2
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.005636,
+    "vs_incumbent": {
+     "wins": 28,
+     "losses": 16,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.048071
+    },
+    "vs_random_restart": {
+     "wins": 26,
+     "losses": 15,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.058638
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.008933,
+    "vs_incumbent": {
+     "wins": 31,
+     "losses": 14,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.008047
+    },
+    "vs_random_restart": {
+     "wins": 19,
+     "losses": 22,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.733645
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.005987,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009294,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-72f5c89c4d4f",
+   "config": {
+    "mu": 8,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.9,
+    "tournament": 3
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.00583,
+    "vs_incumbent": {
+     "wins": 32,
+     "losses": 13,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.003304
+    },
+    "vs_random_restart": {
+     "wins": 25,
+     "losses": 15,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.07693
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.009389,
+    "vs_incumbent": {
+     "wins": 30,
+     "losses": 18,
+     "ties": 12,
+     "sign_test_p_one_sided": 0.055701
+    },
+    "vs_random_restart": {
+     "wins": 18,
+     "losses": 26,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.912914
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.008425,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009899,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-d730b5ba1c88",
+   "config": {
+    "mu": 2,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 1.0,
+    "tournament": 1
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.005693,
+    "vs_incumbent": {
+     "wins": 30,
+     "losses": 15,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.017849
+    },
+    "vs_random_restart": {
+     "wins": 26,
+     "losses": 15,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.058638
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.009761,
+    "vs_incumbent": {
+     "wins": 27,
+     "losses": 16,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.063145
+    },
+    "vs_random_restart": {
+     "wins": 18,
+     "losses": 23,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.825556
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.007279,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009158,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-0a2651483cc6",
+   "config": {
+    "mu": 2,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 1.0,
+    "tournament": 2
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.005693,
+    "vs_incumbent": {
+     "wins": 30,
+     "losses": 15,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.017849
+    },
+    "vs_random_restart": {
+     "wins": 26,
+     "losses": 15,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.058638
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.009761,
+    "vs_incumbent": {
+     "wins": 27,
+     "losses": 16,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.063145
+    },
+    "vs_random_restart": {
+     "wins": 18,
+     "losses": 23,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.825556
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.007279,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009158,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-22e7e42b683d",
+   "config": {
+    "mu": 2,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 1.0,
+    "tournament": 3
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.005693,
+    "vs_incumbent": {
+     "wins": 30,
+     "losses": 15,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.017849
+    },
+    "vs_random_restart": {
+     "wins": 26,
+     "losses": 15,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.058638
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.009761,
+    "vs_incumbent": {
+     "wins": 27,
+     "losses": 16,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.063145
+    },
+    "vs_random_restart": {
+     "wins": 18,
+     "losses": 23,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.825556
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.007279,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009158,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-a7b0d35b8ebb",
+   "config": {
+    "mu": 4,
+    "offspring": 4,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 1.0,
+    "tournament": 1
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.005693,
+    "vs_incumbent": {
+     "wins": 30,
+     "losses": 15,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.017849
+    },
+    "vs_random_restart": {
+     "wins": 26,
+     "losses": 15,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.058638
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.009761,
+    "vs_incumbent": {
+     "wins": 27,
+     "losses": 16,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.063145
+    },
+    "vs_random_restart": {
+     "wins": 18,
+     "losses": 23,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.825556
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.007279,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009158,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-12b387892289",
+   "config": {
+    "mu": 4,
+    "offspring": 4,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 1.0,
+    "tournament": 2
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.005693,
+    "vs_incumbent": {
+     "wins": 30,
+     "losses": 15,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.017849
+    },
+    "vs_random_restart": {
+     "wins": 26,
+     "losses": 15,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.058638
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.009761,
+    "vs_incumbent": {
+     "wins": 27,
+     "losses": 16,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.063145
+    },
+    "vs_random_restart": {
+     "wins": 18,
+     "losses": 23,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.825556
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.007279,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009158,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-06ff33ac9bcb",
+   "config": {
+    "mu": 4,
+    "offspring": 4,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 1.0,
+    "tournament": 3
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.005693,
+    "vs_incumbent": {
+     "wins": 30,
+     "losses": 15,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.017849
+    },
+    "vs_random_restart": {
+     "wins": 26,
+     "losses": 15,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.058638
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.009761,
+    "vs_incumbent": {
+     "wins": 27,
+     "losses": 16,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.063145
+    },
+    "vs_random_restart": {
+     "wins": 18,
+     "losses": 23,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.825556
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.007279,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009158,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-e59697dcf9c6",
+   "config": {
+    "mu": 8,
+    "offspring": 8,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 1.0,
+    "tournament": 1
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.005693,
+    "vs_incumbent": {
+     "wins": 30,
+     "losses": 15,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.017849
+    },
+    "vs_random_restart": {
+     "wins": 26,
+     "losses": 15,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.058638
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.009761,
+    "vs_incumbent": {
+     "wins": 27,
+     "losses": 16,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.063145
+    },
+    "vs_random_restart": {
+     "wins": 18,
+     "losses": 23,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.825556
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.007279,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009158,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-aae4c0a7df6a",
+   "config": {
+    "mu": 8,
+    "offspring": 8,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 1.0,
+    "tournament": 2
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.005693,
+    "vs_incumbent": {
+     "wins": 30,
+     "losses": 15,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.017849
+    },
+    "vs_random_restart": {
+     "wins": 26,
+     "losses": 15,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.058638
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.009761,
+    "vs_incumbent": {
+     "wins": 27,
+     "losses": 16,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.063145
+    },
+    "vs_random_restart": {
+     "wins": 18,
+     "losses": 23,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.825556
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.007279,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009158,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-93ceeeb66d16",
+   "config": {
+    "mu": 8,
+    "offspring": 8,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 1.0,
+    "tournament": 3
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.005693,
+    "vs_incumbent": {
+     "wins": 30,
+     "losses": 15,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.017849
+    },
+    "vs_random_restart": {
+     "wins": 26,
+     "losses": 15,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.058638
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.009761,
+    "vs_incumbent": {
+     "wins": 27,
+     "losses": 16,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.063145
+    },
+    "vs_random_restart": {
+     "wins": 18,
+     "losses": 23,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.825556
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.007279,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009158,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-f1b88f54f88e",
+   "config": {
+    "mu": 2,
+    "offspring": 8,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 1.0,
+    "tournament": 1
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.005693,
+    "vs_incumbent": {
+     "wins": 30,
+     "losses": 15,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.017849
+    },
+    "vs_random_restart": {
+     "wins": 26,
+     "losses": 15,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.058638
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.009761,
+    "vs_incumbent": {
+     "wins": 27,
+     "losses": 16,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.063145
+    },
+    "vs_random_restart": {
+     "wins": 18,
+     "losses": 23,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.825556
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.007279,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009158,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-801225ae5ab4",
+   "config": {
+    "mu": 2,
+    "offspring": 8,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 1.0,
+    "tournament": 2
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.005693,
+    "vs_incumbent": {
+     "wins": 30,
+     "losses": 15,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.017849
+    },
+    "vs_random_restart": {
+     "wins": 26,
+     "losses": 15,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.058638
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.009761,
+    "vs_incumbent": {
+     "wins": 27,
+     "losses": 16,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.063145
+    },
+    "vs_random_restart": {
+     "wins": 18,
+     "losses": 23,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.825556
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.007279,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009158,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-541cc1e27b72",
+   "config": {
+    "mu": 2,
+    "offspring": 8,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 1.0,
+    "tournament": 3
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.005693,
+    "vs_incumbent": {
+     "wins": 30,
+     "losses": 15,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.017849
+    },
+    "vs_random_restart": {
+     "wins": 26,
+     "losses": 15,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.058638
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.009761,
+    "vs_incumbent": {
+     "wins": 27,
+     "losses": 16,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.063145
+    },
+    "vs_random_restart": {
+     "wins": 18,
+     "losses": 23,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.825556
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.007279,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009158,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-a2a050d7f3fa",
+   "config": {
+    "mu": 8,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 1.0,
+    "tournament": 1
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.005693,
+    "vs_incumbent": {
+     "wins": 30,
+     "losses": 15,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.017849
+    },
+    "vs_random_restart": {
+     "wins": 26,
+     "losses": 15,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.058638
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.009761,
+    "vs_incumbent": {
+     "wins": 27,
+     "losses": 16,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.063145
+    },
+    "vs_random_restart": {
+     "wins": 18,
+     "losses": 23,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.825556
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.007279,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009158,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-a078dcfe9638",
+   "config": {
+    "mu": 8,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 1.0,
+    "tournament": 2
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.005693,
+    "vs_incumbent": {
+     "wins": 30,
+     "losses": 15,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.017849
+    },
+    "vs_random_restart": {
+     "wins": 26,
+     "losses": 15,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.058638
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.009761,
+    "vs_incumbent": {
+     "wins": 27,
+     "losses": 16,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.063145
+    },
+    "vs_random_restart": {
+     "wins": 18,
+     "losses": 23,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.825556
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.007279,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009158,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-fe187b461799",
+   "config": {
+    "mu": 8,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 1.0,
+    "tournament": 3
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.005693,
+    "vs_incumbent": {
+     "wins": 30,
+     "losses": 15,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.017849
+    },
+    "vs_random_restart": {
+     "wins": 26,
+     "losses": 15,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.058638
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.009761,
+    "vs_incumbent": {
+     "wins": 27,
+     "losses": 16,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.063145
+    },
+    "vs_random_restart": {
+     "wins": 18,
+     "losses": 23,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.825556
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.007279,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009158,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-411a5d3e9f18",
+   "config": {
+    "mu": 4,
+    "offspring": 4,
+    "p_extra_mutation": 0.0,
+    "p_extra_mutation_recombined": 0.0,
+    "p_recombine": 0.0,
+    "p_restart": 0.0,
+    "tournament": 2
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.00896,
+    "vs_incumbent": {
+     "wins": 20,
+     "losses": 21,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.622386
+    },
+    "vs_random_restart": {
+     "wins": 15,
+     "losses": 29,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.988686
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.006652,
+    "vs_incumbent": {
+     "wins": 17,
+     "losses": 21,
+     "ties": 22,
+     "sign_test_p_one_sided": 0.791154
+    },
+    "vs_random_restart": {
+     "wins": 12,
+     "losses": 31,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.999043
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.00835,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.01106,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-38bef94332cf",
+   "config": {
+    "mu": 4,
+    "offspring": 4,
+    "p_extra_mutation": 0.9,
+    "p_extra_mutation_recombined": 0.9,
+    "p_recombine": 0.9,
+    "p_restart": 0.0,
+    "tournament": 2
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.009685,
+    "vs_incumbent": {
+     "wins": 21,
+     "losses": 19,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.437315
+    },
+    "vs_random_restart": {
+     "wins": 18,
+     "losses": 24,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.860022
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.007613,
+    "vs_incumbent": {
+     "wins": 21,
+     "losses": 20,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.5
+    },
+    "vs_random_restart": {
+     "wins": 17,
+     "losses": 29,
+     "ties": 14,
+     "sign_test_p_one_sided": 0.972962
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.010622,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.011976,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-ef4851aab186",
+   "config": {
+    "mu": 4,
+    "offspring": 4,
+    "p_extra_mutation": 0.0,
+    "p_extra_mutation_recombined": 0.0,
+    "p_recombine": 0.9,
+    "p_restart": 0.0,
+    "tournament": 2
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.012701,
+    "vs_incumbent": {
+     "wins": 18,
+     "losses": 24,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.860022
+    },
+    "vs_random_restart": {
+     "wins": 10,
+     "losses": 33,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.999915
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.007851,
+    "vs_incumbent": {
+     "wins": 19,
+     "losses": 24,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.819811
+    },
+    "vs_random_restart": {
+     "wins": 12,
+     "losses": 36,
+     "ties": 12,
+     "sign_test_p_one_sided": 0.999889
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.014134,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.016134,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-be37a62230b5",
+   "config": {
+    "mu": 4,
+    "offspring": 4,
+    "p_extra_mutation": 0.9,
+    "p_extra_mutation_recombined": 0.9,
+    "p_recombine": 0.0,
+    "p_restart": 0.0,
+    "tournament": 2
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.009383,
+    "vs_incumbent": {
+     "wins": 26,
+     "losses": 17,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.111026
+    },
+    "vs_random_restart": {
+     "wins": 17,
+     "losses": 24,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.894488
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.006346,
+    "vs_incumbent": {
+     "wins": 25,
+     "losses": 16,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.105512
+    },
+    "vs_random_restart": {
+     "wins": 18,
+     "losses": 26,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.912914
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.005673,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.012023,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-672caa544020",
+   "config": {
+    "mu": 4,
+    "offspring": 4,
+    "p_extra_mutation": 0.0,
+    "p_extra_mutation_recombined": 0.0,
+    "p_recombine": 0.0,
+    "p_restart": 0.5,
+    "tournament": 2
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.006269,
+    "vs_incumbent": {
+     "wins": 28,
+     "losses": 16,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.048071
+    },
+    "vs_random_restart": {
+     "wins": 22,
+     "losses": 19,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.377614
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.008081,
+    "vs_incumbent": {
+     "wins": 21,
+     "losses": 23,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.674206
+    },
+    "vs_random_restart": {
+     "wins": 15,
+     "losses": 29,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.988686
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.008912,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.010163,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-52ecbd7e9906",
+   "config": {
+    "mu": 4,
+    "offspring": 4,
+    "p_extra_mutation": 0.9,
+    "p_extra_mutation_recombined": 0.9,
+    "p_recombine": 0.9,
+    "p_restart": 0.5,
+    "tournament": 2
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.007026,
+    "vs_incumbent": {
+     "wins": 29,
+     "losses": 13,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.00976
+    },
+    "vs_random_restart": {
+     "wins": 23,
+     "losses": 16,
+     "ties": 21,
+     "sign_test_p_one_sided": 0.168392
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.005606,
+    "vs_incumbent": {
+     "wins": 28,
+     "losses": 16,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.048071
+    },
+    "vs_random_restart": {
+     "wins": 17,
+     "losses": 22,
+     "ties": 21,
+     "sign_test_p_one_sided": 0.831608
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.007446,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.011509,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-032cf374408a",
+   "config": {
+    "mu": 4,
+    "offspring": 4,
+    "p_extra_mutation": 0.0,
+    "p_extra_mutation_recombined": 0.0,
+    "p_recombine": 0.9,
+    "p_restart": 0.5,
+    "tournament": 2
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.006487,
+    "vs_incumbent": {
+     "wins": 29,
+     "losses": 16,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.036227
+    },
+    "vs_random_restart": {
+     "wins": 25,
+     "losses": 19,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.22569
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.007896,
+    "vs_incumbent": {
+     "wins": 26,
+     "losses": 22,
+     "ties": 12,
+     "sign_test_p_one_sided": 0.332733
+    },
+    "vs_random_restart": {
+     "wins": 15,
+     "losses": 32,
+     "ties": 13,
+     "sign_test_p_one_sided": 0.996029
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.006138,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.011517,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-0cf37d01b63d",
+   "config": {
+    "mu": 4,
+    "offspring": 4,
+    "p_extra_mutation": 0.9,
+    "p_extra_mutation_recombined": 0.9,
+    "p_recombine": 0.0,
+    "p_restart": 0.5,
+    "tournament": 2
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.005047,
+    "vs_incumbent": {
+     "wins": 30,
+     "losses": 13,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.006859
+    },
+    "vs_random_restart": {
+     "wins": 24,
+     "losses": 17,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.174444
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.005337,
+    "vs_incumbent": {
+     "wins": 25,
+     "losses": 16,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.105512
+    },
+    "vs_random_restart": {
+     "wins": 19,
+     "losses": 25,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.854392
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.006082,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009363,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-1e1adf85bd4c",
+   "config": {
+    "mu": 4,
+    "offspring": 4,
+    "p_extra_mutation": 0.0,
+    "p_extra_mutation_recombined": 0.0,
+    "p_recombine": 0.0,
+    "p_restart": 0.9,
+    "tournament": 2
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.005897,
+    "vs_incumbent": {
+     "wins": 29,
+     "losses": 14,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.01577
+    },
+    "vs_random_restart": {
+     "wins": 24,
+     "losses": 18,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.2204
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.008616,
+    "vs_incumbent": {
+     "wins": 29,
+     "losses": 16,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.036227
+    },
+    "vs_random_restart": {
+     "wins": 17,
+     "losses": 23,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.865906
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.004976,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.008932,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-caee3edea0f0",
+   "config": {
+    "mu": 4,
+    "offspring": 4,
+    "p_extra_mutation": 0.9,
+    "p_extra_mutation_recombined": 0.9,
+    "p_recombine": 0.9,
+    "p_restart": 0.9,
+    "tournament": 2
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.006317,
+    "vs_incumbent": {
+     "wins": 31,
+     "losses": 14,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.008047
+    },
+    "vs_random_restart": {
+     "wins": 22,
+     "losses": 16,
+     "ties": 22,
+     "sign_test_p_one_sided": 0.208846
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.009356,
+    "vs_incumbent": {
+     "wins": 30,
+     "losses": 17,
+     "ties": 13,
+     "sign_test_p_one_sided": 0.03947
+    },
+    "vs_random_restart": {
+     "wins": 16,
+     "losses": 26,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.955785
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.006646,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.010055,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-2f3179043dba",
+   "config": {
+    "mu": 4,
+    "offspring": 4,
+    "p_extra_mutation": 0.0,
+    "p_extra_mutation_recombined": 0.0,
+    "p_recombine": 0.9,
+    "p_restart": 0.9,
+    "tournament": 2
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.006982,
+    "vs_incumbent": {
+     "wins": 29,
+     "losses": 16,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.036227
+    },
+    "vs_random_restart": {
+     "wins": 23,
+     "losses": 17,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.214795
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.0102,
+    "vs_incumbent": {
+     "wins": 28,
+     "losses": 17,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.067578
+    },
+    "vs_random_restart": {
+     "wins": 16,
+     "losses": 26,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.955785
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.007328,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.010766,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-f51da0fb8706",
+   "config": {
+    "mu": 4,
+    "offspring": 4,
+    "p_extra_mutation": 0.9,
+    "p_extra_mutation_recombined": 0.9,
+    "p_recombine": 0.0,
+    "p_restart": 0.9,
+    "tournament": 2
+   },
+   "source": "grid",
+   "pilot_train": {
+    "mean_loss": 0.006486,
+    "vs_incumbent": {
+     "wins": 28,
+     "losses": 17,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.067578
+    },
+    "vs_random_restart": {
+     "wins": 20,
+     "losses": 20,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.562685
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.01105,
+    "vs_incumbent": {
+     "wins": 29,
+     "losses": 17,
+     "ties": 14,
+     "sign_test_p_one_sided": 0.051903
+    },
+    "vs_random_restart": {
+     "wins": 17,
+     "losses": 27,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.951929
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.007634,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009588,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-2d4a15cf9f87",
+   "config": {
+    "mu": 8,
+    "offspring": 4,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.0,
+    "tournament": 2
+   },
+   "source": "cycle-4 lineage",
+   "cycle_4_train_mean_loss": 0.007035,
+   "pilot_train": {
+    "mean_loss": 0.008052,
+    "vs_incumbent": {
+     "wins": 25,
+     "losses": 15,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.07693
+    },
+    "vs_random_restart": {
+     "wins": 17,
+     "losses": 23,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.865906
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.007709,
+    "vs_incumbent": {
+     "wins": 20,
+     "losses": 20,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.562685
+    },
+    "vs_random_restart": {
+     "wins": 15,
+     "losses": 29,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.988686
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.012511,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.012086,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-562c6fdf85bc",
+   "config": {
+    "mu": 4,
+    "offspring": 6,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.0,
+    "tournament": 2
+   },
+   "source": "cycle-4 lineage",
+   "cycle_4_train_mean_loss": 0.008585,
+   "pilot_train": {
+    "mean_loss": 0.010121,
+    "vs_incumbent": {
+     "wins": 19,
+     "losses": 19,
+     "ties": 22,
+     "sign_test_p_one_sided": 0.564293
+    },
+    "vs_random_restart": {
+     "wins": 15,
+     "losses": 27,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.978221
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.008656,
+    "vs_incumbent": {
+     "wins": 13,
+     "losses": 23,
+     "ties": 24,
+     "sign_test_p_one_sided": 0.967377
+    },
+    "vs_random_restart": {
+     "wins": 12,
+     "losses": 33,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.999588
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.008485,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.014103,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-c0b27b4df69e",
+   "config": {
+    "mu": 4,
+    "offspring": 4,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.064,
+    "tournament": 2
+   },
+   "source": "cycle-4 lineage",
+   "cycle_4_train_mean_loss": 0.011097,
+   "pilot_train": {
+    "mean_loss": 0.010659,
+    "vs_incumbent": {
+     "wins": 24,
+     "losses": 16,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.134094
+    },
+    "vs_random_restart": {
+     "wins": 19,
+     "losses": 23,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.7796
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.006593,
+    "vs_incumbent": {
+     "wins": 23,
+     "losses": 17,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.214795
+    },
+    "vs_random_restart": {
+     "wins": 16,
+     "losses": 30,
+     "ties": 14,
+     "sign_test_p_one_sided": 0.987052
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.012154,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.012154,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-afdb92cb42e7",
+   "config": {
+    "mu": 4,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.756,
+    "p_recombine": 0.3,
+    "p_restart": 0.0,
+    "tournament": 2
+   },
+   "source": "cycle-4 lineage",
+   "cycle_4_train_mean_loss": 0.006082,
+   "pilot_train": {
+    "mean_loss": 0.010337,
+    "vs_incumbent": {
+     "wins": 22,
+     "losses": 15,
+     "ties": 23,
+     "sign_test_p_one_sided": 0.162004
+    },
+    "vs_random_restart": {
+     "wins": 17,
+     "losses": 27,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.951929
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.010677,
+    "vs_incumbent": {
+     "wins": 17,
+     "losses": 25,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.917925
+    },
+    "vs_random_restart": {
+     "wins": 14,
+     "losses": 37,
+     "ties": 9,
+     "sign_test_p_one_sided": 0.999689
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.015019,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.013155,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-2272322885e9",
+   "config": {
+    "mu": 4,
+    "offspring": 4,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.525,
+    "p_recombine": 0.3,
+    "p_restart": 0.156,
+    "tournament": 2
+   },
+   "source": "cycle-4 lineage",
+   "cycle_4_train_mean_loss": 0.008155,
+   "pilot_train": {
+    "mean_loss": 0.00646,
+    "vs_incumbent": {
+     "wins": 25,
+     "losses": 15,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.07693
+    },
+    "vs_random_restart": {
+     "wins": 19,
+     "losses": 24,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.819811
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.007556,
+    "vs_incumbent": {
+     "wins": 24,
+     "losses": 15,
+     "ties": 21,
+     "sign_test_p_one_sided": 0.099795
+    },
+    "vs_random_restart": {
+     "wins": 15,
+     "losses": 29,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.988686
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.009032,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009185,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-0f87a85744bd",
+   "config": {
+    "mu": 4,
+    "offspring": 4,
+    "p_extra_mutation": 0.353,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.0,
+    "tournament": 2
+   },
+   "source": "cycle-4 lineage",
+   "cycle_4_train_mean_loss": 0.008296,
+   "pilot_train": {
+    "mean_loss": 0.010756,
+    "vs_incumbent": {
+     "wins": 12,
+     "losses": 10,
+     "ties": 38,
+     "sign_test_p_one_sided": 0.415906
+    },
+    "vs_random_restart": {
+     "wins": 15,
+     "losses": 28,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.98423
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.008012,
+    "vs_incumbent": {
+     "wins": 11,
+     "losses": 17,
+     "ties": 32,
+     "sign_test_p_one_sided": 0.907533
+    },
+    "vs_random_restart": {
+     "wins": 16,
+     "losses": 30,
+     "ties": 14,
+     "sign_test_p_one_sided": 0.987052
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.008181,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.01516,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-ff13692c61ce",
+   "config": {
+    "mu": 4,
+    "offspring": 4,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.299,
+    "p_restart": 0.0,
+    "tournament": 2
+   },
+   "source": "cycle-4 lineage",
+   "cycle_4_train_mean_loss": 0.007975,
+   "pilot_train": {
+    "mean_loss": 0.010738,
+    "vs_incumbent": {
+     "wins": 1,
+     "losses": 0,
+     "ties": 59,
+     "sign_test_p_one_sided": 0.5
+    },
+    "vs_random_restart": {
+     "wins": 14,
+     "losses": 29,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.993141
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.007752,
+    "vs_incumbent": {
+     "wins": 0,
+     "losses": 0,
+     "ties": 60,
+     "sign_test_p_one_sided": 1.0
+    },
+    "vs_random_restart": {
+     "wins": 12,
+     "losses": 34,
+     "ties": 14,
+     "sign_test_p_one_sided": 0.999732
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.007944,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.014444,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-82c8a80efc51",
+   "config": {
+    "mu": 8,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.372,
+    "p_restart": 0.0,
+    "tournament": 1
+   },
+   "source": "cycle-4 lineage",
+   "cycle_4_train_mean_loss": 0.009157,
+   "pilot_train": {
+    "mean_loss": 0.008832,
+    "vs_incumbent": {
+     "wins": 28,
+     "losses": 17,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.067578
+    },
+    "vs_random_restart": {
+     "wins": 20,
+     "losses": 25,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.814351
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.007465,
+    "vs_incumbent": {
+     "wins": 25,
+     "losses": 22,
+     "ties": 13,
+     "sign_test_p_one_sided": 0.385433
+    },
+    "vs_random_restart": {
+     "wins": 17,
+     "losses": 29,
+     "ties": 14,
+     "sign_test_p_one_sided": 0.972962
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.012132,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.013121,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-e64e9613d184",
+   "config": {
+    "mu": 6,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.756,
+    "p_recombine": 0.3,
+    "p_restart": 0.0,
+    "tournament": 2
+   },
+   "source": "cycle-4 lineage",
+   "cycle_4_train_mean_loss": 0.00797,
+   "pilot_train": {
+    "mean_loss": 0.008766,
+    "vs_incumbent": {
+     "wins": 25,
+     "losses": 16,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.105512
+    },
+    "vs_random_restart": {
+     "wins": 17,
+     "losses": 24,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.894488
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.006443,
+    "vs_incumbent": {
+     "wins": 22,
+     "losses": 19,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.377614
+    },
+    "vs_random_restart": {
+     "wins": 19,
+     "losses": 28,
+     "ties": 13,
+     "sign_test_p_one_sided": 0.928067
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.011028,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.010361,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-598073da7e8c",
+   "config": {
+    "mu": 8,
+    "offspring": 4,
+    "p_extra_mutation": 0.332,
+    "p_extra_mutation_recombined": 0.727,
+    "p_recombine": 0.3,
+    "p_restart": 0.0,
+    "tournament": 2
+   },
+   "source": "cycle-4 lineage",
+   "cycle_4_train_mean_loss": 0.010242,
+   "pilot_train": {
+    "mean_loss": 0.008665,
+    "vs_incumbent": {
+     "wins": 26,
+     "losses": 14,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.040345
+    },
+    "vs_random_restart": {
+     "wins": 20,
+     "losses": 22,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.678016
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.006275,
+    "vs_incumbent": {
+     "wins": 22,
+     "losses": 20,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.438807
+    },
+    "vs_random_restart": {
+     "wins": 16,
+     "losses": 29,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.982151
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.010114,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.011424,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-cdff07bf8a6f",
+   "config": {
+    "mu": 8,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.756,
+    "p_recombine": 0.3,
+    "p_restart": 0.0,
+    "tournament": 2
+   },
+   "source": "cycle-4 lineage",
+   "cycle_4_train_mean_loss": 0.007726,
+   "pilot_train": {
+    "mean_loss": 0.009252,
+    "vs_incumbent": {
+     "wins": 24,
+     "losses": 18,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.2204
+    },
+    "vs_random_restart": {
+     "wins": 19,
+     "losses": 25,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.854392
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.006058,
+    "vs_incumbent": {
+     "wins": 21,
+     "losses": 16,
+     "ties": 23,
+     "sign_test_p_one_sided": 0.255688
+    },
+    "vs_random_restart": {
+     "wins": 16,
+     "losses": 25,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.941362
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.01223,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.012051,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-fcb64243b803",
+   "config": {
+    "mu": 4,
+    "offspring": 4,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.253,
+    "p_restart": 0.0,
+    "tournament": 2
+   },
+   "source": "cycle-4 lineage",
+   "cycle_4_train_mean_loss": 0.011232,
+   "pilot_train": {
+    "mean_loss": 0.009308,
+    "vs_incumbent": {
+     "wins": 15,
+     "losses": 12,
+     "ties": 33,
+     "sign_test_p_one_sided": 0.350554
+    },
+    "vs_random_restart": {
+     "wins": 16,
+     "losses": 27,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.967003
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.007713,
+    "vs_incumbent": {
+     "wins": 14,
+     "losses": 12,
+     "ties": 34,
+     "sign_test_p_one_sided": 0.422509
+    },
+    "vs_random_restart": {
+     "wins": 16,
+     "losses": 32,
+     "ties": 12,
+     "sign_test_p_one_sided": 0.993358
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.008042,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.013751,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-61df6a58be13",
+   "config": {
+    "mu": 4,
+    "offspring": 4,
+    "p_extra_mutation": 0.497,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.0,
+    "tournament": 2
+   },
+   "source": "cycle-4 lineage",
+   "cycle_4_train_mean_loss": 0.007398,
+   "pilot_train": {
+    "mean_loss": 0.006089,
+    "vs_incumbent": {
+     "wins": 24,
+     "losses": 13,
+     "ties": 23,
+     "sign_test_p_one_sided": 0.049436
+    },
+    "vs_random_restart": {
+     "wins": 23,
+     "losses": 19,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.321984
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.007509,
+    "vs_incumbent": {
+     "wins": 20,
+     "losses": 19,
+     "ties": 21,
+     "sign_test_p_one_sided": 0.5
+    },
+    "vs_random_restart": {
+     "wins": 16,
+     "losses": 31,
+     "ties": 13,
+     "sign_test_p_one_sided": 0.990688
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.008927,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009926,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-3c66dc174fef",
+   "config": {
+    "mu": 3,
+    "offspring": 4,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.0,
+    "tournament": 2
+   },
+   "source": "cycle-4 lineage",
+   "cycle_4_train_mean_loss": 0.008643,
+   "pilot_train": {
+    "mean_loss": 0.012203,
+    "vs_incumbent": {
+     "wins": 20,
+     "losses": 19,
+     "ties": 21,
+     "sign_test_p_one_sided": 0.5
+    },
+    "vs_random_restart": {
+     "wins": 13,
+     "losses": 31,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.998171
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.006644,
+    "vs_incumbent": {
+     "wins": 17,
+     "losses": 21,
+     "ties": 22,
+     "sign_test_p_one_sided": 0.791154
+    },
+    "vs_random_restart": {
+     "wins": 13,
+     "losses": 30,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.997299
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.011346,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.01182,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-4188d7850377",
+   "config": {
+    "mu": 4,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.756,
+    "p_recombine": 0.0,
+    "p_restart": 0.0,
+    "tournament": 2
+   },
+   "source": "cycle-4 lineage",
+   "cycle_4_train_mean_loss": 0.007655,
+   "pilot_train": {
+    "mean_loss": 0.008701,
+    "vs_incumbent": {
+     "wins": 26,
+     "losses": 13,
+     "ties": 21,
+     "sign_test_p_one_sided": 0.026626
+    },
+    "vs_random_restart": {
+     "wins": 18,
+     "losses": 22,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.785205
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.006679,
+    "vs_incumbent": {
+     "wins": 25,
+     "losses": 17,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.139978
+    },
+    "vs_random_restart": {
+     "wins": 15,
+     "losses": 27,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.978221
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.010953,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.010528,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-af4bc49454db",
+   "config": {
+    "mu": 4,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.859,
+    "p_recombine": 0.3,
+    "p_restart": 0.0,
+    "tournament": 2
+   },
+   "source": "cycle-4 lineage",
+   "cycle_4_train_mean_loss": 0.00631,
+   "pilot_train": {
+    "mean_loss": 0.007021,
+    "vs_incumbent": {
+     "wins": 26,
+     "losses": 11,
+     "ties": 23,
+     "sign_test_p_one_sided": 0.010037
+    },
+    "vs_random_restart": {
+     "wins": 16,
+     "losses": 25,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.941362
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.010904,
+    "vs_incumbent": {
+     "wins": 17,
+     "losses": 26,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.936855
+    },
+    "vs_random_restart": {
+     "wins": 15,
+     "losses": 35,
+     "ties": 10,
+     "sign_test_p_one_sided": 0.998699
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.012929,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.013187,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-0f9918a2df21",
+   "config": {
+    "mu": 8,
+    "offspring": 4,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.756,
+    "p_recombine": 0.346,
+    "p_restart": 0.0,
+    "tournament": 2
+   },
+   "source": "cycle-4 lineage",
+   "cycle_4_train_mean_loss": 0.010591,
+   "pilot_train": {
+    "mean_loss": 0.009599,
+    "vs_incumbent": {
+     "wins": 29,
+     "losses": 13,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.00976
+    },
+    "vs_random_restart": {
+     "wins": 18,
+     "losses": 24,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.860022
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.008176,
+    "vs_incumbent": {
+     "wins": 20,
+     "losses": 18,
+     "ties": 22,
+     "sign_test_p_one_sided": 0.435707
+    },
+    "vs_random_restart": {
+     "wins": 14,
+     "losses": 33,
+     "ties": 13,
+     "sign_test_p_one_sided": 0.998456
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.012166,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.010738,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-931e3c4aa0b1",
+   "config": {
+    "mu": 4,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.3,
+    "p_restart": 0.0,
+    "tournament": 2
+   },
+   "source": "cycle-4 lineage",
+   "cycle_4_train_mean_loss": 0.007203,
+   "pilot_train": {
+    "mean_loss": 0.0125,
+    "vs_incumbent": {
+     "wins": 19,
+     "losses": 21,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.682086
+    },
+    "vs_random_restart": {
+     "wins": 14,
+     "losses": 29,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.993141
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.007632,
+    "vs_incumbent": {
+     "wins": 15,
+     "losses": 21,
+     "ties": 24,
+     "sign_test_p_one_sided": 0.878508
+    },
+    "vs_random_restart": {
+     "wins": 13,
+     "losses": 33,
+     "ties": 14,
+     "sign_test_p_one_sided": 0.999179
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.013524,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.012446,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-0fffb74e2671",
+   "config": {
+    "mu": 4,
+    "offspring": 8,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.756,
+    "p_recombine": 0.3,
+    "p_restart": 0.0,
+    "tournament": 2
+   },
+   "source": "cycle-4 lineage",
+   "cycle_4_train_mean_loss": 0.006731,
+   "pilot_train": {
+    "mean_loss": 0.009477,
+    "vs_incumbent": {
+     "wins": 26,
+     "losses": 14,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.040345
+    },
+    "vs_random_restart": {
+     "wins": 14,
+     "losses": 27,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.986233
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.005703,
+    "vs_incumbent": {
+     "wins": 22,
+     "losses": 16,
+     "ties": 22,
+     "sign_test_p_one_sided": 0.208846
+    },
+    "vs_random_restart": {
+     "wins": 16,
+     "losses": 29,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.982151
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.011531,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.011456,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-cd8726643990",
+   "config": {
+    "mu": 8,
+    "offspring": 4,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.579,
+    "p_recombine": 0.3,
+    "p_restart": 0.0,
+    "tournament": 2
+   },
+   "source": "cycle-4 lineage",
+   "cycle_4_train_mean_loss": 0.007646,
+   "pilot_train": {
+    "mean_loss": 0.009941,
+    "vs_incumbent": {
+     "wins": 28,
+     "losses": 14,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.021779
+    },
+    "vs_random_restart": {
+     "wins": 17,
+     "losses": 23,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.865906
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.006921,
+    "vs_incumbent": {
+     "wins": 20,
+     "losses": 20,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.562685
+    },
+    "vs_random_restart": {
+     "wins": 15,
+     "losses": 30,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.991953
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.011749,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.012113,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-659d141abc28",
+   "config": {
+    "mu": 4,
+    "offspring": 2,
+    "p_extra_mutation": 0.227,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.13,
+    "p_restart": 0.0,
+    "tournament": 2
+   },
+   "source": "cycle-4 lineage",
+   "cycle_4_train_mean_loss": 0.009284,
+   "pilot_train": {
+    "mean_loss": 0.009204,
+    "vs_incumbent": {
+     "wins": 27,
+     "losses": 15,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.044215
+    },
+    "vs_random_restart": {
+     "wins": 21,
+     "losses": 24,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.724258
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.007124,
+    "vs_incumbent": {
+     "wins": 21,
+     "losses": 23,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.674206
+    },
+    "vs_random_restart": {
+     "wins": 14,
+     "losses": 34,
+     "ties": 12,
+     "sign_test_p_one_sided": 0.998956
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.013663,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.011167,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-b88aba0f549b",
+   "config": {
+    "mu": 2,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.5,
+    "p_recombine": 0.331,
+    "p_restart": 0.0,
+    "tournament": 2
+   },
+   "source": "cycle-4 lineage",
+   "cycle_4_train_mean_loss": 0.008722,
+   "pilot_train": {
+    "mean_loss": 0.009492,
+    "vs_incumbent": {
+     "wins": 24,
+     "losses": 17,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.174444
+    },
+    "vs_random_restart": {
+     "wins": 19,
+     "losses": 23,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.7796
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.006554,
+    "vs_incumbent": {
+     "wins": 21,
+     "losses": 20,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.5
+    },
+    "vs_random_restart": {
+     "wins": 14,
+     "losses": 24,
+     "ties": 22,
+     "sign_test_p_one_sided": 0.963524
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.009343,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.012027,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-c6295b6943a1",
+   "config": {
+    "mu": 4,
+    "offspring": 4,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.756,
+    "p_recombine": 0.3,
+    "p_restart": 0.0,
+    "tournament": 2
+   },
+   "source": "cycle-4 lineage",
+   "cycle_4_train_mean_loss": 0.009159,
+   "pilot_train": {
+    "mean_loss": 0.009509,
+    "vs_incumbent": {
+     "wins": 18,
+     "losses": 13,
+     "ties": 29,
+     "sign_test_p_one_sided": 0.236565
+    },
+    "vs_random_restart": {
+     "wins": 16,
+     "losses": 27,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.967003
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.007116,
+    "vs_incumbent": {
+     "wins": 14,
+     "losses": 14,
+     "ties": 32,
+     "sign_test_p_one_sided": 0.574723
+    },
+    "vs_random_restart": {
+     "wins": 16,
+     "losses": 29,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.982151
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.007907,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.011692,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-01418a26db2f",
+   "config": {
+    "mu": 4,
+    "offspring": 2,
+    "p_extra_mutation": 0.415,
+    "p_extra_mutation_recombined": 0.859,
+    "p_recombine": 0.3,
+    "p_restart": 0.0,
+    "tournament": 2
+   },
+   "source": "cycle-4 lineage",
+   "cycle_4_train_mean_loss": 0.008958,
+   "pilot_train": {
+    "mean_loss": 0.010778,
+    "vs_incumbent": {
+     "wins": 21,
+     "losses": 19,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.437315
+    },
+    "vs_random_restart": {
+     "wins": 19,
+     "losses": 26,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.883653
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.009488,
+    "vs_incumbent": {
+     "wins": 20,
+     "losses": 25,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.814351
+    },
+    "vs_random_restart": {
+     "wins": 16,
+     "losses": 31,
+     "ties": 13,
+     "sign_test_p_one_sided": 0.990688
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.012211,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.010683,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-ca5348ce1149",
+   "config": {
+    "mu": 4,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.861,
+    "p_recombine": 0.3,
+    "p_restart": 0.0,
+    "tournament": 2
+   },
+   "source": "cycle-4 lineage",
+   "cycle_4_train_mean_loss": 0.00631,
+   "pilot_train": {
+    "mean_loss": 0.007241,
+    "vs_incumbent": {
+     "wins": 26,
+     "losses": 12,
+     "ties": 22,
+     "sign_test_p_one_sided": 0.016776
+    },
+    "vs_random_restart": {
+     "wins": 16,
+     "losses": 26,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.955785
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.010904,
+    "vs_incumbent": {
+     "wins": 17,
+     "losses": 26,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.936855
+    },
+    "vs_random_restart": {
+     "wins": 15,
+     "losses": 35,
+     "ties": 10,
+     "sign_test_p_one_sided": 0.998699
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.01315,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.013677,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-a56f14a77cd9",
+   "config": {
+    "mu": 8,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.859,
+    "p_recombine": 0.3,
+    "p_restart": 0.0,
+    "tournament": 2
+   },
+   "source": "cycle-4 lineage",
+   "cycle_4_train_mean_loss": 0.008436,
+   "pilot_train": {
+    "mean_loss": 0.010032,
+    "vs_incumbent": {
+     "wins": 23,
+     "losses": 18,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.266355
+    },
+    "vs_random_restart": {
+     "wins": 16,
+     "losses": 24,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.92307
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.00665,
+    "vs_incumbent": {
+     "wins": 23,
+     "losses": 18,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.266355
+    },
+    "vs_random_restart": {
+     "wins": 19,
+     "losses": 23,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.7796
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.012749,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.011962,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-6acac3207fe1",
+   "config": {
+    "mu": 2,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.756,
+    "p_recombine": 0.3,
+    "p_restart": 0.0,
+    "tournament": 2
+   },
+   "source": "cycle-4 lineage",
+   "cycle_4_train_mean_loss": 0.008262,
+   "pilot_train": {
+    "mean_loss": 0.007534,
+    "vs_incumbent": {
+     "wins": 24,
+     "losses": 12,
+     "ties": 24,
+     "sign_test_p_one_sided": 0.032623
+    },
+    "vs_random_restart": {
+     "wins": 20,
+     "losses": 22,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.678016
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.006482,
+    "vs_incumbent": {
+     "wins": 21,
+     "losses": 23,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.674206
+    },
+    "vs_random_restart": {
+     "wins": 11,
+     "losses": 30,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.999275
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.008611,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.012407,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-7573c3ffc32b",
+   "config": {
+    "mu": 4,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.756,
+    "p_recombine": 0.541,
+    "p_restart": 0.0,
+    "tournament": 2
+   },
+   "source": "cycle-4 lineage",
+   "cycle_4_train_mean_loss": 0.010984,
+   "pilot_train": {
+    "mean_loss": 0.007315,
+    "vs_incumbent": {
+     "wins": 22,
+     "losses": 17,
+     "ties": 21,
+     "sign_test_p_one_sided": 0.261199
+    },
+    "vs_random_restart": {
+     "wins": 13,
+     "losses": 29,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.996042
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.006898,
+    "vs_incumbent": {
+     "wins": 25,
+     "losses": 20,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.275742
+    },
+    "vs_random_restart": {
+     "wins": 13,
+     "losses": 31,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.998171
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.009317,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.01337,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-55964ab3436e",
+   "config": {
+    "mu": 3,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.859,
+    "p_recombine": 0.3,
+    "p_restart": 0.0,
+    "tournament": 2
+   },
+   "source": "cycle-4 lineage",
+   "cycle_4_train_mean_loss": 0.009603,
+   "pilot_train": {
+    "mean_loss": 0.009352,
+    "vs_incumbent": {
+     "wins": 23,
+     "losses": 19,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.321984
+    },
+    "vs_random_restart": {
+     "wins": 14,
+     "losses": 30,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.99522
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.007794,
+    "vs_incumbent": {
+     "wins": 20,
+     "losses": 20,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.562685
+    },
+    "vs_random_restart": {
+     "wins": 12,
+     "losses": 31,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.999043
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.010225,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.011349,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-c93092dbc393",
+   "config": {
+    "mu": 4,
+    "offspring": 4,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.859,
+    "p_recombine": 0.3,
+    "p_restart": 0.0,
+    "tournament": 2
+   },
+   "source": "cycle-4 lineage",
+   "cycle_4_train_mean_loss": 0.00777,
+   "pilot_train": {
+    "mean_loss": 0.008626,
+    "vs_incumbent": {
+     "wins": 19,
+     "losses": 13,
+     "ties": 28,
+     "sign_test_p_one_sided": 0.188543
+    },
+    "vs_random_restart": {
+     "wins": 16,
+     "losses": 27,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.967003
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.007713,
+    "vs_incumbent": {
+     "wins": 15,
+     "losses": 18,
+     "ties": 27,
+     "sign_test_p_one_sided": 0.756575
+    },
+    "vs_random_restart": {
+     "wins": 14,
+     "losses": 36,
+     "ties": 10,
+     "sign_test_p_one_sided": 0.999532
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.009613,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.013337,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-ae6022fe46e6",
+   "config": {
+    "mu": 4,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.756,
+    "p_recombine": 0.025,
+    "p_restart": 0.0,
+    "tournament": 2
+   },
+   "source": "cycle-4 lineage",
+   "cycle_4_train_mean_loss": 0.007131,
+   "pilot_train": {
+    "mean_loss": 0.007613,
+    "vs_incumbent": {
+     "wins": 28,
+     "losses": 12,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.008295
+    },
+    "vs_random_restart": {
+     "wins": 18,
+     "losses": 22,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.785205
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.00647,
+    "vs_incumbent": {
+     "wins": 26,
+     "losses": 18,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.145608
+    },
+    "vs_random_restart": {
+     "wins": 17,
+     "losses": 27,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.951929
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.010624,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009789,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-0e070b72573f",
+   "config": {
+    "mu": 4,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.756,
+    "p_recombine": 0.309,
+    "p_restart": 0.339,
+    "tournament": 2
+   },
+   "source": "cycle-4 lineage",
+   "cycle_4_train_mean_loss": 0.007983,
+   "pilot_train": {
+    "mean_loss": 0.006245,
+    "vs_incumbent": {
+     "wins": 23,
+     "losses": 18,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.266355
+    },
+    "vs_random_restart": {
+     "wins": 20,
+     "losses": 22,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.678016
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.007978,
+    "vs_incumbent": {
+     "wins": 24,
+     "losses": 23,
+     "ties": 13,
+     "sign_test_p_one_sided": 0.5
+    },
+    "vs_random_restart": {
+     "wins": 14,
+     "losses": 32,
+     "ties": 14,
+     "sign_test_p_one_sided": 0.997733
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.007158,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.010484,
+     "incumbent": 0.014502
+    },
+    "passes_gate": true
+   }
+  },
+  {
+   "id": "cfg-49782cb67aab",
+   "config": {
+    "mu": 4,
+    "offspring": 8,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.859,
+    "p_recombine": 0.3,
+    "p_restart": 0.0,
+    "tournament": 2
+   },
+   "source": "cycle-4 lineage",
+   "cycle_4_train_mean_loss": 0.00696,
+   "pilot_train": {
+    "mean_loss": 0.005632,
+    "vs_incumbent": {
+     "wins": 27,
+     "losses": 13,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.019239
+    },
+    "vs_random_restart": {
+     "wins": 15,
+     "losses": 23,
+     "ties": 22,
+     "sign_test_p_one_sided": 0.928347
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.006075,
+    "vs_incumbent": {
+     "wins": 19,
+     "losses": 18,
+     "ties": 23,
+     "sign_test_p_one_sided": 0.5
+    },
+    "vs_random_restart": {
+     "wins": 15,
+     "losses": 30,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.991953
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.011131,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009727,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-45f66dab4123",
+   "config": {
+    "mu": 4,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.756,
+    "p_recombine": 0.3,
+    "p_restart": 0.0,
+    "tournament": 1
+   },
+   "source": "cycle-4 lineage",
+   "cycle_4_train_mean_loss": 0.007794,
+   "pilot_train": {
+    "mean_loss": 0.00612,
+    "vs_incumbent": {
+     "wins": 29,
+     "losses": 14,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.01577
+    },
+    "vs_random_restart": {
+     "wins": 17,
+     "losses": 26,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.936855
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.00716,
+    "vs_incumbent": {
+     "wins": 23,
+     "losses": 20,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.380396
+    },
+    "vs_random_restart": {
+     "wins": 12,
+     "losses": 32,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.99937
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.00835,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.009879,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-fadca09a156c",
+   "config": {
+    "mu": 4,
+    "offspring": 6,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.756,
+    "p_recombine": 0.3,
+    "p_restart": 0.0,
+    "tournament": 2
+   },
+   "source": "cycle-4 lineage",
+   "cycle_4_train_mean_loss": 0.00634,
+   "pilot_train": {
+    "mean_loss": 0.009813,
+    "vs_incumbent": {
+     "wins": 24,
+     "losses": 19,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.271192
+    },
+    "vs_random_restart": {
+     "wins": 18,
+     "losses": 27,
+     "ties": 15,
+     "sign_test_p_one_sided": 0.932422
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.007731,
+    "vs_incumbent": {
+     "wins": 19,
+     "losses": 21,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.682086
+    },
+    "vs_random_restart": {
+     "wins": 13,
+     "losses": 31,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.998171
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.009294,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.010813,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-15f95e74cea7",
+   "config": {
+    "mu": 3,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.756,
+    "p_recombine": 0.3,
+    "p_restart": 0.0,
+    "tournament": 2
+   },
+   "source": "cycle-4 lineage",
+   "cycle_4_train_mean_loss": 0.009431,
+   "pilot_train": {
+    "mean_loss": 0.00879,
+    "vs_incumbent": {
+     "wins": 26,
+     "losses": 14,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.040345
+    },
+    "vs_random_restart": {
+     "wins": 15,
+     "losses": 27,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.978221
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.008018,
+    "vs_incumbent": {
+     "wins": 20,
+     "losses": 19,
+     "ties": 21,
+     "sign_test_p_one_sided": 0.5
+    },
+    "vs_random_restart": {
+     "wins": 11,
+     "losses": 32,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.999697
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.009976,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.011068,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-0f6ef8d4ad6e",
+   "config": {
+    "mu": 4,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.756,
+    "p_recombine": 0.3,
+    "p_restart": 0.0,
+    "tournament": 3
+   },
+   "source": "cycle-4 lineage",
+   "cycle_4_train_mean_loss": 0.009128,
+   "pilot_train": {
+    "mean_loss": 0.00818,
+    "vs_incumbent": {
+     "wins": 23,
+     "losses": 18,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.266355
+    },
+    "vs_random_restart": {
+     "wins": 21,
+     "losses": 26,
+     "ties": 13,
+     "sign_test_p_one_sided": 0.809153
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.008341,
+    "vs_incumbent": {
+     "wins": 16,
+     "losses": 25,
+     "ties": 19,
+     "sign_test_p_one_sided": 0.941362
+    },
+    "vs_random_restart": {
+     "wins": 10,
+     "losses": 38,
+     "ties": 12,
+     "sign_test_p_one_sided": 0.999992
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.008439,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.011937,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  },
+  {
+   "id": "cfg-6c611bbd5b3b",
+   "config": {
+    "mu": 2,
+    "offspring": 2,
+    "p_extra_mutation": 0.3,
+    "p_extra_mutation_recombined": 0.859,
+    "p_recombine": 0.26,
+    "p_restart": 0.0,
+    "tournament": 2
+   },
+   "source": "cycle-4 lineage",
+   "cycle_4_train_mean_loss": 0.008937,
+   "pilot_train": {
+    "mean_loss": 0.008016,
+    "vs_incumbent": {
+     "wins": 25,
+     "losses": 9,
+     "ties": 26,
+     "sign_test_p_one_sided": 0.004521
+    },
+    "vs_random_restart": {
+     "wins": 17,
+     "losses": 23,
+     "ties": 20,
+     "sign_test_p_one_sided": 0.865906
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.006219,
+    "vs_incumbent": {
+     "wins": 24,
+     "losses": 14,
+     "ties": 22,
+     "sign_test_p_one_sided": 0.071653
+    },
+    "vs_random_restart": {
+     "wins": 15,
+     "losses": 28,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.98423
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.009737,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.012612,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  }
+ ],
+ "evaluations": 33720,
+ "seconds": 2664.6
+}

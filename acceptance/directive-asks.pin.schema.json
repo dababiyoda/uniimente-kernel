@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.internal/acceptance/directive-asks.pin.schema.json",
+  "title": "The pinned asks of the 2026-10-28 directive's completion contract",
+  "description": "Every ask id ever issued in directive-sections.json, with the blocker class it may claim while open besides BUILDABLE_NOT_BUILT. An ask is retired in the map, never deleted; a pinned class moves only to BUILDABLE_NOT_BUILT (python -m acceptance directive --against <base>).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "asks"],
+  "properties": {
+    "version": {"const": "directive-asks-pin/1"},
+    "note": {"type": "string"},
+    "asks": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {"pattern": "^S[0-9]{1,2}\\.A[0-9]+$"},
+      "additionalProperties": {"enum": ["FOUNDER_ONLY", "EXTERNAL", "BUILDABLE_NOT_BUILT", "PRINCIPLE"]}
+    }
+  }
+}

@@ -226,6 +226,89 @@ def test_stale_subregion_evidence_never_steers_and_stale_negative_evidence_persi
     assert {r["status"] for r in rows if r["method"] == "cognition.develop_repair"} == {"EXPERIMENTAL"}
 
 
+def _grid_index(grid_version, grid_table, astar_status="EXPERIMENTAL", astar_version=None):
+    """search_astar and grid_dijkstra, the two families a grid request fits: search_astar measured at its current
+    version (median 0.5 s, neutral), grid_dijkstra at ``grid_version`` (median 0.1 ms, the given subregion table)."""
+    from greg.cognition.genomes import library
+    astar = library.genome("search_astar")
+    return {"genomes": {
+        "search_astar": {"status": astar_status, "version": astar_version or astar.version, "median_seconds": 0.5,
+                         "evidence": "astar.json#search_astar"},
+        "grid_dijkstra": {"status": "EXPERIMENTAL", "version": grid_version, "median_seconds": 0.0001,
+                          "subregions_vs_competitor": grid_table, "evidence": "grid.json#grid_dijkstra",
+                          "competitor": library.genome("grid_dijkstra").competitor}},
+        "recipes": {}, "routing": {}}
+
+
+def test_latency_and_subregion_verdicts_measured_at_another_version_never_rank(registry, no_index):
+    """Review of grid_dijkstra 1.1.0: the compiler attached a family's held-out median latency and subregion verdicts
+    whenever its evidence was not stale, and negative evidence never is, so 1.0.0's measurements (0.1 ms, FAVOURED
+    here) ranked 1.1.0 as if they were its own. Measured at another version they are reported, labelled with that
+    version, and never rank; the same measurements at the current version do."""
+    from greg.cognition.genomes import library, solvers_b
+    data, _ = solvers_b.astar_instance(1)                                   # development seed
+    name, current = solvers_b.astar_subregion(data), library.genome("grid_dijkstra").version
+    favoured = {name: {"n": 10, "wins": 10, "losses": 0, "ties": 0, "p_better": 0.000977, "p_worse": 1.0}}
+    assert current != "1.0.0"
+    for cid in ("cognition.search_astar", "cognition.grid_dijkstra"):
+        registry.set_state(cid, "ATTACHED")                                  # evaluation-only, in memory
+    no_index.write_text(json.dumps(_grid_index("1.0.0", favoured)))
+    r = compile_(registry, {"geometry": "optimization"}, data, execute=False)
+    assert r["method_or_composition_selected"] == "cognition.search_astar"   # measured 0.5 s beats unranked latency
+    rows = {x["method"]: x for x in compiler.candidates(data, compiler.CompetencyGeometry.parse(
+        {"geometry": "optimization"}), json.loads(no_index.read_text()))}
+    grid = rows["cognition.grid_dijkstra"]
+    assert grid["status"] == "EXPERIMENTAL" and "stale_evidence" not in grid         # negative evidence persists
+    assert "median_seconds" not in grid and "subregion" not in grid
+    stale = grid["stale_measurements"]
+    assert (stale["version_measured"], stale["version_current"], stale["median_seconds"]) == ("1.0.0", current, 0.0001)
+    assert stale["subregion"]["name"] == name and stale["subregion"]["verdict"] == "FAVOURED"
+    assert "never used to rank" in stale["stale_evidence"]
+    assert "persists until a re-admission" in stale["stale_evidence"]
+    assert rows["cognition.search_astar"]["median_seconds"] == 0.5 and "stale_measurements" not in rows[
+        "cognition.search_astar"]
+    no_index.write_text(json.dumps(_grid_index(current, favoured)))         # the same evidence at this version
+    r = compile_(registry, {"geometry": "optimization"}, data, execute=False)
+    assert r["method_or_composition_selected"] == "cognition.grid_dijkstra" and "stale_measurements" not in r
+    assert r["subregion_evidence"]["verdict"] == "FAVOURED"
+
+
+def test_a_dominated_verdict_of_another_version_names_no_acquisition_and_the_receipt_labels_it(registry, no_index):
+    """An old version's DOMINATED subregion verdict added dissent and named the competitor for Genesis acquisition
+    as if the current code had lost there. It is reported in the receipt, labelled, and steers nothing."""
+    from greg.cognition.genomes import library, solvers_b
+    data, _ = solvers_b.astar_instance(1)
+    name, current = solvers_b.astar_subregion(data), library.genome("grid_dijkstra").version
+    dominated = {name: {"n": 10, "wins": 0, "losses": 10, "ties": 0, "p_better": 1.0, "p_worse": 0.000977}}
+    registry.set_state("cognition.grid_dijkstra", "ATTACHED")
+    no_index.write_text(json.dumps(_grid_index("1.0.0", dominated, astar_status="SUPERSEDED")))
+    r = compile_(registry, {"geometry": "optimization"}, data, execute=False)
+    assert r["method_or_composition_selected"] == "cognition.grid_dijkstra"
+    assert "subregion_evidence" not in r and "acquisition_candidates" not in r
+    assert not any("lost 10-0" in d for d in r["dissent"])
+    assert r["stale_measurements"]["subregion"]["verdict"] == "DOMINATED"
+    assert r["stale_measurements"]["version_measured"] == "1.0.0"
+    assert r["stale_measurements"]["version_current"] == current
+    no_index.write_text(json.dumps(_grid_index(current, dominated, astar_status="SUPERSEDED")))
+    r = compile_(registry, {"geometry": "optimization"}, data, execute=False)
+    assert r["subregion_evidence"]["verdict"] == "DOMINATED" and r["acquisition_candidates"]
+    assert "stale_measurements" not in r
+
+
+def test_a_frozen_exclusion_of_another_version_is_labelled_with_that_version(registry, no_index):
+    from greg.cognition.genomes import library, solvers_b
+    data, _ = solvers_b.astar_instance(1)
+    astar = library.genome("search_astar").version
+    no_index.write_text(json.dumps(_grid_index("1.0.0", {}, astar_status="SUPERSEDED", astar_version="0.0.1")))
+    r = compile_(registry, {"geometry": "optimization"}, data, execute=False)
+    assert {"method": "cognition.search_astar",
+            "why": f"frozen admission status SUPERSEDED, measured at version 0.0.1 (it persists until a re-admission "
+                   f"at {astar})"} in r["methods_rejected"]
+    no_index.write_text(json.dumps(_grid_index("1.0.0", {}, astar_status="SUPERSEDED")))
+    r = compile_(registry, {"geometry": "optimization"}, data, execute=False)
+    assert {"method": "cognition.search_astar", "why": "frozen admission status SUPERSEDED"} in r["methods_rejected"]
+
+
 def test_a_superseded_fit_names_the_deployable_mechanism_that_superseded_it(registry, no_index, monkeypatch):
     """Admission v2: basal_pid was superseded 0-30 by the simulation-optimised PI. Where that mechanism is not a
     registered genome, a request only basal_pid fits is a capability deficit, and the receipt names the mechanism
@@ -450,6 +533,36 @@ def test_settled_failures_on_the_body_demote_a_method_and_a_few_do_not(registry,
     assert compile_(registry, geometry, both, execute=False)["method_or_composition_selected"] == \
         "cognition.flow_maxflow"                                     # too few outcomes to inhibit
     assert compiler._settled_inhibition(12, 8) is None
+
+
+def test_settled_outcomes_alone_change_the_choice_between_two_eligible_fits(registry, no_index, monkeypatch):
+    """Whole-machine trace gap (#158, 2026-10-21): settled competence only ordered fits within one admission status,
+    so retained outcomes never changed a decision by themselves. A one-sided Fisher exact test, Holm-adjusted, with
+    at least SETTLED_MIN_N outcomes on both sides, now prefers the fit the body's outcomes favour."""
+    both = {**R.f3(3)["payload"], **maxflow_instance(3)[0]}
+    no_index.write_text(json.dumps({"genomes": {"flow_maxflow": {"status": "DEFAULT_FOR_GEOMETRY"},
+                                                "flow_reinforce_greedy": {"status": "SUPERSEDED"}},
+                                    "recipes": {}, "routing": {}}))
+    geometry = {"geometry": "optimization"}
+    recipe = "composition:graph_then_allocate"
+    assert compile_(registry, geometry, both, execute=False)["method_or_composition_selected"] == \
+        "cognition.flow_maxflow"                                     # frozen evidence decides without outcomes
+    monkeypatch.setattr(compiler, "_settled_counts",
+                        lambda journal: {"cognition.flow_maxflow": (12, 6), recipe: (12, 12)})
+    r = compile_(registry, geometry, both, execute=False)
+    assert r["method_or_composition_selected"] == recipe
+    assert r["selection_level"] == "preferred_by_settled_outcomes"
+    assert r["settled_preference"]["preferred"] == recipe and r["settled_preference"]["tests"][0]["p_holm"] < 0.05
+    assert any("settled outcomes on this body prefer" in d for d in r["dissent"])
+    assert not r["methods_demoted"] or all(d["method"] != "cognition.flow_maxflow" for d in r["methods_demoted"])
+    # too few outcomes on one side, or a difference the test cannot separate from noise: nothing moves
+    for counts in ({"cognition.flow_maxflow": (12, 6), recipe: (9, 9)},
+                   {"cognition.flow_maxflow": (12, 11), recipe: (12, 12)}):
+        monkeypatch.setattr(compiler, "_settled_counts", lambda journal, c=counts: c)
+        r = compile_(registry, geometry, both, execute=False)
+        assert r["method_or_composition_selected"] == "cognition.flow_maxflow"
+        assert r["selection_level"] != "preferred_by_settled_outcomes"
+    assert compiler.SETTLED_MIN_N == 10 and compiler.SETTLED_ALPHA == 0.05
 
 
 def test_an_executed_composition_keeps_each_stages_counterargument_as_dissent(registry, no_index):
@@ -740,7 +853,10 @@ def test_a_flat_request_that_lacks_an_input_no_fitting_method_reads_asks_for_it(
     repair = {**grid, "sources": [[0, 0]], "sinks": [[2, 3]], "removed": [], "blocked": [], "events": [], "steps": 3}
     r = compile_on(mcf, {"treated": [1.0, 2.0], **repair})
     assert r["missing_information"] == [{"method": "cognition.develop_repair", "missing_inputs": ["message_loss",
-                                                                                                  "seed"]}]
+                                                                                                  "seed"]},
+                                        # the recombined hybrid also needs the controller it audits
+                                        {"method": "cognition.develop_repair_hybrid",
+                                         "missing_inputs": ["controller", "message_loss", "seed"]}]
     # a request-level flag and a key no mechanism requires change nothing
     r = compile_on(mcf, {"treated": [1.0, 2.0], "note": "pilot", "formalization_complete": True})
     assert r["missing_information"] == [{"method": "cognition.causal", "missing_inputs": ["control"]}]
@@ -899,10 +1015,294 @@ def test_a_cortex_organ_reading_one_part_of_a_genome_request_does_not_answer_it(
         r = compile_on(lacking)
         assert r["state"] == "ABSTAIN", shape
         assert [(m["method"], m["missing_inputs"]) for m in r["missing_information"]] == \
-            [("cognition.develop_repair", ["blocked"])], shape
+            [("cognition.develop_repair", ["blocked"]),                # its recombined hybrid reads the same inputs
+             ("cognition.develop_repair_hybrid", ["blocked"])], shape
     why = {m["method"]: m["why"] for m in compile_on(data)["methods_rejected"]}
     assert "answers a relaxation" in why["cognition.cortex.semantic"]
-    assert "['cognition.develop_repair']" in why["cognition.cortex.semantic"]
+    assert "['cognition.develop_repair', 'cognition.develop_repair_hybrid']" in why["cognition.cortex.semantic"]
     # a declaration that excludes the fuller method leaves the organ its question; an organ alone is untouched
     assert compile_on(data, {"geometry": "semantic"})["method_or_composition_selected"] == "cognition.cortex.semantic"
     assert compile_on({"sources": data["sources"]})["method_or_composition_selected"] == "cognition.cortex.semantic"
+
+
+def _f7_index(no_index):
+    """Admission v3's verdicts for the F7 shape: the recipe's VPL lift, and flow_expansion_mcf DEFAULT against its
+    twin at the genome's current version."""
+    from greg.cognition.genomes import library
+    no_index.write_text(json.dumps({
+        "routing": {}, "recipes": {"graph_then_allocate": {"lift": True, "status": "VPL_LIFT"}},
+        "genomes": {"flow_expansion_mcf": {"status": "DEFAULT_FOR_GEOMETRY",
+                                           "version": library.executables()["flow_expansion_mcf"].genome.version,
+                                           "evidence": "docs/evidence/greg-genome-admission/x/results.json"}}}))
+
+
+def _everything_attached():
+    registry = registry_view()
+    for cid in list(registry.manifests):
+        registry.set_state(cid, "ATTACHED")
+    return registry
+
+
+def _f7_run(registry):
+    def run(request, **extra):
+        return reason({"problem_id": "f7-shape", "compile": {"geometry": {}, "data": request, **extra}},
+                      registry=registry)
+    return run
+
+
+def test_a_recipe_is_demoted_only_for_a_matched_genome_that_fits_this_request(no_index):
+    """Independent review 2026-10-15 (F2): the single-genome match was decided without asking whether the genome fits
+    this request. A capacity network sent beside any other key fits no single genome (it is not a one-part request),
+    yet the recipe was demoted after every other fit and another question was answered ("expression": "2 + 2" was
+    ANSWERED 4; "sources" went to the semantic organ, which abstained)."""
+    from greg.cognition.genomes import library
+    _f7_index(no_index)
+    data, truth = library.executables()["flow_expansion_mcf"].instance(3)            # development seed
+    run = _f7_run(_everything_attached())
+    for extra in ({"expression": "2 + 2"}, {"sources": [{"id": "s1", "text": "capacity report"}]}):
+        r = run({"capacity_network": data, **extra}, execute=False)
+        assert r["method_or_composition_selected"] == "composition:graph_then_allocate", extra
+        assert "composition:graph_then_allocate" not in {d["method"] for d in r["methods_demoted"]}
+    answered = run({"capacity_network": data, "expression": "2 + 2"})
+    assert answered["state"] == "ANSWERED" and answered["result"]["flow_value"] == truth["optimum"]
+    plain = run({"capacity_network": data}, execute=False)          # the one-part request: the genome answers its part
+    assert plain["method_or_composition_selected"] == "cognition.flow_expansion_mcf"
+    assert any(d["method"] == "composition:graph_then_allocate" and "matched this recipe's twin" in d["why"]
+               for d in plain["methods_demoted"])
+
+
+def test_a_recipe_the_stage_rule_rejects_is_not_listed_as_demoted(no_index):
+    """Independent review 2026-10-15 (F5): the match was decided before the stage rule, so a part that is no capacity
+    network listed the recipe both as rejected (its compile stage lacks the inputs) and as demoted by the match."""
+    from greg.cognition.genomes import library
+    _f7_index(no_index)
+    other, _ = library.executables()["assignment_lsa"].instance(2)                   # development seed; no network
+    r = _f7_run(_everything_attached())({"capacity_network": other}, execute=False)
+    assert "composition:graph_then_allocate" in {d["method"] for d in r["methods_rejected"]}
+    assert "composition:graph_then_allocate" not in {d["method"] for d in r["methods_demoted"]}
+
+
+@pytest.mark.parametrize("lift", [True, False])
+def test_a_recipe_serving_while_its_matched_genome_is_withheld_says_so(no_index, lift):
+    """Independent review 2026-10-15 (F4): every demoted fit that served was labelled only_fit_despite_no_lift. A
+    recipe serving while the genome that matched it is withheld is not the only fit, whether its own lift verdict is
+    verified or not (the fix verification's label-order mutation survived the lift case alone)."""
+    from greg.cognition.genomes import library
+    _f7_index(no_index)
+    if not lift:
+        index = json.loads(no_index.read_text())
+        index["recipes"]["graph_then_allocate"] = {"lift": False, "status": "NO_LIFT"}
+        no_index.write_text(json.dumps(index))
+    data, _ = library.executables()["flow_expansion_mcf"].instance(3)                # development seed
+    stages = registry_view()
+    for cid in ("cognition.flow_capacity_plan", "cognition.optimization", "cognition.flow_maxflow"):
+        stages.set_state(cid, "ATTACHED")
+    r = _f7_run(stages)({"capacity_network": data}, execute=False)
+    assert r["method_or_composition_selected"] == "composition:graph_then_allocate"
+    assert r["withheld_best_fit"]["method"] == "cognition.flow_expansion_mcf"
+    assert r["selection_level"] == "serves_while_best_fit_withheld"
+
+
+def test_a_fit_demoted_by_its_settled_outcomes_is_labelled_so(registry, no_index, monkeypatch):
+    """Independent review 2026-10-15 (F4): a method demoted by its settled outcomes on this body, serving because
+    nothing else fits, was labelled only_fit_despite_no_lift although no lift verdict applies to it."""
+    monkeypatch.setattr(compiler, "_settled_counts", lambda journal: {"cognition.flow_maxflow": (12, 2)})
+    r = compile_(registry, {"geometry": "optimization"}, maxflow_instance(3)[0], execute=False)
+    assert r["method_or_composition_selected"] == "cognition.flow_maxflow"          # demoted, and the only fit
+    assert any("2 of 12 correct" in d["why"] for d in r["methods_demoted"])
+    assert r["selection_level"] == "demoted_by_settled_outcomes"
+
+
+def _f7_index_also(no_index, recipe=None, **statuses):
+    """``_f7_index`` with the recipe's lift verdict replaced by ``recipe`` and the shape's other genomes given these
+    admission statuses at their current versions."""
+    from greg.cognition.genomes import library
+    _f7_index(no_index)
+    index = json.loads(no_index.read_text())
+    for family, status in statuses.items():
+        index["genomes"][family] = {"status": status, "version": library.executables()[family].genome.version,
+                                    "evidence": f"docs/evidence/greg-genome-admission/x/results.json#{family}"}
+    if recipe:
+        index["recipes"]["graph_then_allocate"] = recipe
+    no_index.write_text(json.dumps(index))
+
+
+@pytest.mark.parametrize("genome", ["attached", "withheld"])
+def test_a_recipe_whose_matched_genome_its_settled_outcomes_demote_does_not_claim_to_rank_after_it(no_index,
+                                                                                                    monkeypatch,
+                                                                                                    genome):
+    """Fix verification 2026-10-15: when the genome that matched a recipe's twin is itself demoted by its settled
+    outcomes on this body, both are demoted fits and the recipe may rank first (best_of_demoted_fits, a label no
+    test reached), yet the recipe's demotion reason, repeated in dissent, said the recipe ranks after the genome.
+    Attached or withheld, the demoted genome ranks after the recipe, so the recipe serves as the best demoted fit."""
+    from greg.cognition.genomes import library
+    _f7_index_also(no_index, flow_reinforce_greedy="SUPERSEDED")      # admission v3's verdict on the other genome
+    data, _ = library.executables()["flow_expansion_mcf"].instance(3)                # development seed
+    if genome == "attached":
+        registry = _everything_attached()
+    else:
+        registry = registry_view()
+        for cid in ("cognition.flow_capacity_plan", "cognition.optimization", "cognition.flow_maxflow"):
+            registry.set_state(cid, "ATTACHED")
+    run = _f7_run(registry)
+    control = run({"capacity_network": data}, execute=False)          # no settled outcomes: the genome ranks first
+    assert (control["method_or_composition_selected"] == "cognition.flow_expansion_mcf" if genome == "attached"
+            else control["withheld_best_fit"]["method"] == "cognition.flow_expansion_mcf")
+    assert {d["method"]: d["why"] for d in control["methods_demoted"]}["composition:graph_then_allocate"].endswith(
+        "the single method is canonical for this geometry and the recipe ranks after it")
+    monkeypatch.setattr(compiler, "_settled_counts", lambda journal: {"cognition.flow_expansion_mcf": (12, 2)})
+    r = run({"capacity_network": data}, execute=False)
+    assert r["method_or_composition_selected"] == "composition:graph_then_allocate" and "withheld_best_fit" not in r
+    assert r["selection_level"] == "best_of_demoted_fits"
+    demoted = {d["method"]: d["why"] for d in r["methods_demoted"]}
+    assert "2 of 12 correct" in demoted["cognition.flow_expansion_mcf"]
+    why = demoted["composition:graph_then_allocate"]
+    assert "matched this recipe's twin" in why and "ranks after" not in why
+    assert why.endswith("the single method is canonical for this geometry, but settled outcomes on this body demote "
+                        "cognition.flow_expansion_mcf too, so the recipe is ordered with it among the demoted fits by "
+                        "the other rank keys") and why in r["dissent"]
+
+
+@pytest.mark.parametrize("case", ["after a no-lift verdict", "beside a matched genome ahead", "both demoted"])
+def test_the_matched_reason_is_qualified_inside_the_recipes_whole_demotion_reason(no_index, monkeypatch, case):
+    """Fix verification 2026-10-15: the qualified reason replaces the matched one inside the recipe's composed
+    demotion reason. A NO_LIFT verdict before it is kept; a second matched genome that is not demoted still ranks
+    before the recipe, and the reason says so; two demoted matched genomes are named as such (the
+    flow_reinforce_greedy DEFAULT verdict is hypothetical: admission v3 found it SUPERSEDED)."""
+    from greg.cognition.genomes import library
+    if case == "after a no-lift verdict":
+        _f7_index_also(no_index, recipe={"lift": False, "status": "NO_LIFT"}, flow_reinforce_greedy="SUPERSEDED")
+    else:
+        _f7_index_also(no_index, flow_reinforce_greedy="DEFAULT_FOR_GEOMETRY")
+    settled = {"cognition.flow_expansion_mcf": (12, 2)}
+    if case == "both demoted":
+        settled["cognition.flow_reinforce_greedy"] = (12, 2)
+    monkeypatch.setattr(compiler, "_settled_counts", lambda journal: settled)
+    data, _ = library.executables()["flow_expansion_mcf"].instance(3)                # development seed
+    r = _f7_run(_everything_attached())({"capacity_network": data}, execute=False)
+    why = {d["method"]: d["why"] for d in r["methods_demoted"]}["composition:graph_then_allocate"]
+    assert why.count("matched this recipe's twin") == 1 and "ranks after it" not in why
+    if case == "after a no-lift verdict":                    # the lift verdict ranks the recipe after the genome
+        assert why.startswith("frozen VPL verdict (evidence index): no lift over its best constituent; ranked after "
+                              "every other fit; admitted single genome cognition.flow_expansion_mcf matched")
+        assert why.endswith(", but settled outcomes on this body demote cognition.flow_expansion_mcf too, so the "
+                            "recipe is ordered with it among the demoted fits by the other rank keys")
+        assert r["method_or_composition_selected"] == "cognition.flow_expansion_mcf"
+        assert r["selection_level"] == "demoted_by_settled_outcomes"
+    elif case == "beside a matched genome ahead":
+        assert why.endswith("the single method is canonical for this geometry and the recipe ranks after "
+                            "cognition.flow_reinforce_greedy, but settled outcomes on this body demote "
+                            "cognition.flow_expansion_mcf too, so the recipe is ordered with it among the demoted fits "
+                            "by the other rank keys")
+        assert r["method_or_composition_selected"] == "cognition.flow_reinforce_greedy"
+        assert r["selection_level"] == "admission_status"
+    else:
+        assert why.endswith("the single method is canonical for this geometry, but settled outcomes on this body "
+                            "demote cognition.flow_expansion_mcf, cognition.flow_reinforce_greedy too, so the recipe is "
+                            "ordered with them among the demoted fits by the other rank keys")
+        assert r["method_or_composition_selected"] == "composition:graph_then_allocate"
+        assert r["selection_level"] == "best_of_demoted_fits" and why in r["dissent"]
+
+
+@pytest.mark.parametrize("promotion", ["registered", "not registered"])
+def test_no_acquisition_candidate_is_named_for_a_geometry_the_declaration_excludes(registry, no_index, monkeypatch,
+                                                                                   promotion):
+    """Independent review 2026-10-15 (F6): a basal_pid request declared deductive named the simulation-optimised PI
+    tuner (physical) for Genesis to acquire, although the declaration excludes it: promotion keeps the epistemic
+    class. The same held where the superseding mechanism is not a registered genome."""
+    from greg.cognition import catalog
+    from greg.cognition.genomes import library
+    item = library.executables()["basal_pid"]
+    no_index.write_text(json.dumps({"genomes": {"basal_pid": {
+        "status": "SUPERSEDED", "version": item.genome.version, "evidence": "v2/results.json#genomes.basal_pid"}},
+        "recipes": {}, "routing": {}}))
+    if promotion == "not registered":
+        monkeypatch.delitem(catalog.FAMILIES, library.promotions()["basal_pid"])
+    data = item.instance(2)[0]                                                        # development seed
+    r = compile_(registry, {"geometry": "deductive"}, data, execute=False)
+    assert r["state"] == "CAPABILITY_DEFICIT" and "acquisition_candidates" not in r
+    if promotion == "not registered":                       # the native declaration still names the mechanism
+        native = compile_(registry, {"geometry": item.genome.epistemic_class}, data, execute=False)
+        assert "cognition.basal_pid" in [c["supersedes"] for c in native["acquisition_candidates"]]
+
+
+def test_an_admitted_single_genome_that_matched_a_recipes_twin_outranks_the_recipe(no_index):
+    """Review of #179 (M10, L11) and admission v3: flow_expansion_mcf was admitted DEFAULT against the
+    graph_then_allocate twin (equal quality on 30 of 30 at about a seventh of the latency). The recipe's VPL_LIFT
+    was measured over a repertoire without it, yet a request in the recipe's own shape still ranked the recipe
+    first. The matched recipe is demoted, not deleted: it serves while the genome is withheld (with one prepared
+    attach ask), and a stale or lower verdict matches nothing."""
+    from greg.cognition.genomes import library
+    item = library.executables()["flow_expansion_mcf"]
+    data, truth = item.instance(3)                                                   # development seed
+    shaped = {"capacity_network": data}
+
+    def index(status="DEFAULT_FOR_GEOMETRY", version=item.genome.version):
+        no_index.write_text(json.dumps({
+            "routing": {}, "recipes": {"graph_then_allocate": {"lift": True, "status": "VPL_LIFT"}},
+            "genomes": {"flow_expansion_mcf": {"status": status, "version": version,
+                                               "evidence": "docs/evidence/greg-genome-admission/x/results.json"}}}))
+
+    stages = registry_view()
+    for cid in ("cognition.flow_capacity_plan", "cognition.optimization", "cognition.flow_maxflow"):
+        stages.set_state(cid, "ATTACHED")
+    both = registry_view()
+    for cid in ("cognition.flow_capacity_plan", "cognition.optimization", "cognition.flow_maxflow",
+                "cognition.flow_expansion_mcf"):
+        both.set_state(cid, "ATTACHED")
+
+    def run(registry, **extra):
+        return reason({"problem_id": "f7-shape", "compile": {"geometry": {"consequence_class": "read_only"},
+                                                             "data": shaped, **extra}}, registry=registry)
+    index()
+    r = run(both)
+    assert r["state"] == "ANSWERED" and r["method_or_composition_selected"] == "cognition.flow_expansion_mcf"
+    assert r["result"]["flow_value"] == truth["optimum"]
+    demoted = {d["method"]: d["why"] for d in r["methods_demoted"]}
+    assert "matched this recipe's twin" in demoted["composition:graph_then_allocate"]
+    # an operator preference for the recipe never outranks the genome that matched it (it did before the demotion)
+    rows = [row for row in compiler.candidates(shaped, compiler.CompetencyGeometry.parse({}), compiler.evidence_index())
+            if not row["rejected"]]
+    ranked = sorted(rows, key=lambda row: compiler._rank(row, ["graph_then_allocate"], {}))
+    assert ranked[0]["method"] == "cognition.flow_expansion_mcf"
+    served = run(stages, execute=False)                       # the genome withheld: the recipe still serves
+    assert served["method_or_composition_selected"] == "composition:graph_then_allocate"
+    assert served["withheld_best_fit"]["method"] == "cognition.flow_expansion_mcf"
+    for status, version in (("NICHE_CAPABILITY", item.genome.version), ("DEFAULT_FOR_GEOMETRY", "0.0.0-old")):
+        index(status, version)                                # a lower or stale verdict matches nothing
+        assert run(both, execute=False)["method_or_composition_selected"] == "composition:graph_then_allocate"
+
+
+def test_an_optimal_claim_must_meet_its_own_proven_bound_and_a_composition_carries_its_certificate(registry, no_index):
+    """Review of #179 (M6): the optimisation verifier checked feasibility only. A feasible but suboptimal plan
+    written into the proof with the solver status OPTIMAL verified, although its own proof bound (58) exceeded its
+    objective (55), and the composition's answer dropped the solver status. An OPTIMAL claim must now meet its
+    proven bound and the proof must be the output's; the composition reports how strong its certificate is."""
+    import copy
+    from greg.cognition.catalog import FAMILIES
+    from greg.cognition.solvers import SOLVERS
+    from greg.cognition.verification import verify
+    data = {"variables": {"x": [0, 5], "y": [0, 5]},
+            "constraints": [{"coefficients": {"x": 1, "y": 1}, "op": "<=", "rhs": 4}],
+            "objective": {"coefficients": {"x": 1, "y": 1}, "sense": "max"}}
+    honest = SOLVERS["optimization"](data, {"latency_limit": 10})
+    proof_class = FAMILIES["optimization"][3]
+    assert honest["output"]["solver_status"] == "OPTIMAL" and all(verify("optimization", data, honest, proof_class)
+                                                                   ["checks"].values())
+    forged = copy.deepcopy(honest)
+    forged["output"].update(solution={"x": 1, "y": 2}, objective_value=3.0)       # feasible, one short of optimum
+    forged["proof"]["solution"] = {"x": 1, "y": 2}
+    checks = verify("optimization", data, forged, proof_class)["checks"]
+    assert checks["constraint_substitution"] and checks["objective_substitution"]  # feasibility alone passes
+    assert checks["optimal_objective_meets_its_bound"] is False
+    mismatched = copy.deepcopy(honest)
+    mismatched["output"].update(solution={"x": 1, "y": 2}, objective_value=3.0)   # the proof is another solution's
+    checks = verify("optimization", data, mismatched, proof_class)["checks"]
+    # one canonical check (review V4): proof_matches_output duplicated the artifact status and solution checks
+    assert checks["artifact_solution_matches_output"] is False and "proof_matches_output" not in checks
+    no_index.write_text(json.dumps({"genomes": {"flow_reinforce_greedy": {"status": "SUPERSEDED"}}, "routing": {},
+                                    "recipes": {"graph_then_allocate": {"lift": True, "status": "VPL_LIFT"}}}))
+    r = compile_(registry, {"geometry": "optimization"}, R.f3(3)["payload"])
+    assert r["method_or_composition_selected"] == "composition:graph_then_allocate"
+    assert r["result"]["solver_status"] == "OPTIMAL" and r["result"]["optimality"] == "proven"
+    assert r["result"]["optimality_gap"] == 0

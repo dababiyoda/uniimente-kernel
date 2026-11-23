@@ -1,0 +1,9 @@
+{"family": "flow_capacity_plan", "status": "COMPOSITION_ONLY", "vs_baseline": {"wins": 30, "losses": 0, "ties": 0, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 30, "losses": 0, "ties": 0, "p_better": 0.0, "p_worse": 1.0}}
+{"family": "flow_reinforce_greedy", "status": "SUPERSEDED", "vs_baseline": {"wins": 30, "losses": 0, "ties": 0, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 0, "losses": 10, "ties": 20, "p_better": 1.0, "p_worse": 0.000977}}
+{"family": "grid_dijkstra", "status": "DEFAULT_FOR_GEOMETRY", "vs_baseline": {"wins": 0, "losses": 0, "ties": 30, "p_better": 1.0, "p_worse": 1.0}, "vs_competitor": {"wins": 0, "losses": 0, "ties": 30, "p_better": 1.0, "p_worse": 1.0}}
+{
+ "flow_capacity_plan": "COMPOSITION_ONLY",
+ "flow_reinforce_greedy": "SUPERSEDED",
+ "grid_dijkstra": "DEFAULT_FOR_GEOMETRY"
+}
+exit 0

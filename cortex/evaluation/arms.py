@@ -54,6 +54,28 @@ def routed_seed(item: Mapping[str, Any], cortex: Cortex) -> dict:
             "state": receipt["output"]["state"], "receipt_id": receipt["receipt_id"], "receipt": receipt}
 
 
+class Unreached(RuntimeError):
+    """The model call itself failed on this item (transport, truncated reply, timeout, a server that died): the
+    baseline was not reached there. A reply that came back but is unusable is a scored task failure instead.
+    Where the failure happened decides, never the exception's type (0.2.2; review of the port)."""
+
+
+def _complete(client, system: str, user: str) -> str:
+    try:
+        return client.complete(system, user)
+    except Exception as exc:   # noqa: BLE001 - any failure inside the call means the model did not answer
+        raise Unreached(f"{type(exc).__name__}: {exc}"[:300]) from exc
+
+
+def _parse_or_malformed(reply: str) -> dict:
+    """A reply the model returned: parsed, or a scored task failure (``malformed``), never an unreached item."""
+    try:
+        return _parse(reply)
+    except (ValueError, TypeError, AttributeError) as exc:
+        return {"disposition": "malformed", "answer": None, "confidence": None,
+                "malformed": f"{type(exc).__name__}: {exc}"[:300]}
+
+
 def _parse(reply: str) -> dict:
     data = json.loads(reply)
     disp = data.get("disposition")
@@ -64,8 +86,8 @@ def _parse(reply: str) -> dict:
 
 def always_llm(item: Mapping[str, Any], client) -> dict:
     started = time.perf_counter()
-    reply = client.complete(BASELINE_SYSTEM, _prompt(item))
-    out = _parse(reply)
+    reply = _complete(client, BASELINE_SYSTEM, _prompt(item))
+    out = _parse_or_malformed(reply)
     out.update(latency_s=time.perf_counter() - started, cost_usd=0.0, model_calls=1, solver_calls=0)
     return out
 
@@ -74,7 +96,7 @@ def llm_committee(item: Mapping[str, Any], client) -> dict:
     started = time.perf_counter()
     votes = []
     for role in COMMITTEE_ROLES:
-        votes.append(_parse(client.complete(f"Act as {role}. " + BASELINE_SYSTEM, _prompt(item))))
+        votes.append(_parse_or_malformed(_complete(client, f"Act as {role}. " + BASELINE_SYSTEM, _prompt(item))))
     top, _ = Counter(v["disposition"] for v in votes).most_common(1)[0]
     answers = [v["answer"] for v in votes if v["disposition"] == top]
     answer = Counter(canonical_json(a) for a in answers).most_common(1)[0][0]

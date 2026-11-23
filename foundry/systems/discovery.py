@@ -21,14 +21,12 @@ from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from capabilities.genome import CONSEQUENCE_CLASSES
+from provenance.digests import compact_json_bytes as _canon
+from foundry.systems.refusals import refusal_recorder
 
 
 class DiscoveryError(ValueError):
     pass
-
-
-def _canon(value) -> bytes:
-    return json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
 
 
 def _t(s: str) -> datetime:
@@ -164,13 +162,7 @@ def exercise(root) -> dict:
     publish(root, sign(dale_key, desc("organ:daleobanks", 1, [
         cap("dale.assess_fast", ["wire-opportunity-packet"], ["wire-venture-assessment"], latency=200, cost=0.01),
         cap("dale.assess_down", ["wire-opportunity-packet"], ["wire-venture-assessment"], health="down", latency=10)])))
-    refusals = {}
-    def refused(label, fn):
-        try:
-            fn()
-            refusals[label] = False
-        except DiscoveryError as exc:
-            refusals[label] = str(exc)
+    refusals, refused = refusal_recorder(DiscoveryError, accepted=False)
     refused("unenrolled_organ", lambda: publish(root, sign(rogue, desc("organ:rogue", 1, []))))
     refused("forged_signature", lambda: publish(root, sign(rogue, desc("organ:wmi", 2, []))))
     refused("replayed_sequence", lambda: publish(root, wmi_v1))

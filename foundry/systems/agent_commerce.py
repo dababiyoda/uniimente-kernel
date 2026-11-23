@@ -40,6 +40,8 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey,
 from business.commercial_loop import ACCEPTED_VERIFICATIONS
 from foundry.systems import accounting, cas, discovery, dsl, reputation
 from foundry.systems.webserver import Site, verify_served
+from provenance.digests import compact_json_bytes as _canon
+from foundry.systems.refusals import refusal_recorder
 
 CARD_PATH = "/.well-known/agent.json"
 CHALLENGE_TTL = timedelta(minutes=15)
@@ -49,10 +51,6 @@ PRICING_FIELDS = {"rule", "constants", "buyer_variables", "example"}
 
 class CommerceError(ValueError):
     pass
-
-
-def _canon(value) -> bytes:
-    return json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
 
 
 def _t(s: str) -> datetime:
@@ -413,14 +411,7 @@ def exercise(root) -> dict:
                 raise RuntimeError("capacity is 5 reports per order")
             return _canon({"reports": inputs["units"]})
         shop.handlers["report"] = report
-        refusals = {}
-
-        def refused(label, fn):
-            try:
-                fn()
-                refusals[label] = None
-            except (CommerceError, discovery.DiscoveryError) as exc:
-                refusals[label] = str(exc)[:80]
+        refusals, refused = refusal_recorder((CommerceError, discovery.DiscoveryError), limit=80)
 
         skills = demo_skills()
         unpriced = json.loads(json.dumps(skills[0])); unpriced["pricing"]["rule"] = "__import__('os').system('id')"

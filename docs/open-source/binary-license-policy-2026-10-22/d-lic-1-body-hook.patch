@@ -1,0 +1,32 @@
+diff --git a/greg/body.py b/greg/body.py
+index 13b93824..00fa843d 100644
+--- a/greg/body.py
++++ b/greg/body.py
+@@ -36,7 +36,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+ 
+ from compiler.ucl_compiler import compile_constitution
+ from events.spine import EventSpine
+-from greg import anchor, asks, compute, dataplane, doctor, gravity, improvement, metrics, models, presence, sop, tribunal
++from greg import anchor, asks, compute, dataplane, doctor, gravity, improvement, licensing, metrics, models, presence, sop, tribunal
+ from greg.authority import AuthorityOffice
+ from greg.capabilities import BUILTINS, CapabilityRegistry, SecretBroker
+ from greg.founder import FounderAuthError, FounderVerifier, instant, key_id, spent_nonce, validate_device_grant
+@@ -632,10 +632,17 @@ class Body:
+                 raise MissionError("unknown capability")
+             if kind == "CAPABILITY_ATTACH" and self.registry.state[cid] not in ("VERIFIED", "DETACHED", "ATTACHED"):
+                 raise MissionError("only verified capabilities may be attached")
++            clearance = None
++            if kind == "CAPABILITY_ATTACH":   # D-LIC-1 draft; inert while licensing.ACTIVE_FOUNDER_ATTACH_POLICY is P0
++                cleared, why, clearance = licensing.founder_attach_check(self.registry.manifests[cid], body)
++                if not cleared:
++                    raise MissionError(why)
+             state = "ATTACHED" if kind == "CAPABILITY_ATTACH" else "DETACHED"
+             self.registry.set_state(cid, state)
+             self.journal.record("capability.state", {"capability_id": cid, "state": state, "by": "founder command",
+-                                                     "command_digest": digest}, key=[cid, state, digest])
++                                                     "command_digest": digest,
++                                                     **({"license_clearance": clearance} if clearance else {})},
++                                key=[cid, state, digest])
+             return {"capability_id": cid, "state": state}
+         if kind == "BODY_PAUSE":
+             self.journal.record("body.paused", {"command_digest": digest}, key=digest)

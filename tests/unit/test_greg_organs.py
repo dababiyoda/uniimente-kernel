@@ -372,7 +372,8 @@ def test_live_exchange_runs_real_organ_code_and_reproduces(tmp_path, journal):
     out = organs.exchange({**params, "seed": SEED}, ctx(tmp_path, journal, roots=organ_roots(params)))
     assert out["appraisal_verdict"] == "REPRODUCED" and out["transport_verified"] is True
     assert out["assessment"]["requires_human_approval"] is True
-    assert out["sender_identity_isolated"] is False          # pinned organs share one key: stated, not hidden
+    assert out["sender_identity_isolated"] is True           # each organ signs with its own key (pin e7dc0cbc)
+    assert out["key_holders"]["wealthmachine"] == ["wealthmachine", "kernel"]   # DALEOBANKS cannot sign as it
     assert out["external_effects"] is None and out["authority_created"] is False
     status = organs.status({}, ctx(tmp_path, journal, capability="organ.status"))
     assert status["verdict"] is None and status["unbound_facts_ignored"] == 3   # no receipt vouches yet
@@ -583,3 +584,73 @@ def test_an_excluded_tree_under_a_fixed_system_grant_refuses_the_stage(tmp_path)
     with pytest.raises(CapabilityError, match="reaches /usr/share"):
         organs._confinement(venv / "bin" / "python3", tmp_path / "own", tmp_path / "store",
                             exclude=(Path("/usr/share"),))
+
+
+# ---------------------------------------------------------------------- #
+# Per-organ keys (founder decision 2026-10-23: the organs' pins upgraded)
+# ---------------------------------------------------------------------- #
+def _resigning(monkeypatch, resign):
+    """Run the real organs, then let ``resign`` replace WealthMachine's signed answer before GREG verifies it."""
+    real = organs._stage
+
+    def stage(python, cwd, code, *args, env, **kw):
+        out = real(python, cwd, code, *args, env=env, **kw)
+        return resign(out, env) if code == organs.WEALTHMACHINE_STAGE else out
+    monkeypatch.setattr(organs, "_stage", stage)
+
+
+def _signed(out, key, *, scope):
+    h = dict(out["headers"])
+    h.pop(bt.H_KEY_SCOPE, None)
+    if scope != "shared":
+        h[bt.H_KEY_SCOPE] = scope
+    h[bt.H_SIGNATURE] = bt.sign(key, h[bt.H_IDENTITY], h[bt.H_TIMESTAMP], h[bt.H_NONCE], h[bt.H_IDEMPOTENCY],
+                                h[bt.H_SCHEMA], out["body"].encode(), recipient=h[bt.H_RECIPIENT],
+                                operation=h[bt.H_OPERATION], request_digest=h[bt.H_REQUEST],
+                                direction=h[bt.H_DIRECTION], status=h[bt.H_STATUS], trace_id=h[bt.H_TRACE],
+                                key_scope=scope)
+    return {**out, "headers": h}
+
+
+def test_an_answer_signed_with_another_organs_key_is_refused_at_the_kernel(tmp_path, journal, monkeypatch):
+    """Acceptance (NEXT_WAVE item 3): an organ message signed with another organ's key is refused. DALEOBANKS
+    holds only its own key; an assessment it signs in WealthMachine's name does not verify, and no WealthMachine
+    fact or appraisal is recorded."""
+    params = live_organs()
+    _resigning(monkeypatch, lambda out, env: _signed(out, env["UNIIMENTE_BRIDGE_KEY_DALEOBANKS"], scope="identity"))
+    with pytest.raises(CapabilityError, match="signature verification failed"):
+        organs.exchange({**params, "seed": SEED}, ctx(tmp_path, journal, roots=organ_roots(params)))
+    assert not journal.replay("organ.observed") or all(o.payload["organ"] == "daleobanks"
+                                                       for o in journal.replay("organ.observed"))
+    assert not journal.replay("organ.appraised")
+
+
+def test_a_shared_scope_message_is_refused(tmp_path, journal, monkeypatch):
+    """No shared key exists in an exchange: an answer signed at shared scope (as the one-key pin did) cannot verify."""
+    params = live_organs()
+    _resigning(monkeypatch, lambda out, env: _signed(out, "s" * 64, scope="shared"))
+    with pytest.raises(CapabilityError, match="unsigned admission prohibited"):
+        organs.exchange({**params, "seed": SEED}, ctx(tmp_path, journal, roots=organ_roots(params)))
+    assert not journal.replay("organ.appraised")
+
+
+def test_each_organ_receives_only_the_keys_it_needs(tmp_path, journal, monkeypatch):
+    seen = {}
+
+    def stage(python, cwd, code, *args, env, **kw):
+        seen[cwd.name] = sorted(k for k in env if "KEY" in k)
+        raise CapabilityError("stop here")
+    monkeypatch.setattr(organs, "_stage", stage)
+    with pytest.raises(CapabilityError, match="stop here"):
+        organs.exchange(git_checkouts(tmp_path), ctx(tmp_path, journal, roots=(tmp_path, Path("/usr/bin"))))
+    assert seen == {"daleobanks": ["UNIIMENTE_BRIDGE_KEY_DALEOBANKS"]}
+    assert bt.SIGNING_KEY_ENV not in seen["daleobanks"]
+
+
+def test_an_organ_on_the_one_key_pin_is_refused_with_the_reason(tmp_path, journal, monkeypatch):
+    def stage(python, cwd, code, *args, **kw):
+        raise CapabilityError("organ stage in daleobanks failed: BridgeSecurityError: signing configuration required")
+    monkeypatch.setattr(organs, "_stage", stage)
+    with pytest.raises(CapabilityError, match="predates per-organ keys"):
+        organs.exchange(git_checkouts(tmp_path), ctx(tmp_path, journal, roots=(tmp_path, Path("/usr/bin"))))
+    assert journal.replay("organ.") == []

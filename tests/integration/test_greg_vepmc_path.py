@@ -22,12 +22,18 @@ import sys
 
 import pytest
 
-from tests.integration.test_greg_body_supervised import (ROOT, SUPERVISORD, events, greg, heartbeat, history,
-                                                         supervisor_endpoint, wait_for)
+from tests.integration.test_greg_body_supervised import (ROOT, events, greg, heartbeat, history, supervisor_endpoint,
+                                                         wait_for)
 from greg import metrics, service
+from tests.supervisor_requirement import require_supervisord
 
-pytestmark = pytest.mark.skipif(SUPERVISORD is None, reason="supervisord (requirements-dev) not installed")
 FIXTURE_PASSPHRASE = "fixture passphrase, not Alfonso's"
+
+
+@pytest.fixture(autouse=True)
+def supervisor_on_path():
+    """Skip without supervisord, or fail under GREG_REQUIRE_SUPERVISOR=1 (tests/supervisor_requirement.py)."""
+    require_supervisord("supervisord (requirements-dev) not installed")
 
 
 def founder(home, passphrase, *args):
@@ -110,6 +116,12 @@ def test_first_vepmc_path_requires_founder_body_designation(tmp_path, passphrase
             assert row["evidence_level"] == vepmc["evidence_level"] == metrics.FOUNDER_TIER
             assert vepmc["founder_tier_count"] == 1 and "not_founder_tier" not in row
             assert path["achieved"] == ["N0", "N1"] and path["active"]["id"] == "N2"
+        # greg acceptance judges the step-4 First Mission; it states that scope and repeats the N1 result as vepmc
+        # computed it, so a kept report never contradicts this closure nor reads a rehearsal as founder tier (C4).
+        acceptance = json.loads(greg(home, "acceptance").stdout)
+        assert "First Mission" in acceptance["scope"] and "greg vepmc" in acceptance["scope"]
+        assert acceptance["n1"] == {"evidence_level": vepmc["evidence_level"], "structural_candidate_count": 1,
+                                    "founder_tier_count": 0 if passphrase is None else 1}
         founder(home, passphrase, "stop", "--key", str(key))
         wait_for(lambda: heartbeat(home)["state"] == "STOPPED", what="founder stop")
         if os.environ.get("GREG_RECORD_EVIDENCE") and passphrase is None:

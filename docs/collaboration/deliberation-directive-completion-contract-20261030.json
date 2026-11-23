@@ -1,0 +1,478 @@
+{
+  "decision_id": "DIRECTIVE-COMPLETION-CONTRACT-20261030",
+  "title": "Compute 'the prompt is completely built' section by section from cited evidence, conjunctively, with the ask set pinned",
+  "problem": "On 2026-10-30 the founder set the completion criterion: \"That is done when we completely build the prompt\" (INTENT-20261030-BUILD-BEFORE-DEVICE-RUN). The prompt is the 77-section directive of 2026-10-28. Nothing computed that sentence. The path's depth covers nodes N1-N8 only, so reaching N8 could be read as 'the prompt is built' while whole sections stayed open (the unit spec names sections 11, 26, 28, 32, 33, 36, 37, 42, 50 and 52). That is a false-completion risk, and directive sections 10 and 73 say 'Never fabricate completeness' and 'Never inflate completeness'.",
+  "founder_intent_refs": [
+    "INTENT-20261030-BUILD-BEFORE-DEVICE-RUN (the criterion: \"That is done when we completely build the prompt\")",
+    "INTENT-20261028-OPUS-MAXIMUS-REISSUE (sections 10 and 73: never fabricate or inflate completeness; the map reads all 77 sections; sections 12, 68 and 69 hold the asks the merged #236 closed)",
+    "INTENT-20261001-FULL-MACHINE-COMPLETION",
+    "INTENT-20261019-UPWARD-ASCENT"
+  ],
+  "baseline": "feb531d2 (#227's branch, recording the directive and the correction): the acceptance harness checks acceptance/missions.json and acceptance/completion-contract.json (Missions A-L and the section-35 functions). No file maps the 77 directive sections, and `python -m acceptance check` reads no directive map, so a map claiming all 77 sections DONE, with section 40 removed and section 13's heading changed, passes with exit 0 'sound' (vacuously: the base has no directive gate, review finding F8).",
+  "alternatives": [
+    {
+      "name": "Proposed: a pinned, conjunctive section map inside the existing acceptance harness",
+      "description": "acceptance/directive-sections.json holds one record per section 1-77 with the source's exact heading and its testable asks (paraphrase, verbatim excerpt, the listed lines it answers, owner paths, cited evidence, required tier, computed tier, coverage, blocker with its record). acceptance/directive.py computes each ask's tier as the least-verified of what it cites (as the harness does), counts an ask met only at its required tier and covered, a section DONE only when every ask is met and every listed line is answered or set aside, and 'completely built' only when no ask is BUILDABLE_NOT_BUILT, an unguarded principle or open with no blocker, and every listed line is accounted for. acceptance/directive-asks.pin.json pins every ask id; asks are retired, never deleted; `directive --against <base>` refuses a pin edited in the same change. A separate workflow collects every cited node and runs an 85-mutant gate.",
+      "advantages": [
+        "The founder's sentence becomes one computed answer with reasons: on the merged tree 'prompt completely built: NO', 77 of 272 asks met at the static ceiling, 130 open asks building can still close",
+        "The buildable residual is printed in dependency order (68 rows on the merged tree), a work queue derived from the same map",
+        "Reuses the harness's report, node resolution and real-process rule; completion-contract.json and missions.json are cited as evidence, not copied",
+        "Deleting or relabelling an ask, citing a helper, claiming a tier above the evidence and calling an under-mapped section DONE are each refused by name (37 tests, 85 of 85 mutants caught)"
+      ],
+      "disadvantages": [
+        "The map is a reviewed reading of the directive; paraphrase fidelity, required tiers and blocker classes are judgements no check can make",
+        "Counts are static ceilings; CI collects the cited nodes but does not run them",
+        "Large: 6,004 lines of map and 714 lines of checker to keep current as units land"
+      ],
+      "revival_evidence": "Retained as the proposal."
+    },
+    {
+      "name": "Simplest viable: one record per section in completion-contract.json citing tests, tier computed, no pin and no line accounting",
+      "description": "The unit spec's literal wording ('extend the existing acceptance/completion-contract.json harness ... a section entry citing a non-existent test, or claiming a level above its evidence kind, fails'). Round 1 of this unit (4a4facc6..b909b516) was close to it: 258 asks, 19 tests, 29 mutants, no pin, no listed-line accounting.",
+      "advantages": [
+        "Smaller and quicker to review",
+        "Already refuses a non-existent test and a tier above the evidence"
+      ],
+      "disadvantages": [
+        "The round-1 attack review reproduced that deleting an open founder ask turned its section DONE with `check` and all 19 tests passing; deleting all 189 open asks flipped both verdicts to yes (MWB-1)",
+        "Section 69 computed DONE on one ask for twelve bullets and four prohibitions (MWB-2, F2), so round 1 reported DONE 3 where line accounting gives DONE 1"
+      ],
+      "revival_evidence": "A founder ruling that the ask set is fixed by him and signed, which would make the in-repo pin unnecessary."
+    },
+    {
+      "name": "Strongest competing design: completion computed from a CI run of every cited node, with a founder-signed ask set",
+      "description": "Run every node the map cites in CI with Chromium, bubblewrap and a DALEOBANKS checkout, publish `directive --outcomes`, and accept a change to the ask set only under a founder signature.",
+      "advantages": [
+        "Attained tiers instead of static ceilings: the 6 asks met only statically (skips on every host checked) would show as unmet",
+        "A pin change could not pass without the founder"
+      ],
+      "disadvantages": [
+        "No workflow in the repository provisions Chromium, bubblewrap or a DALEOBANKS checkout today",
+        "A founder signature on every map edit adds founder burden for bookkeeping",
+        "Not built"
+      ],
+      "revival_evidence": "The #196 integrator adds a CI job with Chromium and bubblewrap that runs the cited nodes; or the founder asks to sign the ask set."
+    },
+    {
+      "name": "Staged and reversible: report only first, gates later",
+      "description": "Land `python -m acceptance directive` as a read-only report, and add the pin, the line accounting and the mutant gate only after the founder ratifies the reading.",
+      "advantages": [
+        "Smallest first change; the reading can be corrected before anything gates on it"
+      ],
+      "disadvantages": [
+        "A report without the pin is the version the review showed could be edited into 'completely built: yes' with every check green",
+        "Gates that arrive later must be reviewed again against a map that has moved"
+      ],
+      "revival_evidence": "The founder rejects the reading wholesale, so the gates would only protect a wrong map."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "The founder's criterion stays uncomputed. Completion is judged from path depth or prose reports, and the false-completion risk the unit spec names remains.",
+    "advantages": [
+      "No new map to maintain as units land",
+      "No new workflow or 30-minute mutant gate"
+    ],
+    "disadvantages": [
+      "No answer to 'is the prompt completely built' that a test can check",
+      "No ordered list of what building can still close",
+      "Sections 10 and 73 ('Never fabricate completeness', 'Never inflate completeness') stay unguarded for completion claims"
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "The founder's own sentence is the criterion, and it is now computed conjunctively: every section, every ask, every listed line. It answers NO on the merged tree, which is the truthful answer. Nothing is retired without a founder intent record quoted verbatim, so no ask leaves by an agent's choice.",
+      "material_concerns": [
+        "The 4,026-character preamble before section 1, including the 'Build this:' paragraph, is not mapped, and the README and the summary line do not say so (review MWB-11, not addressed)",
+        "Required tiers and blocker classes are this session's reading; the founder has not ratified them",
+        "655 listed lines in 55 sections have no ask yet, so the per-section counts may hide asks"
+      ],
+      "evidence_refs": [
+        "acceptance/directive-sections.json (source, criterion, reading)",
+        "docs/FOUNDER_INTENT_LEDGER.md (INTENT-20261030-BUILD-BEFORE-DEVICE-RUN)",
+        "docs/intent/sources/OPUS-MAXIMUS-MASTER-BUILD-DIRECTIVE-2026-10-28-source.md"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "One harness, not a parallel framework: directive.py reuses acceptance/__init__.py's report, node resolution and real-process rule, and asks cite completion-contract.json functions and missions.json requirements as evidence. The map is a new data file beside them rather than records inside completion-contract.json, because the directive's 77 sections are a different key space from the section-35 functions; this departs from the spec's wording and is recorded.",
+      "material_concerns": [
+        "Every landing unit changes what evidence points at; the map must be re-read after each integration (shown when #236 and #234 needed c49572d7)",
+        "The map is 6,004 lines; one file edited by many units will conflict if several edit it at once",
+        "The pin is in-tree; only `--against` a base refuses a pin edited together with the map"
+      ],
+      "evidence_refs": [
+        "acceptance/directive.py",
+        "acceptance/__main__.py",
+        "acceptance/README.md (section 'The directive's sections')"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Two reviews of round 1 (b909b516) were done by separate agents of this same session, one attack and one fidelity, not by independent sessions or humans. They reported 20 findings. The 18 the fix round took up were reproduced and fixed, each with a regression test, and the mutant gate grew from 29 to 85. Two were not changed: the unmapped preamble (MWB-11) and the vacuous base fail-before (F8, a wording point). A final verification by another agent of this session re-ran the gate (85 of 85) and corrected one README count.",
+      "material_concerns": [
+        "A push to main, or a local run without `--against`, does not ratchet the pin",
+        "'Met' is a static ceiling: 6 met asks rest on tests that skipped on every host checked (S28.A2, S60.A1, S72.A1 need Playwright with Chromium; S31.A1 and S50.A2 bubblewrap; S45.A1 a DALEOBANKS checkout)",
+        "A blocker record shows a blocker exists, not that nothing else blocks; relabelling within the pinned class is still a review question"
+      ],
+      "evidence_refs": [
+        "docs/evidence/directive-completion-contract-2026-10-30/README.md (round 2 table)",
+        "tests/unit/test_directive_sections.py",
+        "scripts/ci/check_directive_sections_mutants.py"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Reversible and inert: nothing in GREG's runtime reads the map, and reverting the branch restores the earlier `check` output. The cost is maintenance: each unit that lands must cite its tests in the map (the check refuses a stale tier), and the integrator re-reads the map after each merge.",
+      "material_concerns": [
+        "The new workflow has not run in GitHub Actions; its install line was checked only in a clean local venv (dev only: exit 2; with cognition and playwright==1.63.0: all 129 nodes then, 141 now, collect)",
+        "The mutant gate takes about 30 minutes",
+        "Five commits carry the placeholder identity combined-check <combined-check@local> from the shared repository config, and merge commit c5274447 has git's default message with no trailer; history was not rewritten"
+      ],
+      "evidence_refs": [
+        ".github/workflows/directive-completion.yml",
+        "docs/evidence/directive-completion-contract-2026-10-30/README.md (commands and results)"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "The change lowers what can be claimed: round 1's DONE 3 became DONE 1 after review, and every count is labelled a static ceiling or a run. No evidence is deleted; negative results (round 1's bypasses, the 84/85 first mutant run, the skipped tests) are kept in the README.",
+      "material_concerns": [
+        "The headline '77/272 asks met' must not be quoted as attained progress: in the recorded LOCAL runs 58 of the 64 own-node met asks were met, and the 9 met asks citing mission requirements were not re-run",
+        "Reality level is UNIT-TESTED for the checker with LOCAL runs behind the met asks; nothing is founder-used, live or externally verified; VEPMC stays 0"
+      ],
+      "evidence_refs": [
+        "docs/evidence/directive-completion-contract-2026-10-30/local-run-met-asks.json",
+        "docs/evidence/directive-completion-contract-2026-10-30/local-run-round2.json"
+      ],
+      "recommendation": "RETAIN"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "Round-1 fail-before: the unit's tests cannot run on the base",
+      "tier": "unit_test",
+      "reference": "tests/unit/test_directive_sections.py copied into a detached worktree of feb531d2",
+      "finding": "1 collection error ('cannot import name directive from acceptance'); 0 of 19 ran"
+    },
+    {
+      "claim": "Round-2 fail-before: the review's bypasses pass on round 1",
+      "tier": "unit_test",
+      "reference": "round-2 test_directive_sections.py and test_greg_path_cli.py on b909b516 (reproduced by the final verifier)",
+      "finding": "15 failed, 22 passed; the 15 are the new failure classes; 18 of the 22 are round-1 tests, 2 are greg path evidence tests and 2 add coverage of safeguards that existed"
+    },
+    {
+      "claim": "A pin edited together with the map is refused against the base",
+      "tier": "sandbox_execution",
+      "reference": "scratch worktree: S16.A3 deleted and S1.A3 relabelled EXTERNAL in map and pin, then `directive --against 74214dd8`",
+      "finding": "check exits 0 (in-tree pin edited too); --against exits 2 naming S1.A3 and S16.A3"
+    },
+    {
+      "claim": "Every safeguard fails a test when removed",
+      "tier": "sandbox_execution",
+      "reference": "scripts/ci/check_directive_sections_mutants.py; logs under the session scratchpad (mwb-final-verify-8c78ea21, mwb-merge-4dc0d581)",
+      "finding": "85 of 85 caught at 5d10433e, at 8c78ea21 (final verifier, 1670 s) and on the merged tree at c49572d7 (30 min)"
+    },
+    {
+      "claim": "On the tree merged with #196 at 4dc0d581 the map is sound and answers NO",
+      "tier": "sandbox_execution",
+      "reference": "python -m acceptance check at c49572d7 and 41aedaca",
+      "finding": "77 sections (DONE 1, PARTIAL 53, OPEN 23); 77/272 asks met at the static ceiling; 130 open asks building can still close; 655 listed lines unanswered; prompt completely built: NO"
+    },
+    {
+      "claim": "The merge brought in two built units and the map now counts them",
+      "tier": "unit_test",
+      "reference": "c49572d7; tests/unit/test_path_build_frontier.py, tests/unit/test_greg_seed_consistency.py, tests/unit/test_greg_backup.py, tests/integration/test_greg_backup_process.py",
+      "finding": "S12.A3, S68.A4, S69.A5 (WU-01, #236) and S47.A2 (WU-14, #234) met; their 14 cited nodes: 44 passed, 0 skipped"
+    },
+    {
+      "claim": "Every cited node and guard collects a test",
+      "tier": "sandbox_execution",
+      "reference": "python -m acceptance directive --collect --against 4dc0d581 (merged tree); the same on a scratch tree merged with 638457a4",
+      "finding": "all 141 distinct cited nodes collect; no pin at the base, so nothing to ratchet; the pinned asks hold against a0ef65ee"
+    },
+    {
+      "claim": "Most statically met asks are met in a run",
+      "tier": "sandbox_execution",
+      "reference": "LOCAL runs with -p acceptance._plugin: local-run-met-asks.json (610 passed, 26 skipped) and local-run-round2.json (238 passed, 3 skipped)",
+      "finding": "58 of the 64 own-node met asks met in the run (before the merge); 6 fell short on skips"
+    },
+    {
+      "claim": "No regression in neighbouring suites after the merge",
+      "tier": "unit_test",
+      "reference": "test_acceptance_harness, test_founder_correction_20261030, test_greg_packaging, test_greg_platform, test_developmental_inheritance, test_greg_foundry_worker; check_authority_singleton.py; check_schema_refs.py",
+      "finding": "115 passed; one authority source per governed artifact; 27 schemas, 130 local refs resolve"
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "Round 1 could be gamed into 'completely built: yes'",
+      "tier": "sandbox_execution",
+      "reference": "attack review of b909b516 (MWB-1, MWB-3, MWB-7), separate agent of this session",
+      "finding": "Deleting an open ask turned its section DONE with all checks green; a helper function inside a wholesale-cited file counted as evidence; relabelling buildable asks EXTERNAL closed the verdict. Fixed in round 2"
+    },
+    {
+      "claim": "Round 1 reported sections DONE on too few asks",
+      "tier": "historical_artifact",
+      "reference": "MWB-2 and F2; acceptance/directive-sections.json section 69",
+      "finding": "Section 69 was DONE on 1 ask for 12 bullets and 4 prohibitions; with line accounting 15 and 69 are PARTIAL and DONE fell from 3 to 1"
+    },
+    {
+      "claim": "Round 1's workflow would have failed on every pull request",
+      "tier": "sandbox_execution",
+      "reference": "fidelity review F1: clean venv with requirements-dev.txt only",
+      "finding": "directive --collect exit 2: six files collect nothing (networkx and scipy importorskip x4, Playwright x2). Fixed by installing cognition and playwright==1.63.0"
+    },
+    {
+      "claim": "Six statically met asks have never passed on any host checked",
+      "tier": "sandbox_execution",
+      "reference": "local-run-round2.json",
+      "finding": "S28.A2, S60.A1, S72.A1 (Playwright with Chromium), S31.A1, S50.A2 (bubblewrap), S45.A1 (DALEOBANKS checkout) skipped; CI collects but does not run them"
+    },
+    {
+      "claim": "The verdict covers sections 1-77 only",
+      "tier": "primary_source",
+      "reference": "docs/intent/sources/OPUS-MAXIMUS-MASTER-BUILD-DIRECTIVE-2026-10-28-source.md; review MWB-11 (plausible)",
+      "finding": "The 4,026 characters before the first section rule, with the 'Build this:' paragraph, are not parsed into any section; not addressed and not stated in the README"
+    },
+    {
+      "claim": "Most of the directive's listed lines are not yet mapped",
+      "tier": "unit_test",
+      "reference": "python -m acceptance check summary",
+      "finding": "655 listed lines in 55 sections have no ask; only sections 13, 15 and 69 were audited line by line"
+    },
+    {
+      "claim": "The first round-2 mutant run had a survivor",
+      "tier": "sandbox_execution",
+      "reference": "mutant gate on 74214dd8",
+      "finding": "84 of 85: 'Mission L's trace does not cap the coverage' survived; 5d10433e strengthened the test"
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "Any claim that the prompt is completely built is computed from the directive's own sections and the tests that exist, refused while any part is open, and cannot be produced by editing the map.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "One conjunctive answer to the founder's criterion",
+        "amplified_value": "Completion claims in reports and PRs can be checked against `python -m acceptance check` instead of prose; a later report saying 'built' while the check says NO is visibly wrong"
+      },
+      {
+        "id": "A2",
+        "statement": "The buildable residual in dependency order",
+        "amplified_value": "The same map that refuses false completion orders the remaining work; when a unit lands, the asks it closes move and its row leaves (WU-01 and WU-14 did, 70 rows to 68)"
+      },
+      {
+        "id": "A3",
+        "statement": "Reuse of the acceptance harness's rules and evidence",
+        "amplified_value": "An ask's tier is computed exactly as a mission requirement's or contract function's is, so the two cannot disagree on what a test can establish"
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "The ask set is a human reading; deleting or relabelling an ask could fake completion",
+        "severity": "high",
+        "response_type": "protective",
+        "redesigned_response": "Pin every ask id with the class it may claim; retire, never delete; FOUNDER_ONLY and EXTERNAL on test-reachable tiers cite a record; `directive --against <base>` ratchets in CI on pull requests"
+      },
+      {
+        "id": "D2",
+        "statement": "Statuses are static ceilings and can be read as attained",
+        "severity": "medium",
+        "response_type": "evidence",
+        "redesigned_response": "Every count is labelled 'static ceiling' or 'in this run'; `directive --outcomes` recomputes from a run, where a failure, skip or empty collection leaves the ask unmet; the LOCAL runs are committed per ask"
+      },
+      {
+        "id": "D3",
+        "statement": "A section with too few asks computes DONE",
+        "severity": "high",
+        "response_type": "protective",
+        "redesigned_response": "Listed-line accounting: every bullet and every 'Do not' or 'Never' line must be answered by an ask or set aside with a reason before DONE or 'completely built'"
+      },
+      {
+        "id": "D4",
+        "statement": "CI cost and fragility: cited files need networkx, scipy and Playwright to collect, and the mutant gate takes about 30 minutes",
+        "severity": "medium",
+        "response_type": "modularity",
+        "redesigned_response": "A separate workflow installs dev, cognition and playwright==1.63.0 with a read-only token; canonical-ci.yml is not edited, so the integrator decides where the gates run"
+      },
+      {
+        "id": "D5",
+        "statement": "Every landing unit must update the map",
+        "severity": "low",
+        "response_type": "governance",
+        "redesigned_response": "The check refuses a stale tier or a closed unit still named by an open ask, so an outdated map fails instead of drifting; the integrator re-reads it after each merge, as c49572d7 did"
+      }
+    ],
+    "comparisons": {
+      "baseline": "feb531d2: no directive gate; any content in a directive map passes",
+      "do_nothing": "The criterion stays uncomputed and completion is judged from path depth or prose",
+      "simplest_viable_alternative": "Round 1 without pin or line accounting: reproduced bypasses to 'completely built: yes' and DONE 3 on under-mapped sections",
+      "strongest_competing_architecture": "CI-run outcomes plus a founder-signed ask set: attained tiers, but needs CI provisioning that does not exist and founder signatures on bookkeeping",
+      "reversible_experiment": "This change: data files, a checker and a separate workflow; no runtime reads them; one revert restores the earlier check"
+    },
+    "rejected_alternatives": [
+      {
+        "name": "Records inside acceptance/completion-contract.json",
+        "rejection_reason": "Its records are the section-35 functions with their own schema; mixing 77 section records into it would change that contract's schema and fields; the map cites its functions instead",
+        "revival_evidence": "The completion-contract owner asks for one file"
+      },
+      {
+        "name": "Map only the sections the spec named (11, 26, 28, 32, 33, 36, 37, 42, 50, 52)",
+        "rejection_reason": "The criterion is the whole prompt; a partial map would recreate the false-completion risk for the other sections",
+        "revival_evidence": "None"
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Two separate agents of this session attacked round 1 (20 findings); the strengthened design was then re-verified by another agent of this session and re-checked after merging #196 at 4dc0d581. This pass attacks the strengthened design for gaming, unrun evidence, scope, drift after merges and maintenance.",
+    "new_weaknesses": [
+      {
+        "id": "W1",
+        "category": "gaming",
+        "statement": "The in-tree pin can be edited with the map on a push to main or in a local run without `--against`",
+        "strengthening_response": "CI runs the ratchet against a pull request's base; residual for pushes; the integrator can require the workflow on #196's branch"
+      },
+      {
+        "id": "W2",
+        "category": "fragility",
+        "statement": "CI collects the cited nodes but runs none of them; 6 met asks have skipped on every host checked",
+        "strengthening_response": "The six carry a note in the map; counts are labelled; a CI job that runs the nodes with Chromium and bubblewrap and publishes `directive --outcomes` is the named next step"
+      },
+      {
+        "id": "W3",
+        "category": "comprehensibility",
+        "statement": "655 listed lines in 55 sections are unmapped, so 'completely built' is NO partly for mapping reasons, and the buildable count may understate the work",
+        "strengthening_response": "The summary line prints the unanswered-line count separately from the build residual; mapping them is a named follow-up"
+      },
+      {
+        "id": "W4",
+        "category": "overfit",
+        "statement": "The preamble before section 1 is outside the verdict and the label does not say so (MWB-11)",
+        "strengthening_response": "Not changed in this unit; recorded as dissent and as negative evidence in the PR"
+      },
+      {
+        "id": "W5",
+        "category": "fragility",
+        "statement": "Each merge into #196 can change what an ask's evidence points at or build what an open ask waits for",
+        "strengthening_response": "Shown and handled once: after 4dc0d581 four asks moved and one reason was corrected (S17.A4). The base has since adopted #209 (638457a4); on a scratch tree merged with it the static check gives the same counts and all 141 nodes collect, but the map was not reviewed against #209"
+      },
+      {
+        "id": "W6",
+        "category": "gaming",
+        "statement": "A blocker class can be honest yet incomplete: a record shows a blocker exists, not that nothing else blocks",
+        "strengthening_response": "Stated in acceptance/README.md as a review question; the pin makes a class change a visible, separate edit"
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "resolved",
+        "rationale": "Pin, retirement, records and the ratchet are each tested and mutated; the reviewers' deletion and relabelling probes are refused. Pushes outside pull requests remain (W1)",
+        "owner": "acceptance/ maintainers; #196 integrator for branch protection",
+        "review_trigger": "A merged head whose pin lost an id or moved a class out of the residual"
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "accepted",
+        "rationale": "Labels and committed LOCAL runs keep ceilings and attainment apart; attained tiers in CI need provisioning not available here",
+        "owner": "#196 integrator (CI job); acceptance/ maintainers",
+        "review_trigger": "A CI job runs the cited nodes and publishes `directive --outcomes`"
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "deferred",
+        "rationale": "Resolved for sections 13, 15 and 69; 55 sections still hold 655 unanswered lines, which keep 'completely built' NO until mapped",
+        "owner": "The session mapping the directive (session_01Kucyfm6YBHMTjaiC1M9hqD) or a later mapper",
+        "review_trigger": "The unanswered-line count reaches 0, or a reviewer finds an ask hidden in an unaudited section"
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "deferred",
+        "rationale": "The separate workflow avoids canonical-ci.yml, which open PRs #214 and #232 edit; where the gates finally run is the integrator's call",
+        "owner": "#196 integrator",
+        "review_trigger": "The first GitHub Actions run of directive-completion.yml, or the integrator wiring the gates into canonical-ci.yml"
+      },
+      {
+        "disadvantage_id": "D5",
+        "outcome": "accepted",
+        "rationale": "The check fails on a stale map instead of letting it drift; the post-merge update c49572d7 shows the cost is one map edit per integration",
+        "owner": "#196 integrator; each unit's author",
+        "review_trigger": "A unit lands without its asks moving, or map edits from two units conflict"
+      }
+    ],
+    "final_design": "acceptance/directive-sections.json (77 sections, 272 pinned asks, 69 units) checked by acceptance/directive.py through `python -m acceptance check` and `directive` (--collect, --outcomes, --against); conjunctive DONE and 'completely built' with listed-line accounting; asks retired, never deleted; founder and external blockers on test-reachable tiers cite records; principles guarded by their own evidence; a separate read-only workflow collects every cited node, ratchets the pin against the PR base and runs the 85-mutant gate.",
+    "residual_risks": [
+      {
+        "risk": "The reading itself (paraphrases, required tiers, blocker classes, set-aside lines) is wrong in places",
+        "mitigation": "Every judgement is a visible, pinned, separately reviewable edit; the founder can withdraw an ask by intent record",
+        "owner": "Alfonso Lopez (ratification); acceptance/ maintainers",
+        "review_trigger": "The founder's ruling on the reading or a reviewer's finding against a specific ask"
+      },
+      {
+        "risk": "The static count is quoted as attained progress",
+        "mitigation": "Labels in the summary line and README; the PR states the run counts beside it",
+        "owner": "Anyone reporting progress; #196 integrator",
+        "review_trigger": "A report citing '77/272' without its label"
+      },
+      {
+        "risk": "The map is not re-read after a merge that changes evidence (#209 at 638457a4 is the current case)",
+        "mitigation": "The static check and collection hold on a tree merged with 638457a4; the integrator re-reads the map at intake",
+        "owner": "#196 integrator",
+        "review_trigger": "Intake of this PR into #196"
+      }
+    ],
+    "recommendation": "NEEDS_FOUNDER_DECISION"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Recorded with thresholds; neither blocks the draft. Both bound how the verdict may be quoted.",
+    "entries": [
+      {
+        "role": "Adversarial Reviewer",
+        "position": "Count an ask met only from a CI run of its cited nodes, not from the static ceiling, before the map's counts are quoted as progress.",
+        "rationale": "Six statically met asks have skipped on every host checked, and the nine that cite mission requirements were not re-run; a ceiling is not an attainment.",
+        "evidence_threshold": "A CI run in which a statically met ask's nodes fail or skip, or any report quoting the static met count as attained",
+        "owner": "#196 integrator; acceptance/ maintainers",
+        "review_trigger": "The first CI job that runs the cited nodes and publishes `directive --outcomes`"
+      },
+      {
+        "role": "Founder-Intent Steward",
+        "position": "The label 'prompt completely built' should say it covers sections 1-77, or the preamble should be mapped, before the verdict is reported to the founder as covering the whole prompt.",
+        "rationale": "The 4,026-character preamble holds the 'Build this:' paragraph, the directive's headline build ask; review MWB-11 found terms there that no numbered section carries.",
+        "evidence_threshold": "A preamble ask that no section's ask answers, or the founder stating the preamble is part of the criterion",
+        "owner": "acceptance/ maintainers",
+        "review_trigger": "The next map revision, or the founder's ruling on the reading"
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": true,
+    "approval_status": "pending",
+    "approver": "Alfonso Lopez (adoption, any merge, ratifying the reading and any withdrawal of an ask); #196 integrator for intake"
+  },
+  "migration_plan": "None required. The change adds data files, a checker, tests, a workflow and records; five files are added to foundry/owned-source.json. Nothing in GREG's runtime reads them. After each unit lands in #196, its tests are cited in the map and its asks recomputed, as c49572d7 did for WU-01 and WU-14.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Revert this branch's commits, or decline intake into #196",
+      "`python -m acceptance check` then prints only its earlier line; no runtime state, ledger or grant changes"
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "`check` passes a map in which a pinned ask is missing, or a section is DONE with an open ask or an unanswered listed line",
+    "'Prompt completely built' reads yes while any ask is BUILDABLE_NOT_BUILT, an unguarded principle or open with no blocker",
+    "A mutant of a listed safeguard survives the gate on a merged head",
+    "The founder rejects the reading and the map cannot express his reading without weakening a check"
+  ],
+  "decision": "NEEDS_FOUNDER_DECISION",
+  "decision_owner": "Alfonso Lopez decides adoption, any merge, and whether to ratify the reading (required tiers, blocker classes, withdrawals); the #196 integrator decides intake and where the gates run in CI; session_01Kucyfm6YBHMTjaiC1M9hqD owns the reversible draft. The five role positions are recorded by the implementing session; the adversarial reviews were done by separate agents of this same session, not by independent sessions or humans. All five roles recommend RETAIN; two dissents are recorded.",
+  "review_trigger": "Intake into #196 (re-read the map against #209 and later adoptions); the first CI run of directive-completion.yml; a CI job publishing `directive --outcomes`; the founder's ruling on the reading; or the unanswered-line count reaching 0"
+}

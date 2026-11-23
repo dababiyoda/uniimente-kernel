@@ -1,0 +1,540 @@
+{
+ "schema": "greg-loop15-step-map/1",
+ "mission_id": "m:loop15-staffing",
+ "goal_id": "sha256:853d2e1e7d543ec421343d66a269fdaaa27ef2296dd275923489c9f986a75478",
+ "ledger_head": "sha256:82dab49b4877d8c8427a4666d12d6885125b1e22ff5fba6ba02e20804c75560d",
+ "ledger_records": 578,
+ "chain_verified": true,
+ "founder_key": "per-test Ed25519 key; NOT Alfonso",
+ "counts_toward_vepmc": false,
+ "steps": {
+  "1": {
+   "name": "founder-authorized goal persisted",
+   "events": [
+    {
+     "event_id": "0c5a9054-7ed6-5486-9c59-7669094596ba",
+     "seq": 3,
+     "hash": "sha256:57b6dde1708fab63bf9da45a4be544afef796c80e45c141101bdb1974ea4a9ce",
+     "type": "greg.mission.registered"
+    },
+    {
+     "event_id": "a83d4fe7-e8c2-53ec-ab07-c6c5fbbcbddb",
+     "seq": 554,
+     "hash": "sha256:1f8572d038a6ee1ea37202baf97b32e1dd803dab43a919bc83a82005ef512669",
+     "type": "greg.command.accepted"
+    },
+    {
+     "event_id": "702d368c-ff6a-50b9-8c99-c109f80703f5",
+     "seq": 6,
+     "hash": "sha256:8e2da1ad71d52f36d03e3bace7f63ba36ca0b0157acbf7ed1db593c8a4f2e295",
+     "type": "greg.command.accepted"
+    }
+   ],
+   "records": {
+    "egregore.goal_authorized": {
+     "seq": 5,
+     "goal_id": "sha256:853d2e1e7d543ec421343d66a269fdaaa27ef2296dd275923489c9f986a75478"
+    }
+   },
+   "boots": 4,
+   "status": "SHOWN"
+  },
+  "2": {
+   "name": "an observation wakes the goal, which drives the mission",
+   "events": [
+    {
+     "event_id": "2b9a722e-3e78-5c99-881e-7c392b9b7eed",
+     "seq": 123,
+     "hash": "sha256:d9d61d8e19655aa308d04893219af7b69a2f80befa91b70f92d2e52f46d5d047",
+     "type": "greg.external.ingested"
+    },
+    {
+     "event_id": "221064a9-6358-5ae7-bcbd-dd4a052c05e1",
+     "seq": 129,
+     "hash": "sha256:265a0febe13b5b3634a3844acf049745c16399fd12e797a93fea51fa5e976156",
+     "type": "greg.mission.schedule"
+    },
+    {
+     "event_id": "36fd207f-dae6-5311-b185-44ee91b32782",
+     "seq": 141,
+     "hash": "sha256:69c5bc79a0bcd1861942fdb6d57f6cafa2e2dfb40699952c8b617f0b2cefb1f2",
+     "type": "greg.mission.observed"
+    },
+    {
+     "event_id": "a5ddcf33-2d6e-5b09-b58f-2d87faa0c399",
+     "seq": 178,
+     "hash": "sha256:ee0ebea2b6adc60cf5c63fd8183dcbc511a5127381b661a3fcdb112a25887857",
+     "type": "greg.decision.withdrawn"
+    },
+    {
+     "event_id": "ac7d3b46-0cb7-564d-bded-0f6376fdb0cd",
+     "seq": 179,
+     "hash": "sha256:35054247f9020e0203f8839d35350f9cccdcd8024d3c1d4f63e08298d839d4fe",
+     "type": "greg.mission.unblocked"
+    }
+   ],
+   "records": {
+    "egregore.gravity_turn (woken)": {
+     "seq": 128
+    }
+   },
+   "intake": "live: dropped with `greg intake` while the body ran; read on its next tick, no restart",
+   "controls": [
+    "request on file for ~4 body-minutes: no observation, no compile",
+    "SIGKILL and restart alone: no observation, no compile, no re-ask"
+   ],
+   "status": "SHOWN",
+   "gap": "the observation is a local file drop (greg intake): a local process stands in for an external feed, and no connector delivers it from outside the host. The wake is timing only: it changes when the mission observes, never what it may do"
+  },
+  "3": {
+   "name": "the Mind compiles with provenance",
+   "events": [
+    {
+     "event_id": "a0193af7-2685-5a38-bbe9-1e0e4fa9f064",
+     "seq": 246,
+     "hash": "sha256:4c32fd5f870defef4d4dcefbfd7d3c1f0838aa2bbb198f52ccd9a408042a4c71",
+     "type": "greg.mission.action"
+    }
+   ],
+   "compile_receipts": [
+    {
+     "ledger_seq": 31,
+     "state": "CAPABILITY_DEFICIT",
+     "receipt_id": "sha256:774fbe70f480a2413a63f80f7f9930171fe6a26b871775f7e352b34a3b1ff601"
+    },
+    {
+     "ledger_seq": 91,
+     "state": "CAPABILITY_DEFICIT",
+     "receipt_id": "sha256:89c51c10a3d49ac822e4b3d572c557ee999147c97b002f07cd59b3bafe38b248"
+    },
+    {
+     "ledger_seq": 150,
+     "state": "CAPABILITY_DEFICIT",
+     "receipt_id": "sha256:651c6246c8745b60ed861003ace3471471d1cf8807d962d181e1e4dae594eda3"
+    },
+    {
+     "ledger_seq": 206,
+     "state": "CAPABILITY_DEFICIT",
+     "receipt_id": "sha256:e4713998a766f77ba31756843a067a9fe60622bc0ca65166f14d256700bfe11f"
+    },
+    {
+     "ledger_seq": 243,
+     "state": "CAPABILITY_DEFICIT",
+     "receipt_id": "sha256:0a5cccd3795710eed7ba20fda667f722f839eb87653c7ef1e7e655f476fcaee3"
+    },
+    {
+     "ledger_seq": 306,
+     "state": "ANSWERED",
+     "receipt_id": "sha256:f96cd5a2450c3e361c83b6d24a65b059b0aeca2b4e1848853f7186787be20ae4"
+    },
+    {
+     "ledger_seq": 381,
+     "state": "ANSWERED",
+     "receipt_id": "sha256:4a9d8e5d7f7ea2b954fd82da615547878a9600278befd42c50612f0f62520e7c"
+    },
+    {
+     "ledger_seq": 448,
+     "state": "ANSWERED",
+     "receipt_id": "sha256:11d4703762c34f2deb917083b4717a8df161c875e6bed7c72780abab3b3d73ac"
+    },
+    {
+     "ledger_seq": 511,
+     "state": "ANSWERED",
+     "receipt_id": "sha256:fccfa4b814eaf6bca39493ee0f1cf3f3bfdd352565f8499ea06ce793dc4086bf"
+    }
+   ],
+   "methods_considered": [
+    "constructible:assignment.staffing"
+   ],
+   "authority_created": false,
+   "status": "SHOWN"
+  },
+  "4": {
+   "name": "existing capabilities searched first",
+   "events": [
+    {
+     "event_id": "582d5b00-f379-5fe5-bd34-9c325c00b491",
+     "seq": 248,
+     "hash": "sha256:cbe27d53c3f9fb1d96b370584f97ef8c79dc6a9d91a463ecb3afda9f11834c5c",
+     "type": "greg.genesis.route"
+    },
+    {
+     "event_id": "a81bf167-627c-5c1c-9d2a-b584af1d9ba6",
+     "seq": 249,
+     "hash": "sha256:853534984bf35f5b0645d3aa86464f34ed0782e083734e62751d9cce0736695b",
+     "type": "greg.genesis.route"
+    },
+    {
+     "event_id": "7ec671bb-22b3-582e-af13-562054cbdc5a",
+     "seq": 251,
+     "hash": "sha256:4121d767830c0b5ca2e639667bc5a7c980e4800d16e261aadf9e342a760e6b2e",
+     "type": "greg.genesis.route"
+    },
+    {
+     "event_id": "950d8a32-9872-51c8-b6a9-c71c72ae6ed3",
+     "seq": 252,
+     "hash": "sha256:3d0f84a9c11c89bdeeeb6f9063aef432950dd9cb753575b1bbca049e025e81a2",
+     "type": "greg.genesis.route"
+    },
+    {
+     "event_id": "481cb8f0-4f01-5687-b167-486ba4347432",
+     "seq": 255,
+     "hash": "sha256:65835b1d175cc7c9692ca25f164cdb5aa5f948a25db393bbf7bbeca8c2369ef5",
+     "type": "greg.genesis.route"
+    },
+    {
+     "event_id": "f7b1eb67-01eb-5c27-84c3-8884b6a30330",
+     "seq": 257,
+     "hash": "sha256:a140e1e3819e549b5821258f7918489462f523fc521575ce54771ea9f1950f4c",
+     "type": "greg.genesis.route"
+    },
+    {
+     "event_id": "131a8d7d-36f7-5fad-b31a-4e0300795cf2",
+     "seq": 278,
+     "hash": "sha256:ec3d4a632915b8f36891a54f8049558462817465bb405da4339ff7a586e12ef8",
+     "type": "greg.genesis.route"
+    }
+   ],
+   "first_compile_state": "CAPABILITY_DEFICIT",
+   "status": "SHOWN"
+  },
+  "5": {
+   "name": "a typed deficit",
+   "events": [
+    {
+     "event_id": "fb780b2d-681d-550a-bd19-bdafd0f649c2",
+     "seq": 247,
+     "hash": "sha256:e8c7b274743433e22ab3a7189fb9c5baa108adfaf4b16a105d893d7a464acee8",
+     "type": "greg.deficit.opened"
+    },
+    {
+     "event_id": "fa36da55-e2bc-50ed-8094-363b7fb9c36b",
+     "seq": 250,
+     "hash": "sha256:98672d7121daa94ba3d42bde19b12aa17b9d81b07075d946e26293225525e9f6",
+     "type": "greg.deficit.opened"
+    }
+   ],
+   "functions": [
+    "assignment.staffing",
+    "graph.max_flow"
+   ],
+   "status": "SHOWN"
+  },
+  "6": {
+   "name": "Genesis forms the capability",
+   "events": [
+    {
+     "event_id": "17d88008-63bd-5e85-9d96-f485beaf82e0",
+     "seq": 253,
+     "hash": "sha256:cf37575ded85c6fd9c2806fb3909606d114bc916baf127aebd7bc24066ac21d1",
+     "type": "greg.genesis.verified"
+    },
+    {
+     "event_id": "8fe86e92-0015-5e96-8e85-2ed9c7349f9b",
+     "seq": 276,
+     "hash": "sha256:903d71fe549016a0c6da25490f666bf2a56ac989d21b5f4158f8ce80ce78d32f",
+     "type": "greg.genesis.verified"
+    }
+   ],
+   "capabilities": [
+    "acquired.graph.max_flow.networkx",
+    "composed.assignment.staffing.networkx.5670bf4c5c"
+   ],
+   "status": "SHOWN"
+  },
+  "7": {
+   "name": "attach only on the founder's signed command",
+   "events": [
+    {
+     "event_id": "65d78a3a-d794-583b-aa59-c32f535c3471",
+     "seq": 258,
+     "hash": "sha256:3e241088a1ad755078f41976a7a4357bb56bbd1ed4870bc9db61f96cd7529c3d",
+     "type": "greg.decision.requested"
+    },
+    {
+     "event_id": "ef152b90-8469-5a65-a916-acd62d84700a",
+     "seq": 280,
+     "hash": "sha256:5bfe5df38f0a3cc46ac6380e68ebb4bec7ca06ee9180857f92237b4cc9879243",
+     "type": "greg.decision.requested"
+    },
+    {
+     "event_id": "0472dedb-a025-5431-b7b6-c7af94c94296",
+     "seq": 260,
+     "hash": "sha256:40bb806b2ab7f96a0b0873cec6361a50e0fb2be784f3a7823b50158197b575cb",
+     "type": "greg.command.rejected"
+    },
+    {
+     "event_id": "3fdff7f5-f18d-5cbd-874e-f28f920a6bbf",
+     "seq": 267,
+     "hash": "sha256:22da1d9ead028f7aec23100a4b1c056d3cd0ee15cd8cbe4cb3e40c45c1f37db1",
+     "type": "greg.capability.state"
+    },
+    {
+     "event_id": "6aadf21a-ab69-5923-bfb8-5bb5769c35b0",
+     "seq": 282,
+     "hash": "sha256:5841695004720ef746469cb78cc80722106aa13f6f4633e024e86ec6ee4416c3",
+     "type": "greg.capability.state"
+    }
+   ],
+   "forged_attach_refused": "FounderAuthError: founder key not enrolled or revoked",
+   "status": "SHOWN"
+  },
+  "8": {
+   "name": "a confined worker uses the Mind's answer, re-checked by GREG",
+   "events": [
+    {
+     "event_id": "a6a90812-0055-5fb3-9200-adab5d27899d",
+     "seq": 488,
+     "hash": "sha256:b501380834a90ce31888167019f432e0e76831a51591935633a5c073762974f1",
+     "type": "greg.mission.action"
+    },
+    {
+     "event_id": "abb94be9-fabf-58c2-9e0c-d0d5cfd116ff",
+     "seq": 538,
+     "hash": "sha256:6ad93c8ec095976281dbf987e097aa20d5be26fe1f449f75c3adbc7b2ea6005e",
+     "type": "greg.mission.observed"
+    }
+   ],
+   "binding": {
+    "param": "context",
+    "from_check": "answered",
+    "from_receipt": "sha256:bf90a33de00901a0435297c25aeb22463f87c2345bfc248241c9d4b653e2e6e8",
+    "field": "result",
+    "value_sha256": "sha256:d14951c56e878979c241540885357a085a23b2a0fb41951a57e1b7c8896d61b6"
+   },
+   "isolation": "bubblewrap",
+   "network": "isolated-network-namespace",
+   "greg_tests_passed": true,
+   "commit": "c6e3d2aa41a75b8cc8ea7ee36784c1c1c56bd9cc",
+   "status": "SHOWN"
+  },
+  "9": {
+   "name": "a real organ process consumes the answer",
+   "events": [
+    {
+     "event_id": "75406120-b239-575c-a4d2-95983c378501",
+     "seq": 351,
+     "hash": "sha256:242f1a96bd4a8e57a346f970ab20a511712847d1adccc014c44cd73174a954ea",
+     "type": "greg.mission.action"
+    },
+    {
+     "event_id": "b7927bd7-4849-510b-8b1d-9bfdfeb4748d",
+     "seq": 343,
+     "hash": "sha256:ccf88d9f72c49f633550af0979a7d60706b9ef68d9748533edc3452732ac6a07",
+     "type": "greg.organ.observed"
+    },
+    {
+     "event_id": "81524ec4-aecb-56a2-b069-f83223df72a2",
+     "seq": 345,
+     "hash": "sha256:fc28e43131dc1d4abcd9fe5dae6e92347f62a620b6865af6e33c300e7f239071",
+     "type": "greg.organ.observed"
+    },
+    {
+     "event_id": "5aefe2cb-54bc-5f52-89b4-8153abc9776e",
+     "seq": 346,
+     "hash": "sha256:8261d76bd3fa546c37f05a32b4c76194e0fcb79623b762cab7a8f5b500e38cc5",
+     "type": "greg.organ.appraised"
+    }
+   ],
+   "binding": {
+    "param": "seed",
+    "from_check": "answered",
+    "from_receipt": "sha256:4f61e81f3d8dc4290879d843eeb23ae2fb5b2dabff3d0de746c193b8a29818b2",
+    "field": "result",
+    "value_sha256": "sha256:1d46dd0f25a115c6a69e5f57a84f5b42ad2fd9eb13f83538f21a01ece0b1716f"
+   },
+   "organ_heads": {
+    "daleobanks": "664ac98c553759ce754bb684cb248225343edd7e",
+    "wealthmachine": "26c697e769108375372171c607ed7f45a3eb4661"
+   },
+   "packet_id": "306c93d1-51c9-4e6f-87ed-11a24cae2c8c",
+   "daleobanks_ledger": {
+    "idea_intake_chars": 1153,
+    "bound_seed_chars": 1153,
+    "idea_refined_opportunity": "306c93d1-51c9-4e6f-87ed-11a24cae2c8c"
+   },
+   "packet_evidence": [
+    "operator thought c1f268d3-1aa3-446f-a2e9-3e8e6c0dbbfe",
+    "Evidence from GREG's certified staffing plan for the docks and the line: {\n \"assignment\": [\n  [\n   \"Ana\",\n   \"Dock2\",\n   2\n  ],\n  [\n   \"Ben\",\n   \"Dock1\",\n   4\n  ],\n  [\n   \"Cy\",\n   \"Line\",\n   2\n  ]\n ],\n \"authority_created\": false,\n \"bottleneck\": {\n  \"capacity\": 6,\n  \"demand\": 7,\n  \"eligible_workers\": [\n   \"Ana\",\n   \"Ben\"\n  ],\n  \"orders\": [\n   \"Dock1\",\n   \"Dock2\"\n  ],\n  \"why\": \"these orders can only be served by these workers, whose whole capacity is short of their demand; no assignment can do better without more capacity for exactly them\"\n },\n \"certificate\": {\n  \"arithmetic\": \"exact integers\",\n  \"checked_by\": \"GREG, from the original problem; shares no code with the engine\",\n  \"kind\": \"deficiency set (generalized Hall/Koenig): staffed equals demand outside U plus capacity of U's eligible workers\"\n },\n \"certified\": true,\n \"composed_of\": [\n  \"staffing-via-maxflow\"\n ],\n \"engine\": \"networkx 3.6.1\",\n \"shortage\": 1,\n \"staffed\": 8,\n \"total_demand\": 9,\n \"unfilled\": {\n  \"Dock2\": 1\n }\n}"
+   ],
+   "sender_identity_isolated": true,
+   "assessment": {
+    "go_no_go": "needs_more_evidence",
+    "opportunity_score": 0.696,
+    "risk_level": "low",
+    "legal_readiness": "review_required",
+    "requires_human_approval": true
+   },
+   "wealthmachine_reading": "staffing evidence[1] (unverified report): staffed=8, total_demand=9, shortage=1, unfilled={\"Dock2\": 1}; internal arithmetic agrees only; original demand, capacity and optimality are not verified",
+   "wealthmachine_first_validation_step": "Validate the reported staffing shortage of 1 units against original demand and capacity; resolve unfilled orders {\"Dock2\": 1} before proceeding",
+   "status": "SHOWN",
+   "gap": "WealthMachine reads the staffing figures (WMI #45) but checks only the report's internal arithmetic: not the original problem, the certificate, the optimality or the world, so a consistent lie still reads as consistent (and is labelled unverified); each organ signs with its own key, yet WealthMachine holds DALEOBANKS's key to verify it (HMAC lets a verifier forge); the organs run pinned code on the body's host and UID, and the second WealthMachine process makes the assessment REPRODUCED (same-code determinism), not VERIFIED by an independent party"
+  },
+  "10": {
+   "name": "an interruption occurs",
+   "events": [
+    {
+     "event_id": "922579fe-e910-546f-a014-9464afb9408f",
+     "seq": 424,
+     "hash": "sha256:a3ee3714ff842b25121b9da23d583b460d61e1c668242d2c35c337a3310243c1",
+     "type": "greg.mission.action"
+    }
+   ],
+   "point": "SIGKILL of the body while the bubblewrap worker was in flight (started.txt present)",
+   "status": "SHOWN",
+   "gap": "a SIGKILL on a Linux test host, not on the founder's device"
+  },
+  "11": {
+   "name": "recovery keeps authority, budget and unresolved-effect state",
+   "events": [
+    {
+     "event_id": "922579fe-e910-546f-a014-9464afb9408f",
+     "seq": 424,
+     "hash": "sha256:a3ee3714ff842b25121b9da23d583b460d61e1c668242d2c35c337a3310243c1",
+     "type": "greg.mission.action"
+    },
+    {
+     "event_id": "3122db7c-c2b2-59c3-a6c9-e40cdd17fd30",
+     "seq": 425,
+     "hash": "sha256:79a0829f007008f48125d09e84561cbc88dad53b94f1346add1fe8e60a1cc906",
+     "type": "greg.mission.action"
+    },
+    {
+     "event_id": "a6a90812-0055-5fb3-9200-adab5d27899d",
+     "seq": 488,
+     "hash": "sha256:b501380834a90ce31888167019f432e0e76831a51591935633a5c073762974f1",
+     "type": "greg.mission.action"
+    },
+    {
+     "event_id": "146032f5-6339-5ff0-a943-f05e0b448bdc",
+     "seq": 121,
+     "hash": "sha256:57208232b0ebd77a009a7ab7ec28955d2341381e5185d268e85b1d9ff02c61f6",
+     "type": "greg.body.recovered"
+    },
+    {
+     "event_id": "82c7c5ee-f833-5323-9813-7af143a61cd6",
+     "seq": 418,
+     "hash": "sha256:b87a50a61850eaf48900d673f76b4eb4b58e015d60993b41e1f401e1f0933a90",
+     "type": "greg.body.recovered"
+    },
+    {
+     "event_id": "c29a983a-6386-5fe0-9397-9a5dfd3458bf",
+     "seq": 552,
+     "hash": "sha256:1657a81a7dbe866fa6fd5c8445f2798558dff155debe733c1bbf8424476528ed",
+     "type": "greg.body.recovered"
+    }
+   ],
+   "proof_predicates": {
+    "founder_mandate": true,
+    "worker_commission": true,
+    "internal_consequence_only": true,
+    "provider_consequence_inert": true,
+    "no_completed_evidence": true,
+    "within_limit": true
+   },
+   "spent_usd": 0.0,
+   "budget_usd": 0.01,
+   "founder_questions_after_kill": 0,
+   "completed_runs": 1,
+   "status": "SHOWN"
+  },
+  "12": {
+   "name": "independent appraisal re-derives the closure",
+   "events": [
+    {
+     "event_id": "09a764bf-dadb-52a4-b7a2-042ac1dccf01",
+     "seq": 541,
+     "hash": "sha256:23fabb596df45ccdfd2b3cdcd62817389c3665faa982cf4176b715e3aeb04400",
+     "type": "greg.mission.appraised"
+    }
+   ],
+   "rerun_from_stopped_ledger": "VERIFIED",
+   "checks": {
+    "achieved_claimed": true,
+    "approval_boundaries_honored": true,
+    "approval_boundary_encountered": false,
+    "arrived_via_inbox": true,
+    "chain_intact": true,
+    "checks_rederived_from_receipts": true,
+    "closure_evidence_bound": true,
+    "closure_matches_signed_rule": true,
+    "deliveries_bound_to_evidence": true,
+    "exactly_once": true,
+    "founder_signature_verified": true,
+    "preconditions_honored": true,
+    "registered_once": true,
+    "world_reobserved": true
+   },
+   "status": "SHOWN",
+   "gap": "the appraiser shares reviewed Kernel code: process independence, not an independent implementation"
+  },
+  "13": {
+   "name": "settlement happens once",
+   "events": [
+    {
+     "event_id": "a7d6a0bb-0d11-5bf7-823c-d394552c53ba",
+     "seq": 539,
+     "hash": "sha256:fb5abe997f48a70972372ba79a25253d1531f89507b89477e5ea22d1d30315c4",
+     "type": "greg.mission.achieved"
+    },
+    {
+     "event_id": "11a1df93-d69c-55ab-a3d0-426a1a07feb9",
+     "seq": 542,
+     "hash": "sha256:39ef14ca78c7fb11ca76932b0b3b1e582b4fe6fe527ac33de2c4f26cdcf9baaf",
+     "type": "greg.cognition.settled",
+     "mission_id": "m:loop15-staffing",
+     "check_id": "answered",
+     "method": "composed.assignment.staffing.networkx.5670bf4c5c",
+     "method_version": "1.0.0",
+     "correct": true
+    }
+   ],
+   "restarts_after_closure": 2,
+   "status": "SHOWN"
+  },
+  "14": {
+   "name": "retained evidence changes a later decision",
+   "events": [
+    {
+     "event_id": "bbe14b3a-ec44-5c1d-bb1c-485af40259bc",
+     "seq": 570,
+     "hash": "sha256:1097bab344c154195def0f325f21b61a5ca45c1ccd276329998606f37949bbf2",
+     "type": "greg.mission.appraised"
+    }
+   ],
+   "same_body_first_compile": {
+    "state": "ANSWERED",
+    "method": "composed.assignment.staffing.networkx.5670bf4c5c"
+   },
+   "fresh_control_body_first_compile": {
+    "state": "CAPABILITY_DEFICIT"
+   },
+   "status": "SHOWN",
+   "gap": "the changed decision is capability retention (the formed construction is reused); settled outcomes alone do not reorder a choice here (one fit for this geometry)"
+  },
+  "15": {
+   "name": "the changed decision is tested on fresh work",
+   "mission_id": "m:compiled-loop15-later",
+   "events": [
+    {
+     "event_id": "d903d2f9-a071-57ee-b399-e9438cb39d0e",
+     "seq": 553,
+     "hash": "sha256:2cb575bfa34af4964bfeade64d178bc9e188520da6aaeebc82f874ef96c9e743",
+     "type": "greg.mission.registered"
+    },
+    {
+     "event_id": "d11f481d-e348-5c81-97c2-cdc0b63ca2a4",
+     "seq": 568,
+     "hash": "sha256:0c7ea0721c99234d99970eb9bb004119a6cffdacb43ba38a537313446e9c238b",
+     "type": "greg.mission.achieved"
+    }
+   ],
+   "answer": {
+    "staffed": 6
+   },
+   "independent_check": "exhaustive search over every feasible assignment (no GREG code)",
+   "status": "SHOWN",
+   "gap": "the fresh work is a second synthetic staffing request, not founder work; no external verification"
+  }
+ }
+}

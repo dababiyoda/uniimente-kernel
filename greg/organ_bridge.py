@@ -55,7 +55,8 @@ def _check_binding(journal: Journal, mission_id: str, trace_id: str) -> None:
 
 def record_exchange(journal: Journal, *, mission_id: str, headers: dict, body: bytes,
                     nonce_cache, expected_sender: str, expected_operation: str,
-                    expected_recipient: str | None = None, request_digest: str | None = None) -> dict:
+                    expected_recipient: str | None = None, request_digest: str | None = None,
+                    require_isolated_identity: bool = False) -> dict:
     """Verify one bridge message, retain it as evidence, link it to a mission.
 
     Raises `bt.BridgeSecurityError` (and records nothing) when verification fails,
@@ -63,15 +64,15 @@ def record_exchange(journal: Journal, *, mission_id: str, headers: dict, body: b
     """
     meta = bt.verify_headers(headers, body, nonce_cache=nonce_cache, expected_sender=expected_sender,
                              expected_recipient=expected_recipient, expected_operation=expected_operation,
-                             request_digest=request_digest)
+                             request_digest=request_digest, require_isolated_identity=require_isolated_identity)
     trace_id = meta.get("trace_id") or ""
     _check_binding(journal, mission_id, trace_id)
     retained = dataplane.ingest(journal, source=f"organ:{meta['identity']}",
                                 content=body.decode("utf-8"), channel=f"bridge:{expected_operation}")
     observed = {"mission_id": mission_id, "organ": meta["identity"], "operation": expected_operation,
                 "content_sha256": hashlib.sha256(body).hexdigest(), "transport_verified": True,
-                # The bridge uses one shared key: it authenticates a key holder,
-                # not a specific organ. Carried so no trace overstates it.
+                # True only for a per-organ key distinct from every other key; a shared key
+                # authenticates a key holder, not a specific organ. Carried so no trace overstates it.
                 "sender_identity_isolated": meta.get("identity_isolated") == "true",
                 "content_trust": "untrusted", "quarantined": retained.get("quarantined", False),
                 "trace_id": trace_id, "receipt": None}

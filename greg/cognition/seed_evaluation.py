@@ -99,7 +99,7 @@ def always_llm(params, registry, config):
         input_digest=digest(params),evidence_refs=[],assumptions=['local model proposal; no computational proof or empirical truth'],excluded_variables=[],
         output=answer,uncertainty={'provisional':True,'calibration':'unmeasured'},proof_type=None,proof_artifact=None,alternative_methods_considered=[],
         method_selection_reason='frozen always-model baseline; never paid fallback',strongest_counterargument='proposal has no native proof artifact',
-        falsification_condition='exact evaluator contradicts proposal',abstention_state=state,missing_information=missing,compute_cost={'model_calls':1,'energy':'unmeasured'},
+        falsification_condition='exact evaluator contradicts proposal',abstention_state=state,missing_information=missing,compute_cost={'model_calls':int(provenance is not None),'energy':'unmeasured'},
         money_cost=0,latency=time.monotonic()-started,evaluator='frozen exact evaluator',evaluator_result={'verdict':'PROPOSAL_ONLY'},
         outcome_state='CONDITIONAL_RESULT',model_provenance=provenance)
     return value.to_dict()
@@ -125,12 +125,14 @@ def assess(output, *, model_config=None):
         measured,correct,components=loss(r,case)
         old=reason(p,registry=old_registry)
         llm=always_llm(p,registry,model_config)
-        old_loss,old_correct,_=loss(old,case);llm_loss,llm_correct,_=loss(llm,case)
+        # 0.2.2 (verified 2026-10-21): a baseline that never reached a model is not scored as its loss
+        old_loss,old_correct,_=loss(old,case);llm_ran=llm['method']!='baseline.always_local_llm' or llm['model_provenance'] is not None
+        llm_loss,llm_correct=(loss(llm,case)[:2] if llm_ran else (None,None))
 
         rows.append({'id':case['id'],'stratum':case['stratum'],'group':case['group'],'correct':correct,'loss':measured,
                      'components':components,'receipt':r,'baseline_static_loss':measured,
                      'existing_greg':{'receipt':old,'loss':old_loss,'correct':old_correct,'limit':'compatible projection of pinned #137 absence; not founder-device baseline'},
-                     'always_llm':{'receipt':llm,'loss':llm_loss,'correct':llm_correct},
+                     'always_llm':{'receipt':llm,'loss':llm_loss,'correct':llm_correct,'ran':llm_ran},
                      'baseline_static_evidence':'same retained deployable static policy; identical output, no imaginary independent arm'})
         if len(rows)%20==0:print(f'completed {len(rows)}/{len(suite["cases"])}',flush=True)
         if time.monotonic()-started>frozen['budget']['global_seconds']:break
@@ -138,11 +140,14 @@ def assess(output, *, model_config=None):
     for row in rows:strata[row['stratum']].append(row)
     summary={k:{'n':len(v),'correct':sum(r['correct'] for r in v),'mean_loss':statistics.mean(r['loss'] for r in v),
                  'latency_p95':sorted(r['receipt']['latency'] for r in v)[max(0,math.ceil(.95*len(v))-1)]} for k,v in strata.items()}
+    attempted=[r for r in rows if r['always_llm']['receipt']['method']=='baseline.always_local_llm'];served=sum(r['always_llm']['ran'] for r in attempted)
+    llm_status=(f'MEASURED one-call local-model proposals ({served}/{len(attempted)} served); no native computational certificate' if attempted and served==len(attempted)
+                else f'NOT_RUN: local model served {served}/{len(attempted)} model-path cases; unserved rows carry no baseline loss')
     report={'freeze_digest':digest(frozen),'suite_digest':digest(suite),'total':len(suite['cases']),'completed':len(rows),
             'receipted_denominator':len(rows),'correct':sum(r['correct'] for r in rows),'strata':summary,'results':rows,
             'routing_gain_against_static':0,'ci95_against_identical_static':[0,0], 'superiority_status':'INCONCLUSIVE',
             'baseline_status':{'existing_greg_without_cortex':'MEASURED scoped compatibility projection of #137 no-cortex inventory; full-runtime comparison remains a limitation',
-                               'always_local_llm':'MEASURED one-call local-model proposals; no native computational certificate',
+                               'always_local_llm':llm_status,
                                'tool_enabled_workflow':'same deterministic specialist workflow is deployable; no gain over it',
                                'static_specialist_router':'MEASURED: retained static policy is proposed policy','proposed_router':'MEASURED'},
             'hard_failure':'no effect authority granted by any receipt; runtime authority/isolation tests separate',

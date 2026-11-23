@@ -81,9 +81,13 @@ class LightCone:
             raise ScopeError("unknown or missing scope field")
         if isinstance(value["budget_usd"], bool):
             raise ScopeError("budget must be finite and nonnegative")
+        try:
+            budget = float(value["budget_usd"])
+        except OverflowError:   # a JSON integer beyond float range: refused like inf, not raised past every caller
+            raise ScopeError("budget must be finite and nonnegative") from None
         return cls(capabilities=frozenset(value["capabilities"]), targets=tuple(value["targets"]),
                    max_consequence_class=value["max_consequence_class"],
-                   budget_usd=float(value["budget_usd"]), horizon=value["horizon"],
+                   budget_usd=budget, horizon=value["horizon"],
                    data_classes=frozenset(value.get("data_classes", ())))
 
     def to_dict(self) -> dict:

@@ -1,0 +1,285 @@
+{
+ "decision_id": "KERNEL-STEP9-WMI-READS-FIGURES-2026-10-28",
+ "title": "Adopt WealthMachine's staffing reader (WMI #45 + #47) into the integration candidate and make step 9 prove the figures change the assessment",
+ "problem": "On #196 4e970f2d the certified staffing answer reaches WealthMachine as packet evidence, but the pinned WMI (7a45d223) only counts evidence items: through the real organ exchange an 8/8 and a 4/8 report give byte-identical assessments, both go. Step 9 recorded this as a gap.",
+ "founder_intent_refs": [
+  "INTENT-20261001-FULL-MACHINE-COMPLETION",
+  "INTENT-20261019-UPWARD-ASCENT",
+  "INTENT-20261023-ORGAN-PINS-UPGRADED",
+  "founder directive 2026-10-28 (TRUE ABSOLUTE OPUS MAXIMUS, section 4)",
+  "https://github.com/dababiyoda/uniimente-kernel/issues/96#issuecomment-6473380596"
+ ],
+ "baseline": "#196 at 4e970f2d with WMI pinned at 7a45d223; step 9 asserts only that the certified answer reaches WealthMachine.",
+ "alternatives": [
+  {
+   "name": "Repin to #45 (b2c7f234) as handed off",
+   "description": "Adopt #45 unchanged and strengthen step 9.",
+   "advantages": [
+    "Smallest change; correct on the 15-step mission's one well-placed report."
+   ],
+   "disadvantages": [
+    "Through the real producer, two merged reports or a replay are misread as malformed (2 of 7 contrast tests fail).",
+    "Capacity data inflates the demand score (WMI review)."
+   ],
+   "revival_evidence": "#47 rejected on review with no alternative fix."
+  },
+  {
+   "name": "Kernel-side reading",
+   "description": "Have the Kernel interpret staffing figures and pass a verdict to WealthMachine.",
+   "advantages": [
+    "One reader, owned by the producer."
+   ],
+   "disadvantages": [
+    "Moves venture judgement out of the venture organ; a Kernel verdict would read as authority."
+   ],
+   "revival_evidence": "A founder decision that the Kernel owns venture assessment."
+  },
+  {
+   "name": "Step 9 only, no new contrast test",
+   "description": "Assert the 8-of-9 reading in the 15-step mission and stop.",
+   "advantages": [
+    "No new test file."
+   ],
+   "disadvantages": [
+    "One mission cannot show that different staffing realities produce different assessments with nothing else changed."
+   ],
+   "revival_evidence": "CI time pressure that removes job 8 headroom."
+  }
+ ],
+ "do_nothing_option": {
+  "expected_outcome": "Step 9 keeps its gap; WealthMachine's decision is blind to the Mind's figures.",
+  "advantages": [
+   "No integration cost."
+  ],
+  "disadvantages": [
+   "The founder's first acceptance condition stays unmet."
+  ]
+ },
+ "roles": [
+  {
+   "role": "Founder-Intent Steward",
+   "position": "Self-review. The first brick is behavioural: two equal-count packets with different staffing realities must change WealthMachine's reasons and priorities through the real machine, without false verification or authority. This change shows it and then resumes the parent machine.",
+   "material_concerns": [
+    "Do not call the reading verification.",
+    "Resume construction outcome, combined machine and learning next."
+   ],
+   "evidence_refs": [
+    "three-pins.txt",
+    "contrast-wmi-7a45d223.json",
+    "contrast-wmi-0e80582d.json"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Systems Architect",
+   "position": "Only the pin, the receipt summary (recommended_next_action) and tests change in the Kernel; the venture judgement stays in WealthMachine; no contract, transport or authority change.",
+   "material_concerns": [
+    "The receipt summary now carries untrusted organ text; it is labelled as such and was already retained in the journal."
+   ],
+   "evidence_refs": [
+    "greg/organs.py SUMMARY"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Adversarial Reviewer",
+   "position": "The contrast test runs truncated, inconsistent, contradictory, replayed and self-promoting reports through the real producer; a WMI head that only counts evidence fails all 7; #45 fails 2; #47 passes 7.",
+   "material_concerns": [
+    "Same-code determinism of the second WealthMachine process is reproduction, not independent verification."
+   ],
+   "evidence_refs": [
+    "three-pins.txt"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Operator and Maintainer",
+   "position": "The new test adds about 15 seconds to CI job 8 and needs the same organ variables; it fails under UNIIMENTE_REQUIRE_ORGANS=1 instead of skipping.",
+   "material_concerns": [
+    "CPU contention in shared runners can stretch organ subprocess time; the exchange timeout is unchanged at 300 s."
+   ],
+   "evidence_refs": [
+    "job8.txt"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Evidence and Welfare Guardian",
+   "position": "Every reading stays an unverified report; requires_human_approval stays true; nothing is sent, published, spent or decided; synthetic staffing problems only.",
+   "material_concerns": [
+    "No real staffing outcome or buyer exists behind these figures."
+   ],
+   "evidence_refs": [
+    "README.md limits"
+   ],
+   "recommendation": "EXPERIMENT"
+  }
+ ],
+ "evidence": [
+  {
+   "claim": "On WMI 7a45d223 an 8/8 and a 4/8 report through the real organ exchange give byte-identical assessments, both go.",
+   "tier": "sandbox_execution",
+   "reference": "contrast-wmi-7a45d223.json",
+   "finding": "The figures changed nothing before."
+  },
+  {
+   "claim": "On WMI 0e80582d the same packets (2 evidence items each, identical score 0.696) differ in verdict, reasons, validation plan and first step.",
+   "tier": "sandbox_execution",
+   "reference": "contrast-wmi-0e80582d.json",
+   "finding": "The shortage changes the assessment and nothing else explains it."
+  },
+  {
+   "claim": "The contrast test fails 7/7 on 7a45d223, 2/7 on b2c7f234 and passes 7/7 on 0e80582d.",
+   "tier": "sandbox_execution",
+   "reference": "three-pins.txt",
+   "finding": "Fail-before on the current pin; the hardening child is required."
+  },
+  {
+   "claim": "CI job 8's command passes locally with real organs, bubblewrap and Landlock on the new pin.",
+   "tier": "sandbox_execution",
+   "reference": "job8.txt",
+   "finding": "Isolation, approval, interruption and reconciliation behaviour is intact."
+  }
+ ],
+ "counterevidence": [
+  {
+   "claim": "On the 15-step mission's own single report, #45 already capped the verdict correctly.",
+   "tier": "sandbox_execution",
+   "reference": "three-pins.txt (b2c7f234 passes the 8-of-9 test)",
+   "finding": "The live mission was not wrong on #45; the hostile real-producer variants were."
+  }
+ ],
+ "pass_1": {
+  "intended_outcome": "WealthMachine's assessment of the Mind's staffing answer changes with the answer's figures, on the real organ path, with no false verification and no authority.",
+  "advantages": [
+   {
+    "id": "A1",
+    "statement": "A behavioural contrast on the real path.",
+    "amplified_value": "Any future WMI pin that stops reading the figures fails CI job 8 immediately (7/7 on the old pin)."
+   },
+   {
+    "id": "A2",
+    "statement": "Step 9 asserts the exact bytes the Kernel verified.",
+    "amplified_value": "The 15-step trace now shows WealthMachine's reading and first step, not only that the packet arrived."
+   }
+  ],
+  "disadvantages": [
+   {
+    "id": "D1",
+    "statement": "The Kernel pins a WMI child two draft levels deep (#47 on #45 on #44).",
+    "severity": "medium",
+    "response_type": "governance",
+    "redesigned_response": "The manifest and CI comment name the chain; rollback is restoring 7a45d223."
+   },
+   {
+    "id": "D2",
+    "statement": "The receipt now carries WealthMachine free text.",
+    "severity": "low",
+    "response_type": "protective",
+    "redesigned_response": "It is the same untrusted content already retained in the journal; nothing reads it as a command."
+   }
+  ],
+  "comparisons": {
+   "baseline": "Gap recorded, figures unread.",
+   "do_nothing": "Rejected: the founder's first acceptance condition is unmet.",
+   "simplest_viable_alternative": "Repin to #45: rejected after 2 of 7 real-path hostile cases misread.",
+   "strongest_competing_architecture": "Kernel-side reading: rejected, it would move venture judgement into the authority plane.",
+   "reversible_experiment": "Selected: a child branch of #196 with the repin, the step-9 assertions and the contrast test; draft PR for the integrator."
+  },
+  "rejected_alternatives": [
+   {
+    "name": "Kernel-side staffing verdict",
+    "rejection_reason": "Would make an organ judgement look like Kernel authority.",
+    "revival_evidence": "Founder decision that the Kernel owns venture assessment."
+   }
+  ]
+ },
+ "pass_2": {
+  "attack_summary": "Re-attack: can the contrast pass for a reason other than the reader (packet fields, scores, evidence count)? Does any existing job-8 behaviour regress (isolation, forged attach, SIGKILL reconciliation, appraisal)? Does the new receipt field leak into decisions?",
+  "new_weaknesses": [
+   {
+    "id": "W1",
+    "category": "overfit",
+    "statement": "The contrast uses two hand-chosen problems.",
+    "strengthening_response": "Both answers are produced and certified by the Kernel's own chain; the 15-step mission's own answer is a third case; WMI tests cover the reader generally."
+   },
+   {
+    "id": "W2",
+    "category": "dependency",
+    "statement": "Job 8 now depends on a WMI child not yet reviewed by its author.",
+    "strengthening_response": "Independent review requested from a different session (#47) and from #45's author; the pin is a single line to revert."
+   }
+  ],
+  "pass_1_disadvantage_dispositions": [
+   {
+    "disadvantage_id": "D1",
+    "outcome": "accepted",
+    "rationale": "Draft stacking is the repository's integration practice; the chain is recorded.",
+    "owner": "integrator session_01FBS4KNJR59nSbdGbxo8Mbx",
+    "review_trigger": "Founder merge of #44/#45/#47 into WMI main."
+   },
+   {
+    "disadvantage_id": "D2",
+    "outcome": "accepted",
+    "rationale": "Founder visibility of the changed priority is part of the effect.",
+    "owner": "Kernel organ owner",
+    "review_trigger": "Any consumer that branches on the summary's text."
+   }
+  ],
+  "final_design": "Pin WMI 0e80582d in CI jobs 5 and 8 and the manifest; the exchange receipt carries recommended_next_action; step 9 asserts WealthMachine's reading of the 8-of-9 answer from the retained signed assessment; a real-organ contrast test proves equal-count 8/8 vs 4/8 differ only in the staffing reading and its consequences, and five hostile reports keep explicit uncertainty.",
+  "residual_risks": [
+   {
+    "risk": "A consistent fabricated report still reads as consistent.",
+    "mitigation": "Unverified labelling; original-input validation requested first.",
+    "owner": "WMI maintainer",
+    "review_trigger": "Before acting on a staffing report."
+   },
+   {
+    "risk": "HMAC lets WealthMachine forge DALEOBANKS's signature (pre-existing, step 9 gap).",
+    "mitigation": "Recorded; asymmetric organ signatures are the next transport step.",
+    "owner": "Kernel transport owner",
+    "review_trigger": "Asymmetric signature work."
+   }
+  ],
+  "recommendation": "EXPERIMENT"
+ },
+ "dissent": {
+  "present": true,
+  "handling": "Self-review; the WMI review lenses were separate agents of the same model; the assistant session session_01KucyfnwWG7Lgp8QvCTKeHg offered an independent review of both heads.",
+  "entries": [
+   {
+    "role": "Evidence and Welfare Guardian",
+    "position": "Do not let step 9's SHOWN status read as verification of staffing reality.",
+    "rationale": "Only internal arithmetic is checked.",
+    "evidence_threshold": "An original-input verifier and a real staffing outcome.",
+    "owner": "Kernel organ owner",
+    "review_trigger": "Any claim that step 9 verifies staffing."
+   }
+  ]
+ },
+ "authority_impact": {
+  "level": "standard",
+  "changes_authority": false,
+  "requires_authorized_human": false,
+  "approval_status": "not_required",
+  "approver": null
+ },
+ "migration_plan": "Draft child PR into claude/greg-full-machine-completion-whgiee at 4e970f2d. The integrator decides intake; merges are the founder's. On intake the ledger row INTENT-20261023-ORGAN-PINS-UPGRADED's failure evidence 'WealthMachine counts evidence items but does not read figures' is closed by this child.",
+ "rollback_plan": {
+  "possible": true,
+  "steps": [
+   "Close the child PR or revert its commit.",
+   "Restore the WMI pin 7a45d223 in canonical-ci.yml jobs 5 and 8 and in organs/wealthmachine.manifest.yaml.",
+   "Keep the contrast test and evidence in history."
+  ],
+  "reason_impossible": null
+ },
+ "kill_criteria": [
+  "Any organ assessment gains authority or loses requires_human_approval.",
+  "A job-8 behaviour (isolation, forged attach refusal, reconciliation, appraisal) regresses.",
+  "The contrast passes on a WMI head that does not read the figures."
+ ],
+ "decision": "EXPERIMENT",
+ "decision_owner": "session_01Kucyfoabgsg6W8H8xj4qea (implementation, self-review); integrator session_01FBS4KNJR59nSbdGbxo8Mbx (intake); Alfonso (merge)",
+ "review_trigger": "Independent review of the exact head; Canonical CI on the child PR."
+}

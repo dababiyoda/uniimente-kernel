@@ -33,13 +33,12 @@ outcome calibration. Pure stdlib, pure data.
 """
 from __future__ import annotations
 
-import hashlib
-import json
 from itertools import combinations
 from dataclasses import asdict, dataclass
 from typing import Optional
 
 from capabilities.genome import CONSEQUENCE_CLASSES, GenomeRegistry
+from provenance.digests import sha256_json
 
 # --------------------------------------------------------------------------
 # Epistemic methods and the evidence each can produce
@@ -94,8 +93,7 @@ class RouterError(ValueError):
 
 
 def _digest(value) -> str:
-    raw = json.dumps(value, sort_keys=True, separators=(",", ":"), default=str)
-    return "sha256:" + hashlib.sha256(raw.encode()).hexdigest()
+    return sha256_json(value, default=str)
 
 
 # --------------------------------------------------------------------------

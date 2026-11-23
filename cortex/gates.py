@@ -18,6 +18,7 @@ grants, or evaluate policy on anyone's behalf.
 """
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 from datetime import datetime
 from fnmatch import fnmatchcase
@@ -76,7 +77,27 @@ class AuthorityRecord:
 
     @classmethod
     def from_dict(cls, value: Mapping[str, Any]) -> "AuthorityRecord":
+        # 0.2.2: a malformed record is rejected as a record, never raised as an untyped error or blamed on an option.
+        if not isinstance(value, Mapping):
+            raise CortexError(f"authority record must be a mapping, got {type(value).__name__}")
+        for key in ("kind", "origin"):
+            if not isinstance(value.get(key), str) or not value.get(key):
+                raise CortexError(f"authority record needs a non-empty string {key!r}")
+        if not isinstance(value.get("body", {}), Mapping):
+            raise CortexError("authority record body must be a mapping")
+        if value.get("record_id") is not None and not (isinstance(value["record_id"], str) and value["record_id"]):
+            raise CortexError("authority record record_id must be a non-empty string")
         body = dict(value.get("body", {}))
+        # the fields the gates and the ranking read, typed here so a malformed record is rejected as a record
+        if "scope" in body and not isinstance(body["scope"], Mapping):
+            raise CortexError("authority record body scope must be a mapping")
+        if "purposes" in body and not (isinstance(body["purposes"], (list, tuple))
+                                       and all(isinstance(p, str) for p in body["purposes"])):
+            raise CortexError("authority record body purposes must be a list of strings")
+        if "weights" in body and not (isinstance(body["weights"], Mapping) and all(
+                isinstance(k, str) and isinstance(w, (int, float)) and not isinstance(w, bool) and math.isfinite(w)
+                for k, w in body["weights"].items())):
+            raise CortexError("authority record body weights must map criteria to finite numbers")
         return cls(record_id=value.get("record_id") or digest(body), kind=value["kind"],
                    origin=value["origin"], body=body)
 
@@ -110,12 +131,20 @@ class Option:
     harm: ConsequenceVector
     evidence_statuses: tuple[str, ...]
     advantage: Mapping[str, float]
+    declared_consequence_class: str | None = None   # 0.2.2: kept when the option's own harm raised it
 
     @classmethod
     def from_dict(cls, value: Mapping[str, Any]) -> "Option":
         cc = value.get("consequence_class", "internal_write")
         if cc not in CONSEQUENCE_CLASSES:
             raise CortexError(f"option consequence_class {cc!r} unknown")
+        harm = ConsequenceVector.from_partial(value.get("harm"))
+        # 0.2.2: the option-level twin of the problem-level rule (v0.2.1): an option's own harm may raise its class,
+        # never lower it. High financial harm, or any hard violation, is at least "financial".
+        declared = None
+        if (harm.levels["financial"] in ("high", "critical") or harm.hard_violations()) and \
+                consequence_rank(cc) < consequence_rank("financial"):
+            declared, cc = cc, "financial"
         rev = value.get("reversibility", "unknown")
         if rev not in REVERSIBILITY:
             raise CortexError(f"option reversibility {rev!r} unknown")
@@ -129,10 +158,9 @@ class Option:
         return cls(option_id=value["option_id"], action_class=value["action_class"],
                    target=value.get("target", "internal://unspecified"), consequence_class=cc,
                    reversibility=rev, cost_usd=cost, requires_consent=bool(value.get("requires_consent")),
-                   consent_subject=value.get("consent_subject"),
-                   harm=ConsequenceVector.from_partial(value.get("harm")),
+                   consent_subject=value.get("consent_subject"), harm=harm,
                    evidence_statuses=tuple(value.get("evidence_statuses", ())),
-                   advantage=dict(adv))
+                   advantage=dict(adv), declared_consequence_class=declared)
 
 
 @dataclass(frozen=True)
@@ -196,7 +224,11 @@ def _in_scope(scope: Mapping[str, Any], option: Option, as_of: str | None) -> tu
     if ceiling not in CONSEQUENCE_CLASSES or consequence_rank(option.consequence_class) > consequence_rank(ceiling):
         return False, f"{option.consequence_class} exceeds mandate ceiling {ceiling}"
     expires = scope.get("expires_at")
-    if expires and as_of:
+    if expires:
+        if not as_of:
+            # 0.2.2 (from seed 0.1.6): a mandate with an expiry cannot be confirmed current without a reference
+            # instant.
+            return False, "mandate has an expiry but the problem declares no as_of; validity unverifiable"
         if _instant(as_of) >= _instant(expires):
             return False, "mandate expired"
     return True, "within mandate"
@@ -208,6 +240,11 @@ def evaluate_gates(option: Option, records: list[AuthorityRecord], *,
     rejected = tuple({"record_id": r.record_id, "kind": r.kind, "origin": r.origin,
                       "why": "not a permission-bearing record kind/origin"}
                      for r in records if not r.permission_bearing)
+    if option.declared_consequence_class is not None:
+        severe = {k: v for k, v in option.harm.levels.items() if v in ("high", "critical")}
+        rejected += ({"field": "consequence_class", "value": option.declared_consequence_class,
+                      "source": "option_declared",
+                      "why": f"option harm {severe} implies at least {option.consequence_class}"},)
     gates: dict[str, GateResult] = {}
     cc_rank = consequence_rank(option.consequence_class)
 
@@ -313,6 +350,23 @@ def evaluate_gates(option: Option, records: list[AuthorityRecord], *,
     return GateReport(option.option_id, gates, rejected)
 
 
+def _front(eligible: list[Option], criteria: list[str]) -> list[Option]:
+    def dominates(a: Option, b: Option) -> bool:
+        if any(c not in a.advantage or c not in b.advantage for c in criteria):
+            return False
+        return all(a.advantage[c] >= b.advantage[c] for c in criteria) and any(
+            a.advantage[c] > b.advantage[c] for c in criteria)
+
+    return [o for o in eligible if not any(dominates(p, o) for p in eligible if p is not o)]
+
+
+def pareto_front(options: list[Option], reports: Mapping[str, GateReport]) -> list[str]:
+    """The gate-passing options no other passing option dominates: the only ones ranking weights ever score."""
+    passing = [o for o in options if reports[o.option_id].all_pass]
+    criteria = sorted(set().union(*[set(o.advantage) for o in passing])) if passing else []
+    return [o.option_id for o in _front(passing, criteria)]
+
+
 def rank_after_gates(options: list[Option], reports: Mapping[str, GateReport], *,
                      founder_weights: Mapping[str, float] | None = None) -> dict:
     """Rank only gate-passing options. Advantage is never read for excluded ones.
@@ -331,14 +385,7 @@ def rank_after_gates(options: list[Option], reports: Mapping[str, GateReport], *
                                          list(_REVERSIBILITY_FACTOR).index(o.reversibility)))
     margin = uncertainty_margin(worst.consequence_class, worst.reversibility)
     criteria = sorted(set().union(*[set(o.advantage) for o in eligible]))
-
-    def dominates(a: Option, b: Option) -> bool:
-        if any(c not in a.advantage or c not in b.advantage for c in criteria):
-            return False
-        return all(a.advantage[c] >= b.advantage[c] for c in criteria) and any(
-            a.advantage[c] > b.advantage[c] for c in criteria)
-
-    front = [o for o in eligible if not any(dominates(p, o) for p in eligible if p is not o)]
+    front = _front(eligible, criteria)
     tradeoffs = [{"option_id": o.option_id, "advantage": dict(o.advantage)} for o in front]
     result = {"eligible": [o.option_id for o in eligible], "excluded": excluded,
               "front": [o.option_id for o in front], "tradeoffs": tradeoffs, "margin": margin}

@@ -735,10 +735,11 @@
     {
      "id": "G3",
      "gap": "G3. The acquisition 'search' covers only the code-resident CATALOG (5 anticipated functions with prewritten candidates, argv and parsers). It cannot discover an installed tool or package for a function the catalog does not list.",
-     "state": "OPEN",
+     "state": "CLOSED",
      "buildable_now": true,
      "dependency": "none",
-     "next": "Add an offline discovery route to Genesis.resolve for a function that has a founder-signed contract but no CATALOG entry. It would enumerate executables on the scrubbed PATH and installed distributions via importlib.metadata, with no network and no installation. It would propose invocation templates from a small, auditable template set and qualify each candidate on the contract's held-out vectors in run_isolated. Test: a mission for 'text.line_count' with a contract and no CATALOG entry (assert 'text.line_count' not in genesis.CATALOG) and no builder. Assert genesis.route records an installed_software discovery that finds wc with a -l template, genesis.verified passes on held-out vectors, provenance records binary_sha256, deficit.resolved resumes the original mission, and builder.calls is empty."
+     "next": "Add an offline discovery route to Genesis.resolve for a function that has a founder-signed contract but no CATALOG entry. It would enumerate executables on the scrubbed PATH and installed distributions via importlib.metadata, with no network and no installation. It would propose invocation templates from a small, auditable template set and qualify each candidate on the contract's held-out vectors in run_isolated. Test: a mission for 'text.line_count' with a contract and no CATALOG entry (assert 'text.line_count' not in genesis.CATALOG) and no builder. Assert genesis.route records an installed_software discovery that finds wc with a -l template, genesis.verified passes on held-out vectors, provenance records binary_sha256, deficit.resolved resumes the original mission, and builder.calls is empty.",
+     "closed_by": "greg.genesis._discovery_route with tests/unit/test_greg_genesis_discovery.py (SANDBOX): an uncatalogued function with a founder-signed contract is tried against a fixed, auditable set of 19 read-only text-filter templates (wc, sha*/md5/b2sum, cksum, sort, uniq, tac, head, tail, base64) run isolated with no network; the first that answers the public examples is qualified on examples plus held-out vectors through its serving adapter, pinned by binary sha256 with its licence read, and attached under the usual rules; text.line_count is served by wc -l with builder.calls empty, and the ablation (no templates) pays for a build. Residual, not built: discovery of installed Python distributions via importlib.metadata, and templates beyond the fixed set"
     },
     {
      "id": "G4",
@@ -751,10 +752,11 @@
     {
      "id": "G5",
      "gap": "G5. No test shows that acquiring comes before building, and no test asserts the full route order.",
-     "state": "OPEN",
+     "state": "CLOSED",
      "buildable_now": true,
      "dependency": "none",
-     "next": "Test in tests/unit/test_greg_genesis_builder.py: Body(builder=StaticBuilder(GOOD_HASH)) with a hash.sha256 mission that also carries a capability_specs contract for hash.sha256 and auto_attach. Assert builder.calls == [], the resolved capability_id is acquired.hash.sha256.*, and genesis.route order is [verified_detached:none, installed_software:acquired] with no builder route. Second case, an uncatalogued function: assert the route order is exactly [verified_detached:none, installed_software:'no catalogued installed tool or oracle for this function', builder:'built and verified'], matching deficit.opened.search_order."
+     "next": "Test in tests/unit/test_greg_genesis_builder.py: Body(builder=StaticBuilder(GOOD_HASH)) with a hash.sha256 mission that also carries a capability_specs contract for hash.sha256 and auto_attach. Assert builder.calls == [], the resolved capability_id is acquired.hash.sha256.*, and genesis.route order is [verified_detached:none, installed_software:acquired] with no builder route. Second case, an uncatalogued function: assert the route order is exactly [verified_detached:none, installed_software:'no catalogued installed tool or oracle for this function', builder:'built and verified'], matching deficit.opened.search_order.",
+     "closed_by": "tests/unit/test_greg_genesis_discovery.py (SANDBOX): a catalogued hash.sha256 mission with a contract and a willing builder routes exactly [verified_detached:none, installed_software:acquired] with builder.calls empty; an uncatalogued function nothing installed serves routes exactly [verified_detached, installed_software (behaviour search, nothing matched), builder:'built and verified'], matching deficit.opened.search_order. The installed_software text is the discovery result, no longer 'no catalogued installed tool or oracle for this function', since discovery now runs on that route"
     },
     {
      "id": "G6",
@@ -1007,10 +1009,11 @@
     {
      "id": "G4",
      "gap": "G4. Cumulative budget across several workers in one mission is tested only at UNIT level (LightCone.admits).",
-     "state": "OPEN",
+     "state": "CLOSED",
      "buildable_now": true,
      "dependency": "none",
-     "next": "Reuse the G1 mission with a 0.7 cone budget and cost_usd 0.5 on each worker. Assert: after worker-a books 0.4, worker-b becomes exactly one APPROVAL decision.requested whose reasons say 'cost 0.5 with 0.4 spent exceeds budget 0.7'; no grant_issued exists for worker-b's scope; the double was called once. Then drop a signed DECISION approve and assert worker-b runs exactly once, spent_usd equals the sum, and no second approval is requested. The probe already showed the pre-approval half."
+     "next": "Reuse the G1 mission with a 0.7 cone budget and cost_usd 0.5 on each worker. Assert: after worker-a books 0.4, worker-b becomes exactly one APPROVAL decision.requested whose reasons say 'cost 0.5 with 0.4 spent exceeds budget 0.7'; no grant_issued exists for worker-b's scope; the double was called once. Then drop a signed DECISION approve and assert worker-b runs exactly once, spent_usd equals the sum, and no second approval is requested. The probe already showed the pre-approval half.",
+     "closed_by": "tests/integration/test_greg_mission_d_budget_and_cancel.py::test_the_mission_budget_holds_across_workers_and_only_the_founder_lifts_it (the D2 mission, 0.7 cone, two workers signed at 0.5: worker-a books 0.4; worker-b is exactly one APPROVAL whose why_now is 'cost 0.5 with 0.4 spent exceeds budget 0.7', no grant for its scope and no dispatch before a signed DECISION approve; then it runs exactly once, one grant, spent_usd is the sum, no second ask, ACHIEVED) and ::test_a_worker_inside_the_remaining_budget_needs_no_approval (control). SANDBOX tier: in-process Body, scripted worker double, per-test key."
     },
     {
      "id": "G5",
@@ -1024,10 +1027,11 @@
     {
      "id": "G6",
      "gap": "G6. Cancellation of a mission with dependent worker tasks is untested: abandon between tasks. (Interruption during a worker is now covered: H.G4 and H.G11.)",
-     "state": "OPEN",
+     "state": "CLOSED",
      "buildable_now": true,
      "dependency": "none",
-     "next": "Run the G1 mission. After worker-a is DONE, drop a signed LIFECYCLE {state:'ABANDONED'}. Assert status ABANDONED, worker-b never called, no work-orders/b, no worker-b grant_issued, worker-a's evidence and receipt kept, ledger chain ok. The probe showed this path works. (The former part (b), which asked for the next commission to return reused: True, described the defect H.G11 fixed: unreceipted evidence is never reused, and a not-executed answer runs a new worker under a new grant; tests/unit/test_greg_mission_reconciliation.py::test_a_body_lost_after_the_work_order_evidence_but_before_its_receipt_is_recommissioned_not_closed.)"
+     "next": "Run the G1 mission. After worker-a is DONE, drop a signed LIFECYCLE {state:'ABANDONED'}. Assert status ABANDONED, worker-b never called, no work-orders/b, no worker-b grant_issued, worker-a's evidence and receipt kept, ledger chain ok. The probe showed this path works. (The former part (b), which asked for the next commission to return reused: True, described the defect H.G11 fixed: unreceipted evidence is never reused, and a not-executed answer runs a new worker under a new grant; tests/unit/test_greg_mission_reconciliation.py::test_a_body_lost_after_the_work_order_evidence_but_before_its_receipt_is_recommissioned_not_closed.)",
+     "closed_by": "tests/integration/test_greg_mission_d_budget_and_cancel.py::test_abandoning_between_dependent_workers_stops_the_consumer_and_keeps_the_producer (after worker-a is DONE a signed LIFECYCLE ABANDONED: status ABANDONED, worker-b never called, no worker-b action, no grant after the abandon, work-orders/b absent while work-orders/a stays, worker-a's receipt still on the ledger, chain verifies). SANDBOX tier."
     },
     {
      "id": "G7",
@@ -2120,10 +2124,11 @@
     {
      "id": "G5",
      "gap": "Autonomy issuance (#87) names its human authorizer by a caller string, not a founder signature.",
-     "state": "OPEN",
+     "state": "CLOSED",
      "buildable_now": true,
      "dependency": "none",
-     "next": "Bind A1+ issuance to a founder-signed decision envelope (greg/founder.py)."
+     "next": "Bind A1+ issuance to a founder-signed decision envelope (greg/founder.py).",
+     "closed_by": "autonomy/levels.py AutonomyAuthority(verifier=...): above A0, issue needs a greg.founder AUTONOMY_GRANT (founder key only, not in DEVICE_KINDS) signed for exactly that subject, tuple and level, with a nonce the authority's ledger has not spent; a name alone, a forged, device-signed, expired, other-body, other-kind, edited, replayed or mismatched grant, or no verifier is refused before anything is stored, and autonomy.issued keeps the signing key, nonce and envelope digest. tests/unit/test_autonomy_signed_issuance.py (25; on f383fd26 a name alone issued A8); scripts/ci/check_autonomy_signed_issuance_mutants.py (8/8, job 10b). Unit tier: AutonomyAuthority is a library, with no GREG Body command path or CLI signer yet."
     },
     {
      "id": "G6",
@@ -2279,10 +2284,11 @@
     {
      "id": "G4",
      "gap": "G4: acquired-capability branch. No test shows a Capability-Genesis-formed capability measurably improving a later related mission.",
-     "state": "OPEN",
+     "state": "CLOSED",
      "buildable_now": true,
      "dependency": "none",
-     "next": "Base it on tests/unit/test_greg_genesis_builder.py. Mission A opens a deficit; builders.StaticBuilder(WRONG, GOOD) builds; the capability is verified by the frozen oracle and attached. Restart the Body. Submit mission B, a different mission_id and different input data needing the same function. Assert: no new deficit.opened, genesis.built count unchanged, builder.calls unchanged, no signed build budget consumed, B ACHIEVED and appraised VERIFIED in fewer ticks and actions than A. Ablation: on a fresh home, or after a founder-signed CAPABILITY_DETACH of the built capability, B opens a deficit and either needs builder calls or, without a build budget, blocks or escalates. The metric is builder invocations, ticks-to-ACHIEVED and budget, not registry rows."
+     "next": "Base it on tests/unit/test_greg_genesis_builder.py. Mission A opens a deficit; builders.StaticBuilder(WRONG, GOOD) builds; the capability is verified by the frozen oracle and attached. Restart the Body. Submit mission B, a different mission_id and different input data needing the same function. Assert: no new deficit.opened, genesis.built count unchanged, builder.calls unchanged, no signed build budget consumed, B ACHIEVED and appraised VERIFIED in fewer ticks and actions than A. Ablation: on a fresh home, or after a founder-signed CAPABILITY_DETACH of the built capability, B opens a deficit and either needs builder calls or, without a build budget, blocks or escalates. The metric is builder invocations, ticks-to-ACHIEVED and budget, not registry rows.",
+     "closed_by": "tests/unit/test_greg_genesis_capability_dividend.py (SANDBOX): mission B after a restart, served by the capability mission A formed, opens no deficit, records no Genesis route, build or verification, makes 0 builder calls, spends 0 of its signed build budget, and is appraised VERIFIED after reaching ACHIEVED in 1 tick against 2 ticks, 2 builder calls, 2 verifications and 0.10 of reported build spend for the same mission B on a fresh home; after a founder-signed CAPABILITY_DETACH, B gets no dividend (escalates without a build budget; with one, the identical rebuild is refused as founder-detached and not attached)"
     },
     {
      "id": "G5",

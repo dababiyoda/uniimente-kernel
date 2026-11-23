@@ -1,0 +1,4 @@
+12 failure-triggered: 0.114  shadow-from-start: 0.205
+24 failure-triggered: 0.648  shadow-from-start: 0.737
+36 failure-triggered: 0.893  shadow-from-start: 0.928
+60 failure-triggered: 0.991  shadow-from-start: 0.994

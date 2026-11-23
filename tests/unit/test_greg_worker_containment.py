@@ -237,8 +237,15 @@ def test_a_worker_that_replaces_its_evaluator_never_closes_its_mission(tmp_path,
         verdict = b.ledger.find(observed[-1]["receipt"]).payload["result"]["output"]
     assert verdict["verdict"] == "REJECTED", verdict
     assert any("frozen evaluator" in f for f in verdict["findings"]), verdict
-    # The substituted evaluator really would have passed: the tests GREG ran on the patched clone are green.
-    assert verdict["independent_tests"] and all(t["passed"] for t in verdict["independent_tests"]), verdict
+    if how == "weaken":
+        # Joined with #168's sealed oracle (68240cc): a founder-named test file the patch edits is restored to its
+        # base version before GREG runs it, so the run is the founder's evaluator (failing on this patch), not the
+        # substitute. Both defenses name the edit; before the join this asserted the substitute's green run.
+        assert any("sealed acceptance oracle" in f for f in verdict["findings"]), verdict
+        assert verdict["independent_tests"] and not all(t["passed"] for t in verdict["independent_tests"]), verdict
+    else:
+        # The substituted evaluator really would have passed: the tests GREG ran on the patched clone are green.
+        assert verdict["independent_tests"] and all(t["passed"] for t in verdict["independent_tests"]), verdict
 
 
 @pytest.mark.skipif(not LANDLOCK, reason="Landlock ABI >= 3 is not available on this kernel")

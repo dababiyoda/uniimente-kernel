@@ -1,0 +1,108 @@
+# The open-source metabolism group of scripts/ci/check_cortex_mutants.py, on 40520bcb, each mutant in a separate copy
+CAUGHT  [open-source metabolism] an uncleared license still auto-attaches: 1 failed, 1972 passed in 39.93s
+CAUGHT  [open-source metabolism] an engine dependency attaches whatever its license: 1 failed, 1987 passed in 47.72s
+CAUGHT  [open-source metabolism] an unclassified or restricted license is cleared: 1 failed, 21 passed in 2.98s
+CAUGHT  [open-source metabolism] AND takes the most permissive term: 1 failed, 11 passed in 3.93s
+CAUGHT  [open-source metabolism] a card without an assessment is cleared: 1 failed, 1976 passed in 47.32s
+CAUGHT  [open-source metabolism] a stricter License field beside a classifier is ignored: 1 failed, 21 passed in 1.67s
+CAUGHT  [open-source metabolism] the frozen oracle accepts any extraction: 1 failed, 1915 passed in 16.10s
+CAUGHT  [open-source metabolism] a binary under a not-open license attaches itself: 1 failed, 1924 passed in 15.15s
+CAUGHT  [open-source metabolism] a restrictive DEP-5 'with' addition is read as an exception: 1 failed in 1.40s
+CAUGHT  [open-source metabolism] a DEP-5 license definition paragraph is read as applying: 1 failed, 82 passed in 2.57s
+CAUGHT  [open-source metabolism] a phrase is judged on the receipt's bounded prefix: 1 failed, 1911 passed in 7.08s
+CAUGHT  [open-source metabolism] a binary killed at the output ceiling is read as an answer: 1 failed, 1948 passed in 28.62s
+CAUGHT  [open-source metabolism] a binary's output is unbounded: 1 failed, 1940 passed in 25.36s
+CAUGHT  [open-source metabolism] a binary writes past the output ceiling: 1 failed, 1940 passed in 49.49s
+CAUGHT  [open-source metabolism] a binary runs without a memory ceiling: 1 failed, 1941 passed in 23.86s
+CAUGHT  [open-source metabolism] a phrase missing from a scanned page is reported absent: 1 failed, 1937 passed in 16.95s
+CAUGHT  [open-source metabolism] qualification ignores whether a reader says it read everything: 1 failed, 1939 passed in 20.10s
+CAUGHT  [open-source metabolism] a page with an image counts as read: 1 failed, 1911 passed in 5.28s
+CAUGHT  [open-source metabolism] a found phrase is not declared decided: 1 failed, 1938 passed in 18.34s
+CAUGHT  [open-source metabolism] a spool file is read through a planted link: 1 failed, 1949 passed in 25.39s
+CAUGHT  [open-source metabolism] a spool file that is no longer a regular file is read: 1 failed, 1949 passed in 26.10s
+CAUGHT  [open-source metabolism] a binary that honours SIGXFSZ is not killed at the ceiling: 1 failed, 1948 passed in 27.56s
+CAUGHT  [open-source metabolism] a companion binary's license is not read before attach: 1 failed, 1947 passed in 27.44s
+CAUGHT  [open-source metabolism] a network-copyleft term beside an unclassified one is not held: 1 failed in 1.58s
+CAUGHT  [open-source metabolism] an unknown name masks a restrictive one in the same field: 1 failed, 11 passed in 1.38s
+CAUGHT  [open-source metabolism] OR elects an alternative with a known restriction on a tie: 1 failed, 22 passed in 1.43s
+CAUGHT  [open-source metabolism] an unknown DEP-5 base hides a restrictive addition: 1 failed, 5 passed in 1.30s
+CAUGHT  [open-source metabolism] an unparseable expression hides its restrictive names: 1 failed, 1863 passed in 3.83s
+CAUGHT  [open-source metabolism] a stricter classifier beside an expression is ignored: 1 failed, 24 passed in 1.63s
+CAUGHT  [open-source metabolism] a classifier naming an alternative of the expression raises its class: 1 failed, 29 passed in 1.40s
+CAUGHT  [open-source metabolism] an unclassified SPDX License field beside a classifier is informational: 1 failed, 41 passed in 1.29s
+CAUGHT  [open-source metabolism] restrictive wording in a short License field is not read: 1 failed, 3 passed in 1.34s
+CAUGHT  [open-source metabolism] restrictive license families are unclassified at other versions: 1 failed, 3 passed in 1.37s
+CAUGHT  [open-source metabolism] a second License line in one DEP-5 paragraph overwrites the first: 1 failed, 51 passed in 1.90s
+CAUGHT  [open-source metabolism] a Files line inside a DEP-5 paragraph does not start a stanza: 1 failed, 51 passed in 1.78s
+CAUGHT  [open-source metabolism] a DEP-5 Files stanza without a License is skipped: 1 failed, 84 passed in 1.94s
+CAUGHT  [open-source metabolism] an inclusive commercial phrase reads as a restriction: 1 failed, 52 passed in 1.70s
+CAUGHT  [open-source metabolism] AND obligations are not conjunctive: 1 failed, 57 passed in 1.92s
+CAUGHT  [open-source metabolism] the use verdict mixes terms across alternatives: 1 error in 0.66s
+CAUGHT  [open-source metabolism] a DEP-5 header that disagrees with its Files stanzas is not reported: 1 failed, 83 passed in 2.40s
+CAUGHT  [open-source metabolism] source-available and restricted-use terms are not distinguished: 1 failed, 76 passed in 2.45s
+CAUGHT  [open-source metabolism] an unclassified license is compatible because the use is local: 1 failed, 63 passed in 1.99s
+CAUGHT  [open-source metabolism] copyleft is compatible even when redistributed or linked: 1 failed, 60 passed in 1.80s
+CAUGHT  [open-source metabolism] network copyleft ignores network exposure and modification: 1 failed, 62 passed in 2.17s
+CAUGHT  [open-source metabolism] a not-open term is merely uncertain: 1 failed, 64 passed in 2.29s
+CAUGHT  [open-source metabolism] an unreadable assessment is compatible: 1 failed, 2047 passed in 53.58s
+CAUGHT  [open-source metabolism] the capability takes its most permissive term: 1 failed, 64 passed in 2.24s
+CAUGHT  [open-source metabolism] the qualification digest ignores the binary's content: 1 failed, 2048 passed in 51.87s
+CAUGHT  [open-source metabolism] P4c attaches whatever the use verdict: 1 failed, 1858 passed in 4.45s
+CAUGHT  [open-source metabolism] a bare founder attach clears an unresolved hold: 1 failed, 2056 passed in 54.32s
+CAUGHT  [open-source metabolism] a clearance for an earlier assessment is accepted: 1 failed, 2058 passed in 53.52s
+CAUGHT  [open-source metabolism] a clearance for another use is accepted: 1 failed, 2059 passed in 55.24s
+CAUGHT  [open-source metabolism] a clearance without a basis is accepted: 1 failed, 2060 passed in 55.96s
+CAUGHT  [open-source metabolism] a clearance that skips an obligation is accepted: 1 failed, 2061 passed in 55.13s
+CAUGHT  [open-source metabolism] a founder signature overrides third-party rights: 1 failed, 64 passed in 1.43s
+CAUGHT  [open-source metabolism] a run proceeds after the use context changed: 1 failed, 2050 passed in 52.55s
+CAUGHT  [open-source metabolism] a run proceeds after the license facts changed: 1 failed, 2050 passed in 58.04s
+CAUGHT  [open-source metabolism] a never-qualified capability runs under P4c: 1 failed, 2050 passed in 58.76s
+CAUGHT  [open-source metabolism] a founder's detach is quarantined over at restart: 1 failed, 2065 passed, 1 skipped in 65.91s (0:01:05)
+CAUGHT  [open-source metabolism] a restarted reader loses its companions: 1 failed, 2067 passed, 1 skipped in 70.12s (0:01:10)
+CAUGHT  [open-source metabolism] a changed companion is trusted at restart: 1 failed, 2068 passed, 1 skipped in 72.91s (0:01:12)
+CAUGHT  [open-source metabolism] an unreadable input counts against the reader: 1 failed, 2069 passed, 1 skipped in 74.00s (0:01:14)
+CAUGHT  [open-source metabolism] a kill at a ceiling is not typed as a budget: 1 failed, 2072 passed, 1 skipped in 73.90s (0:01:13)
+CAUGHT  [open-source metabolism] a changed companion is untyped: 1 failed, 2076 passed, 1 skipped in 78.26s (0:01:18)
+CAUGHT  [open-source metabolism] a binary's timeout escapes untyped: 1 failed, 2077 passed, 1 skipped in 76.21s (0:01:16)
+CAUGHT  [open-source metabolism] a binary's version line is stored whole: 1 failed, 2078 passed, 1 skipped in 75.85s (0:01:15)
+CAUGHT  [open-source metabolism] ligatures and compatibility forms are compared raw: 1 failed, 2092 passed, 1 skipped in 79.12s (0:01:19)
+CAUGHT  [open-source metabolism] typographic quotes and dashes are compared raw: 1 failed, 2083 passed, 1 skipped in 77.08s (0:01:17)
+CAUGHT  [open-source metabolism] a phrase is matched inside a longer word: 1 failed, 2085 passed, 1 skipped in 79.84s (0:01:19)
+CAUGHT  [open-source metabolism] a line-end-dehyphenated phrase is not looked for joined: 1 failed, 2081 passed, 1 skipped in 78.88s (0:01:18)
+CAUGHT  [open-source metabolism] a reader's companions read a different copy of the input: 1 failed, 2079 passed, 1 skipped in 82.66s (0:01:22)
+CAUGHT  [open-source metabolism] a snapshot is taken through a link or of a FIFO: 1 failed, 2080 passed, 1 skipped in 85.22s (0:01:25)
+CAUGHT  [open-source metabolism] an acquired binary runs without requalification: 1 failed, 2053 passed in 93.12s (0:01:33)
+CAUGHT  [open-source metabolism] an edited Apache-2.0 text is cleared by its shape: 1 failed, 1868 passed in 5.12s
+CAUGHT  [open-source metabolism] an edited MIT text is cleared by its opening: 1 failed, 1868 passed in 4.90s
+CAUGHT  [open-source metabolism] terms added beside a standard text are ignored: 1 failed, 1869 passed in 4.40s
+CAUGHT  [open-source metabolism] restrictive wording inside a model license text is not read: 1 failed, 1869 passed in 5.81s
+CAUGHT  [open-source metabolism] a Llama community license is not recognised: 1 failed, 1880 passed in 6.46s
+CAUGHT  [open-source metabolism] an OpenRAIL license is not recognised: 1 failed, 1884 passed in 6.13s
+CAUGHT  [open-source metabolism] a part of a word reads as a rider in a full text: 1 failed, 1900 passed in 5.68s
+CAUGHT  [open-source metabolism] the GPL-2 distribution clause reads as a use restriction: 1 failed, 1899 passed in 6.48s
+CAUGHT  [open-source metabolism] a model's weights are cleared whatever their license: 1 failed, 1869 passed in 6.19s
+CAUGHT  [open-source metabolism] a model without a license is not named as such: 1 failed, 1904 passed in 6.63s
+CAUGHT  [open-source metabolism] a license blob that does not match its digest is read: 1 failed, 1905 passed in 6.05s
+CAUGHT  [open-source metabolism] a model assessment is not bound to its weights: 1 failed, 1901 passed in 7.33s
+CAUGHT  [open-source metabolism] a linked license blob is followed: 1 failed, 1909 passed in 6.56s
+CAUGHT  [open-source metabolism] a restricting sentence's inclusive phrase is masked: 1 failed, 1836 passed in 6.97s
+CAUGHT  [open-source metabolism] a License line before its Files line starts a definition: 1 failed, 1839 passed in 6.18s
+CAUGHT  [open-source metabolism] an unparseable field loses its multi-word restrictive names: 1 failed, 1840 passed in 7.17s
+CAUGHT  [open-source metabolism] Elastic-2.0 in free text is not read: 1 failed, 1848 passed in 7.87s
+CAUGHT  [open-source metabolism] an unparseable expression hides the classifiers beside it: 1 failed, 1850 passed in 7.62s
+CAUGHT  [open-source metabolism] a non-OSI classifier GREG does not list is ignored beside an expression: 1 failed, 1854 passed in 7.45s
+CAUGHT  [open-source metabolism] a name only like a known family is read as that family: 1 failed, 1858 passed in 8.01s
+CAUGHT  [open-source metabolism] an unlisted family name is compatible under P4c: 1 failed, 1858 passed in 7.88s
+CAUGHT  [open-source metabolism] an OR with a held alternative and no cleared one is released: 1 failed, 22 passed in 3.00s
+CAUGHT  [open-source metabolism] the use election ignores the class on equal verdicts: 1 failed, 58 passed in 3.00s
+CAUGHT  [open-source metabolism] the use election depends on operand order: 1 failed, 1861 passed in 8.10s
+CAUGHT  [open-source metabolism] deep nesting is parsed without a bound: 1 failed, 1862 passed in 9.34s
+CAUGHT  [open-source metabolism] an unparseable License-Expression loses the restrictive names no wording catches: 1 failed, 1863 passed in 8.08s
+CAUGHT  [open-source metabolism] a one-line License field packaging rejects loses the restrictive names in it: 1 failed, 1863 passed in 8.71s
+CAUGHT  [open-source metabolism] a word of an unparseable field is read as restrictive wording: 1 failed, 52 passed in 3.66s
+CAUGHT  [open-source metabolism] any line that starts as a copyright notice is dropped beside the terms: 1 failed, 1870 passed in 7.06s
+CAUGHT  [open-source metabolism] a sentence after the holder's name is part of the notice: 1 failed, 1872 passed in 6.27s
+CAUGHT  [open-source metabolism] a normative word in the holder's name is part of the notice: 1 failed, 1871 passed in 6.47s
+CAUGHT  [open-source metabolism] the Apache notice's copyright field takes any text: 1 failed, 1873 passed in 6.11s
+105 mutants, 0 survived or stale
+EXIT 0

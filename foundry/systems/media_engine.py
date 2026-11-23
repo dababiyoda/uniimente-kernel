@@ -22,7 +22,6 @@ nothing here contacts a network.
 """
 from __future__ import annotations
 
-import hashlib
 import html
 import io
 import json
@@ -37,6 +36,8 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey,
 
 from foundry.company import REQUIRED_EDITORIAL_RULES
 from foundry.systems import cas
+from provenance.digests import compact_json_bytes as _canon, sha256_tagged as _sha
+from foundry.systems.refusals import refusal_recorder
 
 SAMPLE_RATE = 22050
 KINDS = ("image", "audio", "video", "interactive")
@@ -47,14 +48,6 @@ NOTE_HZ = {"C4": 261.63, "D4": 293.66, "E4": 329.63, "F4": 349.23, "G4": 392.0, 
 
 class MediaError(ValueError):
     pass
-
-
-def _canon(v) -> bytes:
-    return json.dumps(v, sort_keys=True, separators=(",", ":")).encode()
-
-
-def _sha(data: bytes) -> str:
-    return "sha256:" + hashlib.sha256(data).hexdigest()
 
 
 def _rgb(hex_color: str) -> tuple[int, int, int]:
@@ -277,14 +270,7 @@ def exercise(root) -> dict:
     root = Path(root)
     palette = {"bg": "#0b1f3a", "fg": "#f5f1e8", "accent": "#e3a72f"}
     canon = canon_from_persona(demo_persona(), palette=palette, mark="GREG", editorial_rules=list(REQUIRED_EDITORIAL_RULES))
-    refusals = {}
-
-    def refused(label, fn):
-        try:
-            fn()
-            refusals[label] = None
-        except MediaError as exc:
-            refusals[label] = str(exc)[:80]
+    refusals, refused = refusal_recorder(MediaError, limit=80)
     undisclosed = dict(canon, editorial_rules=[r for r in REQUIRED_EDITORIAL_RULES if r != "synthetic_identity_disclosed"])
     refused("canon_without_disclosure_rule", lambda: Engine(root / "bad", key_seed=bytes(32 * [71]), canon=undisclosed, clock=lambda: "t"))
     refused("canon_without_palette", lambda: Engine(root / "bad2", key_seed=bytes(32 * [71]), canon=dict(canon, palette={}), clock=lambda: "t"))

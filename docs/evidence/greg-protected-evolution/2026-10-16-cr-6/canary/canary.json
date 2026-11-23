@@ -1,0 +1,98 @@
+{
+ "schema": "greg-p8-canary/1",
+ "started_at": "2026-10-21T12:45:22.972920+00:00",
+ "source_commit": "82bb6453f4e8da76c318838cb5299320ac2e3fda",
+ "seeds": [
+  8300,
+  8539
+ ],
+ "python": "3.13.16",
+ "n": 240,
+ "incumbent": {
+  "id": "cfg-111751096c0d",
+  "config": {
+   "mu": 4,
+   "offspring": 4,
+   "p_extra_mutation": 0.3,
+   "p_extra_mutation_recombined": 0.5,
+   "p_recombine": 0.3,
+   "p_restart": 0.0,
+   "tournament": 2
+  }
+ },
+ "proposed": {
+  "id": "cfg-4398ea71018f",
+  "config": {
+   "mu": 4,
+   "offspring": 4,
+   "p_extra_mutation": 0.3,
+   "p_extra_mutation_recombined": 0.55,
+   "p_recombine": 0.3,
+   "p_restart": 0.807,
+   "tournament": 2
+  }
+ },
+ "mean_loss": {
+  "incumbent": 0.011135,
+  "proposed": 0.007357,
+  "random_restart": 0.006393
+ },
+ "proposed_vs_incumbent": {
+  "wins": 107,
+  "losses": 74,
+  "ties": 59,
+  "sign_test_p_one_sided": 0.00857,
+  "mean_a": 0.007357,
+  "mean_b": 0.011135
+ },
+ "proposed_vs_random_restart": {
+  "wins": 79,
+  "losses": 95,
+  "ties": 66,
+  "sign_test_p_one_sided": 0.901331,
+  "mean_a": 0.007357,
+  "mean_b": 0.006393
+ },
+ "random_restart_vs_incumbent": {
+  "wins": 116,
+  "losses": 62,
+  "ties": 62,
+  "sign_test_p_one_sided": 3.2e-05,
+  "mean_a": 0.006393,
+  "mean_b": 0.011135
+ },
+ "stress": {
+  "incumbent": {
+   "lean": 0.012516,
+   "fewval": 0.014605
+  },
+  "proposed": {
+   "lean": 0.007727,
+   "fewval": 0.010025
+  },
+  "all_outputs_verified": true
+ },
+ "by_category": {
+  "loose_due_dates": {
+   "n": 119,
+   "incumbent": 0.017768,
+   "proposed": 0.010921,
+   "random_restart": 0.009126
+  },
+  "tight_due_dates": {
+   "n": 121,
+   "incumbent": 0.004612,
+   "proposed": 0.003851,
+   "random_restart": 0.003706
+  }
+ },
+ "decision": {
+  "verdict": "CANARY_PASSES",
+  "replicates_against_incumbent": true,
+  "stress_ok": true,
+  "random_restart_significantly_better": false,
+  "applied": false
+ },
+ "seconds": 147.9,
+ "authority_created": false
+}

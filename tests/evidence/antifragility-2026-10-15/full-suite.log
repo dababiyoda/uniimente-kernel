@@ -1,0 +1,10 @@
+# python -m pytest -q at 320cbaf5, finished 2026-10-15T18:28Z (local container)
+# the five failures are the environmental Landlock tests: they fail identically at the base here and pass in CI
+=========================== short test summary info ============================
+FAILED tests/unit/test_foundry_systems.py::test_mcp_tools_run_behind_kernel_identity_policy_and_gate
+FAILED tests/unit/test_greg_foundry_worker.py::test_restricted_dsl_verifier_runs_but_ratification_is_still_required
+FAILED tests/unit/test_greg_landlock.py::test_landlock_inherits_into_exact_reviewed_dsl_and_packaging_children
+FAILED tests/unit/test_greg_mcp_worker.py::test_first_party_mcp_reaches_actual_retained_machine_state_without_writes
+FAILED tests/unit/test_greg_packaging.py::test_guarded_owned_bundle_rebuilds_in_fixed_independent_child
+5 failed, 4097 passed, 25 skipped in 1339.40s (0:22:19)
+rc=1

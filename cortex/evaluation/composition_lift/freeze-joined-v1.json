@@ -1,0 +1,133 @@
+{
+  "frozen_at": "2026-10-22T04:49:31.231590+00:00",
+  "inputs": {
+    "files": {
+      "cortex/evaluation/composition_lift/run_joined_v1.py": "sha256:22bf2a4499741be4b3ecdd19b1d674628ad459c644ee812ed6d306eed4ac92be",
+      "cortex/evaluation/composition_lift/prereg-joined-v1.json": "sha256:482cb69a3f3c944289f3940a9bb8cee9aaf40a207cf378fcc40837a5517facc6",
+      "cortex/evaluation/composition_lift/run_converged_v1.py": "sha256:b0409f924d2ca9d7d2712a47ce6996fe13426eb1f9204bd0a682ef69c00e3489",
+      "cortex/evaluation/composition_lift/prereg-converged-v1.json": "sha256:3bbe3edcbdc5567c1f3d0f69565ee4bd7382438c333490229a950d001db01a0d",
+      "cortex/evaluation/composition_lift/run.py": "sha256:e64f2d1ce25e36d7343a0343dc6cb3d92b227cebf05bbb546f58b8eb09dfa633",
+      "cortex/evaluation/composition_lift/run_v2.py": "sha256:5f89a32f4607bbc567a328a346176ec48dc2182226290e8ac022d39666e650e3",
+      "greg/cognition/composition.py": "sha256:e8ff0465177c8a9d72c2c9af03bd6a7f1cf7a1a92e8c2086b1b3f1301281e778",
+      "greg/cognition/cortex.py": "sha256:d2a011d2d2704406a9f1e1fa1af88b95c5471e0a6b576756cfb8f5c2cd0606f0",
+      "greg/cognition/bridge.py": "sha256:ae662209ca5456f9497f9cb3a543b991de81b277c252c33e26f18c4a51f621c2",
+      "greg/cognition/catalog.py": "sha256:8437b549e527d29c0e1898bf18f8332a618a1104bf4e0821b84232d2ca9e2118",
+      "greg/cognition/contracts.py": "sha256:5e84ffece92a039f093c1d5b7355de2b194da846181b8448e5ad7ad4774c940e",
+      "greg/cognition/solvers.py": "sha256:50f0a195e796498ff309ccd6a1068a4c6cfaf0eb060b77e8421864622d00207a",
+      "greg/cognition/verification.py": "sha256:41374884ba08b632765e65d31ec6926befd0bc736931130eb7689f019a1ca982",
+      "greg/cognition/worker.py": "sha256:bbd4c31cf5a9a2a6264d6a02d077f86f96a56e6b3006d7547bcf5918e1e7fdf5",
+      "greg/cognition/genomes/contract.py": "sha256:1a5c08649df5f8e948566e2412cfdbb83fb543f7b996df312ef248851f9f0270",
+      "greg/cognition/genomes/library.py": "sha256:912b554596a7edbb30e67252b304da12002c7ed6ce02ad8bcf3d2db8003011ed",
+      "greg/cognition/genomes/flow.py": "sha256:c4c30d7925a3ef63da2e537571dfefe7a7ec961dc1957fd3f329ab35d8800007",
+      "greg/cognition/genomes/forecasting.py": "sha256:e7bdd6f0f2c8ae99242df85341b2c858bad95f7b2f9b77330c51e1e02b18a165",
+      "greg/cognition/genomes/decision.py": "sha256:e085f8c78aaa600fbed5962b6e438ea72dbc0060bcf8526ec2fc7b6c3ad0472e",
+      "cortex/routing.py": "sha256:c7df74f21654768d5b24f3791aa4c80290eb971ece7669083885edfb60182d1f",
+      "cortex/organs/evidence_causal.py": "sha256:7569d74b10ffafed3b51aacbb854ff41d76d398cdd6f0b48e465e9cf9b66456e",
+      "cortex/organs/cpsat.py": "sha256:192d2508f1e464cbfb4c5192df8207f17c6cb543e7282ef34a1059ab2b735162",
+      "cortex/organs/formal.py": "sha256:b0a1f64e6fa9c24c4cef7594d042ae4038e58421b6e078e79bca6fadc0fb92cd",
+      "cortex/evaluation/generators.py": "sha256:2b302d0d01b8051eae604dec7214726c53fe6bce7deb90d4e55b5cdcc544c362",
+      "requirements-cortex.txt": "sha256:5558445ce171be8d2247c2e7e1ab1d68c4c3c96e8a0908af279a7427516c0961",
+      "requirements-cognition.txt": "sha256:174ebe6818fe911393eb7002485163f7d055664e739cafb530ae0010eebe516b",
+      "greg/cognition/compiler.py": "sha256:e3e9effa7751d61efc59bf4eec9456ce57f64031c7abd03fad3897bfd58537c4"
+    },
+    "recipe_bindings": {
+      "estimate_then_optimize": {
+        "function": "greg/cognition/composition.py::run",
+        "closure_sha256": "sha256:92fe253e2b21a5639a2ea4b1b2bbb8b8d067e93ad3b4313408def75ac11c8408",
+        "stage_closures": {
+          "organ:estimate:EstimationOrgan": "sha256:e2efcc2b1fa5cce72ed9009784d61b5265f6c67719b3096273fc2a2afc22bc5b",
+          "organ:optimization:CpSatOrgan": "sha256:93391fad974cfb4922841b8bf4d565c1cc003c34c4aa8357e66cc93318bd83e7",
+          "organ:optimization:FormalOrgan": "sha256:5fd130bd1561986556280f6549cc5c7b61891c64fc6486ac07be8be8371188a2",
+          "route:_route_parts": "sha256:fdab04e2c86abbe1c8a9a1df939891f01e14c7c154adb43147cba7a28fc852b4",
+          "route:CpSatOrgan": "sha256:93391fad974cfb4922841b8bf4d565c1cc003c34c4aa8357e66cc93318bd83e7",
+          "route:DeterrenceOrgan": "sha256:6ad068dd9f12e914790902fe5fa72d8a063dee792276c003e656fa11067384cf",
+          "route:EstimationOrgan": "sha256:e2efcc2b1fa5cce72ed9009784d61b5265f6c67719b3096273fc2a2afc22bc5b",
+          "route:EvidenceCausalOrgan": "sha256:139bc0a18e65564c91e6c54de0ed9f06e655a2da5ebe9ba24a9ac0d64a8fe3a4",
+          "route:FormalOrgan": "sha256:5fd130bd1561986556280f6549cc5c7b61891c64fc6486ac07be8be8371188a2",
+          "route:ScheduleExtractionOrgan": "sha256:d4b9dadef56ae45585733c957c028ca7ae5657ed31a26aea8b4a635c9fff9e25",
+          "route:SemanticOrgan": "sha256:82a01912cf908d923137f6a707e6ae1a374e787683052c9ea8b77ddf7eae6e35"
+        },
+        "recipe_entry_sha256": "sha256:428bc0f85736daba39d9bba4f0e82614041bae8ad266641741f84cacbf0ef6c7",
+        "closure_unresolved": []
+      },
+      "identify_then_optimize": {
+        "function": "greg/cognition/composition.py::run",
+        "closure_sha256": "sha256:92fe253e2b21a5639a2ea4b1b2bbb8b8d067e93ad3b4313408def75ac11c8408",
+        "stage_closures": {
+          "organ:causal:EvidenceCausalOrgan": "sha256:139bc0a18e65564c91e6c54de0ed9f06e655a2da5ebe9ba24a9ac0d64a8fe3a4",
+          "organ:optimization:CpSatOrgan": "sha256:93391fad974cfb4922841b8bf4d565c1cc003c34c4aa8357e66cc93318bd83e7",
+          "organ:optimization:FormalOrgan": "sha256:5fd130bd1561986556280f6549cc5c7b61891c64fc6486ac07be8be8371188a2",
+          "route:_route_parts": "sha256:fdab04e2c86abbe1c8a9a1df939891f01e14c7c154adb43147cba7a28fc852b4",
+          "route:CpSatOrgan": "sha256:93391fad974cfb4922841b8bf4d565c1cc003c34c4aa8357e66cc93318bd83e7",
+          "route:DeterrenceOrgan": "sha256:6ad068dd9f12e914790902fe5fa72d8a063dee792276c003e656fa11067384cf",
+          "route:EstimationOrgan": "sha256:e2efcc2b1fa5cce72ed9009784d61b5265f6c67719b3096273fc2a2afc22bc5b",
+          "route:EvidenceCausalOrgan": "sha256:139bc0a18e65564c91e6c54de0ed9f06e655a2da5ebe9ba24a9ac0d64a8fe3a4",
+          "route:FormalOrgan": "sha256:5fd130bd1561986556280f6549cc5c7b61891c64fc6486ac07be8be8371188a2",
+          "route:ScheduleExtractionOrgan": "sha256:d4b9dadef56ae45585733c957c028ca7ae5657ed31a26aea8b4a635c9fff9e25",
+          "route:SemanticOrgan": "sha256:82a01912cf908d923137f6a707e6ae1a374e787683052c9ea8b77ddf7eae6e35"
+        },
+        "recipe_entry_sha256": "sha256:80c333ac73d427a3910d7aee4d7212fcee2078e0e0db076e2cb487092d3c38e2",
+        "closure_unresolved": []
+      },
+      "graph_then_allocate": {
+        "function": "greg/cognition/composition.py::_graph_then_allocate",
+        "closure_sha256": "sha256:c3cb6f6eded4dd5e461becb9a19592051295c5b2de494b117ac3c1ad88d688f7",
+        "stage_closures": {
+          "flow_capacity_plan": "sha256:f99e90914ef86e571897407fa08e0173e5bc121989d8258f582a4fd9e093edcb",
+          "flow_maxflow": "sha256:e2df9a6ebbbbbaf400421698e973ee9f767f663ddc4b96cb5077bc044205b3b9",
+          "solvers:optimization": "sha256:55393a60242a113613869e9ff464e88e1cc03230fd174276f766935a77a07401",
+          "adapter:_genome_solver": "sha256:b7495c95473ce2372082a5f18d518c61e1d99ca306756f2e58a3e084257621e1",
+          "adapter:run": "sha256:88fcab7a5faf3b23c0d0334f6b94626f131d68b06e9759f83949e32878e301ec",
+          "dispatch:SOLVERS": "sha256:c23c4382b10824f20a42dff821493fc5d24b63767185d26dcaacf5ed6f7d8b4c"
+        },
+        "recipe_entry_sha256": "sha256:8dec62ed97e2b286504f92a47b2a803660f378d13896f2b6885b723860e2346f",
+        "closure_unresolved": []
+      },
+      "bayes_then_voi": {
+        "function": "greg/cognition/composition.py::_bayes_then_voi",
+        "closure_sha256": "sha256:334e67aa8a064cc5aa4da5faa939fc9e758c24571c91b6bacc8991d064c7a4f7",
+        "stage_closures": {
+          "decision_preposterior": "sha256:30bdb5dfd71430da041ca8a390ae0e2df7836722fb92da8a978ac3fb1f82e09b",
+          "solvers:information": "sha256:d1473fddab10f469a1c7d33d37524fb2738fbba525d6e1edf98cd243e1d884b3",
+          "solvers:probabilistic": "sha256:7dbab42bea25b159ea4e8c9b709f13d528c304455b9431f6fd3d28605f23ed21",
+          "adapter:_genome_solver": "sha256:b7495c95473ce2372082a5f18d518c61e1d99ca306756f2e58a3e084257621e1",
+          "adapter:run": "sha256:88fcab7a5faf3b23c0d0334f6b94626f131d68b06e9759f83949e32878e301ec",
+          "dispatch:SOLVERS": "sha256:c23c4382b10824f20a42dff821493fc5d24b63767185d26dcaacf5ed6f7d8b4c"
+        },
+        "recipe_entry_sha256": "sha256:634e882fdcaddeb52715ba60992227ac4932ab2cd1e920bd20dc4968e2670487",
+        "closure_unresolved": []
+      }
+    },
+    "seeds": {
+      "F1": [
+        4717,
+        4756
+      ],
+      "F2R": [
+        4640,
+        4703
+      ],
+      "F3": [
+        4809,
+        4848
+      ],
+      "F4": [
+        4863,
+        4902
+      ]
+    },
+    "eval_attach": [
+      "cognition.flow_maxflow",
+      "cognition.flow_capacity_plan",
+      "cognition.flow_reinforce_greedy",
+      "cognition.forecast_quantile",
+      "cognition.newsvendor_compile",
+      "cognition.decision_preposterior",
+      "cognition.probabilistic",
+      "cognition.information",
+      "cognition.optimization",
+      "cognition.flow_expansion_mcf"
+    ],
+    "rule": "converged rule: routed correct > best single correct (best of lineage constituents and exact_single, chosen on held-out results), routed wrong <= best single wrong, one-sided exact sign test p < 0.05 over discordant items, routed median latency <= 60 s. Lineage rule (constituents only) reported beside it."
+  }
+}

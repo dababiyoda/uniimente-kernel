@@ -1,0 +1,254 @@
+[
+ {
+  "config": {
+   "mu": 4,
+   "offspring": 4,
+   "p_recombine": 0.3,
+   "p_extra_mutation": 0.3,
+   "p_extra_mutation_recombined": 0.5,
+   "p_restart": 0.25,
+   "tournament": 2
+  },
+  "why": "sweep: incumbent with p_restart 0.25"
+ },
+ {
+  "config": {
+   "mu": 4,
+   "offspring": 4,
+   "p_recombine": 0.3,
+   "p_extra_mutation": 0.3,
+   "p_extra_mutation_recombined": 0.5,
+   "p_restart": 0.5,
+   "tournament": 2
+  },
+  "why": "sweep: incumbent with p_restart 0.5"
+ },
+ {
+  "config": {
+   "mu": 4,
+   "offspring": 4,
+   "p_recombine": 0.3,
+   "p_extra_mutation": 0.3,
+   "p_extra_mutation_recombined": 0.5,
+   "p_restart": 0.75,
+   "tournament": 2
+  },
+  "why": "sweep: incumbent with p_restart 0.75"
+ },
+ {
+  "config": {
+   "mu": 4,
+   "offspring": 4,
+   "p_recombine": 0.3,
+   "p_extra_mutation": 0.3,
+   "p_extra_mutation_recombined": 0.5,
+   "p_restart": 0.9,
+   "tournament": 2
+  },
+  "why": "sweep: incumbent with p_restart 0.9"
+ },
+ {
+  "config": {
+   "mu": 4,
+   "offspring": 4,
+   "p_recombine": 0.3,
+   "p_extra_mutation": 0.3,
+   "p_extra_mutation_recombined": 0.5,
+   "p_restart": 1.0,
+   "tournament": 2
+  },
+  "why": "sweep: incumbent with p_restart 1.0"
+ },
+ {
+  "config": {
+   "mu": 4,
+   "offspring": 4,
+   "p_extra_mutation": 0.3,
+   "p_extra_mutation_recombined": 0.5,
+   "p_recombine": 0.3,
+   "p_restart": 0.25,
+   "tournament": 1
+  },
+  "why": "passed sign p<0.05 and lower mean on both pilot halves"
+ },
+ {
+  "config": {
+   "mu": 8,
+   "offspring": 2,
+   "p_extra_mutation": 0.3,
+   "p_extra_mutation_recombined": 0.5,
+   "p_recombine": 0.3,
+   "p_restart": 0.25,
+   "tournament": 2
+  },
+  "why": "passed sign p<0.05 and lower mean on both pilot halves"
+ },
+ {
+  "config": {
+   "mu": 8,
+   "offspring": 2,
+   "p_extra_mutation": 0.3,
+   "p_extra_mutation_recombined": 0.5,
+   "p_recombine": 0.3,
+   "p_restart": 0.5,
+   "tournament": 2
+  },
+  "why": "passed sign p<0.05 and lower mean on both pilot halves"
+ },
+ {
+  "config": {
+   "mu": 4,
+   "offspring": 4,
+   "p_extra_mutation": 0.3,
+   "p_extra_mutation_recombined": 0.5,
+   "p_recombine": 0.3,
+   "p_restart": 0.75,
+   "tournament": 1
+  },
+  "why": "passed sign p<0.05 and lower mean on both pilot halves"
+ },
+ {
+  "config": {
+   "mu": 8,
+   "offspring": 8,
+   "p_extra_mutation": 0.3,
+   "p_extra_mutation_recombined": 0.5,
+   "p_recombine": 0.3,
+   "p_restart": 0.75,
+   "tournament": 2
+  },
+  "why": "passed sign p<0.05 and lower mean on both pilot halves"
+ },
+ {
+  "config": {
+   "mu": 2,
+   "offspring": 8,
+   "p_extra_mutation": 0.3,
+   "p_extra_mutation_recombined": 0.5,
+   "p_recombine": 0.3,
+   "p_restart": 0.75,
+   "tournament": 2
+  },
+  "why": "passed sign p<0.05 and lower mean on both pilot halves"
+ },
+ {
+  "config": {
+   "mu": 8,
+   "offspring": 2,
+   "p_extra_mutation": 0.3,
+   "p_extra_mutation_recombined": 0.5,
+   "p_recombine": 0.3,
+   "p_restart": 0.75,
+   "tournament": 1
+  },
+  "why": "passed sign p<0.05 and lower mean on both pilot halves"
+ },
+ {
+  "config": {
+   "mu": 4,
+   "offspring": 4,
+   "p_extra_mutation": 0.9,
+   "p_extra_mutation_recombined": 0.9,
+   "p_recombine": 0.9,
+   "p_restart": 0.5,
+   "tournament": 2
+  },
+  "why": "passed sign p<0.05 and lower mean on both pilot halves"
+ },
+ {
+  "config": {
+   "mu": 2,
+   "offspring": 8,
+   "p_extra_mutation": 0.3,
+   "p_extra_mutation_recombined": 0.5,
+   "p_recombine": 0.3,
+   "p_restart": 0.5,
+   "tournament": 2
+  },
+  "why": "top 5 by pilot-train mean loss"
+ },
+ {
+  "config": {
+   "mu": 4,
+   "offspring": 4,
+   "p_extra_mutation": 0.9,
+   "p_extra_mutation_recombined": 0.9,
+   "p_recombine": 0.0,
+   "p_restart": 0.5,
+   "tournament": 2
+  },
+  "why": "top 5 by pilot-train mean loss"
+ },
+ {
+  "config": {
+   "mu": 4,
+   "offspring": 4,
+   "p_extra_mutation": 0.3,
+   "p_extra_mutation_recombined": 0.5,
+   "p_recombine": 0.3,
+   "p_restart": 0.5,
+   "tournament": 1
+  },
+  "why": "top 5 by pilot-train mean loss"
+ },
+ {
+  "config": {
+   "mu": 8,
+   "offspring": 8,
+   "p_extra_mutation": 0.3,
+   "p_extra_mutation_recombined": 0.5,
+   "p_recombine": 0.3,
+   "p_restart": 0.9,
+   "tournament": 3
+  },
+  "why": "top 5 by pilot-train mean loss"
+ },
+ {
+  "config": {
+   "mu": 4,
+   "offspring": 2,
+   "p_extra_mutation": 0.3,
+   "p_extra_mutation_recombined": 0.756,
+   "p_recombine": 0.3,
+   "p_restart": 0.0,
+   "tournament": 2
+  },
+  "why": "cycle 4 candidate"
+ },
+ {
+  "config": {
+   "mu": 4,
+   "offspring": 4,
+   "p_extra_mutation": 0.497,
+   "p_extra_mutation_recombined": 0.5,
+   "p_recombine": 0.309,
+   "p_restart": 0.339,
+   "tournament": 2
+  },
+  "why": "batch-1 simulated candidate (mutate-incumbent/1, lhs None, seed 20261008)"
+ },
+ {
+  "config": {
+   "mu": 4,
+   "offspring": 4,
+   "p_extra_mutation": 0.3,
+   "p_extra_mutation_recombined": 0.498,
+   "p_recombine": 0.227,
+   "p_restart": 0.0,
+   "tournament": 1
+  },
+  "why": "batch-1 simulated candidate (mutate-incumbent/1, lhs None, seed 20261016)"
+ },
+ {
+  "config": {
+   "mu": 2,
+   "offspring": 4,
+   "p_extra_mutation": 0.3,
+   "p_extra_mutation_recombined": 0.5,
+   "p_recombine": 0.3,
+   "p_restart": 0.335,
+   "tournament": 2
+  },
+  "why": "batch-1 simulated candidate (cover/1, lhs 16, seed 20261016)"
+ }
+]

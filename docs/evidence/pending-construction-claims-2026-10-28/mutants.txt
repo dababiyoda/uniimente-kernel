@@ -1,0 +1,11 @@
+== m1
+                        if o.payload["passed"] and o.payload["mission_id"] == spec["mission_id"]]
+FAILED test_one_claim_reobserved_on_many_receipts_is_offered_once_and_leaves_once_any_receipt_is_reported
+FAILED test_a_persistent_mission_reobserving_one_answer_asks_once_and_one_signed_report_settles_it_once
+2 failed, 25 passed in 22.93s
+== m2
+                        if o.payload["passed"] and o.payload["mission_id"] == spec["mission_id"]]
+FAILED test_one_claim_reobserved_on_many_receipts_is_offered_once_and_leaves_once_any_receipt_is_reported
+FAILED test_a_persistent_mission_reobserving_one_answer_asks_once_and_one_signed_report_settles_it_once
+2 failed, 25 passed in 25.31s
+M1: every receipt of a claim offered (no per-claim projection); M2: a claim stays offered after a sibling receipt was reported

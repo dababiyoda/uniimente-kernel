@@ -1,4 +1,6 @@
 pyyaml>=6.0
+# SPDX license expressions for Genesis's license qualification (greg/licensing.py)
+packaging>=24.2
 pytest>=8.0
 jsonschema>=4.20
 rfc3339-validator==0.1.4

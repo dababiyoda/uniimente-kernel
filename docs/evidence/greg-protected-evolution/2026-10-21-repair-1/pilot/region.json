@@ -1,0 +1,1312 @@
+{
+ "schema": "greg-p8-repair1-region/1",
+ "target": "develop_repair",
+ "seeds": {
+  "pool": [
+   3360,
+   3999
+  ],
+  "train": {
+   "T1": [
+    3000,
+    3119
+   ],
+   "T2": [
+    3120,
+    3239
+   ],
+   "T3": [
+    3240,
+    3359
+   ]
+  }
+ },
+ "incumbent": {
+  "id": "cfg-238c13bfb8a7",
+  "config": {
+   "wave_period": 8,
+   "expiry_waves": 2,
+   "repeats": 5,
+   "retract_repeats": 3
+  },
+  "pool": {
+   "mean_loss": -0.952899,
+   "wrong": 0,
+   "abstain": 0,
+   "n": 640,
+   "mean_loss_without_wrong": -0.952899,
+   "errors": {
+    "wrong": 0,
+    "n": 640,
+    "rate": 0.0,
+    "upper_95": 0.00467
+   },
+   "vs_baselines": {
+    "no_repair": {
+     "wins": 640,
+     "losses": 0,
+     "ties": 0,
+     "sign_test_p_one_sided": 0.0
+    },
+    "replanner": {
+     "wins": 173,
+     "losses": 467,
+     "ties": 0,
+     "sign_test_p_one_sided": 1.0
+    }
+   },
+   "vs_replanner_by_controller": {
+    "reliable_controller": {
+     "wins": 0,
+     "losses": 320,
+     "ties": 0,
+     "sign_test_p_one_sided": 1.0
+    },
+    "unreliable_controller": {
+     "wins": 173,
+     "losses": 147,
+     "ties": 0,
+     "sign_test_p_one_sided": 0.081073
+    }
+   }
+  },
+  "train": {
+   "T1": {
+    "mean_loss": -0.952307,
+    "wrong": 0,
+    "abstain": 0,
+    "n": 120,
+    "mean_loss_without_wrong": -0.952307,
+    "errors": {
+     "wrong": 0,
+     "n": 120,
+     "rate": 0.0,
+     "upper_95": 0.024655
+    }
+   },
+   "T2": {
+    "mean_loss": -0.950392,
+    "wrong": 0,
+    "abstain": 0,
+    "n": 120,
+    "mean_loss_without_wrong": -0.950392,
+    "errors": {
+     "wrong": 0,
+     "n": 120,
+     "rate": 0.0,
+     "upper_95": 0.024655
+    }
+   },
+   "T3": {
+    "mean_loss": -0.951537,
+    "wrong": 0,
+    "abstain": 0,
+    "n": 120,
+    "mean_loss_without_wrong": -0.951537,
+    "errors": {
+     "wrong": 0,
+     "n": 120,
+     "rate": 0.0,
+     "upper_95": 0.024655
+    }
+   }
+  },
+  "stress": {
+   "T1": {
+    "lossy": {
+     "mean_loss": -0.926462,
+     "wrong": 0,
+     "abstain": 0,
+     "n": 120,
+     "mean_loss_without_wrong": -0.926462,
+     "errors": {
+      "wrong": 0,
+      "n": 120,
+      "rate": 0.0,
+      "upper_95": 0.024655
+     }
+    },
+    "late": {
+     "mean_loss": Infinity,
+     "wrong": 2,
+     "abstain": 0,
+     "n": 120,
+     "mean_loss_without_wrong": -0.94461,
+     "errors": {
+      "wrong": 2,
+      "n": 120,
+      "rate": 0.016667,
+      "upper_95": 0.051534
+     }
+    },
+    "all_outputs_verified": false
+   },
+   "T2": {
+    "lossy": {
+     "mean_loss": -0.927182,
+     "wrong": 0,
+     "abstain": 0,
+     "n": 120,
+     "mean_loss_without_wrong": -0.927182,
+     "errors": {
+      "wrong": 0,
+      "n": 120,
+      "rate": 0.0,
+      "upper_95": 0.024655
+     }
+    },
+    "late": {
+     "mean_loss": Infinity,
+     "wrong": 1,
+     "abstain": 0,
+     "n": 120,
+     "mean_loss_without_wrong": -0.949188,
+     "errors": {
+      "wrong": 1,
+      "n": 120,
+      "rate": 0.008333,
+      "upper_95": 0.038921
+     }
+    },
+    "all_outputs_verified": false
+   },
+   "T3": {
+    "lossy": {
+     "mean_loss": -0.921319,
+     "wrong": 0,
+     "abstain": 0,
+     "n": 120,
+     "mean_loss_without_wrong": -0.921319,
+     "errors": {
+      "wrong": 0,
+      "n": 120,
+      "rate": 0.0,
+      "upper_95": 0.024655
+     }
+    },
+    "late": {
+     "mean_loss": Infinity,
+     "wrong": 2,
+     "abstain": 0,
+     "n": 120,
+     "mean_loss_without_wrong": -0.947758,
+     "errors": {
+      "wrong": 2,
+      "n": 120,
+      "rate": 0.016667,
+      "upper_95": 0.051534
+     }
+    },
+    "all_outputs_verified": false
+   }
+  }
+ },
+ "baselines": {
+  "no_repair": {
+   "what": "D.repair_no_repair (the rule's trigger baseline: keep the pre-damage field, claim nothing)",
+   "mean_loss": -0.073932,
+   "wrong": 0,
+   "abstain": 344,
+   "n": 640,
+   "mean_loss_without_wrong": -0.073932,
+   "errors": {
+    "wrong": 0,
+    "n": 640,
+    "rate": 0.0,
+    "upper_95": 0.00467
+   },
+   "vs_incumbent": {
+    "wins": 0,
+    "losses": 640,
+    "ties": 0,
+    "sign_test_p_one_sided": 1.0
+   }
+  },
+  "replanner": {
+   "what": "D.repair_central_replanner (the strongest competitor: adaptive centralized replanner, reliable on even seeds, crash or stale view on odd ones; reported, never in the rule)",
+   "mean_loss": Infinity,
+   "wrong": 50,
+   "abstain": 0,
+   "n": 640,
+   "mean_loss_without_wrong": -0.838426,
+   "errors": {
+    "wrong": 50,
+    "n": 640,
+    "rate": 0.078125,
+    "upper_95": 0.097847
+   },
+   "vs_incumbent": {
+    "wins": 467,
+    "losses": 173,
+    "ties": 0,
+    "sign_test_p_one_sided": 0.0
+   }
+  }
+ },
+ "trigger": {
+  "T1": {
+   "rule_no_repair": 0.0,
+   "diagnostic_replanner": 0.6667,
+   "fires": false
+  },
+  "T2": {
+   "rule_no_repair": 0.0,
+   "diagnostic_replanner": 0.75,
+   "fires": false
+  },
+  "T3": {
+   "rule_no_repair": 0.0,
+   "diagnostic_replanner": 0.7333,
+   "fires": false
+  }
+ },
+ "rows": [
+  {
+   "label": "informed:slow-waves (wave_period 12)",
+   "informed_by_prior_observations": true,
+   "id": "cfg-b2162b2ff085",
+   "config": {
+    "expiry_waves": 2,
+    "repeats": 5,
+    "retract_repeats": 3,
+    "wave_period": 12
+   },
+   "pool": {
+    "mean_loss": -0.966266,
+    "wrong": 0,
+    "abstain": 0,
+    "n": 640,
+    "mean_loss_without_wrong": -0.966266,
+    "errors": {
+     "wrong": 0,
+     "n": 640,
+     "rate": 0.0,
+     "upper_95": 0.00467
+    },
+    "vs_incumbent": {
+     "wins": 582,
+     "losses": 58,
+     "ties": 0,
+     "sign_test_p_one_sided": 0.0
+    },
+    "vs_baselines": {
+     "no_repair": {
+      "wins": 640,
+      "losses": 0,
+      "ties": 0,
+      "sign_test_p_one_sided": 0.0
+     },
+     "replanner": {
+      "wins": 173,
+      "losses": 467,
+      "ties": 0,
+      "sign_test_p_one_sided": 1.0
+     }
+    },
+    "vs_replanner_by_controller": {
+     "reliable_controller": {
+      "wins": 0,
+      "losses": 320,
+      "ties": 0,
+      "sign_test_p_one_sided": 1.0
+     },
+     "unreliable_controller": {
+      "wins": 173,
+      "losses": 147,
+      "ties": 0,
+      "sign_test_p_one_sided": 0.081073
+     }
+    },
+    "resampled": [
+     {
+      "n": 120,
+      "draws": 2000,
+      "retain_rate_alpha": 1.0,
+      "retain_rate_programme_7": 1.0
+     },
+     {
+      "n": 240,
+      "draws": 2000,
+      "retain_rate_alpha": 1.0,
+      "retain_rate_programme_7": 1.0
+     },
+     {
+      "n": 360,
+      "draws": 2000,
+      "retain_rate_alpha": 1.0,
+      "retain_rate_programme_7": 1.0
+     },
+     {
+      "n": 480,
+      "draws": 2000,
+      "retain_rate_alpha": 1.0,
+      "retain_rate_programme_7": 1.0
+     }
+    ]
+   },
+   "gate": {
+    "T1": {
+     "adversarial": {
+      "late": {
+       "incumbent": Infinity,
+       "candidate": Infinity,
+       "wrong": {
+        "incumbent": 2,
+        "candidate": 2,
+        "both_answered": 116,
+        "incumbent_answered_mean": -0.946549,
+        "candidate_answered_mean": -0.96138
+       }
+      },
+      "lossy": {
+       "incumbent": -0.926462,
+       "candidate": -0.94359
+      }
+     },
+     "all_outputs_verified": false,
+     "passes_gate": false,
+     "errors": {
+      "late": {
+       "incumbent": {
+        "wrong": 2,
+        "n": 120,
+        "rate": 0.016667,
+        "upper_95": 0.051534
+       },
+       "candidate": {
+        "wrong": 2,
+        "n": 120,
+        "rate": 0.016667,
+        "upper_95": 0.051534
+       }
+      },
+      "lossy": {
+       "incumbent": {
+        "wrong": 0,
+        "n": 120,
+        "rate": 0.0,
+        "upper_95": 0.024655
+       },
+       "candidate": {
+        "wrong": 0,
+        "n": 120,
+        "rate": 0.0,
+        "upper_95": 0.024655
+       }
+      }
+     }
+    },
+    "T2": {
+     "adversarial": {
+      "late": {
+       "incumbent": Infinity,
+       "candidate": Infinity,
+       "wrong": {
+        "incumbent": 1,
+        "candidate": 1,
+        "both_answered": 119,
+        "incumbent_answered_mean": -0.949188,
+        "candidate_answered_mean": -0.957189
+       }
+      },
+      "lossy": {
+       "incumbent": -0.927182,
+       "candidate": -0.941226
+      }
+     },
+     "all_outputs_verified": false,
+     "passes_gate": false,
+     "errors": {
+      "late": {
+       "incumbent": {
+        "wrong": 1,
+        "n": 120,
+        "rate": 0.008333,
+        "upper_95": 0.038921
+       },
+       "candidate": {
+        "wrong": 1,
+        "n": 120,
+        "rate": 0.008333,
+        "upper_95": 0.038921
+       }
+      },
+      "lossy": {
+       "incumbent": {
+        "wrong": 0,
+        "n": 120,
+        "rate": 0.0,
+        "upper_95": 0.024655
+       },
+       "candidate": {
+        "wrong": 0,
+        "n": 120,
+        "rate": 0.0,
+        "upper_95": 0.024655
+       }
+      }
+     }
+    },
+    "T3": {
+     "adversarial": {
+      "late": {
+       "incumbent": Infinity,
+       "candidate": Infinity,
+       "wrong": {
+        "incumbent": 2,
+        "candidate": 1,
+        "both_answered": 118,
+        "incumbent_answered_mean": -0.947758,
+        "candidate_answered_mean": -0.954175
+       }
+      },
+      "lossy": {
+       "incumbent": -0.921319,
+       "candidate": -0.9431
+      }
+     },
+     "all_outputs_verified": false,
+     "passes_gate": false,
+     "errors": {
+      "late": {
+       "incumbent": {
+        "wrong": 2,
+        "n": 120,
+        "rate": 0.016667,
+        "upper_95": 0.051534
+       },
+       "candidate": {
+        "wrong": 1,
+        "n": 120,
+        "rate": 0.008333,
+        "upper_95": 0.038921
+       }
+      },
+      "lossy": {
+       "incumbent": {
+        "wrong": 0,
+        "n": 120,
+        "rate": 0.0,
+        "upper_95": 0.024655
+       },
+       "candidate": {
+        "wrong": 0,
+        "n": 120,
+        "rate": 0.0,
+        "upper_95": 0.024655
+       }
+      }
+     }
+    }
+   },
+   "fixed_protocol_retain": [
+    {
+     "n": 120,
+     "retain_rate_alpha": 0.0,
+     "retain_rate_programme_7": 0.0
+    },
+    {
+     "n": 240,
+     "retain_rate_alpha": 0.0,
+     "retain_rate_programme_7": 0.0
+    },
+    {
+     "n": 360,
+     "retain_rate_alpha": 0.0,
+     "retain_rate_programme_7": 0.0
+    },
+    {
+     "n": 480,
+     "retain_rate_alpha": 0.0,
+     "retain_rate_programme_7": 0.0
+    }
+   ]
+  },
+  {
+   "label": "informed:short-expiry (expiry_waves 1)",
+   "informed_by_prior_observations": true,
+   "id": "cfg-9558af130012",
+   "config": {
+    "expiry_waves": 1,
+    "repeats": 5,
+    "retract_repeats": 3,
+    "wave_period": 8
+   },
+   "pool": {
+    "mean_loss": -0.952899,
+    "wrong": 0,
+    "abstain": 0,
+    "n": 640,
+    "mean_loss_without_wrong": -0.952899,
+    "errors": {
+     "wrong": 0,
+     "n": 640,
+     "rate": 0.0,
+     "upper_95": 0.00467
+    },
+    "vs_incumbent": {
+     "wins": 0,
+     "losses": 0,
+     "ties": 640,
+     "sign_test_p_one_sided": 1.0
+    },
+    "vs_baselines": {
+     "no_repair": {
+      "wins": 640,
+      "losses": 0,
+      "ties": 0,
+      "sign_test_p_one_sided": 0.0
+     },
+     "replanner": {
+      "wins": 173,
+      "losses": 467,
+      "ties": 0,
+      "sign_test_p_one_sided": 1.0
+     }
+    },
+    "vs_replanner_by_controller": {
+     "reliable_controller": {
+      "wins": 0,
+      "losses": 320,
+      "ties": 0,
+      "sign_test_p_one_sided": 1.0
+     },
+     "unreliable_controller": {
+      "wins": 173,
+      "losses": 147,
+      "ties": 0,
+      "sign_test_p_one_sided": 0.081073
+     }
+    },
+    "resampled": [
+     {
+      "n": 120,
+      "draws": 2000,
+      "retain_rate_alpha": 0.0,
+      "retain_rate_programme_7": 0.0
+     },
+     {
+      "n": 240,
+      "draws": 2000,
+      "retain_rate_alpha": 0.0,
+      "retain_rate_programme_7": 0.0
+     },
+     {
+      "n": 360,
+      "draws": 2000,
+      "retain_rate_alpha": 0.0,
+      "retain_rate_programme_7": 0.0
+     },
+     {
+      "n": 480,
+      "draws": 2000,
+      "retain_rate_alpha": 0.0,
+      "retain_rate_programme_7": 0.0
+     }
+    ]
+   },
+   "gate": {
+    "T1": {
+     "adversarial": {
+      "late": {
+       "incumbent": Infinity,
+       "candidate": -0.943208,
+       "wrong": {
+        "incumbent": 2,
+        "candidate": 0,
+        "both_answered": 118,
+        "incumbent_answered_mean": -0.94461,
+        "candidate_answered_mean": -0.94461
+       }
+      },
+      "lossy": {
+       "incumbent": -0.926462,
+       "candidate": -0.926462
+      }
+     },
+     "all_outputs_verified": true,
+     "passes_gate": true,
+     "errors": {
+      "late": {
+       "incumbent": {
+        "wrong": 2,
+        "n": 120,
+        "rate": 0.016667,
+        "upper_95": 0.051534
+       },
+       "candidate": {
+        "wrong": 0,
+        "n": 120,
+        "rate": 0.0,
+        "upper_95": 0.024655
+       }
+      },
+      "lossy": {
+       "incumbent": {
+        "wrong": 0,
+        "n": 120,
+        "rate": 0.0,
+        "upper_95": 0.024655
+       },
+       "candidate": {
+        "wrong": 0,
+        "n": 120,
+        "rate": 0.0,
+        "upper_95": 0.024655
+       }
+      }
+     }
+    },
+    "T2": {
+     "adversarial": {
+      "late": {
+       "incumbent": Infinity,
+       "candidate": Infinity,
+       "wrong": {
+        "incumbent": 1,
+        "candidate": 1,
+        "both_answered": 119,
+        "incumbent_answered_mean": -0.949188,
+        "candidate_answered_mean": -0.949188
+       }
+      },
+      "lossy": {
+       "incumbent": -0.927182,
+       "candidate": -0.927182
+      }
+     },
+     "all_outputs_verified": false,
+     "passes_gate": false,
+     "errors": {
+      "late": {
+       "incumbent": {
+        "wrong": 1,
+        "n": 120,
+        "rate": 0.008333,
+        "upper_95": 0.038921
+       },
+       "candidate": {
+        "wrong": 1,
+        "n": 120,
+        "rate": 0.008333,
+        "upper_95": 0.038921
+       }
+      },
+      "lossy": {
+       "incumbent": {
+        "wrong": 0,
+        "n": 120,
+        "rate": 0.0,
+        "upper_95": 0.024655
+       },
+       "candidate": {
+        "wrong": 0,
+        "n": 120,
+        "rate": 0.0,
+        "upper_95": 0.024655
+       }
+      }
+     }
+    },
+    "T3": {
+     "adversarial": {
+      "late": {
+       "incumbent": Infinity,
+       "candidate": Infinity,
+       "wrong": {
+        "incumbent": 2,
+        "candidate": 1,
+        "both_answered": 118,
+        "incumbent_answered_mean": -0.947758,
+        "candidate_answered_mean": -0.947758
+       }
+      },
+      "lossy": {
+       "incumbent": -0.921319,
+       "candidate": -0.921319
+      }
+     },
+     "all_outputs_verified": false,
+     "passes_gate": false,
+     "errors": {
+      "late": {
+       "incumbent": {
+        "wrong": 2,
+        "n": 120,
+        "rate": 0.016667,
+        "upper_95": 0.051534
+       },
+       "candidate": {
+        "wrong": 1,
+        "n": 120,
+        "rate": 0.008333,
+        "upper_95": 0.038921
+       }
+      },
+      "lossy": {
+       "incumbent": {
+        "wrong": 0,
+        "n": 120,
+        "rate": 0.0,
+        "upper_95": 0.024655
+       },
+       "candidate": {
+        "wrong": 0,
+        "n": 120,
+        "rate": 0.0,
+        "upper_95": 0.024655
+       }
+      }
+     }
+    }
+   },
+   "fixed_protocol_retain": [
+    {
+     "n": 120,
+     "retain_rate_alpha": 0.0,
+     "retain_rate_programme_7": 0.0
+    },
+    {
+     "n": 240,
+     "retain_rate_alpha": 0.0,
+     "retain_rate_programme_7": 0.0
+    },
+    {
+     "n": 360,
+     "retain_rate_alpha": 0.0,
+     "retain_rate_programme_7": 0.0
+    },
+    {
+     "n": 480,
+     "retain_rate_alpha": 0.0,
+     "retain_rate_programme_7": 0.0
+    }
+   ]
+  },
+  {
+   "label": "informed:slow-waves-short-expiry (12, 1)",
+   "informed_by_prior_observations": true,
+   "id": "cfg-1ae30a4d942c",
+   "config": {
+    "expiry_waves": 1,
+    "repeats": 5,
+    "retract_repeats": 3,
+    "wave_period": 12
+   },
+   "pool": {
+    "mean_loss": -0.966266,
+    "wrong": 0,
+    "abstain": 0,
+    "n": 640,
+    "mean_loss_without_wrong": -0.966266,
+    "errors": {
+     "wrong": 0,
+     "n": 640,
+     "rate": 0.0,
+     "upper_95": 0.00467
+    },
+    "vs_incumbent": {
+     "wins": 582,
+     "losses": 58,
+     "ties": 0,
+     "sign_test_p_one_sided": 0.0
+    },
+    "vs_baselines": {
+     "no_repair": {
+      "wins": 640,
+      "losses": 0,
+      "ties": 0,
+      "sign_test_p_one_sided": 0.0
+     },
+     "replanner": {
+      "wins": 173,
+      "losses": 467,
+      "ties": 0,
+      "sign_test_p_one_sided": 1.0
+     }
+    },
+    "vs_replanner_by_controller": {
+     "reliable_controller": {
+      "wins": 0,
+      "losses": 320,
+      "ties": 0,
+      "sign_test_p_one_sided": 1.0
+     },
+     "unreliable_controller": {
+      "wins": 173,
+      "losses": 147,
+      "ties": 0,
+      "sign_test_p_one_sided": 0.081073
+     }
+    },
+    "resampled": [
+     {
+      "n": 120,
+      "draws": 2000,
+      "retain_rate_alpha": 1.0,
+      "retain_rate_programme_7": 1.0
+     },
+     {
+      "n": 240,
+      "draws": 2000,
+      "retain_rate_alpha": 1.0,
+      "retain_rate_programme_7": 1.0
+     },
+     {
+      "n": 360,
+      "draws": 2000,
+      "retain_rate_alpha": 1.0,
+      "retain_rate_programme_7": 1.0
+     },
+     {
+      "n": 480,
+      "draws": 2000,
+      "retain_rate_alpha": 1.0,
+      "retain_rate_programme_7": 1.0
+     }
+    ]
+   },
+   "gate": {
+    "T1": {
+     "adversarial": {
+      "late": {
+       "incumbent": Infinity,
+       "candidate": Infinity,
+       "wrong": {
+        "incumbent": 2,
+        "candidate": 2,
+        "both_answered": 116,
+        "incumbent_answered_mean": -0.946549,
+        "candidate_answered_mean": -0.96138
+       }
+      },
+      "lossy": {
+       "incumbent": -0.926462,
+       "candidate": -0.94359
+      }
+     },
+     "all_outputs_verified": false,
+     "passes_gate": false,
+     "errors": {
+      "late": {
+       "incumbent": {
+        "wrong": 2,
+        "n": 120,
+        "rate": 0.016667,
+        "upper_95": 0.051534
+       },
+       "candidate": {
+        "wrong": 2,
+        "n": 120,
+        "rate": 0.016667,
+        "upper_95": 0.051534
+       }
+      },
+      "lossy": {
+       "incumbent": {
+        "wrong": 0,
+        "n": 120,
+        "rate": 0.0,
+        "upper_95": 0.024655
+       },
+       "candidate": {
+        "wrong": 0,
+        "n": 120,
+        "rate": 0.0,
+        "upper_95": 0.024655
+       }
+      }
+     }
+    },
+    "T2": {
+     "adversarial": {
+      "late": {
+       "incumbent": Infinity,
+       "candidate": Infinity,
+       "wrong": {
+        "incumbent": 1,
+        "candidate": 1,
+        "both_answered": 119,
+        "incumbent_answered_mean": -0.949188,
+        "candidate_answered_mean": -0.957189
+       }
+      },
+      "lossy": {
+       "incumbent": -0.927182,
+       "candidate": -0.941226
+      }
+     },
+     "all_outputs_verified": false,
+     "passes_gate": false,
+     "errors": {
+      "late": {
+       "incumbent": {
+        "wrong": 1,
+        "n": 120,
+        "rate": 0.008333,
+        "upper_95": 0.038921
+       },
+       "candidate": {
+        "wrong": 1,
+        "n": 120,
+        "rate": 0.008333,
+        "upper_95": 0.038921
+       }
+      },
+      "lossy": {
+       "incumbent": {
+        "wrong": 0,
+        "n": 120,
+        "rate": 0.0,
+        "upper_95": 0.024655
+       },
+       "candidate": {
+        "wrong": 0,
+        "n": 120,
+        "rate": 0.0,
+        "upper_95": 0.024655
+       }
+      }
+     }
+    },
+    "T3": {
+     "adversarial": {
+      "late": {
+       "incumbent": Infinity,
+       "candidate": Infinity,
+       "wrong": {
+        "incumbent": 2,
+        "candidate": 1,
+        "both_answered": 118,
+        "incumbent_answered_mean": -0.947758,
+        "candidate_answered_mean": -0.954175
+       }
+      },
+      "lossy": {
+       "incumbent": -0.921319,
+       "candidate": -0.9431
+      }
+     },
+     "all_outputs_verified": false,
+     "passes_gate": false,
+     "errors": {
+      "late": {
+       "incumbent": {
+        "wrong": 2,
+        "n": 120,
+        "rate": 0.016667,
+        "upper_95": 0.051534
+       },
+       "candidate": {
+        "wrong": 1,
+        "n": 120,
+        "rate": 0.008333,
+        "upper_95": 0.038921
+       }
+      },
+      "lossy": {
+       "incumbent": {
+        "wrong": 0,
+        "n": 120,
+        "rate": 0.0,
+        "upper_95": 0.024655
+       },
+       "candidate": {
+        "wrong": 0,
+        "n": 120,
+        "rate": 0.0,
+        "upper_95": 0.024655
+       }
+      }
+     }
+    }
+   },
+   "fixed_protocol_retain": [
+    {
+     "n": 120,
+     "retain_rate_alpha": 0.0,
+     "retain_rate_programme_7": 0.0
+    },
+    {
+     "n": 240,
+     "retain_rate_alpha": 0.0,
+     "retain_rate_programme_7": 0.0
+    },
+    {
+     "n": 360,
+     "retain_rate_alpha": 0.0,
+     "retain_rate_programme_7": 0.0
+    },
+    {
+     "n": 480,
+     "retain_rate_alpha": 0.0,
+     "retain_rate_programme_7": 0.0
+    }
+   ]
+  },
+  {
+   "label": "informed:more-repeats (repeats 8, retract 5)",
+   "informed_by_prior_observations": true,
+   "id": "cfg-0cdf994c848e",
+   "config": {
+    "expiry_waves": 2,
+    "repeats": 8,
+    "retract_repeats": 5,
+    "wave_period": 8
+   },
+   "pool": {
+    "mean_loss": -0.948781,
+    "wrong": 0,
+    "abstain": 0,
+    "n": 640,
+    "mean_loss_without_wrong": -0.948781,
+    "errors": {
+     "wrong": 0,
+     "n": 640,
+     "rate": 0.0,
+     "upper_95": 0.00467
+    },
+    "vs_incumbent": {
+     "wins": 103,
+     "losses": 537,
+     "ties": 0,
+     "sign_test_p_one_sided": 1.0
+    },
+    "vs_baselines": {
+     "no_repair": {
+      "wins": 640,
+      "losses": 0,
+      "ties": 0,
+      "sign_test_p_one_sided": 0.0
+     },
+     "replanner": {
+      "wins": 173,
+      "losses": 467,
+      "ties": 0,
+      "sign_test_p_one_sided": 1.0
+     }
+    },
+    "vs_replanner_by_controller": {
+     "reliable_controller": {
+      "wins": 0,
+      "losses": 320,
+      "ties": 0,
+      "sign_test_p_one_sided": 1.0
+     },
+     "unreliable_controller": {
+      "wins": 173,
+      "losses": 147,
+      "ties": 0,
+      "sign_test_p_one_sided": 0.081073
+     }
+    },
+    "resampled": [
+     {
+      "n": 120,
+      "draws": 2000,
+      "retain_rate_alpha": 0.0,
+      "retain_rate_programme_7": 0.0
+     },
+     {
+      "n": 240,
+      "draws": 2000,
+      "retain_rate_alpha": 0.0,
+      "retain_rate_programme_7": 0.0
+     },
+     {
+      "n": 360,
+      "draws": 2000,
+      "retain_rate_alpha": 0.0,
+      "retain_rate_programme_7": 0.0
+     },
+     {
+      "n": 480,
+      "draws": 2000,
+      "retain_rate_alpha": 0.0,
+      "retain_rate_programme_7": 0.0
+     }
+    ]
+   },
+   "gate": {
+    "T1": {
+     "adversarial": {
+      "late": {
+       "incumbent": Infinity,
+       "candidate": Infinity,
+       "wrong": {
+        "incumbent": 2,
+        "candidate": 4,
+        "both_answered": 114,
+        "incumbent_answered_mean": -0.950521,
+        "candidate_answered_mean": -0.943716
+       }
+      },
+      "lossy": {
+       "incumbent": -0.926462,
+       "candidate": -0.911245
+      }
+     },
+     "all_outputs_verified": false,
+     "passes_gate": false,
+     "errors": {
+      "late": {
+       "incumbent": {
+        "wrong": 2,
+        "n": 120,
+        "rate": 0.016667,
+        "upper_95": 0.051534
+       },
+       "candidate": {
+        "wrong": 4,
+        "n": 120,
+        "rate": 0.033333,
+        "upper_95": 0.074653
+       }
+      },
+      "lossy": {
+       "incumbent": {
+        "wrong": 0,
+        "n": 120,
+        "rate": 0.0,
+        "upper_95": 0.024655
+       },
+       "candidate": {
+        "wrong": 0,
+        "n": 120,
+        "rate": 0.0,
+        "upper_95": 0.024655
+       }
+      }
+     }
+    },
+    "T2": {
+     "adversarial": {
+      "late": {
+       "incumbent": Infinity,
+       "candidate": -0.941818,
+       "wrong": {
+        "incumbent": 1,
+        "candidate": 0,
+        "both_answered": 119,
+        "incumbent_answered_mean": -0.949188,
+        "candidate_answered_mean": -0.943088
+       }
+      },
+      "lossy": {
+       "incumbent": -0.927182,
+       "candidate": -0.911045
+      }
+     },
+     "all_outputs_verified": true,
+     "passes_gate": true,
+     "errors": {
+      "late": {
+       "incumbent": {
+        "wrong": 1,
+        "n": 120,
+        "rate": 0.008333,
+        "upper_95": 0.038921
+       },
+       "candidate": {
+        "wrong": 0,
+        "n": 120,
+        "rate": 0.0,
+        "upper_95": 0.024655
+       }
+      },
+      "lossy": {
+       "incumbent": {
+        "wrong": 0,
+        "n": 120,
+        "rate": 0.0,
+        "upper_95": 0.024655
+       },
+       "candidate": {
+        "wrong": 0,
+        "n": 120,
+        "rate": 0.0,
+        "upper_95": 0.024655
+       }
+      }
+     }
+    },
+    "T3": {
+     "adversarial": {
+      "late": {
+       "incumbent": Infinity,
+       "candidate": Infinity,
+       "wrong": {
+        "incumbent": 2,
+        "candidate": 3,
+        "both_answered": 117,
+        "incumbent_answered_mean": -0.947723,
+        "candidate_answered_mean": -0.948699
+       }
+      },
+      "lossy": {
+       "incumbent": -0.921319,
+       "candidate": -0.910344
+      }
+     },
+     "all_outputs_verified": false,
+     "passes_gate": false,
+     "errors": {
+      "late": {
+       "incumbent": {
+        "wrong": 2,
+        "n": 120,
+        "rate": 0.016667,
+        "upper_95": 0.051534
+       },
+       "candidate": {
+        "wrong": 3,
+        "n": 120,
+        "rate": 0.025,
+        "upper_95": 0.063344
+       }
+      },
+      "lossy": {
+       "incumbent": {
+        "wrong": 0,
+        "n": 120,
+        "rate": 0.0,
+        "upper_95": 0.024655
+       },
+       "candidate": {
+        "wrong": 0,
+        "n": 120,
+        "rate": 0.0,
+        "upper_95": 0.024655
+       }
+      }
+     }
+    }
+   },
+   "fixed_protocol_retain": [
+    {
+     "n": 120,
+     "retain_rate_alpha": 0.0,
+     "retain_rate_programme_7": 0.0
+    },
+    {
+     "n": 240,
+     "retain_rate_alpha": 0.0,
+     "retain_rate_programme_7": 0.0
+    },
+    {
+     "n": 360,
+     "retain_rate_alpha": 0.0,
+     "retain_rate_programme_7": 0.0
+    },
+    {
+     "n": 480,
+     "retain_rate_alpha": 0.0,
+     "retain_rate_programme_7": 0.0
+    }
+   ]
+  }
+ ],
+ "evaluations": 7160,
+ "baseline_evaluations": 2000,
+ "seconds": 127.8
+}

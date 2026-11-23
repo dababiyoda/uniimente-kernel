@@ -1,0 +1,55 @@
+--- a/greg/evidence_strength.py
++++ b/greg/evidence_strength.py
+@@ -72,6 +72,20 @@
+     _FLIP = {ast.Eq: ast.NotEq, ast.NotEq: ast.Eq, ast.Is: ast.IsNot, ast.IsNot: ast.Is,
+              ast.In: ast.NotIn, ast.NotIn: ast.In}
+ 
++    def __init__(self, lines: set[int], target: int | None = None, constants: str = "all"):
++        super().__init__(lines, target)
++        self.constants, self._data = constants, 0
++
++    def _literal(self, node):
++        self._data += 1
++        try:
++            self.generic_visit(node)
++        finally:
++            self._data -= 1
++        return node
++
++    visit_Dict = visit_List = visit_Tuple = visit_Set = _literal
++
+     def _here(self, node) -> bool:
+         return getattr(node, "lineno", None) in self.lines
+ 
+@@ -102,6 +116,8 @@
+         if self._here(node) and isinstance(node.value, bool):
+             return self._site(node, f"line {node.lineno}: {node.value} -> {not node.value}",
+                               lambda: ast.copy_location(ast.Constant(not node.value), node))
++        if self.constants == "none" or (self.constants == "expressions" and self._data):
++            return node
+         return super().visit_Constant(node)
+ 
+ 
+@@ -116,19 +132,19 @@
+     return lines
+ 
+ 
+-def mutants(source: str, lines: set[int], limit: int = MAX_MUTANTS) -> list[tuple[str, str]]:
++def mutants(source: str, lines: set[int], limit: int = MAX_MUTANTS, constants: str = "all") -> list[tuple[str, str]]:
+     """Deterministic, evenly spread sample of single-site mutants of ``lines``; no-op mutants dropped."""
+     try:
+         original = ast.unparse(ast.parse(source)) + "\n"
+     except SyntaxError:
+         return []
+-    probe = _Adversary(lines)
++    probe = _Adversary(lines, constants=constants)
+     probe.visit(ast.parse(source))
+     total = len(probe.labels)
+     picks = range(total) if total <= limit else sorted({round(i * (total - 1) / (limit - 1)) for i in range(limit)})
+     out = []
+     for index in picks:
+-        tree = _Adversary(lines, target=index).visit(ast.parse(source))
++        tree = _Adversary(lines, target=index, constants=constants).visit(ast.parse(source))
+         text = ast.unparse(ast.fix_missing_locations(tree)) + "\n"
+         if text != original:
+             out.append((probe.labels[index], text))

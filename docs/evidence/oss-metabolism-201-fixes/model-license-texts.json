@@ -1,0 +1,982 @@
+[
+ {
+  "file": "absl_py-2.5.1.dist-info/licenses/LICENSE",
+  "declared": "Apache-2.0",
+  "class": "permissive",
+  "terms": [
+   "Apache-2.0"
+  ]
+ },
+ {
+  "file": "annotated_types-0.8.0.dist-info/licenses/LICENSE",
+  "declared": "MIT",
+  "class": "permissive",
+  "terms": [
+   "MIT"
+  ]
+ },
+ {
+  "file": "anthropic-1.17.0.dist-info/licenses/LICENSE",
+  "declared": "MIT License",
+  "class": "permissive",
+  "terms": [
+   "MIT"
+  ]
+ },
+ {
+  "file": "anyio-4.15.1.dist-info/licenses/LICENSE",
+  "declared": "MIT",
+  "class": "permissive",
+  "terms": [
+   "MIT"
+  ]
+ },
+ {
+  "file": "attrs-26.1.0.dist-info/licenses/LICENSE",
+  "declared": "MIT",
+  "class": "permissive",
+  "terms": [
+   "MIT"
+  ]
+ },
+ {
+  "file": "certifi-2026.10.23.dist-info/licenses/LICENSE",
+  "declared": "Mozilla Public License 2.0 (MPL 2.0)",
+  "class": "unclassified",
+  "terms": [
+   "license text 'This package contains a modified version of ca"
+  ]
+ },
+ {
+  "file": "cffi-2.1.1.dist-info/licenses/LICENSE",
+  "declared": "MIT-0",
+  "class": "unclassified",
+  "terms": [
+   "license text 'Except when otherwise stated (look for LICENSE"
+  ]
+ },
+ {
+  "file": "charset_normalizer-3.5.2.dist-info/licenses/LICENSE",
+  "declared": "MIT",
+  "class": "permissive",
+  "terms": [
+   "MIT"
+  ]
+ },
+ {
+  "file": "claude_agent_sdk-0.2.174.dist-info/licenses/LICENSE",
+  "declared": "MIT License",
+  "class": "permissive",
+  "terms": [
+   "MIT"
+  ]
+ },
+ {
+  "file": "click-8.5.0.dist-info/licenses/LICENSE.txt",
+  "declared": "BSD-3-Clause",
+  "class": "unclassified",
+  "terms": [
+   "license text 'Copyright 2014 Pallets'"
+  ]
+ },
+ {
+  "file": "cryptography-50.0.2.dist-info/licenses/LICENSE",
+  "declared": "Apache-2.0 OR BSD-3-Clause",
+  "class": "unclassified",
+  "terms": [
+   "license text 'This software is made available under the term"
+  ]
+ },
+ {
+  "file": "cryptography-50.0.2.dist-info/licenses/LICENSE.APACHE",
+  "declared": "Apache-2.0 OR BSD-3-Clause",
+  "class": "permissive",
+  "terms": [
+   "Apache-2.0"
+  ]
+ },
+ {
+  "file": "cryptography-50.0.2.dist-info/licenses/LICENSE.BSD",
+  "declared": "Apache-2.0 OR BSD-3-Clause",
+  "class": "unclassified",
+  "terms": [
+   "license text 'Copyright (c) Individual contributors.'"
+  ]
+ },
+ {
+  "file": "docstring_parser-0.18.0.dist-info/licenses/LICENSE.md",
+  "declared": "MIT License",
+  "class": "permissive",
+  "terms": [
+   "MIT"
+  ]
+ },
+ {
+  "file": "h11-0.16.0.dist-info/licenses/LICENSE.txt",
+  "declared": "MIT License",
+  "class": "permissive",
+  "terms": [
+   "MIT"
+  ]
+ },
+ {
+  "file": "httpcore2-2.16.0.dist-info/licenses/LICENSE.md",
+  "declared": "BSD-3-Clause",
+  "class": "unclassified",
+  "terms": [
+   "license text 'Copyright \u00a9 2026 to present Pydantic Services "
+  ]
+ },
+ {
+  "file": "httpx2-2.16.0.dist-info/licenses/LICENSE.md",
+  "declared": "BSD-3-Clause",
+  "class": "unclassified",
+  "terms": [
+   "license text 'Copyright \u00a9 2026 to present Pydantic Services "
+  ]
+ },
+ {
+  "file": "idna-3.20.dist-info/licenses/LICENSE.md",
+  "declared": "BSD-3-Clause",
+  "class": "unclassified",
+  "terms": [
+   "license text 'BSD 3-Clause License'"
+  ]
+ },
+ {
+  "file": "imageio_ffmpeg-0.6.0.dist-info/LICENSE",
+  "declared": "BSD License",
+  "class": "unclassified",
+  "terms": [
+   "license text 'BSD 2-Clause License'"
+  ]
+ },
+ {
+  "file": "immutabledict-4.3.1.dist-info/licenses/LICENSE",
+  "declared": "MIT",
+  "class": "permissive",
+  "terms": [
+   "MIT"
+  ]
+ },
+ {
+  "file": "iniconfig-2.3.1.dist-info/licenses/LICENSE",
+  "declared": "MIT",
+  "class": "permissive",
+  "terms": [
+   "MIT"
+  ]
+ },
+ {
+  "file": "jiter-0.18.0.dist-info/licenses/LICENSE",
+  "declared": "MIT",
+  "class": "permissive",
+  "terms": [
+   "MIT"
+  ]
+ },
+ {
+  "file": "jsonschema-4.26.0.dist-info/licenses/COPYING",
+  "declared": "MIT",
+  "class": "permissive",
+  "terms": [
+   "MIT"
+  ]
+ },
+ {
+  "file": "jsonschema_specifications-2025.9.1.dist-info/licenses/COPYING",
+  "declared": "MIT",
+  "class": "permissive",
+  "terms": [
+   "MIT"
+  ]
+ },
+ {
+  "file": "mcp-2.3.0.dist-info/licenses/LICENSE",
+  "declared": "MIT License",
+  "class": "permissive",
+  "terms": [
+   "MIT"
+  ]
+ },
+ {
+  "file": "mcp_types-2.3.0.dist-info/licenses/LICENSE",
+  "declared": "MIT License",
+  "class": "permissive",
+  "terms": [
+   "MIT"
+  ]
+ },
+ {
+  "file": "mpmath-1.3.0.dist-info/LICENSE",
+  "declared": "BSD License",
+  "class": "unclassified",
+  "terms": [
+   "license text 'Copyright (c) 2005-2021 Fredrik Johansson and "
+  ]
+ },
+ {
+  "file": "networkx-3.6.1.dist-info/licenses/LICENSE.txt",
+  "declared": "BSD-3-Clause",
+  "class": "unclassified",
+  "terms": [
+   "license text 'NetworkX is distributed with the 3-clause BSD "
+  ]
+ },
+ {
+  "file": "numpy-2.4.6.dist-info/licenses/LICENSE.txt",
+  "declared": "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0",
+  "class": "unclassified",
+  "terms": [
+   "license text 'Copyright (c) 2005-2025, NumPy Developers.'"
+  ]
+ },
+ {
+  "file": "numpy-2.4.6.dist-info/licenses/numpy/_core/include/numpy/libdivide/LICENSE.txt",
+  "declared": "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0",
+  "class": "unclassified",
+  "terms": [
+   "license text 'zlib License'"
+  ]
+ },
+ {
+  "file": "numpy-2.4.6.dist-info/licenses/numpy/_core/src/common/pythoncapi-compat/COPYING",
+  "declared": "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0",
+  "class": "unclassified",
+  "terms": [
+   "license text 'BSD Zero Clause License'"
+  ]
+ },
+ {
+  "file": "numpy-2.4.6.dist-info/licenses/numpy/_core/src/highway/LICENSE",
+  "declared": "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0",
+  "class": "unclassified",
+  "terms": [
+   "Apache-2.0",
+   "Apache-2.0 text with other terms beside it ('this project is"
+  ]
+ },
+ {
+  "file": "numpy-2.4.6.dist-info/licenses/numpy/_core/src/multiarray/dragon4_LICENSE.txt",
+  "declared": "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0",
+  "class": "unclassified",
+  "terms": [
+   "MIT",
+   "MIT text with other terms beside it ('dragon4.c|h h contains"
+  ]
+ },
+ {
+  "file": "numpy-2.4.6.dist-info/licenses/numpy/_core/src/npysort/x86-simd-sort/LICENSE.md",
+  "declared": "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0",
+  "class": "unclassified",
+  "terms": [
+   "license text 'BSD 3-Clause License'"
+  ]
+ },
+ {
+  "file": "numpy-2.4.6.dist-info/licenses/numpy/_core/src/umath/svml/LICENSE",
+  "declared": "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0",
+  "class": "unclassified",
+  "terms": [
+   "license text 'Copyright (c) 2005-2021, NumPy Developers.'"
+  ]
+ },
+ {
+  "file": "numpy-2.4.6.dist-info/licenses/numpy/fft/pocketfft/LICENSE.md",
+  "declared": "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0",
+  "class": "unclassified",
+  "terms": [
+   "license text 'Copyright (C) 2010-2018 Max-Planck-Society'"
+  ]
+ },
+ {
+  "file": "numpy-2.4.6.dist-info/licenses/numpy/linalg/lapack_lite/LICENSE.txt",
+  "declared": "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0",
+  "class": "unclassified",
+  "terms": [
+   "license text 'Copyright (c) 1992-2013 The University of Tenn"
+  ]
+ },
+ {
+  "file": "numpy-2.4.6.dist-info/licenses/numpy/ma/LICENSE",
+  "declared": "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0",
+  "class": "unclassified",
+  "terms": [
+   "license text '* Copyright (c) 2006, University of Georgia an"
+  ]
+ },
+ {
+  "file": "numpy-2.4.6.dist-info/licenses/numpy/random/LICENSE.md",
+  "declared": "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0",
+  "class": "unclassified",
+  "terms": [
+   "license text '**This software is dual-licensed under the The"
+  ]
+ },
+ {
+  "file": "numpy-2.4.6.dist-info/licenses/numpy/random/src/distributions/LICENSE.md",
+  "declared": "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0",
+  "class": "unclassified",
+  "terms": [
+   "MIT",
+   "MIT text with other terms beside it ('## NumPy Redistributio"
+  ]
+ },
+ {
+  "file": "numpy-2.4.6.dist-info/licenses/numpy/random/src/mt19937/LICENSE.md",
+  "declared": "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0",
+  "class": "unclassified",
+  "terms": [
+   "MIT",
+   "MIT text with other terms beside it ('# MT19937 The rk_rando"
+  ]
+ },
+ {
+  "file": "numpy-2.4.6.dist-info/licenses/numpy/random/src/pcg64/LICENSE.md",
+  "declared": "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0",
+  "class": "unclassified",
+  "terms": [
+   "MIT",
+   "MIT text with other terms beside it ('# PCG64 ## The MIT Lic"
+  ]
+ },
+ {
+  "file": "numpy-2.4.6.dist-info/licenses/numpy/random/src/philox/LICENSE.md",
+  "declared": "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0",
+  "class": "unclassified",
+  "terms": [
+   "license text '# PHILOX'"
+  ]
+ },
+ {
+  "file": "numpy-2.4.6.dist-info/licenses/numpy/random/src/sfc64/LICENSE.md",
+  "declared": "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0",
+  "class": "unclassified",
+  "terms": [
+   "MIT",
+   "MIT text with other terms beside it ('# SFC64 ## The MIT Lic"
+  ]
+ },
+ {
+  "file": "numpy-2.4.6.dist-info/licenses/numpy/random/src/splitmix64/LICENSE.md",
+  "declared": "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0",
+  "class": "unclassified",
+  "terms": [
+   "license text '# SPLITMIX64'"
+  ]
+ },
+ {
+  "file": "openai-3.40.0.dist-info/licenses/LICENSE",
+  "declared": "Apache-2.0",
+  "class": "permissive",
+  "terms": [
+   "Apache-2.0"
+  ]
+ },
+ {
+  "file": "opentelemetry_api-1.45.1.dist-info/licenses/LICENSE",
+  "declared": "Apache-2.0",
+  "class": "permissive",
+  "terms": [
+   "Apache-2.0"
+  ]
+ },
+ {
+  "file": "ortools-9.15.6755.dist-info/licenses/LICENSE",
+  "declared": "Apache Software License",
+  "class": "permissive",
+  "terms": [
+   "Apache-2.0"
+  ]
+ },
+ {
+  "file": "packaging-26.3.dist-info/licenses/LICENSE",
+  "declared": "Apache-2.0 OR BSD-2-Clause",
+  "class": "unclassified",
+  "terms": [
+   "license text 'This software is made available under the term"
+  ]
+ },
+ {
+  "file": "packaging-26.3.dist-info/licenses/LICENSE.APACHE",
+  "declared": "Apache-2.0 OR BSD-2-Clause",
+  "class": "permissive",
+  "terms": [
+   "Apache-2.0"
+  ]
+ },
+ {
+  "file": "packaging-26.3.dist-info/licenses/LICENSE.BSD",
+  "declared": "Apache-2.0 OR BSD-2-Clause",
+  "class": "unclassified",
+  "terms": [
+   "license text 'Copyright (c) Donald Stufft and individual con"
+  ]
+ },
+ {
+  "file": "pandas-3.1.0.dist-info/licenses/LICENSE",
+  "declared": "BSD-3-Clause",
+  "class": "unclassified",
+  "terms": [
+   "license text 'BSD 3-Clause License'"
+  ]
+ },
+ {
+  "file": "pandas-3.1.0.dist-info/licenses/LICENSES/BOTTLENECK_LICENCE",
+  "declared": "BSD-3-Clause",
+  "class": "unclassified",
+  "terms": [
+   "license text 'Copyright (c) 2010-2019 Keith Goodman'"
+  ]
+ },
+ {
+  "file": "pandas-3.1.0.dist-info/licenses/LICENSES/DATEUTIL_LICENSE",
+  "declared": "BSD-3-Clause",
+  "class": "unclassified",
+  "terms": [
+   "license text 'Copyright 2017- Paul Ganssle <paul@ganssle.io>"
+  ]
+ },
+ {
+  "file": "pandas-3.1.0.dist-info/licenses/LICENSES/HAVEN_LICENSE",
+  "declared": "BSD-3-Clause",
+  "class": "unclassified",
+  "terms": [
+   "MIT",
+   "MIT text with other terms beside it ('# MIT License')"
+  ]
+ },
+ {
+  "file": "pandas-3.1.0.dist-info/licenses/LICENSES/KLIB_LICENSE",
+  "declared": "BSD-3-Clause",
+  "class": "permissive",
+  "terms": [
+   "MIT"
+  ]
+ },
+ {
+  "file": "pandas-3.1.0.dist-info/licenses/LICENSES/MUSL_LICENSE",
+  "declared": "BSD-3-Clause",
+  "class": "unclassified",
+  "terms": [
+   "MIT",
+   "MIT text with other terms beside it ('musl as a whole is lic"
+  ]
+ },
+ {
+  "file": "pandas-3.1.0.dist-info/licenses/LICENSES/NUMPY_LICENSE",
+  "declared": "BSD-3-Clause",
+  "class": "unclassified",
+  "terms": [
+   "license text 'Copyright (c) 2005-2023, NumPy Developers.'"
+  ]
+ },
+ {
+  "file": "pandas-3.1.0.dist-info/licenses/LICENSES/PACKAGING_LICENSE",
+  "declared": "BSD-3-Clause",
+  "class": "unclassified",
+  "terms": [
+   "Apache-2.0",
+   "Apache-2.0 text with other terms beside it ('copyright (c) d"
+  ]
+ },
+ {
+  "file": "pandas-3.1.0.dist-info/licenses/LICENSES/PSF_LICENSE",
+  "declared": "BSD-3-Clause",
+  "class": "unclassified",
+  "terms": [
+   "license text 'A. HISTORY OF THE SOFTWARE'"
+  ]
+ },
+ {
+  "file": "pandas-3.1.0.dist-info/licenses/LICENSES/PYPERCLIP_LICENSE",
+  "declared": "BSD-3-Clause",
+  "class": "unclassified",
+  "terms": [
+   "license text 'Copyright (c) 2014, Al Sweigart'"
+  ]
+ },
+ {
+  "file": "pandas-3.1.0.dist-info/licenses/LICENSES/PYUPGRADE_LICENSE",
+  "declared": "BSD-3-Clause",
+  "class": "permissive",
+  "terms": [
+   "MIT"
+  ]
+ },
+ {
+  "file": "pandas-3.1.0.dist-info/licenses/LICENSES/SAS7BDAT_LICENSE",
+  "declared": "BSD-3-Clause",
+  "class": "permissive",
+  "terms": [
+   "MIT"
+  ]
+ },
+ {
+  "file": "pandas-3.1.0.dist-info/licenses/LICENSES/STATSBASE_JL_LICENSE",
+  "declared": "BSD-3-Clause",
+  "class": "unclassified",
+  "terms": [
+   "license text 'StatsBase.jl is licensed under the MIT License"
+  ]
+ },
+ {
+  "file": "pandas-3.1.0.dist-info/licenses/LICENSES/ULTRAJSON_LICENSE",
+  "declared": "BSD-3-Clause",
+  "class": "unclassified",
+  "terms": [
+   "license text 'Developed by ESN, an Electronic Arts Inc. stud"
+  ]
+ },
+ {
+  "file": "pandas-3.1.0.dist-info/licenses/LICENSES/XSIMD_LICENSE",
+  "declared": "BSD-3-Clause",
+  "class": "unclassified",
+  "terms": [
+   "license text 'Copyright (c) 2016, Johan Mabille, Sylvain Cor"
+  ]
+ },
+ {
+  "file": "pandas-3.1.0.dist-info/licenses/subprojects/fast_float-8.2.10/LICENSE-APACHE",
+  "declared": "BSD-3-Clause",
+  "class": "permissive",
+  "terms": [
+   "Apache-2.0"
+  ]
+ },
+ {
+  "file": "pandas-3.1.0.dist-info/licenses/subprojects/fast_float-8.2.10/LICENSE-BOOST",
+  "declared": "BSD-3-Clause",
+  "class": "unclassified",
+  "terms": [
+   "license text 'Boost Software License - Version 1.0 - August "
+  ]
+ },
+ {
+  "file": "pandas-3.1.0.dist-info/licenses/subprojects/fast_float-8.2.10/LICENSE-MIT",
+  "declared": "BSD-3-Clause",
+  "class": "permissive",
+  "terms": [
+   "MIT"
+  ]
+ },
+ {
+  "file": "pillow-12.3.0.dist-info/licenses/LICENSE",
+  "declared": "MIT-CMU",
+  "class": "unclassified",
+  "terms": [
+   "Apache-2.0",
+   "Apache-2.0 text with other terms beside it ('the python imag"
+  ]
+ },
+ {
+  "file": "pluggy-1.7.0.dist-info/licenses/LICENSE",
+  "declared": "MIT License",
+  "class": "permissive",
+  "terms": [
+   "MIT"
+  ]
+ },
+ {
+  "file": "protobuf-6.33.5.dist-info/LICENSE",
+  "declared": "3-Clause BSD License",
+  "class": "unclassified",
+  "terms": [
+   "license text 'Copyright 2008 Google Inc.  All rights reserve"
+  ]
+ },
+ {
+  "file": "pycparser-3.12.dist-info/licenses/LICENSE",
+  "declared": "BSD-3-Clause",
+  "class": "unclassified",
+  "terms": [
+   "license text 'pycparser -- A C parser in Python'"
+  ]
+ },
+ {
+  "file": "pydantic-2.14.1.dist-info/licenses/LICENSE",
+  "declared": "MIT",
+  "class": "permissive",
+  "terms": [
+   "MIT"
+  ]
+ },
+ {
+  "file": "pydantic_core-2.50.1.dist-info/licenses/LICENSE",
+  "declared": "MIT",
+  "class": "permissive",
+  "terms": [
+   "MIT"
+  ]
+ },
+ {
+  "file": "pygments-2.21.0.dist-info/licenses/LICENSE",
+  "declared": "BSD-2-Clause",
+  "class": "unclassified",
+  "terms": [
+   "license text 'Copyright (c) 2006-2022 by the respective auth"
+  ]
+ },
+ {
+  "file": "pyjwt-2.15.1.dist-info/licenses/LICENSE",
+  "declared": "MIT",
+  "class": "permissive",
+  "terms": [
+   "MIT"
+  ]
+ },
+ {
+  "file": "pytest-9.2.0.dist-info/licenses/LICENSE",
+  "declared": "MIT",
+  "class": "permissive",
+  "terms": [
+   "MIT"
+  ]
+ },
+ {
+  "file": "python_dateutil-3.0.0.dist-info/licenses/LICENSE",
+  "declared": "BSD License; Apache Software License",
+  "class": "unclassified",
+  "terms": [
+   "license text 'Copyright 2017- Paul Ganssle <paul@ganssle.io>"
+  ]
+ },
+ {
+  "file": "python_multipart-0.0.32.dist-info/licenses/LICENSE.txt",
+  "declared": "Apache-2.0",
+  "class": "permissive",
+  "terms": [
+   "Apache-2.0"
+  ]
+ },
+ {
+  "file": "pyyaml-6.0.3.dist-info/licenses/LICENSE",
+  "declared": "MIT License",
+  "class": "permissive",
+  "terms": [
+   "MIT"
+  ]
+ },
+ {
+  "file": "referencing-0.37.0.dist-info/licenses/COPYING",
+  "declared": "MIT",
+  "class": "permissive",
+  "terms": [
+   "MIT"
+  ]
+ },
+ {
+  "file": "requests-2.34.2.dist-info/licenses/LICENSE",
+  "declared": "Apache Software License",
+  "class": "unclassified",
+  "terms": [
+   "license text 'Apache License'"
+  ]
+ },
+ {
+  "file": "rfc3161_client-1.0.9.dist-info/licenses/LICENSE",
+  "declared": "Apache Software License",
+  "class": "permissive",
+  "terms": [
+   "Apache-2.0"
+  ]
+ },
+ {
+  "file": "rfc3339_validator-0.1.4.dist-info/LICENSE",
+  "declared": "MIT License",
+  "class": "permissive",
+  "terms": [
+   "MIT"
+  ]
+ },
+ {
+  "file": "rpds_py-2026.9.1.dist-info/licenses/LICENSE",
+  "declared": "MIT",
+  "class": "permissive",
+  "terms": [
+   "MIT"
+  ]
+ },
+ {
+  "file": "scipy-1.17.1.dist-info/LICENSE.txt",
+  "declared": "BSD License",
+  "class": "unclassified",
+  "terms": [
+   "license text 'Copyright (c) 2001-2002 Enthought, Inc. 2003, "
+  ]
+ },
+ {
+  "file": "six-1.17.0.dist-info/LICENSE",
+  "declared": "MIT License",
+  "class": "permissive",
+  "terms": [
+   "MIT"
+  ]
+ },
+ {
+  "file": "sniffio-1.3.1.dist-info/LICENSE",
+  "declared": "MIT License; Apache Software License",
+  "class": "unclassified",
+  "terms": [
+   "license text 'This software is made available under the term"
+  ]
+ },
+ {
+  "file": "sniffio-1.3.1.dist-info/LICENSE.APACHE2",
+  "declared": "MIT License; Apache Software License",
+  "class": "permissive",
+  "terms": [
+   "Apache-2.0"
+  ]
+ },
+ {
+  "file": "sniffio-1.3.1.dist-info/LICENSE.MIT",
+  "declared": "MIT License; Apache Software License",
+  "class": "permissive",
+  "terms": [
+   "MIT"
+  ]
+ },
+ {
+  "file": "sse_starlette-3.6.0.dist-info/licenses/LICENSE",
+  "declared": "BSD-3-Clause",
+  "class": "unclassified",
+  "terms": [
+   "license text 'Copyright \u00a9 2020, [sysid](https://sysid.github"
+  ]
+ },
+ {
+  "file": "starlette-1.10.0.dist-info/licenses/LICENSE.md",
+  "declared": "BSD-3-Clause",
+  "class": "unclassified",
+  "terms": [
+   "license text 'Copyright \u00a9 2018, [Encode OSS Ltd](https://www"
+  ]
+ },
+ {
+  "file": "stripe-16.0.1.dist-info/licenses/LICENSE",
+  "declared": "MIT License",
+  "class": "permissive",
+  "terms": [
+   "MIT"
+  ]
+ },
+ {
+  "file": "supervisor-4.3.0.dist-info/LICENSES.txt",
+  "declared": "BSD-derived (http://www.repoze.org/LICEN",
+  "class": "not_open_source",
+  "terms": [
+   "license text mentions 'non-commercial'"
+  ]
+ },
+ {
+  "file": "sympy-1.14.0.dist-info/licenses/LICENSE",
+  "declared": "BSD License",
+  "class": "unclassified",
+  "terms": [
+   "MIT",
+   "MIT text with other terms beside it ('Redistribution and use"
+  ]
+ },
+ {
+  "file": "truststore-0.10.5.dist-info/licenses/LICENSE",
+  "declared": "MIT",
+  "class": "permissive",
+  "terms": [
+   "MIT"
+  ]
+ },
+ {
+  "file": "typing_extensions-4.16.0.dist-info/licenses/LICENSE",
+  "declared": "PSF-2.0",
+  "class": "unclassified",
+  "terms": [
+   "license text 'A. HISTORY OF THE SOFTWARE'"
+  ]
+ },
+ {
+  "file": "typing_inspection-0.4.4.dist-info/licenses/LICENSE",
+  "declared": "MIT",
+  "class": "permissive",
+  "terms": [
+   "MIT"
+  ]
+ },
+ {
+  "file": "tzdata-2026.6.dist-info/licenses/LICENSE",
+  "declared": "Apache-2.0",
+  "class": "unclassified",
+  "terms": [
+   "license text 'Apache Software License 2.0'"
+  ]
+ },
+ {
+  "file": "tzdata-2026.6.dist-info/licenses/licenses/LICENSE_APACHE",
+  "declared": "Apache-2.0",
+  "class": "permissive",
+  "terms": [
+   "Apache-2.0"
+  ]
+ },
+ {
+  "file": "urllib3-2.8.0.dist-info/licenses/LICENSE.txt",
+  "declared": "MIT",
+  "class": "permissive",
+  "terms": [
+   "MIT"
+  ]
+ },
+ {
+  "file": "uvicorn-0.54.0.dist-info/licenses/LICENSE.md",
+  "declared": "BSD-3-Clause",
+  "class": "unclassified",
+  "terms": [
+   "license text 'Copyright \u00a9 2017-present, [Encode OSS Ltd](htt"
+  ]
+ },
+ {
+  "file": "wasmtime-49.0.0.dist-info/licenses/LICENSE",
+  "declared": "Apache-2.0 WITH LLVM-exception",
+  "class": "unclassified",
+  "terms": [
+   "Apache-2.0",
+   "Apache-2.0 text with other terms beside it ('appendix: how t"
+  ]
+ },
+ {
+  "file": "/usr/share/common-licenses/Apache-2.0",
+  "declared": "Apache-2.0",
+  "class": "permissive",
+  "terms": [
+   "Apache-2.0"
+  ]
+ },
+ {
+  "file": "/usr/share/common-licenses/Artistic",
+  "declared": "Artistic",
+  "class": "unclassified",
+  "terms": [
+   "license text 'The \"Artistic License\"'"
+  ]
+ },
+ {
+  "file": "/usr/share/common-licenses/BSD",
+  "declared": "BSD",
+  "class": "unclassified",
+  "terms": [
+   "license text 'Copyright (c) The Regents of the University of"
+  ]
+ },
+ {
+  "file": "/usr/share/common-licenses/CC0-1.0",
+  "declared": "CC0-1.0",
+  "class": "unclassified",
+  "terms": [
+   "license text 'Creative Commons Legal Code'"
+  ]
+ },
+ {
+  "file": "/usr/share/common-licenses/GFDL",
+  "declared": "GFDL",
+  "class": "unclassified",
+  "terms": [
+   "license text 'GNU Free Documentation License'"
+  ]
+ },
+ {
+  "file": "/usr/share/common-licenses/GFDL-1.2",
+  "declared": "GFDL-1.2",
+  "class": "unclassified",
+  "terms": [
+   "license text 'GNU Free Documentation License'"
+  ]
+ },
+ {
+  "file": "/usr/share/common-licenses/GFDL-1.3",
+  "declared": "GFDL-1.3",
+  "class": "unclassified",
+  "terms": [
+   "license text 'GNU Free Documentation License'"
+  ]
+ },
+ {
+  "file": "/usr/share/common-licenses/GPL",
+  "declared": "GPL",
+  "class": "unclassified",
+  "terms": [
+   "license text 'GNU GENERAL PUBLIC LICENSE'"
+  ]
+ },
+ {
+  "file": "/usr/share/common-licenses/GPL-1",
+  "declared": "GPL-1",
+  "class": "unclassified",
+  "terms": [
+   "license text 'GNU GENERAL PUBLIC LICENSE'"
+  ]
+ },
+ {
+  "file": "/usr/share/common-licenses/GPL-2",
+  "declared": "GPL-2",
+  "class": "unclassified",
+  "terms": [
+   "license text 'GNU GENERAL PUBLIC LICENSE'"
+  ]
+ },
+ {
+  "file": "/usr/share/common-licenses/GPL-3",
+  "declared": "GPL-3",
+  "class": "unclassified",
+  "terms": [
+   "license text 'GNU GENERAL PUBLIC LICENSE'"
+  ]
+ },
+ {
+  "file": "/usr/share/common-licenses/LGPL",
+  "declared": "LGPL",
+  "class": "unclassified",
+  "terms": [
+   "license text 'GNU LESSER GENERAL PUBLIC LICENSE'"
+  ]
+ },
+ {
+  "file": "/usr/share/common-licenses/LGPL-2",
+  "declared": "LGPL-2",
+  "class": "unclassified",
+  "terms": [
+   "license text 'GNU LIBRARY GENERAL PUBLIC LICENSE'"
+  ]
+ },
+ {
+  "file": "/usr/share/common-licenses/LGPL-2.1",
+  "declared": "LGPL-2.1",
+  "class": "unclassified",
+  "terms": [
+   "license text 'GNU LESSER GENERAL PUBLIC LICENSE'"
+  ]
+ },
+ {
+  "file": "/usr/share/common-licenses/LGPL-3",
+  "declared": "LGPL-3",
+  "class": "unclassified",
+  "terms": [
+   "license text 'GNU LESSER GENERAL PUBLIC LICENSE'"
+  ]
+ },
+ {
+  "file": "/usr/share/common-licenses/MPL-1.1",
+  "declared": "MPL-1.1",
+  "class": "unclassified",
+  "terms": [
+   "license text 'MOZILLA PUBLIC LICENSE'"
+  ]
+ },
+ {
+  "file": "/usr/share/common-licenses/MPL-2.0",
+  "declared": "MPL-2.0",
+  "class": "unclassified",
+  "terms": [
+   "license text 'Mozilla Public License Version 2.0'"
+  ]
+ }
+]

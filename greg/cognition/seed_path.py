@@ -186,6 +186,21 @@ def solve(params, ctx):
     return r
 
 
+
+RAN_OUTCOMES = ('ANSWERED_WITHIN_SCOPE', 'CONDITIONAL_RESULT')
+
+
+def claim_ran(claim) -> bool:
+    """A claim ran when its method answered (in scope or conditionally) and its verification is valid."""
+    return claim.get('outcome') in RAN_OUTCOMES and bool((claim.get('verification') or {}).get('valid'))
+
+
+def _method_ref(claim, receipt) -> dict:
+    return {'method': claim['method'], 'geometry': claim['geometry'],
+            'native_version': (claim.get('result') or {}).get('version'),
+            'model_digest': (claim.get('result') or {}).get('model_digest'),
+            'verifier_digest': receipt.payload['verifier_digest']}
+
 def settle(params, ctx):
     """Append a signed, attributable observation. A declaration is never independent evidence."""
     if ctx.journal is None or not ctx.authority_ref or not ctx.grant_id:
@@ -214,11 +229,11 @@ def settle(params, ctx):
     outcome = {**params, 'authority_ref': ctx.authority_ref, 'authority_created': False,
                'score_status': 'reported assessment; not authenticated performance',
                'verification_scope': 'computational integrity only' if params['tier'] == 'computation_verified' else 'reported observation',
-               'methods': [{'method': c['method'], 'geometry': c['geometry'],
-                    'native_version': (c.get('result') or {}).get('version'),
-                    'model_digest': (c.get('result') or {}).get('model_digest'),
-                    'verifier_digest': receipt.payload['verifier_digest']}
-                    for c in receipt.payload['claims']],
+               # 0.2.2 (verified 2026-10-21): only a claim that ran and was verified is credited; the others
+               # are listed, never silently dropped and never counted as an observation.
+               'methods': [_method_ref(c, receipt) for c in receipt.payload['claims'] if claim_ran(c)],
+               'unexecuted_methods': [_method_ref(c, receipt) for c in receipt.payload['claims']
+                                      if not claim_ran(c)],
                'attribution': 'reported contribution, not proven causal credit'}
     retained = [e.payload for e in ctx.journal.replay('cognition.outcome')]
     prior = next((o for o in retained if o['outcome_id'] == params['outcome_id']), None)

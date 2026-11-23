@@ -16,7 +16,7 @@ edits the reviewed record. It becomes, explicitly and traceably:
 """
 from __future__ import annotations
 
-from greg import anchor, asks, sop
+from greg import anchor, asks, compounding, sop
 from greg.journal import Journal, iso, utcnow
 from provenance.ledger import sha256_json
 
@@ -116,6 +116,9 @@ def morning_report(journal: Journal, engine=None, *, now=None, heartbeat: dict |
         "q9_learned": {"capabilities_acquired": by("deficit.resolved"), "sops_proposed": by("sop.proposed"),
                        "sops_awaiting_ratification": sop.awaiting_ratification(journal),
                        "sops_compounding": sop.trend(journal)["compounding"],
+                       # a later, different mission that used a capability an earlier one formed, and what that
+                       # earlier acquisition cost which the later mission did not pay (greg/compounding.py)
+                       "capabilities_reused": compounding.retained_reuse(journal)["reuses"],
                        "critiques_applied": [c["critique_id"] for c in critiques]},
         "q10_retain": sorted({a["capability"] for a in done if a.get("capability")}),
         "q11_change": [{"regression_id": r["regression_id"], "description": r["description"]} for r in regressions],
@@ -150,6 +153,8 @@ def morning_report(journal: Journal, engine=None, *, now=None, heartbeat: dict |
     report["learning"] = improvement.report(journal, journal.ledger)   # kept, rejected, reverted, expired
     from greg import goal_gravity          # persistent goals: what woke, what was asked, what is stopped
     report["goal_gravity"] = goal_gravity.morning_section(journal)
+    from greg import blockers               # section 29: each open blocker, typed (what lifts it, who must act)
+    report["blockers"] = blockers.section(journal, engine=engine)
     report["report_digest"] = sha256_json(report)
     return report
 

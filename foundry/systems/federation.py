@@ -42,6 +42,7 @@ from pathlib import Path
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
+from provenance.digests import compact_json_bytes as _canon
 
 CONTEXT = ["https://www.w3.org/ns/activitystreams", "https://w3id.org/security/v1"]
 AS_TYPE = "application/activity+json"
@@ -51,10 +52,6 @@ DELIVERY_ATTEMPTS = 3
 
 class FederationError(RuntimeError):
     pass
-
-
-def _canon(v) -> bytes:
-    return json.dumps(v, sort_keys=True, separators=(",", ":")).encode()
 
 
 def _t(s: str) -> datetime:

@@ -1,0 +1,272 @@
+{
+ "probabilistic": [
+  "DEFAULT_FOR_GEOMETRY",
+  {
+   "wins": 26,
+   "losses": 10,
+   "p_better": 0.005665,
+   "p_worse": 0.998033
+  },
+  {
+   "wins": 24,
+   "losses": 12,
+   "p_better": 0.032623,
+   "p_worse": 0.985592
+  }
+ ],
+ "control": [
+  "DEFAULT_FOR_GEOMETRY",
+  {
+   "wins": 39,
+   "losses": 1,
+   "p_better": 0.0,
+   "p_worse": 1.0
+  },
+  {
+   "wins": 40,
+   "losses": 0,
+   "p_better": 0.0,
+   "p_worse": 1.0
+  }
+ ],
+ "micro": [
+  "DEFAULT_FOR_GEOMETRY",
+  {
+   "wins": 36,
+   "losses": 4,
+   "p_better": 0.0,
+   "p_worse": 1.0
+  },
+  null
+ ],
+ "pattern": [
+  "REJECTED",
+  {
+   "wins": 7,
+   "losses": 22,
+   "p_better": 0.998842,
+   "p_worse": 0.004065
+  },
+  {
+   "wins": 0,
+   "losses": 23,
+   "p_better": 1.0,
+   "p_worse": 0.0
+  }
+ ],
+ "collective": [
+  "EXPERIMENTAL",
+  {
+   "wins": 14,
+   "losses": 8,
+   "p_better": 0.143139,
+   "p_worse": 0.9331
+  },
+  {
+   "wins": 5,
+   "losses": 10,
+   "p_better": 0.940765,
+   "p_worse": 0.150879
+  }
+ ],
+ "evolutionary": [
+  "REJECTED",
+  {
+   "wins": 0,
+   "losses": 40,
+   "p_better": 1.0,
+   "p_worse": 0.0
+  },
+  null
+ ],
+ "simulation": [
+  "REJECTED",
+  {
+   "wins": 0,
+   "losses": 40,
+   "p_better": 1.0,
+   "p_worse": 0.0
+  },
+  null
+ ],
+ "sequential": [
+  "DEFAULT_FOR_GEOMETRY",
+  {
+   "wins": 13,
+   "losses": 0,
+   "p_better": 0.000122,
+   "p_worse": 1.0
+  },
+  null
+ ],
+ "information": [
+  "DEFAULT_FOR_GEOMETRY",
+  {
+   "wins": 24,
+   "losses": 0,
+   "p_better": 0.0,
+   "p_worse": 1.0
+  },
+  {
+   "wins": 16,
+   "losses": 0,
+   "p_better": 1.5e-05,
+   "p_worse": 1.0
+  }
+ ],
+ "game": [
+  "DEFAULT_FOR_GEOMETRY",
+  {
+   "wins": 40,
+   "losses": 0,
+   "p_better": 0.0,
+   "p_worse": 1.0
+  },
+  {
+   "wins": 31,
+   "losses": 0,
+   "p_better": 0.0,
+   "p_worse": 1.0
+  }
+ ],
+ "graph": [
+  "EXPERIMENTAL",
+  {
+   "wins": 4,
+   "losses": 0,
+   "p_better": 0.0625,
+   "p_worse": 1.0
+  },
+  null
+ ],
+ "exact": [
+  "DEFAULT_FOR_GEOMETRY",
+  {
+   "wins": 40,
+   "losses": 0,
+   "p_better": 0.0,
+   "p_worse": 1.0
+  },
+  null
+ ],
+ "robust_pattern": [
+  "DEFAULT_FOR_GEOMETRY",
+  {
+   "wins": 14,
+   "losses": 5,
+   "p_better": 0.031784,
+   "p_worse": 0.990395
+  },
+  {
+   "wins": 4,
+   "losses": 7,
+   "p_better": 0.886719,
+   "p_worse": 0.274414
+  }
+ ],
+ "crowd": [
+  "DEFAULT_FOR_GEOMETRY",
+  {
+   "wins": 26,
+   "losses": 10,
+   "p_better": 0.005665,
+   "p_worse": 0.998033
+  },
+  {
+   "wins": 14,
+   "losses": 21,
+   "p_better": 0.912267,
+   "p_worse": 0.155252
+  }
+ ],
+ "swarm": [
+  "DEFAULT_FOR_GEOMETRY",
+  {
+   "wins": 37,
+   "losses": 3,
+   "p_better": 0.0,
+   "p_worse": 1.0
+  },
+  {
+   "wins": 17,
+   "losses": 21,
+   "p_better": 0.791154,
+   "p_worse": 0.313551
+  }
+ ],
+ "blackbox": [
+  "SUPERSEDED",
+  {
+   "wins": 38,
+   "losses": 2,
+   "p_better": 0.0,
+   "p_worse": 1.0
+  },
+  {
+   "wins": 11,
+   "losses": 23,
+   "p_better": 0.987847,
+   "p_worse": 0.028806
+  }
+ ],
+ "search": [
+  "ALIAS",
+  null,
+  null
+ ],
+ "estimation": [
+  "SUPERSEDED_BY_CANONICAL_ORGAN",
+  null,
+  null
+ ],
+ "formal": [
+  "SUPERSEDED_BY_CANONICAL_ORGAN",
+  null,
+  null
+ ],
+ "optimization": [
+  "SUPERSEDED_BY_CANONICAL_ORGAN",
+  null,
+  null
+ ],
+ "causal": [
+  "NOT_BENCHMARKED",
+  null,
+  null
+ ],
+ "semantic": [
+  "NOT_RUN",
+  null,
+  null
+ ],
+ "human": [
+  "ROUTE_ONLY",
+  null,
+  null
+ ],
+ "evidence": [
+  "NOT_BENCHMARKED",
+  null,
+  null
+ ],
+ "protection": [
+  "NOT_BENCHMARKED",
+  null,
+  null
+ ],
+ "crowd_sparse": [
+  "EXPERIMENTAL",
+  {
+   "wins": 24,
+   "losses": 15,
+   "p_better": 0.099795,
+   "p_worse": 0.945935
+  },
+  {
+   "wins": 12,
+   "losses": 27,
+   "p_better": 0.995262,
+   "p_worse": 0.011851
+  }
+ ]
+}

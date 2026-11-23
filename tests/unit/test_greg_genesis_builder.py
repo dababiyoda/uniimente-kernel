@@ -317,7 +317,10 @@ def test_a_candidate_that_loops_is_judged_failed_by_its_cpu_limit_not_deferred_a
     loop = "def run(text):\n    while True:\n        pass\n"
     path = tmp_path / "candidate.py"
     path.write_text(loop)
-    passed, report = builders.verify(path, CONTRACT["examples"])
+    # The harness's CPU limit (8 s soft) must judge the loop, not the wall clock. At the default 10 s wall budget a
+    # loaded runner gives the loop under 80% of a core and the wall timeout fires first (CI job 9 on d52b09d7): the
+    # candidate is still failed, but by the other path. A wide wall budget keeps this test on the CPU limit.
+    passed, report = builders.verify(path, CONTRACT["examples"], timeout=120)
     assert passed is False and "exited" in report["failures"][0]["error"]
 
 

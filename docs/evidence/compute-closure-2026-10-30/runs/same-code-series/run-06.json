@@ -1,0 +1,149 @@
+{
+ "kind": "compute.benchmark",
+ "workload": {
+  "version": 1,
+  "seed": "greg-compute-benchmark/1",
+  "sha256_rounds": 200000,
+  "ledger_records": 50,
+  "spawn": "python -I -c pass"
+ },
+ "workload_digest": "sha256:0ded9793e95c102bf0e33216b63e3ddcb5ea1bb91d7b66b6510c250b03beb408",
+ "runs": 7,
+ "samples_seconds": [
+  0.443723,
+  0.613886,
+  0.461913,
+  0.42553,
+  0.365694,
+  0.45093,
+  0.422942
+ ],
+ "components_seconds": {
+  "sha256_chain": [
+   0.15289,
+   0.310466,
+   0.211815,
+   0.191522,
+   0.163686,
+   0.195355,
+   0.162787
+  ],
+  "ledger_append_verify": [
+   0.245351,
+   0.231526,
+   0.223959,
+   0.203804,
+   0.178906,
+   0.20107,
+   0.235081
+  ],
+  "process_spawn": [
+   0.045481,
+   0.071894,
+   0.026139,
+   0.030205,
+   0.023102,
+   0.054504,
+   0.025073
+  ]
+ },
+ "component_medians": {
+  "sha256_chain": 0.191522,
+  "ledger_append_verify": 0.223959,
+  "process_spawn": 0.030205
+ },
+ "median_seconds": 0.443723,
+ "iqr_seconds": 0.032186,
+ "relative_iqr": 0.072535,
+ "contention": {
+  "per_run": [
+   {
+    "cpu_wait_share": 0.0286,
+    "psi_cpu_share": 0.457,
+    "psi_io_share": 0.0296,
+    "psi_memory_share": 0.0
+   },
+   {
+    "cpu_wait_share": 0.2353,
+    "psi_cpu_share": 0.4686,
+    "psi_io_share": 0.0371,
+    "psi_memory_share": 0.0
+   },
+   {
+    "cpu_wait_share": 0.3548,
+    "psi_cpu_share": 0.4197,
+    "psi_io_share": 0.0256,
+    "psi_memory_share": 0.0
+   },
+   {
+    "cpu_wait_share": 0.2945,
+    "psi_cpu_share": 0.4616,
+    "psi_io_share": 0.0252,
+    "psi_memory_share": 0.0
+   },
+   {
+    "cpu_wait_share": 0.1531,
+    "psi_cpu_share": 0.4192,
+    "psi_io_share": 0.0578,
+    "psi_memory_share": 0.0
+   },
+   {
+    "cpu_wait_share": 0.2611,
+    "psi_cpu_share": 0.4132,
+    "psi_io_share": 0.0279,
+    "psi_memory_share": 0.0
+   },
+   {
+    "cpu_wait_share": 0.1464,
+    "psi_cpu_share": 0.4563,
+    "psi_io_share": 0.0169,
+    "psi_memory_share": 0.0
+   }
+  ],
+  "medians": {
+   "cpu_wait_share": 0.2353,
+   "psi_cpu_share": 0.4563,
+   "psi_io_share": 0.0279,
+   "psi_memory_share": 0.0
+  }
+ },
+ "deterministic": true,
+ "output_digest": "0e2d2476c228d9d42a475066a96c9dbc38c215c8e0f25036bd095b6001d086e4",
+ "host": {
+  "machine": "x86_64",
+  "system": "Linux",
+  "release": "6.18.44-fc-v185",
+  "python": "3.11.17",
+  "implementation": "CPython",
+  "cores": 4,
+  "memory_bytes": 16872808448,
+  "conditions": {
+   "load1": 5.479,
+   "psi_cpu_some_avg10": 45.52,
+   "psi_cpu_some_avg60": 35.22,
+   "psi_memory_some_avg10": 0.0,
+   "psi_memory_some_avg60": 0.0,
+   "psi_io_some_avg10": 2.29,
+   "psi_io_some_avg60": 2.17,
+   "mem_total_bytes": 16872808448,
+   "mem_available_bytes": 15388917760,
+   "mem_available_ratio": 0.9121
+  },
+  "conditions_at_end": {
+   "load1": 5.521,
+   "psi_cpu_some_avg10": 45.43,
+   "psi_cpu_some_avg60": 35.54,
+   "psi_memory_some_avg10": 0.0,
+   "psi_memory_some_avg60": 0.0,
+   "psi_io_some_avg10": 2.23,
+   "psi_io_some_avg60": 2.17,
+   "mem_total_bytes": 16872808448,
+   "mem_available_bytes": 15345967104,
+   "mem_available_ratio": 0.9095
+  }
+ },
+ "started_at": "2026-10-30T13:34:26.659538Z",
+ "finished_at": "2026-10-30T13:34:29.848063Z",
+ "network": "none",
+ "reality_status": "MEASURED_ON_THIS_HOST"
+}

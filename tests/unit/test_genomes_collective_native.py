@@ -658,9 +658,10 @@ def test_the_p8_immune_split_is_byte_identical_to_the_base_commit(monkeypatch):
     byte-identical to the one at dbc0643 (review seeds stand in for the reserved P8 seeds 7000-8059, which this test
     never generates)."""
     from greg.cognition import evolution
-    monkeypatch.setattr(evolution, "IMMUNE_TRAIN_SEEDS", P8_STAND_IN["train"])
-    monkeypatch.setattr(evolution, "IMMUNE_HELDOUT_SEEDS", P8_STAND_IN["heldout"])
-    split = evolution.immune_split()
+    # the stand-ins are outside P8's reserved range, so the named split's seed check is replaced, not the generation
+    monkeypatch.setattr(evolution, "immune_split_seeds",
+                        lambda name: (P8_STAND_IN["train"], P8_STAND_IN["heldout"], set()))
+    split = evolution.immune_split("cycle-2")
     assert _sha(split) == P8_SPLIT_AT_BASE
     train, held, _ = split
     assert {v["category"] for v in (*train.values(), *held.values())} == {"low_dim_2_3", "mid_dim_4_6"}

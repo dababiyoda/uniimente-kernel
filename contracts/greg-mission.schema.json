@@ -290,7 +290,15 @@
                 "max_bytes": {
                   "type": "integer",
                   "minimum": 1,
-                  "maximum": 65536
+                  "maximum": 1048576,
+                  "description": "at most 65536 unless by is artifact"
+                },
+                "by": {
+                  "enum": [
+                    "receipt",
+                    "artifact"
+                  ],
+                  "description": "receipt (default): the value the receipt kept; a value the receipt cut is refused. artifact: when the receipt cut the output, the whole output is read from the body's artifact store by the address the receipt recorded and re-hashed; a missing or altered artifact holds the strategy. Default max_bytes 1048576."
                 }
               }
             }

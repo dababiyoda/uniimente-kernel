@@ -1,0 +1,63 @@
+{
+ "body": "this cloud container (Ubuntu 24.04 userland, dpkg), 2026-10-23, under concurrent test load",
+ "usr_bin": {
+  "binaries": 707,
+  "P0_current_hold_known_uncleared": 0,
+  "P1_fail_closed": 442,
+  "P4c_use_context_hold": 442,
+  "catalog_p4c_held": [
+   "shasum"
+  ]
+ },
+ "catalog_requalify_ms_median_per_binary": {
+  "sha256sum": 37.89,
+  "shasum": 39.86,
+  "openssl": 36.72,
+  "wc": 41.39,
+  "pdftotext": 38.73,
+  "pdfimages": 38.02
+ },
+ "p0_requalify_us_median": 0.2,
+ "functions_lost_under_p4c": 0,
+ "founder_decisions_under_p4c_for_current_catalog": 0,
+ "founder_decisions_if_shasum_were_the_only_sha256_tool": 1,
+ "unclassified_terms_top": {
+  "ImageMagick": 64,
+  "Magick++": 25,
+  "other": 21,
+  "permissive": 18,
+  "CC-BY-SA-3.0": 11,
+  "(empty)": 11,
+  "LGPL": 9,
+  "GNU-All-Permissive-License": 8
+ },
+ "scancode_targeted": {
+  "version": "scancode-toolkit-mini 32.5.0 in an isolated scratch venv (not the body's interpreter)",
+  "dependency_defect": "pluggy 1.7.0: ValueError did not find any 'pre_scan' hooks; works with pluggy 1.4.0 (<1.5)",
+  "venv_size_mb": 717,
+  "install_seconds": 34,
+  "files": [
+   "coreutils",
+   "openssl",
+   "perl",
+   "poppler-utils copyright"
+  ],
+  "scan_seconds_cold": 29.4,
+  "scan_seconds_warm": 24.3,
+  "max_rss_mb": 1410,
+  "classes": {
+   "coreutils": "strong_copyleft",
+   "openssl": "strong_copyleft",
+   "perl": "strong_copyleft",
+   "poppler-utils": "strong_copyleft"
+  },
+  "effect": "resolves the one P4c catalog hold (shasum, owned by perl) to strong copyleft, compatible with GREG's use",
+  "disagreement_kept": "openssl: GREG's reader says weak copyleft, scancode strong (GPL-1.0-or-later alternative); neither is a legal opinion"
+ },
+ "name_table_extension_negative": {
+  "names_added": 18,
+  "p4c_holds_before": 442,
+  "p4c_holds_after": 438,
+  "decision": "reverted; text classification (P3) is the lever"
+ }
+}

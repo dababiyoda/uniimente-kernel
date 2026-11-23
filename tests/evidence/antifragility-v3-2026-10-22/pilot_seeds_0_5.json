@@ -1,0 +1,72 @@
+{
+ "LOW/sphere": {
+  "swarm_pass": 6,
+  "ms_pass": 6,
+  "swarm_med": 3.338975659068359e-11,
+  "ms_med": 1.7985589821981048e-16,
+  "ms_med_s": 0.155
+ },
+ "LOW/ackley": {
+  "swarm_pass": 6,
+  "ms_pass": 1,
+  "swarm_med": 1.0486143497079325e-05,
+  "ms_med": 3.2328429140646535,
+  "ms_med_s": 0.1325
+ },
+ "LOW/griewank": {
+  "swarm_pass": 4,
+  "ms_pass": 6,
+  "swarm_med": 0.13394546648535527,
+  "ms_med": 1.1102230246251565e-16,
+  "ms_med_s": 0.1275
+ },
+ "LOW/rosenbrock": {
+  "swarm_pass": 4,
+  "ms_pass": 6,
+  "swarm_med": 6.190270337413592,
+  "ms_med": 3.164915642035759e-11,
+  "ms_med_s": 0.135
+ },
+ "LOW/rastrigin": {
+  "swarm_pass": 6,
+  "ms_pass": 6,
+  "swarm_med": 7.9798580297977395,
+  "ms_med": 24.756257215648304,
+  "ms_med_s": 0.1485
+ },
+ "HIGH/sphere": {
+  "swarm_pass": 1,
+  "ms_pass": 6,
+  "swarm_med": 15.03920950000104,
+  "ms_med": 2.8162734225817926e-16,
+  "ms_med_s": 0.212
+ },
+ "HIGH/ackley": {
+  "swarm_pass": 2,
+  "ms_pass": 0,
+  "swarm_med": 3.1301758105295776,
+  "ms_med": 5.9174746312157485,
+  "ms_med_s": 0.2715
+ },
+ "HIGH/griewank": {
+  "swarm_pass": 2,
+  "ms_pass": 6,
+  "swarm_med": 0.3979038589265529,
+  "ms_med": 5.551115123125783e-16,
+  "ms_med_s": 0.23299999999999998
+ },
+ "HIGH/rosenbrock": {
+  "swarm_pass": 3,
+  "ms_pass": 6,
+  "swarm_med": 738.5472702922052,
+  "ms_med": 0.23920312503458707,
+  "ms_med_s": 0.2435
+ },
+ "HIGH/rastrigin": {
+  "swarm_pass": 2,
+  "ms_pass": 2,
+  "swarm_med": 67.02681262522579,
+  "ms_med": 62.1851468178708,
+  "ms_med_s": 0.225
+ }
+}

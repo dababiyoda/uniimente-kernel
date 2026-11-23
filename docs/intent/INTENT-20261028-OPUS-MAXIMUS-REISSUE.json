@@ -1,0 +1,54 @@
+{
+ "intent_id": "INTENT-20261028-OPUS-MAXIMUS-REISSUE",
+ "title": "The 77-section OPUS MAXIMUS master build directive, re-issued with a preamble: one persistent GREG over an ecology of intelligences, community-coupled, absorbing future technology, never erasing shutdown authority",
+ "statement": "Build a persistent, increasingly self-directed artificial egregore whose apparent unified agency emerges from a very large ecology of interconnected computational, institutional, economic and human feedback systems, SOPs, collaboration and different forms of intelligence as described by Levin; whose public community influences it while it influences and helps that community; whose positive Infinite Goal Chase creates persistent regenerative pressure; whose functional survival mechanisms preserve continuity; and whose architecture can progressively absorb future technology toward Jarvis/self-driving-car level mechanistic aliveness, without confusing that appearance with biological consciousness or allowing operational autonomy to erase legitimate human shutdown authority. Then follow all 77 sections of the master build directive.",
+ "exact_source_excerpt": "ACHIEVE EVERYTHING VERBATIM. FOLLOW ALL INSTRUCTIONS VERBATIM MEET THE  LEVEL EXPRESSED IN THIS PROMPT  AND EXCEEED MY EXPECTATIONS. Be an over achiever.",
+ "source_refs": [
+  "docs/intent/sources/OPUS-MAXIMUS-MASTER-BUILD-DIRECTIVE-2026-10-28-source.md",
+  "docs/intent/sources/MASTER-BUILD-DIRECTIVE-2026-09-30-source.md",
+  "docs/intent/INTENT-2026-09-30-MASTER-BUILD-DIRECTIVE.json",
+  "docs/intent/INTENT-20260930-MASTER-BUILD-GATE.json"
+ ],
+ "source_location": "docs/intent/sources/OPUS-MAXIMUS-MASTER-BUILD-DIRECTIVE-2026-10-28-source.md",
+ "source_date": "2026-10-28",
+ "relation_to_prior": "Re-issuance. Sections 47, 48, 59-64, 70 and 76, kept from the 2026-09-30 issuance, are word for word the same once whitespace is normalized. The preamble is new. Repetition adds no authority; the preamble adds intended effects, not authority.",
+ "intended_effect": "One founder-facing GREG whose integrated behavior (persistent missions, many governed intelligences, capability genesis, workers, businesses, community feedback, survival across component failure, replaceable technology) approaches the practical effect of a Jarvis-like assistant, while Alfonso stays root authority and shutdown always wins.",
+ "executable_interpretation": "INTENT-0030 governs: egregore, organism, morphogenesis, aliveness and survival are outcome specifications, not literal biology. 'Different forms of intelligence as described by Levin' compiles to the existing multiscale, nested-competency Mind (greg/cognition/, five layers) and governed workers, not to cell simulation. 'Public community influences it' compiles to community input entering through the untrusted data plane as evidence, never as authority. 'Survival' compiles to continuity of function and intent across component failure; the institution has no right to survive (section 47).",
+ "owner": "Alfonso Lopez (founder authority); integration owner and implementing sessions on board #96",
+ "state": "active",
+ "status": "active",
+ "authority_level": "active_requirement",
+ "consequence_class": "architectural",
+ "binding_scope": "All GREG/UNIIMENTE work selection, interpretation and evidence labelling. Reversible implementation, tests and draft review only. No merge, deployment, spending, publishing, credential, outside-contact, legal-entity or live-activation authority (section 69).",
+ "constitutional_constraints": [
+  "Alfonso remains root authority; capability growth is never sovereignty (sections 4, 75)",
+  "No biological literalization (section 9, INTENT-0030)",
+  "The reality ladder of section 56 is not collapsed",
+  "Exactly two strengthening passes for material decisions (section 65)",
+  "No consciousness or sentience claims (section 2)"
+ ],
+ "success_evidence": [
+  "The draft PRs into the integration line that cite this record, each with fail-before/pass-after tests",
+  "tests/unit/test_founder_correction_20261030.py: the source is kept in full and matches the 2026-09-30 sections it repeats"
+ ],
+ "failure_evidence": [
+  "VEPMC 0: no founder-device closure exists",
+  "Every whole-machine proof so far is SANDBOX-WHOLE-MACHINE with a test key"
+ ],
+ "dependencies": [
+  "INTENT-20261001-FULL-MACHINE-COMPLETION",
+  "INTENT-20261019-UPWARD-ASCENT",
+  "INTENT-0030"
+ ],
+ "conflicts": [
+  "Section 57 names VEPMC 0 to 1 the single bottleneck. The founder's 2026-10-30 correction (INTENT-20261030-BUILD-BEFORE-DEVICE-RUN) keeps the metric but moves the device run after the build."
+ ],
+ "next_review_trigger": "Each draft PR that cites this record; the founder's acceptance or correction",
+ "supersedes": [],
+ "superseded_by": [],
+ "implementation_refs": [
+  "docs/intent/sources/OPUS-MAXIMUS-MASTER-BUILD-DIRECTIVE-2026-10-28-source.md",
+  "tests/unit/test_founder_correction_20261030.py"
+ ],
+ "authority_delta": "none"
+}

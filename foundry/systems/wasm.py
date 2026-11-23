@@ -26,6 +26,7 @@ import random
 from pathlib import Path
 
 from foundry.systems import dsl
+from foundry.systems.refusals import refusal_recorder
 
 HOST_ALLOWED_IMPORTS = {("wasi_snapshot_preview1", "*")}
 FUEL = 50_000
@@ -208,13 +209,7 @@ def exercise(root) -> dict:
                                                                        "customer_tier": 2, "cost_per_unit": 50}}, root)
     diff = differential("pricing", src)
     budget = differential("budget", "min(requested, remaining - reserve) if remaining > reserve else 0")
-    refusals = {}
-    def refused(label, fn):
-        try:
-            fn()
-            refusals[label] = None
-        except WasmError as exc:
-            refusals[label] = str(exc)
+    refusals, refused = refusal_recorder(WasmError)
     sneaky = wasmtime.wat2wasm('(module (import "wasi_snapshot_preview1" "fd_write" '
                                '(func (param i32 i32 i32 i32) (result i32))) (func (export "rule") (result f64) (f64.const 1)))')
     manifest = {"language": "pricing", "exports": {"rule": {"params": [], "result": "f64"}}, "imports": [],

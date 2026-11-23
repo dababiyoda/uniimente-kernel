@@ -1,0 +1,132 @@
+{
+ "family": "reconcile_qp",
+ "partition": "dev",
+ "status_if_heldout_matched": "SUPERSEDED",
+ "arms": {
+  "candidate": {
+   "correct": 10,
+   "wrong": 0,
+   "abstain": 0,
+   "mean_quality": 1.0,
+   "median_seconds": 0.006849
+  },
+  "baseline": {
+   "correct": 1,
+   "wrong": 9,
+   "abstain": 0,
+   "mean_quality": -0.8,
+   "median_seconds": 0.000115
+  },
+  "competitor": {
+   "correct": 10,
+   "wrong": 0,
+   "abstain": 0,
+   "mean_quality": 1.0,
+   "median_seconds": 0.0012
+  }
+ },
+ "vs_baseline": {
+  "wins": 9,
+  "losses": 0,
+  "ties": 1,
+  "p_better": 0.001953,
+  "p_worse": 1.0
+ },
+ "vs_competitor": {
+  "wins": 0,
+  "losses": 0,
+  "ties": 10,
+  "p_better": 1.0,
+  "p_worse": 1.0
+ },
+ "subregions": {
+  "balanced_network": {
+   "n": 8,
+   "vs_baseline": {
+    "wins": 7,
+    "losses": 0,
+    "ties": 1,
+    "p_better": 0.007812,
+    "p_worse": 1.0
+   },
+   "vs_competitor": {
+    "wins": 0,
+    "losses": 0,
+    "ties": 8,
+    "p_better": 1.0,
+    "p_worse": 1.0
+   }
+  },
+  "budget_split": {
+   "n": 2,
+   "vs_baseline": {
+    "wins": 2,
+    "losses": 0,
+    "ties": 0,
+    "p_better": 0.25,
+    "p_worse": 1.0
+   },
+   "vs_competitor": {
+    "wins": 0,
+    "losses": 0,
+    "ties": 2,
+    "p_better": 1.0,
+    "p_worse": 1.0
+   }
+  }
+ },
+ "diagnostics": {
+  "median_cpu_seconds": {
+   "candidate": 0.002865,
+   "baseline": 0.000116,
+   "competitor": 0.001043
+  },
+  "note": "reported diagnostics, never inputs to the admission decision: the rule decides on wall-clock medians only. cpu_seconds is the calling thread's CPU time per call (time.thread_time; work on other threads or processes is not in it); diagnostics.median_cpu_seconds is its median per arm; host_load is the host's load at the start and end of the run"
+ },
+ "host_load": {
+  "start": {
+   "at": "2026-10-21T17:06:34.480006+00:00",
+   "loadavg": {
+    "1m": 5.08,
+    "5m": 4.73,
+    "15m": 4.53,
+    "runnable": 5,
+    "entities": 147
+   },
+   "cpu_affinity": [
+    0
+   ],
+   "cpu_count": 4,
+   "other_python_processes": {
+    "count": 5,
+    "by_state": {
+     "R": 3,
+     "S": 2
+    },
+    "running_last_on_our_cpus": 1
+   }
+  },
+  "end": {
+   "at": "2026-10-21T17:06:36.394057+00:00",
+   "loadavg": {
+    "1m": 5.08,
+    "5m": 4.73,
+    "15m": 4.53,
+    "runnable": 5,
+    "entities": 149
+   },
+   "cpu_affinity": [
+    0
+   ],
+   "cpu_count": 4,
+   "other_python_processes": {
+    "count": 6,
+    "by_state": {
+     "R": 4,
+     "S": 2
+    },
+    "running_last_on_our_cpus": 1
+   }
+  }
+ }
+}

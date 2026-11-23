@@ -17,7 +17,7 @@ import sys
 import pytest
 
 from greg.body import Body
-from greg.founder import FounderAuthError, generate_founder_key, key_id, load_founder_key, sign_command
+from greg.founder import generate_founder_key, key_id, load_founder_key, sign_command
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "greg/chromebook/install.sh"
@@ -49,6 +49,8 @@ def test_one_command_reaches_a_designated_body_and_a_rerun_changes_nothing(tmp_p
     first = run(dev_args(tmp_path), tmp_path)
     assert first.returncode == 0, first.stdout[-3000:] + first.stderr[-3000:]
     assert "WARNING: not ChromeOS Linux" in first.stdout and "unprotected" in first.stdout
+    head = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
+    assert f"Installing code {head} " in first.stdout                         # the commit an acceptance will name
     assert (tmp_path / "founder.pem").exists() and len((tmp_path / "founder.pem.pub").read_text().strip()) == 64
     assert list((tmp_path / "body/inbox").glob("*body_designate*.json"))          # queued, not self-accepted
 
@@ -77,6 +79,58 @@ def test_it_refuses_to_pretend_another_linux_is_the_chromebook(tmp_path):
     assert not (tmp_path / "body").exists() and not (tmp_path / "founder.pem").exists()
 
 
+SHARED_MAGICS = {"1021997": "9p", "65735546": "FUSE: virtio-fs, sshfs and the like", "6969": "NFS", "517b": "SMB",
+                 "ff534d42": "CIFS", "fe534d42": "SMB2", "c36400": "Ceph", "5346414f": "AFS", "6b414653": "kAFS",
+                 "bd00bd0": "Lustre", "1161970": "GFS2", "7461636f": "OCFS2", "73757245": "Coda",
+                 "20030528": "OrangeFS"}
+
+
+def _shared_folder_stat(tmp: Path, folder: str, magic: str):
+    """A stat that reports ``magic`` for ``folder`` alone: the real stat answers for every other path, so a guard
+    that asked about a path that does not exist, or about the wrong one, finds no shared folder."""
+    (tmp / "bin").mkdir(exist_ok=True)
+    shim = tmp / "bin/stat"
+    shim.write_text(f'#!/bin/sh\nfor a; do last=$a; done\n'
+                    f'if [ "$last" = "{folder}" ]; then case "$*" in *%t*) echo {magic}; exit 0 ;; esac; fi\n'
+                    f'exec {shutil.which("stat")} "$@"\n')
+    shim.chmod(0o755)
+
+
+def _refused(out, name):
+    assert out.returncode == 15, out.stdout[-2000:] + out.stderr[-2000:]
+    assert f"shared or network filesystem ({name})" in out.stderr and "own disk" in out.stderr
+    assert out.stderr.rstrip().endswith("(the default is ~/.uniimente/greg).")      # the exit code is not the message
+
+
+@pytest.mark.parametrize("magic", sorted(SHARED_MAGICS))
+def test_it_refuses_a_body_home_on_a_shared_or_network_folder(tmp_path, magic):
+    share = tmp_path / "share"
+    share.mkdir()
+    _shared_folder_stat(tmp_path, str(share), magic)
+    args = dev_args(tmp_path)
+    args[args.index("--home") + 1] = str(share / "greg" / "body")              # not there yet: its folder is asked
+    out = run(args, tmp_path)
+    _refused(out, SHARED_MAGICS[magic])
+    assert not (share / "greg").exists() and not (tmp_path / "founder.pem").exists()
+
+
+def test_a_relative_or_rootward_body_home_is_checked_where_greg_will_put_it(tmp_path):
+    share = tmp_path / "share"
+    share.mkdir()
+    _shared_folder_stat(tmp_path, os.path.realpath(share), "1021997")
+    args = dev_args(tmp_path)
+    args[args.index("--home") + 1] = "greg/body"                                 # relative to where it runs
+    _refused(run(args, tmp_path, cwd=share), "9p")
+    _shared_folder_stat(tmp_path, "/", "65735546")                                # no ancestor exists but /
+    args[args.index("--home") + 1] = "/greg-no-such-root-dir/body"
+    _refused(run(args, tmp_path), "FUSE: virtio-fs, sshfs and the like")
+    _shared_folder_stat(tmp_path, str(tmp_path / "home"), "6969")                 # "~" as greg expands it
+    args[args.index("--home") + 1] = "~/greg/body"
+    _refused(run(args, tmp_path), "NFS")
+    assert not (share / "greg").exists() and not Path("/greg-no-such-root-dir").exists()
+    assert not (tmp_path / "home/greg").exists()
+
+
 def test_it_stops_with_the_fix_when_no_python_311_exists(tmp_path):
     fake_bin = tmp_path / "fakebin"
     fake_bin.mkdir()
@@ -101,6 +155,63 @@ def test_engines_are_best_effort_and_can_be_skipped(tmp_path):
     done = run(dev_args(tmp_path) + ["--no-engines"], tmp_path)
     assert done.returncode == 0, done.stdout[-3000:] + done.stderr[-3000:]
     assert "Reasoning engines present:" in done.stdout
+
+
+def _engine_specs():
+    """Every requirement line the engine step must install, following -r includes, in file order."""
+    def specs(path):
+        for raw in path.read_text().splitlines():
+            line = raw.split("#", 1)[0].strip()
+            if line.startswith("-r "):
+                yield from specs(path.parent / line[3:].strip())
+            elif line:
+                yield line
+    return list(specs(ROOT / "requirements-cognition.txt"))
+
+
+def test_an_engine_without_a_wheel_for_this_machine_costs_only_that_engine(tmp_path):
+    """The pinned Z3's only Linux ARM64 wheel needs glibc 2.38; Debian 12, ChromeOS Linux's base, has 2.36, so pip
+    finds nothing to install there (PyPI files, checked 2026-10-28). One pip call for every engine then failed as
+    a whole and an ARM Chromebook got no engine at all. Here pip is a stand-in that has no wheel for z3-solver."""
+    venv, log = tmp_path / "venv", tmp_path / "pip.log"
+    (venv / "bin").mkdir(parents=True)
+    fake = venv / "bin/python"
+    fake.write_text(f"""#!/bin/sh
+if [ "$1" = "-m" ] && [ "$2" = "pip" ]; then
+  echo "$*" >> {log}
+  case "$*" in
+    *z3-solver*|*requirements-cognition.txt*|*requirements-cortex.txt*)
+      echo "ERROR: No matching distribution found for z3-solver==5.1.0.0" >&2; exit 1 ;;
+  esac
+  exit 0
+fi
+exec {sys.executable} "$@"
+""")
+    fake.chmod(0o755)
+    args = [a for a in dev_args(tmp_path) if a != "--skip-deps"] + ["--venv", str(venv)]
+    out = run(args, tmp_path)
+    assert out.returncode == 0, out.stdout[-3000:] + out.stderr[-3000:]          # Body 1 is still created
+    calls = [line for line in log.read_text().splitlines() if "--only-binary=:all:" in line]
+    specs = _engine_specs()
+    assert len(calls) == len(specs) and [c.rsplit(" ", 1)[-1] for c in calls] == specs   # one call per engine
+    assert all(" -c " in c for c in calls)                                       # each under the same pins
+    assert "not installed: z3-solver==5.1.0.0 (ERROR: No matching distribution found" in out.stdout
+    assert "WARNING: 1 reasoning engine requirement(s) did not install: z3-solver==5.1.0.0. Every other engine did." \
+        in out.stdout
+
+
+def test_the_doctor_says_why_an_engine_has_no_wheel_on_this_machine(monkeypatch):
+    from greg import doctor, mechanisms
+    real = mechanisms.installed
+    monkeypatch.setattr(mechanisms, "installed", lambda name: None if name == "z3-solver" else real(name))
+    monkeypatch.setattr(doctor.platform, "machine", lambda: "aarch64")
+    monkeypatch.setattr(doctor.platform, "libc_ver", lambda: ("glibc", "2.36"))
+    report = doctor.engines()
+    z3 = next(r for r in report["engines"] if r["distribution"] == "z3-solver")
+    assert "z3-solver" in report["missing"] and report["platform"] == {"machine": "aarch64", "glibc": "2.36"}
+    assert "needs glibc 2.38, this system has 2.36" in z3["why_missing"]
+    monkeypatch.setattr(doctor.platform, "machine", lambda: "x86_64")      # x86-64 has a wheel: no such claim
+    assert "why_missing" not in next(r for r in doctor.engines()["engines"] if r["distribution"] == "z3-solver")
 
 
 # -- #138 (b8a0ccd): the actual signer must be the companion's key and the body's enrolled key ----------
@@ -182,9 +293,9 @@ def test_founder_public_unlocks_encrypted_key_without_opening_a_body(tmp_path, m
     assert main(["--home", str(missing_body), "founder", "public", "--key", str(key)]) == 0
     assert capsys.readouterr().out.strip() == public
     assert not missing_body.exists() and key.read_bytes() == before
-    key.chmod(0o644)
-    with pytest.raises(FounderAuthError, match="readable by others"):
-        main(["--home", str(missing_body), "founder", "public", "--key", str(key)])
+    key.chmod(0o644)                                     # one plain line and exit 2, not a FounderAuthError traceback
+    assert main(["--home", str(missing_body), "founder", "public", "--key", str(key)]) == 2
+    assert "readable by others" in capsys.readouterr().err
 
 
 def test_a_rerun_offers_the_founder_tier_to_a_body_designated_without_it(tmp_path):
@@ -208,3 +319,90 @@ def test_a_rerun_offers_the_founder_tier_to_a_body_designated_without_it(tmp_pat
     assert json.loads(greg(tmp_path, "status"))["founder_tier"]["enrolled_key_attested"] is True
     third = subprocess.run(["bash", str(SCRIPT), *args], capture_output=True, text=True, env=env, timeout=300)
     assert "has claimed the founder tier" in third.stdout and not list((tmp_path / "body/inbox").glob("*.json"))
+
+
+# Every runbook or script that tells the founder to install the kernel by clone or checkout. A surface found by
+# install_surfaces() must be listed here or in NOT_FOUNDER_INSTALL with the reason it installs no body.
+FOUNDER_INSTALL_SURFACES = (
+    "greg/CHROMEBOOK_FIRST_MISSION.md",
+    "greg/chromebook/install.sh",
+    "greg/FIRST_MISSION.md",                            # the Mac runbook
+    "docs/opus-maximus/MISSION_CONTROL_OPERATIONS.md",  # the founder's operator card, section 1 "Install"
+)
+NOT_FOUNDER_INSTALL = {
+    "docs/OPEN_SOURCE_RESEARCH_LINE.md": "an offline research preview beside the organ clones; it installs no body",
+}
+
+
+def install_commands(rel: str):
+    """Commands a founder would copy: fenced blocks of a runbook, the whole of a script. Inline mentions (a rollback
+    row, a checkout GREG is to read) are not install steps."""
+    import re
+    text = (ROOT / rel).read_text()
+    if not rel.endswith(".md"):
+        return [text]
+    return [m.group(2) for m in re.finditer(r"^(```|~~~)[^\n]*\n(.*?)^\1[ \t]*$", text, re.M | re.S)]
+
+
+def named_branches(block: str):
+    """The branch each kernel clone installs: its -b/--branch, else the next checkout/switch, else None (the default
+    branch). A checkout/switch with no clone in the block names its branch too."""
+    import re
+    named, clone_waiting = [], False
+    for line in block.splitlines():
+        clone = re.search(r"git clone\b(.*)", line)
+        if clone and "uniimente-kernel" in clone.group(1):
+            if clone_waiting:
+                named.append(None)
+            b = re.search(r"(?:-b|--branch)[ =](\S+)", clone.group(1))
+            if b:
+                named.append(b.group(1))
+            clone_waiting = not b
+            continue
+        b = re.search(r"git (?:checkout|switch)(?: -c| -b)? ([^\s`;&|]+)", line)
+        if b:
+            named.append(b.group(1))
+            clone_waiting = False
+    return named + ([None] if clone_waiting else [])
+
+
+def install_surfaces():
+    import re
+    tracked = subprocess.run(["git", "ls-files", "*.md", "*.sh"], cwd=ROOT, capture_output=True, text=True,
+                             check=True).stdout.split()
+    return {rel for rel in tracked if not rel.startswith(("tests/", "docs/evidence/")) and (ROOT / rel).is_file()
+            and any(re.search(r"git clone\b[^\n]*uniimente-kernel|git (?:checkout|switch) ", b)
+                    for b in install_commands(rel))}
+
+
+def test_every_founder_install_surface_names_the_one_review_branch():
+    """The runbooks and the installer once told Alfonso to clone branches the candidate had long left behind. Each
+    founder-facing clone/checkout names the branch in greg/chromebook/REVIEW_BRANCH, and nothing else."""
+    import re
+    branch = (ROOT / "greg/chromebook/REVIEW_BRANCH").read_text().strip()
+    assert re.fullmatch(r"[A-Za-z0-9._/-]+", branch)
+    named = {rel: [b for block in install_commands(rel) for b in named_branches(block)]
+             for rel in FOUNDER_INSTALL_SURFACES}
+    assert all(named.values()), {rel: b for rel, b in named.items() if not b}
+    stale = {rel: b for rel, b in named.items() if any(x != branch for x in b)}
+    assert not stale, f"founder install surfaces that do not install {branch}: {stale}"
+
+
+def test_no_founder_install_surface_escapes_the_review_branch_guard():
+    """A new runbook that clones or checks out the kernel joins FOUNDER_INSTALL_SURFACES, or says why it is not one."""
+    found = install_surfaces()
+    assert set(FOUNDER_INSTALL_SURFACES) <= found, set(FOUNDER_INSTALL_SURFACES) - found
+    assert found - set(FOUNDER_INSTALL_SURFACES) - set(NOT_FOUNDER_INSTALL) == set()
+
+
+@pytest.mark.parametrize("block, expected", [
+    ("git clone -b good https://github.com/dababiyoda/uniimente-kernel\n", ["good"]),
+    ("git clone https://github.com/dababiyoda/uniimente-kernel && cd uniimente-kernel\ngit checkout good\n", ["good"]),
+    ("git clone https://github.com/dababiyoda/uniimente-kernel && cd uniimente-kernel\n", [None]),
+    ("git clone https://github.com/dababiyoda/uniimente-kernel\ngit clone -b good https://github.com/"
+     "dababiyoda/uniimente-kernel\n", [None, "good"]),
+    ("cd ~/src/uniimente-kernel\ngit switch stale   # comment\n", ["stale"]),
+    ("git clone https://github.com/dababiyoda/DALEOBANKS\n", []),
+])
+def test_named_branches_reads_what_a_founder_would_install(block, expected):
+    assert named_branches(block) == expected

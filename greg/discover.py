@@ -61,9 +61,12 @@ def corpus() -> tuple:
                       "text": f"{name.replace('-', ' ')} {doc}", "state": "drafted from your words, then you sign",
                       "how": "Command: describe the outcome; GREG drafts this mission for review"})
     for cid, (manifest, _) in sorted(BUILTINS.items()):
+        # A cognition family's function and template description only repeat its id ("Bounded <family> cognition
+        # with typed evidence and abstention", greg/cognition/catalog.py), which would count one word three times.
+        repeats = manifest.function == cid and manifest.description.startswith("Bounded ")
+        said = "" if repeats else f" {manifest.function.replace('.', ' ')} {manifest.description}"
         items.append({"kind": "capability", "id": cid, "title": manifest.description[:120],
-                      "text": f"{cid.replace('.', ' ').replace('_', ' ')} {manifest.function.replace('.', ' ')} "
-                              f"{manifest.description}",
+                      "text": f"{cid.replace('.', ' ').replace('_', ' ')}{said}",
                       "state": None, "consequence": manifest.consequence_class,
                       "how": "used inside a signed mission's envelope"})
     rows = yaml.safe_load((ROOT / "foundry/completion.yaml").read_text())

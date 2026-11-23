@@ -1,0 +1,7825 @@
+{
+ "schema": "greg-composition-lift-converged/1",
+ "manifest_sha256": "sha256:2d9b7f9f736ad6bdae60ccf30ffc108fbbbb7759089dea13ffbfc509653f0efd",
+ "started_at": "2026-10-21T16:16:14.445572+00:00",
+ "finished_at": "2026-10-21T16:28:57.913465+00:00",
+ "source_commit": "53d39d766a96ca7fdab18452827da24b71258fa9",
+ "environment": {
+  "python": "3.11.15"
+ },
+ "recipe_bindings": {
+  "estimate_then_optimize": {
+   "function": "greg/cognition/composition.py::run",
+   "closure_sha256": "sha256:f1ccd269dc6197901d0230197a90d8e7d323f416cc952e6c909cf54db68c1555",
+   "stage_closures": {
+    "organ:estimate:EstimationOrgan": "sha256:e2efcc2b1fa5cce72ed9009784d61b5265f6c67719b3096273fc2a2afc22bc5b",
+    "organ:optimization:CpSatOrgan": "sha256:93391fad974cfb4922841b8bf4d565c1cc003c34c4aa8357e66cc93318bd83e7",
+    "organ:optimization:FormalOrgan": "sha256:5fd130bd1561986556280f6549cc5c7b61891c64fc6486ac07be8be8371188a2"
+   },
+   "recipe_entry_sha256": "sha256:428bc0f85736daba39d9bba4f0e82614041bae8ad266641741f84cacbf0ef6c7",
+   "closure_unresolved": []
+  },
+  "identify_then_optimize": {
+   "function": "greg/cognition/composition.py::run",
+   "closure_sha256": "sha256:f1ccd269dc6197901d0230197a90d8e7d323f416cc952e6c909cf54db68c1555",
+   "stage_closures": {
+    "organ:causal:EvidenceCausalOrgan": "sha256:139bc0a18e65564c91e6c54de0ed9f06e655a2da5ebe9ba24a9ac0d64a8fe3a4",
+    "organ:optimization:CpSatOrgan": "sha256:93391fad974cfb4922841b8bf4d565c1cc003c34c4aa8357e66cc93318bd83e7",
+    "organ:optimization:FormalOrgan": "sha256:5fd130bd1561986556280f6549cc5c7b61891c64fc6486ac07be8be8371188a2"
+   },
+   "recipe_entry_sha256": "sha256:80c333ac73d427a3910d7aee4d7212fcee2078e0e0db076e2cb487092d3c38e2",
+   "closure_unresolved": []
+  },
+  "graph_then_allocate": {
+   "function": "greg/cognition/composition.py::_graph_then_allocate",
+   "closure_sha256": "sha256:6ec913a466b684e35a8e9f9b3a955aa79ddbf6d6eef993f6555d8bcac4b6f0e8",
+   "stage_closures": {
+    "flow_capacity_plan": "sha256:f99e90914ef86e571897407fa08e0173e5bc121989d8258f582a4fd9e093edcb",
+    "flow_maxflow": "sha256:e2df9a6ebbbbbaf400421698e973ee9f767f663ddc4b96cb5077bc044205b3b9",
+    "solvers:optimization": "sha256:55393a60242a113613869e9ff464e88e1cc03230fd174276f766935a77a07401"
+   },
+   "recipe_entry_sha256": "sha256:8dec62ed97e2b286504f92a47b2a803660f378d13896f2b6885b723860e2346f",
+   "closure_unresolved": []
+  },
+  "bayes_then_voi": {
+   "function": "greg/cognition/composition.py::_bayes_then_voi",
+   "closure_sha256": "sha256:d08aaa349707d5537b6bddbec1baa591fb604d9c802644fabfa4de603e67d2a4",
+   "stage_closures": {
+    "decision_preposterior": "sha256:30bdb5dfd71430da041ca8a390ae0e2df7836722fb92da8a978ac3fb1f82e09b",
+    "solvers:information": "sha256:2ddbb1d9f941abbbbd626e003ceb053d2660c44bb894d25b86c92c0dbe1a66b3",
+    "solvers:probabilistic": "sha256:1a1662833a2302616498d68bd844a4070f99256b8af59c6c88a78010e8430818"
+   },
+   "recipe_entry_sha256": "sha256:634e882fdcaddeb52715ba60992227ac4932ab2cd1e920bd20dc4968e2670487",
+   "closure_unresolved": []
+  }
+ },
+ "heldout": [
+  {
+   "item_id": "F1-6501",
+   "family": "F1",
+   "seed": 6501,
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.721,
+     "state": "no plan from an estimate alone",
+     "stages": null
+    },
+    "optimize_at_point": {
+     "result": "wrong",
+     "seconds": 0.78,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "optimize_at_worst_case": {
+     "result": "suboptimal",
+     "seconds": 0.762,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.223,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.218,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 4.522,
+     "state": "ANSWERED",
+     "stages": 2,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F1-6502",
+   "family": "F1",
+   "seed": 6502,
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.4,
+     "state": "no plan from an estimate alone",
+     "stages": null
+    },
+    "optimize_at_point": {
+     "result": "wrong",
+     "seconds": 0.652,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "optimize_at_worst_case": {
+     "result": "correct",
+     "seconds": 0.635,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.103,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.043,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.914,
+     "state": "ANSWERED",
+     "stages": 2,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F1-6503",
+   "family": "F1",
+   "seed": 6503,
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.401,
+     "state": "no plan from an estimate alone",
+     "stages": null
+    },
+    "optimize_at_point": {
+     "result": "wrong",
+     "seconds": 0.607,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "optimize_at_worst_case": {
+     "result": "suboptimal",
+     "seconds": 0.52,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.003,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.995,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.079,
+     "state": "ANSWERED",
+     "stages": 2,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F1-6504",
+   "family": "F1",
+   "seed": 6504,
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.382,
+     "state": "no plan from an estimate alone",
+     "stages": null
+    },
+    "optimize_at_point": {
+     "result": "wrong",
+     "seconds": 0.557,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "optimize_at_worst_case": {
+     "result": "suboptimal",
+     "seconds": 0.573,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.956,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.978,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.959,
+     "state": "ANSWERED",
+     "stages": 2,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F1-6505",
+   "family": "F1",
+   "seed": 6505,
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.37,
+     "state": "no plan from an estimate alone",
+     "stages": null
+    },
+    "optimize_at_point": {
+     "result": "wrong",
+     "seconds": 0.598,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "optimize_at_worst_case": {
+     "result": "suboptimal",
+     "seconds": 0.514,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.917,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.899,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.938,
+     "state": "ANSWERED",
+     "stages": 2,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F1-6506",
+   "family": "F1",
+   "seed": 6506,
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.362,
+     "state": "no plan from an estimate alone",
+     "stages": null
+    },
+    "optimize_at_point": {
+     "result": "wrong",
+     "seconds": 0.549,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "optimize_at_worst_case": {
+     "result": "suboptimal",
+     "seconds": 0.582,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.975,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.966,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.966,
+     "state": "ANSWERED",
+     "stages": 2,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F1-6507",
+   "family": "F1",
+   "seed": 6507,
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.384,
+     "state": "no plan from an estimate alone",
+     "stages": null
+    },
+    "optimize_at_point": {
+     "result": "wrong",
+     "seconds": 0.609,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "optimize_at_worst_case": {
+     "result": "suboptimal",
+     "seconds": 0.728,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.237,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.036,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.075,
+     "state": "ANSWERED",
+     "stages": 2,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F1-6508",
+   "family": "F1",
+   "seed": 6508,
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.391,
+     "state": "no plan from an estimate alone",
+     "stages": null
+    },
+    "optimize_at_point": {
+     "result": "wrong",
+     "seconds": 0.512,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "optimize_at_worst_case": {
+     "result": "suboptimal",
+     "seconds": 0.576,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.957,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.923,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.853,
+     "state": "ANSWERED",
+     "stages": 2,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F1-6509",
+   "family": "F1",
+   "seed": 6509,
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.398,
+     "state": "no plan from an estimate alone",
+     "stages": null
+    },
+    "optimize_at_point": {
+     "result": "wrong",
+     "seconds": 0.526,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "optimize_at_worst_case": {
+     "result": "suboptimal",
+     "seconds": 0.524,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "wrong",
+     "seconds": 0.906,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "routed_composition": {
+     "result": "wrong",
+     "seconds": 0.925,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "compiled": {
+     "result": "wrong",
+     "seconds": 0.947,
+     "state": "ANSWERED",
+     "stages": 2,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F1-6510",
+   "family": "F1",
+   "seed": 6510,
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.37,
+     "state": "no plan from an estimate alone",
+     "stages": null
+    },
+    "optimize_at_point": {
+     "result": "correct",
+     "seconds": 0.536,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "optimize_at_worst_case": {
+     "result": "suboptimal",
+     "seconds": 0.613,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.891,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.872,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.888,
+     "state": "ANSWERED",
+     "stages": 2,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F1-6511",
+   "family": "F1",
+   "seed": 6511,
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.435,
+     "state": "no plan from an estimate alone",
+     "stages": null
+    },
+    "optimize_at_point": {
+     "result": "wrong",
+     "seconds": 0.58,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "optimize_at_worst_case": {
+     "result": "suboptimal",
+     "seconds": 0.57,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.935,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.002,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.933,
+     "state": "ANSWERED",
+     "stages": 2,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F1-6512",
+   "family": "F1",
+   "seed": 6512,
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.341,
+     "state": "no plan from an estimate alone",
+     "stages": null
+    },
+    "optimize_at_point": {
+     "result": "wrong",
+     "seconds": 0.603,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "optimize_at_worst_case": {
+     "result": "suboptimal",
+     "seconds": 0.582,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.984,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.958,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.97,
+     "state": "ANSWERED",
+     "stages": 2,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F1-6513",
+   "family": "F1",
+   "seed": 6513,
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.381,
+     "state": "no plan from an estimate alone",
+     "stages": null
+    },
+    "optimize_at_point": {
+     "result": "wrong",
+     "seconds": 0.541,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "optimize_at_worst_case": {
+     "result": "suboptimal",
+     "seconds": 0.642,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.036,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.05,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.219,
+     "state": "ANSWERED",
+     "stages": 2,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F1-6514",
+   "family": "F1",
+   "seed": 6514,
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.572,
+     "state": "no plan from an estimate alone",
+     "stages": null
+    },
+    "optimize_at_point": {
+     "result": "wrong",
+     "seconds": 0.771,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "optimize_at_worst_case": {
+     "result": "suboptimal",
+     "seconds": 0.589,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.061,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.87,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.93,
+     "state": "ANSWERED",
+     "stages": 2,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F1-6515",
+   "family": "F1",
+   "seed": 6515,
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.338,
+     "state": "no plan from an estimate alone",
+     "stages": null
+    },
+    "optimize_at_point": {
+     "result": "wrong",
+     "seconds": 0.635,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "optimize_at_worst_case": {
+     "result": "suboptimal",
+     "seconds": 0.575,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.932,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.966,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.01,
+     "state": "ANSWERED",
+     "stages": 2,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F1-6516",
+   "family": "F1",
+   "seed": 6516,
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.342,
+     "state": "no plan from an estimate alone",
+     "stages": null
+    },
+    "optimize_at_point": {
+     "result": "wrong",
+     "seconds": 0.579,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "optimize_at_worst_case": {
+     "result": "suboptimal",
+     "seconds": 0.552,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.873,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.918,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.859,
+     "state": "ANSWERED",
+     "stages": 2,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F1-6517",
+   "family": "F1",
+   "seed": 6517,
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.338,
+     "state": "no plan from an estimate alone",
+     "stages": null
+    },
+    "optimize_at_point": {
+     "result": "wrong",
+     "seconds": 0.516,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "optimize_at_worst_case": {
+     "result": "suboptimal",
+     "seconds": 0.503,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.97,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.949,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.019,
+     "state": "ANSWERED",
+     "stages": 2,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F1-6518",
+   "family": "F1",
+   "seed": 6518,
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.337,
+     "state": "no plan from an estimate alone",
+     "stages": null
+    },
+    "optimize_at_point": {
+     "result": "wrong",
+     "seconds": 0.514,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "optimize_at_worst_case": {
+     "result": "suboptimal",
+     "seconds": 0.6,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.873,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.946,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.888,
+     "state": "ANSWERED",
+     "stages": 2,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F1-6519",
+   "family": "F1",
+   "seed": 6519,
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.349,
+     "state": "no plan from an estimate alone",
+     "stages": null
+    },
+    "optimize_at_point": {
+     "result": "wrong",
+     "seconds": 0.551,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "optimize_at_worst_case": {
+     "result": "suboptimal",
+     "seconds": 0.537,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.971,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.859,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.9,
+     "state": "ANSWERED",
+     "stages": 2,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F1-6520",
+   "family": "F1",
+   "seed": 6520,
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.389,
+     "state": "no plan from an estimate alone",
+     "stages": null
+    },
+    "optimize_at_point": {
+     "result": "wrong",
+     "seconds": 0.58,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "optimize_at_worst_case": {
+     "result": "suboptimal",
+     "seconds": 0.528,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.851,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.926,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.891,
+     "state": "ANSWERED",
+     "stages": 2,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F1-6521",
+   "family": "F1",
+   "seed": 6521,
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.348,
+     "state": "no plan from an estimate alone",
+     "stages": null
+    },
+    "optimize_at_point": {
+     "result": "wrong",
+     "seconds": 0.564,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "optimize_at_worst_case": {
+     "result": "suboptimal",
+     "seconds": 0.608,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.906,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.921,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.953,
+     "state": "ANSWERED",
+     "stages": 2,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F1-6522",
+   "family": "F1",
+   "seed": 6522,
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.443,
+     "state": "no plan from an estimate alone",
+     "stages": null
+    },
+    "optimize_at_point": {
+     "result": "wrong",
+     "seconds": 0.57,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "optimize_at_worst_case": {
+     "result": "suboptimal",
+     "seconds": 0.506,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.049,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.968,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.997,
+     "state": "ANSWERED",
+     "stages": 2,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F1-6523",
+   "family": "F1",
+   "seed": 6523,
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.399,
+     "state": "no plan from an estimate alone",
+     "stages": null
+    },
+    "optimize_at_point": {
+     "result": "wrong",
+     "seconds": 0.634,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "optimize_at_worst_case": {
+     "result": "suboptimal",
+     "seconds": 0.585,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.9,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.952,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.975,
+     "state": "ANSWERED",
+     "stages": 2,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F1-6524",
+   "family": "F1",
+   "seed": 6524,
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.324,
+     "state": "no plan from an estimate alone",
+     "stages": null
+    },
+    "optimize_at_point": {
+     "result": "wrong",
+     "seconds": 0.486,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "optimize_at_worst_case": {
+     "result": "suboptimal",
+     "seconds": 0.587,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.921,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.936,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.936,
+     "state": "ANSWERED",
+     "stages": 2,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F1-6525",
+   "family": "F1",
+   "seed": 6525,
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.35,
+     "state": "no plan from an estimate alone",
+     "stages": null
+    },
+    "optimize_at_point": {
+     "result": "wrong",
+     "seconds": 0.524,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "optimize_at_worst_case": {
+     "result": "suboptimal",
+     "seconds": 0.481,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.987,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.911,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.901,
+     "state": "ANSWERED",
+     "stages": 2,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F1-6526",
+   "family": "F1",
+   "seed": 6526,
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.392,
+     "state": "no plan from an estimate alone",
+     "stages": null
+    },
+    "optimize_at_point": {
+     "result": "wrong",
+     "seconds": 0.606,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "optimize_at_worst_case": {
+     "result": "suboptimal",
+     "seconds": 0.534,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.0,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.877,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.231,
+     "state": "ANSWERED",
+     "stages": 2,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F1-6527",
+   "family": "F1",
+   "seed": 6527,
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.387,
+     "state": "no plan from an estimate alone",
+     "stages": null
+    },
+    "optimize_at_point": {
+     "result": "correct",
+     "seconds": 0.59,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "optimize_at_worst_case": {
+     "result": "correct",
+     "seconds": 0.576,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.039,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.895,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.017,
+     "state": "ANSWERED",
+     "stages": 2,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F1-6528",
+   "family": "F1",
+   "seed": 6528,
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.664,
+     "state": "no plan from an estimate alone",
+     "stages": null
+    },
+    "optimize_at_point": {
+     "result": "wrong",
+     "seconds": 0.67,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "optimize_at_worst_case": {
+     "result": "suboptimal",
+     "seconds": 0.588,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.104,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.012,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.909,
+     "state": "ANSWERED",
+     "stages": 2,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F1-6529",
+   "family": "F1",
+   "seed": 6529,
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.352,
+     "state": "no plan from an estimate alone",
+     "stages": null
+    },
+    "optimize_at_point": {
+     "result": "wrong",
+     "seconds": 0.548,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "optimize_at_worst_case": {
+     "result": "suboptimal",
+     "seconds": 0.51,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.931,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.992,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.952,
+     "state": "ANSWERED",
+     "stages": 2,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F1-6530",
+   "family": "F1",
+   "seed": 6530,
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.39,
+     "state": "no plan from an estimate alone",
+     "stages": null
+    },
+    "optimize_at_point": {
+     "result": "correct",
+     "seconds": 0.62,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "optimize_at_worst_case": {
+     "result": "suboptimal",
+     "seconds": 0.605,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.98,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.948,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.886,
+     "state": "ANSWERED",
+     "stages": 2,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F1-6531",
+   "family": "F1",
+   "seed": 6531,
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.428,
+     "state": "no plan from an estimate alone",
+     "stages": null
+    },
+    "optimize_at_point": {
+     "result": "wrong",
+     "seconds": 0.525,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "optimize_at_worst_case": {
+     "result": "correct",
+     "seconds": 0.56,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.934,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.946,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.875,
+     "state": "ANSWERED",
+     "stages": 2,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F1-6532",
+   "family": "F1",
+   "seed": 6532,
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.374,
+     "state": "no plan from an estimate alone",
+     "stages": null
+    },
+    "optimize_at_point": {
+     "result": "correct",
+     "seconds": 0.566,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "optimize_at_worst_case": {
+     "result": "suboptimal",
+     "seconds": 0.565,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.942,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.877,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.039,
+     "state": "ANSWERED",
+     "stages": 2,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F1-6533",
+   "family": "F1",
+   "seed": 6533,
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.359,
+     "state": "no plan from an estimate alone",
+     "stages": null
+    },
+    "optimize_at_point": {
+     "result": "wrong",
+     "seconds": 0.509,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "optimize_at_worst_case": {
+     "result": "suboptimal",
+     "seconds": 0.513,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.938,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.872,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.023,
+     "state": "ANSWERED",
+     "stages": 2,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F1-6534",
+   "family": "F1",
+   "seed": 6534,
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.371,
+     "state": "no plan from an estimate alone",
+     "stages": null
+    },
+    "optimize_at_point": {
+     "result": "wrong",
+     "seconds": 0.571,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "optimize_at_worst_case": {
+     "result": "suboptimal",
+     "seconds": 0.515,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.891,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.07,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.865,
+     "state": "ANSWERED",
+     "stages": 2,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F1-6535",
+   "family": "F1",
+   "seed": 6535,
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.396,
+     "state": "no plan from an estimate alone",
+     "stages": null
+    },
+    "optimize_at_point": {
+     "result": "wrong",
+     "seconds": 0.575,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "optimize_at_worst_case": {
+     "result": "suboptimal",
+     "seconds": 0.635,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.914,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.913,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.876,
+     "state": "ANSWERED",
+     "stages": 2,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F1-6536",
+   "family": "F1",
+   "seed": 6536,
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.368,
+     "state": "no plan from an estimate alone",
+     "stages": null
+    },
+    "optimize_at_point": {
+     "result": "wrong",
+     "seconds": 0.535,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "optimize_at_worst_case": {
+     "result": "suboptimal",
+     "seconds": 0.543,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.929,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.939,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.055,
+     "state": "ANSWERED",
+     "stages": 2,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F1-6537",
+   "family": "F1",
+   "seed": 6537,
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.443,
+     "state": "no plan from an estimate alone",
+     "stages": null
+    },
+    "optimize_at_point": {
+     "result": "wrong",
+     "seconds": 0.625,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "optimize_at_worst_case": {
+     "result": "suboptimal",
+     "seconds": 0.517,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.908,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.886,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.952,
+     "state": "ANSWERED",
+     "stages": 2,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F1-6538",
+   "family": "F1",
+   "seed": 6538,
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.353,
+     "state": "no plan from an estimate alone",
+     "stages": null
+    },
+    "optimize_at_point": {
+     "result": "wrong",
+     "seconds": 0.535,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "optimize_at_worst_case": {
+     "result": "suboptimal",
+     "seconds": 0.588,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.943,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.958,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.995,
+     "state": "ANSWERED",
+     "stages": 2,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F1-6539",
+   "family": "F1",
+   "seed": 6539,
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.471,
+     "state": "no plan from an estimate alone",
+     "stages": null
+    },
+    "optimize_at_point": {
+     "result": "wrong",
+     "seconds": 0.525,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "optimize_at_worst_case": {
+     "result": "suboptimal",
+     "seconds": 0.598,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.057,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.963,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.118,
+     "state": "ANSWERED",
+     "stages": 2,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F1-6540",
+   "family": "F1",
+   "seed": 6540,
+   "arms": {
+    "estimate_alone": {
+     "result": "no_decision",
+     "seconds": 0.455,
+     "state": "no plan from an estimate alone",
+     "stages": null
+    },
+    "optimize_at_point": {
+     "result": "wrong",
+     "seconds": 0.61,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "optimize_at_worst_case": {
+     "result": "correct",
+     "seconds": 0.595,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.889,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.904,
+     "state": "ANSWERED",
+     "stages": null
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.902,
+     "state": "ANSWERED",
+     "stages": 2,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6601",
+   "family": "F2R",
+   "seed": 6601,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.464,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.503,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.34,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.099,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.369,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6602",
+   "family": "F2R",
+   "seed": 6602,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.562,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.549,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.004,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.092,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.041,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6603",
+   "family": "F2R",
+   "seed": 6603,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.416,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.517,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.002,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.991,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.959,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6604",
+   "family": "F2R",
+   "seed": 6604,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.431,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.499,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.055,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.131,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.085,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6605",
+   "family": "F2R",
+   "seed": 6605,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.448,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.566,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.981,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.153,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.018,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6606",
+   "family": "F2R",
+   "seed": 6606,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.471,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.562,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "no_decision",
+     "seconds": 0.257,
+     "state": "STAGE_ABSTAINED",
+     "stages": 1
+    },
+    "routed_composition": {
+     "result": "no_decision",
+     "seconds": 0.223,
+     "state": "STAGE_ABSTAINED",
+     "stages": 1
+    },
+    "compiled": {
+     "result": "no_decision",
+     "seconds": 0.237,
+     "state": "STAGE_ABSTAINED",
+     "stages": 1,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6607",
+   "family": "F2R",
+   "seed": 6607,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.453,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.738,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.231,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.185,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.0,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6608",
+   "family": "F2R",
+   "seed": 6608,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.434,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.574,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.231,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.23,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.233,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6609",
+   "family": "F2R",
+   "seed": 6609,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.547,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.631,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.082,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.042,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.089,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6610",
+   "family": "F2R",
+   "seed": 6610,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.417,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.513,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.942,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.235,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.11,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6611",
+   "family": "F2R",
+   "seed": 6611,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.415,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "wrong",
+     "seconds": 0.604,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.965,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.055,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.977,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6612",
+   "family": "F2R",
+   "seed": 6612,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.471,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "wrong",
+     "seconds": 0.622,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.967,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.046,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.242,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6613",
+   "family": "F2R",
+   "seed": 6613,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.454,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.575,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.973,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.103,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.921,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6614",
+   "family": "F2R",
+   "seed": 6614,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.422,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.562,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.143,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.104,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.064,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6615",
+   "family": "F2R",
+   "seed": 6615,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.441,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "wrong",
+     "seconds": 0.575,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.096,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.103,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.359,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6616",
+   "family": "F2R",
+   "seed": 6616,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.578,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.573,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.016,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.08,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.231,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6617",
+   "family": "F2R",
+   "seed": 6617,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.428,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.536,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.067,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.218,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.132,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6618",
+   "family": "F2R",
+   "seed": 6618,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.567,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "wrong",
+     "seconds": 0.559,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.155,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.962,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.006,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6619",
+   "family": "F2R",
+   "seed": 6619,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.431,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "wrong",
+     "seconds": 0.497,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.21,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.996,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.937,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6620",
+   "family": "F2R",
+   "seed": 6620,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.507,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.493,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.972,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.062,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.982,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6621",
+   "family": "F2R",
+   "seed": 6621,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.475,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.556,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.105,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.044,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.028,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6622",
+   "family": "F2R",
+   "seed": 6622,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.428,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.558,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.092,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.181,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.211,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6623",
+   "family": "F2R",
+   "seed": 6623,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.506,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.549,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.082,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.012,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.026,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6624",
+   "family": "F2R",
+   "seed": 6624,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.445,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "wrong",
+     "seconds": 0.563,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.966,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.987,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.089,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6625",
+   "family": "F2R",
+   "seed": 6625,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.438,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "wrong",
+     "seconds": 0.486,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.941,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.973,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.135,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6626",
+   "family": "F2R",
+   "seed": 6626,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.467,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.559,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.038,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.971,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.991,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6627",
+   "family": "F2R",
+   "seed": 6627,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.459,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "wrong",
+     "seconds": 0.59,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.989,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.935,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.024,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6628",
+   "family": "F2R",
+   "seed": 6628,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.507,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.586,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.062,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.079,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.139,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6629",
+   "family": "F2R",
+   "seed": 6629,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.639,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.542,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.958,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.102,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.061,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6630",
+   "family": "F2R",
+   "seed": 6630,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.486,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "wrong",
+     "seconds": 0.702,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.223,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.292,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.133,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6631",
+   "family": "F2R",
+   "seed": 6631,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.579,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.673,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.215,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.123,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.376,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6632",
+   "family": "F2R",
+   "seed": 6632,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.642,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.72,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.008,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.042,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.17,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6633",
+   "family": "F2R",
+   "seed": 6633,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.443,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.622,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.07,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.183,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.173,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6634",
+   "family": "F2R",
+   "seed": 6634,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.489,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "wrong",
+     "seconds": 0.628,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.144,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.108,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.247,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6635",
+   "family": "F2R",
+   "seed": 6635,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.492,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.594,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.001,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.05,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.145,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6636",
+   "family": "F2R",
+   "seed": 6636,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.492,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.597,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.109,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.09,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.028,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6637",
+   "family": "F2R",
+   "seed": 6637,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.471,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.565,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.29,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.136,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.253,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6638",
+   "family": "F2R",
+   "seed": 6638,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.449,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.634,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.038,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.104,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.064,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6639",
+   "family": "F2R",
+   "seed": 6639,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.455,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.595,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.992,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.017,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.114,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6640",
+   "family": "F2R",
+   "seed": 6640,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.518,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.576,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "wrong",
+     "seconds": 1.134,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "wrong",
+     "seconds": 1.322,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "wrong",
+     "seconds": 1.017,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6641",
+   "family": "F2R",
+   "seed": 6641,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.591,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.723,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.177,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.104,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.032,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6642",
+   "family": "F2R",
+   "seed": 6642,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.548,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.636,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.047,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.153,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.31,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6643",
+   "family": "F2R",
+   "seed": 6643,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.568,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.683,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.373,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.329,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.132,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6644",
+   "family": "F2R",
+   "seed": 6644,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.542,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.629,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.065,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.106,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.053,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6645",
+   "family": "F2R",
+   "seed": 6645,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.467,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "wrong",
+     "seconds": 0.602,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.077,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.091,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.186,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6646",
+   "family": "F2R",
+   "seed": 6646,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.629,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.522,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.057,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.261,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.056,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6647",
+   "family": "F2R",
+   "seed": 6647,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.417,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "wrong",
+     "seconds": 0.486,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.02,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.154,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.226,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6648",
+   "family": "F2R",
+   "seed": 6648,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.539,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.533,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.042,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.045,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.173,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6649",
+   "family": "F2R",
+   "seed": 6649,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.537,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.599,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.073,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.498,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.582,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6650",
+   "family": "F2R",
+   "seed": 6650,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.469,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.541,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.063,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.004,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.062,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6651",
+   "family": "F2R",
+   "seed": 6651,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.556,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.676,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.907,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.887,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.947,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6652",
+   "family": "F2R",
+   "seed": 6652,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.529,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.553,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.11,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.131,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.133,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6653",
+   "family": "F2R",
+   "seed": 6653,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.483,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.519,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.024,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.983,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.93,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6654",
+   "family": "F2R",
+   "seed": 6654,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.463,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.518,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.999,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.029,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.968,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6655",
+   "family": "F2R",
+   "seed": 6655,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.472,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "wrong",
+     "seconds": 0.553,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.063,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.152,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.187,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6656",
+   "family": "F2R",
+   "seed": 6656,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.649,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.61,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.037,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.13,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.067,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6657",
+   "family": "F2R",
+   "seed": 6657,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.646,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.716,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.082,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.346,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.179,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6658",
+   "family": "F2R",
+   "seed": 6658,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.551,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.606,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.066,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.047,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.063,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6659",
+   "family": "F2R",
+   "seed": 6659,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.606,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.674,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.063,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.073,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.1,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6660",
+   "family": "F2R",
+   "seed": 6660,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.549,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.609,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.092,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.214,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.162,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6661",
+   "family": "F2R",
+   "seed": 6661,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.49,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "wrong",
+     "seconds": 0.587,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.103,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.033,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.213,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6662",
+   "family": "F2R",
+   "seed": 6662,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.537,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "wrong",
+     "seconds": 0.608,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.949,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.097,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.068,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6663",
+   "family": "F2R",
+   "seed": 6663,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.47,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "wrong",
+     "seconds": 0.511,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.042,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.174,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.072,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F2R-6664",
+   "family": "F2R",
+   "seed": 6664,
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.626,
+     "state": "no allocation from effects alone",
+     "stages": null
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.688,
+     "state": "single optimiser",
+     "stages": null
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.101,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.162,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 1.138,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F3-6701",
+   "family": "F3",
+   "seed": 6701,
+   "arms": {
+    "graph_alone_greedy": {
+     "result": "correct",
+     "seconds": 0.287,
+     "state": "constituent",
+     "stages": 1
+    },
+    "optimize_flow_blind": {
+     "result": "suboptimal",
+     "seconds": 0.758,
+     "state": "constituent",
+     "stages": 1
+    },
+    "exact_single": {
+     "result": "correct",
+     "seconds": 0.232,
+     "state": "single genome",
+     "stages": 1
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.371,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.455,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.257,
+     "state": "ANSWERED",
+     "stages": 1,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F3-6702",
+   "family": "F3",
+   "seed": 6702,
+   "arms": {
+    "graph_alone_greedy": {
+     "result": "correct",
+     "seconds": 0.233,
+     "state": "constituent",
+     "stages": 1
+    },
+    "optimize_flow_blind": {
+     "result": "suboptimal",
+     "seconds": 0.647,
+     "state": "constituent",
+     "stages": 1
+    },
+    "exact_single": {
+     "result": "correct",
+     "seconds": 0.298,
+     "state": "single genome",
+     "stages": 1
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.345,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.245,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.323,
+     "state": "ANSWERED",
+     "stages": 1,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F3-6703",
+   "family": "F3",
+   "seed": 6703,
+   "arms": {
+    "graph_alone_greedy": {
+     "result": "correct",
+     "seconds": 0.28,
+     "state": "constituent",
+     "stages": 1
+    },
+    "optimize_flow_blind": {
+     "result": "suboptimal",
+     "seconds": 0.607,
+     "state": "constituent",
+     "stages": 1
+    },
+    "exact_single": {
+     "result": "correct",
+     "seconds": 0.285,
+     "state": "single genome",
+     "stages": 1
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.348,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.374,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.323,
+     "state": "ANSWERED",
+     "stages": 1,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F3-6704",
+   "family": "F3",
+   "seed": 6704,
+   "arms": {
+    "graph_alone_greedy": {
+     "result": "correct",
+     "seconds": 0.279,
+     "state": "constituent",
+     "stages": 1
+    },
+    "optimize_flow_blind": {
+     "result": "suboptimal",
+     "seconds": 0.697,
+     "state": "constituent",
+     "stages": 1
+    },
+    "exact_single": {
+     "result": "correct",
+     "seconds": 0.24,
+     "state": "single genome",
+     "stages": 1
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.474,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.416,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.277,
+     "state": "ANSWERED",
+     "stages": 1,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F3-6705",
+   "family": "F3",
+   "seed": 6705,
+   "arms": {
+    "graph_alone_greedy": {
+     "result": "correct",
+     "seconds": 0.272,
+     "state": "constituent",
+     "stages": 1
+    },
+    "optimize_flow_blind": {
+     "result": "suboptimal",
+     "seconds": 0.629,
+     "state": "constituent",
+     "stages": 1
+    },
+    "exact_single": {
+     "result": "correct",
+     "seconds": 0.24,
+     "state": "single genome",
+     "stages": 1
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.278,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.353,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.276,
+     "state": "ANSWERED",
+     "stages": 1,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F3-6706",
+   "family": "F3",
+   "seed": 6706,
+   "arms": {
+    "graph_alone_greedy": {
+     "result": "correct",
+     "seconds": 0.261,
+     "state": "constituent",
+     "stages": 1
+    },
+    "optimize_flow_blind": {
+     "result": "correct",
+     "seconds": 0.674,
+     "state": "constituent",
+     "stages": 1
+    },
+    "exact_single": {
+     "result": "correct",
+     "seconds": 0.286,
+     "state": "single genome",
+     "stages": 1
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.439,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.344,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.314,
+     "state": "ANSWERED",
+     "stages": 1,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F3-6707",
+   "family": "F3",
+   "seed": 6707,
+   "arms": {
+    "graph_alone_greedy": {
+     "result": "correct",
+     "seconds": 0.26,
+     "state": "constituent",
+     "stages": 1
+    },
+    "optimize_flow_blind": {
+     "result": "suboptimal",
+     "seconds": 0.773,
+     "state": "constituent",
+     "stages": 1
+    },
+    "exact_single": {
+     "result": "correct",
+     "seconds": 0.316,
+     "state": "single genome",
+     "stages": 1
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.389,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.303,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.284,
+     "state": "ANSWERED",
+     "stages": 1,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F3-6708",
+   "family": "F3",
+   "seed": 6708,
+   "arms": {
+    "graph_alone_greedy": {
+     "result": "correct",
+     "seconds": 0.277,
+     "state": "constituent",
+     "stages": 1
+    },
+    "optimize_flow_blind": {
+     "result": "suboptimal",
+     "seconds": 0.726,
+     "state": "constituent",
+     "stages": 1
+    },
+    "exact_single": {
+     "result": "correct",
+     "seconds": 0.276,
+     "state": "single genome",
+     "stages": 1
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.288,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.272,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.263,
+     "state": "ANSWERED",
+     "stages": 1,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F3-6709",
+   "family": "F3",
+   "seed": 6709,
+   "arms": {
+    "graph_alone_greedy": {
+     "result": "suboptimal",
+     "seconds": 0.312,
+     "state": "constituent",
+     "stages": 1
+    },
+    "optimize_flow_blind": {
+     "result": "suboptimal",
+     "seconds": 0.622,
+     "state": "constituent",
+     "stages": 1
+    },
+    "exact_single": {
+     "result": "correct",
+     "seconds": 0.242,
+     "state": "single genome",
+     "stages": 1
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.343,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.28,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.245,
+     "state": "ANSWERED",
+     "stages": 1,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F3-6710",
+   "family": "F3",
+   "seed": 6710,
+   "arms": {
+    "graph_alone_greedy": {
+     "result": "correct",
+     "seconds": 0.289,
+     "state": "constituent",
+     "stages": 1
+    },
+    "optimize_flow_blind": {
+     "result": "suboptimal",
+     "seconds": 0.794,
+     "state": "constituent",
+     "stages": 1
+    },
+    "exact_single": {
+     "result": "correct",
+     "seconds": 0.252,
+     "state": "single genome",
+     "stages": 1
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.314,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.332,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.259,
+     "state": "ANSWERED",
+     "stages": 1,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F3-6711",
+   "family": "F3",
+   "seed": 6711,
+   "arms": {
+    "graph_alone_greedy": {
+     "result": "correct",
+     "seconds": 0.324,
+     "state": "constituent",
+     "stages": 1
+    },
+    "optimize_flow_blind": {
+     "result": "suboptimal",
+     "seconds": 0.727,
+     "state": "constituent",
+     "stages": 1
+    },
+    "exact_single": {
+     "result": "correct",
+     "seconds": 0.261,
+     "state": "single genome",
+     "stages": 1
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.362,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.275,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.259,
+     "state": "ANSWERED",
+     "stages": 1,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F3-6712",
+   "family": "F3",
+   "seed": 6712,
+   "arms": {
+    "graph_alone_greedy": {
+     "result": "suboptimal",
+     "seconds": 0.288,
+     "state": "constituent",
+     "stages": 1
+    },
+    "optimize_flow_blind": {
+     "result": "suboptimal",
+     "seconds": 0.701,
+     "state": "constituent",
+     "stages": 1
+    },
+    "exact_single": {
+     "result": "correct",
+     "seconds": 0.237,
+     "state": "single genome",
+     "stages": 1
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.377,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.339,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.286,
+     "state": "ANSWERED",
+     "stages": 1,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F3-6713",
+   "family": "F3",
+   "seed": 6713,
+   "arms": {
+    "graph_alone_greedy": {
+     "result": "suboptimal",
+     "seconds": 0.239,
+     "state": "constituent",
+     "stages": 1
+    },
+    "optimize_flow_blind": {
+     "result": "suboptimal",
+     "seconds": 0.668,
+     "state": "constituent",
+     "stages": 1
+    },
+    "exact_single": {
+     "result": "correct",
+     "seconds": 0.31,
+     "state": "single genome",
+     "stages": 1
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.406,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.346,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.278,
+     "state": "ANSWERED",
+     "stages": 1,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F3-6714",
+   "family": "F3",
+   "seed": 6714,
+   "arms": {
+    "graph_alone_greedy": {
+     "result": "suboptimal",
+     "seconds": 0.315,
+     "state": "constituent",
+     "stages": 1
+    },
+    "optimize_flow_blind": {
+     "result": "suboptimal",
+     "seconds": 0.816,
+     "state": "constituent",
+     "stages": 1
+    },
+    "exact_single": {
+     "result": "correct",
+     "seconds": 0.264,
+     "state": "single genome",
+     "stages": 1
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.308,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.25,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.253,
+     "state": "ANSWERED",
+     "stages": 1,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F3-6715",
+   "family": "F3",
+   "seed": 6715,
+   "arms": {
+    "graph_alone_greedy": {
+     "result": "correct",
+     "seconds": 0.258,
+     "state": "constituent",
+     "stages": 1
+    },
+    "optimize_flow_blind": {
+     "result": "suboptimal",
+     "seconds": 0.623,
+     "state": "constituent",
+     "stages": 1
+    },
+    "exact_single": {
+     "result": "correct",
+     "seconds": 0.246,
+     "state": "single genome",
+     "stages": 1
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.495,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.2,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.299,
+     "state": "ANSWERED",
+     "stages": 1,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F3-6716",
+   "family": "F3",
+   "seed": 6716,
+   "arms": {
+    "graph_alone_greedy": {
+     "result": "correct",
+     "seconds": 0.249,
+     "state": "constituent",
+     "stages": 1
+    },
+    "optimize_flow_blind": {
+     "result": "suboptimal",
+     "seconds": 0.769,
+     "state": "constituent",
+     "stages": 1
+    },
+    "exact_single": {
+     "result": "correct",
+     "seconds": 0.28,
+     "state": "single genome",
+     "stages": 1
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.209,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.298,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.253,
+     "state": "ANSWERED",
+     "stages": 1,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F3-6717",
+   "family": "F3",
+   "seed": 6717,
+   "arms": {
+    "graph_alone_greedy": {
+     "result": "correct",
+     "seconds": 0.269,
+     "state": "constituent",
+     "stages": 1
+    },
+    "optimize_flow_blind": {
+     "result": "suboptimal",
+     "seconds": 0.585,
+     "state": "constituent",
+     "stages": 1
+    },
+    "exact_single": {
+     "result": "correct",
+     "seconds": 0.24,
+     "state": "single genome",
+     "stages": 1
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.463,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.378,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.342,
+     "state": "ANSWERED",
+     "stages": 1,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F3-6718",
+   "family": "F3",
+   "seed": 6718,
+   "arms": {
+    "graph_alone_greedy": {
+     "result": "correct",
+     "seconds": 0.249,
+     "state": "constituent",
+     "stages": 1
+    },
+    "optimize_flow_blind": {
+     "result": "suboptimal",
+     "seconds": 0.711,
+     "state": "constituent",
+     "stages": 1
+    },
+    "exact_single": {
+     "result": "correct",
+     "seconds": 0.285,
+     "state": "single genome",
+     "stages": 1
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.399,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.441,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.318,
+     "state": "ANSWERED",
+     "stages": 1,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F3-6719",
+   "family": "F3",
+   "seed": 6719,
+   "arms": {
+    "graph_alone_greedy": {
+     "result": "correct",
+     "seconds": 0.311,
+     "state": "constituent",
+     "stages": 1
+    },
+    "optimize_flow_blind": {
+     "result": "suboptimal",
+     "seconds": 0.799,
+     "state": "constituent",
+     "stages": 1
+    },
+    "exact_single": {
+     "result": "correct",
+     "seconds": 0.323,
+     "state": "single genome",
+     "stages": 1
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.535,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.411,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.262,
+     "state": "ANSWERED",
+     "stages": 1,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F3-6720",
+   "family": "F3",
+   "seed": 6720,
+   "arms": {
+    "graph_alone_greedy": {
+     "result": "suboptimal",
+     "seconds": 0.348,
+     "state": "constituent",
+     "stages": 1
+    },
+    "optimize_flow_blind": {
+     "result": "suboptimal",
+     "seconds": 0.724,
+     "state": "constituent",
+     "stages": 1
+    },
+    "exact_single": {
+     "result": "correct",
+     "seconds": 0.327,
+     "state": "single genome",
+     "stages": 1
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.317,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.482,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.319,
+     "state": "ANSWERED",
+     "stages": 1,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F3-6721",
+   "family": "F3",
+   "seed": 6721,
+   "arms": {
+    "graph_alone_greedy": {
+     "result": "correct",
+     "seconds": 0.252,
+     "state": "constituent",
+     "stages": 1
+    },
+    "optimize_flow_blind": {
+     "result": "suboptimal",
+     "seconds": 0.768,
+     "state": "constituent",
+     "stages": 1
+    },
+    "exact_single": {
+     "result": "correct",
+     "seconds": 0.27,
+     "state": "single genome",
+     "stages": 1
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.348,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.486,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.274,
+     "state": "ANSWERED",
+     "stages": 1,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F3-6722",
+   "family": "F3",
+   "seed": 6722,
+   "arms": {
+    "graph_alone_greedy": {
+     "result": "correct",
+     "seconds": 0.244,
+     "state": "constituent",
+     "stages": 1
+    },
+    "optimize_flow_blind": {
+     "result": "suboptimal",
+     "seconds": 0.665,
+     "state": "constituent",
+     "stages": 1
+    },
+    "exact_single": {
+     "result": "correct",
+     "seconds": 0.24,
+     "state": "single genome",
+     "stages": 1
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.323,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.383,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.28,
+     "state": "ANSWERED",
+     "stages": 1,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F3-6723",
+   "family": "F3",
+   "seed": 6723,
+   "arms": {
+    "graph_alone_greedy": {
+     "result": "suboptimal",
+     "seconds": 0.328,
+     "state": "constituent",
+     "stages": 1
+    },
+    "optimize_flow_blind": {
+     "result": "suboptimal",
+     "seconds": 0.773,
+     "state": "constituent",
+     "stages": 1
+    },
+    "exact_single": {
+     "result": "correct",
+     "seconds": 0.262,
+     "state": "single genome",
+     "stages": 1
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.469,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.386,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.255,
+     "state": "ANSWERED",
+     "stages": 1,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F3-6724",
+   "family": "F3",
+   "seed": 6724,
+   "arms": {
+    "graph_alone_greedy": {
+     "result": "suboptimal",
+     "seconds": 0.248,
+     "state": "constituent",
+     "stages": 1
+    },
+    "optimize_flow_blind": {
+     "result": "suboptimal",
+     "seconds": 0.645,
+     "state": "constituent",
+     "stages": 1
+    },
+    "exact_single": {
+     "result": "correct",
+     "seconds": 0.251,
+     "state": "single genome",
+     "stages": 1
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.29,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.266,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.237,
+     "state": "ANSWERED",
+     "stages": 1,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F3-6725",
+   "family": "F3",
+   "seed": 6725,
+   "arms": {
+    "graph_alone_greedy": {
+     "result": "correct",
+     "seconds": 0.261,
+     "state": "constituent",
+     "stages": 1
+    },
+    "optimize_flow_blind": {
+     "result": "suboptimal",
+     "seconds": 0.663,
+     "state": "constituent",
+     "stages": 1
+    },
+    "exact_single": {
+     "result": "correct",
+     "seconds": 0.318,
+     "state": "single genome",
+     "stages": 1
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.348,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.513,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.308,
+     "state": "ANSWERED",
+     "stages": 1,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F3-6726",
+   "family": "F3",
+   "seed": 6726,
+   "arms": {
+    "graph_alone_greedy": {
+     "result": "correct",
+     "seconds": 0.26,
+     "state": "constituent",
+     "stages": 1
+    },
+    "optimize_flow_blind": {
+     "result": "suboptimal",
+     "seconds": 0.696,
+     "state": "constituent",
+     "stages": 1
+    },
+    "exact_single": {
+     "result": "correct",
+     "seconds": 0.282,
+     "state": "single genome",
+     "stages": 1
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.227,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.409,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.299,
+     "state": "ANSWERED",
+     "stages": 1,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F3-6727",
+   "family": "F3",
+   "seed": 6727,
+   "arms": {
+    "graph_alone_greedy": {
+     "result": "correct",
+     "seconds": 0.317,
+     "state": "constituent",
+     "stages": 1
+    },
+    "optimize_flow_blind": {
+     "result": "suboptimal",
+     "seconds": 0.691,
+     "state": "constituent",
+     "stages": 1
+    },
+    "exact_single": {
+     "result": "correct",
+     "seconds": 0.307,
+     "state": "single genome",
+     "stages": 1
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.474,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.341,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.273,
+     "state": "ANSWERED",
+     "stages": 1,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F3-6728",
+   "family": "F3",
+   "seed": 6728,
+   "arms": {
+    "graph_alone_greedy": {
+     "result": "correct",
+     "seconds": 0.302,
+     "state": "constituent",
+     "stages": 1
+    },
+    "optimize_flow_blind": {
+     "result": "suboptimal",
+     "seconds": 0.737,
+     "state": "constituent",
+     "stages": 1
+    },
+    "exact_single": {
+     "result": "correct",
+     "seconds": 0.309,
+     "state": "single genome",
+     "stages": 1
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.381,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.327,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.245,
+     "state": "ANSWERED",
+     "stages": 1,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F3-6729",
+   "family": "F3",
+   "seed": 6729,
+   "arms": {
+    "graph_alone_greedy": {
+     "result": "suboptimal",
+     "seconds": 0.242,
+     "state": "constituent",
+     "stages": 1
+    },
+    "optimize_flow_blind": {
+     "result": "suboptimal",
+     "seconds": 0.649,
+     "state": "constituent",
+     "stages": 1
+    },
+    "exact_single": {
+     "result": "correct",
+     "seconds": 0.249,
+     "state": "single genome",
+     "stages": 1
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.301,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.354,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.252,
+     "state": "ANSWERED",
+     "stages": 1,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F3-6730",
+   "family": "F3",
+   "seed": 6730,
+   "arms": {
+    "graph_alone_greedy": {
+     "result": "suboptimal",
+     "seconds": 0.259,
+     "state": "constituent",
+     "stages": 1
+    },
+    "optimize_flow_blind": {
+     "result": "suboptimal",
+     "seconds": 0.699,
+     "state": "constituent",
+     "stages": 1
+    },
+    "exact_single": {
+     "result": "correct",
+     "seconds": 0.238,
+     "state": "single genome",
+     "stages": 1
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.255,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.284,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.294,
+     "state": "ANSWERED",
+     "stages": 1,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F3-6731",
+   "family": "F3",
+   "seed": 6731,
+   "arms": {
+    "graph_alone_greedy": {
+     "result": "suboptimal",
+     "seconds": 0.286,
+     "state": "constituent",
+     "stages": 1
+    },
+    "optimize_flow_blind": {
+     "result": "suboptimal",
+     "seconds": 0.745,
+     "state": "constituent",
+     "stages": 1
+    },
+    "exact_single": {
+     "result": "correct",
+     "seconds": 0.246,
+     "state": "single genome",
+     "stages": 1
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.27,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.397,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.253,
+     "state": "ANSWERED",
+     "stages": 1,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F3-6732",
+   "family": "F3",
+   "seed": 6732,
+   "arms": {
+    "graph_alone_greedy": {
+     "result": "suboptimal",
+     "seconds": 0.246,
+     "state": "constituent",
+     "stages": 1
+    },
+    "optimize_flow_blind": {
+     "result": "suboptimal",
+     "seconds": 0.6,
+     "state": "constituent",
+     "stages": 1
+    },
+    "exact_single": {
+     "result": "correct",
+     "seconds": 0.239,
+     "state": "single genome",
+     "stages": 1
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.285,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.29,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.292,
+     "state": "ANSWERED",
+     "stages": 1,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F3-6733",
+   "family": "F3",
+   "seed": 6733,
+   "arms": {
+    "graph_alone_greedy": {
+     "result": "correct",
+     "seconds": 0.284,
+     "state": "constituent",
+     "stages": 1
+    },
+    "optimize_flow_blind": {
+     "result": "suboptimal",
+     "seconds": 0.664,
+     "state": "constituent",
+     "stages": 1
+    },
+    "exact_single": {
+     "result": "correct",
+     "seconds": 0.266,
+     "state": "single genome",
+     "stages": 1
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.307,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.299,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.235,
+     "state": "ANSWERED",
+     "stages": 1,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F3-6734",
+   "family": "F3",
+   "seed": 6734,
+   "arms": {
+    "graph_alone_greedy": {
+     "result": "correct",
+     "seconds": 0.253,
+     "state": "constituent",
+     "stages": 1
+    },
+    "optimize_flow_blind": {
+     "result": "suboptimal",
+     "seconds": 0.619,
+     "state": "constituent",
+     "stages": 1
+    },
+    "exact_single": {
+     "result": "correct",
+     "seconds": 0.241,
+     "state": "single genome",
+     "stages": 1
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.31,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.28,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.311,
+     "state": "ANSWERED",
+     "stages": 1,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F3-6735",
+   "family": "F3",
+   "seed": 6735,
+   "arms": {
+    "graph_alone_greedy": {
+     "result": "correct",
+     "seconds": 0.325,
+     "state": "constituent",
+     "stages": 1
+    },
+    "optimize_flow_blind": {
+     "result": "suboptimal",
+     "seconds": 0.733,
+     "state": "constituent",
+     "stages": 1
+    },
+    "exact_single": {
+     "result": "correct",
+     "seconds": 0.283,
+     "state": "single genome",
+     "stages": 1
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.367,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.475,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.297,
+     "state": "ANSWERED",
+     "stages": 1,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F3-6736",
+   "family": "F3",
+   "seed": 6736,
+   "arms": {
+    "graph_alone_greedy": {
+     "result": "correct",
+     "seconds": 0.296,
+     "state": "constituent",
+     "stages": 1
+    },
+    "optimize_flow_blind": {
+     "result": "suboptimal",
+     "seconds": 0.735,
+     "state": "constituent",
+     "stages": 1
+    },
+    "exact_single": {
+     "result": "correct",
+     "seconds": 0.251,
+     "state": "single genome",
+     "stages": 1
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.403,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.362,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.288,
+     "state": "ANSWERED",
+     "stages": 1,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F3-6737",
+   "family": "F3",
+   "seed": 6737,
+   "arms": {
+    "graph_alone_greedy": {
+     "result": "correct",
+     "seconds": 0.248,
+     "state": "constituent",
+     "stages": 1
+    },
+    "optimize_flow_blind": {
+     "result": "suboptimal",
+     "seconds": 0.68,
+     "state": "constituent",
+     "stages": 1
+    },
+    "exact_single": {
+     "result": "correct",
+     "seconds": 0.329,
+     "state": "single genome",
+     "stages": 1
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.39,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.382,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.302,
+     "state": "ANSWERED",
+     "stages": 1,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F3-6738",
+   "family": "F3",
+   "seed": 6738,
+   "arms": {
+    "graph_alone_greedy": {
+     "result": "correct",
+     "seconds": 0.286,
+     "state": "constituent",
+     "stages": 1
+    },
+    "optimize_flow_blind": {
+     "result": "suboptimal",
+     "seconds": 0.722,
+     "state": "constituent",
+     "stages": 1
+    },
+    "exact_single": {
+     "result": "correct",
+     "seconds": 0.324,
+     "state": "single genome",
+     "stages": 1
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.499,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.395,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.283,
+     "state": "ANSWERED",
+     "stages": 1,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F3-6739",
+   "family": "F3",
+   "seed": 6739,
+   "arms": {
+    "graph_alone_greedy": {
+     "result": "suboptimal",
+     "seconds": 0.266,
+     "state": "constituent",
+     "stages": 1
+    },
+    "optimize_flow_blind": {
+     "result": "suboptimal",
+     "seconds": 0.812,
+     "state": "constituent",
+     "stages": 1
+    },
+    "exact_single": {
+     "result": "correct",
+     "seconds": 0.255,
+     "state": "single genome",
+     "stages": 1
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.469,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.335,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.326,
+     "state": "ANSWERED",
+     "stages": 1,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F3-6740",
+   "family": "F3",
+   "seed": 6740,
+   "arms": {
+    "graph_alone_greedy": {
+     "result": "suboptimal",
+     "seconds": 0.312,
+     "state": "constituent",
+     "stages": 1
+    },
+    "optimize_flow_blind": {
+     "result": "suboptimal",
+     "seconds": 0.691,
+     "state": "constituent",
+     "stages": 1
+    },
+    "exact_single": {
+     "result": "correct",
+     "seconds": 0.297,
+     "state": "single genome",
+     "stages": 1
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 1.456,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 1.417,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.289,
+     "state": "ANSWERED",
+     "stages": 1,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F4-6801",
+   "family": "F4",
+   "seed": 6801,
+   "arms": {
+    "bayes_alone": {
+     "result": "wrong",
+     "seconds": 0.259,
+     "state": "constituent",
+     "stages": 1
+    },
+    "voi_uninformed": {
+     "result": "correct",
+     "seconds": 0.546,
+     "state": "constituent",
+     "stages": 2
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.803,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.716,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.847,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F4-6802",
+   "family": "F4",
+   "seed": 6802,
+   "arms": {
+    "bayes_alone": {
+     "result": "correct",
+     "seconds": 0.27,
+     "state": "constituent",
+     "stages": 1
+    },
+    "voi_uninformed": {
+     "result": "correct",
+     "seconds": 0.517,
+     "state": "constituent",
+     "stages": 2
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.811,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.746,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.737,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F4-6803",
+   "family": "F4",
+   "seed": 6803,
+   "arms": {
+    "bayes_alone": {
+     "result": "wrong",
+     "seconds": 0.256,
+     "state": "constituent",
+     "stages": 1
+    },
+    "voi_uninformed": {
+     "result": "correct",
+     "seconds": 0.61,
+     "state": "constituent",
+     "stages": 2
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.797,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.863,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.826,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F4-6804",
+   "family": "F4",
+   "seed": 6804,
+   "arms": {
+    "bayes_alone": {
+     "result": "correct",
+     "seconds": 0.264,
+     "state": "constituent",
+     "stages": 1
+    },
+    "voi_uninformed": {
+     "result": "wrong",
+     "seconds": 0.576,
+     "state": "constituent",
+     "stages": 2
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.837,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.834,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.826,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F4-6805",
+   "family": "F4",
+   "seed": 6805,
+   "arms": {
+    "bayes_alone": {
+     "result": "wrong",
+     "seconds": 0.306,
+     "state": "constituent",
+     "stages": 1
+    },
+    "voi_uninformed": {
+     "result": "correct",
+     "seconds": 0.556,
+     "state": "constituent",
+     "stages": 2
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.846,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.781,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.847,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F4-6806",
+   "family": "F4",
+   "seed": 6806,
+   "arms": {
+    "bayes_alone": {
+     "result": "correct",
+     "seconds": 0.299,
+     "state": "constituent",
+     "stages": 1
+    },
+    "voi_uninformed": {
+     "result": "correct",
+     "seconds": 0.554,
+     "state": "constituent",
+     "stages": 2
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.776,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.831,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.86,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F4-6807",
+   "family": "F4",
+   "seed": 6807,
+   "arms": {
+    "bayes_alone": {
+     "result": "wrong",
+     "seconds": 0.273,
+     "state": "constituent",
+     "stages": 1
+    },
+    "voi_uninformed": {
+     "result": "correct",
+     "seconds": 0.567,
+     "state": "constituent",
+     "stages": 2
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.853,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.872,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.765,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F4-6808",
+   "family": "F4",
+   "seed": 6808,
+   "arms": {
+    "bayes_alone": {
+     "result": "correct",
+     "seconds": 0.243,
+     "state": "constituent",
+     "stages": 1
+    },
+    "voi_uninformed": {
+     "result": "correct",
+     "seconds": 0.506,
+     "state": "constituent",
+     "stages": 2
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.859,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.785,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.815,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F4-6809",
+   "family": "F4",
+   "seed": 6809,
+   "arms": {
+    "bayes_alone": {
+     "result": "wrong",
+     "seconds": 0.253,
+     "state": "constituent",
+     "stages": 1
+    },
+    "voi_uninformed": {
+     "result": "wrong",
+     "seconds": 0.511,
+     "state": "constituent",
+     "stages": 2
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.841,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.862,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.76,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F4-6810",
+   "family": "F4",
+   "seed": 6810,
+   "arms": {
+    "bayes_alone": {
+     "result": "correct",
+     "seconds": 0.252,
+     "state": "constituent",
+     "stages": 1
+    },
+    "voi_uninformed": {
+     "result": "wrong",
+     "seconds": 0.536,
+     "state": "constituent",
+     "stages": 2
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.734,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.816,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.892,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F4-6811",
+   "family": "F4",
+   "seed": 6811,
+   "arms": {
+    "bayes_alone": {
+     "result": "correct",
+     "seconds": 0.276,
+     "state": "constituent",
+     "stages": 1
+    },
+    "voi_uninformed": {
+     "result": "wrong",
+     "seconds": 0.588,
+     "state": "constituent",
+     "stages": 2
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.941,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.869,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.874,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F4-6812",
+   "family": "F4",
+   "seed": 6812,
+   "arms": {
+    "bayes_alone": {
+     "result": "wrong",
+     "seconds": 0.244,
+     "state": "constituent",
+     "stages": 1
+    },
+    "voi_uninformed": {
+     "result": "wrong",
+     "seconds": 0.509,
+     "state": "constituent",
+     "stages": 2
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.749,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.877,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.825,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F4-6813",
+   "family": "F4",
+   "seed": 6813,
+   "arms": {
+    "bayes_alone": {
+     "result": "correct",
+     "seconds": 0.266,
+     "state": "constituent",
+     "stages": 1
+    },
+    "voi_uninformed": {
+     "result": "correct",
+     "seconds": 0.551,
+     "state": "constituent",
+     "stages": 2
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.796,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.844,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.842,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F4-6814",
+   "family": "F4",
+   "seed": 6814,
+   "arms": {
+    "bayes_alone": {
+     "result": "wrong",
+     "seconds": 0.256,
+     "state": "constituent",
+     "stages": 1
+    },
+    "voi_uninformed": {
+     "result": "correct",
+     "seconds": 0.601,
+     "state": "constituent",
+     "stages": 2
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.74,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.812,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.966,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F4-6815",
+   "family": "F4",
+   "seed": 6815,
+   "arms": {
+    "bayes_alone": {
+     "result": "wrong",
+     "seconds": 0.278,
+     "state": "constituent",
+     "stages": 1
+    },
+    "voi_uninformed": {
+     "result": "wrong",
+     "seconds": 0.612,
+     "state": "constituent",
+     "stages": 2
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.861,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.907,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.855,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F4-6816",
+   "family": "F4",
+   "seed": 6816,
+   "arms": {
+    "bayes_alone": {
+     "result": "wrong",
+     "seconds": 0.257,
+     "state": "constituent",
+     "stages": 1
+    },
+    "voi_uninformed": {
+     "result": "correct",
+     "seconds": 0.486,
+     "state": "constituent",
+     "stages": 2
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.781,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.854,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.789,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F4-6817",
+   "family": "F4",
+   "seed": 6817,
+   "arms": {
+    "bayes_alone": {
+     "result": "correct",
+     "seconds": 0.232,
+     "state": "constituent",
+     "stages": 1
+    },
+    "voi_uninformed": {
+     "result": "wrong",
+     "seconds": 0.561,
+     "state": "constituent",
+     "stages": 2
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.799,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.811,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.765,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F4-6818",
+   "family": "F4",
+   "seed": 6818,
+   "arms": {
+    "bayes_alone": {
+     "result": "wrong",
+     "seconds": 0.238,
+     "state": "constituent",
+     "stages": 1
+    },
+    "voi_uninformed": {
+     "result": "correct",
+     "seconds": 0.54,
+     "state": "constituent",
+     "stages": 2
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.817,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.771,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.848,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F4-6819",
+   "family": "F4",
+   "seed": 6819,
+   "arms": {
+    "bayes_alone": {
+     "result": "correct",
+     "seconds": 0.256,
+     "state": "constituent",
+     "stages": 1
+    },
+    "voi_uninformed": {
+     "result": "wrong",
+     "seconds": 0.562,
+     "state": "constituent",
+     "stages": 2
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.913,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.795,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.809,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F4-6820",
+   "family": "F4",
+   "seed": 6820,
+   "arms": {
+    "bayes_alone": {
+     "result": "correct",
+     "seconds": 0.256,
+     "state": "constituent",
+     "stages": 1
+    },
+    "voi_uninformed": {
+     "result": "correct",
+     "seconds": 0.542,
+     "state": "constituent",
+     "stages": 2
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.875,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.958,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.848,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F4-6821",
+   "family": "F4",
+   "seed": 6821,
+   "arms": {
+    "bayes_alone": {
+     "result": "correct",
+     "seconds": 0.246,
+     "state": "constituent",
+     "stages": 1
+    },
+    "voi_uninformed": {
+     "result": "wrong",
+     "seconds": 0.565,
+     "state": "constituent",
+     "stages": 2
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.784,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.777,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.773,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F4-6822",
+   "family": "F4",
+   "seed": 6822,
+   "arms": {
+    "bayes_alone": {
+     "result": "wrong",
+     "seconds": 0.265,
+     "state": "constituent",
+     "stages": 1
+    },
+    "voi_uninformed": {
+     "result": "correct",
+     "seconds": 0.58,
+     "state": "constituent",
+     "stages": 2
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.851,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.871,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.755,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F4-6823",
+   "family": "F4",
+   "seed": 6823,
+   "arms": {
+    "bayes_alone": {
+     "result": "wrong",
+     "seconds": 0.319,
+     "state": "constituent",
+     "stages": 1
+    },
+    "voi_uninformed": {
+     "result": "wrong",
+     "seconds": 0.654,
+     "state": "constituent",
+     "stages": 2
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.805,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.738,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.928,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F4-6824",
+   "family": "F4",
+   "seed": 6824,
+   "arms": {
+    "bayes_alone": {
+     "result": "wrong",
+     "seconds": 0.308,
+     "state": "constituent",
+     "stages": 1
+    },
+    "voi_uninformed": {
+     "result": "wrong",
+     "seconds": 0.51,
+     "state": "constituent",
+     "stages": 2
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.884,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.789,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.87,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F4-6825",
+   "family": "F4",
+   "seed": 6825,
+   "arms": {
+    "bayes_alone": {
+     "result": "wrong",
+     "seconds": 0.25,
+     "state": "constituent",
+     "stages": 1
+    },
+    "voi_uninformed": {
+     "result": "correct",
+     "seconds": 0.58,
+     "state": "constituent",
+     "stages": 2
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.823,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.806,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.808,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F4-6826",
+   "family": "F4",
+   "seed": 6826,
+   "arms": {
+    "bayes_alone": {
+     "result": "wrong",
+     "seconds": 0.308,
+     "state": "constituent",
+     "stages": 1
+    },
+    "voi_uninformed": {
+     "result": "correct",
+     "seconds": 0.6,
+     "state": "constituent",
+     "stages": 2
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.938,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.839,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.884,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F4-6827",
+   "family": "F4",
+   "seed": 6827,
+   "arms": {
+    "bayes_alone": {
+     "result": "correct",
+     "seconds": 0.278,
+     "state": "constituent",
+     "stages": 1
+    },
+    "voi_uninformed": {
+     "result": "wrong",
+     "seconds": 0.499,
+     "state": "constituent",
+     "stages": 2
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.755,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.851,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.838,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F4-6828",
+   "family": "F4",
+   "seed": 6828,
+   "arms": {
+    "bayes_alone": {
+     "result": "correct",
+     "seconds": 0.265,
+     "state": "constituent",
+     "stages": 1
+    },
+    "voi_uninformed": {
+     "result": "wrong",
+     "seconds": 0.489,
+     "state": "constituent",
+     "stages": 2
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.69,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.835,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.838,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F4-6829",
+   "family": "F4",
+   "seed": 6829,
+   "arms": {
+    "bayes_alone": {
+     "result": "wrong",
+     "seconds": 0.334,
+     "state": "constituent",
+     "stages": 1
+    },
+    "voi_uninformed": {
+     "result": "correct",
+     "seconds": 0.619,
+     "state": "constituent",
+     "stages": 2
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.895,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.917,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.945,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F4-6830",
+   "family": "F4",
+   "seed": 6830,
+   "arms": {
+    "bayes_alone": {
+     "result": "wrong",
+     "seconds": 0.318,
+     "state": "constituent",
+     "stages": 1
+    },
+    "voi_uninformed": {
+     "result": "correct",
+     "seconds": 0.607,
+     "state": "constituent",
+     "stages": 2
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.815,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.754,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.858,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F4-6831",
+   "family": "F4",
+   "seed": 6831,
+   "arms": {
+    "bayes_alone": {
+     "result": "wrong",
+     "seconds": 0.244,
+     "state": "constituent",
+     "stages": 1
+    },
+    "voi_uninformed": {
+     "result": "correct",
+     "seconds": 0.525,
+     "state": "constituent",
+     "stages": 2
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.814,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.844,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.887,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F4-6832",
+   "family": "F4",
+   "seed": 6832,
+   "arms": {
+    "bayes_alone": {
+     "result": "wrong",
+     "seconds": 0.278,
+     "state": "constituent",
+     "stages": 1
+    },
+    "voi_uninformed": {
+     "result": "correct",
+     "seconds": 0.643,
+     "state": "constituent",
+     "stages": 2
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.79,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.902,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.857,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F4-6833",
+   "family": "F4",
+   "seed": 6833,
+   "arms": {
+    "bayes_alone": {
+     "result": "correct",
+     "seconds": 0.276,
+     "state": "constituent",
+     "stages": 1
+    },
+    "voi_uninformed": {
+     "result": "correct",
+     "seconds": 0.587,
+     "state": "constituent",
+     "stages": 2
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.833,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.781,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.814,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F4-6834",
+   "family": "F4",
+   "seed": 6834,
+   "arms": {
+    "bayes_alone": {
+     "result": "correct",
+     "seconds": 0.243,
+     "state": "constituent",
+     "stages": 1
+    },
+    "voi_uninformed": {
+     "result": "wrong",
+     "seconds": 0.633,
+     "state": "constituent",
+     "stages": 2
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.853,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.942,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.886,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F4-6835",
+   "family": "F4",
+   "seed": 6835,
+   "arms": {
+    "bayes_alone": {
+     "result": "wrong",
+     "seconds": 0.25,
+     "state": "constituent",
+     "stages": 1
+    },
+    "voi_uninformed": {
+     "result": "correct",
+     "seconds": 0.598,
+     "state": "constituent",
+     "stages": 2
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.927,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.872,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.954,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F4-6836",
+   "family": "F4",
+   "seed": 6836,
+   "arms": {
+    "bayes_alone": {
+     "result": "wrong",
+     "seconds": 0.299,
+     "state": "constituent",
+     "stages": 1
+    },
+    "voi_uninformed": {
+     "result": "correct",
+     "seconds": 0.608,
+     "state": "constituent",
+     "stages": 2
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.899,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.852,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.884,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F4-6837",
+   "family": "F4",
+   "seed": 6837,
+   "arms": {
+    "bayes_alone": {
+     "result": "wrong",
+     "seconds": 0.232,
+     "state": "constituent",
+     "stages": 1
+    },
+    "voi_uninformed": {
+     "result": "correct",
+     "seconds": 0.605,
+     "state": "constituent",
+     "stages": 2
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.821,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.818,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.964,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F4-6838",
+   "family": "F4",
+   "seed": 6838,
+   "arms": {
+    "bayes_alone": {
+     "result": "correct",
+     "seconds": 0.301,
+     "state": "constituent",
+     "stages": 1
+    },
+    "voi_uninformed": {
+     "result": "correct",
+     "seconds": 0.639,
+     "state": "constituent",
+     "stages": 2
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.786,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.773,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.797,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F4-6839",
+   "family": "F4",
+   "seed": 6839,
+   "arms": {
+    "bayes_alone": {
+     "result": "correct",
+     "seconds": 0.293,
+     "state": "constituent",
+     "stages": 1
+    },
+    "voi_uninformed": {
+     "result": "correct",
+     "seconds": 0.505,
+     "state": "constituent",
+     "stages": 2
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.747,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.737,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.817,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  },
+  {
+   "item_id": "F4-6840",
+   "family": "F4",
+   "seed": 6840,
+   "arms": {
+    "bayes_alone": {
+     "result": "correct",
+     "seconds": 0.267,
+     "state": "constituent",
+     "stages": 1
+    },
+    "voi_uninformed": {
+     "result": "wrong",
+     "seconds": 0.55,
+     "state": "constituent",
+     "stages": 2
+    },
+    "static_composition": {
+     "result": "correct",
+     "seconds": 0.785,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "routed_composition": {
+     "result": "correct",
+     "seconds": 0.816,
+     "state": "ANSWERED",
+     "stages": 3
+    },
+    "compiled": {
+     "result": "correct",
+     "seconds": 0.924,
+     "state": "ANSWERED",
+     "stages": 3,
+     "method": null
+    }
+   }
+  }
+ ],
+ "summary": {
+  "F1": {
+   "recipe": "estimate_then_optimize",
+   "n": 40,
+   "counts": {
+    "estimate_alone": {
+     "correct": 0,
+     "wrong": 0,
+     "suboptimal": 0,
+     "no_decision": 40
+    },
+    "optimize_at_point": {
+     "correct": 4,
+     "wrong": 36,
+     "suboptimal": 0,
+     "no_decision": 0
+    },
+    "optimize_at_worst_case": {
+     "correct": 4,
+     "wrong": 0,
+     "suboptimal": 36,
+     "no_decision": 0
+    },
+    "static_composition": {
+     "correct": 39,
+     "wrong": 1,
+     "suboptimal": 0,
+     "no_decision": 0
+    },
+    "routed_composition": {
+     "correct": 39,
+     "wrong": 1,
+     "suboptimal": 0,
+     "no_decision": 0
+    },
+    "compiled": {
+     "correct": 39,
+     "wrong": 1,
+     "suboptimal": 0,
+     "no_decision": 0
+    }
+   },
+   "median_seconds": {
+    "estimate_alone": 0.383,
+    "optimize_at_point": 0.571,
+    "optimize_at_worst_case": 0.575,
+    "static_composition": 0.942,
+    "routed_composition": 0.946,
+    "compiled": 0.952
+   },
+   "p95_seconds": {
+    "estimate_alone": 0.572,
+    "optimize_at_point": 0.67,
+    "optimize_at_worst_case": 0.642,
+    "static_composition": 1.104,
+    "routed_composition": 1.05,
+    "compiled": 1.219
+   },
+   "translation_failure_rate": 0.0,
+   "composition_failure_rate": 0.0,
+   "lift": false,
+   "best_constituent": "optimize_at_worst_case",
+   "routed_wins": 35,
+   "routed_losses": 0,
+   "sign_test_p_one_sided": 2.9e-11,
+   "lineage_rule": {
+    "best_single": "optimize_at_worst_case",
+    "routed_wins": 35,
+    "routed_losses": 0,
+    "sign_test_p_one_sided": 2.9e-11,
+    "lift": false
+   },
+   "exact_singles": [],
+   "tied_by": []
+  },
+  "F2R": {
+   "recipe": "identify_then_optimize",
+   "n": 64,
+   "counts": {
+    "identify_alone": {
+     "correct": 0,
+     "wrong": 0,
+     "suboptimal": 0,
+     "no_decision": 64
+    },
+    "optimize_on_association": {
+     "correct": 48,
+     "wrong": 16,
+     "suboptimal": 0,
+     "no_decision": 0
+    },
+    "static_composition": {
+     "correct": 62,
+     "wrong": 1,
+     "suboptimal": 0,
+     "no_decision": 1
+    },
+    "routed_composition": {
+     "correct": 62,
+     "wrong": 1,
+     "suboptimal": 0,
+     "no_decision": 1
+    },
+    "compiled": {
+     "correct": 62,
+     "wrong": 1,
+     "suboptimal": 0,
+     "no_decision": 1
+    }
+   },
+   "median_seconds": {
+    "identify_alone": 0.484,
+    "optimize_on_association": 0.575,
+    "static_composition": 1.063,
+    "routed_composition": 1.101,
+    "compiled": 1.089
+   },
+   "p95_seconds": {
+    "identify_alone": 0.639,
+    "optimize_on_association": 0.716,
+    "static_composition": 1.231,
+    "routed_composition": 1.322,
+    "compiled": 1.359
+   },
+   "translation_failure_rate": 0.0,
+   "composition_failure_rate": 0.015625,
+   "lift": true,
+   "best_constituent": "optimize_on_association",
+   "routed_wins": 16,
+   "routed_losses": 2,
+   "sign_test_p_one_sided": 0.00065612793,
+   "lineage_rule": {
+    "best_single": "optimize_on_association",
+    "routed_wins": 16,
+    "routed_losses": 2,
+    "sign_test_p_one_sided": 0.00065612793,
+    "lift": true
+   },
+   "exact_singles": [],
+   "tied_by": []
+  },
+  "F3": {
+   "recipe": "graph_then_allocate",
+   "n": 40,
+   "counts": {
+    "graph_alone_greedy": {
+     "correct": 27,
+     "wrong": 0,
+     "suboptimal": 13,
+     "no_decision": 0
+    },
+    "optimize_flow_blind": {
+     "correct": 1,
+     "wrong": 0,
+     "suboptimal": 39,
+     "no_decision": 0
+    },
+    "exact_single": {
+     "correct": 40,
+     "wrong": 0,
+     "suboptimal": 0,
+     "no_decision": 0
+    },
+    "static_composition": {
+     "correct": 40,
+     "wrong": 0,
+     "suboptimal": 0,
+     "no_decision": 0
+    },
+    "routed_composition": {
+     "correct": 40,
+     "wrong": 0,
+     "suboptimal": 0,
+     "no_decision": 0
+    },
+    "compiled": {
+     "correct": 40,
+     "wrong": 0,
+     "suboptimal": 0,
+     "no_decision": 0
+    }
+   },
+   "median_seconds": {
+    "graph_alone_greedy": 0.275,
+    "optimize_flow_blind": 0.698,
+    "exact_single": 0.265,
+    "static_composition": 1.355,
+    "routed_composition": 1.349,
+    "compiled": 0.281
+   },
+   "p95_seconds": {
+    "graph_alone_greedy": 0.325,
+    "optimize_flow_blind": 0.799,
+    "exact_single": 0.324,
+    "static_composition": 1.495,
+    "routed_composition": 1.482,
+    "compiled": 0.323
+   },
+   "translation_failure_rate": 0.0,
+   "composition_failure_rate": 0.0,
+   "lift": false,
+   "best_constituent": "exact_single",
+   "routed_wins": 0,
+   "routed_losses": 0,
+   "sign_test_p_one_sided": 1.0,
+   "lineage_rule": {
+    "best_single": "graph_alone_greedy",
+    "routed_wins": 13,
+    "routed_losses": 0,
+    "sign_test_p_one_sided": 0.000122070312,
+    "lift": true
+   },
+   "exact_singles": [
+    "exact_single"
+   ],
+   "tied_by": [
+    "exact_single"
+   ]
+  },
+  "F4": {
+   "recipe": "bayes_then_voi",
+   "n": 40,
+   "counts": {
+    "bayes_alone": {
+     "correct": 18,
+     "wrong": 22,
+     "suboptimal": 0,
+     "no_decision": 0
+    },
+    "voi_uninformed": {
+     "correct": 25,
+     "wrong": 15,
+     "suboptimal": 0,
+     "no_decision": 0
+    },
+    "static_composition": {
+     "correct": 40,
+     "wrong": 0,
+     "suboptimal": 0,
+     "no_decision": 0
+    },
+    "routed_composition": {
+     "correct": 40,
+     "wrong": 0,
+     "suboptimal": 0,
+     "no_decision": 0
+    },
+    "compiled": {
+     "correct": 40,
+     "wrong": 0,
+     "suboptimal": 0,
+     "no_decision": 0
+    }
+   },
+   "median_seconds": {
+    "bayes_alone": 0.265,
+    "voi_uninformed": 0.564,
+    "static_composition": 0.816,
+    "routed_composition": 0.833,
+    "compiled": 0.847
+   },
+   "p95_seconds": {
+    "bayes_alone": 0.318,
+    "voi_uninformed": 0.639,
+    "static_composition": 0.927,
+    "routed_composition": 0.917,
+    "compiled": 0.954
+   },
+   "translation_failure_rate": 0.0,
+   "composition_failure_rate": 0.0,
+   "lift": true,
+   "best_constituent": "voi_uninformed",
+   "routed_wins": 15,
+   "routed_losses": 0,
+   "sign_test_p_one_sided": 3.0517578e-05,
+   "lineage_rule": {
+    "best_single": "voi_uninformed",
+    "routed_wins": 15,
+    "routed_losses": 0,
+    "sign_test_p_one_sided": 3.0517578e-05,
+    "lift": true
+   },
+   "exact_singles": [],
+   "tied_by": []
+  },
+  "VPL_converged": {
+   "families_with_lift": 2,
+   "lifted": [
+    "F2R",
+    "F4"
+   ],
+   "families": 4,
+   "rule": "converged rule: routed correct > best single correct (best of lineage constituents and exact_single, chosen on held-out results), routed wrong <= best single wrong, one-sided exact sign test p < 0.05 over discordant items, routed median latency <= 60 s. Lineage rule (constituents only) reported beside it."
+  }
+ }
+}

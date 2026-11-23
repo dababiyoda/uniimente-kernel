@@ -1,0 +1,320 @@
+{
+  "decision_id": "FOUNDRY-09-OCI-COMPLETION-20261026",
+  "classification": "standard",
+  "contributor": "KIMI",
+  "founder_intent_ids": [
+    "INTENT-0037"
+  ],
+  "system_boundary": "Foundry system 9 only, under INTENT-2026-09-27-FOUNDRY-55 and INTENT-20261001-FULL-MACHINE-COMPLETION. Reconcile deterministic local context evidence with the exact-head hosted OCI build/second-environment proof. Do not close system 10, full GREG/organ imaging, general source admission, VEPMC, founder-device acceptance, or any merge/activation gate.",
+  "inspected_sources": [
+    {
+      "source": "foundry/completion.yaml and foundry/completion.py at fa80ace79eb1ac2cc4bf745918baf5587e1ae3f6",
+      "inspected": true
+    },
+    {
+      "source": "foundry/systems/oci.py, foundry/oci_entry.py and foundry/systems/dsl.py at the exact base head",
+      "inspected": true
+    },
+    {
+      "source": "scripts/ci/prove_oci.py and .github/workflows/canonical-ci.yml at the exact base head",
+      "inspected": true
+    },
+    {
+      "source": "tests/unit/test_greg_oci.py and the signed-Body OCI mission path",
+      "inspected": true
+    },
+    {
+      "source": "Canonical CI run 39984114068 job metadata for job 120524216169, including every step conclusion",
+      "inspected": true
+    },
+    {
+      "source": "Artifact-list metadata for owned-oci-capability-evidence artifact 12515337331",
+      "inspected": true
+    },
+    {
+      "source": "Public Actions job page for run 39984114068 job 120524216169",
+      "inspected": true
+    },
+    {
+      "source": "docs/collaboration/deliberation-owned-oci-20261002.json and the preserved system 9 PARTIAL lineage",
+      "inspected": true
+    },
+    {
+      "source": "Local mount st_nlink diagnostics and an exact-head detached native-filesystem worktree",
+      "inspected": true
+    },
+    {
+      "source": "Changed-tree full Foundry audit output and its native-filesystem child-CI environment on 2026-10-26",
+      "inspected": true
+    },
+    {
+      "source": "Pull request 196, its current comments, and issue 96 claims immediately before editing",
+      "inspected": true
+    }
+  ],
+  "alternatives": [
+    {
+      "kind": "proposed",
+      "benefits": "Record system 9 COMPLETE at SANDBOX_VERIFIED by combining reproducible local context evidence with the exact-head hosted proof whose committed success gates cover both acceptance criteria.",
+      "liabilities": "The hosted artifact and raw log internals were not locally inspected, so the evidence must not be promoted to independently verified case-level outcomes.",
+      "evidence": "Local system 9 result and hash reproduce; exact-head OCI job and proof step succeeded; the proof script fails on unequal rebuilds or any host/container mismatch.",
+      "rollback": "Restore the parent row and remove the new local completion record while retaining the hosted evidence and negative-access record as history.",
+      "kill_criteria": "Wrong source head, an invalid proof gate, failed local reproduction, later hosted mismatch, or any attempt to read this as full-machine or higher-tier evidence.",
+      "revival_condition": "Not rejected; maintain while exact local and hosted evidence remain valid."
+    },
+    {
+      "kind": "current_baseline",
+      "benefits": "Leave system 9 PARTIAL despite the successful hosted proof, avoiding any reliance on inaccessible artifact internals.",
+      "liabilities": "The existing gap says hosted rebuild/run evidence is pending even though that evidence now exists at the exact head; the completion inventory would remain materially stale.",
+      "evidence": "The base row is PARTIAL and names actual hosted OCI rebuild/run evidence as its remaining delta-specific gap.",
+      "rollback": "No change to roll back.",
+      "kill_criteria": "The hosted job is shown unrelated to the acceptance criteria or its metadata is wrong.",
+      "revival_condition": "Restore this baseline if the exact-head proof is invalidated or the completion record cannot reproduce."
+    },
+    {
+      "kind": "do_nothing",
+      "benefits": "Make no repository change and mention the green hosted job only in transient coordination prose.",
+      "liabilities": "No durable acceptance mapping, recovery, evidence-tier boundary, or preserved retrieval failure enters the completion contract; later sessions must rediscover everything.",
+      "evidence": "The current integration branch already contains the implementation and hosted run but no system 9 local evidence record.",
+      "rollback": "Not applicable.",
+      "kill_criteria": "Any requirement for durable completion and negative-evidence lineage.",
+      "revival_condition": "Use only if an overlapping owner claims this exact completion/evidence scope before editing."
+    },
+    {
+      "kind": "simplest_viable",
+      "benefits": "Flip PARTIAL to COMPLETE and generate system-09.json with no separate hosted record.",
+      "liabilities": "This would hide that local image_built is false, omit the exact hosted run and artifact-access limits, and look like count-driven state gaming.",
+      "evidence": "The completion auditor requires fields and local reproduction but does not itself understand hosted evidence; a bare flip could therefore look mechanically valid while being substantively incomplete.",
+      "rollback": "Revert the row and generated evidence.",
+      "kill_criteria": "Always reject as insufficient for this transition.",
+      "revival_condition": "Never as a standalone design; only its mechanical record-generation step is reused inside the proposed evidence package."
+    },
+    {
+      "kind": "strongest_competitor",
+      "benefits": "Keep system 9 PARTIAL until the artifact report, raw logs and per-case results are independently inspected, or until Docker/Podman proof runs locally.",
+      "liabilities": "Artifact download is 401, log access is 403, and Docker/Podman/runc are unavailable here. This conflates a stronger evidence tier with the narrower sandbox acceptance and leaves an actually executed proof unusable.",
+      "evidence": "Case-level independent inspection would be stronger than a platform success record; no such inspection occurred in this session.",
+      "rollback": "Retain PARTIAL and the precise evidence blocker.",
+      "kill_criteria": "A policy explicitly makes artifact-internal independent inspection a precondition for SANDBOX_VERIFIED completion.",
+      "revival_condition": "Adopt immediately if the exact-head job cannot be trusted, the proof script's gates do not establish acceptance, or the founder/integrator requires independent case-level review for COMPLETE."
+    },
+    {
+      "kind": "reversible_experiment",
+      "benefits": "Stage the scoped evidence/completion transition on an independent child draft, run focused and full Foundry checks, and let exact-head review decide intake without touching the integration owner's branch.",
+      "liabilities": "A draft and local tests are not integration, independent review, hosted CI on the child head, or founder acceptance.",
+      "evidence": "The posted bounded claim reserves only the system 9 row and new evidence/deliberation records; rollback is a single scoped commit.",
+      "rollback": "Close the draft or revert the scoped commit; never force-push or alter another session's branch.",
+      "kill_criteria": "Overlapping claim, relevant destination-head change, failed reproduction, or evidence overstatement.",
+      "revival_condition": "This is the selected delivery mechanism unless coordination or validation stops it."
+    }
+  ],
+  "roles": {
+    "founder_intent_steward": "Close buildable obligations rather than stopping at an audit, but leave VEPMC and real-world founder gates untouched. A truthful system 9 transition advances the Foundry contract; a count-driven flip would betray it. Alfonso Lopez remains root constitutional authority.",
+    "systems_architect": "Keep separate evidence owners: foundry.completion reproduces the local deterministic context record, while the existing hosted workflow owns real OCI build and second-environment execution. Add no runtime, authority plane, builder permission, routing plane, or second completion system.",
+    "adversarial_reviewer": "A green check is not magic evidence. It counts only because run, job, step and source head match and the inspected script exits successfully only after immutable rebuild equality and six exact behavior comparisons. The inaccessible artifact remains a material objection to any stronger claim.",
+    "operator_maintainer": "Preserve exact run/job/artifact identifiers, expiration and archive digest; record 401/403/sign-in limits and cancelled overall CI job. Recovery rebuilds reviewed bytes, refuses tampered context, removes the disposable builder, and returns PARTIAL on drift rather than reusing stale success.",
+    "evidence_welfare_guardian": "Keep image_built=false in local evidence, SANDBOX_VERIFIED as the ceiling, negative results and dissent visible, and VEPMC at 0. Do not turn one restricted-rule capability into full GREG/organ portability or independent external verification. Five perspectives are self-review by one agent, not independent reviewers."
+  },
+  "passes": [
+    {
+      "pass": 1,
+      "intended_outcome": "Determine whether existing evidence satisfies system 9 without conflating local packaging, hosted execution, and independent verification.",
+      "advantages": [
+        "Maps each acceptance criterion to the proof that actually establishes it.",
+        "Uses an exact source head and committed fail-closed proof gates rather than prose.",
+        "Keeps local image_built=false and the hosted evidence tier visible.",
+        "Retains the former gap and adds concrete recovery behavior."
+      ],
+      "disadvantages": [
+        {
+          "id": "D1",
+          "text": "Artifact archive and raw log internals are unavailable, so no case-level report was independently inspected.",
+          "redesign": "Record the 401, 403 and sign-in outcomes; cap the claim at SANDBOX_VERIFIED and require report/raw evidence or fresh independent proof for elevation."
+        },
+        {
+          "id": "D2",
+          "text": "A green job could be unrelated to this source or too weak to prove acceptance.",
+          "redesign": "Bind run, job, step and artifact metadata to fa80ace7; inspect and hash the proof script and enumerate the exact rebuild and six-case gates required for zero exit."
+        },
+        {
+          "id": "D3",
+          "text": "The local exercise returns image_built=false and could be misread as the whole completion proof.",
+          "redesign": "Keep that false value unchanged, generate the local record as packaging-only evidence, and reference hosted evidence separately."
+        },
+        {
+          "id": "D4",
+          "text": "Changing state could silently delete the former gap and privileged-runtime lineage.",
+          "redesign": "Rename the field to state_lineage, prepend the bounded resolution, and preserve the entire former text verbatim."
+        },
+        {
+          "id": "D5",
+          "text": "The successful OCI job could be smoothed into an all-CI-green claim despite the cancelled kernel/organ job.",
+          "redesign": "Record jobs 2-9 separately from job 1 cancelled and set all_canonical_ci_green=false in the durable evidence."
+        },
+        {
+          "id": "D6",
+          "text": "The first native test attempt on the working mount produced a REFUTED signed mission and could be mistaken for a project regression.",
+          "redesign": "Trace the refusal to st_nlink=0 on every owned source, rerun the exact head in a detached native-filesystem worktree where st_nlink=1, and retain both outcomes."
+        }
+      ],
+      "attack_vectors": [
+        "Treat artifact metadata as inspection of its contents.",
+        "Flip state to improve the 50/55 count without satisfying acceptance.",
+        "Treat a restricted-rule fixture as full GREG, organ, or general-code packaging.",
+        "Treat one green job as the whole workflow or as VEPMC.",
+        "Hide a mount-induced test failure or relabel it as a code defect without diagnosis."
+      ],
+      "dispositions": [],
+      "residual_risk": "The proposed record still depends on GitHub's hosted job result and the inspected committed proof rather than locally read report internals."
+    },
+    {
+      "pass": 2,
+      "intended_outcome": "Strengthen the evidence package against stale heads, misleading tiers, lost lineage, environmental false positives, and unrecoverable completion claims.",
+      "advantages": [
+        "Source digests bind the proof contract to the exact reviewed files.",
+        "The evidence record distinguishes local, hosted, artifact-metadata, and public-page claims.",
+        "The deliberation retains the strongest competitor and its revival conditions.",
+        "The child-draft route makes the transition reversible and independently reviewable before integration."
+      ],
+      "disadvantages": [],
+      "attack_vectors": [
+        "Artifact expiry turns a durable pointer into an implied permanent archive.",
+        "A later source change inherits stale completion without a fresh hosted proof.",
+        "Recovery becomes prose unless it names tamper refusal, builder cleanup, and return to PARTIAL.",
+        "Five self-review roles are misrepresented as independent consensus."
+      ],
+      "dispositions": [
+        {
+          "id": "D1",
+          "disposition": "accepted",
+          "owner": "Integration reviewer and subsequent OCI maintainer",
+          "threshold": "Remain at SANDBOX_VERIFIED. Any stronger tier, or a dispute over case-level behavior, requires artifact/raw-log inspection or a fresh independently reviewed hosted proof."
+        },
+        {
+          "id": "D2",
+          "disposition": "resolved",
+          "owner": "KIMI",
+          "threshold": "Run 39984114068, job 120524216169 and artifact 12515337331 all name fa80ace7; the proof-step and script gates are recorded."
+        },
+        {
+          "id": "D3",
+          "disposition": "resolved",
+          "owner": "KIMI",
+          "threshold": "system-09.json retains image_built=false and the row's limitations say local context creation is not an image claim."
+        },
+        {
+          "id": "D4",
+          "disposition": "resolved",
+          "owner": "KIMI",
+          "threshold": "The former gap remains verbatim in state_lineage and negative_evidence.deleted is empty."
+        },
+        {
+          "id": "D5",
+          "disposition": "resolved",
+          "owner": "KIMI",
+          "threshold": "The evidence and handoff name the cancelled job and never claim all Canonical CI passed."
+        },
+        {
+          "id": "D6",
+          "disposition": "resolved",
+          "owner": "KIMI",
+          "threshold": "The mount failure is explained by measured st_nlink=0; the exact-head native-filesystem OCI suite passes 7/7, and both results remain recorded."
+        }
+      ],
+      "residual_risk": "The artifact may expire on 2026-11-22, and its report/raw logs remain uninspected. Completion is valid only for the restricted-rule capability at SANDBOX_VERIFIED; later heads still need their own successful hosted OCI proof and local audit."
+    }
+  ],
+  "dissent": {
+    "present": true,
+    "material": true,
+    "strongest_objection": "A platform success flag and artifact metadata are not independent inspection of the artifact's report or six case results; on that view system 9 should remain PARTIAL until raw evidence is readable.",
+    "resolution_threshold": "The narrower COMPLETE claim is acceptable only while the exact head, successful proof step, inspected fail-closed script gates and reproducible local record all hold, and only at SANDBOX_VERIFIED. Any higher-tier claim requires case-level artifact/raw-log inspection or fresh independent proof. If those gates are shown not to establish acceptance, restore PARTIAL.",
+    "review_trigger": "Artifact access or expiry, any OCI/proof/workflow change, a failed local or hosted reproduction, an integrator/founder request for case-level evidence, or any proposed evidence-tier elevation."
+  },
+  "evidence": [
+    {
+      "claim": "The local system 9 exercise produces an intact deterministic context with context_sha256 b3e1a317447802134f586af84ee06046c21519bebbbbcc6b4465c888343910dd and image_built=false.",
+      "source_type": "deterministic_fixture",
+      "claimed_tier": "deterministic_fixture"
+    },
+    {
+      "claim": "The exact-base and changed-tree OCI unit suites each pass 7/7 in a native-filesystem worktree after the mount-specific st_nlink issue is removed.",
+      "source_type": "unit_test",
+      "claimed_tier": "unit_test"
+    },
+    {
+      "claim": "The changed-tree full Foundry rerun audit completed with PASS: 51/55 complete; 0 problem(s); systems 10, 26, 28 and 52 remain PARTIAL.",
+      "source_type": "sandbox_execution",
+      "claimed_tier": "sandbox_execution"
+    },
+    {
+      "claim": "The changed-tree Foundry completion-contract suite passed 66 tests; 27 Stripe deprecation warnings were emitted and no test failed.",
+      "source_type": "unit_test",
+      "claimed_tier": "unit_test"
+    },
+    {
+      "claim": "Run 39984114068 job 120524216169 and its immutable-build/second-environment proof step concluded success at fa80ace7.",
+      "source_type": "real_external_effect",
+      "claimed_tier": "real_external_effect"
+    },
+    {
+      "claim": "The inspected proof script requires identical independent OCI layouts and six exact host/container result matches before successful exit.",
+      "source_type": "deterministic_fixture",
+      "claimed_tier": "deterministic_fixture"
+    },
+    {
+      "claim": "Artifact 12515337331 exists at the same run/head with retained size, digest and expiration metadata.",
+      "source_type": "real_external_effect",
+      "claimed_tier": "real_external_effect"
+    },
+    {
+      "claim": "The public job page says Sign in to view logs while displaying job success on October 23, 2026 in 1m 5s.",
+      "source_type": "prose_claim",
+      "claimed_tier": "prose_claim"
+    },
+    {
+      "claim": "The overall run is not all green: canonical job 1 was cancelled after timeout although jobs 2-9 succeeded.",
+      "source_type": "real_external_effect",
+      "claimed_tier": "real_external_effect"
+    }
+  ],
+  "negative_evidence": {
+    "retained": [
+      "Local system 9 evidence keeps image_built=false and does not claim container execution.",
+      "Artifact archive retrieval returned HTTP 401; no internal report, layout, image digest or case result was inspected.",
+      "Job-log API retrieval returned HTTP 403; the public page requires sign-in for logs.",
+      "Artifact metadata and its archive digest are not artifact-content inspection or an OCI image digest.",
+      "Overall Canonical CI is not all green because job 1 was cancelled after timeout.",
+      "Earlier run 70a89457 failed the OCI job under Docker 29/containerd image-ID semantics before the compatibility fix.",
+      "The working mount returns st_nlink=0 for all 634 owned-source files; the first OCI run therefore gave 1 failed/6 passed, while the exact-head native-filesystem rerun gave 7 passed.",
+      "The first full base audit stopped at system 11 because wasmtime was absent; that is an incomplete environmental attempt, not a Foundry audit pass.",
+      "Later audit attempts stopped at missing imageio_ffmpeg, stripe and claude_agent_sdk imports; the 126 MB SDK wheel download and a combined package installer both timed out or stalled. Actual declared source/wheel releases with published hashes were used instead, with no stub or provider call.",
+      "Before the native virtual environment supplied pytest to commissioning's deliberately scrubbed child CI, two commissioning-capable audit attempts raised KeyError: proposal because the child tests could not run. These were inconclusive environment failures, not evidence mismatches; the focused rerun then matched system 51's retained result hash exactly.",
+      "The successful full audit is a local changed-tree result, not a hosted child-head CI run, an entire repository test-suite result, or integration.",
+      "The former PARTIAL gap, paused privileged-runtime work, unvalidated groundwork, full-machine portability and general execution limits remain in state_lineage.",
+      "System 10, full GREG/organ images, general source admission, live activation, VEPMC and founder-only gates remain open and untouched.",
+      "All five deliberation perspectives are one agent's self-review, not independent review."
+    ],
+    "deleted": []
+  },
+  "rollback": "Close the child draft or revert only its scoped completion/evidence transition. Restore the parent system 9 row if the claim fails, retain the hosted evidence and failure/access records as historical negative evidence, and never force-push or alter the integration owner's branch. No runtime migration or deployed state exists.",
+  "kill_criteria": "Kill or regress the transition if the run/job/artifact does not bind fa80ace7, the proof script does not actually enforce both acceptance criteria, local evidence fails to reproduce, a later hosted rebuild/behavior comparison fails, the former lineage is lost, or the record is used to claim full-machine completion, independent external verification, new authority, activation, or VEPMC.",
+  "authority": {
+    "introduces_new_authority_source": false,
+    "founder_authorization": null,
+    "creates_parallel_canon": false
+  },
+  "github_ops": [
+    {
+      "target_branch": "kimi/foundry-completion-20261026",
+      "protected": false,
+      "explicit_authorization": null
+    }
+  ],
+  "implementation": {
+    "performed": true,
+    "notes": "Scoped system 9 completion/evidence records and this deliberation only. No production runtime, CI workflow, organ pin, authority, spend, MCP, privileged-runtime, repair-admission, merge, deployment or activation change."
+  },
+  "decision": "RETAIN",
+  "decision_owner": "KIMI for the reversible Standard evidence transition; the integration reviewer decides intake and Alfonso Lopez retains all founder-only and consequential authority"
+}

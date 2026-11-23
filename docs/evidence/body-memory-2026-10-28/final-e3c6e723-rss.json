@@ -1,0 +1,53 @@
+{
+ "scenario": "one holding mission, infinite closure, 60 s cadence, simulated clock",
+ "resident_records": 1024,
+ "python": "3.11.17",
+ "ticks": 1800,
+ "points": [
+  {
+   "ticks": 300,
+   "records": 3920,
+   "rss_kb": 71920,
+   "ledger_bytes_on_disk": 2831558,
+   "seconds": 12.7
+  },
+  {
+   "ticks": 600,
+   "records": 7820,
+   "rss_kb": 76888,
+   "ledger_bytes_on_disk": 5644958,
+   "seconds": 37.8
+  },
+  {
+   "ticks": 900,
+   "records": 11720,
+   "rss_kb": 82728,
+   "ledger_bytes_on_disk": 8460071,
+   "seconds": 76.1
+  },
+  {
+   "ticks": 1200,
+   "records": 15620,
+   "rss_kb": 87152,
+   "ledger_bytes_on_disk": 11277364,
+   "seconds": 127.6
+  },
+  {
+   "ticks": 1500,
+   "records": 19520,
+   "rss_kb": 92964,
+   "ledger_bytes_on_disk": 14094664,
+   "seconds": 189.9
+  },
+  {
+   "ticks": 1800,
+   "records": 23420,
+   "rss_kb": 98068,
+   "ledger_bytes_on_disk": 16911964,
+   "seconds": 279.1
+  }
+ ],
+ "rss_bytes_per_record": 1373.1,
+ "disk_bytes_per_record": 722.1,
+ "max_rss_kb": 97828
+}

@@ -4,6 +4,8 @@
 
 **Scope:** this measures the #158 lineage's code at the freeze commit `202b932`. It does not measure the converged Mind of PR #179, where this freeze refuses (`FROZEN_INPUT_CHANGED`) by design.
 
+> **Errata:** an independent review on 2026-10-15 corrected one percentage base in this README. The original wording is kept below, and the correction is listed under *Errata (2026-10-15 independent review)* at the end.
+
 ## Provenance
 
 - **Runner:** `cortex/evaluation/composition_lift/run_v5.py`.
@@ -128,3 +130,14 @@ The routed arm over-covers at q* = 2/3 and under-covers at 29/30 (0.942 against 
 - Items share dates and streams, so the item sign test treats them as independent. The per-date test (120-2) is reported alongside.
 - One city and one half-year (2015). Streams are boroughs and airports of one platform.
 - Latency is this container's, under the load described above.
+
+## Errata (2026-10-15 independent review)
+
+The original wording stays in place above. Every number here was recomputed from `results-v5.json` (`summary.F8.total_realised_cost`); no frozen file was changed.
+
+1. **Percentage base of the ablation comparison.** Original: "A simpler EWMA tracker with the same quantile and the same Erlang stage costs 4.7% less in total, because it never abstains."
+   - 4.7% takes the ablation's total as its base: routed costs 656,324, which is 4.7% more than the ablation's 626,736. This is the base of the cost-reduction table (-4.7%) and of the predictions row ("4.7% dearer").
+   - Taking the routed total as the base, the ablation costs 4.5% less: (656,324 - 626,736) / 656,324 = 4.51%.
+   - The sentence should read: the ablation "costs 4.5% less in total" (routed is 4.7% dearer).
+2. **"Once, in a clean worktree."** Original: "Run: once, in a clean worktree at `202b932`."
+   - `results-v5.json` records the source commit but no dirty-tree state, and `run_v5.py` has no dirty check, so "once" and "clean worktree" are the operator's statements, not recorded facts. The frozen manifest check (the run refuses changed code) bounds the effect. The same holds for genome admission v3 (its errata item 8); the admission harness now records `source_dirty` for future runs.

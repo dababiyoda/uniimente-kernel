@@ -1,0 +1,11 @@
+{
+  "family": "shared fixed costs under a cap: 2-4 costs of 2-10, 3-6 offers of 2-9 each needing 1-2 of them, budget uniform from 0 to the total cost",
+  "seed": 1021,
+  "instances": 2000,
+  "cap_binding": 1259,
+  "heuristic_suboptimal": 237,
+  "share": 0.1185,
+  "profit_left_by_heuristic": 734,
+  "optimal_profit_total": 8494,
+  "share_of_profit_lost": 0.0864
+}

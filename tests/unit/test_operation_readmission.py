@@ -12,6 +12,9 @@ import sys
 
 import pytest
 
+# Held-out seeds here sit at 9400+: on the joined tree (#196) Track B reserves 7000-9199 for P8
+# (greg/cognition/genomes/admission.py P8_RESERVED), which #192's runner tests had used as fresh.
+
 from cortex.evaluation.genome_admission import run as run155
 from cortex.evaluation.genome_admission import run_operations as R
 from greg.cognition.contracts import CognitionError
@@ -99,16 +102,16 @@ def test_a_freeze_refuses_spent_development_p8_and_pr155_seeds_and_an_existing_f
         assert not (tmp_path / f"r-{start}").exists()
     with pytest.raises(SystemExit, match="--heldout-start"):
         R.main(["--freeze", "r-default"])
-    R.main(["--freeze", "r1", "--heldout-start", "9000"])
+    R.main(["--freeze", "r1", "--heldout-start", "9400"])
     frozen = json.loads((tmp_path / "r1" / "freeze.json").read_text())
-    assert frozen["inputs"]["heldout_seeds"] == list(range(9000, 9030))
+    assert frozen["inputs"]["heldout_seeds"] == list(range(9400, 9430))
     assert (frozen["inputs"]["rule"], frozen["inputs"]["rule_155"]) == (admission.RULE, R.RULE_155)
     assert frozen["inputs"]["geometry"] == R.GEOMETRY and frozen["inputs"]["families"] == list(R.FAMILIES)
     assert {R.RUNNER, "cortex/evaluation/genome_admission/run.py", "greg/cognition/genomes/admission.py",
             "greg/cognition/solvers.py", "greg/cognition/contracts.py", "greg/cognition/verification.py",
             "greg/cognition/worker.py", "greg/cognition/cortex.py"} <= set(frozen["inputs"]["code"])
     with pytest.raises(SystemExit, match="existing re-admission freeze"):
-        R.main(["--freeze", "r1", "--heldout-start", "9100"])
+        R.main(["--freeze", "r1", "--heldout-start", "9500"])
 
 
 def test_a_negative_start_cannot_alias_refused_seeds(tmp_path, monkeypatch):
@@ -123,7 +126,7 @@ def test_a_negative_start_cannot_alias_refused_seeds(tmp_path, monkeypatch):
             R.main(["--freeze", f"neg{start}", "--heldout-start", str(start)])
         assert not (tmp_path / f"neg{start}").exists()
     assert R.refusals(range(-1030, -1000)) and R.refusals(range(-38, -8))
-    assert R.refusals(range(9000, 9030)) == []
+    assert R.refusals(range(9400, 9430)) == []
 
 
 def _git(repo, *args):
@@ -151,7 +154,7 @@ def test_a_run_inside_the_repository_is_bound_to_its_committed_pre_registration(
                         lambda item, rows: ("EXPERIMENTAL", {"vs_baseline": {}, "vs_competitor": {}}))
     monkeypatch.setattr(R, "smoke", lambda family, seed: {"verifier": "STRUCTURALLY_VERIFIED"})
     monkeypatch.setattr(R, "rule_155", lambda rows: {"status": "EXPERIMENTAL"})
-    R.main(["--freeze", "ops", "--heldout-start", "9000"])
+    R.main(["--freeze", "ops", "--heldout-start", "9400"])
     with pytest.raises(SystemExit, match="commit freeze.json"):
         R.main(["--run", "ops"])
     _git(repo, "add", "evidence/ops/freeze.json")
@@ -169,7 +172,7 @@ def test_a_run_inside_the_repository_is_bound_to_its_committed_pre_registration(
     manifest.write_text(pristine)
     later = evidence / "later"                                   # a later freeze spending this run's seeds
     later.mkdir()
-    (later / "freeze.json").write_text(json.dumps({"inputs": {"heldout_seeds": [9005]}}))
+    (later / "freeze.json").write_text(json.dumps({"inputs": {"heldout_seeds": [9405]}}))
     _git(repo, "add", "evidence/later/freeze.json")
     _git(repo, "commit", "-qm", "a later freeze")
     with pytest.raises(SystemExit, match="spent by an earlier admission freeze"):
@@ -189,19 +192,19 @@ def test_a_re_admission_freeze_spends_its_seeds_for_every_later_admission(tmp_pa
     seeds are refused by a later re-admission and by the genome harness alike."""
     monkeypatch.setattr(R, "EVIDENCE", tmp_path)
     monkeypatch.setattr(admission, "EVIDENCE", tmp_path)
-    R.main(["--freeze", "ops", "--heldout-start", "9000"])
-    assert set(range(9000, 9030)) <= admission.spent_seeds()
+    R.main(["--freeze", "ops", "--heldout-start", "9400"])
+    assert set(range(9400, 9430)) <= admission.spent_seeds()
     with pytest.raises(SystemExit, match="spent by an earlier admission freeze"):
-        R.main(["--freeze", "ops-2", "--heldout-start", "9015"])
+        R.main(["--freeze", "ops-2", "--heldout-start", "9415"])
     with pytest.raises(SystemExit, match="spent"):
-        admission.main(["--freeze", "genome-2", "--only", "flow_maxflow", "--heldout-start", "9010"])
+        admission.main(["--freeze", "genome-2", "--only", "flow_maxflow", "--heldout-start", "9410"])
 
 
 def test_the_run_refuses_changed_frozen_inputs_and_never_overwrites_results(tmp_path, monkeypatch):
     """--run reproduces the freeze's inputs or refuses (a hashed file edited after the freeze, a tampered digest or
     protocol field); it refuses an existing results.json and leaves it untouched."""
     monkeypatch.setattr(R, "EVIDENCE", tmp_path)
-    R.main(["--freeze", "r1", "--heldout-start", "9000"])
+    R.main(["--freeze", "r1", "--heldout-start", "9400"])
     path = tmp_path / "r1" / "freeze.json"
     pristine = path.read_text()
     sha = R._sha
@@ -210,7 +213,8 @@ def test_the_run_refuses_changed_frozen_inputs_and_never_overwrites_results(tmp_
         R.main(["--run", "r1"])
     monkeypatch.setattr(R, "_sha", sha)
     for edit in (lambda i: i["code"].update({R.RUNNER: "sha256:" + "0" * 64}),
-                 lambda i: i["geometry"].update(compute_limit=200000)):
+                 lambda i: i["geometry"].update(compute_limit=200000),
+                 lambda i: i["solver_closures"]["game"].update(function="exact")):
         frozen = json.loads(pristine)
         edit(frozen["inputs"])
         path.write_text(json.dumps(frozen))
@@ -258,3 +262,66 @@ def test_the_results_carry_families_not_genomes_and_route_through_the_evidence_i
                                                                           row["baseline"])
         assert op["evidence"] == f"{B.ADMISSION}/dev-run/results.json#families.{family}"
         assert op["code"]["closure_sha256"] == C.solver_code(family)["closure_sha256"], family
+
+
+def _dev_run(tmp_path, monkeypatch, name):
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import build_mind_evidence_index as B
+    monkeypatch.setattr(R, "EVIDENCE", tmp_path / B.ADMISSION)
+    run = tmp_path / B.ADMISSION / name
+    run.mkdir(parents=True)
+    (run / "freeze.json").write_text(json.dumps({"frozen_at": "dev", "inputs": R.inputs(admission.DEV_SEEDS[:2])}))
+    R.main(["--run", name])
+    monkeypatch.setattr(B, "ROOT", tmp_path)
+    monkeypatch.setattr(B, "OPERATION_RUNS", ((f"{B.ADMISSION}/{name}/results.json", "families", None),))
+    return json.loads((run / "results.json").read_text()), B.build()
+
+
+def test_a_run_records_the_solver_its_candidate_reached_and_the_index_confirms_the_dispatch(tmp_path, monkeypatch):
+    """SOLVERS takes non-literal updates (greg/cognition/solvers.py), so a positive verdict binds only when its run
+    recorded the function SOLVERS held at runtime (round-2 review of #179, N4). The runner records, per family, the
+    one function every candidate call reached; the index then marks the static dispatch verified_at_runtime and the
+    rule no longer reports "recorded no runtime dispatch". The freeze binds the dispatch it expects."""
+    from greg.cognition import compiler as C
+    results, index = _dev_run(tmp_path, monkeypatch, "dev-dispatch")
+    assert results["solver_closures"].keys() == set(R.FAMILIES)
+    for family in R.FAMILIES:
+        now = C.solver_code(family)
+        assert results["solver_closures"][family] == {"path": now["path"], "function": now["function"],
+                                                      "closure_sha256": now["closure_sha256"],
+                                                      "calls_observed": True}, family
+        dispatched = index["operations"][family]["code"]["dispatched"]
+        assert dispatched["verified_at_runtime"] is True and "runtime_disagrees" not in dispatched, family
+        positive = dict(index["operations"][family], status="DEFAULT_FOR_GEOMETRY")
+        status, why = C.operation_status(family, positive)
+        assert why is None or "recorded no runtime dispatch" not in why, (family, why)
+    assert {f: v["function"] for f, v in R.inputs(admission.DEV_SEEDS[:2])["solver_closures"].items()} == {
+        "control": "control", "game": "game", "information": "information", "probabilistic": "bayesian"}
+
+
+def test_a_run_whose_candidate_reached_another_solver_binds_nothing(tmp_path, monkeypatch):
+    """A candidate that reached a function other than the static dispatch (a rebinding the static reading cannot
+    see) is recorded as reached; the index records runtime_disagrees and a positive verdict routes UNEVALUATED.
+    A family whose candidate reached two functions records no runtime dispatch at all."""
+    from greg.cognition import compiler as C
+    real = SOLVERS["game"]
+
+    def rebound(request, geometry):
+        return real(request, geometry)
+    monkeypatch.setitem(SOLVERS, "game", rebound)
+    frozen = R.closures()
+    monkeypatch.setattr(R, "closures", lambda: {**frozen, "game": {"path": "greg/cognition/solvers.py",
+                                                                   "function": "game", "closure_sha256": None}})
+    results, index = _dev_run(tmp_path, monkeypatch, "dev-rebound")
+    assert results["solver_closures"]["game"] == {"path": "tests/unit/test_operation_readmission.py",
+                                                  "function": "rebound", "closure_sha256": None,
+                                                  "calls_observed": True}
+    dispatched = index["operations"]["game"]["code"]["dispatched"]
+    assert dispatched["runtime_disagrees"] == {"path": "tests/unit/test_operation_readmission.py",
+                                               "function": "rebound"}
+    status, why = C.operation_status("game", dict(index["operations"]["game"], status="DEFAULT_FOR_GEOMETRY"))
+    assert status == "UNEVALUATED" and "at runtime" in why, why
+    R.CALLED["game"] = {("greg/cognition/solvers.py", "game"), ("greg/cognition/solvers.py", "exact")}
+    assert R.runtime_dispatch("game", frozen["game"]) is None
+    R.CALLED.pop("game")
+    assert R.runtime_dispatch("game", frozen["game"]) is None          # no call observed: nothing confirmed

@@ -1090,12 +1090,51 @@ ABSTAIN = {
 }
 
 
+# Abstention outside native competence is decided by the input's shape or the state limit, never by the clock: the
+# state-explosion case reaches its 20,000-state limit in about 0.1 s on a quiet machine, but on a loaded CI runner
+# (Canonical CI job 1 on #299, e0f84ed1) the 5-second budget ran out after 18,110 states and the genome answered,
+# truthfully, UNKNOWN "latency budget exhausted". These tests give the clock no say; the timeout answer is pinned
+# separately below.
+NATIVE_BUDGET = dict(BUDGET, latency_s=600.0)
+
+
 @pytest.mark.parametrize("family", FAMILIES)
 def test_abstains_outside_native_competence(family):
     for data in ABSTAIN[family]:
-        out = item(family).solve(copy.deepcopy(data), BUDGET)
+        out = item(family).solve(copy.deepcopy(data), NATIVE_BUDGET)
         assert out["status"] == "ABSTAIN" and out["output"] is None and out["missing"], (family, out)
         _json_clean(out["certificate"])
+
+
+class _SlowClock:
+    """``time`` for the genome module with a clock that advances ``step`` seconds per reading: a machine that slow."""
+    def __init__(self, step):
+        self.now, self.step = 0.0, step
+
+    def perf_counter(self):
+        self.now += self.step
+        return self.now
+
+    def __getattr__(self, name):
+        return getattr(time, name)
+
+
+def test_the_state_explosion_abstention_does_not_depend_on_the_machines_speed(monkeypatch):
+    # One second per clock reading: the explorer reads the clock every 256 states, so it reaches the 20,000-state
+    # limit after about 80 readings. With the old 5-second budget this machine answered UNKNOWN, as the runner did.
+    monkeypatch.setattr(strategic, "time", _SlowClock(1.0))
+    out = item("verify_liveness").solve(copy.deepcopy(ABSTAIN["verify_liveness"][2]), NATIVE_BUDGET)
+    assert out["status"] == "ABSTAIN" and out["certificate"]["states_explored"] > strategic.LV_NATIVE_STATES, out
+
+
+def test_a_liveness_check_that_runs_out_of_time_is_unknown_never_an_abstention_or_a_verdict(monkeypatch):
+    # Founder, 2026-11-12: "A timeout does not establish measured failure." Out of time before the state limit, the
+    # genome claims neither that the problem is outside its competence nor any verdict about the system.
+    monkeypatch.setattr(strategic, "time", _SlowClock(100.0))
+    out = item("verify_liveness").solve(copy.deepcopy(ABSTAIN["verify_liveness"][2]), BUDGET)
+    assert out["status"] == "UNKNOWN" and out["output"] is None, out
+    assert out["missing"] == ["latency budget exhausted"], out
+    assert out["certificate"]["states_explored"] <= strategic.LV_NATIVE_STATES, out
 
 
 def test_out_of_scope_liveness_requests_are_refused_by_every_arm():
@@ -1171,16 +1210,19 @@ def test_z3_backed_bmc_is_reproducible_within_one_process():
 @pytest.mark.parametrize("family", FAMILIES)
 def test_dev_seeds_run_within_budget_and_never_answer_falsely(family):
     x = item(family)
+    # CPU seconds, not wall time: generation, solve and verification are single-process, and on a loaded CI runner
+    # the wall clock also counts time spent waiting for a core (mechanism_check read 5.19 s wall for a solve on
+    # #280's job 1, 2026-11-23; under 32 busy loops on 4 cores the 5 s per-seed wall limit failed too).
     for seed in range(10):
-        started = time.perf_counter()
+        started = time.process_time()
         data, truth = dev(family, seed)
-        t0 = time.perf_counter()
+        t0 = time.process_time()
         out = x.solve(copy.deepcopy(data), BUDGET)
-        solve_s = time.perf_counter() - t0
+        solve_s = time.process_time() - t0
         assert solve_s < 2.0, (family, seed, solve_s)
         if out["status"] == "ANSWER":
             assert all(x.verify(data, out["output"], out["certificate"]).values()), (family, seed)
             assert x.score(data, truth, out["output"])["category"] == "correct", (family, seed)
         else:
             assert out["status"] in ("ABSTAIN", "UNKNOWN") and out["missing"]
-        assert time.perf_counter() - started < 5.0, (family, seed)
+        assert time.process_time() - started < 5.0, (family, seed)

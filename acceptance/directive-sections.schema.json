@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.internal/acceptance/directive-sections.schema.json",
+  "title": "Directive completion contract: the 77 sections of the 2026-10-28 directive and their testable asks",
+  "description": "One record per numbered section. Section count, order, headings, excerpts, cited evidence, computed tiers, blockers and statuses are checked against the source and this tree by python -m acceptance check.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "source", "reading", "units", "sections"],
+  "properties": {
+    "version": {"const": "directive-sections/1"},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["directive", "sha256", "criterion", "intent_refs"],
+      "properties": {
+        "directive": {"type": "string", "pattern": "^docs/intent/sources/.+\\.md$"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "criterion": {"type": "string", "minLength": 1},
+        "intent_refs": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "reading": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "units": {"type": "array", "items": {"$ref": "#/$defs/unit"}},
+    "sections": {"type": "array", "items": {"$ref": "#/$defs/section"}}
+  },
+  "$defs": {
+    "status": {
+      "enum": ["INTENDED", "DESIGNED", "IMPLEMENTED", "INTEGRATED", "UNIT_VERIFIED", "SANDBOX_VERIFIED",
+               "BODY_VERIFIED", "FOUNDER_ACCEPTED", "AUTHORIZED_LIVE", "EXTERNALLY_VERIFIED",
+               "COMMERCIAL_OUTCOME_VERIFIED", "BLOCKED_WITH_REASON"]
+    },
+    "required": {
+      "description": "A testable ask requires at least UNIT_VERIFIED: a rung below it would be met with no evidence.",
+      "enum": ["UNIT_VERIFIED", "SANDBOX_VERIFIED", "BODY_VERIFIED", "FOUNDER_ACCEPTED", "AUTHORIZED_LIVE",
+               "EXTERNALLY_VERIFIED", "COMMERCIAL_OUTCOME_VERIFIED"]
+    },
+    "unit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "source", "depends_on"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[A-Z]{1,2}[0-9]*-[A-Z0-9]+[a-z0-9]*$"},
+        "title": {"type": "string", "minLength": 1},
+        "source": {"type": "string", "minLength": 1},
+        "depends_on": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "closed_by": {
+          "description": "What closed the unit (a commit, PR or test). No open ask names a closed unit; an open unit is named by an open ask or is a prerequisite of one.",
+          "type": "string", "minLength": 1
+        },
+        "note": {"type": "string"}
+      }
+    },
+    "section": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["n", "heading", "status", "asks"],
+      "properties": {
+        "n": {"type": "integer", "minimum": 1},
+        "heading": {"type": "string", "minLength": 1},
+        "status": {"enum": ["DONE", "PARTIAL", "OPEN"]},
+        "asks": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/ask"}},
+        "not_asks": {
+          "description": "Listed lines of the section (bullets, and lines that start 'Do not' or 'Never') that are not testable asks, each with its reason. A DONE section answers or sets aside every listed line.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["line", "reason"],
+            "properties": {"line": {"type": "string", "minLength": 1}, "reason": {"type": "string", "minLength": 1}}
+          }
+        }
+      }
+    },
+    "ask": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "ask", "excerpt", "owner_paths", "evidence", "required_tier", "tier", "coverage"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^S[0-9]{1,2}\\.A[0-9]+$"},
+        "ask": {"type": "string", "minLength": 1, "maxLength": 400},
+        "excerpt": {"type": "string", "minLength": 8, "maxLength": 300},
+        "owner_paths": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "evidence": {
+          "type": "array",
+          "items": {"type": "string", "pattern": "^(contract:[A-Z][A-Z0-9-]*|mission:[A-L]\\.[A-Za-z0-9.]+|tests/\\S+)$"}
+        },
+        "tests_tier": {"enum": ["UNIT_VERIFIED", "SANDBOX_VERIFIED", "BODY_VERIFIED"]},
+        "required_tier": {"$ref": "#/$defs/required"},
+        "tier": {"$ref": "#/$defs/status"},
+        "coverage": {"enum": ["covered", "partial", "gap"]},
+        "lines": {
+          "description": "Further listed lines of the section this ask answers, verbatim (the excerpt answers each line it quotes whole).",
+          "type": "array", "items": {"type": "string", "minLength": 1}
+        },
+        "retired": {
+          "description": "A retired ask stays in the map: superseded by a live ask that requires at least as much (met when its successor is), or withdrawn by a founder intent record under docs/intent/, quoted verbatim.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["reason"],
+          "properties": {
+            "reason": {"type": "string", "minLength": 1},
+            "superseded_by": {"type": "string", "pattern": "^S[0-9]{1,2}\\.A[0-9]+$"},
+            "record": {"type": "string", "pattern": "^docs/intent/[^#]+#.+$"}
+          }
+        },
+        "blocker": {"$ref": "#/$defs/blocker"},
+        "note": {"type": "string"}
+      }
+    },
+    "blocker": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["class", "reason"],
+      "properties": {
+        "class": {"enum": ["FOUNDER_ONLY", "EXTERNAL", "BUILDABLE_NOT_BUILT", "PRINCIPLE"]},
+        "reason": {"type": "string", "minLength": 1},
+        "unit": {"type": "string", "minLength": 1},
+        "record": {
+          "description": "What holds a FOUNDER_ONLY or EXTERNAL blocker: gap:<mission>.<gap> (an open missions.json gap building cannot close, whose dependency fits the class) or <path>#<verbatim text in that file>. Required when a test can reach the ask's required tier.",
+          "type": "string", "pattern": "^(gap:[A-L]\\.G[0-9]+|[^#\\s][^#]*#.+)$"
+        },
+        "guarded_by": {
+          "oneOf": [
+            {"const": "UNGUARDED"},
+            {"type": "array", "minItems": 1, "items": {"type": "string", "pattern": "^tests/\\S+$"}}
+          ]
+        }
+      }
+    }
+  }
+}

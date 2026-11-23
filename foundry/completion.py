@@ -19,7 +19,6 @@ module makes the states binding:
 """
 from __future__ import annotations
 
-import hashlib
 import json
 import os
 import sys
@@ -27,6 +26,7 @@ import tempfile
 from pathlib import Path
 
 import yaml
+from provenance.digests import sha256_json
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "foundry" / "completion.yaml"
@@ -85,7 +85,7 @@ def contract(path: Path = CONTRACT) -> dict[int, dict]:
 
 
 def _hash(result) -> str:
-    return "sha256:" + hashlib.sha256(json.dumps(result, sort_keys=True, default=str).encode()).hexdigest()
+    return sha256_json(result, separators=None, default=str)
 
 
 def run(system_id: int, implementation: str | None = None) -> dict:

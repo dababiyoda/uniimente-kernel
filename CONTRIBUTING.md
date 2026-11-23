@@ -1,3 +1,5 @@
+> **Reading order:** one canonical sequence for every entry file is in [AGENTS.md § Canonical reading order](AGENTS.md#canonical-reading-order). The lists below are kept as written.
+
 # Contributing to UNIIMENTE
 
 Before material work, read:
@@ -10,7 +12,7 @@ Before material work, read:
 6. relevant active intent records and verbatim sources
 7. `docs/RECURSIVE_COLLABORATION_PROTOCOL.md`
 
-Canonical cross-agent coordination is GitHub issue #117.
+Cross-agent coordination began on GitHub issue #117, which still carries the corpus-metabolism directive thread. Live work claims and handoffs are on board #96; see `docs/collaboration/START_HERE.md`.
 
 Do not infer the project from one document, branch, PR, experiment, or model summary. State source coverage and unavailable context for material decisions.
 

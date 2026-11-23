@@ -382,7 +382,6 @@ DROPPED_PAYLOAD_MUTANTS = [
      "                            or False):"),
 ]
 
-# 2026-10-29 shared-folder refusal (#211): a body home where Linux may serve a cached copy of another machine's file.
 DIVIDEND_TESTS = ["tests/unit/test_greg_genesis_capability_dividend.py"]
 DIVIDEND_MUTANTS = [
     # a capability Genesis formed serves a later mission with no new build (acceptance J.G4)
@@ -403,6 +402,7 @@ DIVIDEND_MUTANTS = [
      'state = "ATTACHED" if kind == "CAPABILITY_ATTACH" else "DETACHED"', 'state = "ATTACHED"'),
 ]
 
+# 2026-10-29 shared-folder refusal (#211): a body home where Linux may serve a cached copy of another machine's file.
 SHARED_HOME_TESTS = ["tests/unit/test_greg_shared_home.py"]
 SHARED_HOME_MUTANTS = [
     ("greg init creates a body on a shared folder", "greg/body.py",

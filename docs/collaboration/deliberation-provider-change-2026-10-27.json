@@ -1,0 +1,155 @@
+{
+  "decision_id": "DELIB-PROVIDER-CHANGE-2026-10-27",
+  "title": "Record breaking provider contracts, identity controls, model retirements, and incident exposure without expanding runtime authority",
+  "problem": "OpenAI changed Decisions, caching, service-tier policy and models; Anthropic changed API/SDK contracts, identity/enforcement controls, admin surfaces and cloud routing; Kimi launched K3.1 Pro and announced K2 retirement. Decide whether UNIIMENTE needs new protocol law, immediate migration, an evidence-only update, or no repository change.",
+  "founder_intent_refs": ["INTENT-20260901-provider-change", "INTENT-0028", "INTENT-0030", "INTENT-20260930-open-source-first"],
+  "baseline": "Kernel and DALEOBANKS default to local inference. DALEOBANKS alone retains explicit optional OpenAI Chat Completions and embeddings. No Anthropic or Kimi runtime route exists. Draft PR 105 section 7 already governs provider contracts, cached/tool/reasoning artifacts, identity and data scope, retries, cost, independent evaluation, and duplicate runtimes.",
+  "alternatives": [
+    {
+      "name": "Evidence-only update to draft PR 105",
+      "description": "Add the dated official-source packet and this deliberation without changing protocol text or runtime code.",
+      "advantages": ["Preserves a durable contract and deadline record", "Captures direct OpenAI incident exposure", "Keeps execution consequence-inert and reversible"],
+      "disadvantages": ["Adds review debt to an already large draft", "Does not test live provider behavior"],
+      "revival_evidence": "Selected for this cycle because breaking contracts, hard K2 dates, and direct optional OpenAI incident exposure cross the materiality gate."
+    },
+    {
+      "name": "Add vendor-specific protocol clauses",
+      "description": "Add named OpenAI, Anthropic, and Kimi fields and products to constitutional protocol text.",
+      "advantages": ["Makes current provider terms explicit"],
+      "disadvantages": ["Duplicates existing provider-neutral rules", "Couples constitutional text to volatile product names"],
+      "revival_evidence": "A deterministic failure demonstrates a material risk not covered by section 7."
+    },
+    {
+      "name": "Immediate migration or adoption",
+      "description": "Adopt Decisions, long caching, Anthropic SDK/API 2026-10-21, Claude-on-GCP, Kimi K3.1 Pro, or Kimi Admin APIs now.",
+      "advantages": ["Could improve capability, speed, or operational visibility"],
+      "disadvantages": ["No direct route, account contract, benchmark, residency proof, or founder authorization exists", "Admin and agent surfaces can expand authority and data scope"],
+      "revival_evidence": "Founder-approved sandbox with pinned contracts, independent acceptance, eligible residency, bounded cost, and rollback."
+    },
+    {
+      "name": "Provider-native control plane",
+      "description": "Let provider sessions, identity enforcement, admin APIs, retries, caches, and evaluators own collaboration state.",
+      "advantages": ["Reduces application-side control-plane work"],
+      "disadvantages": ["Violates canonical authority, one-source-of-truth, and no-duplicate-runtime constraints", "Lets providers under test own evidence and evaluation"],
+      "revival_evidence": "None while UNIIMENTE requires one canonical identity, task, authority, receipt, evidence, cost, and consequence plane."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Publish the user brief only and leave draft PR 105 unchanged.",
+    "advantages": ["No repository mutation", "Avoids increasing review debt"],
+    "disadvantages": ["Loses a durable K2 retirement and API-version record", "Leaves direct OpenAI incident exposure outside the existing evidence lineage"]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Preserve the one-machine, open-source-first, and human-authority directions; vendor changes can only alter replaceable adapters.",
+      "material_concerns": ["Provider launch urgency must not redefine the project", "Provider identity or admin state must not manufacture authority"],
+      "evidence_refs": ["AGENTS.md@d64a6c93", "docs/OPEN_SOURCE_STACK.md@d64a6c93", "Draft PR 105 section 7"],
+      "recommendation": "NEEDS_FOUNDER_DECISION"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Treat caches, batches, cloud routes, SDK loops, admin APIs, and new models as pinned leased capabilities mapped into the existing runtime.",
+      "material_concerns": ["Implicit client behavior can introduce a second retry plane", "Model, cache, tier, and endpoint changes are not replay-equivalent"],
+      "evidence_refs": ["OpenAI changelog 2026-10-20 through 2026-10-26", "Anthropic release notes 2026-10-20 through 2026-10-23", "Kimi announcement 2026-10-23"],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Make no repository change because most features are prospective and existing provider-neutral law is sufficient.",
+      "material_concerns": ["Weekly evidence accumulation can become bureaucracy", "Some Kimi documentation lacks a publication date", "One model's five-role analysis is not independent approval"],
+      "evidence_refs": ["Negative exact searches on four default branches", "Draft PR 105 section 7", "Kimi model-list page observed 2026-10-27"],
+      "recommendation": "DEFER"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Record exact effective dates and failure semantics, but build no adapter until direct exposure or an authorized adoption proposal exists.",
+      "material_concerns": ["Caching, reasoning, tools, batches, retries, and cloud intermediaries can hide cost", "SDK major changes and web-fetch policy errors increase maintenance risk", "Repeated incidents can create ambiguous completion"],
+      "evidence_refs": ["Provider release notes and pricing", "OpenAI, Anthropic, and Kimi status pages 2026-10-20 through 2026-10-27"],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Keep provider identities, enforcement state, tags, caches, transcripts, search results, and review outputs as bounded evidence, never canonical truth or authority.",
+      "material_concerns": ["User profiles and Slack tags widen personal and organizational data scope", "Long caches can conflict with retention or ZDR requirements", "Same-provider evaluation is circular"],
+      "evidence_refs": ["Anthropic release notes 2026-10-20 through 2026-10-23", "OpenAI changelog 2026-10-20", "Draft protocol section 7"],
+      "recommendation": "NEEDS_FOUNDER_DECISION"
+    }
+  ],
+  "evidence": [
+    {"claim": "OpenAI changed Decisions, caching, tier-policy, and model contracts during the review window.", "tier": "primary_source", "reference": "https://developers.openai.com/api/docs/changelog observed 2026-10-27", "finding": "Entries dated October 20, 21, 22, and 26 describe 12-hour caching, service-tier restrictions, Decisions GA, and gpt-6.1-terra."},
+    {"claim": "OpenAI incidents affected DALEOBANKS' optional API surfaces.", "tier": "primary_source", "reference": "https://status.openai.com/ incidents dated 2026-10-20 through 2026-10-22", "finding": "The broad incident named Chat Completions and Embeddings among affected components; DALEOBANKS exposes both only when explicitly configured."},
+    {"claim": "Anthropic introduced a new default API/SDK contract plus identity, webhook, web-fetch, admin, and cloud-route surfaces.", "tier": "primary_source", "reference": "https://platform.claude.com/docs/en/release-notes/overview observed 2026-10-27", "finding": "Entries dated October 20 through 23 document API version 2026-10-21, SDK majors, user profiles, enforcement webhooks, web-fetch controls, Claude Tag API, and Anthropic-managed Claude on GCP."},
+    {"claim": "Kimi launched K3.1 Pro and published K2 retirement dates.", "tier": "primary_source", "reference": "https://forum.moonshot.ai/t/kimi-k3-1-pro-has-launched-start-exploring-now/629 and https://platform.kimi.ai/docs/models observed 2026-10-27", "finding": "Official announcement is dated October 23; model documentation says new users lose K2 access October 31 and all K2 models are planned for retirement by end of December."},
+    {"claim": "Current default branches have no direct exposure to the new provider features.", "tier": "deterministic_fixture", "reference": "GitHub exact searches at Kernel d64a6c93, DALEOBANKS 667439f4, WMI ec82b802, PumpStation db6758df on 2026-10-27", "finding": "No service_tier, hosted Responses or Decisions route, Anthropic client/model, Moonshot endpoint, K3.1/K2.6/K2.7 model, or /v1/tools/search call was found. DALEOBANKS retains optional legacy OpenAI Chat Completions and embeddings only."}
+  ],
+  "counterevidence": [
+    {"claim": "A new protocol invariant is required.", "tier": "historical_artifact", "reference": "Draft PR 105 docs/RECURSIVE_COLLABORATION_PROTOCOL.md section 7", "finding": "Existing rules already cover leased provider capabilities, exact contract and artifact binding, data-scope expansion, receipt-gated recovery, per-attempt cost, independent evaluation, and no duplicate runtime."},
+    {"claim": "Official documentation proves provider behavior in UNIIMENTE.", "tier": "other", "reference": "No live provider call, account inspection, or credential use was authorized or performed", "finding": "Documentation establishes provider claims only; direct integration behavior remains untested and prospective."}
+  ],
+  "pass_1": {
+    "intended_outcome": "Keep collaboration replaceable, auditable, retry-safe, privacy-bounded, cost-bounded, and controlled by one canonical runtime and human authority.",
+    "advantages": [
+      {"id": "A1", "statement": "A dated evidence-only record captures breaking contracts and hard retirement dates without adopting them.", "amplified_value": "Future adapter owners can act from official sources while the default system remains local and consequence-inert."},
+      {"id": "A2", "statement": "Existing provider-neutral rules absorb new vendor products.", "amplified_value": "Canonical ownership stays stable as providers change model names, cloud routes, admin APIs, and cache products."}
+    ],
+    "disadvantages": [
+      {"id": "D1", "statement": "Another weekly record increases review debt and can normalize de facto policy power.", "severity": "high", "response_type": "governance", "redesigned_response": "Add only two evidence files and a concise PR-body delta; no protocol text, adapter, or fixture."},
+      {"id": "D2", "statement": "Most new features are prospective on current default branches.", "severity": "medium", "response_type": "evidence", "redesigned_response": "Label exposure negative and defer implementation until an authorized route or non-repository inventory reveals use."},
+      {"id": "D3", "statement": "SDK, admin, webhook, cloud, and agent products can create duplicate authority and runtime paths.", "severity": "critical", "response_type": "governance", "redesigned_response": "Keep all provider state subordinate; require canonical identity/event/receipt/cost translation and deterministic recovery fixtures before canary."},
+      {"id": "D4", "statement": "Profiles, tags, access bundles, cached context, and cloud projects widen credential and data scope.", "severity": "critical", "response_type": "protective", "redesigned_response": "Perform no account action; require separate authorization, least privilege, retention/residency mapping, consent, revocation, and deletion tests."},
+      {"id": "D5", "statement": "Provider incidents can produce ambiguous completion and unsafe retries on directly exposed optional OpenAI routes.", "severity": "high", "response_type": "protective", "redesigned_response": "Use canonical receipts and the original idempotency identity; record every retry or failover as a separate subordinate attempt."},
+      {"id": "D6", "statement": "The K2 retirement page does not state its publication date.", "severity": "medium", "response_type": "evidence", "redesigned_response": "Record observation date and explicit uncertainty while preserving the stated effective dates; do not invent a publication date."}
+    ],
+    "comparisons": {
+      "baseline": "Local-first default routes, optional legacy OpenAI calls in DALEOBANKS, no Anthropic/Kimi runtime, and generic provider controls in draft section 7.",
+      "do_nothing": "Avoids review debt but loses durable breaking-contract, incident-exposure, and retirement evidence.",
+      "simplest_viable_alternative": "User brief only; lower burden but insufficient for the existing material-change evidence lineage and K2 deadline.",
+      "strongest_competing_architecture": "Provider-native SDKs, agents, admin APIs, caches, and cloud projects own task state, identities, retries, and evaluation; operationally convenient but constitutionally incompatible.",
+      "reversible_experiment": "If authorized exposure appears, replay recorded provider fixtures offline into canonical subordinate attempts, then run a cost-capped sandbox canary with no external effects."
+    },
+    "rejected_alternatives": [
+      {"name": "Add vendor-specific protocol law", "rejection_reason": "Existing section 7 already covers every material invariant found.", "revival_evidence": "A failing deterministic case proves an uncovered invariant."},
+      {"name": "Adopt provider features now", "rejection_reason": "No direct route, account evidence, independent benchmark, residency proof, or founder approval exists.", "revival_evidence": "Authorized exposure plus pinned fixtures, independent evaluation, cost/residency review, and rollback."},
+      {"name": "Inspect accounts and credentials", "rejection_reason": "This review is not authorized to access provider accounts, secrets, contracts, projects, balances, or sessions.", "revival_evidence": "A separate least-privilege authorized-human task."}
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "The evidence-only design can still overclaim Kimi notice recency, confuse five role prompts with independent review, ignore non-repository routes, or let future adapters hide cache, reasoning, batch, tool, retry, and cloud-intermediary costs.",
+    "new_weaknesses": [
+      {"id": "N1", "category": "bureaucracy", "statement": "A large recurring PR can become harder to review than the risk it records.", "strengthening_response": "Limit this cycle to two new evidence files and one bounded PR-body section; make no protocol change."},
+      {"id": "N2", "category": "dependency", "statement": "All five roles are one model's structured analysis, not independent approval.", "strengthening_response": "Keep the PR draft and all adoption decisions pending founder or delegated human review."},
+      {"id": "N3", "category": "fragility", "statement": "Provider docs, retirement dates, prices, and status can change after observation.", "strengthening_response": "Preserve observation/effective dates, official URLs, branch SHAs, and require a fresh check before migration or canary."},
+      {"id": "N4", "category": "expense", "statement": "Root request accounting can omit cache writes, reasoning, batch questions, tools, retries, and cloud marketplace charges.", "strengthening_response": "Require every provider and intermediary operation as a subordinate cost event and kill adoption when reconciliation is incomplete."}
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {"disadvantage_id": "D1", "outcome": "accepted", "rationale": "Breaking contracts, a hard retirement window, and direct optional OpenAI incident exposure justify one evidence-only update.", "owner": "weekly provider reviewer", "review_trigger": "Next cycle; brief-only unless the materiality gate is met"},
+      {"disadvantage_id": "D2", "outcome": "deferred", "rationale": "No adapter or migration is built until authorized direct exposure exists.", "owner": "future provider-adapter owner", "review_trigger": "Authorized route inventory or adoption proposal"},
+      {"disadvantage_id": "D3", "outcome": "prohibited", "rationale": "Provider SDKs, identities, webhooks, admin APIs, cloud routes, or agents may not own canonical task, authority, evaluation, receipts, retries, or costs.", "owner": "kernel architecture owner", "review_trigger": "Any provider control-plane or agent-runtime proposal"},
+      {"disadvantage_id": "D4", "outcome": "prohibited", "rationale": "No account, credential, profile, tag, access bundle, cache, cloud project, contract, or residency setting is accessed in this review.", "owner": "founder or delegated security operator", "review_trigger": "Any identity, admin, cache, cloud, or account task"},
+      {"disadvantage_id": "D5", "outcome": "resolved", "rationale": "Canonical receipt and idempotency discipline already governs ambiguous completion and distinct retry/failover attempts.", "owner": "workflow and cost-ledger operator", "review_trigger": "Any timeout, incomplete response, or provider incident"},
+      {"disadvantage_id": "D6", "outcome": "accepted", "rationale": "The record states publication uncertainty and relies only on the observed notice and explicit effective dates.", "owner": "weekly provider reviewer", "review_trigger": "A dated Kimi changelog or changed retirement schedule"}
+    ],
+    "final_design": "Add only the 2026-10-27 official-source evidence packet and this validated deliberation to draft PR 105. Preserve section 7 unchanged. Make no runtime, model, route, account, credential, production, authority, default-branch, or merge change.",
+    "residual_risks": [
+      {"risk": "Non-repository provider use and account-selected routes remain unknown.", "mitigation": "Require a separate authorized inventory before K2 retirement or any adoption action.", "owner": "founder or delegated operator", "review_trigger": "Before 2026-10-31 for suspected K2 use and before any provider migration"},
+      {"risk": "The deliberation is not independent approval.", "mitigation": "Keep draft status and require founder or delegated human decision.", "owner": "alfonso_lopez", "review_trigger": "PR 105 review"},
+      {"risk": "Provider contracts and status can change after capture.", "mitigation": "Recheck official sources and pin fixtures before any canary.", "owner": "provider-adapter owner", "review_trigger": "Any implementation or migration proposal"}
+    ],
+    "recommendation": "NEEDS_FOUNDER_DECISION"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Preserve the Adversarial Reviewer's brief-only objection. It wins on scope: no new protocol text, runtime code, adapter, provider call, account inspection, or migration. Breaking contracts, explicit K2 deadlines, and direct optional OpenAI incident exposure justify only the dated evidence update.",
+    "entries": [
+      {"role": "Adversarial Reviewer", "position": "Make no repository change because direct exposure to new features is negative and section 7 is sufficient.", "rationale": "Recurring model-authored evidence can create bureaucracy and de facto policy authority.", "evidence_threshold": "Future repository updates require direct exposure, a hard deadline, breaking contract, material incident exposure, or a previously uncovered invariant.", "owner": "alfonso_lopez", "review_trigger": "Founder review of PR 105 or next weekly cycle"}
+    ]
+  },
+  "authority_impact": {"level": "constitutional", "changes_authority": false, "requires_authorized_human": true, "approval_status": "pending", "approver": "alfonso_lopez"},
+  "migration_plan": "No runtime migration. If exposure is later authorized, pin provider/model/API-version/cache/tier/tool/cloud contracts; translate every request, batch item, webhook, tool, retry, and intermediary event into canonical attempts and receipts; prove cancellation/resume and idempotency with deterministic fixtures; perform independent evaluation; review credentials, retention, residency, contracts, and total cost; then run a founder-approved sandbox canary.",
+  "rollback_plan": {"possible": true, "steps": ["Leave draft PR 105 unmerged or revert only the 2026-10-27 evidence commits", "Preserve the evidence and dissent as historical records", "Return to brief-only reporting when a later cycle does not meet the materiality gate"], "reason_impossible": null},
+  "kill_criteria": ["Any default-branch write or merge without founder approval", "Any provider-owned canonical identity, workflow, authority, memory, evidence, evaluator, receipt, retry, or cost ledger", "Any second scheduler, webhook executor, retry daemon, durable provider session owner, or agent runtime", "Any retry or failover without canonical receipt and idempotency reconciliation", "Any model, API version, cache, tier, tool, cloud, or search migration treated as replay-equivalent without fixtures and independent evaluation", "Any account, credential, profile, tag, access bundle, cloud project, contract, balance, invoice, production, or authority change", "Any missing cache, batch, reasoning, tool, retry, or intermediary cost", "Any ineligible retention, residency, or unapproved data scope", "One immaterial recurring repository update"],
+  "decision": "NEEDS_FOUNDER_DECISION",
+  "decision_owner": "alfonso_lopez",
+  "review_trigger": "Founder review of draft PR 105; any direct use of OpenAI Decisions, long caching, service tiers, gpt-6.1-terra, Anthropic API 2026-10-21 or admin/cloud surfaces, Kimi K3.1/K2, or an incident with ambiguous completion"
+}

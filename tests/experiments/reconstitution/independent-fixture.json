@@ -1,0 +1,28 @@
+{
+  "scenario": "Release a teaching telescope from a university equipment desk after its return inspection. An integrated signed release record is an alternate path when available.",
+  "sources": {
+    "identity-slip-771": "serial-confirmed",
+    "bench-ticket-381": "optics-inspected",
+    "locker-receipt-254": "locker-cleared",
+    "training-desk-938": "staff-trained",
+    "calendar-desk-802": "room-reserved",
+    "pickup-log-610": "collector-scheduled"
+  },
+  "rules": [
+    ["r17", "corroborated", ["serial-confirmed", "optics-inspected"], "asset-ready"],
+    ["r42", "corroborated", ["asset-ready", "locker-cleared"], "asset-cleared"],
+    ["r09", "attestation", ["signed-combined-release"], "asset-cleared"],
+    ["r58", "logistics", ["staff-trained", "room-reserved"], "desk-ready"],
+    ["r66", "decide", ["asset-cleared", "desk-ready", "collector-scheduled"], "handoff-approved"],
+    ["r23", "decide", ["room-reserved"], "room-open-for-training"]
+  ],
+  "targets": ["handoff-approved", "room-open-for-training"],
+  "control": "room-open-for-training",
+  "expected_terminal_sources": {
+    "asset-ready": ["bench-ticket-381", "identity-slip-771"],
+    "asset-cleared": ["bench-ticket-381", "identity-slip-771", "locker-receipt-254"],
+    "desk-ready": ["calendar-desk-802", "training-desk-938"],
+    "handoff-approved": ["bench-ticket-381", "calendar-desk-802", "identity-slip-771", "locker-receipt-254", "pickup-log-610", "training-desk-938"],
+    "room-open-for-training": ["calendar-desk-802"]
+  }
+}

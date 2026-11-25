@@ -1,0 +1,63 @@
+{
+  "capsule": [
+    [
+      "decide",
+      0,
+      "corroborated"
+    ]
+  ],
+  "capsule_acquisition_rule_checks": 66,
+  "evidence_tier": "synthetic_authored_cases",
+  "recovery": {
+    "adaptive_central": {
+      "first_answer_round": 1,
+      "rule_checks": 3
+    },
+    "adaptive_local": {
+      "binding_changes": [
+        [
+          "d_release",
+          0,
+          "a_fast",
+          "c_certify"
+        ],
+        [
+          "e_provisional",
+          0,
+          "report",
+          null
+        ]
+      ],
+      "first_answer_round": 1,
+      "rule_checks": 30
+    },
+    "frozen_local": {
+      "first_answer_round": null,
+      "rewires": 0
+    },
+    "unrelated_kept_every_round": true,
+    "withdrawn_support_retracted_at_first_observation": true
+  },
+  "round_budget_per_phase": 6,
+  "transfer": {
+    "cold": {
+      "binding_changes": [
+        [
+          "k_allocate",
+          0,
+          "i_short",
+          "j_audit"
+        ]
+      ],
+      "first_answer_round": 2,
+      "rewires": 1,
+      "rule_checks": 30
+    },
+    "inherited": {
+      "binding_changes": [],
+      "first_answer_round": 2,
+      "rewires": 0,
+      "rule_checks": 30
+    }
+  }
+}

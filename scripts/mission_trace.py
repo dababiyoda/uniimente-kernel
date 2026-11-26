@@ -37,7 +37,11 @@ def trace(home: Path, mission_id: str) -> dict:
         # the founder's answers are the ones the mission book counts; a row it does not count is listed apart
         answers = [a for rid, a in body.engine.book.answers.items() if rid in asked]
         uncounted = [{**u["row"], "why": u["why"]} for rid, u in body.engine.book.unverified.items() if rid in asked]
-        appraised = mine("mission.appraised")
+        # the final appraisal of the mission's current closure (its achievement, or its newest closure), as every
+        # reader of standing takes it (greg/appraisal.py ``standings``), not the latest record of any closure
+        from greg.appraisal import standings
+        current = standings(journal).current(mission_id)
+        appraisal = current.record.payload if current is not None and current.record is not None else None
         achieved = mine("mission.achieved")
         observed = mine("mission.observed")
         events = [{"type": e.type, "event_id": e.event_id, "payload": e.payload,
@@ -73,7 +77,7 @@ def trace(home: Path, mission_id: str) -> dict:
                        "sha256": hashlib.sha256(p.read_bytes()).hexdigest()} for p in deliveries if p.is_file()],
         "proof": {"observations": [{k: o.get(k) for k in ("check_id", "passed", "receipt")} for o in observed[-len(
                       spec["success_checks"]):]],
-                  "independent_appraisal": appraised[-1] if appraised else None,
+                  "independent_appraisal": appraisal,
                   "achieved": bool(achieved),
                   "receipts_on_ledger": sum(1 for a in actions if a.get("receipt") in receipts)},
         "persistence": {"ledger_chain_verified": chain_ok, "chain_detail": str(chain_detail)[:200],

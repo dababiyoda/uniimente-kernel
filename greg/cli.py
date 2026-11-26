@@ -1113,11 +1113,13 @@ def main(argv=None) -> int:
                 print(json.dumps(seed.make_seed(Path(home), out), indent=1))
             else:
                 from foundry.systems import graph, reputation
-                # One clock: the ledger's record time. A payload's own `at` is the mission engine's tick time,
-                # taken before the tick reads its inbox, so an approved action would sort before its approval.
+                from greg.journal import foundry_events
+                # The ledger's order (``seq``) and one clock, the ledger's record time. A payload's own `at` is the
+                # mission engine's tick time, taken before the tick reads its inbox, so an approved action would
+                # sort before its approval; and a record time set back by a clock correction sorts before older
+                # events, so the readers order by ``seq``.
                 with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
-                    events = [{"type": e.type, "event_id": e.event_id, "payload": e.payload,
-                               "at": e.occurred_at} for e in journal.replay("")]
+                    events = foundry_events(journal)
                 if args.foundry_cmd in ("trace", "changed"):
                     from foundry.systems import observability
                     if args.foundry_cmd == "trace":

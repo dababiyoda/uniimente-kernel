@@ -101,7 +101,16 @@ class Graph:
 
 
 def from_greg(events) -> Graph:
-    """Build the causal graph from GREG journal events (type, event_id, payload)."""
+    """Build the causal graph from GREG journal events (type, event_id, payload).
+
+    Every appraisal is an Outcome node, named with the closure it judged and whether it stands for that closure
+    (greg/appraisal.py ``standings``). A receipt is ``measured_as`` the appraisals of its run's own closure only
+    (``Standings.judging``, the rule every GREG reader shares): an appraisal never measured a run another closure
+    judged."""
+    from greg.appraisal import standings_of_events
+    events = list(events)
+    book = standings_of_events(events)
+    measured: dict[int, list] = {}      # closure -> receipt nodes of the runs it judged
     g = Graph()
     for e in events:
         p, kind = e["payload"], e["type"].removeprefix("greg.")
@@ -123,13 +132,17 @@ def from_greg(events) -> Graph:
             if p.get("receipt"):
                 g.add(f"receipt:{p['receipt']}", "Receipt")
                 g.link(action, "produced", f"receipt:{p['receipt']}")
+                closure = book.judging(p["mission_id"], book.pos.get(e["event_id"]))
+                if closure is not None:
+                    measured.setdefault(id(closure), []).append(f"receipt:{p['receipt']}")
         elif kind == "mission.appraised":
             outcome = f"outcome:{e['event_id']}"
-            g.add(outcome, "Outcome", verdict=p.get("verdict"), mission=p.get("mission_id"))
-            for s, rows in list(g.out.items()):
-                if g.nodes[s]["kind"] == "Action" and f"decision:{p.get('mission_id')}" in [x for _, x in g.inn[s]]:
-                    for _, receipt in rows:
-                        g.link(receipt, "measured_as", outcome)
+            closure = book.named_by(e["event_id"])
+            stands = closure is not None and closure.standing is not None and closure.standing.event_id == e["event_id"]
+            g.add(outcome, "Outcome", verdict=p.get("verdict"), mission=p.get("mission_id"), stands=stands,
+                  closure=(closure.event_id or "achievement") if closure is not None else None)
+            for receipt in measured.get(id(closure), ()) if closure is not None else ():
+                g.link(receipt, "measured_as", outcome)
     return g
 
 

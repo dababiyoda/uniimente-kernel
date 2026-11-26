@@ -114,7 +114,10 @@ def rehearse(*, directory: Path | None = None, kernel_root: Path | None = None, 
             if out and out[0]["state"] in ("ACHIEVED", "BLOCKED"):
                 break
         actions = [e.payload for e in body.journal.replay("mission.action") if e.payload["mission_id"] == spec["mission_id"]]
-        appraisals = [e.payload for e in body.journal.replay("mission.appraised") if e.payload["mission_id"] == spec["mission_id"]]
+        # the verdict of the mission's current closure (greg/appraisal.py standings), not of its latest record
+        from greg.appraisal import standings
+        closure = standings(body.journal).current(spec["mission_id"])
+        appraised = closure.record.payload["verdict"] if closure is not None and closure.record is not None else None
         chain_ok, _ = body.ledger.verify_chain()
     done = [a["action_id"] for a in actions if a["status"] == "DONE"]
     dossiers = sorted((home / "deliveries" / "first-mission").glob("*.md"))
@@ -138,7 +141,7 @@ def rehearse(*, directory: Path | None = None, kernel_root: Path | None = None, 
             "kernel_root": str(kernel), "mission_id": spec["mission_id"],
             "state": trace[-1][0]["state"] if trace and trace[-1] else "UNKNOWN",
             "steps_done": done, "steps_repeated": sorted({a for a in done if done.count(a) > 1}),
-            "appraisal": appraisals[-1]["verdict"] if appraisals else None,
+            "appraisal": appraised,
             "dossier": str(dossiers[0]) if dossiers else None, "ledger_chain_verified": chain_ok,
             "venture_rehearsal": venture, "second_first_mission": second,
             "elapsed_seconds": round(time.monotonic() - started, 2),

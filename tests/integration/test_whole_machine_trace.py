@@ -80,7 +80,9 @@ class Reappraised:
         events = self.journal.replay(prefix)
         if prefix != "mission.appraised":
             return events
-        return [SimpleNamespace(payload={**e.payload, "verdict": "REFUTED",
+        # each record keeps its own id and type: a reader binds an appraisal to the closure it names by its id
+        return [SimpleNamespace(type=e.type, event_id=e.event_id,
+                                payload={**e.payload, "verdict": "REFUTED",
                                          "checks": {**e.payload["checks"], "world_reobserved": False}}) for e in events]
 
 

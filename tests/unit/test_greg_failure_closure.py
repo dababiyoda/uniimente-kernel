@@ -53,6 +53,11 @@ def appraisals(body):
     return {e.payload["mission_id"]: e.payload for e in body.journal.replay("mission.appraised")}
 
 
+def appraisals_of(body, mission_id):
+    """Every appraisal record of one mission, in ledger order."""
+    return [e.payload for e in body.journal.replay("mission.appraised") if e.payload["mission_id"] == mission_id]
+
+
 def test_a_failed_mission_closes_unmet_and_is_appraised_as_a_verified_failure(tmp_path):
     body, *_ = run(tmp_path, [blackbox("m:fails", 1, 0.0), blackbox("m:passes", 1, 1e6)])
     try:
@@ -100,6 +105,67 @@ def test_a_run_dependent_inner_request_never_settles_one_claim_twice(tmp_path, m
         assert sorted((o["mission_id"], o["correct"]) for o in outcomes) == [("m:f-one", False), ("m:okay", True)]
     finally:
         body.close()
+    # A reading settles only under the closure whose appraisal re-derived it (greg/appraisal.py
+    # ``Standings.judging``), so one claim settles again only through a later closure: a standing mission whose
+    # second check drifts holds twice, and each hold re-derives one reading of the same cognitive claim.
+    from greg import appraisal
+    (tmp_path / "held").mkdir()
+    home, key, body_id, _ = make_body(tmp_path / "held")
+    note = workspace(home, "m:held") / "c.txt"
+    note.parent.mkdir(parents=True, exist_ok=True)
+    note.write_text("drift")
+    spec = mission("m:held", checks=blackbox("m:held", 3, 1e6)["success_checks"] + [note_check("c", note, "ok")],
+                   strategies=[write_strategy("w", "c.txt", "ok", ["c"])],
+                   capabilities=["cognition.solve", "fs.read", "fs.write"],
+                   targets=("cognition:*", "fs:*", "workspace:*"), closure={"kind": "infinite", "cadence_seconds": 60})
+    clock = Clock()
+    body = Body(home, clock=clock).open()
+    try:
+        body.boot()
+        for cid in METHODS:
+            body.apply(signed(key, body_id, "CAPABILITY_ATTACH", {"capability_id": cid}))
+        body.apply(signed(key, body_id, "MISSION", spec))
+        for n in range(11):
+            if n == 5:
+                note.write_text("drift again")
+            body.tick()
+            clock.advance(31)
+        book, position = appraisal.standings(body.journal), body.journal.positions("")
+        settled = [o for o in body.journal.replay("mission.observed") if o.payload["check_id"] == "good"
+                   and book.judging("m:held", position[o.event_id], reading=True, check="good") is not None]
+        assert len({book.judging("m:held", position[o.event_id], reading=True, check="good").event_id
+                    for o in settled}) == 2
+        outcomes = [o for o in settlement.measured_outcomes(body.journal) if o["mission_id"] == "m:held"]
+        assert [(o["check_id"], o["correct"]) for o in outcomes] == [("good", True)]
+    finally:
+        body.close()
+
+
+def test_a_failure_closure_settles_only_the_checks_it_names(tmp_path):
+    """On a real body, with the real appraiser child and the real cognition.solve. One computation is read by two
+    checks: "good" (fitness at most 1e6) passes and "bad" (fitness at most 0) fails. The mission closes unmet naming
+    "bad", and its appraisal re-derives that check only (greg/appraisal.py ``appraise``: "checks it does not name are
+    not part of the claim"). So only "bad" settles under its VERIFIED_UNMET; "good" was re-derived by no appraisal
+    and earns no competence credit. Before (independent re-check of #310, C1), "good" settled as correct under that
+    VERIFIED_UNMET with the tier "locally reobserved and appraised computation"."""
+    import copy
+    spec = blackbox("m:mixed", 1, 1e6)
+    bad = copy.deepcopy(spec["success_checks"][0])
+    bad.update(check_id="bad", description="fitness at most 0", predicate={**bad["predicate"], "value": 0.0})
+    spec["success_checks"].append(bad)
+    spec["strategies"][0]["advances"] = ["good", "bad"]
+    body, *_ = run(tmp_path, [spec], ticks=6)
+    try:
+        [unmet] = body.journal.replay("mission.unmet")
+        assert unmet.payload["failing_checks"] == ["bad"]
+        assert [(a["verdict"], a["closure_event"], a["findings"]) for a in appraisals_of(body, "m:mixed")] == [
+            ("VERIFIED_UNMET", unmet.event_id, [])]
+        read = [(o.payload["check_id"], o.payload["passed"]) for o in body.journal.replay("mission.observed")]
+        assert ("good", True) in read and ("bad", False) in read      # both checks were read
+        outcomes = settlement.measured_outcomes(body.journal)
+        assert [(o["check_id"], o["correct"]) for o in outcomes] == [("bad", False)]
+    finally:
+        body.close()
 
 
 def test_a_verified_failure_is_never_read_as_a_success(tmp_path):
@@ -108,6 +174,12 @@ def test_a_verified_failure_is_never_read_as_a_success(tmp_path):
         assert "m:fails" not in verified_appraisals(body.journal)          # precedents, SOPs
         assert track_record(body.journal)["cognition.solve"]["verified"] == 0
         assert not body.journal.replay("mission.achieved")
+        # Those two readers now take a success only from an achievement or a hold (greg/appraisal.py standings), but
+        # others read the verdict word itself (the earned level, Goal Gravity's appraised_verified), so the
+        # appraiser's own record of a failure closure must never say VERIFIED.
+        [unmet] = body.journal.replay("mission.unmet")
+        assert [(a["verdict"], a["closure_event"]) for a in appraisals_of(body, "m:fails")] == [
+            ("VERIFIED_UNMET", unmet.event_id)]
     finally:
         body.close()
 

@@ -30,9 +30,9 @@ What must hold now:
   appraisal raises an autonomy level, answers an ask or lifts a blocker;
 - a check left open (not run, or read too late) is named ``not_established``, and routing does not blame a
   capability for it;
-- a mission whose latest appraisal waits for an attach is "not yet appraised" to the SOP trend, the N4 reading and
-  the compounding wording; Mission Control's Proof list says which closure each appraisal is for and why an
-  UNAVAILABLE one was not appraised;
+- a mission whose current closure's final appraisal waits for an attach is "not yet appraised" to the SOP trend, the
+  N4 reading and the compounding wording; Mission Control's Proof list says which closure each appraisal is for and
+  why an UNAVAILABLE one was not appraised;
 - an adapter that is not the one this body holds registered for a reviewed built-in is not run, and neither is a
   sensor that is not read-only.
 
@@ -427,7 +427,7 @@ def test_a_founder_re_attach_lets_the_closure_be_appraised_again(tmp_path, child
             body.tick()
         assert len(child.requests) == 2 and len(facts(body, "mission.appraised")) == 2
         from greg.sop import verified_appraisals
-        assert MID in verified_appraisals(body.journal)          # the latest appraisal is the one readers take
+        assert MID in verified_appraisals(body.journal)          # the closure's final appraisal stands for it
 
 
 def test_a_re_attach_after_a_restart_is_still_appraised(tmp_path, child):
@@ -507,7 +507,7 @@ def test_a_failure_closure_appraised_late_does_not_speak_against_the_achievement
     """A failure closure waits for its appraisal while its sensor is detached. The founder does the work himself
     (one of the alternatives the ask offers) and attaches the sensor again; the mission achieves. The failure
     closure is then appraised late against a world in which the work is done. That must not be recorded as a
-    refutation, and the readers that take a mission's latest appraisal must find the achievement's own."""
+    refutation, and every reader of the mission's current closure must find the achievement's own appraisal."""
     from greg import corrections, metrics
     from greg.cognition.settlement import _settling_appraisals
     from greg.sop import verified_appraisals
@@ -536,8 +536,10 @@ def test_a_failure_closure_appraised_late_does_not_speak_against_the_achievement
         assert "appraised_late" not in appraised[2] and appraised[2]["checks"]["world_reobserved"] is True
         assert [f["kind"] for f in autonomy.failures(body.journal)] == ["ineffective"]     # the nudge; no "refuted"
         assert not [c for c in corrections.Index(body.journal).causes(body.clock()) if c["class"] == "APPRAISAL_REFUTED"]
+        # the nudge's own closure is the failure closure, whose final appraisal is UNAVAILABLE: it is unappraised,
+        # neither refuted nor credited by the achievement that followed (the founder did that work, not the nudge)
         record = routing.track_record(body.journal)["fs.write"]
-        assert (record["refuted"], record["verified"]) == (0, 1)
+        assert (record["refuted"], record["verified"]) == (0, 0)
         assert MID in verified_appraisals(body.journal)
         [row] = [r for r in metrics.vepmc(body.journal)["missions"] if r["mission_id"] == MID]
         assert row["appraised_verified"] is True

@@ -1153,6 +1153,7 @@ def _sense(body, loop: GoalGravityLoop, cursor: int) -> tuple[list[SignalEnvelop
     latest: dict[tuple, tuple] = {}            # one reading per (subject, attribute): the latest in ledger order
     path_changed = cursor == 0
     gate: dict = {}                            # grant_issued and witness records, read once if needed
+    closing: dict = {}                         # mission id -> its closure and appraisal records in this batch
     for rec in records:
         if rec.record_type != "event":
             continue
@@ -1172,9 +1173,11 @@ def _sense(body, loop: GoalGravityLoop, cursor: int) -> tuple[list[SignalEnvelop
             value, _ = evaluate_receipt(check["predicate"], receipt.payload.get("result", {}), artifacts)
             trust = "attributed" if value == p["passed"] else "untrusted"
             latest[(p["mission_id"], p["check_id"])] = (rec.payload["event_id"], p["at"], rec.hash, value, trust)
-        elif t == "greg.mission.appraised" and p.get("verdict") in ("VERIFIED", "REFUTED"):
-            latest[(p["mission_id"], "appraised_verified")] = (rec.payload["event_id"], rec.ts_utc, rec.hash,
-                                                               p["verdict"] == "VERIFIED", "attributed")
+        elif t in APPRAISAL_READING and p.get("mission_id"):
+            # A closure or an appraisal of the mission may change what its current closure stands on: read after the
+            # batch, below, from the closure's own appraisal. The key holds this reading's place among the others.
+            closing.setdefault(p["mission_id"], {})[rec.payload["event_id"]] = (rec.ts_utc, rec.hash)
+            latest.setdefault((p["mission_id"], "appraised_verified"), None)
         elif t in ("greg.capability.registered", "greg.capability.state"):
             # Capability formation as perception: a capability that became usable (formed, recovered, attached)
             # or stopped being usable changes what a mission blocked on its function can do. Recorded by Genesis
@@ -1190,6 +1193,28 @@ def _sense(body, loop: GoalGravityLoop, cursor: int) -> tuple[list[SignalEnvelop
             about, terms = intake_about(p.get("content", ""), book, loop.registry)
             emit(rec.payload["event_id"], p["at"], rec.hash, trust="untrusted", tags=[p["channel"]],
                  domain=p["channel"], intake=True, about=about, matched_terms=terms)
+    if closing:
+        # The mission's reading is the verdict of its current closure (its achievement, or a standing mission's
+        # newest closure), as greg/appraisal.py ``standings`` binds each appraisal to the closure it judged: True for
+        # VERIFIED, False for REFUTED or VERIFIED_UNMET, and unknown (None) while that closure has no verdict of its
+        # own (not appraised yet, or its final appraisal UNAVAILABLE). An appraisal of another closure of the
+        # mission, such as an earlier failure closure appraised late, moves nothing; a newer closure withdraws the
+        # older one's verdict. With no reading held, an unknown one adds nothing.
+        from greg.appraisal import standings
+        book = standings(body.journal)
+        for mid, records_seen in closing.items():
+            current = book.current(mid)
+            verdict = current.verdict if current is not None else None
+            value = None if verdict is None else verdict == "VERIFIED"
+            held = world.belief(mid, "appraised_verified")
+            if value is None and (held is None or held.value is None):
+                del latest[(mid, "appraised_verified")]
+                continue
+            decided = (current.standing.event_id if verdict is not None
+                       else current.event_id if current is not None else None)
+            event_id = decided if decided in records_seen else list(records_seen)[-1]
+            at, record_hash = records_seen[event_id]
+            latest[(mid, "appraised_verified")] = (event_id, at, record_hash, value, "attributed")
     for (subject, attribute), (event_id, at, record_hash, value, trust) in latest.items():
         if changed(subject, attribute, value, trust):
             emit(event_id, at, record_hash, [{"subject": subject, "attribute": attribute, "value": value,
@@ -1204,6 +1229,8 @@ def _sense(body, loop: GoalGravityLoop, cursor: int) -> tuple[list[SignalEnvelop
     return out, end
 
 
+# The records after which a mission's appraised_verified reading is read again (``_sense``).
+APPRAISAL_READING = ("greg.mission.appraised", "greg.mission.held", "greg.mission.unmet", "greg.mission.achieved")
 # Each transition is its own change: formed or recovered (VERIFIED: attachable), attached (usable now),
 # quarantined or detached (no longer usable). The value is the state, so every one of them can wake a goal.
 CAPABILITY_USABLE = ("VERIFIED", "ATTACHED", "QUARANTINED", "DETACHED")

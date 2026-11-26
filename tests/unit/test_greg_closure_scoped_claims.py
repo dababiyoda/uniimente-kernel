@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from greg.cognition import settlement
 from greg.sop import REQUIRED_CHECKS
-from tests.unit.test_greg_pending_construction_realization import observe, pending
+from tests.unit.test_greg_pending_construction_realization import CHECK, observe, pending
 
 MID = "m:pending-fixture"
 
@@ -23,7 +23,10 @@ def appraise(journal, verdict, closure_event=None, *, failing=()):
 
 
 def close(journal, kind):
-    journal.record(f"mission.{kind}", {"mission_id": MID})
+    """A closure as the engine records it (greg/missions.py): a failure closure names the signed check that still
+    fails, and its appraisal re-derives only the checks it names (greg/appraisal.py ``appraise``)."""
+    journal.record(f"mission.{kind}", {"mission_id": MID,
+                                       **({"failing_checks": [CHECK["check_id"]]} if kind == "unmet" else {})})
     return journal.events[-1].event_id
 
 

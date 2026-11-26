@@ -129,7 +129,8 @@ def retained_reuse(journal: Journal) -> dict:
     seq = {r.payload.get("event_id"): r.seq for r in journal.ledger.by_type("event")}
     verified = {mid: seq[eid] for mid, eid in sop.verified_appraisals(journal).items() if eid in seq}
     awaiting = sop.awaiting_appraisal(journal)      # appraised again when the founder attaches what was not run
-    rejected = {e.payload.get("mission_id") for e in journal.replay("mission.appraised")} - set(verified) - awaiting
+    # appraised, on its current closure, and neither verified nor waiting (an earlier closure's verdict is not B's)
+    rejected = set(sop.current_appraisals(journal)) - set(verified) - awaiting
     registered = {e.payload["mission_id"]: (e.payload.get("spec") or {}, seq[e.event_id])
                   for e in journal.replay("mission.registered") if e.payload.get("mission_id")}
     opened = {e.payload["deficit_id"]: e.payload for e in journal.replay("deficit.opened")

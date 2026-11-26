@@ -181,8 +181,9 @@ MUTANTS = [
     (SOP, "a run whose appraisal waits for an attach counts as a failed SOP run",
      '    for mid in awaiting_appraisal(journal):', '    for mid in ():'),
     (SOP, "every UNAVAILABLE appraisal reads as waiting for an attach",
-     '    return {mid for mid, appraisal in latest.items() if not_run_by_appraiser(appraisal)}',
-     '    return {mid for mid, appraisal in latest.items() if appraisal.get("verdict") == "UNAVAILABLE"}'),
+     '    return {mid for mid, (_, event) in current_appraisals(journal).items() if not_run_by_appraiser(event.payload)}',
+     '    return {mid for mid, (_, event) in current_appraisals(journal).items()\n'
+     '            if event.payload.get("verdict") == "UNAVAILABLE"}'),
     (COMPOUNDING, "a reuse whose appraisal waits for an attach is worded as rejected",
      ' - set(verified) - awaiting\n', ' - set(verified)\n'),
     (MISSION_CONTROL, "the Proof list does not carry why an appraisal was UNAVAILABLE",
@@ -196,9 +197,12 @@ MUTANTS = [
     (CORRECTIONS, "a correction lists a check the appraiser left open as a failed check",
      'if v is False\n                                                             '
      'and k not in (p.get("not_established") or ())),', 'if v is False),'),
+    # The fold reads each run's own closure's standing (greg/appraisal.py ``Standings.judging``), which an
+    # UNAVAILABLE never is, so the mutant is anchored where it reads that verdict: an UNAVAILABLE final record counts.
     (AUTONOMY, "an appraisal that judged nothing counts as a verified run towards an autonomy level",
-     'kind = "verified" if judged is not None and judged[1] == "VERIFIED" else None',
-     'kind = "verified" if judged is not None and judged[1] in ("VERIFIED", "UNAVAILABLE") else None'),
+     '            kind = "verified" if closure is not None and closure.verdict == "VERIFIED" else None',
+     '            kind = "verified" if closure is not None and (closure.verdict == "VERIFIED" or getattr('
+     'closure.record, "payload", {}).get("verdict") == "UNAVAILABLE") else None'),
     (MISSION_CONTROL, "every appraisal row reads as the achievement's",
      'f"{closure_kinds.get(closure, \'closure\')} {str(closure)[:8]}" if closure else "achievement"', '"achievement"'),
     (MISSION_CONTROL, "the Proof view does not show which closure an appraisal is for",
